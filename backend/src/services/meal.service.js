@@ -63,8 +63,8 @@ const deleteMealById = async (mealId, userId) => {
     if (!meal) {
         throw new Error('Meal not found');
     }
-    await meal.remove();
     await User.findByIdAndUpdate(userId,{$pull:{meals:mealId}},{new:true})
+    await Meal.findByIdAndDelete(mealId);
     return meal;
 };
 

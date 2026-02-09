@@ -63,11 +63,12 @@ const deleteMarketById = async (marketId,userId) => {
     if (!market) {
         throw new Error('Market not found');
     }
-    await market.remove();
+    // await market.remove();
 
     await User.findByIdAndUpdate(userId,{
         $pull:{markets:marketId}
     })
+    await Market.findByIdAndDelete(marketId)
     return market;
 };
 
