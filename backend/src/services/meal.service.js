@@ -1,5 +1,6 @@
 const Meal = require('../models/Meal.model');
 const User = require('../models/User.model');
+const AppError = require('../utils/errors/AppError');
 
 /**
  * Create a meal
@@ -7,9 +8,12 @@ const User = require('../models/User.model');
  * @returns {Promise<Meal>}
  */
 const createMeal = async (mealBody) => {
-    // return Meal.create(mealBody);
-    const {user} = mealBody;
+    const {user, date} = mealBody;
     mealBody.mealCount = mealBody.type === 'both' ? 2 : 1;
+
+    const existingMeal = await Meal.findOne({user, date})
+    if(existingMeal) throw new AppError('Meal already exist for this date', 409)
+
     const newMeal = await Meal.create(mealBody);
     await User.findByIdAndUpdate(user,{
     $push:{meals:newMeal._id}},{new:true})
@@ -46,7 +50,7 @@ const getMealById = async (id) => {
 const updateMealById = async (mealId, updateBody) => {
     const meal = await getMealById(mealId);
     if (!meal) {
-        throw new Error('Meal not found');
+        throw new AppError('Meal not found', 404);
     }
     Object.assign(meal, updateBody);
     await meal.save();
@@ -61,7 +65,7 @@ const updateMealById = async (mealId, updateBody) => {
 const deleteMealById = async (mealId, userId) => {
     const meal = await getMealById(mealId);
     if (!meal) {
-        throw new Error('Meal not found');
+        throw new AppError('Meal not found', 404);
     }
     await User.findByIdAndUpdate(userId,{$pull:{meals:mealId}},{new:true})
     await Meal.findByIdAndDelete(mealId);

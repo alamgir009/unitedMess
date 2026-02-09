@@ -1,5 +1,6 @@
 const Market = require('../models/Market.model');
 const User = require('../models/User.model');
+const AppError = require('../utils/errors/AppError');
 
 /**
  * Create a market entry
@@ -7,7 +8,12 @@ const User = require('../models/User.model');
  * @returns {Promise<Market>}
  */
 const createMarket = async (marketBody) => {
-    const {user} = marketBody;
+    const { user, date } = marketBody;
+    const existingMarket = await Market.findOne({ user, date });
+
+    if (existingMarket) {
+        throw new AppError('Market already exists for this date', 409);
+    }
     let newMarket = await Market.create(marketBody)
 
     await User.findByIdAndUpdate(user,{
@@ -46,7 +52,7 @@ const getMarketById = async (id) => {
 const updateMarketById = async (marketId, updateBody) => {
     const market = await getMarketById(marketId);
     if (!market) {
-        throw new Error('Market not found');
+        throw new AppError('Market not found', 404);
     }
     Object.assign(market, updateBody);
     await market.save();
@@ -61,7 +67,7 @@ const updateMarketById = async (marketId, updateBody) => {
 const deleteMarketById = async (marketId,userId) => {
     const market = await getMarketById(marketId);
     if (!market) {
-        throw new Error('Market not found');
+        throw new AppError('Market not found', 404);
     }
     // await market.remove();
 
