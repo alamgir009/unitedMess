@@ -17,13 +17,11 @@ const marketSchema = new mongoose.Schema(
             required: true,
             min: 0,
         },
-        items: [
-            {
-                name: String,
-                price: Number,
-                quantity: String,
-            }
-        ],
+        items: {
+            type: String,
+            required:true,
+            trim:true,
+        },
         image: {
             type: String, // URL to receipt or image
         },

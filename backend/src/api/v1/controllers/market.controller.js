@@ -4,7 +4,7 @@ const { sendSuccessResponse } = require('../../../utils/helpers/response.helper'
 const pick = require('../../../utils/helpers/pick');
 
 const createMarket = asyncHandler(async (req, res) => {
-    const market = await marketService.createMarket({ ...req.body, marketOwner: req.user.id });
+    const market = await marketService.createMarket({ ...req.body, user: req.user.id });
     sendSuccessResponse(res, 201, 'Market entry created successfully', market);
 });
 
