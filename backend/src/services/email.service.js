@@ -417,37 +417,43 @@ const sendPasswordResetEmail = async (to, token, name = 'User') => {
 };
 
 /**
- * Send welcome email
+ * Send welcome email after successful email verification
  * @param {string} to - Recipient email
  * @param {string} name - User name
  * @returns {Promise}
  */
 const sendWelcomeEmail = async (to, name) => {
     const dashboardUrl = `${config.appUrl || 'http://localhost:5173'}/dashboard`;
-
+    
     const { html, text } = generateEmailTemplate({
-        title: 'Welcome to United Mess!',
-        previewText: `Welcome ${name}! Get started with United Mess.`,
+        title: 'Email Verified Successfully!',
+        previewText: `${name}, your email has been verified. Awaiting admin approval.`,
         content: `
-<p class="email-text">Hello ${name},</p>
-<p class="email-text">Welcome to United Mess! We're thrilled to have you join our community of food lovers and providers.</p>
-<p class="email-text">Your account is now active and ready to use. Here's what you can do:</p>
-<ul style="color: #4a5568; padding-left: 20px;">
+<p class="email-text">Dear ${name},</p>
+<p class="email-text">Congratulations! 🎉 Your email address has been successfully verified.</p>
+<p class="email-text">Your registration with United Mess is now under review by our admin team. You will receive a notification once your account has been approved and activated.</p>
+<div style="background-color: #f7fafc; border-left: 4px solid #4299e1; padding: 16px; margin: 24px 0;">
+    <p style="margin: 0; color: #2d3748; font-weight: 600;">⏳ Next Steps:</p>
+    <p style="margin: 8px 0 0 0; color: #4a5568;">Please wait for admin approval from United Mess. This typically takes 24-48 hours.</p>
+</div>
+<p class="email-text">Once approved, you'll be able to:</p>
+<ul style="color: #4a5568; padding-left: 20px; line-height: 1.8;">
     <li>Browse available meals in your area</li>
-    <li>Connect with local markets</li>
-    <li>Manage your meal preferences</li>
-    <li>Track your orders and payments</li>
+    <li>Connect with local markets and providers</li>
+    <li>Manage your meal preferences and dietary requirements</li>
+    <li>Track your orders and payment history</li>
 </ul>
-<p class="email-text">Get started by exploring your dashboard!</p>
+<p class="email-text">We appreciate your patience and look forward to welcoming you to the United Mess community!</p>
+<p class="email-text">If you have any questions in the meantime, please don't hesitate to contact our support team.</p>
 `,
-        buttonText: 'Go to Dashboard',
+        buttonText: 'Visit Dashboard',
         buttonLink: dashboardUrl,
         showButton: true
     });
-
+    
     return sendEmail({
         to,
-        subject: 'Welcome to United Mess! 🎉',
+        subject: '✅ Email Verified Successfully - Awaiting Admin Approval',
         text,
         html
     });
@@ -497,25 +503,31 @@ const sendAccountApprovedEmail = async (to, name) => {
  * @returns {Promise}
  */
 const sendAccountDeniedEmail = async (to, name, reason = 'Your application did not meet our current requirements.') => {
+    const supportUrl = `${config.appUrl || 'https://unitedmess.com'}/support`;
+    
     const { html, text } = generateEmailTemplate({
-        title: 'Account Application Update',
+        title: 'Account Update',
         previewText: 'Update regarding your United Mess account application.',
         content: `
-<p class="email-text">Hello ${name},</p>
-<p class="email-text">Thank you for your interest in United Mess. After reviewing your application, we regret to inform you that we cannot approve your account at this time.</p>
-<div class="email-text-highlight">
-    <p style="margin: 0; color: #2d3748;"><strong>Reason:</strong> ${reason}</p>
+<p class="email-text">Dear ${name},</p>
+<p class="email-text">Thank you for your interest in joining United Mess. We appreciate the time you took to complete your application.</p>
+<p class="email-text">After careful review by our admin team, we regret to inform you that we are unable to approve your account application at this time.</p>
+<div style="background-color: #fff5f5; border-left: 4px solid #fc8181; padding: 16px; margin: 24px 0;">
+    <p style="margin: 0; color: #2d3748; font-weight: 600;">📋 Reason for Denial:</p>
+    <p style="margin: 8px 0 0 0; color: #4a5568;">${reason}</p>
 </div>
-<p class="email-text">If you believe this is a mistake or would like to provide additional information, please contact our support team.</p>
-<p class="email-text">We appreciate your understanding and hope to serve you in the future.</p>
+<p class="email-text">If you believe this decision was made in error or would like to provide additional information for reconsideration, please don't hesitate to contact our support team.</p>
+<p class="email-text">We appreciate your understanding and hope to have the opportunity to serve you in the future.</p>
 `,
-        showButton: false,
-        footerText: 'For any questions or concerns, please contact our support team.'
+        showButton: true,
+        buttonText: 'Contact Support',
+        buttonLink: supportUrl,
+        footerText: 'For any questions or concerns, please reach out to our support team.'
     });
 
     return sendEmail({
         to,
-        subject: 'Account Application Update - United Mess',
+        subject: '❌ Account Update - United Mess',
         text,
         html
     });
@@ -529,15 +541,24 @@ const sendAccountDeniedEmail = async (to, name, reason = 'Your application did n
  */
 const sendPasswordChangeNotification = async (to, name = 'User') => {
     const supportUrl = `${config.appUrl || 'https://unitedmess.com'}/support`;
+    const loginUrl = `${config.appUrl || 'https://unitedmess.com'}/login`;
 
     const { html, text } = generateEmailTemplate({
         title: 'Password Changed Successfully',
         previewText: 'Your United Mess password has been changed.',
         content: `
-<p class="email-text">Hello ${name},</p>
-<p class="email-text">This is a confirmation that your United Mess account password was recently changed.</p>
-<p class="email-text">If you made this change, no further action is required.</p>
-<p class="email-text" style="color: #e53e3e;"><strong>Security Alert:</strong> If you did NOT change your password, please contact our support team immediately to secure your account.</p>
+<p class="email-text">Dear ${name},</p>
+<p class="email-text">This email confirms that your United Mess account password was successfully changed on ${new Date().toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' })}.</p>
+<div style="background-color: #f0fff4; border-left: 4px solid #48bb78; padding: 16px; margin: 24px 0;">
+    <p style="margin: 0; color: #2d3748; font-weight: 600;">✅ Change Confirmed</p>
+    <p style="margin: 8px 0 0 0; color: #4a5568;">If you made this change, no further action is required. You can now use your new password to access your account.</p>
+</div>
+<div style="background-color: #fff5f5; border-left: 4px solid #fc8181; padding: 16px; margin: 24px 0;">
+    <p style="margin: 0; color: #2d3748; font-weight: 600;">🔒 Security Alert</p>
+    <p style="margin: 8px 0 0 0; color: #c53030;"><strong>If you did NOT make this change, your account may be compromised.</strong></p>
+    <p style="margin: 8px 0 0 0; color: #4a5568;">Please contact our support team immediately to secure your account and reset your password.</p>
+</div>
+<p class="email-text">For your security, we recommend regularly updating your password and never sharing it with anyone.</p>
 `,
         showButton: true,
         buttonText: 'Contact Support',
@@ -547,7 +568,7 @@ const sendPasswordChangeNotification = async (to, name = 'User') => {
 
     return sendEmail({
         to,
-        subject: 'Password Changed - Security Notification',
+        subject: '🔐 Password Changed - Security Notification',
         text,
         html
     });
@@ -560,28 +581,37 @@ const sendPasswordChangeNotification = async (to, name = 'User') => {
  * @returns {Promise}
  */
 const sendPasswordResetConfirmation = async (to, name = 'User') => {
+    const loginUrl = `${config.appUrl || 'https://unitedmess.com'}/login`;
+    const supportUrl = `${config.appUrl || 'https://unitedmess.com'}/support`;
+
     const { html, text } = generateEmailTemplate({
         title: 'Password Reset Successful',
         previewText: 'Your password has been successfully reset.',
         content: `
-<p class="email-text">Hello ${name},</p>
-<p class="email-text">Your United Mess account password has been successfully reset.</p>
-<p class="email-text">You can now use your new password to log in to your account.</p>
-<p class="email-text" style="color: #38a169;"><strong>Security Tip:</strong> For your account's security, we recommend:</p>
-<ul style="color: #4a5568; padding-left: 20px;">
-    <li>Using a unique password for United Mess</li>
-    <li>Enabling two-factor authentication if available</li>
-    <li>Regularly updating your password</li>
-    <li>Never sharing your password with anyone</li>
-</ul>
+<p class="email-text">Dear ${name},</p>
+<p class="email-text">Great news! Your United Mess account password has been successfully reset. ✨</p>
+<p class="email-text">You can now use your new password to securely log in to your account and access all features.</p>
+<div style="background-color: #f0fff4; border-left: 4px solid #48bb78; padding: 16px; margin: 24px 0;">
+    <p style="margin: 0; color: #2d3748; font-weight: 600;">💡 Security Best Practices:</p>
+    <ul style="color: #4a5568; padding-left: 20px; margin: 8px 0 0 0; line-height: 1.8;">
+        <li>Use a unique, strong password for your United Mess account</li>
+        <li>Enable two-factor authentication if available</li>
+        <li>Update your password every 3-6 months</li>
+        <li>Never share your password with anyone, including support staff</li>
+        <li>Avoid using the same password across multiple platforms</li>
+    </ul>
+</div>
+<p class="email-text">Your account security is our top priority. If you have any questions or concerns, our support team is here to help.</p>
 `,
-        showButton: false,
+        showButton: true,
+        buttonText: 'Log In to Your Account',
+        buttonLink: loginUrl,
         footerText: 'If you did not reset your password, please contact our support team immediately.'
     });
 
     return sendEmail({
         to,
-        subject: 'Password Reset Confirmation - United Mess',
+        subject: '✅ Password Reset Confirmation - United Mess',
         text,
         html
     });
@@ -594,38 +624,43 @@ const sendPasswordResetConfirmation = async (to, name = 'User') => {
  * @returns {Promise}
  */
 const sendAccountLockedEmail = async (to, name = 'User') => {
-    const unlockUrl = `${config.appUrl || 'https://unitedmess.com'}/auth/unlock-account`;
+    const resetPasswordUrl = `${config.appUrl || 'https://unitedmess.com'}/auth/forgot-password`;
     const supportUrl = `${config.appUrl || 'https://unitedmess.com'}/support`;
 
     const { html, text } = generateEmailTemplate({
         title: 'Account Locked - Security Alert',
         previewText: 'Your account has been locked due to multiple failed login attempts.',
         content: `
-<p class="email-text">Hello ${name},</p>
-<p class="email-text">We've detected multiple unsuccessful login attempts on your United Mess account.</p>
-<p class="email-text">To protect your account, it has been temporarily <strong>locked</strong> for 2 hours.</p>
-<div class="email-text-highlight">
-    <p style="margin: 0; color: #2d3748;">
-        <strong>What happened?</strong><br>
-        Too many incorrect password attempts were made on your account.
-    </p>
+<p class="email-text">Dear ${name},</p>
+<p class="email-text">We've detected multiple unsuccessful login attempts on your United Mess account within a short period.</p>
+<div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px; margin: 24px 0;">
+    <p style="margin: 0; color: #2d3748; font-weight: 600;">🔒 Account Status: Temporarily Locked</p>
+    <p style="margin: 8px 0 0 0; color: #4a5568;">To protect your account security, we have temporarily locked your account for <strong>2 hours</strong>.</p>
 </div>
-<p class="email-text">If this was you, you can:</p>
-<ol style="color: #4a5568; padding-left: 20px;">
-    <li>Wait 2 hours for the lock to expire automatically</li>
-    <li>Use the "Forgot Password" feature to reset your password</li>
-    <li>Contact our support team for immediate assistance</li>
+<div style="background-color: #f7fafc; border-left: 4px solid #4299e1; padding: 16px; margin: 24px 0;">
+    <p style="margin: 0; color: #2d3748; font-weight: 600;">❓ What Happened?</p>
+    <p style="margin: 8px 0 0 0; color: #4a5568;">Multiple incorrect password attempts were detected on your account, triggering our automatic security lockout system.</p>
+</div>
+<p class="email-text"><strong>What You Can Do:</strong></p>
+<ol style="color: #4a5568; padding-left: 20px; line-height: 1.8;">
+    <li><strong>Wait:</strong> Your account will automatically unlock after 2 hours from the time of the last failed attempt</li>
+    <li><strong>Reset Password:</strong> Use the "Forgot Password" feature to reset your password immediately</li>
+    <li><strong>Contact Support:</strong> Reach out to our support team for immediate assistance if you suspect unauthorized access</li>
 </ol>
+<div style="background-color: #fff5f5; border-left: 4px solid #fc8181; padding: 16px; margin: 24px 0;">
+    <p style="margin: 0; color: #2d3748; font-weight: 600;">⚠️ Didn't Try to Log In?</p>
+    <p style="margin: 8px 0 0 0; color: #c53030;">If you did not attempt to access your account, please contact our support team immediately. Your account may require additional security measures.</p>
+</div>
 `,
         showButton: true,
-        buttonText: 'Contact Support',
-        buttonLink: supportUrl,
-        footerText: 'This is an automated security measure to protect your account.'
+        buttonText: 'Reset Password',
+        buttonLink: resetPasswordUrl,
+        footerText: 'This is an automated security measure to protect your account from unauthorized access.'
     });
 
     return sendEmail({
         to,
-        subject: '⚠️ Account Locked - Security Alert',
+        subject: '⚠️ Account Locked - Security Alert | United Mess',
         text,
         html
     });
