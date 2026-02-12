@@ -30,7 +30,7 @@ const updateMarket = asyncHandler(async (req, res) => {
 
 const deleteMarket = asyncHandler(async (req, res) => {
     // const {marketId} = req.params;
-    await marketService.deleteMarketById(req.params.marketId, req.user.id);
+    await marketService.deleteMarketById(req.params.marketId);
     res.status(204).send();
 });
 

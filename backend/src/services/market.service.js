@@ -16,9 +16,11 @@ const createMarket = async (marketBody) => {
     }
     let newMarket = await Market.create(marketBody)
 
-    await User.findByIdAndUpdate(user,{
-        $push:{markets:newMarket._id}}, 
-    {new:true})
+    await User.findByIdAndUpdate(user, {
+        $push: { markets: newMarket._id },
+        $inc: { totalMarketAmount: newMarket.amount }
+    },
+    { new: true, runValidators: true })
 
     return newMarket
 };
@@ -51,11 +53,20 @@ const getMarketById = async (id) => {
  */
 const updateMarketById = async (marketId, updateBody) => {
     const market = await getMarketById(marketId);
-    if (!market) {
-        throw new AppError('Market not found', 404);
-    }
+    if (!market) throw new AppError('Market not found', 404);
+
+    const oldAmount = market.amount;
     Object.assign(market, updateBody);
     await market.save();
+
+    // Adjust user's total if amount changed
+    if (updateBody.amount !== undefined && updateBody.amount !== oldAmount) {
+        await User.findByIdAndUpdate(market.user._id, {
+            $inc: { totalMarketAmount: updateBody.amount - oldAmount }
+        },
+        { new: true, runValidators: true });
+    }
+
     return market;
 };
 
@@ -64,16 +75,18 @@ const updateMarketById = async (marketId, updateBody) => {
  * @param {ObjectId} marketId
  * @returns {Promise<Market>}
  */
-const deleteMarketById = async (marketId,userId) => {
+const deleteMarketById = async (marketId) => {
     const market = await getMarketById(marketId);
     if (!market) {
         throw new AppError('Market not found', 404);
     }
-    // await market.remove();
-
-    await User.findByIdAndUpdate(userId,{
-        $pull:{markets:marketId}
-    })
+    
+    await User.findByIdAndUpdate(market.user, {
+        $pull: { markets: marketId },
+        $inc: { totalMarketAmount: -market.amount }
+    },
+    { new: true, runValidators: true })
+    
     await Market.findByIdAndDelete(marketId)
     return market;
 };

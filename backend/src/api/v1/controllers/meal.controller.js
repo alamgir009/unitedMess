@@ -33,7 +33,7 @@ const updateMeal = asyncHandler(async (req, res) => {
 });
 
 const deleteMeal = asyncHandler(async (req, res) => {
-    await mealService.deleteMealById(req.params.mealId, req.user.id);
+    await mealService.deleteMealById(req.params.mealId);
     res.status(204).send();
 });
 

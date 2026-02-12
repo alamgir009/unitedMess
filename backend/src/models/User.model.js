@@ -70,6 +70,16 @@ const userSchema = new mongoose.Schema({
         default: 'pending'
     },
     markets: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Market' }],
+    totalMarketAmount: {
+        type: Number,
+        default: 0,
+        min: [0, 'Total market amount cannot be negative']
+    },
+    totalMeal: {
+        type: Number,
+        default: 0,
+        min: [0, 'Total meal count cannot be negative']
+    },
     meals: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Meal' }],
     payment: {
         type: String,
@@ -153,8 +163,8 @@ userSchema.pre('save', function (next) {
 
 userSchema.pre('save', function (next) {
     if (this.isModified('email') && this.email) {
-        const normalized = validator.normalizeEmail(String(this.email).trim(), { 
-            gmail_remove_dots: false 
+        const normalized = validator.normalizeEmail(String(this.email).trim(), {
+            gmail_remove_dots: false
         });
         if (normalized) this.email = normalized;
     }
@@ -164,16 +174,16 @@ userSchema.pre('save', function (next) {
             const pn = parsePhoneNumberFromString(String(this.phone));
             if (!pn || !pn.isValid()) {
                 const err = new mongoose.Error.ValidationError(this);
-                err.addError('phone', new mongoose.Error.ValidatorError({ 
-                    message: 'Please provide a valid phone number' 
+                err.addError('phone', new mongoose.Error.ValidatorError({
+                    message: 'Please provide a valid phone number'
                 }));
                 return next(err);
             }
             this.phone = pn.number;
         } catch (err) {
             const vErr = new mongoose.Error.ValidationError(this);
-            vErr.addError('phone', new mongoose.Error.ValidatorError({ 
-                message: 'Invalid phone number' 
+            vErr.addError('phone', new mongoose.Error.ValidatorError({
+                message: 'Invalid phone number'
             }));
             return next(vErr);
         }
@@ -196,9 +206,9 @@ userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
 
 // STATIC METHODS - Simple queries only
 userSchema.statics.isEmailTaken = async function (email, excludeUserId) {
-    return !!(await this.findOne({ 
-        email: email.toLowerCase(), 
-        _id: { $ne: excludeUserId } 
+    return !!(await this.findOne({
+        email: email.toLowerCase(),
+        _id: { $ne: excludeUserId }
     }).collation({ locale: 'en', strength: 2 }));
 };
 

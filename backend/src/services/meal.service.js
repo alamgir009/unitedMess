@@ -8,15 +8,18 @@ const AppError = require('../utils/errors/AppError');
  * @returns {Promise<Meal>}
  */
 const createMeal = async (mealBody) => {
-    const {user, date} = mealBody;
+    const { user, date } = mealBody;
     mealBody.mealCount = mealBody.type === 'both' ? 2 : 1;
 
-    const existingMeal = await Meal.findOne({user, date})
-    if(existingMeal) throw new AppError('Meal already exist for this date', 409)
+    const existingMeal = await Meal.findOne({ user, date })
+    if (existingMeal) throw new AppError('Meal already exist for this date', 409)
 
     const newMeal = await Meal.create(mealBody);
-    await User.findByIdAndUpdate(user,{
-    $push:{meals:newMeal._id}},{new:true})
+    await User.findByIdAndUpdate(user, {
+        $push: { meals: newMeal._id },
+        $inc: { totalMeal: newMeal.mealCount }
+    },
+        { new: true, runValidators: true })
     return newMeal;
 
 };
@@ -49,11 +52,25 @@ const getMealById = async (id) => {
  */
 const updateMealById = async (mealId, updateBody) => {
     const meal = await getMealById(mealId);
-    if (!meal) {
-        throw new AppError('Meal not found', 404);
+    if (!meal) throw new AppError('Meal not found', 404);
+
+    const oldCount = meal.mealCount;
+    // If type is being updated, recalc mealCount
+    if (updateBody.type) {
+        updateBody.mealCount = updateBody.type === 'both' ? 2 : 1;
     }
+
     Object.assign(meal, updateBody);
     await meal.save();
+
+    // Adjust user's total if mealCount changed
+    if (updateBody.mealCount !== undefined && meal.mealCount !== oldCount) {
+        await User.findByIdAndUpdate(meal.user, {
+            $inc: { totalMeal: meal.mealCount - oldCount }
+        },
+        { new: true, runValidators: true });
+    }
+
     return meal;
 };
 
@@ -62,12 +79,18 @@ const updateMealById = async (mealId, updateBody) => {
  * @param {ObjectId} mealId
  * @returns {Promise<Meal>}
  */
-const deleteMealById = async (mealId, userId) => {
+const deleteMealById = async (mealId) => {
     const meal = await getMealById(mealId);
     if (!meal) {
         throw new AppError('Meal not found', 404);
     }
-    await User.findByIdAndUpdate(userId,{$pull:{meals:mealId}},{new:true})
+
+    await User.findByIdAndUpdate(meal.user, {
+        $pull: { meals: mealId },
+        $inc: { totalMeal: -meal.mealCount }
+    },
+    { new: true, runValidators: true })
+    
     await Meal.findByIdAndDelete(mealId);
     return meal;
 };
