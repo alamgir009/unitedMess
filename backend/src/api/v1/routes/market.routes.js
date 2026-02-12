@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const marketController = require('../controllers/market.controller');
-const { protect, authorize } = require('../middlewares/auth.middleware');
+const { protect } = require('../middlewares/auth.middleware');
 
 router.use(protect);
 

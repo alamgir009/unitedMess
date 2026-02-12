@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const mealController = require('../controllers/meal.controller');
-const { protect, authorize } = require('../middlewares/auth.middleware');
+const { protect } = require('../middlewares/auth.middleware');
 
 router.use(protect);
 
