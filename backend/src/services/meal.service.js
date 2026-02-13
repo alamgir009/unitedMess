@@ -9,30 +9,42 @@ const AppError = require('../utils/errors/AppError');
  */
 const createMeal = async (mealBody) => {
     const { user, date } = mealBody;
+
+    // Check for existing meal first (fail fast)
+    if (await Meal.exists({ user, date })) {
+        throw new AppError('Meal already exists for this date', 409);
+    }
+
+    // Set counts
     mealBody.mealCount = mealBody.type === 'both' ? 2 : 1;
+    mealBody.guestCount = mealBody.isGuestMeal ? (mealBody.guestCount || 1) : 0;
 
-    const existingMeal = await Meal.findOne({ user, date })
-    if (existingMeal) throw new AppError('Meal already exist for this date', 409)
+    // Parallel execution for better performance
+    const [newMeal] = await Promise.all([
+        Meal.create(mealBody),
+        User.findByIdAndUpdate(
+            user,
+            {
+                $push: { meals: mealBody._id }, // Will be set by Mongoose
+                $inc: {
+                    totalMeal: mealBody.mealCount,
+                    guestMeal: mealBody.guestCount
+                }
+            },
+            { new: true, runValidators: true }
+        )
+    ]);
 
-    const newMeal = await Meal.create(mealBody);
-    await User.findByIdAndUpdate(user, {
-        $push: { meals: newMeal._id },
-        $inc: { totalMeal: newMeal.mealCount }
-    },
-        { new: true, runValidators: true })
     return newMeal;
-
 };
 
 /**
  * Query for meals
- * @param {Object} filter - Mongo filter
- * @param {Object} options - Query options
+ * @param {Object} filter
  * @returns {Promise<QueryResult>}
  */
-const queryMeals = async (filter, options) => {
-    const meals = await Meal.find(filter).sort({ date: -1 });
-    return meals;
+const queryMeals = async (filter) => {
+    return Meal.find(filter).sort({ date: -1 }).lean(); // .lean() for 5-10x faster queries
 };
 
 /**
@@ -54,21 +66,37 @@ const updateMealById = async (mealId, updateBody) => {
     const meal = await getMealById(mealId);
     if (!meal) throw new AppError('Meal not found', 404);
 
-    const oldCount = meal.mealCount;
-    // If type is being updated, recalc mealCount
+    // Store old values
+    const oldMealCount = meal.mealCount;
+    const oldGuestCount = meal.guestCount || 0;
+
+    // Handle type change
     if (updateBody.type) {
         updateBody.mealCount = updateBody.type === 'both' ? 2 : 1;
     }
 
+    // Handle guest meal toggle
+    if (updateBody.isGuestMeal !== undefined) {
+        updateBody.guestCount = updateBody.isGuestMeal 
+            ? (updateBody.guestCount ?? 1) 
+            : 0;
+    }
+
+    // Apply updates
     Object.assign(meal, updateBody);
     await meal.save();
 
-    // Adjust user's total if mealCount changed
-    if (updateBody.mealCount !== undefined && meal.mealCount !== oldCount) {
-        await User.findByIdAndUpdate(meal.user, {
-            $inc: { totalMeal: meal.mealCount - oldCount }
-        },
-        { new: true, runValidators: true });
+    // Calculate diffs
+    const mealDiff = meal.mealCount - oldMealCount;
+    const guestDiff = (meal.guestCount || 0) - oldGuestCount;
+
+    // Update user if needed
+    if (mealDiff || guestDiff) {
+        await User.findByIdAndUpdate(
+            meal.user,
+            { $inc: { totalMeal: mealDiff, guestMeal: guestDiff } },
+            { new: true }
+        );
     }
 
     return meal;
@@ -81,17 +109,20 @@ const updateMealById = async (mealId, updateBody) => {
  */
 const deleteMealById = async (mealId) => {
     const meal = await getMealById(mealId);
-    if (!meal) {
-        throw new AppError('Meal not found', 404);
-    }
+    if (!meal) throw new AppError('Meal not found', 404);
 
-    await User.findByIdAndUpdate(meal.user, {
-        $pull: { meals: mealId },
-        $inc: { totalMeal: -meal.mealCount }
-    },
-    { new: true, runValidators: true })
-    
-    await Meal.findByIdAndDelete(mealId);
+    // Parallel execution
+    await Promise.all([
+        User.findByIdAndUpdate(
+            meal.user,
+            {
+                $pull: { meals: mealId },
+                $inc: { totalMeal: -meal.mealCount, guestMeal: -(meal.guestCount || 0) }
+            }
+        ),
+        meal.deleteOne()
+    ]);
+
     return meal;
 };
 

@@ -81,6 +81,7 @@ const userSchema = new mongoose.Schema({
         min: [0, 'Total meal count cannot be negative']
     },
     meals: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Meal' }],
+    guestMeal: { type: Number, default: 0, min: [0, 'Cannot be negative'] },
     payment: {
         type: String,
         enum: ['pending', 'success', 'failed'],
