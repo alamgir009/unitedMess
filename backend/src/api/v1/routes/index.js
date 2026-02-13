@@ -15,6 +15,7 @@ router.use('/users', userRoutes);
 router.use('/meals', mealRoutes);
 router.use('/markets', marketRoutes);
 router.use('/payments', paymentRoutes);
+router.use('/setting', paymentRoutes);
 
 router.get('/', (req, res) => {
     res.json({ message: 'API v1 running' });

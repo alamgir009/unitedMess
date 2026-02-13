@@ -84,6 +84,12 @@ const getMealCharge = async (req, res) => {
     sendSuccessResponse(res, 200, 'Meal charge per user', mealCharge)
 };
 
+const getPaybleAmountforMeal = async (req,res)=>{
+    const payingAmount = await userService.getPaybleAmountforMeal();
+    sendSuccessResponse(res, 200, 'Payble meal charge amount', payingAmount)
+}
+
+
 module.exports = {
     createUser,
     getUsers,
@@ -96,5 +102,6 @@ module.exports = {
     getStats,
     getGrandTotalMarketAmount,
     getGrandTotalMeal,
-    getMealCharge
+    getMealCharge,
+    getPaybleAmountforMeal
 };

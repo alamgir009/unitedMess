@@ -82,6 +82,11 @@ const userSchema = new mongoose.Schema({
     },
     meals: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Meal' }],
     guestMeal: { type: Number, default: 0, min: [0, 'Cannot be negative'] },
+    chargePerGuestMeal: { type: Number, default: 60, min: 0 },
+    cookingCharge: { type: Number, default: 400, min: 0 },
+    waterBill: { type: Number, default: 0, min: 0 },
+    gasBillCharge: { type: Number, default: 0, min: 0 },
+    paybleAmountforMeal: { type: Number, default: 0, min: 0 },
     payment: {
         type: String,
         enum: ['pending', 'success', 'failed'],

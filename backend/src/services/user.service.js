@@ -51,6 +51,29 @@ async function updateProfile(userId, updateData) {
 }
 
 /**
+ * Update the guest meal charge for all users.
+ * @param {Object} updateData - Contains the new chargePerGuestMeal value.
+ * @returns {Promise<Object>} - Result of the update operation.
+ */
+// async function updateGuestMealCharge(updateData) {
+//   const { chargePerGuestMeal } = updateData;
+
+//   // Validate input: must be a non‑negative number
+//   if (typeof chargePerGuestMeal !== 'number' || chargePerGuestMeal < 0) {
+//     throw new AppError('chargePerGuestMeal must be a non‑negative number', 400);
+//   }
+
+//   // Update all users: set chargePerGuestMeal to the new value
+//   const result = await User.updateMany(
+//     {}, // empty filter = all users
+//     { $set: { chargePerGuestMeal } },
+//     { runValidators: true } // ensure schema validation (min: 0) is enforced
+//   );
+
+//   return result; // contains matchedCount, modifiedCount, etc.
+// }
+
+/**
  * Approve user account (admin only)
  * @param {string} userId
  * @param {string} approvedBy
@@ -374,5 +397,6 @@ module.exports = {
     getUserStats,
     getGrandTotalMarketAmount,
     getGrandTotalMeal,
-    getMealCharge
+    getMealCharge,
+    // updateGuestMealCharge
 };
