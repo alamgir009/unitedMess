@@ -193,6 +193,74 @@ async function getAllUsers(filters = {}, pagination = {}) {
 }
 
 /**
+ * Calculate the sum of totalMarketAmount across all users.
+ * @returns {Promise<number>}
+ */
+const getGrandTotalMarketAmount = async () => {
+  const result = await User.aggregate([
+    {
+      $group: {
+        _id: null,
+        grandTotal: { $sum: '$totalMarketAmount' }
+      }
+    }
+  ]);
+
+  // If no users exist, result[0] is undefined → return 0
+  return result[0]?.grandTotal || 0;
+};
+
+const getGrandTotalMeal = async()=>{
+    const result = await User.aggregate([
+        {
+          $group: {
+            _id: null,
+            oevrallMeal:{
+              $sum:"$totalMeal"
+            }
+            
+          }
+        }
+    ]) 
+
+    return result[0]?.oevrallMeal || 0;
+}
+
+/**
+ * Calculate the meal charge: totalMarketAmount / totalMeal (summed across all users).
+ * @returns {Promise<number>} - The meal charge, rounded to 2 decimal places.
+ */
+const getMealCharge = async () => {
+  const result = await User.aggregate([
+    {
+      $group: {
+        _id: null,
+        totalMarketAmount: { $sum: '$totalMarketAmount' },
+        totalMeal: { $sum: '$totalMeal' }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        mealCharge: {
+          $cond: {
+            if: { $eq: ['$totalMeal', 0] },
+            then: 0,
+            else: { $divide: ['$totalMarketAmount', '$totalMeal'] }
+          }
+        }
+      }
+    }
+  ]);
+
+  // If no users exist, result is empty → return 0
+  const mealCharge = result[0]?.mealCharge || 0;
+
+  // Round to two decimal places (common for currency)
+  return Math.round(mealCharge * 100) / 100;
+};
+
+/**
  * Search users by name or email (admin only)
  * @param {string} searchTerm
  * @param {Object} pagination
@@ -303,5 +371,8 @@ module.exports = {
     deactivateAccount,
     getAllUsers,
     searchUsers,
-    getUserStats
+    getUserStats,
+    getGrandTotalMarketAmount,
+    getGrandTotalMeal,
+    getMealCharge
 };

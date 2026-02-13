@@ -69,6 +69,21 @@ const getStats = asyncHandler(async (req, res) => {
     sendSuccessResponse(res, 200, 'User statistics', stats);
 });
 
+const getGrandTotalMarketAmount = async (req, res) => {
+    const grandTotal = await userService.getGrandTotalMarketAmount();
+    sendSuccessResponse(res, 200, 'Grand total market amount', grandTotal)
+};
+
+const getGrandTotalMeal = async (req, res) => {
+const overallMeal = await userService.getGrandTotalMeal()
+sendSuccessResponse(res, 200, 'Overall total meals', overallMeal)
+}
+
+const getMealCharge = async (req, res) => {
+    const mealCharge = await userService.getMealCharge();
+    sendSuccessResponse(res, 200, 'Meal charge per user', mealCharge)
+};
+
 module.exports = {
     createUser,
     getUsers,
@@ -79,4 +94,7 @@ module.exports = {
     denyUser,
     updatePaymentStatus,
     getStats,
+    getGrandTotalMarketAmount,
+    getGrandTotalMeal,
+    getMealCharge
 };

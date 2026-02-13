@@ -15,6 +15,9 @@ router.route('/')
     .post(authorize('admin'), userController.createUser);
 
 router.get('/stats', authorize('admin'), userController.getStats);
+router.get('/stats/market-grand-total', userController.getGrandTotalMarketAmount);
+router.get('/stats/meal-grand-total', userController.getGrandTotalMeal);
+router.get('/stats/user-meal-charge', userController.getMealCharge);
 
 router.post('/:userId/approve', authorize('admin'), userController.approveUser);
 router.post('/:userId/deny', authorize('admin'), userController.denyUser);
