@@ -4,28 +4,42 @@ const { protect, authorize } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
 
-// Current User Routes
-router.use(protect);
-router.get('/me', userController.getUser);
-router.patch('/me', userController.updateUser);
+// Helper to apply middleware chain
+const adminOnly = [protect, authorize('admin')];
+const authenticated = [protect];
 
-// Admin Routes
+// ==================== SEARCH & STATS (Admin Only) ====================
+router.get('/search', ...adminOnly, userController.searchUsers);
+router.get('/stats', ...adminOnly, userController.getStats);
+router.get('/stats/market-grand-total', ...adminOnly, userController.getGrandTotalMarketAmount);
+router.get('/stats/meal-grand-total', ...adminOnly, userController.getGrandTotalMeal);
+router.get('/stats/meal-charge', ...adminOnly, userController.getMealCharge);
+
+// Bulk operations
+router.patch('/bulk/status', ...adminOnly, userController.bulkUpdateStatus);
+
+// ==================== CURRENT USER (Me) ====================
+router.route('/me')
+.get(...authenticated, userController.getMe)
+.patch(...authenticated, userController.updateMe)
+.delete(...authenticated, userController.deactivateMyAccount);
+router.get('/me/payable', ...authenticated, userController.getPaybleAmountforMeal);
+
+// ==================== USER MANAGEMENT (Admin Only) ====================
 router.route('/')
-    .get(authorize('admin'), userController.getUsers)
-    .post(authorize('admin'), userController.createUser);
+    .get(...adminOnly, userController.getUsers)
 
-router.get('/stats', authorize('admin'), userController.getStats);
-router.get('/stats/market-grand-total', userController.getGrandTotalMarketAmount);
-router.get('/stats/meal-grand-total', userController.getGrandTotalMeal);
-router.get('/stats/user-meal-charge', userController.getMealCharge);
+// Specific actions before generic routes
+router.post('/:userId/approve', ...adminOnly, userController.approveUser);
+router.post('/:userId/deny', ...adminOnly, userController.denyUser);
+router.patch('/:userId/payment', ...adminOnly, userController.updatePaymentStatus);
+router.patch('/:userId/gas-bill', ...adminOnly, userController.updateGasBillStatus);
+router.get('/:userId/payable', ...adminOnly, userController.getPaybleAmountforMeal);
 
-router.post('/:userId/approve', authorize('admin'), userController.approveUser);
-router.post('/:userId/deny', authorize('admin'), userController.denyUser);
-router.patch('/:userId/payment', authorize('admin'), userController.updatePaymentStatus);
-
+// Generic CRUD (must be last)
 router.route('/:userId')
-    .get(authorize('admin'), userController.getUser)
-    .patch(authorize('admin'), userController.updateUser)
-    .delete(authorize('admin'), userController.deleteUser);
+    .get(...adminOnly, userController.getUser)
+    .patch(...adminOnly, userController.updateUser)
+    .delete(...adminOnly, userController.deleteUser);
 
 module.exports = router;

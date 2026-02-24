@@ -1,45 +1,68 @@
+const mongoose = require('mongoose');
 const Market = require('../models/Market.model');
 const User = require('../models/User.model');
 const AppError = require('../utils/errors/AppError');
+const { parseDate } = require('../utils/helpers/date.helper');
 
 /**
  * Create a market entry
- * @param {Object} marketBody
- * @returns {Promise<Market>}
  */
 const createMarket = async (marketBody) => {
-    const { user, date } = marketBody;
-    const existingMarket = await Market.findOne({ user, date });
+    const { user, amount, items, description, image } = marketBody;
+    const date = parseDate(marketBody.date);
 
+    // Validate required items (must be non‑empty string)
+    if (!items || typeof items !== 'string' || !items.trim()) {
+        throw new AppError('Items description is required and must be a non‑empty string', 400);
+    }
+
+    // Prevent duplicate entry for same user & date
+    const existingMarket = await Market.findOne({ user, date });
     if (existingMarket) {
         throw new AppError('Market already exists for this date', 409);
     }
-    let newMarket = await Market.create(marketBody)
 
-    await User.findByIdAndUpdate(user, {
-        $push: { markets: newMarket._id },
-        $inc: { totalMarketAmount: newMarket.amount }
-    },
-    { new: true, runValidators: true })
+    const marketId = new mongoose.Types.ObjectId();
 
-    return newMarket
+    // Prepare market data exactly matching the schema
+    const marketData = {
+        _id: marketId,
+        user,
+        date,
+        amount,
+        items: items.trim(),
+        ...(description && { description }),
+        ...(image && { image }),
+    };
+
+    // Parallel: create market + update user totals
+    const [newMarket] = await Promise.all([
+        Market.create(marketData),
+        User.findByIdAndUpdate(
+            user,
+            {
+                $push: { markets: marketId },
+                $inc: { totalMarketAmount: amount },
+            },
+            { new: true, runValidators: true }
+        ),
+    ]);
+
+    return newMarket;
 };
 
 /**
- * Query for markets
- * @param {Object} filter
- * @param {Object} options
- * @returns {Promise<QueryResult>}
+ * Query for markets (with optional filters)
  */
 const queryMarkets = async (filter, options) => {
-    const markets = await Market.find(filter).sort({ date: -1 }).populate('user', 'name email');
+    const markets = await Market.find(filter)
+        .sort({ date: -1 })
+        .populate('user', 'name email');
     return markets;
 };
 
 /**
  * Get market by id
- * @param {ObjectId} id
- * @returns {Promise<Market>}
  */
 const getMarketById = async (id) => {
     return Market.findById(id).populate('user', 'name email');
@@ -47,24 +70,33 @@ const getMarketById = async (id) => {
 
 /**
  * Update market by id
- * @param {ObjectId} marketId
- * @param {Object} updateBody
- * @returns {Promise<Market>}
  */
 const updateMarketById = async (marketId, updateBody) => {
     const market = await getMarketById(marketId);
     if (!market) throw new AppError('Market not found', 404);
 
     const oldAmount = market.amount;
+
+    // Parse date if present
+    if (updateBody.date) {
+        updateBody.date = parseDate(updateBody.date);
+    }
+
+    // Trim items if provided
+    if (updateBody.items && typeof updateBody.items === 'string') {
+        updateBody.items = updateBody.items.trim();
+    }
+
     Object.assign(market, updateBody);
     await market.save();
 
     // Adjust user's total if amount changed
     if (updateBody.amount !== undefined && updateBody.amount !== oldAmount) {
-        await User.findByIdAndUpdate(market.user._id, {
-            $inc: { totalMarketAmount: updateBody.amount - oldAmount }
-        },
-        { new: true, runValidators: true });
+        await User.findByIdAndUpdate(
+            market.user._id,
+            { $inc: { totalMarketAmount: updateBody.amount - oldAmount } },
+            { new: true, runValidators: true }
+        );
     }
 
     return market;
@@ -72,22 +104,21 @@ const updateMarketById = async (marketId, updateBody) => {
 
 /**
  * Delete market by id
- * @param {ObjectId} marketId
- * @returns {Promise<Market>}
  */
 const deleteMarketById = async (marketId) => {
     const market = await getMarketById(marketId);
-    if (!market) {
-        throw new AppError('Market not found', 404);
-    }
-    
-    await User.findByIdAndUpdate(market.user, {
-        $pull: { markets: marketId },
-        $inc: { totalMarketAmount: -market.amount }
-    },
-    { new: true, runValidators: true })
-    
-    await Market.findByIdAndDelete(marketId)
+    if (!market) throw new AppError('Market not found', 404);
+
+    await User.findByIdAndUpdate(
+        market.user,
+        {
+            $pull: { markets: marketId },
+            $inc: { totalMarketAmount: -market.amount },
+        },
+        { new: true, runValidators: true }
+    );
+
+    await Market.findByIdAndDelete(marketId);
     return market;
 };
 

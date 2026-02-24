@@ -7,6 +7,7 @@ const userRoutes = require('./user.routes');
 const mealRoutes = require('./meal.routes');
 const marketRoutes = require('./market.routes');
 const paymentRoutes = require('./payment.routes');
+const settingsRoutes  = require('./setting.route');
 // ...
 
 // Use routes
@@ -15,7 +16,7 @@ router.use('/users', userRoutes);
 router.use('/meals', mealRoutes);
 router.use('/markets', marketRoutes);
 router.use('/payments', paymentRoutes);
-router.use('/setting', paymentRoutes);
+router.use('/setting', settingsRoutes );
 
 router.get('/', (req, res) => {
     res.json({ message: 'API v1 running' });

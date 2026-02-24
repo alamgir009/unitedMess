@@ -1,3 +1,5 @@
+const mongoose = require('mongoose');
+
 const Meal = require('../models/Meal.model');
 const User = require('../models/User.model');
 const AppError = require('../utils/errors/AppError');
@@ -19,13 +21,17 @@ const createMeal = async (mealBody) => {
     mealBody.mealCount = mealBody.type === 'both' ? 2 : 1;
     mealBody.guestCount = mealBody.isGuestMeal ? (mealBody.guestCount || 1) : 0;
 
+    // Generate ID beforehand to ensure it's available for parallel execution
+    const mealId = new mongoose.Types.ObjectId();
+    mealBody._id = mealId;
+
     // Parallel execution for better performance
     const [newMeal] = await Promise.all([
         Meal.create(mealBody),
         User.findByIdAndUpdate(
             user,
             {
-                $push: { meals: mealBody._id }, // Will be set by Mongoose
+                $push: { meals: mealId },
                 $inc: {
                     totalMeal: mealBody.mealCount,
                     guestMeal: mealBody.guestCount
@@ -77,8 +83,8 @@ const updateMealById = async (mealId, updateBody) => {
 
     // Handle guest meal toggle
     if (updateBody.isGuestMeal !== undefined) {
-        updateBody.guestCount = updateBody.isGuestMeal 
-            ? (updateBody.guestCount ?? 1) 
+        updateBody.guestCount = updateBody.isGuestMeal
+            ? (updateBody.guestCount ?? 1)
             : 0;
     }
 

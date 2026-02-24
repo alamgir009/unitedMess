@@ -1,0 +1,100 @@
+Connecting to DB...
+[32minfo[39m: ✅ MongoDB Connected: ac-7rsp3xk-shard-00-01.xxssz9j.mongodb.net {"service":"unitedmess-backend","timestamp":"2026-02-14 01:03:16"}
+Connected.
+Initial State: {
+  _id: null,
+  grandTotalMarketAmount: 3500,
+  grandTotalMeal: 51,
+  totalGuestRevenue: 100
+}
+Creating users...
+User 1 Created: {
+  name: 'Test User A',
+  email: 'test_payable_a@example.com',
+  password: '$2a$12$kzoldWORhvFTnjJbDlQxzuEqpL48DnOVXbq3TYNIOjZ6gPAv433le',
+  image: null,
+  role: 'user',
+  userStatus: 'approved',
+  markets: [],
+  totalMarketAmount: 1000,
+  totalMeal: 10,
+  meals: [],
+  guestMeal: 2,
+  chargePerGuestMeal: 50,
+  cookingCharge: 400,
+  waterBill: 0,
+  gasBillCharge: 0,
+  paybleAmountforMeal: 0,
+  payment: 'pending',
+  gasBill: 'pending',
+  isEmailVerified: false,
+  isActive: true,
+  loginAttempts: 0,
+  deleteIfNotApproved: null,
+  _id: new ObjectId('698f7c7db4fbcea7574b4c4f'),
+  createdAt: 2026-02-13T19:33:17.338Z,
+  updatedAt: 2026-02-13T19:33:17.338Z,
+  __v: 0,
+  isLocked: false,
+  isApproved: true,
+  id: '698f7c7db4fbcea7574b4c4f'
+}
+User 2 Created: {
+  name: 'Test User B',
+  email: 'test_payable_b@example.com',
+  password: '$2a$12$tNbdACSV3cqZOlQJT4LWtuI9OdtKjOEoN.P1s7CDVuzmCVPSGwL42',
+  image: null,
+  role: 'user',
+  userStatus: 'approved',
+  markets: [],
+  totalMarketAmount: 500,
+  totalMeal: 20,
+  meals: [],
+  guestMeal: 0,
+  chargePerGuestMeal: 50,
+  cookingCharge: 400,
+  waterBill: 0,
+  gasBillCharge: 0,
+  paybleAmountforMeal: 0,
+  payment: 'pending',
+  gasBill: 'pending',
+  isEmailVerified: false,
+  isActive: true,
+  loginAttempts: 0,
+  deleteIfNotApproved: null,
+  _id: new ObjectId('698f7c7db4fbcea7574b4c51'),
+  createdAt: 2026-02-13T19:33:17.905Z,
+  updatedAt: 2026-02-13T19:33:17.905Z,
+  __v: 0,
+  isLocked: false,
+  isApproved: true,
+  id: '698f7c7db4fbcea7574b4c51'
+}
+Waiting for consistency...
+Users created. Calculating...
+Total Users: 5
+Debug Aggregation: [
+  {
+    "_id": null,
+    "total": 3500
+  }
+]
+Result A: {
+  "grandTotalMarketAmount": 3500,
+  "grandTotalMeal": 51,
+  "totalGuestRevenue": 100,
+  "adjustedMealCharge": 66.66666666666667,
+  "userStats": {
+    "totalMeal": 10,
+    "totalMarketAmount": 1000,
+    "waterBill": 0,
+    "cookingCharge": 400,
+    "costOfMeals": 666.6666666666667
+  },
+  "payableAmount": 66.66666666666674
+}
+Final Totals: Market=5000, Meal=81, GuestRev=200
+Expected Rate: 59.25925925925926
+Expected Payable A: -7.407407407407391
+Actual Payable A: 66.66666666666674
+FAILURE: Calculation mismatch.

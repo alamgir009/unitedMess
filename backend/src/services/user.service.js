@@ -1,123 +1,181 @@
 const User = require('../models/User.model');
 const AppError = require('../utils/errors/AppError');
 const emailService = require('./email.service');
+const mongoose = require('mongoose');
+
+// Constants
+const PAYMENT_STATUSES = ['pending', 'success', 'failed'];
+const GAS_BILL_STATUSES = ['pending', 'success', 'failed'];
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 10;
+const MAX_LIMIT = 100;
+
+// Validation helpers
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
+const round2 = (num) => Math.round((Number(num) || 0) * 100) / 100;
 
 /**
- * Get user by ID
+ * Get user by ID with optimized population
  * @param {string} userId
+ * @param {string[]} [populateFields=['markets', 'meals']] - Fields to populate
  */
-async function getUserById(userId) {
-    const user = await User.findById(userId)
-        .populate('markets')
-        .populate('meals');
-
-    if (!user) {
-        throw new AppError('User not found', 404);
+async function getUserById(userId, populateFields = ['markets', 'meals']) {
+    if (!isValidObjectId(userId)) {
+        throw new AppError('Invalid user ID format', 400);
     }
+
+    const query = User.findById(userId);
+
+    // Chain population dynamically
+    populateFields.forEach(field => {
+        if (User.schema.paths[field]) query.populate(field);
+    });
+
+    const user = await query.lean().exec(); // Use lean() for read-only ops
+
+    if (!user) throw new AppError('User not found', 404);
 
     return user;
 }
 
 /**
- * Update user profile
+ * Update user profile with transaction safety
  * @param {string} userId
  * @param {Object} updateData
+ * @param {boolean} [isAdmin=false] - Whether the requester is an admin (allows role update)
+ * @returns {Promise<Object>}
  */
-async function updateProfile(userId, updateData) {
-    const { email, phone, name, image } = updateData;
-
-    const user = await User.findById(userId);
-    if (!user) {
-        throw new AppError('User not found', 404);
+async function updateProfile(userId, updateData, isAdmin = false) {
+    if (!isValidObjectId(userId)) {
+        throw new AppError('Invalid user ID format', 400);
     }
 
-    // Check if email is being changed and if it's taken
-    if (email && email !== user.email) {
-        const emailTaken = await User.isEmailTaken(email, userId);
-        if (emailTaken) {
-            throw new AppError('Email already in use', 409);
-        }
-        user.email = email;
-        user.isEmailVerified = false; // Require re-verification
+    const { email, phone, name, image, role , isActive} = updateData;
+    const updates = {};
+    const session = await User.startSession();
+
+    try {
+        await session.withTransaction(async () => {
+            const user = await User.findById(userId).session(session);
+            if (!user) throw new AppError('User not found', 404);
+
+            // Email change logic with verification
+            if (email && email !== user.email) {
+                const emailTaken = await User.isEmailTaken(email, userId);
+                if (emailTaken) throw new AppError('Email already in use', 409);
+
+                updates.email = email;
+                updates.isEmailVerified = false;
+                updates.emailChangedAt = new Date();
+
+                // Queue verification email (don't await in transaction)
+                emailService.sendVerificationEmail(email, user.name).catch(console.error);
+            }
+
+            // Basic profile updates
+            if (name) updates.name = name.trim();
+            if (phone) updates.phone = phone;
+            if (image !== undefined) updates.image = image;
+
+            // Role update – only if requester is admin
+            if (role && isAdmin) updates.role = role;
+            
+            // isActive update – only if requester is admin
+            if (isActive && isAdmin) updates.isActive = isActive;
+
+            updates.updatedAt = new Date();
+
+            // Atomic update
+            await User.findByIdAndUpdate(userId, updates, {
+                session,
+                new: true,
+                runValidators: true
+            });
+        });
+
+        // Return updated user (without session)
+        return User.findById(userId).lean();
+    } finally {
+        session.endSession();
     }
-
-    if (name) user.name = name;
-    if (phone) user.phone = phone;
-    if (image !== undefined) user.image = image;
-
-    await user.save();
-
-    return user;
 }
 
 /**
- * Update the guest meal charge for all users.
- * @param {Object} updateData - Contains the new chargePerGuestMeal value.
- * @returns {Promise<Object>} - Result of the update operation.
- */
-// async function updateGuestMealCharge(updateData) {
-//   const { chargePerGuestMeal } = updateData;
-
-//   // Validate input: must be a non‑negative number
-//   if (typeof chargePerGuestMeal !== 'number' || chargePerGuestMeal < 0) {
-//     throw new AppError('chargePerGuestMeal must be a non‑negative number', 400);
-//   }
-
-//   // Update all users: set chargePerGuestMeal to the new value
-//   const result = await User.updateMany(
-//     {}, // empty filter = all users
-//     { $set: { chargePerGuestMeal } },
-//     { runValidators: true } // ensure schema validation (min: 0) is enforced
-//   );
-
-//   return result; // contains matchedCount, modifiedCount, etc.
-// }
-
-/**
- * Approve user account (admin only)
+ * Approve user account (admin only) - Optimized with transaction
  * @param {string} userId
  * @param {string} approvedBy
  */
 async function approveAccount(userId, approvedBy) {
-    const user = await User.findById(userId);
-    if (!user) {
-        throw new AppError('User not found', 404);
+    if (!isValidObjectId(userId) || !isValidObjectId(approvedBy)) {
+        throw new AppError('Invalid ID format', 400);
     }
 
-    if (user.userStatus === 'approved') {
+    const result = await User.findOneAndUpdate(
+        {
+            _id: userId,
+            userStatus: { $ne: 'approved' } // Idempotent check
+        },
+        {
+            $set: {
+                userStatus: 'approved',
+                isActive: true,
+                approvedBy,
+                approvedAt: new Date()
+            },
+            $unset: { deleteIfNotApproved: 1 }
+        },
+        { new: true }
+    );
+
+    if (!result) {
+        const user = await User.findById(userId).lean();
+        if (!user) throw new AppError('User not found', 404);
         throw new AppError('User is already approved', 400);
     }
 
-    user.userStatus = 'approved';
-    user.deleteIfNotApproved = null;
-    user.isActive = true;
-    await user.save();
+    // Fire-and-forget email (don't block response)
+    emailService.sendAccountApprovedEmail(result.email, result.name)
+        .catch(err => console.error('Approval email failed:', err));
 
-    // Send approval email
-    await emailService.sendAccountApprovedEmail(user.email, user.name);
-
-    return user;
+    return result;
 }
 
 /**
- * Deny user account (admin only)
+ * Deny user account (admin only) - Optimized
  * @param {string} userId
  * @param {string} deniedBy
  * @param {string} reason
  */
 async function denyAccount(userId, deniedBy, reason) {
-    const user = await User.findById(userId);
-    if (!user) {
-        throw new AppError('User not found', 404);
+    if (!isValidObjectId(userId) || !isValidObjectId(deniedBy)) {
+        throw new AppError('Invalid ID format', 400);
     }
 
-    user.userStatus = 'denied';
-    user.isActive = false;
-    user.deleteIfNotApproved = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    await user.save();
+    const deleteDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-    // Send denial email
-    await emailService.sendAccountDeniedEmail(user.email, user.name, reason);
+    const user = await User.findOneAndUpdate(
+        { _id: userId, userStatus: { $ne: 'denied' } },
+        {
+            $set: {
+                userStatus: 'denied',
+                isActive: false,
+                deniedBy,
+                deniedAt: new Date(),
+                deleteIfNotApproved: deleteDate,
+                denialReason: reason
+            }
+        },
+        { new: true }
+    );
+
+    if (!user) {
+        const exists = await User.exists({ _id: userId });
+        if (!exists) throw new AppError('User not found', 404);
+        throw new AppError('User is already denied', 400);
+    }
+
+    emailService.sendAccountDeniedEmail(user.email, user.name, reason)
+        .catch(err => console.error('Denial email failed:', err));
 
     return user;
 }
@@ -128,7 +186,8 @@ async function denyAccount(userId, deniedBy, reason) {
  * @param {string} status - 'pending' | 'success' | 'failed'
  */
 async function updatePaymentStatus(userId, status) {
-    if (!['pending', 'success', 'failed'].includes(status)) {
+    if (!PAYMENT_STATUSES.includes(status)) {
+    // if (!['pending', 'success', 'failed'].includes(status)) {
         throw new AppError('Invalid payment status', 400);
     }
 
@@ -142,14 +201,13 @@ async function updatePaymentStatus(userId, status) {
 
     return user;
 }
-
 /**
  * Update gas bill status
  * @param {string} userId
  * @param {string} status - 'pending' | 'success' | 'failed'
  */
 async function updateGasBillStatus(userId, status) {
-    if (!['pending', 'success', 'failed'].includes(status)) {
+    if (!GAS_BILL_STATUSES.includes(status)) {
         throw new AppError('Invalid gas bill status', 400);
     }
 
@@ -165,44 +223,50 @@ async function updateGasBillStatus(userId, status) {
 }
 
 /**
- * Deactivate user account
+ * Deactivate user account - Soft delete pattern
  * @param {string} userId
  */
 async function deactivateAccount(userId) {
-    const user = await User.findById(userId);
-    if (!user) {
-        throw new AppError('User not found', 404);
-    }
+    const user = await User.findByIdAndUpdate(
+        userId,
+        {
+            isActive: false,
+            deactivatedAt: new Date()
+        },
+        { new: true }
+    ).lean();
 
-    user.isActive = false;
-    await user.save();
-
+    if (!user) throw new AppError('User not found', 404);
     return user;
 }
 
 /**
- * Get all users with filters (admin only)
+ * Get all users with optimized pagination and filtering
  * @param {Object} filters
  * @param {Object} pagination - { page, limit }
  */
 async function getAllUsers(filters = {}, pagination = {}) {
-    const page = Number(pagination.page) || 1;
-    const limit = Number(pagination.limit) || 10;
+    const page = Math.max(1, Number(pagination.page) || DEFAULT_PAGE);
+    const limit = Math.min(MAX_LIMIT, Math.max(1, Number(pagination.limit) || DEFAULT_LIMIT));
     const skip = (page - 1) * limit;
 
-    const query = {};
+    // Build query dynamically
+    const query = Object.entries(filters).reduce((acc, [key, value]) => {
+        if (value !== undefined && value !== '') acc[key] = value;
+        return acc;
+    }, {});
 
-    if (filters.userStatus) query.userStatus = filters.userStatus;
-    if (filters.role) query.role = filters.role;
-    if (filters.isActive !== undefined) query.isActive = filters.isActive;
-    if (filters.payment) query.payment = filters.payment;
-
-    const users = await User.find(query)
-        .limit(limit)
-        .skip(skip)
-        .sort({ createdAt: -1 });
-
-    const total = await User.countDocuments(query);
+    // Parallel execution with cursor-based optimization hint
+    const [users, total] = await Promise.all([
+        User.find(query)
+            .select('-password -__v') // Exclude sensitive fields
+            .limit(limit)
+            .skip(skip)
+            .sort({ createdAt: -1 })
+            .lean()
+            .exec(),
+        User.countDocuments(query)
+    ]);
 
     return {
         users,
@@ -210,181 +274,208 @@ async function getAllUsers(filters = {}, pagination = {}) {
             page,
             limit,
             total,
-            pages: Math.ceil(total / limit)
+            pages: Math.ceil(total / limit),
+            hasNext: skip + users.length < total,
+            hasPrev: page > 1
         }
     };
 }
 
 /**
- * Calculate the sum of totalMarketAmount across all users.
- * @returns {Promise<number>}
- */
-const getGrandTotalMarketAmount = async () => {
-  const result = await User.aggregate([
-    {
-      $group: {
-        _id: null,
-        grandTotal: { $sum: '$totalMarketAmount' }
-      }
-    }
-  ]);
-
-  // If no users exist, result[0] is undefined → return 0
-  return result[0]?.grandTotal || 0;
-};
-
-const getGrandTotalMeal = async()=>{
-    const result = await User.aggregate([
-        {
-          $group: {
-            _id: null,
-            oevrallMeal:{
-              $sum:"$totalMeal"
-            }
-            
-          }
-        }
-    ]) 
-
-    return result[0]?.oevrallMeal || 0;
-}
-
-/**
- * Calculate the meal charge: totalMarketAmount / totalMeal (summed across all users).
- * @returns {Promise<number>} - The meal charge, rounded to 2 decimal places.
- */
-const getMealCharge = async () => {
-  const result = await User.aggregate([
-    {
-      $group: {
-        _id: null,
-        totalMarketAmount: { $sum: '$totalMarketAmount' },
-        totalMeal: { $sum: '$totalMeal' }
-      }
-    },
-    {
-      $project: {
-        _id: 0,
-        mealCharge: {
-          $cond: {
-            if: { $eq: ['$totalMeal', 0] },
-            then: 0,
-            else: { $divide: ['$totalMarketAmount', '$totalMeal'] }
-          }
-        }
-      }
-    }
-  ]);
-
-  // If no users exist, result is empty → return 0
-  const mealCharge = result[0]?.mealCharge || 0;
-
-  // Round to two decimal places (common for currency)
-  return Math.round(mealCharge * 100) / 100;
-};
-
-/**
- * Search users by name or email (admin only)
- * @param {string} searchTerm
- * @param {Object} pagination
- */
-async function searchUsers(searchTerm, pagination = {}) {
-    const page = Number(pagination.page) || 1;
-    const limit = Number(pagination.limit) || 10;
-    const skip = (page - 1) * limit;
-
-    const query = {
-        $or: [
-            { name: { $regex: searchTerm, $options: 'i' } },
-            { email: { $regex: searchTerm, $options: 'i' } }
-        ]
-    };
-
-    const users = await User.find(query)
-        .limit(limit)
-        .skip(skip)
-        .sort({ createdAt: -1 });
-
-    const total = await User.countDocuments(query);
-
-    return {
-        users,
-        pagination: {
-            page,
-            limit,
-            total,
-            pages: Math.ceil(total / limit)
-        }
-    };
-}
-
-/**
- * Get user statistics (admin only)
+ * Optimized aggregation using $facet for single-query stats
  */
 async function getUserStats() {
-    const totalUsers = await User.countDocuments();
-    const activeUsers = await User.countDocuments({ isActive: true });
-    const approvedUsers = await User.countDocuments({ userStatus: 'approved' });
-    const pendingUsers = await User.countDocuments({ userStatus: 'pending' });
-    const deniedUsers = await User.countDocuments({ userStatus: 'denied' });
+    const stats = await User.aggregate([
+        {
+            $facet: {
+                total: [{ $count: 'count' }],
+                byStatus: [
+                    { $group: { _id: '$userStatus', count: { $sum: 1 } } }
+                ],
+                byRole: [
+                    { $group: { _id: '$role', count: { $sum: 1 } } }
+                ],
+                byPayment: [
+                    { $group: { _id: '$payment', count: { $sum: 1 } } }
+                ],
+                active: [
+                    { $match: { isActive: true } },
+                    { $count: 'count' }
+                ]
+            }
+        }
+    ]).then(([result]) => result);
 
-    // Get users by role
-    const adminCount = await User.countDocuments({ role: 'admin' });
-    const userCount = await User.countDocuments({ role: 'user' });
-
-    // Get users by payment status
-    const paymentPending = await User.countDocuments({ payment: 'pending' });
-    const paymentSuccess = await User.countDocuments({ payment: 'success' });
-    const paymentFailed = await User.countDocuments({ payment: 'failed' });
+    const toMap = (arr, key = '_id') =>
+        arr.reduce((acc, item) => ({ ...acc, [item[key]]: item.count }), {});
 
     return {
-        totalUsers,
-        activeUsers,
+        totalUsers: stats.total[0]?.count || 0,
+        activeUsers: stats.active[0]?.count || 0,
         userStatus: {
-            approved: approvedUsers,
-            pending: pendingUsers,
-            denied: deniedUsers
+            approved: 0, pending: 0, denied: 0,
+            ...toMap(stats.byStatus)
         },
         roles: {
-            admin: adminCount,
-            user: userCount
+            admin: 0, user: 0,
+            ...toMap(stats.byRole)
         },
         paymentStatus: {
-            pending: paymentPending,
-            success: paymentSuccess,
-            failed: paymentFailed
+            pending: 0, success: 0, failed: 0,
+            ...toMap(stats.byPayment)
         }
     };
 }
+
 /**
- * Create user (admin only)
- * @param {Object} userBody
+ * Optimized financial calculations - Single aggregation
  */
-async function createUser(userBody) {
-    const { email, password, name, phone, role } = userBody;
+async function getGrandTotalMarketAmount() {
+    const [result] = await User.aggregate([
+        { $group: { _id: null, total: { $sum: '$totalMarketAmount' } } }
+    ]);
+    return round2(result?.total || 0);
+}
 
-    // Check if email is taken
-    const emailTaken = await User.isEmailTaken(email);
-    if (emailTaken) {
-        throw new AppError('Email already registered', 409);
-    }
+async function getGrandTotalMeal() {
+    const [result] = await User.aggregate([
+        { $group: { _id: null, total: { $sum: '$totalMeal' } } }
+    ]);
+    return result?.total || 0;
+}
 
-    const user = await User.create({
-        name,
-        email,
-        password,
-        phone,
-        role: role || 'user',
-        userStatus: 'approved', // Admin created users are auto-approved
-        isEmailVerified: true, // Auto-verified? Or require verification? Let's say auto-verified for now if admin creates.
-        isActive: true
-    });
+async function getMealCharge() {
+    const [result] = await User.aggregate([
+        {
+            $group: {
+                _id: null,
+                totalMarket: { $sum: '$totalMarketAmount' },
+                totalMeal: { $sum: '$totalMeal' }
+            }
+        },
+        {
+            $project: {
+                charge: {
+                    $cond: [
+                        { $eq: ['$totalMeal', 0] },
+                        0,
+                        { $divide: ['$totalMarket', '$totalMeal'] }
+                    ]
+                }
+            }
+        }
+    ]);
+    return round2(result?.charge || 0);
+}
 
-    return user;
+/**
+ * Complex payable calculation with caching opportunity
+ */
+const getPaybleAmountforMeal = async (userId) => {
+    if (!isValidObjectId(userId)) throw new AppError('Invalid user ID', 400);
+
+    // Single aggregation for global + user data
+    const [globalData, user] = await Promise.all([
+        User.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    grandTotalMarket: { $sum: '$totalMarketAmount' },
+                    grandTotalMeal: { $sum: '$totalMeal' },
+                    guestRevenue: {
+                        $sum: { $multiply: ['$guestMeal', '$chargePerGuestMeal'] }
+                    }
+                }
+            }
+        ]),
+        User.findById(userId).lean()
+    ]);
+
+    if (!user) throw new AppError('User not found', 404);
+
+    const stats = globalData[0] || { grandTotalMarket: 0, grandTotalMeal: 0, guestRevenue: 0 };
+
+    // Calculate meal rate
+    const adjustedMealCharge = stats.grandTotalMeal > 0
+        ? (stats.grandTotalMarket - stats.guestRevenue) / stats.grandTotalMeal
+        : 0;
+
+    const guestMealAmount = (user.guestMeal || 0) * (user.chargePerGuestMeal || 0);
+    const costOfMeals = user.totalMeal * adjustedMealCharge;
+
+    const rawPayable = user.waterBill + user.cookingCharge +
+        (costOfMeals - user.totalMarketAmount) + guestMealAmount;
+
+    // Rounding logic
+    const rounded = round2(rawPayable);
+    const finalPayable = (rounded - Math.floor(rounded)) >= 0.5
+        ? Math.ceil(rounded)
+        : rounded;
+
+    // Async update (don't await, fire-and-forget)
+    User.findByIdAndUpdate(userId, {
+        paybleAmountforMeal: finalPayable,
+        lastCalculatedAt: new Date()
+    }).catch(console.error);
+
+    return {
+        grandTotalMarketAmount: round2(stats.grandTotalMarket),
+        grandTotalMeal: stats.grandTotalMeal,
+        totalGuestRevenue: round2(stats.guestRevenue),
+        adjustedMealCharge: round2(adjustedMealCharge),
+        userStats: {
+            totalMeal: user.totalMeal,
+            totalMarketAmount: round2(user.totalMarketAmount),
+            waterBill: round2(user.waterBill),
+            cookingCharge: round2(user.cookingCharge),
+            costOfMeals: round2(costOfMeals),
+            guestMeal: user.guestMeal || 0,
+            chargePerGuestMeal: user.chargePerGuestMeal || 0,
+            guestMealAmount: round2(guestMealAmount)
+        },
+        payableAmount: finalPayable
+    };
+};
+
+/**
+ * Search with text index (requires MongoDB text index on name+email)
+ */
+async function searchUsers(searchTerm, pagination = {}) {
+    const page = Math.max(1, Number(pagination.page) || DEFAULT_PAGE);
+    const limit = Math.min(MAX_LIMIT, Math.max(1, Number(pagination.limit) || DEFAULT_LIMIT));
+    const skip = (page - 1) * limit;
+
+    const query = searchTerm
+        ? { $text: { $search: searchTerm } } // Use text index if available
+        : {
+            $or: [
+                { name: { $regex: searchTerm, $options: 'i' } },
+                { email: { $regex: searchTerm, $options: 'i' } }
+            ]
+        };
+
+    const [users, total] = await Promise.all([
+        User.find(query)
+            .select('-password -__v')
+            .limit(limit)
+            .skip(skip)
+            .sort({ createdAt: -1 })
+            .lean(),
+        User.countDocuments(query)
+    ]);
+
+    return {
+        users,
+        pagination: {
+            page, limit, total,
+            pages: Math.ceil(total / limit),
+            hasNext: skip + users.length < total,
+            hasPrev: page > 1
+        }
+    };
 }
 
 module.exports = {
-    createUser,
     getUserById,
     updateProfile,
     approveAccount,
@@ -398,5 +489,5 @@ module.exports = {
     getGrandTotalMarketAmount,
     getGrandTotalMeal,
     getMealCharge,
-    // updateGuestMealCharge
+    getPaybleAmountforMeal
 };

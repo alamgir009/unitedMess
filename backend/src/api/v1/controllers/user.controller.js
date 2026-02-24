@@ -2,106 +2,229 @@ const asyncHandler = require('../../../utils/helpers/asyncHandler');
 const pick = require('../../../utils/helpers/pick');
 const { userService } = require('../../../services');
 const { sendSuccessResponse } = require('../../../utils/helpers/response.helper');
+const mongoose = require('mongoose');
+const AppError = require('../../../utils/errors/AppError');   // <-- added
 
-const createUser = asyncHandler(async (req, res) => {
-    const user = await userService.createUser(req.body);
-    sendSuccessResponse(res, 201, 'User created successfully', user);
-});
+// Validation helper
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+/**
+ * Validate and extract userId from params or current user
+ */
+const resolveUserId = (req, allowAdmin = false) => {
+    const paramId = req.params?.userId;
+
+    // Admin accessing specific user
+    if (allowAdmin && paramId) {
+        if (!isValidObjectId(paramId)) {
+            throw new AppError('Invalid user ID format', 400);
+        }
+        return paramId;
+    }
+
+    // Self-access (me routes)
+    if (!req.user?.id) {
+        throw new AppError('Authentication required', 401);
+    }
+    return req.user.id;
+};
+
+// ==================== CRUD Operations ====================
 
 const getUsers = asyncHandler(async (req, res) => {
     const filter = pick(req.query, ['userStatus', 'role', 'isActive', 'payment']);
-    const options = pick(req.query, ['page', 'limit']);
+    const options = pick(req.query, ['page', 'limit', 'sort', 'fields']);
+
+    // Sanitize numeric params
+    if (options.page) options.page = Math.max(1, parseInt(options.page, 10));
+    if (options.limit) options.limit = Math.min(100, Math.max(1, parseInt(options.limit, 10)));
+
     const result = await userService.getAllUsers(filter, options);
     sendSuccessResponse(res, 200, 'Users retrieved successfully', result);
 });
 
-const getUser = asyncHandler(async (req, res) => {
-    const user = await userService.getUserById(req.params.userId || req.user.id);
-    if (!user) {
-        // Since we use global error handler via asyncHandler, we should probably throw AppError in service, 
-        // but if service returns null/undefined, we handle it here. 
-        // Service actually throws AppError if not found, so this check might be redundant if service is strict.
-        // But userService.getUserById throws if not found? Let's check service.
-        // Yes line 15: throw new AppError('User not found', 404);
-        // So we don't need the check here if we trust service.
-        // But let's keep it simple.
+const searchUsers = asyncHandler(async (req, res) => {
+    const { q: searchTerm, ...rest } = req.query;
+    const options = pick(rest, ['page', 'limit']);
+
+    if (!searchTerm?.trim()) {
+        return sendSuccessResponse(res, 200, 'Search results', { users: [], pagination: { total: 0 } });
     }
-    // If service throws, it goes to error handler.
-    sendSuccessResponse(res, 200, 'User details', user);
+
+    const result = await userService.searchUsers(searchTerm.trim(), options);
+    sendSuccessResponse(res, 200, 'Search results', result);
+});
+
+const getUser = asyncHandler(async (req, res) => {
+    // Admin viewing specific user
+    const userId = resolveUserId(req, true);
+    const user = await userService.getUserById(userId);
+    sendSuccessResponse(res, 200, 'User details retrieved', user);
+});
+
+const getMe = asyncHandler(async (req, res) => {
+    // Current user viewing self
+    const user = await userService.getUserById(req.user.id);
+    sendSuccessResponse(res, 200, 'Profile retrieved', user);
 });
 
 const updateUser = asyncHandler(async (req, res) => {
-    // If admin is updating another user (via params) or user updating self (via user.id)
-    // The route handles params.userId. If /me, params.userId is undefined? 
-    // Actually /me route calls updateUser with req.user.id potentially?
-    // Let's look at routes. /me calls getUser/updateUser.
-    // If /me, we should probably pass req.user.id.
-    const userId = req.params.userId || req.user.id;
-    const user = await userService.updateProfile(userId, req.body);
+    const userId = resolveUserId(req, true);
+    const user = await userService.updateProfile(userId, req.body, true);
     sendSuccessResponse(res, 200, 'User updated successfully', user);
 });
 
+const updateMe = asyncHandler(async (req, res) => {
+    // Self-update restrictions
+    const allowedUpdates = pick(req.body, ['name', 'phone', 'image', 'email']);
+    const user = await userService.updateProfile(req.user.id, allowedUpdates, false);
+    sendSuccessResponse(res, 200, 'Profile updated successfully', user);
+});
+
+// Admin deletes any user
 const deleteUser = asyncHandler(async (req, res) => {
-    // Soft delete/deactivate
-    await userService.deactivateAccount(req.params.userId);
+    const { userId } = req.params;
+    await userService.deactivateAccount(userId);
     res.status(204).send();
 });
 
+// User deactivates their own account
+const deactivateMyAccount = asyncHandler(async (req, res) => {
+    await userService.deactivateAccount(req.user.id);
+    res.status(204).send();
+});
+
+// ==================== Admin Actions ====================
+
 const approveUser = asyncHandler(async (req, res) => {
-    const user = await userService.approveAccount(req.params.userId, req.user.id);
+    const { userId } = req.params;
+    // Service will throw if user not found or already approved
+    const user = await userService.approveAccount(userId, req.user.id);
     sendSuccessResponse(res, 200, 'User approved successfully', user);
 });
 
 const denyUser = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
     const { reason } = req.body;
-    const user = await userService.denyAccount(req.params.userId, req.user.id, reason);
+
+    if (!reason?.trim()) {
+        throw new AppError('Denial reason is required', 400);
+    }
+
+    const user = await userService.denyAccount(userId, req.user.id, reason.trim());
     sendSuccessResponse(res, 200, 'User denied successfully', user);
 });
 
+// ==================== Status Updates ====================
+
 const updatePaymentStatus = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
     const { status } = req.body;
-    const user = await userService.updatePaymentStatus(req.params.userId, status);
+
+    const user = await userService.updatePaymentStatus(userId, status);
     sendSuccessResponse(res, 200, 'Payment status updated', user);
 });
+
+const updateGasBillStatus = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    const { status } = req.body;
+
+    const user = await userService.updateGasBillStatus(userId, status);
+    sendSuccessResponse(res, 200, 'Gas bill status updated', user);
+});
+
+// ==================== Statistics & Calculations ====================
 
 const getStats = asyncHandler(async (req, res) => {
     const stats = await userService.getUserStats();
     sendSuccessResponse(res, 200, 'User statistics', stats);
 });
 
-const getGrandTotalMarketAmount = async (req, res) => {
+const getGrandTotalMarketAmount = asyncHandler(async (req, res) => {
     const grandTotal = await userService.getGrandTotalMarketAmount();
-    sendSuccessResponse(res, 200, 'Grand total market amount', grandTotal)
-};
+    sendSuccessResponse(res, 200, 'Grand total market amount', { grandTotal });
+});
 
-const getGrandTotalMeal = async (req, res) => {
-const overallMeal = await userService.getGrandTotalMeal()
-sendSuccessResponse(res, 200, 'Overall total meals', overallMeal)
-}
+const getGrandTotalMeal = asyncHandler(async (req, res) => {
+    const overallMeal = await userService.getGrandTotalMeal();
+    sendSuccessResponse(res, 200, 'Overall total meals', { overallMeal });
+});
 
-const getMealCharge = async (req, res) => {
+const getMealCharge = asyncHandler(async (req, res) => {
     const mealCharge = await userService.getMealCharge();
-    sendSuccessResponse(res, 200, 'Meal charge per user', mealCharge)
-};
+    sendSuccessResponse(res, 200, 'Current meal charge rate', { mealCharge });
+});
 
-const getPaybleAmountforMeal = async (req,res)=>{
-    const payingAmount = await userService.getPaybleAmountforMeal();
-    sendSuccessResponse(res, 200, 'Payble meal charge amount', payingAmount)
-}
+const getPaybleAmountforMeal = asyncHandler(async (req, res) => {
+    // Allow admin to check any user, self only for regular users
+    const userId = req.params.userId && req.user.role === 'admin'
+        ? req.params.userId
+        : req.user.id;
 
+    if (!isValidObjectId(userId)) {
+        throw new AppError('Invalid user ID', 400);
+    }
+
+    const payingAmount = await userService.getPaybleAmountforMeal(userId);
+    sendSuccessResponse(res, 200, 'Payable meal charge calculated', payingAmount);
+});
+
+// ==================== Bulk Operations (if needed) ====================
+
+const bulkUpdateStatus = asyncHandler(async (req, res) => {
+    const { userIds, status, type } = req.body;
+
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+        throw new AppError('User IDs array required', 400);
+    }
+
+    const validIds = userIds.filter(isValidObjectId);
+    if (validIds.length !== userIds.length) {
+        throw new AppError('Some user IDs are invalid', 400);
+    }
+
+    // Parallel processing with concurrency limit
+    const batchSize = 10;
+    const results = [];
+
+    for (let i = 0; i < validIds.length; i += batchSize) {
+        const batch = validIds.slice(i, i + batchSize);
+        const batchPromises = batch.map(id =>
+            type === 'payment'
+                ? userService.updatePaymentStatus(id, status)
+                : userService.updateGasBillStatus(id, status)
+        );
+        const batchResults = await Promise.allSettled(batchPromises);
+        results.push(...batchResults);
+    }
+
+    const successful = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.filter(r => r.status === 'rejected').length;
+
+    sendSuccessResponse(res, 200, 'Bulk update completed', {
+        processed: validIds.length,
+        successful,
+        failed
+    });
+});
 
 module.exports = {
-    createUser,
     getUsers,
+    searchUsers,
     getUser,
+    getMe,
     updateUser,
+    updateMe,
     deleteUser,
     approveUser,
     denyUser,
     updatePaymentStatus,
+    updateGasBillStatus,
     getStats,
     getGrandTotalMarketAmount,
     getGrandTotalMeal,
     getMealCharge,
-    getPaybleAmountforMeal
+    getPaybleAmountforMeal,
+    bulkUpdateStatus,
+    deactivateMyAccount
 };
