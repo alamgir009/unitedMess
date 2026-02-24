@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
-
 const Meal = require('../models/Meal.model');
 const User = require('../models/User.model');
 const AppError = require('../utils/errors/AppError');
+const { parseDate } = require('../utils/helpers/date.helper'); // ← added
 
 /**
  * Create a meal
@@ -10,7 +10,9 @@ const AppError = require('../utils/errors/AppError');
  * @returns {Promise<Meal>}
  */
 const createMeal = async (mealBody) => {
-    const { user, date } = mealBody;
+    const { user } = mealBody;
+    const date = parseDate(mealBody.date); // ← parse once
+    mealBody.date = date; // ← replace with parsed date
 
     // Check for existing meal first (fail fast)
     if (await Meal.exists({ user, date })) {
@@ -50,7 +52,7 @@ const createMeal = async (mealBody) => {
  * @returns {Promise<QueryResult>}
  */
 const queryMeals = async (filter) => {
-    return Meal.find(filter).sort({ date: -1 }).lean(); // .lean() for 5-10x faster queries
+    return Meal.find(filter).sort({ date: -1 }).lean();
 };
 
 /**
@@ -59,7 +61,7 @@ const queryMeals = async (filter) => {
  * @returns {Promise<Meal>}
  */
 const getMealById = async (id) => {
-    return Meal.findById(id);
+    return Meal.findById(id).populate('user', 'name email');
 };
 
 /**
@@ -71,6 +73,11 @@ const getMealById = async (id) => {
 const updateMealById = async (mealId, updateBody) => {
     const meal = await getMealById(mealId);
     if (!meal) throw new AppError('Meal not found', 404);
+
+    // Parse date if present
+    if (updateBody.date) {
+        updateBody.date = parseDate(updateBody.date); // ← parse and replace
+    }
 
     // Store old values
     const oldMealCount = meal.mealCount;
