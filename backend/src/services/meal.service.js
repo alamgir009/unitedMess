@@ -2,42 +2,33 @@ const mongoose = require('mongoose');
 const Meal = require('../models/Meal.model');
 const User = require('../models/User.model');
 const AppError = require('../utils/errors/AppError');
-const { parseDate } = require('../utils/helpers/date.helper'); // ← added
+const { parseDate } = require('../utils/helpers/date.helper');
 
 /**
  * Create a meal
- * @param {Object} mealBody
- * @returns {Promise<Meal>}
  */
 const createMeal = async (mealBody) => {
     const { user } = mealBody;
-    const date = parseDate(mealBody.date); // ← parse once
-    mealBody.date = date; // ← replace with parsed date
+    const date = parseDate(mealBody.date);
+    mealBody.date = date;
 
-    // Check for existing meal first (fail fast)
     if (await Meal.exists({ user, date })) {
         throw new AppError('Meal already exists for this date', 409);
     }
 
-    // Set counts
     mealBody.mealCount = mealBody.type === 'both' ? 2 : 1;
     mealBody.guestCount = mealBody.isGuestMeal ? (mealBody.guestCount || 1) : 0;
 
-    // Generate ID beforehand to ensure it's available for parallel execution
     const mealId = new mongoose.Types.ObjectId();
     mealBody._id = mealId;
 
-    // Parallel execution for better performance
     const [newMeal] = await Promise.all([
         Meal.create(mealBody),
         User.findByIdAndUpdate(
             user,
             {
                 $push: { meals: mealId },
-                $inc: {
-                    totalMeal: mealBody.mealCount,
-                    guestMeal: mealBody.guestCount
-                }
+                $inc: { totalMeal: mealBody.mealCount, guestMeal: mealBody.guestCount }
             },
             { new: true, runValidators: true }
         )
@@ -47,18 +38,28 @@ const createMeal = async (mealBody) => {
 };
 
 /**
- * Query for meals
- * @param {Object} filter
- * @returns {Promise<QueryResult>}
+ * Query meals by filter
  */
-const queryMeals = async (filter) => {
-    return Meal.find(filter).sort({ date: -1 }).lean();
+const queryMeals = async (filter, options) => {
+    let sort = { date: -1 }; // default
+
+    if (options?.sortBy) {
+        const [field, order] = options.sortBy.split(':');
+        sort = { [field]: order === 'asc' ? 1 : -1 };
+    }
+
+    const limit = parseInt(options?.limit) || 10;
+    const page = parseInt(options?.page) || 1;
+
+    return Meal.find(filter)
+        .sort(sort)
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean();
 };
 
 /**
  * Get meal by id
- * @param {ObjectId} id
- * @returns {Promise<Meal>}
  */
 const getMealById = async (id) => {
     return Meal.findById(id).populate('user', 'name email');
@@ -66,49 +67,66 @@ const getMealById = async (id) => {
 
 /**
  * Update meal by id
- * @param {ObjectId} mealId
- * @param {Object} updateBody
- * @returns {Promise<Meal>}
+ */
+/**
+ * Update meal by id with duplicate date check
  */
 const updateMealById = async (mealId, updateBody) => {
     const meal = await getMealById(mealId);
     if (!meal) throw new AppError('Meal not found', 404);
 
-    // Parse date if present
+    //  1. Date Logic
     if (updateBody.date) {
-        updateBody.date = parseDate(updateBody.date); // ← parse and replace
+        const parsedDate = parseDate(updateBody.date);
+
+        if (meal.date.getTime() !== parsedDate.getTime()) {
+            // Date actually changed — check for duplicate
+            const duplicate = await Meal.exists({
+                user: meal.user._id,   // meal.user is populated (object), use ._id
+                date: parsedDate,
+                _id: { $ne: mealId }
+            });
+            if (duplicate) throw new AppError('A meal already exists for this date', 409);
+
+            updateBody.date = parsedDate;
+        } else {
+            // Same date sent from form — skip it entirely
+            delete updateBody.date;
+        }
     }
 
-    // Store old values
-    const oldMealCount = meal.mealCount;
+    // 2. Count Recalculation 
+    const oldMealCount = meal.mealCount || 0;
     const oldGuestCount = meal.guestCount || 0;
 
-    // Handle type change
-    if (updateBody.type) {
-        updateBody.mealCount = updateBody.type === 'both' ? 2 : 1;
+    // Resolve final type (incoming or existing)
+    const resolvedType = updateBody.type ?? meal.type;
+    if (updateBody.type !== undefined) {
+        updateBody.mealCount = resolvedType === 'both' ? 2 : 1;
     }
 
-    // Handle guest meal toggle
-    if (updateBody.isGuestMeal !== undefined) {
-        updateBody.guestCount = updateBody.isGuestMeal
-            ? (updateBody.guestCount ?? 1)
+    // Resolve final guest state (incoming or existing)
+    const resolvedIsGuestMeal = updateBody.isGuestMeal ?? meal.isGuestMeal;
+    if (updateBody.isGuestMeal !== undefined || updateBody.guestCount !== undefined) {
+        updateBody.guestCount = resolvedIsGuestMeal
+            ? (updateBody.guestCount ?? meal.guestCount ?? 1)
             : 0;
+        // Keep isGuestMeal in sync if guestCount is being zeroed
+        if (!resolvedIsGuestMeal) updateBody.isGuestMeal = false;
     }
 
-    // Apply updates
+    // 3. Apply & Save 
     Object.assign(meal, updateBody);
     await meal.save();
 
-    // Calculate diffs
-    const mealDiff = meal.mealCount - oldMealCount;
+    // 4. User Stats Sync (only if counts actually changed) 
+    const mealDiff = (meal.mealCount || 0) - oldMealCount;
     const guestDiff = (meal.guestCount || 0) - oldGuestCount;
 
-    // Update user if needed
-    if (mealDiff || guestDiff) {
+    if (mealDiff !== 0 || guestDiff !== 0) {
         await User.findByIdAndUpdate(
-            meal.user,
-            { $inc: { totalMeal: mealDiff, guestMeal: guestDiff } },
-            { new: true }
+            meal.user._id,  // populated object — always use ._id
+            { $inc: { totalMeal: mealDiff, guestMeal: guestDiff } }
         );
     }
 
@@ -117,14 +135,11 @@ const updateMealById = async (mealId, updateBody) => {
 
 /**
  * Delete meal by id
- * @param {ObjectId} mealId
- * @returns {Promise<Meal>}
  */
 const deleteMealById = async (mealId) => {
     const meal = await getMealById(mealId);
     if (!meal) throw new AppError('Meal not found', 404);
 
-    // Parallel execution
     await Promise.all([
         User.findByIdAndUpdate(
             meal.user,
@@ -139,10 +154,20 @@ const deleteMealById = async (mealId) => {
     return meal;
 };
 
+/**
+ * Admin: verify a user exists
+ */
+const verifyUserExists = async (userId) => {
+    const user = await User.findById(userId);
+    if (!user) throw new AppError('User not found', 404);
+    return user;
+};
+
 module.exports = {
     createMeal,
     queryMeals,
     getMealById,
     updateMealById,
     deleteMealById,
+    verifyUserExists,
 };
