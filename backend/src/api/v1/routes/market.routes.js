@@ -1,17 +1,28 @@
 const express = require('express');
 const router = express.Router();
 const marketController = require('../controllers/market.controller');
-const { protect } = require('../middlewares/auth.middleware');
+const { protect, authorize } = require('../middlewares/auth.middleware');
 
-router.use(protect);
+const authenticated = [protect];
+const adminOnly = [protect, authorize('admin')];
 
+// Authenticated user routes
 router.route('/')
-    .get(marketController.getMarkets)
-    .post(marketController.createMarket);
+    .get(...authenticated, marketController.getMarkets)
+    .post(...authenticated, marketController.createMarket);
 
 router.route('/:marketId')
-    .get(marketController.getMarket)
-    .patch(marketController.updateMarket)
-    .delete(marketController.deleteMarket);
+    .get(...authenticated, marketController.getMarket)
+    .patch(...authenticated, marketController.updateMarket)
+    .delete(...authenticated, marketController.deleteMarket);
+
+// Admin-only routes: manage any user's markets by userId
+router.route('/admin/users/:userId/markets')
+    .get(...adminOnly, marketController.adminGetUserMarkets)
+    .post(...adminOnly, marketController.adminCreateMarket);
+
+router.route('/admin/users/:userId/markets/:marketId')
+    .patch(...adminOnly, marketController.adminUpdateMarket)
+    .delete(...adminOnly, marketController.adminDeleteMarket);
 
 module.exports = router;

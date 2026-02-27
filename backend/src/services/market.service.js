@@ -11,20 +11,17 @@ const createMarket = async (marketBody) => {
     const { user, amount, items, description, image } = marketBody;
     const date = parseDate(marketBody.date);
 
-    // Validate required items (must be non‑empty string)
     if (!items || typeof items !== 'string' || !items.trim()) {
-        throw new AppError('Items description is required and must be a non‑empty string', 400);
+        throw new AppError('Items description is required and must be a non-empty string', 400);
     }
 
-    // Prevent duplicate entry for same user & date
-    const existingMarket = await Market.findOne({ user, date });
-    if (existingMarket) {
+    // Use exists() — faster than findOne(), no document fetch needed
+    if (await Market.exists({ user, date })) {
         throw new AppError('Market already exists for this date', 409);
     }
 
     const marketId = new mongoose.Types.ObjectId();
 
-    // Prepare market data exactly matching the schema
     const marketData = {
         _id: marketId,
         user,
@@ -35,7 +32,6 @@ const createMarket = async (marketBody) => {
         ...(image && { image }),
     };
 
-    // Parallel: create market + update user totals
     const [newMarket] = await Promise.all([
         Market.create(marketData),
         User.findByIdAndUpdate(
@@ -52,13 +48,18 @@ const createMarket = async (marketBody) => {
 };
 
 /**
- * Query for markets (with optional filters)
+ * Query markets with optional filter & options
  */
-const queryMarkets = async (filter, options) => {
-    const markets = await Market.find(filter)
-        .sort({ date: -1 })
-        .populate('user', 'name email');
-    return markets;
+const queryMarkets = async (filter, options = {}) => {
+    const { sortBy = 'date', limit = 20, page = 1 } = options;
+    const skip = (page - 1) * limit;
+
+    return Market.find(filter)
+        .sort({ [sortBy]: -1 })
+        .skip(skip)
+        .limit(Number(limit))
+        .populate('user', 'name email')
+        .lean();
 };
 
 /**
@@ -77,25 +78,42 @@ const updateMarketById = async (marketId, updateBody) => {
 
     const oldAmount = market.amount;
 
-    // Parse date if present
+    // Date Logic 
     if (updateBody.date) {
-        updateBody.date = parseDate(updateBody.date);
+        const parsedDate = parseDate(updateBody.date);
+
+        if (market.date.getTime() !== parsedDate.getTime()) {
+            // Date changed — check for duplicate
+            const duplicate = await Market.exists({
+                user: market.user._id,
+                date: parsedDate,
+                _id: { $ne: marketId }
+            });
+            if (duplicate) throw new AppError('A market entry already exists for this date', 409);
+
+            updateBody.date = parsedDate;
+        } else {
+            // Same date sent from form — skip to avoid unnecessary save
+            delete updateBody.date;
+        }
     }
 
-    // Trim items if provided
-    if (updateBody.items && typeof updateBody.items === 'string') {
+    // Items Sanitization 
+    if (updateBody.items !== undefined) {
+        if (typeof updateBody.items !== 'string' || !updateBody.items.trim()) {
+            throw new AppError('Items must be a non-empty string', 400);
+        }
         updateBody.items = updateBody.items.trim();
     }
 
     Object.assign(market, updateBody);
     await market.save();
 
-    // Adjust user's total if amount changed
+    //  User Amount Sync 
     if (updateBody.amount !== undefined && updateBody.amount !== oldAmount) {
         await User.findByIdAndUpdate(
             market.user._id,
-            { $inc: { totalMarketAmount: updateBody.amount - oldAmount } },
-            { new: true, runValidators: true }
+            { $inc: { totalMarketAmount: updateBody.amount - oldAmount } }
         );
     }
 
@@ -109,17 +127,27 @@ const deleteMarketById = async (marketId) => {
     const market = await getMarketById(marketId);
     if (!market) throw new AppError('Market not found', 404);
 
-    await User.findByIdAndUpdate(
-        market.user,
-        {
-            $pull: { markets: marketId },
-            $inc: { totalMarketAmount: -market.amount },
-        },
-        { new: true, runValidators: true }
-    );
+    await Promise.all([
+        User.findByIdAndUpdate(
+            market.user._id,
+            {
+                $pull: { markets: marketId },
+                $inc: { totalMarketAmount: -market.amount },
+            }
+        ),
+        Market.findByIdAndDelete(marketId)
+    ]);
 
-    await Market.findByIdAndDelete(marketId);
     return market;
+};
+
+/**
+ * Verify a user exists — used by admin controllers
+ */
+const verifyUserExists = async (userId) => {
+    const user = await User.findById(userId).lean();
+    if (!user) throw new AppError('User not found', 404);
+    return user;
 };
 
 module.exports = {
@@ -128,4 +156,5 @@ module.exports = {
     getMarketById,
     updateMarketById,
     deleteMarketById,
+    verifyUserExists,
 };
