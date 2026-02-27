@@ -38,24 +38,24 @@ const createMeal = async (mealBody) => {
 };
 
 /**
- * Query meals by filter
+ * Query meals with optional filter & options
  */
-const queryMeals = async (filter, options) => {
-    let sort = { date: -1 }; // default
+const queryMeals = async (filter, options = {}) => {
+    let sort = { date: -1 };
 
-    if (options?.sortBy) {
+    if (options.sortBy) {
         const [field, order] = options.sortBy.split(':');
         sort = { [field]: order === 'asc' ? 1 : -1 };
     }
 
-    const limit = parseInt(options?.limit) || 10;
-    const page = parseInt(options?.page) || 1;
+    const limit = parseInt(options.limit) || 10;
+    const page  = parseInt(options.page)  || 1;
 
     return Meal.find(filter)
         .sort(sort)
         .skip((page - 1) * limit)
         .limit(limit)
-        .lean();
+        .lean();             
 };
 
 /**
@@ -68,21 +68,17 @@ const getMealById = async (id) => {
 /**
  * Update meal by id
  */
-/**
- * Update meal by id with duplicate date check
- */
 const updateMealById = async (mealId, updateBody) => {
     const meal = await getMealById(mealId);
     if (!meal) throw new AppError('Meal not found', 404);
 
-    //  1. Date Logic
+    // ── 1. Date Logic ─────────────────────────────────────────────────────────────
     if (updateBody.date) {
         const parsedDate = parseDate(updateBody.date);
 
         if (meal.date.getTime() !== parsedDate.getTime()) {
-            // Date actually changed — check for duplicate
             const duplicate = await Meal.exists({
-                user: meal.user._id,   // meal.user is populated (object), use ._id
+                user: meal.user._id,        // populated — must use ._id
                 date: parsedDate,
                 _id: { $ne: mealId }
             });
@@ -90,42 +86,38 @@ const updateMealById = async (mealId, updateBody) => {
 
             updateBody.date = parsedDate;
         } else {
-            // Same date sent from form — skip it entirely
-            delete updateBody.date;
+            delete updateBody.date;         // same date from form — skip unnecessary save
         }
     }
 
-    // 2. Count Recalculation 
-    const oldMealCount = meal.mealCount || 0;
+    // ── 2. Count Recalculation ────────────────────────────────────────────────────
+    const oldMealCount  = meal.mealCount  || 0;
     const oldGuestCount = meal.guestCount || 0;
 
-    // Resolve final type (incoming or existing)
-    const resolvedType = updateBody.type ?? meal.type;
     if (updateBody.type !== undefined) {
+        const resolvedType = updateBody.type ?? meal.type;
         updateBody.mealCount = resolvedType === 'both' ? 2 : 1;
     }
 
-    // Resolve final guest state (incoming or existing)
-    const resolvedIsGuestMeal = updateBody.isGuestMeal ?? meal.isGuestMeal;
     if (updateBody.isGuestMeal !== undefined || updateBody.guestCount !== undefined) {
+        const resolvedIsGuestMeal = updateBody.isGuestMeal ?? meal.isGuestMeal;
         updateBody.guestCount = resolvedIsGuestMeal
-            ? (updateBody.guestCount ?? meal.guestCount ?? 1)
+            ? (updateBody.guestCount ?? meal.guestCount ?? 1) 
             : 0;
-        // Keep isGuestMeal in sync if guestCount is being zeroed
-        if (!resolvedIsGuestMeal) updateBody.isGuestMeal = false;
+        if (!resolvedIsGuestMeal) updateBody.isGuestMeal = false; // keep flag in sync
     }
 
-    // 3. Apply & Save 
+    // ── 3. Apply & Save ───────────────────────────────────────────────────────────
     Object.assign(meal, updateBody);
     await meal.save();
 
-    // 4. User Stats Sync (only if counts actually changed) 
-    const mealDiff = (meal.mealCount || 0) - oldMealCount;
+    // ── 4. User Stats Sync ────────────────────────────────────────────────────────
+    const mealDiff  = (meal.mealCount  || 0) - oldMealCount;
     const guestDiff = (meal.guestCount || 0) - oldGuestCount;
 
     if (mealDiff !== 0 || guestDiff !== 0) {
         await User.findByIdAndUpdate(
-            meal.user._id,  // populated object — always use ._id
+            meal.user._id,                  // populated — must use ._id
             { $inc: { totalMeal: mealDiff, guestMeal: guestDiff } }
         );
     }
@@ -142,7 +134,7 @@ const deleteMealById = async (mealId) => {
 
     await Promise.all([
         User.findByIdAndUpdate(
-            meal.user,
+            meal.user._id,                  // populated — must use ._id
             {
                 $pull: { meals: mealId },
                 $inc: { totalMeal: -meal.mealCount, guestMeal: -(meal.guestCount || 0) }
@@ -158,7 +150,7 @@ const deleteMealById = async (mealId) => {
  * Admin: verify a user exists
  */
 const verifyUserExists = async (userId) => {
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).lean();
     if (!user) throw new AppError('User not found', 404);
     return user;
 };
