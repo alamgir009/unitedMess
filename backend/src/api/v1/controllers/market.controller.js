@@ -15,12 +15,15 @@ const getMarkets = asyncHandler(async (req, res) => {
     const filter = pick(req.query, ['date']);
     const options = pick(req.query, ['sortBy', 'limit', 'page']);
 
+    const isAdmin = req.user.role === 'admin';
+
     // Non-admin users can only see their own markets
-    if (req.user.role !== 'admin') {
+    if (!isAdmin) {
         filter.user = req.user.id;
     }
 
-    const markets = await marketService.queryMarkets(filter, options);
+    // populate only when admin — they need to know which user each market belongs to
+    const markets = await marketService.queryMarkets(filter, options, isAdmin);
     sendSuccessResponse(res, 200, 'Market entries retrieved successfully', markets);
 });
 

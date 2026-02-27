@@ -40,7 +40,8 @@ const createMeal = async (mealBody) => {
 /**
  * Query meals with optional filter & options
  */
-const queryMeals = async (filter, options = {}) => {
+// meal.service.js
+const queryMeals = async (filter, options = {}, populateUser = false) => {
     let sort = { date: -1 };
 
     if (options.sortBy) {
@@ -51,11 +52,15 @@ const queryMeals = async (filter, options = {}) => {
     const limit = parseInt(options.limit) || 10;
     const page  = parseInt(options.page)  || 1;
 
-    return Meal.find(filter)
+    const query = Meal.find(filter)
         .sort(sort)
         .skip((page - 1) * limit)
         .limit(limit)
-        .lean();             
+        .lean();
+
+    if (populateUser) query.populate('user', 'name email');
+
+    return query;
 };
 
 /**

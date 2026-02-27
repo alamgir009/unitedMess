@@ -50,16 +50,27 @@ const createMarket = async (marketBody) => {
 /**
  * Query markets with optional filter & options
  */
-const queryMarkets = async (filter, options = {}) => {
-    const { sortBy = 'date', limit = 20, page = 1 } = options;
-    const skip = (page - 1) * limit;
+// market.service.js
+const queryMarkets = async (filter, options = {}, populateUser = false) => {
+    let sort = { date: -1 };
 
-    return Market.find(filter)
-        .sort({ [sortBy]: -1 })
-        .skip(skip)
-        .limit(Number(limit))
-        .populate('user', 'name email')
+    if (options.sortBy) {
+        const [field, order] = options.sortBy.split(':');
+        sort = { [field]: order === 'asc' ? 1 : -1 };
+    }
+
+    const limit = parseInt(options.limit) || 10;
+    const page  = parseInt(options.page)  || 1;
+
+    const query = Market.find(filter)
+        .sort(sort)
+        .skip((page - 1) * limit)
+        .limit(limit)
         .lean();
+
+    if (populateUser) query.populate('user', 'name email');
+
+    return query;
 };
 
 /**

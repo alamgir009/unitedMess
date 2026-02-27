@@ -12,15 +12,16 @@ const createMeal = asyncHandler(async (req, res) => {
 });
 
 const getMeals = asyncHandler(async (req, res) => {
-    const filter = pick(req.query, ['user', 'date']);
+    const filter = pick(req.query, ['date']);
     const options = pick(req.query, ['sortBy', 'limit', 'page']);
 
-    // Non-admin users can only see their own meals
-    if (req.user.role !== 'admin') {
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isAdmin) {
         filter.user = req.user.id;
     }
 
-    const meals = await mealService.queryMeals(filter, options);
+    const meals = await mealService.queryMeals(filter, options, isAdmin);
     sendSuccessResponse(res, 200, 'Meals retrieved successfully', meals);
 });
 
