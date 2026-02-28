@@ -20,7 +20,7 @@ const mealSchema = new mongoose.Schema(
         },
         type: {
             type: String,
-            enum: ['day', 'night', 'both'],
+            enum: ['day', 'night', 'both', 'off'],
             default: 'both'
         },
         isGuestMeal: {

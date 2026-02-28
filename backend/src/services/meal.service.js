@@ -4,6 +4,13 @@ const User = require('../models/User.model');
 const AppError = require('../utils/errors/AppError');
 const { parseDate } = require('../utils/helpers/date.helper');
 
+const mealTypeCountMap = {
+  off: 0,
+  both: 2,
+  day: 1,
+  night: 1,
+};
+
 /**
  * Create a meal
  */
@@ -16,7 +23,7 @@ const createMeal = async (mealBody) => {
         throw new AppError('Meal already exists for this date', 409);
     }
 
-    mealBody.mealCount = mealBody.type === 'both' ? 2 : 1;
+    mealBody.mealCount = mealTypeCountMap[mealBody.type] ?? 0;
     mealBody.guestCount = mealBody.isGuestMeal ? (mealBody.guestCount || 1) : 0;
 
     const mealId = new mongoose.Types.ObjectId();
@@ -100,8 +107,8 @@ const updateMealById = async (mealId, updateBody) => {
     const oldGuestCount = meal.guestCount || 0;
 
     if (updateBody.type !== undefined) {
-        const resolvedType = updateBody.type ?? meal.type;
-        updateBody.mealCount = resolvedType === 'both' ? 2 : 1;
+        // const resolvedType = updateBody.type ?? meal.type;
+        updateBody.mealCount = mealTypeCountMap[updateBody.type] ?? 0;
     }
 
     if (updateBody.isGuestMeal !== undefined || updateBody.guestCount !== undefined) {
