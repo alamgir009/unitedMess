@@ -3,18 +3,20 @@ const router = express.Router();
 const paymentController = require('../controllers/payment.controller');
 const { protect, authorize } = require('../middlewares/auth.middleware');
 
-router.use(protect);
+const authenticated = [protect];
+const adminOnly    = [protect, authorize('admin')];
 
+// All routes require authentication
 router.route('/')
-    .get(paymentController.getPayments)
-    .post(paymentController.createPayment);
+    .get(...authenticated, paymentController.getPayments)
+    .post(...authenticated, paymentController.createPayment);
 
-router.post('/order', paymentController.createOnlineOrder);
-router.post('/verify', paymentController.verifyPayment);
+router.post('/order',  ...authenticated, paymentController.createOnlineOrder);
+router.post('/verify', ...authenticated, paymentController.verifyPayment);
 
 router.route('/:paymentId')
-    .get(paymentController.getPayment)
-    .patch(authorize('admin'), paymentController.updatePayment)
-    .delete(authorize('admin'), paymentController.deletePayment);
+    .get(   ...authenticated, paymentController.getPayment)
+    .patch( ...adminOnly,     paymentController.updatePayment)
+    .delete(...adminOnly,     paymentController.deletePayment);
 
 module.exports = router;

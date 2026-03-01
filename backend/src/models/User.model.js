@@ -89,12 +89,12 @@ const userSchema = new mongoose.Schema({
     paybleAmountforMeal: { type: Number, default: 0, min: 0 },
     payment: {
         type: String,
-        enum: ['pending', 'success', 'failed'],
+        enum: ['pending', 'success', 'failed', 'refunded'],
         default: 'pending'
     },
     gasBill: {
         type: String,
-        enum: ['pending', 'success', 'failed'],
+        enum: ['pending', 'success', 'failed', 'refunded'],
         default: 'pending'
     },
     isEmailVerified: { type: Boolean, default: false },

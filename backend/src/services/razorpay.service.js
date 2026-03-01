@@ -1,29 +1,31 @@
+const crypto   = require('crypto');           // hoisted — never require inside functions
 const Razorpay = require('razorpay');
-const config = require('../config');
+const config   = require('../config');
+const AppError = require('../utils/errors/AppError');
+
+if (!config.razorpay.keyId || !config.razorpay.keySecret) {
+    throw new Error('Razorpay keyId and keySecret must be set in config');
+}
 
 const razorpay = new Razorpay({
-    key_id: config.razorpay.keyId || 'rzp_test_placeholder',
-    key_secret: config.razorpay.keySecret || 'placeholder_secret',
+    key_id:     config.razorpay.keyId,
+    key_secret: config.razorpay.keySecret,
 });
 
 /**
  * Create a Razorpay order
- * @param {number} amount - Amount in smallest currency unit (paise)
- * @param {string} currency - currency code (default INR)
- * @returns {Promise<Object>}
+ * @param {number} amount   - Amount in paise
+ * @param {string} currency - Default INR
  */
 const createOrder = async (amount, currency = 'INR') => {
-    const options = {
-        amount,
-        currency,
-        receipt: `receipt_${Date.now()}`,
-    };
-
     try {
-        const order = await razorpay.orders.create(options);
-        return order;
+        return await razorpay.orders.create({
+            amount,
+            currency,
+            receipt: `rcpt_${Date.now()}`,
+        });
     } catch (error) {
-        throw new Error('Razorpay order creation failed: ' + error.message);
+        throw new AppError(`Razorpay order creation failed: ${error.message}`, 502);
     }
 };
 
@@ -35,14 +37,15 @@ const createOrder = async (amount, currency = 'INR') => {
  * @returns {boolean}
  */
 const verifyPaymentSignature = (orderId, paymentId, signature) => {
-    const crypto = require('crypto');
     const hmac = crypto.createHmac('sha256', config.razorpay.keySecret);
-    hmac.update(orderId + '|' + paymentId);
-    const generatedSignature = hmac.digest('hex');
-    return generatedSignature === signature;
+    hmac.update(`${orderId}|${paymentId}`);
+    const generated = hmac.digest('hex');
+
+    // Timing-safe comparison — prevents timing attack
+    return crypto.timingSafeEqual(
+        Buffer.from(generated, 'hex'),
+        Buffer.from(signature,  'hex')
+    );
 };
 
-module.exports = {
-    createOrder,
-    verifyPaymentSignature,
-};
+module.exports = { createOrder, verifyPaymentSignature };
