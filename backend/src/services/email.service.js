@@ -70,9 +70,9 @@ ${companyAddress}
 © ${year} ${companyName}. All rights reserved.
 `;
 
-const html = `
-<!DOCTYPE html>
+    const html = `<!DOCTYPE html>
 <html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -89,114 +89,153 @@ const html = `
     </noscript>
     <![endif]-->
     <style>
-        /* Client-specific Styles */
-        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        /* ----- CLIENT-SPECIFIC RESETS ----- */
+        body,
+        table,
+        td,
+        a {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
 
-        /* Reset */
+        table,
+        td {
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+
+        img {
+            -ms-interpolation-mode: bicubic;
+            border: 0;
+            height: auto;
+            line-height: 100%;
+            outline: none;
+            text-decoration: none;
+        }
+
+        /* ----- GLOBAL RESET & FONTS ----- */
         body {
             margin: 0 !important;
             padding: 0 !important;
             width: 100% !important;
             height: 100% !important;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Text', Roboto, 'Helvetica Neue', Arial, sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            /*background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);*/
             background-attachment: fixed;
         }
 
-        /* Box-sizing fix */
         * {
             box-sizing: border-box;
             -webkit-box-sizing: border-box;
             -moz-box-sizing: border-box;
         }
 
-        table { 
+        table {
             border-collapse: separate !important;
-            box-sizing: border-box;
         }
-        a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
 
-        /* Responsive */
+        a[x-apple-data-detectors] {
+            color: inherit !important;
+            text-decoration: none !important;
+        }
+
+        /* ----- NOTHING OS DOT MATRIX INFLUENCE (MONOSPACE FOR SPECIFIC ELEMENTS) ----- */
+        .dot-matrix {
+            font-family: 'Courier New', 'SF Mono', 'Menlo', 'Consolas', monospace !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        .glyph-icon-bg {
+            background: rgba(20, 20, 30, 0.15);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        /* subtle dot pattern for nothing OS background effect (used in footer) */
+        .dot-pattern-bg {
+            background-image: radial-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+            background-size: 8px 8px;
+        }
+
+        /* ----- RESPONSIVE ----- */
         @media only screen and (max-width: 640px) {
-            .email-container { 
-                width: 100% !important; 
+            .email-container {
+                width: 100% !important;
                 overflow: hidden;
-                box-sizing: border-box;
             }
-            .header-cell, .body-cell, .footer-cell { 
-                padding-left: 20px !important; 
+
+            .main-padding {
+                padding: 12px 6px !important;
+            }
+
+            .header-cell,
+            .body-cell,
+            .footer-cell {
+                padding-left: 20px !important;
                 padding-right: 20px !important;
-                box-sizing: border-box;
             }
-            .logo-text { font-size: 26px !important; }
-            .email-title { font-size: 20px !important; }
-            .button { 
-                display: block !important; 
+
+            .logo-text {
+                font-size: 28px !important;
+            }
+
+            .email-title {
+                font-size: 22px !important;
+            }
+
+            .button {
+                display: block !important;
                 width: auto !important;
                 max-width: 100% !important;
-                box-sizing: border-box !important;
                 text-align: center !important;
             }
+
             .social-button {
-                width: 40px !important;
-                height: 40px !important;
-                box-sizing: border-box !important;
+                width: 42px !important;
+                height: 42px !important;
             }
-            .social-button img {
-                margin: 10px auto !important;
-            }
-            
+
             .social-td {
                 padding: 0 4px !important;
             }
         }
-
-        /* Glass effect fallbacks for email clients */
-        .glass-header {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.4) 100%) !important;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.18) !important;
-            backdrop-filter: blur(20px) !important;
-            -webkit-backdrop-filter: blur(20px) !important;
-        }
-
-        .glass-footer {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.4) 100%) !important;
-            border-top: 1px solid rgba(255, 255, 255, 0.18) !important;
-            backdrop-filter: blur(20px) !important;
-            -webkit-backdrop-filter: blur(20px) !important;
-        }
     </style>
 </head>
-<body style="margin: 0; padding: 0; background: linear-gradient(135deg, #667eea 0%, #bfbfbf 100%); background-attachment: fixed; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
-    
-    <!-- Preheader -->
+
+<body style="margin: 0; padding: 0; background: radial-gradient(circle at 10% 30%, #fad0e6 0%, #b5e0ff 70%, #c2e5ff 100%); background-attachment: fixed; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Text', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+
+    <!-- PREHEADER -->
     <div style="display: none; font-size: 1px; color: #f9fafb; line-height: 1px; max-height: 0; max-width: 0; opacity: 0; overflow: hidden;">
-        ${previewText || title}
+        ${previewText || title} — experience the fusion of liquid glass and dot matrix.
     </div>
 
-    <!-- Email Wrapper -->
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: linear-gradient(135deg, #f1f5f9 0%, #764ba2 100%); background-attachment: fixed;">
+    <!-- MAIN WRAPPER -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: transparent;">
         <tr>
-            <td align="center" style="padding: 40px 20px;">
-                
-                <!-- Email Container - 600px max width -->
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" class="email-container" style="max-width: 600px; width: 100%; background: rgba(255, 255, 255, 0.08); border-radius: 24px; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37); border: 1px solid rgba(255, 255, 255, 0.18); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);">
-                    
-                    <!-- HEADER - Glass Effect -->
+            <td align="center" class="main-padding" style="padding: 40px 20px;">
+                <!-- CARD CONTAINER – LIQUID GLASS CORE -->
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" class="email-container" style="max-width: 600px; width: 100%; background: rgba(255, 255, 255, 0.15); border-radius: 36px; box-shadow: 0 25px 50px -10px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.4); backdrop-filter: blur(25px) saturate(180%); -webkit-backdrop-filter: blur(25px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.45);">
+
+                    <!-- ===== HEADER – ORIGIN OS 6 VIBRANCY + NOTHING DOT ACCENT ===== -->
                     <tr>
-                        <td class="header-cell glass-header" style="padding: 32px 40px; background: linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.4) 100%); border-radius: 24px 24px 0 0; border-bottom: 1px solid rgba(255, 255, 255, 0.18); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-sizing: border-box;">
+                        <td class="header-cell" style="padding: 36px 40px 30px; background: linear-gradient(145deg, rgba(255,255,255,0.5) 0%, rgba(255,255,240,0.3) 100%); border-radius: 36px 36px 0 0; border-bottom: 1px solid rgba(255,255,255,0.5); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-sizing: border-box;">
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                                 <tr>
                                     <td align="center">
-                                        <h1 class="logo-text" style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; color: #1f2937; line-height: 1.2; text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);">
+                                        <!-- LOGO with dot matrix style -->
+                                        <h1 class="logo-text dot-matrix" style="margin: 0; padding: 0; font-size: 34px; font-weight: 600; letter-spacing: 4px; color: #1f2937; text-shadow: 2px 2px 4px rgba(255,255,255,0.6), 0 0 0 rgba(0,0,0,0.1); background: linear-gradient(145deg, #1e1e2f, #2a2a40); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.1;">
                                             UNITEDMESS
                                         </h1>
-                                        <p style="margin: 8px 0 0 0; padding: 0; font-size: 11px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: #4b5563; line-height: 1.5; text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);">
-                                            Where Food Meets Community
+                                        <!-- dot matrix tagline + glyph-style separator -->
+                                        <p style="margin: 8px 0 0 0; font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: 2px; color: #2e3742; font-weight: 400; text-transform: uppercase; opacity: 0.8;">
+                                            <span style="display: inline-block; width: 6px; height: 6px; background: #2e3742; border-radius: 1px; margin: 0 6px 2px 0;"></span>
+                                            WHERE FOOD MEETS COMMUNITY
+                                            <span style="display: inline-block; width: 6px; height: 6px; background: #2e3742; border-radius: 1px; margin: 0 0 2px 6px;"></span>
                                         </p>
                                     </td>
                                 </tr>
@@ -204,65 +243,57 @@ const html = `
                         </td>
                     </tr>
 
-                    <!-- BODY -->
+                    <!-- ===== BODY – OXYGEN OS CLEAN + LIQUID GLASS LAYERS ===== -->
                     <tr>
-                        <td class="body-cell" style="padding: 40px 40px; background: rgba(255, 255, 255, 0.95); box-sizing: border-box;">
+                        <td class="body-cell" style="padding: 40px 40px; background: rgba(255, 255, 255, 0.55); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); box-sizing: border-box;">
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                                 <tr>
                                     <td>
-                                        <!-- Title -->
-                                        <h2 class="email-title" style="margin: 0 0 16px 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 24px; font-weight: 700; color: #111827; line-height: 1.3; letter-spacing: -0.5px;">
+                                        <!-- Title with subtle dot matrix echo -->
+                                        <h2 class="email-title" style="margin: 0 0 18px 0; font-family: -apple-system, 'Inter', sans-serif; font-size: 26px; font-weight: 600; color: #111827; letter-spacing: -0.3px; border-left: 4px solid #3b82f6; padding-left: 16px;">
                                             ${title}
                                         </h2>
-                                        
-                                        <!-- Content -->
-                                        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 16px; font-weight: 400; color: #4b5563; line-height: 1.7; margin: 0;">
+
+                                        <!-- Content – clean Oxygen OS readability -->
+                                        <div style="font-family: -apple-system, 'Inter', sans-serif; font-size: 16px; font-weight: 400; color: #1f2937; line-height: 1.7; margin: 0; text-shadow: 0 1px 2px rgba(255,255,255,0.3);">
                                             ${content}
                                         </div>
 
+                                        <!-- BUTTON – origin os 6 gradient + liquid glass depth -->
                                         ${showButton && buttonText ? `
-                                        <!-- Button Section -->
-                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 32px;">
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 36px;">
                                             <tr>
                                                 <td align="center">
                                                     <!--[if mso]>
-                                                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${buttonLink}" style="height:44px;v-text-anchor:middle;width:200px;" arcsize="18%" stroke="f" fillcolor="#3b82f6">
+                                                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${buttonLink}" style="height:52px;v-text-anchor:middle;width:220px;" arcsize="20%" stroke="f" fillcolor="#b05eff">
                                                         <w:anchorlock/>
-                                                        <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:600;">${buttonText}</center>
+                                                        <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:600;">${buttonText}</center>
                                                     </v:roundrect>
                                                     <![endif]-->
                                                     <!--[if !mso]><!-->
-                                                    <a href="${buttonLink}" class="button" style="display: inline-block; padding: 14px 28px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.9) 0%, rgba(139, 92, 246, 0.9) 100%); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; font-weight: 600; text-decoration: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3); box-sizing: border-box; max-width: 100%;">
+                                                    <a href="${buttonLink}" class="button" style="display: inline-block; padding: 16px 36px; background: linear-gradient(125deg, #ff7eb3 0%, #b05eff 70%, #3b82f6 100%); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); color: #ffffff; font-family: -apple-system, 'Inter', sans-serif; font-size: 16px; font-weight: 600; text-decoration: none; border-radius: 40px; box-shadow: 0 20px 30px -10px rgba(59,130,246,0.4), 0 4px 8px rgba(0,0,0,0.1), inset 0 2px 0 rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.5); letter-spacing: 0.3px;">
                                                         ${buttonText}
                                                     </a>
                                                     <!--<![endif]-->
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td align="center" style="padding-top: 16px;">
-                                                    <p style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 12px; color: #9ca3af; line-height: 1.5;">
-                                                        Button not working? Copy this link:<br>
-                                                        <a href="${buttonLink}" style="color: #3b82f6; text-decoration: none; font-size: 11px; word-break: break-all;">${buttonLink}</a>
+                                                <td align="center" style="padding-top: 18px;">
+                                                    <p style="margin: 0; font-family: 'Courier New', monospace; font-size: 12px; color: #2d3a4a; letter-spacing: 0.2px;">
+                                                        ⚡ direct link: <a href="${buttonLink}" style="color: #1f2937; text-decoration: underline; text-decoration-style: dotted;">${buttonLink}</a>
                                                     </p>
                                                 </td>
                                             </tr>
                                         </table>
                                         ` : ''}
 
+                                        <!-- FOOTER NOTE – nothing os dotted style -->
                                         ${footerText ? `
-                                        <!-- Divider -->
-                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 32px 0;">
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 36px 0 0;">
                                             <tr>
-                                                <td style="border-top: 1px solid rgba(0, 0, 0, 0.1);"></td>
-                                            </tr>
-                                        </table>
-                                        
-                                        <!-- Footer Note -->
-                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                                            <tr>
-                                                <td style="background: rgba(139, 92, 246, 0.1); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-left: 4px solid rgba(139, 92, 246, 0.8); padding: 16px 20px; border-radius: 12px; border: 1px solid rgba(139, 92, 246, 0.2); box-sizing: border-box;">
-                                                    <p style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; color: #5b21b6; line-height: 1.6; font-style: italic;">
-                                                        ${footerText}
+                                                <td style="background: rgba(255,255,255,0.35); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-left: 4px solid #b05eff; padding: 18px 22px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                                                    <p style="margin: 0; font-family: 'Courier New', monospace; font-size: 14px; color: #1f2b3a; line-height: 1.6; font-weight: 500;">
+                                                        <span style="font-size: 100%; margin-right: 8px;">⏣</span> ${footerText}
                                                     </p>
                                                 </td>
                                             </tr>
@@ -274,79 +305,115 @@ const html = `
                         </td>
                     </tr>
 
-                    <!-- FOOTER - Glass Effect -->
+                    <!-- ===== FOOTER – NOTHING OS GLYPH + LIQUID GLASS & DOT MATRIX ===== -->
                     <tr>
-                        <td class="footer-cell glass-footer" style="padding: 32px 40px; background: linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.4) 100%); border-radius: 0 0 24px 24px; border-top: 1px solid rgba(255, 255, 255, 0.18); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-sizing: border-box;">
+                        <td class="footer-cell" style="padding: 30px 40px 36px; background: linear-gradient(145deg, rgba(255,255,255,0.5) 0%, rgba(230,245,255,0.4) 100%); border-radius: 0 0 36px 36px; border-top: 1px solid rgba(255,255,255,0.5); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-sizing: border-box;">
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                                 <tr>
                                     <td align="center">
-                                        <!-- Connect Title -->
-                                        <p style="margin: 0 0 16px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 600; color: #374151; letter-spacing: 0.5px; text-transform: uppercase; text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);">
-                                            Connect With Us
+                                        <!-- dot matrix decorative line (nothing style) -->
+                                        <!--<div style="width: 80px; height: 2px; background: repeating-linear-gradient(90deg, #2c3e4e 0px, #2c3e4e 4px, transparent 4px, transparent 8px); margin: 0 auto 20px;"></div>-->
+
+                                        <!-- CONNECT TITLE with dot matrix -->
+                                        <p class="dot-matrix" style="margin: 0 0 18px 0; font-size: 13px; font-weight: 600; color: #1f2a36; letter-spacing: 2px; text-transform: uppercase;">
+                                            <span style="background: #1f2a36; width: 5px; height: 5px; display: inline-block; border-radius: 0; margin-right: 8px;"></span>
+                                            connect with us
+                                            <span style="background: #1f2a36; width: 5px; height: 5px; display: inline-block; border-radius: 0; margin-left: 8px;"></span>
                                         </p>
-                                        
-                                        <!-- Social Links - Glass Effect Buttons -->
-                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin-bottom: 24px;">
+
+                                        <!-- SOCIAL ICONS – perfectly centered -->
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin-bottom: 28px;">
                                             <tr>
-                                                <td class="social-td" style="padding: 0 6px;">
-                                                    <a href="https://github.com/alamgir009" class="social-button" style="display: inline-block; width: 44px; height: 44px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 12px; text-decoration: none; border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1); box-sizing: border-box;">
-                                                        <img src="https://cdn-icons-png.flaticon.com/512/25/25231.png" width="20" height="20" alt="GitHub" style="display: block; margin: 12px auto; width: 20px; height: 20px; filter: brightness(0.8);">
-                                                    </a>
+
+                                                <!-- GitHub -->
+                                                <td style="padding: 0 5px;">
+                                                    <table role="presentation" width="48" height="48" cellspacing="0" cellpadding="0" border="0" style="width:48px;height:48px;background:rgba(20,20,30,0.1);border-radius:16px;border:1px solid rgba(255,255,255,0.35);box-shadow:0 6px 12px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.3);">
+                                                        <tr>
+                                                            <td align="center" valign="middle">
+                                                                <a href="https://github.com/alamgir009" style="display:block;">
+                                                                    <img src="https://cdn-icons-png.flaticon.com/512/25/25231.png" width="22" height="22" alt="GitHub" style="display:block; filter:brightness(0.2) contrast(120%); opacity:0.8;">
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
                                                 </td>
-                                                <td class="social-td" style="padding: 0 6px;">
-                                                    <a href="https://linkedin.com" class="social-button" style="display: inline-block; width: 44px; height: 44px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 12px; text-decoration: none; border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1); box-sizing: border-box;">
-                                                        <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="20" height="20" alt="LinkedIn" style="display: block; margin: 12px auto; width: 20px; height: 20px; filter: brightness(0.8);">
-                                                    </a>
+
+                                                <!-- LinkedIn -->
+                                                <td style="padding: 0 5px;">
+                                                    <table role="presentation" width="48" height="48" cellspacing="0" cellpadding="0" border="0" style="width:48px;height:48px;background:rgba(20,20,30,0.1);border-radius:16px;border:1px solid rgba(255,255,255,0.35);box-shadow:0 6px 12px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.3);">
+                                                        <tr>
+                                                            <td align="center" valign="middle">
+                                                                <a href="https://linkedin.com" style="display:block;">
+                                                                    <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="22" height="22" alt="LinkedIn" style="display:block; filter:brightness(0.2) contrast(120%); opacity:0.8;">
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
                                                 </td>
-                                                <td class="social-td" style="padding: 0 6px;">
-                                                    <a href="https://twitter.com" class="social-button" style="display: inline-block; width: 44px; height: 44px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 12px; text-decoration: none; border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1); box-sizing: border-box;">
-                                                        <img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" width="20" height="20" alt="Twitter" style="display: block; margin: 12px auto; width: 20px; height: 20px; filter: brightness(0.8);">
-                                                    </a>
+
+                                                <!-- Twitter -->
+                                                <td style="padding: 0 5px;">
+                                                    <table role="presentation" width="48" height="48" cellspacing="0" cellpadding="0" border="0" style="width:48px;height:48px;background:rgba(20,20,30,0.1);border-radius:16px;border:1px solid rgba(255,255,255,0.35);box-shadow:0 6px 12px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.3);">
+                                                        <tr>
+                                                            <td align="center" valign="middle">
+                                                                <a href="https://twitter.com" style="display:block;">
+                                                                    <img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" width="22" height="22" alt="Twitter" style="display:block; filter:brightness(0.2) contrast(120%); opacity:0.8;">
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
                                                 </td>
-                                                <td class="social-td" style="padding: 0 6px;">
-                                                    <a href="https://instagram.com" class="social-button" style="display: inline-block; width: 44px; height: 44px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 12px; text-decoration: none; border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1); box-sizing: border-box;">
-                                                        <img src="https://cdn-icons-png.flaticon.com/512/174/174855.png" width="20" height="20" alt="Instagram" style="display: block; margin: 12px auto; width: 20px; height: 20px; filter: brightness(0.8);">
-                                                    </a>
+
+                                                <!-- Instagram -->
+                                                <td style="padding: 0 5px;">
+                                                    <table role="presentation" width="48" height="48" cellspacing="0" cellpadding="0" border="0" style="width:48px;height:48px;background:rgba(20,20,30,0.1);border-radius:16px;border:1px solid rgba(255,255,255,0.35);box-shadow:0 6px 12px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.3);">
+                                                        <tr>
+                                                            <td align="center" valign="middle">
+                                                                <a href="https://instagram.com" style="display:block;">
+                                                                    <img src="https://cdn-icons-png.flaticon.com/512/174/174855.png" width="22" height="22" alt="Instagram" style="display:block; filter:brightness(0.2) contrast(120%); opacity:0.8;">
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
                                                 </td>
+
                                             </tr>
                                         </table>
 
-                                        <!-- Divider -->
-                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
+                                        <!-- DIVIDER with dot pattern -->
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 18px 0 20px;">
                                             <tr>
-                                                <td style="border-top: 1px solid rgba(0, 0, 0, 0.1);"></td>
+                                                <td style="border-top: 1px dashed rgba(0,0,0,0.15);"></td>
                                             </tr>
                                         </table>
 
-                                        <!-- Company Info -->
-                                        <p style="margin: 8px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 13px; color: #4b5563; line-height: 1.6; text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);">
-                                            <strong style="color: #374151;">© ${year} ${companyName}</strong><br>
-                                            ${companyAddress}
+                                        <!-- COMPANY INFO with dot matrix subtlety -->
+                                        <p style="margin: 8px 0; font-family: 'Courier New', monospace; font-size: 13px; color: #1e2b3a; line-height: 1.7; font-weight: 400;">
+                                            <strong style="font-weight: 600; background: rgba(255,255,255,0.3); padding: 2px 6px;">© ${year} ${companyName}</strong><br>
+                                            <span style="opacity: 0.8;">${companyAddress}</span>
                                         </p>
 
-                                        <!-- Footer Links -->
-
-                                        <!-- Unsubscribe -->
-                                        <p style="margin: 16px 0 0 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 12px; color: #6b7280; line-height: 1.6; text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);">
-                                            You're receiving this because you're a member of ${companyName}.<br>
-                                            <a href="#" style="color: #3b82f6; text-decoration: none; font-weight: 500;">Update preferences</a> or 
-                                            <a href="#" style="color: #3b82f6; text-decoration: none; font-weight: 500;">Unsubscribe</a>
+                                        <!-- UNSUBSCRIBE / PREFERENCES – oxygen style clean -->
+                                        <p style="margin: 16px 0 0; font-family: -apple-system, 'Inter', sans-serif; font-size: 13px; color: #2d3f4f; opacity: 0.9;">
+                                            You're a member of ${companyName}.<br>
+                                            <a href="#" style="color: #1f2937; text-decoration: underline; text-decoration-style: dotted; font-weight: 500;">preferences</a>
+                                            <span style="margin: 0 6px;">|</span>
+                                            <a href="#" style="color: #1f2937; text-decoration: underline; text-decoration-style: dotted; font-weight: 500;">unsubscribe</a>
                                         </p>
+                                        <!-- tiny dot matrix glyph -->
+                                        <div style="margin-top: 20px; font-size: 10px; color: #3a4a5a; letter-spacing: 3px;">⏣ ⏣ ⏣</div>
                                     </td>
                                 </tr>
                             </table>
                         </td>
                     </tr>
-
                 </table>
-                <!-- End Email Container -->
-
+                <!-- end liquid glass card -->
             </td>
         </tr>
     </table>
-    <!-- End Email Wrapper -->
-
 </body>
+
 </html>`;
 
 
@@ -424,7 +491,7 @@ const sendPasswordResetEmail = async (to, token, name = 'User') => {
  */
 const sendWelcomeEmail = async (to, name) => {
     const dashboardUrl = `${config.appUrl || 'http://localhost:5173'}/dashboard`;
-    
+
     const { html, text } = generateEmailTemplate({
         title: 'Email Verified Successfully!',
         previewText: `${name}, your email has been verified. Awaiting admin approval.`,
@@ -450,7 +517,7 @@ const sendWelcomeEmail = async (to, name) => {
         buttonLink: dashboardUrl,
         showButton: true
     });
-    
+
     return sendEmail({
         to,
         subject: '✅ Email Verified Successfully - Awaiting Admin Approval',
@@ -504,7 +571,7 @@ const sendAccountApprovedEmail = async (to, name) => {
  */
 const sendAccountDeniedEmail = async (to, name, reason = 'Your application did not meet our current requirements.') => {
     const supportUrl = `${config.appUrl || 'https://unitedmess.com'}/support`;
-    
+
     const { html, text } = generateEmailTemplate({
         title: 'Account Update',
         previewText: 'Update regarding your United Mess account application.',
@@ -666,6 +733,55 @@ const sendAccountLockedEmail = async (to, name = 'User') => {
     });
 };
 
+/**
+ * Send payment status email (success/failure)
+ * @param {string} to - user email
+ * @param {string} name - user name
+ * @param {Object} payment - payment document (plain object)
+ * @param {string} status - 'completed' or 'failed'
+ * @returns {Promise}
+ */
+const sendPaymentStatusEmail = async (to, name, payment, status) => {
+    const isSuccess = status === 'completed';
+    const title = isSuccess ? 'Payment Successful' : 'Payment Failed';
+    const previewText = isSuccess ? 'Your payment was successful' : 'Your payment could not be processed';
+
+    // Format amount with currency
+    const formattedAmount = new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        minimumFractionDigits: 2,
+    }).format(payment.amount);
+
+    const content = `
+        <p>Hello ${name},</p>
+        <p>${isSuccess ? 'Your payment has been successfully processed.' : 'We were unable to process your payment.'}</p>
+        <table style="border-collapse: collapse; width: 100%; margin: 20px 0; font-family: Arial, sans-serif;">
+            <tr><td style="padding: 10px; border: 1px solid #ddd;"><strong>Amount:</strong></td><td style="padding: 10px; border: 1px solid #ddd;">${formattedAmount}</td></tr>
+            <tr><td style="padding: 10px; border: 1px solid #ddd;"><strong>Payment Type:</strong></td><td style="padding: 10px; border: 1px solid #ddd;">${payment.type === 'mess_bill' ? 'Mess Bill' : 'Gas Bill'}</td></tr>
+            <tr><td style="padding: 10px; border: 1px solid #ddd;"><strong>Date:</strong></td><td style="padding: 10px; border: 1px solid #ddd;">${new Date(payment.paymentDate).toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short' })}</td></tr>
+            <tr><td style="padding: 10px; border: 1px solid #ddd;"><strong>Transaction ID:</strong></td><td style="padding: 10px; border: 1px solid #ddd; word-break: break-all;">${payment.transactionId || 'N/A'}</td></tr>
+            <tr><td style="padding: 10px; border: 1px solid #ddd;"><strong>Payment Method:</strong></td><td style="padding: 10px; border: 1px solid #ddd;">${payment.paymentMethod === 'razorpay' ? 'Online (Razorpay)' : 'Cash'}</td></tr>
+        </table>
+        <p>Thank you for using United Mess.</p>
+    `;
+
+    const { html, text } = generateEmailTemplate({
+        title,
+        previewText,
+        content,
+        showButton: false,
+        footerText: isSuccess ? 'We appreciate your business.' : 'If you have any questions, please contact support.'
+    });
+
+    return sendEmail({
+        to,
+        subject: `${title} - United Mess`,
+        text,
+        html
+    });
+};
+
 module.exports = {
     transport,
     sendEmail,
@@ -676,5 +792,6 @@ module.exports = {
     sendAccountDeniedEmail,
     sendPasswordChangeNotification,
     sendPasswordResetConfirmation,
-    sendAccountLockedEmail
+    sendAccountLockedEmail,
+    sendPaymentStatusEmail
 };
