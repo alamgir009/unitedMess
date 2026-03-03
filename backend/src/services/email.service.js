@@ -72,348 +72,574 @@ ${companyAddress}
 
     const html = `<!DOCTYPE html>
 <html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <meta name="x-apple-disable-message-reformatting">
-    <title>${title}</title>
-    <!--[if mso]>
-    <noscript>
-        <xml>
-            <o:OfficeDocumentSettings>
-                <o:PixelsPerInch>96</o:PixelsPerInch>
-            </o:OfficeDocumentSettings>
-        </xml>
-    </noscript>
-    <![endif]-->
-    <style>
-        /* ----- CLIENT-SPECIFIC RESETS ----- */
-        body,
-        table,
-        td,
-        a {
-            -webkit-text-size-adjust: 100%;
-            -ms-text-size-adjust: 100%;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="x-apple-disable-message-reformatting">
+  <title>${title}</title>
+  <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+    table,td{mso-table-lspace:0pt;mso-table-rspace:0pt}
+    img{-ms-interpolation-mode:bicubic;border:0;height:auto;line-height:100%;outline:none;text-decoration:none}
+    *{box-sizing:border-box}
+    table{border-collapse:separate!important}
+    a[x-apple-data-detectors]{color:inherit!important;text-decoration:none!important}
+    body{margin:0!important;padding:0!important;width:100%!important;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 
-        table,
-        td {
-            mso-table-lspace: 0pt;
-            mso-table-rspace: 0pt;
-        }
+    /* Accent line utility (some clients honor this; inline style used too for best support) */
+    .gold-accent { height:2px; min-width:100%; background:#c9973a; background-image:linear-gradient(90deg,#c9973a 0%,#ffd27a 100%); line-height:0; }
 
-        img {
-            -ms-interpolation-mode: bicubic;
-            border: 0;
-            height: auto;
-            line-height: 100%;
-            outline: none;
-            text-decoration: none;
-        }
-
-        /* ----- GLOBAL RESET & FONTS ----- */
-        body {
-            margin: 0 !important;
-            padding: 0 !important;
-            width: 100% !important;
-            height: 100% !important;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Text', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            background-attachment: fixed;
-        }
-
-        * {
-            box-sizing: border-box;
-            -webkit-box-sizing: border-box;
-            -moz-box-sizing: border-box;
-        }
-
-        table {
-            border-collapse: separate !important;
-        }
-
-        a[x-apple-data-detectors] {
-            color: inherit !important;
-            text-decoration: none !important;
-        }
-
-        /* ----- NOTHING OS DOT MATRIX INFLUENCE (MONOSPACE FOR SPECIFIC ELEMENTS) ----- */
-        .dot-matrix {
-            font-family: 'Courier New', 'SF Mono', 'Menlo', 'Consolas', monospace !important;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            font-weight: 500;
-        }
-
-        .glyph-icon-bg {
-            background: rgba(20, 20, 30, 0.15);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.3);
-        }
-
-        /* subtle dot pattern for nothing OS background effect (used in footer) */
-        .dot-pattern-bg {
-            background-image: radial-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px);
-            background-size: 8px 8px;
-        }
-
-        /* ----- RESPONSIVE ----- */
-        @media only screen and (max-width: 640px) {
-            .email-container {
-                width: 100% !important;
-                overflow: hidden;
-            }
-
-            .main-padding {
-                padding: 12px 6px !important;
-            }
-
-            .header-cell,
-            .body-cell,
-            .footer-cell {
-                padding-left: 20px !important;
-                padding-right: 20px !important;
-            }
-
-            .logo-text {
-                font-size: 28px !important;
-            }
-
-            .email-title {
-                font-size: 22px !important;
-            }
-
-            .button {
-                display: block !important;
-                width: auto !important;
-                max-width: 100% !important;
-                text-align: center !important;
-            }
-
-            .social-button {
-                width: 42px !important;
-                height: 42px !important;
-            }
-
-            .social-td {
-                padding: 0 4px !important;
-            }
-        }
-    </style>
+    @media only screen and (max-width:640px){
+      .wrap{width:100%!important;border-radius:20px!important}
+      .eyebrow-table,.stamp-table{width:100%!important}
+      .outer-pad{padding:16px 8px!important}
+      .h-cell{padding:28px 22px 24px!important}
+      .b-cell{padding:32px 22px!important}
+      .f-cell{padding:24px 22px 28px!important}
+      .title{font-size:21px!important;letter-spacing:-0.4px!important}
+      .logo{font-size:20px!important}
+      .btn-cta{display:block!important;width:100%!important;text-align:center!important;padding:16px 20px!important}
+      .s-td{padding:0 4px!important}
+      .s-btn{width:38px!important;height:38px!important;border-radius:10px!important}
+      .s-btn img{margin:9px auto!important;width:16px!important;height:16px!important}
+      .pill{display:none!important}
+      .ornament-line{display:none!important}
+    }
+  </style>
 </head>
 
-<body style="margin: 0; padding: 0; background: radial-gradient(circle at 10% 30%, #fad0e6 0%, #b5e0ff 70%, #c2e5ff 100%); background-attachment: fixed; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Text', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+<!--
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  UNITEDMESS — LUXURY EMAIL TEMPLATE                         ║
+  ║  (Responsive & client-friendly alignment fix)               ║
+  ╚══════════════════════════════════════════════════════════════╝
+-->
 
-    <!-- PREHEADER -->
-    <div style="display: none; font-size: 1px; color: #f9fafb; line-height: 1px; max-height: 0; max-width: 0; opacity: 0; overflow: hidden;">
-        ${previewText || title} — experience the fusion of liquid glass and dot matrix.
-    </div>
+<body style="
+  margin:0;padding:0;
+  background-color:#060608;
+  background-image:
+    radial-gradient(ellipse 100% 70% at 15% 0%, rgba(255,210,120,0.07) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 88% 15%, rgba(180,140,255,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 50% at 50% 85%, rgba(100,180,255,0.05) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 40% at 70% 50%, rgba(255,180,100,0.04) 0%, transparent 50%);
+  font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+">
 
-    <!-- MAIN WRAPPER -->
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: transparent;">
-        <tr>
-            <td align="center" class="main-padding" style="padding: 40px 20px;">
-                <!-- CARD CONTAINER – LIQUID GLASS CORE -->
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" class="email-container" style="max-width: 600px; width: 100%; background: rgba(255, 255, 255, 0.15); border-radius: 36px; box-shadow: 0 25px 50px -10px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.4); backdrop-filter: blur(25px) saturate(180%); -webkit-backdrop-filter: blur(25px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.45);">
+  <!--
+                      RESEND-STYLE SINGLE GOLD ACCENT LINE
+                      ─────────────────────────────────────
+                      One clean 2px gradient bar at the very
+                      top — no double borders, no shimmer soup.
+                      Pure editorial confidence.
+  -->
 
-                    <!-- ===== HEADER – ORIGIN OS 6 VIBRANCY + NOTHING DOT ACCENT ===== -->
-                    <tr>
-                        <td class="header-cell" style="padding: 36px 40px 30px; background: linear-gradient(145deg, rgba(255,255,255,0.5) 0%, rgba(255,255,240,0.3) 100%); border-radius: 36px 36px 0 0; border-bottom: 1px solid rgba(255,255,255,0.5); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-sizing: border-box;">
-                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                                <tr>
-                                    <td align="center">
-                                        <!-- LOGO with dot matrix style -->
-                                        <h1 class="logo-text dot-matrix" style="margin: 0; padding: 0; font-size: 34px; font-weight: 600; letter-spacing: 4px; color: #1f2937; text-shadow: 2px 2px 4px rgba(255,255,255,0.6), 0 0 0 rgba(0,0,0,0.1); background: linear-gradient(145deg, #1e1e2f, #2a2a40); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.1;">
-                                            UNITEDMESS
-                                        </h1>
-                                        <!-- dot matrix tagline + glyph-style separator -->
-                                        <p style="margin: 8px 0 0 0; font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: 2px; color: #2e3742; font-weight: 400; text-transform: uppercase; opacity: 0.8;">
-                                            <span style="display: inline-block; width: 6px; height: 6px; background: #2e3742; border-radius: 1px; margin: 0 6px 2px 0;"></span>
-                                            WHERE FOOD MEETS COMMUNITY
-                                            <span style="display: inline-block; width: 6px; height: 6px; background: #2e3742; border-radius: 1px; margin: 0 0 2px 6px;"></span>
-                                        </p>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
+  <!-- Gold accent bar (with MSO fallback) -->
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:0;padding:0;">
+    <tr>
+      <td style="padding:0;margin:0;line-height:0;">
+        <!--[if mso]>
+          <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:600px;height:2px;">
+            <v:fill color="#c9973a" />
+          </v:rect>
+        <![endif]-->
+        <div class="gold-accent" style="height:2px;min-width:100%;background:#c9973a;background-image:linear-gradient(90deg,#c9973a 0%,#ffd27a 100%);line-height:0;font-size:0;">&nbsp;</div>
+      </td>
+    </tr>
+  </table>
 
-                    <!-- ===== BODY – OXYGEN OS CLEAN + LIQUID GLASS LAYERS ===== -->
-                    <tr>
-                        <td class="body-cell" style="padding: 40px 40px; background: rgba(255, 255, 255, 0.55); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); box-sizing: border-box;">
-                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                                <tr>
-                                    <td>
-                                        <!-- Title with subtle dot matrix echo -->
-                                        <h2 class="email-title" style="margin: 0 0 18px 0; font-family: -apple-system, 'Inter', sans-serif; font-size: 26px; font-weight: 600; color: #111827; letter-spacing: -0.3px; border-left: 4px solid #3b82f6; padding-left: 16px;">
-                                            ${title}
-                                        </h2>
+  <!-- Hidden preheader -->
+  <div style="display:none;font-size:1px;color:#060608;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${previewText || title}&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;</div>
 
-                                        <!-- Content – clean Oxygen OS readability -->
-                                        <div style="font-family: -apple-system, 'Inter', sans-serif; font-size: 16px; font-weight: 400; color: #1f2937; line-height: 1.7; margin: 0; text-shadow: 0 1px 2px rgba(255,255,255,0.3);">
-                                            ${content}
-                                        </div>
+  <!-- ═══ OUTER WRAPPER ═══ -->
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td align="center" class="outer-pad" style="padding:52px 20px 48px;">
 
-                                        <!-- BUTTON – origin os 6 gradient + liquid glass depth -->
-                                        ${showButton && buttonText ? `
-                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 36px;">
-                                            <tr>
-                                                <td align="center">
-                                                    <!--[if mso]>
-                                                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${buttonLink}" style="height:52px;v-text-anchor:middle;width:220px;" arcsize="20%" stroke="f" fillcolor="#b05eff">
-                                                        <w:anchorlock/>
-                                                        <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:600;">${buttonText}</center>
-                                                    </v:roundrect>
-                                                    <![endif]-->
-                                                    <!--[if !mso]><!-->
-                                                    <a href="${buttonLink}" class="button" style="display: inline-block; padding: 16px 36px; background: linear-gradient(125deg, #ff7eb3 0%, #b05eff 70%, #3b82f6 100%); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); color: #ffffff; font-family: -apple-system, 'Inter', sans-serif; font-size: 16px; font-weight: 600; text-decoration: none; border-radius: 40px; box-shadow: 0 20px 30px -10px rgba(59,130,246,0.4), 0 4px 8px rgba(0,0,0,0.1), inset 0 2px 0 rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.5); letter-spacing: 0.3px;">
-                                                        ${buttonText}
-                                                    </a>
-                                                    <!--<![endif]-->
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td align="center" style="padding-top: 18px;">
-                                                    <p style="margin: 0; font-family: 'Courier New', monospace; font-size: 12px; color: #2d3a4a; letter-spacing: 0.2px;">
-                                                        ⚡ direct link: <a href="${buttonLink}" style="color: #1f2937; text-decoration: underline; text-decoration-style: dotted;">${buttonLink}</a>
-                                                    </p>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                        ` : ''}
-
-                                        <!-- FOOTER NOTE – nothing os dotted style -->
-                                        ${footerText ? `
-                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 36px 0 0;">
-                                            <tr>
-                                                <td style="background: rgba(255,255,255,0.35); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-left: 4px solid #b05eff; padding: 18px 22px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-                                                    <p style="margin: 0; font-family: 'Courier New', monospace; font-size: 14px; color: #1f2b3a; line-height: 1.6; font-weight: 500;">
-                                                        <span style="font-size: 100%; margin-right: 8px;">⏣</span> ${footerText}
-                                                    </p>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                        ` : ''}
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-
-                    <!-- ===== FOOTER – NOTHING OS GLYPH + LIQUID GLASS & DOT MATRIX ===== -->
-                    <tr>
-                        <td class="footer-cell" style="padding: 30px 40px 36px; background: linear-gradient(145deg, rgba(255,255,255,0.5) 0%, rgba(230,245,255,0.4) 100%); border-radius: 0 0 36px 36px; border-top: 1px solid rgba(255,255,255,0.5); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-sizing: border-box;">
-                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                                <tr>
-                                    <td align="center">
-                                        <!-- dot matrix decorative line (nothing style) -->
-                                        <!--<div style="width: 80px; height: 2px; background: repeating-linear-gradient(90deg, #2c3e4e 0px, #2c3e4e 4px, transparent 4px, transparent 8px); margin: 0 auto 20px;"></div>-->
-
-                                        <!-- CONNECT TITLE with dot matrix -->
-                                        <p class="dot-matrix" style="margin: 0 0 18px 0; font-size: 13px; font-weight: 600; color: #1f2a36; letter-spacing: 2px; text-transform: uppercase;">
-                                            <span style="background: #1f2a36; width: 5px; height: 5px; display: inline-block; border-radius: 0; margin-right: 8px;"></span>
-                                            connect with us
-                                            <span style="background: #1f2a36; width: 5px; height: 5px; display: inline-block; border-radius: 0; margin-left: 8px;"></span>
-                                        </p>
-
-                                        <!-- SOCIAL ICONS – perfectly centered -->
-                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin-bottom: 28px;">
-                                            <tr>
-
-                                                <!-- GitHub -->
-                                                <td style="padding: 0 5px;">
-                                                    <table role="presentation" width="48" height="48" cellspacing="0" cellpadding="0" border="0" style="width:48px;height:48px;background:rgba(20,20,30,0.1);border-radius:16px;border:1px solid rgba(255,255,255,0.35);box-shadow:0 6px 12px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.3);">
-                                                        <tr>
-                                                            <td align="center" valign="middle">
-                                                                <a href="https://github.com/alamgir009" style="display:block;">
-                                                                    <img src="https://cdn-icons-png.flaticon.com/512/25/25231.png" width="22" height="22" alt="GitHub" style="display:block; filter:brightness(0.2) contrast(120%); opacity:0.8;">
-                                                                </a>
-                                                            </td>
-                                                        </tr>
-                                                    </table>
-                                                </td>
-
-                                                <!-- LinkedIn -->
-                                                <td style="padding: 0 5px;">
-                                                    <table role="presentation" width="48" height="48" cellspacing="0" cellpadding="0" border="0" style="width:48px;height:48px;background:rgba(20,20,30,0.1);border-radius:16px;border:1px solid rgba(255,255,255,0.35);box-shadow:0 6px 12px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.3);">
-                                                        <tr>
-                                                            <td align="center" valign="middle">
-                                                                <a href="https://linkedin.com" style="display:block;">
-                                                                    <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="22" height="22" alt="LinkedIn" style="display:block; filter:brightness(0.2) contrast(120%); opacity:0.8;">
-                                                                </a>
-                                                            </td>
-                                                        </tr>
-                                                    </table>
-                                                </td>
-
-                                                <!-- Twitter -->
-                                                <td style="padding: 0 5px;">
-                                                    <table role="presentation" width="48" height="48" cellspacing="0" cellpadding="0" border="0" style="width:48px;height:48px;background:rgba(20,20,30,0.1);border-radius:16px;border:1px solid rgba(255,255,255,0.35);box-shadow:0 6px 12px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.3);">
-                                                        <tr>
-                                                            <td align="center" valign="middle">
-                                                                <a href="https://twitter.com" style="display:block;">
-                                                                    <img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" width="22" height="22" alt="Twitter" style="display:block; filter:brightness(0.2) contrast(120%); opacity:0.8;">
-                                                                </a>
-                                                            </td>
-                                                        </tr>
-                                                    </table>
-                                                </td>
-
-                                                <!-- Instagram -->
-                                                <td style="padding: 0 5px;">
-                                                    <table role="presentation" width="48" height="48" cellspacing="0" cellpadding="0" border="0" style="width:48px;height:48px;background:rgba(20,20,30,0.1);border-radius:16px;border:1px solid rgba(255,255,255,0.35);box-shadow:0 6px 12px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.3);">
-                                                        <tr>
-                                                            <td align="center" valign="middle">
-                                                                <a href="https://instagram.com" style="display:block;">
-                                                                    <img src="https://cdn-icons-png.flaticon.com/512/174/174855.png" width="22" height="22" alt="Instagram" style="display:block; filter:brightness(0.2) contrast(120%); opacity:0.8;">
-                                                                </a>
-                                                            </td>
-                                                        </tr>
-                                                    </table>
-                                                </td>
-
-                                            </tr>
-                                        </table>
-
-                                        <!-- DIVIDER with dot pattern -->
-                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 18px 0 20px;">
-                                            <tr>
-                                                <td style="border-top: 1px dashed rgba(0,0,0,0.15);"></td>
-                                            </tr>
-                                        </table>
-
-                                        <!-- COMPANY INFO with dot matrix subtlety -->
-                                        <p style="margin: 8px 0; font-family: 'Courier New', monospace; font-size: 13px; color: #1e2b3a; line-height: 1.7; font-weight: 400;">
-                                            <strong style="font-weight: 600; background: rgba(255,255,255,0.3); padding: 2px 6px;">© ${year} ${companyName}</strong><br>
-                                            <span style="opacity: 0.8;">${companyAddress}</span>
-                                        </p>
-
-                                        <!-- UNSUBSCRIBE / PREFERENCES – oxygen style clean -->
-                                        <p style="margin: 16px 0 0; font-family: -apple-system, 'Inter', sans-serif; font-size: 13px; color: #2d3f4f; opacity: 0.9;">
-                                            You're a member of ${companyName}.<br>
-                                            <a href="#" style="color: #1f2937; text-decoration: underline; text-decoration-style: dotted; font-weight: 500;">preferences</a>
-                                            <span style="margin: 0 6px;">|</span>
-                                            <a href="#" style="color: #1f2937; text-decoration: underline; text-decoration-style: dotted; font-weight: 500;">unsubscribe</a>
-                                        </p>
-                                        <!-- tiny dot matrix glyph -->
-                                        <div style="margin-top: 20px; font-size: 10px; color: #3a4a5a; letter-spacing: 3px;">⏣ ⏣ ⏣</div>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
-                <!-- end liquid glass card -->
+        <!-- ─── ABOVE-CARD EYEBROW (with responsive class) ─── -->
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" class="eyebrow-table" style="max-width:600px;width:100%;margin-bottom:14px;">
+          <tr>
+            <td align="left">
+              <span style="
+                font-family:'JetBrains Mono','Courier New',monospace;
+                font-size:10px;font-weight:400;
+                letter-spacing:0.18em;text-transform:uppercase;
+                color:rgba(255,255,255,0.18);
+              ">unitedmess · transactional</span>
             </td>
-        </tr>
-    </table>
-</body>
+            <td align="right">
+              <span style="
+                font-family:'JetBrains Mono','Courier New',monospace;
+                font-size:10px;font-weight:400;
+                letter-spacing:0.12em;
+                color:rgba(255,255,255,0.12);
+              ">${year}</span>
+            </td>
+          </tr>
+        </table>
 
+        <!-- ═══════════════════════════════════════════
+             MAIN CARD — all absolute decorative divs removed
+             (they caused misalignment in Gmail/Outlook)
+             ═══════════════════════════════════════════ -->
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600"
+          class="wrap"
+          style="
+            max-width:600px;width:100%;
+            border-radius:26px;
+            overflow:hidden;
+            background: linear-gradient(
+              145deg,
+              rgba(28,26,38,0.92) 0%,
+              rgba(18,16,26,0.96) 40%,
+              rgba(22,20,32,0.94) 100%
+            );
+            box-shadow:
+              0 0 0 1px rgba(255,255,255,0.07),
+              inset 0 1px 0 rgba(255,255,255,0.10),
+              0 32px 80px rgba(0,0,0,0.75),
+              0 8px 24px rgba(0,0,0,0.50),
+              0 0 60px rgba(255,200,80,0.04),
+              0 -4px 40px rgba(160,120,255,0.06);
+            border:1px solid rgba(255,255,255,0.06);
+          ">
+
+          <!-- HEADER SECTION -->
+          <tr>
+            <td class="h-cell" style="
+              padding:36px 44px 30px;
+              background:
+                linear-gradient(
+                  135deg,
+                  rgba(255,255,255,0.055) 0%,
+                  rgba(255,220,140,0.03) 50%,
+                  rgba(180,140,255,0.025) 100%
+                );
+              border-bottom:1px solid rgba(255,255,255,0.07);
+              box-sizing:border-box;
+            ">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td valign="middle">
+
+                    <!-- LOGO ROW -->
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:22px;">
+                      <tr>
+                        <td valign="middle" style="width:auto;">
+                          <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                              <!-- Glyph mark -->
+                              <td valign="middle" style="padding-right:10px;">
+                                <div style="
+                                  width:34px;height:34px;
+                                  border-radius:10px;
+                                  background:linear-gradient(135deg,
+                                    rgba(255,210,100,0.22) 0%,
+                                    rgba(255,160,60,0.12) 50%,
+                                    rgba(200,120,255,0.10) 100%);
+                                  border:1px solid rgba(255,210,100,0.25);
+                                  box-shadow:
+                                    inset 0 1px 0 rgba(255,255,255,0.18),
+                                    0 4px 12px rgba(0,0,0,0.35),
+                                    0 0 16px rgba(255,200,80,0.08);
+                                  display:table-cell;
+                                  text-align:center;vertical-align:middle;
+                                ">
+                                  <span style="
+                                    font-family:'Syne','Arial',sans-serif;
+                                    font-size:13px;font-weight:800;
+                                    color:rgba(255,220,120,0.90);
+                                    letter-spacing:-0.5px;
+                                    line-height:34px;
+                                    display:block;
+                                    text-shadow:0 0 12px rgba(255,200,80,0.40);
+                                  ">UM</span>
+                                </div>
+                              </td>
+                              <td valign="middle">
+                                <h1 class="logo" style="
+                                  margin:0;padding:0;
+                                  font-family:'Syne','Arial',sans-serif;
+                                  font-size:22px;font-weight:700;
+                                  letter-spacing:-0.6px;
+                                  color:rgba(255,255,255,0.92);
+                                  line-height:1;
+                                  text-shadow:0 1px 8px rgba(255,200,80,0.12);
+                                ">unitedmess</h1>
+                                <p style="
+                                  margin:3px 0 0 0;padding:0;
+                                  font-family:'JetBrains Mono','Courier New',monospace;
+                                  font-size:9.5px;font-weight:400;
+                                  letter-spacing:0.14em;text-transform:uppercase;
+                                  color:rgba(255,200,100,0.50);
+                                  line-height:1;
+                                ">where food meets community</p>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                        <td valign="middle" align="right">
+                          <span class="pill" style="
+                            display:inline-block;
+                            padding:5px 12px;
+                            background:rgba(255,200,80,0.08);
+                            border:1px solid rgba(255,200,80,0.18);
+                            border-radius:100px;
+                            font-family:'JetBrains Mono','Courier New',monospace;
+                            font-size:9.5px;font-weight:500;
+                            letter-spacing:0.10em;text-transform:uppercase;
+                            color:rgba(255,210,100,0.70);
+                            box-shadow:0 0 16px rgba(255,200,80,0.06);
+                          ">Verified Send</span>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Ornament separator -->
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="ornament-line">
+                      <tr>
+                        <td style="
+                          height:1px;
+                          background:linear-gradient(90deg,
+                            rgba(255,200,80,0.25) 0%,
+                            rgba(255,200,80,0.08) 30%,
+                            rgba(180,140,255,0.06) 70%,
+                            transparent 100%);
+                        "></td>
+                      </tr>
+                    </table>
+
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- BODY SECTION -->
+          <tr>
+            <td class="b-cell" style="
+              padding:44px 44px 40px;
+              background:rgba(12,11,18,0.60);
+              box-sizing:border-box;
+            ">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td>
+
+                    <h2 class="title" style="
+                      margin:0 0 22px 0;padding:0;
+                      font-family:'Syne','Arial',sans-serif;
+                      font-size:26px;font-weight:700;
+                      color:rgba(255,255,255,0.94);
+                      line-height:1.25;letter-spacing:-0.6px;
+                      text-shadow:0 2px 16px rgba(0,0,0,0.40);
+                    ">${title}</h2>
+
+                    <div style="
+                      font-family:'Instrument Sans',-apple-system,sans-serif;
+                      font-size:15px;font-weight:400;
+                      color:rgba(255,255,255,0.62);
+                      line-height:1.80;
+                      margin:0;
+                    ">${content}</div>
+
+                    ${showButton && buttonText ? `
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top:38px;">
+                      <tr>
+                        <td>
+                          <!--[if mso]>
+                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
+                            href="${buttonLink}"
+                            style="height:52px;v-text-anchor:middle;width:220px;"
+                            arcsize="20%" stroke="f" fillcolor="#c9973a">
+                            <w:anchorlock/>
+                            <center style="color:#ffffff;font-family:sans-serif;font-size:14px;font-weight:700;">${buttonText}</center>
+                          </v:roundrect>
+                          <![endif]-->
+                          <!--[if !mso]><!-->
+                          <a href="${buttonLink}" class="btn-cta" style="
+                            display:inline-block;
+                            padding:16px 36px;
+                            font-family:'Syne','Arial',sans-serif;
+                            font-size:13.5px;font-weight:700;
+                            color:rgba(255,255,255,0.95);
+                            text-decoration:none;
+                            letter-spacing:0.04em;
+                            text-transform:uppercase;
+                            border-radius:14px;
+                            background:linear-gradient(
+                              135deg,
+                              rgba(200,155,50,0.75) 0%,
+                              rgba(180,130,40,0.65) 40%,
+                              rgba(160,110,200,0.45) 100%
+                            );
+                            box-shadow:
+                              inset 0 1px 0 rgba(255,255,200,0.22),
+                              inset 0 -1px 0 rgba(0,0,0,0.30),
+                              0 0 0 1px rgba(200,160,60,0.25),
+                              0 4px 24px rgba(200,150,40,0.20),
+                              0 12px 40px rgba(0,0,0,0.45),
+                              0 0 60px rgba(200,150,40,0.08);
+                            border:none;
+                            box-sizing:border-box;
+                            text-shadow:0 1px 4px rgba(0,0,0,0.40);
+                          ">${buttonText}</a>
+                          <!--<![endif]-->
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding-top:20px;">
+                          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                            <tr>
+                              <td style="
+                                padding:13px 18px;
+                                background:rgba(255,255,255,0.028);
+                                border:1px solid rgba(255,255,255,0.07);
+                                border-radius:10px;
+                                box-sizing:border-box;
+                              ">
+                                <p style="
+                                  margin:0 0 5px 0;
+                                  font-family:'JetBrains Mono','Courier New',monospace;
+                                  font-size:9.5px;font-weight:400;
+                                  letter-spacing:0.12em;text-transform:uppercase;
+                                  color:rgba(255,255,255,0.22);
+                                ">if button fails · copy link</p>
+                                <a href="${buttonLink}" style="
+                                  font-family:'JetBrains Mono','Courier New',monospace;
+                                  font-size:11.5px;
+                                  color:rgba(200,160,80,0.70);
+                                  text-decoration:none;
+                                  word-break:break-all;line-height:1.6;
+                                ">${buttonLink}</a>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                    ` : ''}
+
+                    ${footerText ? `
+                    <!-- Divider -->
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:36px 0 0 0;">
+                      <tr>
+                        <td style="
+                          height:1px;
+                          background:linear-gradient(90deg,
+                            rgba(255,200,80,0.15) 0%,
+                            rgba(255,255,255,0.07) 40%,
+                            transparent 100%);
+                        "></td>
+                      </tr>
+                    </table>
+
+                    <!-- Note block -->
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top:22px;">
+                      <tr>
+                        <td style="
+                          padding:18px 20px;
+                          background:linear-gradient(135deg,
+                            rgba(255,200,80,0.05) 0%,
+                            rgba(200,160,255,0.03) 100%);
+                          border-radius:12px;
+                          border:1px solid rgba(255,200,80,0.10);
+                          border-left:2px solid rgba(255,200,80,0.45);
+                          box-sizing:border-box;
+                          box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);
+                        ">
+                          <p style="
+                            margin:0 0 6px 0;
+                            font-family:'JetBrains Mono','Courier New',monospace;
+                            font-size:9px;font-weight:500;
+                            letter-spacing:0.16em;text-transform:uppercase;
+                            color:rgba(255,200,80,0.55);
+                          ">note</p>
+                          <p style="
+                            margin:0;
+                            font-family:'Instrument Sans',sans-serif;
+                            font-size:13.5px;font-weight:400;
+                            color:rgba(255,255,255,0.50);
+                            line-height:1.70;
+                            font-style:italic;
+                          ">${footerText}</p>
+                        </td>
+                      </tr>
+                    </table>
+                    ` : ''}
+
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- FOOTER SECTION -->
+          <tr>
+            <td class="f-cell" style="
+              padding:28px 44px 36px;
+              background:linear-gradient(
+                160deg,
+                rgba(255,255,255,0.03) 0%,
+                rgba(255,220,120,0.02) 50%,
+                rgba(160,120,255,0.02) 100%
+              );
+              border-top:1px solid rgba(255,255,255,0.06);
+              box-sizing:border-box;
+            ">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+
+                <!-- Social icon row -->
+                <tr>
+                  <td align="center" style="padding-bottom:22px;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
+                      <tr>
+                        <td class="s-td" style="padding:0 5px;">
+                          <a href="https://github.com/alamgir009" class="s-btn" style="
+                            display:inline-block;width:42px;height:42px;
+                            background:linear-gradient(145deg,rgba(255,255,255,0.07),rgba(255,255,255,0.03));
+                            border:1px solid rgba(255,255,255,0.09);
+                            border-radius:12px;
+                            box-shadow:inset 0 1px 0 rgba(255,255,255,0.10),0 4px 12px rgba(0,0,0,0.40);
+                            text-decoration:none;box-sizing:border-box;
+                          ">
+                            <img src="https://cdn-icons-png.flaticon.com/512/25/25231.png" width="16" height="16" alt="GitHub"
+                              style="display:block;margin:13px auto;width:16px;height:16px;opacity:0.55;filter:invert(1);">
+                          </a>
+                        </td>
+                        <td class="s-td" style="padding:0 5px;">
+                          <a href="https://linkedin.com" class="s-btn" style="
+                            display:inline-block;width:42px;height:42px;
+                            background:linear-gradient(145deg,rgba(255,255,255,0.07),rgba(255,255,255,0.03));
+                            border:1px solid rgba(255,255,255,0.09);
+                            border-radius:12px;
+                            box-shadow:inset 0 1px 0 rgba(255,255,255,0.10),0 4px 12px rgba(0,0,0,0.40);
+                            text-decoration:none;box-sizing:border-box;
+                          ">
+                            <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="16" height="16" alt="LinkedIn"
+                              style="display:block;margin:13px auto;width:16px;height:16px;opacity:0.55;filter:invert(1);">
+                          </a>
+                        </td>
+                        <td class="s-td" style="padding:0 5px;">
+                          <a href="https://twitter.com" class="s-btn" style="
+                            display:inline-block;width:42px;height:42px;
+                            background:linear-gradient(145deg,rgba(255,255,255,0.07),rgba(255,255,255,0.03));
+                            border:1px solid rgba(255,255,255,0.09);
+                            border-radius:12px;
+                            box-shadow:inset 0 1px 0 rgba(255,255,255,0.10),0 4px 12px rgba(0,0,0,0.40);
+                            text-decoration:none;box-sizing:border-box;
+                          ">
+                            <img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" width="16" height="16" alt="Twitter"
+                              style="display:block;margin:13px auto;width:16px;height:16px;opacity:0.55;filter:invert(1);">
+                          </a>
+                        </td>
+                        <td class="s-td" style="padding:0 5px;">
+                          <a href="https://instagram.com" class="s-btn" style="
+                            display:inline-block;width:42px;height:42px;
+                            background:linear-gradient(145deg,rgba(255,255,255,0.07),rgba(255,255,255,0.03));
+                            border:1px solid rgba(255,255,255,0.09);
+                            border-radius:12px;
+                            box-shadow:inset 0 1px 0 rgba(255,255,255,0.10),0 4px 12px rgba(0,0,0,0.40);
+                            text-decoration:none;box-sizing:border-box;
+                          ">
+                            <img src="https://cdn-icons-png.flaticon.com/512/174/174855.png" width="16" height="16" alt="Instagram"
+                              style="display:block;margin:13px auto;width:16px;height:16px;opacity:0.55;filter:invert(1);">
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Thin rule -->
+                <tr>
+                  <td style="padding-bottom:18px;">
+                    <div style="
+                      height:1px;
+                      background:linear-gradient(90deg,
+                        transparent 0%,
+                        rgba(255,255,255,0.07) 20%,
+                        rgba(255,200,80,0.10) 50%,
+                        rgba(255,255,255,0.07) 80%,
+                        transparent 100%);
+                    "></div>
+                  </td>
+                </tr>
+
+                <!-- Company + links -->
+                <tr>
+                  <td align="center">
+                    <p style="
+                      margin:0 0 5px 0;
+                      font-family:'Syne','Arial',sans-serif;
+                      font-size:13px;font-weight:600;
+                      color:rgba(255,255,255,0.45);
+                      letter-spacing:0.01em;
+                    ">© ${year} ${companyName}</p>
+                    <p style="
+                      margin:0 0 16px 0;
+                      font-family:'Instrument Sans',sans-serif;
+                      font-size:11.5px;
+                      color:rgba(255,255,255,0.22);
+                      line-height:1.7;
+                    ">${companyAddress}</p>
+                    <p style="
+                      margin:0;
+                      font-family:'Instrument Sans',sans-serif;
+                      font-size:11.5px;
+                      color:rgba(255,255,255,0.22);
+                      line-height:1.9;
+                    ">
+                      You received this as a member of ${companyName}.
+                      <br>
+                      <a href="#" style="
+                        color:rgba(255,200,80,0.55);
+                        text-decoration:none;font-weight:500;
+                        border-bottom:1px solid rgba(255,200,80,0.20);
+                      ">Preferences</a>
+                      <span style="color:rgba(255,255,255,0.12);padding:0 7px;">·</span>
+                      <a href="#" style="
+                        color:rgba(255,200,80,0.55);
+                        text-decoration:none;font-weight:500;
+                        border-bottom:1px solid rgba(255,200,80,0.20);
+                      ">Unsubscribe</a>
+                    </p>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+
+        </table>
+        <!-- ═══ END MAIN CARD ═══ -->
+
+        <!-- BELOW-CARD STAMP (with responsive class) -->
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" class="stamp-table" style="max-width:600px;width:100%;margin-top:18px;">
+          <tr>
+            <td align="center">
+              <p style="
+                margin:0;
+                font-family:'JetBrains Mono','Courier New',monospace;
+                font-size:9.5px;
+                letter-spacing:0.16em;
+                color:rgba(255,255,255,0.08);
+                text-transform:uppercase;
+              ">crafted with care · unitedmess.app</p>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
 </html>`;
 
 
