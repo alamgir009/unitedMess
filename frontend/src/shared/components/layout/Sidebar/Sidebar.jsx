@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
     Utensils,
@@ -18,11 +17,12 @@ import { logout } from '@/modules/auth/store/auth.slice';
 
 const Sidebar = ({ isOpen, onClose }) => {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
 
     const navigation = [
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
         { name: 'Meals', href: '/meals', icon: Utensils },
-        { name: 'Market', href: '/market', icon: ShoppingBag },
+        { name: 'Markets', href: '/market', icon: ShoppingBag },
         { name: 'Payments', href: '/payments', icon: CreditCard },
         { name: 'Members', href: '/members', icon: Users },
         { name: 'Messages', href: '/messages', icon: MessageSquare },
@@ -31,6 +31,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
     const handleLogout = () => {
         dispatch(logout());
+        navigate('/');
     };
 
     return (
@@ -45,17 +46,30 @@ const Sidebar = ({ isOpen, onClose }) => {
             />
 
             <div className={cn(
-                "fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white transition-transform duration-300 transform lg:translate-x-0 lg:static lg:inset-auto lg:flex lg:flex-col",
+                "fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 text-gray-900 dark:text-white transition-all duration-300 transform lg:translate-x-0 lg:static lg:inset-auto lg:flex lg:flex-col",
                 isOpen ? "translate-x-0" : "-translate-x-full"
             )}>
                 {/* Header */}
-                <div className="flex h-16 shrink-0 items-center justify-between px-6 bg-slate-950">
-                    <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                        UnitedMess
-                    </h1>
+                <div className="flex h-16 shrink-0 items-center justify-between px-6 bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
+                    <div className="flex items-center gap-2">
+                         {/* Logo image */}
+                        <div className="relative shrink-0">
+                            <img
+                                src="/assets/icons/new_logo.png"
+                                alt="UnitedMess Logo"
+                                className="w-9 h-9 object-contain rounded-sm transition-all duration-300 group-hover:scale-105 border-2 border-foreground/30"
+                                style={{
+                                    filter: 'drop-shadow(0 2px 6px rgba(99,102,241,0.35))',
+                                }}
+                            />
+                        </div>
+                        <span className="font-bold text-base tracking-tight text-foreground leading-none">
+                            United<span className="text-gradient">Mess</span>
+                        </span>
+                    </div>
                     <button
                         type="button"
-                        className="lg:hidden text-gray-400 hover:text-white"
+                        className="lg:hidden text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
                         onClick={onClose}
                     >
                         <X className="h-6 w-6" />
@@ -71,8 +85,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                             className={({ isActive }) => cn(
                                 "group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors",
                                 isActive
-                                    ? "bg-blue-600/10 text-blue-400"
-                                    : "text-gray-400 hover:bg-slate-800 hover:text-white"
+                                    ? "bg-blue-50 dark:bg-blue-600/10 text-blue-600 dark:text-blue-400"
+                                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white"
                             )}
                         >
                             <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
@@ -82,14 +96,14 @@ const Sidebar = ({ isOpen, onClose }) => {
                 </nav>
 
                 {/* Footer actions */}
-                <div className="border-t border-slate-800 p-4 space-y-1">
+                <div className="border-t border-gray-200 dark:border-slate-800 p-4 space-y-1 transition-colors duration-300">
                     <NavLink
                         to="/profile"
                         className={({ isActive }) => cn(
                             "group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors",
                             isActive
-                                ? "bg-blue-600/10 text-blue-400"
-                                : "text-gray-400 hover:bg-slate-800 hover:text-white"
+                                ? "bg-blue-50 dark:bg-blue-600/10 text-blue-600 dark:text-blue-400"
+                                : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white"
                         )}
                     >
                         <Settings className="mr-3 h-5 w-5 flex-shrink-0" />
@@ -97,7 +111,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                     </NavLink>
                     <button
                         onClick={handleLogout}
-                        className="w-full group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-red-400 hover:bg-red-400/10 transition-colors"
+                        className="w-full group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-400/10 transition-colors"
                     >
                         <LogOut className="mr-3 h-5 w-5 flex-shrink-0" />
                         Logout

@@ -1,9 +1,8 @@
-import React from 'react';
 import { cn } from '@/core/utils/helpers/string.helper';
 
 export const Card = ({ className, children, ...props }) => {
     return (
-        <div className={cn("rounded-lg border bg-white text-gray-950 shadow-sm", className)} {...props}>
+        <div className={cn("rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-gray-950 dark:text-gray-50 shadow-sm transition-colors duration-300", className)} {...props}>
             {children}
         </div>
     );

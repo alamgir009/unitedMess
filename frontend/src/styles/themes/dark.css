@@ -1,0 +1,94 @@
+/**
+ * UnitedMess — Dark Theme
+ * Applied when the root element has class="dark".
+ */
+
+html.dark {
+    color-scheme: dark;
+
+    /* ─── Tailwind-compatible semantic tokens ─── */
+    --background: 222 47% 6%;
+    --foreground: 210 40% 96%;
+    --card: 222 47% 9%;
+    --card-foreground: 210 40% 96%;
+    --popover: 222 47% 8%;
+    --popover-foreground: 210 40% 96%;
+    --primary: 210 92% 58%;
+    --primary-foreground: 222 47% 6%;
+    --secondary: 217 32% 15%;
+    --secondary-foreground: 210 40% 90%;
+    --muted: 217 32% 14%;
+    --muted-foreground: 215 20% 55%;
+    --accent: 160 60% 45%;
+    --accent-foreground: 222 47% 6%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 210 40% 96%;
+    --border: 217 32% 15%;
+    --input: 217 32% 15%;
+    --ring: 210 92% 58%;
+    --radius: 0.75rem;
+
+    /* ─── Surface & Background ─── */
+    --surface-base: hsl(222, 47%, 7%);
+    --surface-raised: hsl(222, 44%, 9%);
+    --surface-overlay: hsl(222, 42%, 11%);
+    --surface-glass: rgba(14, 20, 38, 0.60);
+    --surface-glass-border: rgba(255, 255, 255, 0.06);
+    --surface-frost: rgba(15, 22, 42, 0.80);
+
+    /* ─── Text ─── */
+    --text-primary: hsl(210, 40%, 96%);
+    --text-secondary: hsl(215, 20%, 65%);
+    --text-tertiary: hsl(215, 16%, 48%);
+    --text-inverse: hsl(222, 47%, 8%);
+    --text-on-glass: hsl(210, 40%, 94%);
+
+    /* ─── Borders ─── */
+    --border-color: rgba(255, 255, 255, 0.08);
+    --border-glass: rgba(255, 255, 255, 0.06);
+    --border-subtle: rgba(255, 255, 255, 0.04);
+    --divider: rgba(255, 255, 255, 0.06);
+
+    /* ─── Shadows ─── */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.45), 0 4px 8px rgba(0, 0, 0, 0.35);
+    --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.5), 0 8px 16px rgba(0, 0, 0, 0.4);
+    --shadow-2xl: 0 25px 60px rgba(0, 0, 0, 0.65);
+    --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    --shadow-glow-primary: 0 0 32px rgba(59, 130, 246, 0.25);
+    --shadow-glow-secondary: 0 0 32px rgba(124, 58, 237, 0.25);
+
+    /* ─── Glass ─── */
+    --glass-bg: rgba(14, 20, 38, 0.60);
+    --glass-border: rgba(255, 255, 255, 0.06);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+    /* ─── Gradients ─── */
+    --gradient-primary: linear-gradient(135deg, hsl(210, 92%, 58%) 0%, hsl(268, 76%, 62%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(224, 78%, 10%) 0%, hsl(272, 60%, 18%) 60%, hsl(160, 56%, 22%) 100%);
+    --gradient-glow: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.18) 0%, transparent 70%);
+    --gradient-text: linear-gradient(135deg, hsl(210, 92%, 68%) 0%, hsl(268, 76%, 72%) 100%);
+    --gradient-aurora: linear-gradient(135deg, hsl(210, 92%, 58%) 0%, hsl(268, 76%, 62%) 50%, hsl(160, 60%, 45%) 100%);
+
+    /* ─── Navbar ─── */
+    --navbar-bg: rgba(10, 14, 28, 0.82);
+    --navbar-border: rgba(255, 255, 255, 0.06);
+
+    /* ─── Sidebar ─── */
+    --sidebar-bg: rgba(10, 14, 28, 0.88);
+    --sidebar-border: rgba(255, 255, 255, 0.06);
+
+    /* ─── Status Glass overlays ─── */
+    --success-glass: rgba(22, 163, 74, 0.12);
+    --warning-glass: rgba(234, 179, 8, 0.12);
+    --error-glass: rgba(220, 38, 38, 0.14);
+    --info-glass: rgba(14, 165, 233, 0.12);
+
+    /* ─── Blobs (ambient orbs) for dark mode ─── */
+    --blob-1: rgba(59, 130, 246, 0.20);
+    --blob-2: rgba(124, 58, 237, 0.18);
+    --blob-3: rgba(20, 184, 166, 0.16);
+}

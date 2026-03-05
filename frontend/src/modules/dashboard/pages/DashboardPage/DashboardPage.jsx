@@ -1,4 +1,3 @@
-import React from 'react';
 import { Utensils, IndianRupee, PieChart, Users } from 'lucide-react';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import StatsCard from '@/modules/dashboard/components/StatsCard/StatsCard';
@@ -25,8 +24,8 @@ const DashboardPage = () => {
         <MainLayout>
             <div className="space-y-8">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-gray-900">Dashboard</h2>
-                    <p className="text-muted-foreground text-gray-500">Overview of your mess activities.</p>
+                    <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50 transition-colors">Dashboard</h2>
+                    <p className="text-muted-foreground text-gray-500 dark:text-gray-400 transition-colors">Overview of your mess activities.</p>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -42,7 +41,7 @@ const DashboardPage = () => {
                         </CardHeader>
                         <CardContent className="pl-2">
                             {/* Placeholder for Chart */}
-                            <div className="h-[200px] flex items-center justify-center text-gray-400">
+                            <div className="h-[200px] flex items-center justify-center text-gray-500 dark:text-gray-400">
                                 Chart Component Placeholder
                             </div>
                         </CardContent>

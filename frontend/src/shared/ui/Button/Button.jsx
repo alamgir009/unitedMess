@@ -1,4 +1,3 @@
-import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/core/utils/helpers/string.helper'; // Function we'll need
 
@@ -42,9 +41,7 @@ const Button = ({
 
 // Helper for classnames if not installed yet, but usually we install 'clsx' and 'tailwind-merge'
 // For now, simple implementation
-function simpleCn(...classes) {
-    return classes.filter(Boolean).join(' ');
-}
+
 
 // In real app, we use tailwind-merge
 export default Button;

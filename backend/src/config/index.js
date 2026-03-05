@@ -40,5 +40,16 @@ module.exports = {
         apiKey: process.env.VONAGE_API_KEY,
         apiSecret: process.env.VONAGE_API_SECRET,
         brandName: process.env.VONAGE_BRAND_NAME
-    }
+    },
+    cors: {
+        origin: [
+            process.env.FRONTEND_URL,
+            'http://localhost:5173',
+            'http://127.0.0.1:5173',
+            'http://localhost:3000'
+        ].filter(Boolean),
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+        // Let cors handle allowedHeaders automatically to avoid network errors
+    },
 };

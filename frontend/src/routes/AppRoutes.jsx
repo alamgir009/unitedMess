@@ -1,30 +1,53 @@
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 
-// Placeholder components for routing
 import LoginPage from '@/modules/auth/pages/LoginPage/LoginPage';
 import RegisterPage from '@/modules/auth/pages/RegisterPage/RegisterPage';
 import DashboardPage from '@/modules/dashboard/pages/DashboardPage/DashboardPage';
+import ProfilePage from '@/modules/profile/pages/ProfilePage/ProfilePage';
 import VerifyEmailPage from '@/modules/auth/pages/VerifyEmailPage/VerifyEmailPage';
 
-const HomePage = () => <div className="p-4">Home Page</div>;
-// Remove placeholder DashboardPage
-const NotFoundPage = () => <div className="p-4">404 Not Found</div>;
+import HomePage from '@/modules/public/pages/HomePage/HomePage';
+import AboutPage from '@/modules/public/pages/AboutPage/AboutPage';
+import FoodGalleryPage from '@/modules/public/pages/FoodGalleryPage/FoodGalleryPage';
+import NotFoundPage from '@/modules/public/pages/NotFoundPage/NotFoundPage';
+
+import PublicLayout from '@/shared/components/layout/PublicLayout/PublicLayout';
+
+import ProtectedRoute from '@/shared/components/routes/ProtectedRoute';
 
 const AppRoutes = () => {
     return (
         <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<HomePage />} />
+            {/* ── Public Routes (with Navbar) ── */}
+            <Route element={<PublicLayout />}>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/food-gallery" element={<FoodGalleryPage />} />
+                <Route path="*" element={<NotFoundPage />} />
+            </Route>
+
+            {/* ── Auth Routes (no Navbar) ── */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
 
-            {/* Private Routes (Protected) */}
-            <Route path="/dashboard" element={<DashboardPage />} />
-
-            {/* Catch all */}
-            <Route path="*" element={<NotFoundPage />} />
+            {/* ── Private Routes (no Navbar) ── */}
+            <Route
+                path="/dashboard"
+                element={
+                    <ProtectedRoute>
+                        <DashboardPage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/profile"
+                element={
+                    <ProtectedRoute>
+                        <ProfilePage />
+                    </ProtectedRoute>
+                }
+            />
         </Routes>
     );
 };

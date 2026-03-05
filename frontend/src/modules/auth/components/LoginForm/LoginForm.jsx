@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { login } from '@/modules/auth/store/auth.slice';
 import Button from '@/shared/ui/Button/Button';
@@ -13,7 +13,7 @@ const LoginForm = () => {
 
     const { email, password } = formData;
     const dispatch = useDispatch();
-    const { isLoading } = useSelector((state) => state.auth);
+    const { isLoading, isError, message } = useSelector((state) => state.auth);
 
     const onChange = (e) => {
         setFormData((prevState) => ({
@@ -36,7 +36,7 @@ const LoginForm = () => {
     return (
         <form className="space-y-6" onSubmit={onSubmit}>
             <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">
                     Email address
                 </label>
                 <Input
@@ -52,7 +52,7 @@ const LoginForm = () => {
             </div>
 
             <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">
                     Password
                 </label>
                 <Input
@@ -63,7 +63,7 @@ const LoginForm = () => {
                     required
                     value={password}
                     onChange={onChange}
-                    placeholder="********"
+                    placeholder="••••••••"
                 />
             </div>
 
@@ -73,19 +73,29 @@ const LoginForm = () => {
                         id="remember-me"
                         name="remember-me"
                         type="checkbox"
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-primary focus:ring-primary border-border rounded accent-primary"
                     />
-                    <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                    <label htmlFor="remember-me" className="ml-2 block text-sm text-foreground">
                         Remember me
                     </label>
                 </div>
 
                 <div className="text-sm">
-                    <a href="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
+                    <a href="/forgot-password" className="font-medium text-primary hover:opacity-80 transition-opacity">
                         Forgot your password?
                     </a>
                 </div>
             </div>
+
+            {/* Inline backend error message */}
+            {isError && message && (
+                <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400" role="alert">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mt-0.5 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <span>{message}</span>
+                </div>
+            )}
 
             <div>
                 <Button type="submit" isLoading={isLoading} className="w-full">
@@ -97,3 +107,4 @@ const LoginForm = () => {
 };
 
 export default LoginForm;
+
