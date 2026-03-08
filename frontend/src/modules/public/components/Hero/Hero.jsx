@@ -76,7 +76,7 @@ const Hero = memo(({ totalCount, search, onSearchChange, activeCategory, onCateg
                         placeholder="Search dishes…"
                         value={search}
                         onChange={(e) => onSearchChange(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-white/20 dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]
+                        className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-foregrond dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]
                                    bg-background/40 text-foreground placeholder:text-muted-foreground backdrop-blur-xl text-sm
                                    focus:outline-none focus:ring-2 focus:ring-primary/50 focus:shadow-glow-primary transition-all"
                         aria-label="Search dishes"
