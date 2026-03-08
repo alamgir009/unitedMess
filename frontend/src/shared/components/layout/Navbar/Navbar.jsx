@@ -133,36 +133,12 @@ const Navbar = () => {
                                         to={href}
                                         className="relative px-4 py-2 rounded-xl text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group/link"
                                         style={{
-                                            color: isActive ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))',
+                                            color: isActive ? '#0ea5e9' : 'hsl(var(--muted-foreground))',
+                                            backgroundColor: isActive ? 'rgba(56,189,248,0.15)' : 'transparent'
                                         }}
                                         aria-current={isActive ? 'page' : undefined}
                                     >
                                         <span className="relative z-10">{label}</span>
-                                        {/* Animated underline */}
-                                        <motion.span
-                                            className="absolute bottom-0 left-1/2 h-0.5 rounded-full -translate-x-1/2"
-                                            style={{
-                                                background: 'linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary)/0.6))',
-                                                width: isActive ? '70%' : '0%',
-                                            }}
-                                            initial={false}
-                                            animate={{
-                                                width: isActive ? '70%' : '0%',
-                                            }}
-                                            whileHover={!isActive ? { width: '40%' } : {}}
-                                            transition={{ duration: 0.2 }}
-                                        />
-                                        {/* Glow effect on hover */}
-                                        <motion.span
-                                            className="absolute inset-0 rounded-xl opacity-0 group-hover/link:opacity-100"
-                                            style={{
-                                                background: isDark
-                                                    ? 'radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 70%)'
-                                                    : 'radial-gradient(circle at center, rgba(99,102,241,0.1) 0%, transparent 70%)',
-                                            }}
-                                            animate={{ scale: [1, 1.1, 1] }}
-                                            transition={{ repeat: Infinity, duration: 2 }}
-                                        />
                                     </Link>
                                 </li>
                             );
@@ -210,7 +186,7 @@ const Navbar = () => {
                                 style={{
                                     background: isDark
                                         ? 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)'
-                                        : 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
+                                        : 'linear-gradient(90deg, transparent, rgba(255,200,125,0.3), transparent)',
                                 }}
                                 animate={{ x: ['-100%', '200%'] }}
                                 transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
