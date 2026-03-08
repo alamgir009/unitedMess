@@ -136,7 +136,7 @@ const stats = [
 const team = [
     { name: 'Alamgir Islam', role: 'Founder & Lead Engineer', bio: 'Visionary behind UnitedMess. Passionate about elegant software that solves real community problems, one mess at a time.', initials: 'AI', gradient: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', delay: 0 },
     { name: 'Hafizur Rahaman', role: 'UX & Design Lead', bio: 'Crafts every pixel with purpose. Obsessed with accessibility, motion design, and turning complex workflows into delightful interactions.', initials: 'HR', gradient: 'linear-gradient(135deg, #ec4899 0%, #f97316 100%)', delay: 0.08 },
-    { name: 'Nayan Islam', role: 'Backend Architect', bio: 'Builds the engine under the hood. Expert in distributed systems, real-time data, and making things scale without breaking a sweat.', initials: 'NI', gradient: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)', delay: 0.16 },
+    { name: 'Alamgir Islam', role: 'Backend Architect', bio: 'Builds the engine under the hood. Expert in distributed systems, real-time data, and making things scale without breaking a sweat.', initials: 'AI', gradient: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)', delay: 0.16 },
 ];
 
 const values = [
