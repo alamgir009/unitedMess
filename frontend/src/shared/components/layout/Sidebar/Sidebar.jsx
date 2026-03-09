@@ -22,7 +22,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     const navigation = [
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
         { name: 'Meals', href: '/meals', icon: Utensils },
-        { name: 'Markets', href: '/market', icon: ShoppingBag },
+        { name: 'Markets', href: '/markets', icon: ShoppingBag },
         { name: 'Payments', href: '/payments', icon: CreditCard },
         { name: 'Members', href: '/members', icon: Users },
         { name: 'Messages', href: '/messages', icon: MessageSquare },

@@ -14,6 +14,12 @@ import NotFoundPage from '@/modules/public/pages/NotFoundPage/NotFoundPage';
 import PublicLayout from '@/shared/components/layout/PublicLayout/PublicLayout';
 
 import ProtectedRoute from '@/shared/components/routes/ProtectedRoute';
+import MealPage from '@/modules/meal/pages/MealPage/MealPage';
+import MarketPage from '@/modules/market/pages/MarketPage/MarketPage';
+import PaymentPage from '@/modules/payment/pages/PaymentPage/PaymentPage';
+import MessagePage from '@/modules/message/pages/MessagePage/MessagePage';
+import NotificationsPage from '@/modules/notification/pages/NotificationsPage/NotificationsPage';
+import MemberPage from '@/modules/members/pages/members/MemberPage';
 
 const AppRoutes = () => {
     return (
@@ -45,6 +51,54 @@ const AppRoutes = () => {
                 element={
                     <ProtectedRoute>
                         <ProfilePage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/meals"
+                element={
+                    <ProtectedRoute>
+                        <MealPage/>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/markets"
+                element={
+                    <ProtectedRoute>
+                        <MarketPage/>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/payments"
+                element={
+                    <ProtectedRoute>
+                        <PaymentPage/>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/members"
+                element={
+                    <ProtectedRoute>
+                        <MemberPage/>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/messages"
+                element={
+                    <ProtectedRoute>
+                        <MessagePage/>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/notifications"
+                element={
+                    <ProtectedRoute>
+                        <NotificationsPage/>
                     </ProtectedRoute>
                 }
             />
