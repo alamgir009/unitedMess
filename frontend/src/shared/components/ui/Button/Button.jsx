@@ -1,129 +1,467 @@
-import { forwardRef } from 'react';
-import { clsx } from 'clsx';
+import { Loader2 } from 'lucide-react';
+import { cn } from '@/core/utils/helpers/string.helper';
 
-/**
- * Button Component
- * Variants: primary | secondary | outline | ghost | glass | danger
- * Sizes: xs | sm | md | lg | xl
- */
-const Button = forwardRef(({
-    variant = 'primary',
-    size = 'md',
-    className = '',
-    disabled = false,
-    loading = false,
-    leftIcon,
-    rightIcon,
-    children,
-    ...props
-}, ref) => {
+// ─── CSS injected once ────────────────────────────────────────────────────────
+const BUTTON_STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap');
 
-    const baseStyles = [
-        'relative inline-flex items-center justify-center gap-2',
-        'font-semibold rounded-xl select-none',
-        'transition-all duration-200 ease-out',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-        'active:scale-[0.97]',
-        'disabled:pointer-events-none disabled:opacity-50',
-        'touch-target',
-    ];
+  :root {
+    --btn-font: 'DM Sans', sans-serif;
 
-    const variants = {
-        primary: [
-            'bg-gradient-to-r from-primary-500 to-secondary-500',
-            'text-white',
-            'shadow-md hover:shadow-lg hover:-translate-y-0.5',
-            'hover:opacity-90',
-            'focus-visible:ring-ring',
-            // Origin OS 6 glow on hover
-            'hover:shadow-[0_4px_24px_rgba(14,129,214,0.4)]',
-        ],
-        secondary: [
-            'bg-secondary text-secondary-foreground',
-            'border border-border',
-            'hover:bg-secondary/80 hover:-translate-y-0.5',
-            'shadow-sm hover:shadow-md',
-            'focus-visible:ring-ring',
-        ],
-        outline: [
-            'border-2 border-primary/60 text-primary',
-            'bg-transparent',
-            'hover:bg-primary/8 hover:border-primary hover:-translate-y-0.5',
-            'focus-visible:ring-ring',
-        ],
-        ghost: [
-            'text-foreground bg-transparent',
-            'hover:bg-muted hover:text-foreground',
-            'focus-visible:ring-ring',
-        ],
-        glass: [
-            'glass text-foreground',
-            'hover:bg-white/20 dark:hover:bg-white/10',
-            'hover:-translate-y-0.5 hover:shadow-lg',
-            'focus-visible:ring-white/50',
-            'border border-white/30 dark:border-white/10',
-        ],
-        danger: [
-            'bg-destructive text-destructive-foreground',
-            'hover:bg-destructive/90 hover:-translate-y-0.5',
-            'shadow-sm hover:shadow-md',
-            'focus-visible:ring-destructive',
-        ],
-    };
+    /* Brand palette */
+    --brand-cobalt:   210 100% 56%;
+    --brand-indigo:   248  90% 62%;
+    --brand-emerald:  158  72% 42%;
+    --brand-rose:     350  88% 58%;
+    --brand-amber:     38  96% 52%;
 
-    const sizes = {
-        xs: 'h-7 px-3 text-xs rounded-lg gap-1.5',
-        sm: 'h-9 px-4 text-sm',
-        md: 'h-11 px-6 text-sm',
-        lg: 'h-12 px-8 text-base',
-        xl: 'h-14 px-10 text-lg rounded-2xl',
-    };
+    /* Glass tokens */
+    --glass-light:    rgba(255,255,255,0.18);
+    --glass-edge:     rgba(255,255,255,0.55);
+    --glass-inner:    rgba(255,255,255,0.06);
+    --glass-shadow:   rgba(0,0,0,0.22);
 
-    return (
-        <button
-            ref={ref}
-            disabled={disabled || loading}
-            className={clsx(baseStyles, variants[variant], sizes[size], className)}
-            aria-busy={loading}
-            {...props}
-        >
-            {/* Shimmer overlay for glass/primary on hover */}
-            {(variant === 'glass' || variant === 'primary') && (
-                <span
-                    aria-hidden="true"
-                    className="absolute inset-0 w-full h-full overflow-hidden rounded-[inherit] pointer-events-none"
-                >
-                    <span className="absolute top-0 left-[-100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </span>
-            )}
+    /* Liquid shimmer animation */
+    --shimmer-duration: 2.4s;
+  }
 
-            {/* Loading Spinner */}
-            {loading && (
-                <svg
-                    aria-hidden="true"
-                    className="h-4 w-4 animate-spin shrink-0"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                >
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-            )}
+  /* ── Shimmer travel ───────────────────────────────────────────────────────── */
+  @keyframes btn-shimmer {
+    0%   { transform: translateX(-120%) skewX(-20deg); opacity: 0; }
+    30%  { opacity: 1; }
+    70%  { opacity: 1; }
+    100% { transform: translateX(220%)  skewX(-20deg); opacity: 0; }
+  }
 
-            {!loading && leftIcon && (
-                <span className="shrink-0" aria-hidden="true">{leftIcon}</span>
-            )}
+  /* ── Pulse glow on press ──────────────────────────────────────────────────── */
+  @keyframes btn-press-glow {
+    0%   { box-shadow: var(--btn-glow-0); }
+    50%  { box-shadow: var(--btn-glow-peak); }
+    100% { box-shadow: var(--btn-glow-0); }
+  }
 
-            <span>{children}</span>
+  /* ── Loader spin ──────────────────────────────────────────────────────────── */
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-            {!loading && rightIcon && (
-                <span className="shrink-0" aria-hidden="true">{rightIcon}</span>
-            )}
-        </button>
+  /* ── Liquid ripple on click ───────────────────────────────────────────────── */
+  @keyframes btn-ripple {
+    0%   { transform: scale(0); opacity: 0.45; }
+    100% { transform: scale(4); opacity: 0;    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     BASE
+  ═══════════════════════════════════════════════════════════════════════════ */
+  .fk-btn {
+    font-family: var(--btn-font);
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    user-select: none;
+    letter-spacing: 0.01em;
+    font-weight: 500;
+    border-radius: 12px;
+    transition:
+      transform 120ms cubic-bezier(.22,.68,0,1.2),
+      box-shadow 240ms ease,
+      opacity 200ms ease,
+      filter 200ms ease;
+    -webkit-font-smoothing: antialiased;
+  }
+  .fk-btn:active:not(:disabled) {
+    transform: scale(0.965);
+  }
+  .fk-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.42;
+    filter: saturate(0.5);
+  }
+
+  /* ── Focus ring ───────────────────────────────────────────────────────────── */
+  .fk-btn:focus-visible {
+    outline: 2px solid hsl(var(--brand-cobalt) / 0.7);
+    outline-offset: 3px;
+  }
+
+  /* ── Top-edge highlight (glass rim) ──────────────────────────────────────── */
+  .fk-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 12%; right: 12%;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--glass-edge) 35%,
+      rgba(255,255,255,0.9) 50%,
+      var(--glass-edge) 65%,
+      transparent
     );
-});
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 3;
+  }
 
-Button.displayName = 'Button';
+  /* ── Bottom-edge depth shadow ─────────────────────────────────────────────── */
+  .fk-btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 20%; right: 20%;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(0,0,0,0.25) 50%,
+      transparent
+    );
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  /* ── Shimmer layer ────────────────────────────────────────────────────────── */
+  .fk-btn .fk-shimmer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    overflow: hidden;
+    border-radius: inherit;
+  }
+  .fk-btn .fk-shimmer::after {
+    content: '';
+    position: absolute;
+    top: -50%; bottom: -50%;
+    width: 35%;
+    left: 0;
+    background: linear-gradient(
+      105deg,
+      transparent,
+      rgba(255,255,255,0.08) 40%,
+      rgba(255,255,255,0.28) 50%,
+      rgba(255,255,255,0.08) 60%,
+      transparent
+    );
+    animation: btn-shimmer var(--shimmer-duration) ease-in-out infinite;
+    animation-delay: 0.6s;
+  }
+
+  /* ── Ripple container ─────────────────────────────────────────────────────── */
+  .fk-btn .fk-ripple-container {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .fk-btn .fk-ripple {
+    position: absolute;
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    transform: scale(0);
+    background: rgba(255,255,255,0.28);
+    animation: btn-ripple 520ms ease-out forwards;
+    margin-left: -40px; margin-top: -40px;
+  }
+
+  /* ── Content ──────────────────────────────────────────────────────────────── */
+  .fk-btn .fk-content {
+    position: relative;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    line-height: 1;
+  }
+  .fk-btn .fk-spinner {
+    animation: spin 0.75s linear infinite;
+    flex-shrink: 0;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     VARIANTS
+  ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* ── Primary – cobalt → indigo liquid glass ───────────────────────────────── */
+  .fk-btn--primary {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--brand-cobalt)) 0%,
+      hsl(var(--brand-indigo)) 100%
+    );
+    color: #fff;
+    --btn-glow-0:    0 4px 24px hsl(var(--brand-cobalt) / 0.35),
+                     0 1px  4px rgba(0,0,0,0.20),
+                     inset 0 1px 0 rgba(255,255,255,0.22);
+    --btn-glow-peak: 0 8px 40px hsl(var(--brand-cobalt) / 0.55),
+                     0 2px  8px rgba(0,0,0,0.25),
+                     inset 0 1px 0 rgba(255,255,255,0.28);
+    box-shadow: var(--btn-glow-0);
+    border: 1px solid rgba(255,255,255,0.18);
+  }
+  .fk-btn--primary:hover:not(:disabled) {
+    box-shadow: var(--btn-glow-peak);
+    background: linear-gradient(
+      135deg,
+      hsl(210 100% 60%) 0%,
+      hsl(248 90% 66%) 100%
+    );
+  }
+
+  /* Glass inner surface overlay */
+  .fk-btn--primary .fk-glass-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      160deg,
+      rgba(255,255,255,0.22) 0%,
+      rgba(255,255,255,0.04) 55%,
+      transparent 100%
+    );
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* ── Secondary – frosted slate ────────────────────────────────────────────── */
+  .fk-btn--secondary {
+    background:
+      linear-gradient(160deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 100%),
+      hsl(220 18% 14%);
+    color: hsl(220 20% 88%);
+    border: 1px solid rgba(255,255,255,0.10);
+    box-shadow:
+      0 4px 16px rgba(0,0,0,0.28),
+      inset 0 1px 0 rgba(255,255,255,0.12);
+  }
+  .fk-btn--secondary:hover:not(:disabled) {
+    background:
+      linear-gradient(160deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.07) 100%),
+      hsl(220 18% 17%);
+    box-shadow:
+      0 6px 24px rgba(0,0,0,0.35),
+      inset 0 1px 0 rgba(255,255,255,0.16);
+    color: #fff;
+  }
+  .fk-btn--secondary .fk-glass-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      145deg,
+      rgba(255,255,255,0.10) 0%,
+      transparent 60%
+    );
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* ── Outline – thin glass border ─────────────────────────────────────────── */
+  .fk-btn--outline {
+    background: rgba(255,255,255,0.04);
+    color: hsl(var(--brand-cobalt));
+    border: 1px solid hsl(var(--brand-cobalt) / 0.4);
+    box-shadow:
+      0 0 0 0 hsl(var(--brand-cobalt) / 0),
+      inset 0 1px 0 rgba(255,255,255,0.08);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .fk-btn--outline:hover:not(:disabled) {
+    background: hsl(var(--brand-cobalt) / 0.08);
+    border-color: hsl(var(--brand-cobalt) / 0.7);
+    box-shadow:
+      0 0 0 4px hsl(var(--brand-cobalt) / 0.12),
+      inset 0 1px 0 rgba(255,255,255,0.12);
+  }
+  .fk-btn--outline .fk-glass-overlay {
+    display: none;
+  }
+
+  /* ── Ghost ────────────────────────────────────────────────────────────────── */
+  .fk-btn--ghost {
+    background: transparent;
+    color: hsl(220 20% 70%);
+    border: 1px solid transparent;
+    box-shadow: none;
+  }
+  .fk-btn--ghost:hover:not(:disabled) {
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+    border-color: rgba(255,255,255,0.08);
+  }
+  .fk-btn--ghost .fk-glass-overlay,
+  .fk-btn--ghost .fk-shimmer { display: none; }
+
+  /* ── Danger – rose gradient ───────────────────────────────────────────────── */
+  .fk-btn--danger {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--brand-rose)) 0%,
+      hsl(350 88% 45%) 100%
+    );
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow:
+      0 4px 24px hsl(var(--brand-rose) / 0.35),
+      inset 0 1px 0 rgba(255,255,255,0.20);
+  }
+  .fk-btn--danger:hover:not(:disabled) {
+    box-shadow:
+      0 8px 36px hsl(var(--brand-rose) / 0.50),
+      inset 0 1px 0 rgba(255,255,255,0.25);
+  }
+  .fk-btn--danger .fk-glass-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      160deg,
+      rgba(255,255,255,0.20) 0%,
+      transparent 55%
+    );
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* ── Success – emerald ────────────────────────────────────────────────────── */
+  .fk-btn--success {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--brand-emerald)) 0%,
+      hsl(158 72% 30%) 100%
+    );
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow:
+      0 4px 24px hsl(var(--brand-emerald) / 0.30),
+      inset 0 1px 0 rgba(255,255,255,0.20);
+  }
+  .fk-btn--success:hover:not(:disabled) {
+    box-shadow:
+      0 8px 36px hsl(var(--brand-emerald) / 0.45),
+      inset 0 1px 0 rgba(255,255,255,0.25);
+  }
+  .fk-btn--success .fk-glass-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      160deg,
+      rgba(255,255,255,0.20) 0%,
+      transparent 55%
+    );
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     SIZES
+  ═══════════════════════════════════════════════════════════════════════════ */
+  .fk-btn--sm  { height: 32px; padding: 0 14px; font-size: 12px; border-radius: 8px;  }
+  .fk-btn--md  { height: 42px; padding: 0 20px; font-size: 14px; border-radius: 12px; }
+  .fk-btn--lg  { height: 52px; padding: 0 32px; font-size: 15px; border-radius: 14px; letter-spacing: 0.02em; }
+  .fk-btn--xl  { height: 60px; padding: 0 40px; font-size: 16px; border-radius: 16px; letter-spacing: 0.025em; }
+
+  .fk-btn--icon-sm  { width: 32px; height: 32px; padding: 0; border-radius: 8px;  }
+  .fk-btn--icon-md  { width: 42px; height: 42px; padding: 0; border-radius: 12px; }
+  .fk-btn--icon-lg  { width: 52px; height: 52px; padding: 0; border-radius: 14px; }
+
+  /* full-width */
+  .fk-btn--full { width: 100%; }
+`;
+
+// ─── Style injection (once) ───────────────────────────────────────────────────
+if (typeof document !== 'undefined' && !document.getElementById('fk-btn-styles')) {
+  const tag = document.createElement('style');
+  tag.id = 'fk-btn-styles';
+  tag.textContent = BUTTON_STYLES;
+  document.head.appendChild(tag);
+}
+
+// ─── Ripple helper ────────────────────────────────────────────────────────────
+const spawnRipple = (e) => {
+  const btn = e.currentTarget;
+  const container = btn.querySelector('.fk-ripple-container');
+  if (!container) return;
+  const rect = btn.getBoundingClientRect();
+  const ripple = document.createElement('span');
+  ripple.className = 'fk-ripple';
+  ripple.style.left = `${e.clientX - rect.left}px`;
+  ripple.style.top = `${e.clientY - rect.top}px`;
+  container.appendChild(ripple);
+  ripple.addEventListener('animationend', () => ripple.remove());
+};
+
+// ─── Component ────────────────────────────────────────────────────────────────
+const Button = ({
+  children,
+  variant = 'primary',
+  type,                          // ← accepts type='primary' as alias for variant
+  size = 'md',
+  isLoading = false,
+  iconOnly = false,
+  fullWidth = false,
+  className = '',
+  disabled,
+  onClick,
+  ...props
+}) => {
+  // If type is a variant name, use it; otherwise fall back to variant prop
+  const VARIANTS = new Set(['primary', 'secondary', 'outline', 'ghost', 'danger', 'success']);
+  const resolvedVariant = (type && VARIANTS.has(type)) ? type : variant;
+  const handleClick = (e) => {
+    if (!disabled && !isLoading) {
+      spawnRipple(e);
+      onClick?.(e);
+    }
+  };
+
+  const classes = [
+    'fk-btn',
+    `fk-btn--${resolvedVariant}`,
+    iconOnly ? `fk-btn--icon-${size}` : `fk-btn--${size}`,
+    fullWidth ? 'fk-btn--full' : '',
+    className,
+  ].filter(Boolean).join(' ');
+
+  // Variants that get the glass overlay + shimmer
+  const hasGlass = ['primary', 'secondary', 'danger', 'success'].includes(resolvedVariant);
+  const hasShimmer = ['primary', 'danger', 'success'].includes(resolvedVariant);
+
+  return (
+    <button
+      type={type && !VARIANTS.has(type) ? type : undefined}
+      className={classes}
+      disabled={disabled || isLoading}
+      onClick={handleClick}
+      {...props}
+    >
+      {/* Glass surface overlay */}
+      {hasGlass && <span className="fk-glass-overlay" aria-hidden="true" />}
+
+      {/* Liquid shimmer sweep */}
+      {hasShimmer && <span className="fk-shimmer" aria-hidden="true" />}
+
+      {/* Ripple click layer */}
+      <span className="fk-ripple-container" aria-hidden="true" />
+
+      {/* Label */}
+      <span className="fk-content">
+        {isLoading
+          ? <Loader2 className="fk-spinner" size={size === 'sm' ? 13 : size === 'lg' || size === 'xl' ? 18 : 15} />
+          : null
+        }
+        {children}
+      </span>
+    </button>
+  );
+};
 
 export default Button;

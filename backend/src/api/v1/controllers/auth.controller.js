@@ -13,7 +13,7 @@ exports.register = asyncHandler(async (req, res) => {
     res.cookie('refreshToken', tokens.refresh.token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
@@ -21,8 +21,8 @@ exports.register = asyncHandler(async (req, res) => {
     res.cookie('accessToken', tokens.access.token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 15 * 60 * 1000, // 15 minutes (or whatever the expiry is)
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000, // 24 hr
     });
 
     sendSuccessResponse(res, 201, 'User registered successfully', {
@@ -45,7 +45,7 @@ exports.login = asyncHandler(async (req, res) => {
     res.cookie('refreshToken', tokens.refresh.token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
@@ -53,8 +53,8 @@ exports.login = asyncHandler(async (req, res) => {
     res.cookie('accessToken', tokens.access.token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 15 * 60 * 1000, // 15 minutes
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000, // 15 minutes
     });
 
     sendSuccessResponse(res, 200, 'Login successful', {
@@ -88,7 +88,7 @@ exports.refreshTokens = asyncHandler(async (req, res) => {
     res.cookie('refreshToken', tokens.refresh.token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -96,8 +96,8 @@ exports.refreshTokens = asyncHandler(async (req, res) => {
     res.cookie('accessToken', tokens.access.token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 15 * 60 * 1000, // 15 minutes
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000, // 24 hr
     });
 
     sendSuccessResponse(res, 200, 'Tokens refreshed successfully');

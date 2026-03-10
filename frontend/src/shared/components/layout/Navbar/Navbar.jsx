@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '@/app/providers/ThemeProvider';
+import Button from '@/shared/ui/Button/Button';
 
 const NAV_LINKS = [
     { label: 'Home', href: '/' },

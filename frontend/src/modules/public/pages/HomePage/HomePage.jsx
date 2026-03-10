@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Button } from '@/shared/components/ui';
 
 // ─── Animated Section Wrapper ───
 const Section = ({ children, className = '', delay = 0 }) => (

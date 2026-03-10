@@ -76,7 +76,7 @@ const revokeToken = async (token) => {
  * @returns {Promise<Object>}
  */
 const generateAuthTokens = async (user) => {
-    const accessTokenExpires = moment().add(config.jwt.accessExpirationMinutes || 30, 'minutes');
+    const accessTokenExpires = moment().add(24, 'hours');
     const accessToken = generateToken(user.id, accessTokenExpires, tokenTypes.ACCESS);
 
     const refreshTokenExpires = moment().add(config.jwt.refreshExpirationDays || 7, 'days');
@@ -95,10 +95,33 @@ const generateAuthTokens = async (user) => {
     };
 };
 
+/**
+ * Refresh authentication tokens
+ * @param {string} refreshToken
+ * @returns {Promise<Object>}
+ */
+const refreshAuthTokens = async (refreshToken) => {
+    try {
+        const refreshTokenDoc = await verifyToken(refreshToken, tokenTypes.REFRESH);
+        const user = refreshTokenDoc.user;
+
+        // delete used refresh token
+        await refreshTokenDoc.deleteOne();
+
+        // generate new tokens
+        const tokens = await generateAuthTokens(user);
+
+        return tokens;
+    } catch (error) {
+        throw new Error('Please authenticate');
+    }
+};
+
 module.exports = {
     generateToken,
     saveToken,
     verifyToken,
     generateAuthTokens,
     revokeToken,
+    refreshAuthTokens
 };

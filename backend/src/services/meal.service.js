@@ -47,7 +47,7 @@ const createMeal = async (mealBody) => {
 /**
  * Query meals with optional filter & options
  */
-// meal.service.js
+// queryMeals in meal.service.js
 const queryMeals = async (filter, options = {}, populateUser = false) => {
     let sort = { date: -1 };
 
@@ -56,18 +56,41 @@ const queryMeals = async (filter, options = {}, populateUser = false) => {
         sort = { [field]: order === 'asc' ? 1 : -1 };
     }
 
-    const limit = parseInt(options.limit) || 10;
-    const page  = parseInt(options.page)  || 1;
+    const getAll = options.limit === 'all';
+    const limit = getAll ? 0 : (parseInt(options.limit) || 10);
+    const page  = parseInt(options.page) || 1;
+    const skip  = getAll ? 0 : (page - 1) * limit;
 
-    const query = Meal.find(filter)
-        .sort(sort)
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .lean();
+    const query = Meal.find(filter).sort(sort);
 
-    if (populateUser) query.populate('user', 'name email');
+    if (!getAll) {
+        query.skip(skip).limit(limit);
+    }
+    
+    query.lean();
 
-    return query;
+    // In controllers, isAdmin is usually true when we want to populate user
+    if (populateUser) query.populate('user', 'name email role');
+
+    const [meals, total] = await Promise.all([
+        query.exec(),
+        Meal.countDocuments(filter)
+    ]);
+
+    const totalPages = getAll ? 1 : Math.ceil(total / limit);
+
+    return {
+        meals,
+        pagination: {
+            page: getAll ? 1 : page,
+            limit: getAll ? total : limit,
+            total,
+            pages: totalPages,
+            hasNext: getAll ? false : skip + meals.length < total,
+            hasPrev: getAll ? false : page > 1,
+            isAll: getAll
+        }
+    };
 };
 
 /**
@@ -84,52 +107,59 @@ const updateMealById = async (mealId, updateBody) => {
     const meal = await getMealById(mealId);
     if (!meal) throw new AppError('Meal not found', 404);
 
-    // ── 1. Date Logic ─────────────────────────────────────────────────────────────
+    // ── 1. Date Validation ───────────────────────────────────────────
     if (updateBody.date) {
         const parsedDate = parseDate(updateBody.date);
 
         if (meal.date.getTime() !== parsedDate.getTime()) {
             const duplicate = await Meal.exists({
-                user: meal.user._id,        // populated — must use ._id
+                user: meal.user._id,
                 date: parsedDate,
                 _id: { $ne: mealId }
             });
-            if (duplicate) throw new AppError('A meal already exists for this date', 409);
+
+            if (duplicate) {
+                throw new AppError('A meal already exists for this date', 409);
+            }
 
             updateBody.date = parsedDate;
         } else {
-            delete updateBody.date;         // same date from form — skip unnecessary save
+            delete updateBody.date;
         }
     }
 
-    // ── 2. Count Recalculation ────────────────────────────────────────────────────
-    const oldMealCount  = meal.mealCount  || 0;
+    // ── 2. Resolve Final State (safe partial update) ──────────────────
+    const finalType = updateBody.type ?? meal.type;
+    const finalIsGuestMeal = updateBody.isGuestMeal ?? meal.isGuestMeal;
+
+    let finalGuestCount =
+        updateBody.guestCount ?? meal.guestCount ?? 0;
+
+    if (!finalIsGuestMeal) finalGuestCount = 0;
+
+    const finalMealCount = mealTypeCountMap[finalType] ?? 0;
+
+    // ── 3. Preserve old values for diff ───────────────────────────────
+    const oldMealCount = meal.mealCount || 0;
     const oldGuestCount = meal.guestCount || 0;
 
-    if (updateBody.type !== undefined) {
-        // const resolvedType = updateBody.type ?? meal.type;
-        updateBody.mealCount = mealTypeCountMap[updateBody.type] ?? 0;
-    }
+    // ── 4. Apply updates ──────────────────────────────────────────────
+    Object.assign(meal, updateBody, {
+        type: finalType,
+        isGuestMeal: finalIsGuestMeal,
+        guestCount: finalGuestCount,
+        mealCount: finalMealCount
+    });
 
-    if (updateBody.isGuestMeal !== undefined || updateBody.guestCount !== undefined) {
-        const resolvedIsGuestMeal = updateBody.isGuestMeal ?? meal.isGuestMeal;
-        updateBody.guestCount = resolvedIsGuestMeal
-            ? (updateBody.guestCount ?? meal.guestCount ?? 1) 
-            : 0;
-        if (!resolvedIsGuestMeal) updateBody.isGuestMeal = false; // keep flag in sync
-    }
-
-    // ── 3. Apply & Save ───────────────────────────────────────────────────────────
-    Object.assign(meal, updateBody);
     await meal.save();
 
-    // ── 4. User Stats Sync ────────────────────────────────────────────────────────
-    const mealDiff  = (meal.mealCount  || 0) - oldMealCount;
-    const guestDiff = (meal.guestCount || 0) - oldGuestCount;
+    // ── 5. Sync user stats (only if needed) ───────────────────────────
+    const mealDiff = finalMealCount - oldMealCount;
+    const guestDiff = finalGuestCount - oldGuestCount;
 
-    if (mealDiff !== 0 || guestDiff !== 0) {
+    if (mealDiff || guestDiff) {
         await User.findByIdAndUpdate(
-            meal.user._id,                  // populated — must use ._id
+            meal.user._id,
             { $inc: { totalMeal: mealDiff, guestMeal: guestDiff } }
         );
     }
