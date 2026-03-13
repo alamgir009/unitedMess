@@ -1,4 +1,5 @@
 const User = require('../models/User.model');
+const Payment = require('../models/Payment.model');
 const AppError = require('../utils/errors/AppError');
 const emailService = require('./email.service');
 const mongoose = require('mongoose');
@@ -418,6 +419,18 @@ const getPaybleAmountforMeal = async (userId) => {
         lastCalculatedAt: new Date()
     }).catch(console.error);
 
+    // Calculate if user has paid based on actual payment records for the CURRENT month
+    // This is the absolute source of truth, avoiding any User model sync bugs
+    const currentMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+    const completedPayments = await Payment.find({
+        user: userId,
+        status: 'completed',
+        month: currentMonth
+    }).lean();
+
+    const hasPaidMess = completedPayments.some(p => p.type === 'mess_bill');
+    const hasPaidGas  = completedPayments.some(p => p.type === 'gas_bill');
+
     return {
         grandTotalMarketAmount: round2(stats.grandTotalMarket),
         grandTotalMeal: stats.grandTotalMeal,
@@ -433,7 +446,9 @@ const getPaybleAmountforMeal = async (userId) => {
             chargePerGuestMeal: user.chargePerGuestMeal || 0,
             guestMealAmount: round2(guestMealAmount)
         },
-        payableAmount: finalPayable
+        payableAmount: finalPayable,
+        paymentStatus: user.payment === 'success' || hasPaidMess ? 'success' : 'pending',
+        gasBillStatus: user.gasBill === 'success' || hasPaidGas  ? 'success' : 'pending',
     };
 };
 
@@ -475,6 +490,34 @@ async function searchUsers(searchTerm, pagination = {}) {
     };
 }
 
+/**
+ * Optimized retrieval of payable gas bill
+ */
+const getPaybleAmountforGasBill = async (userId) => {
+    if (!isValidObjectId(userId)) throw new AppError('Invalid user ID', 400);
+
+    // Fetch only the needed fields as a plain JS object for max performance
+    const user = await User.findById(userId)
+        .select('gasBillCharge gasBill')
+        .lean();
+
+    if (!user) throw new AppError('User not found', 404);
+
+    // Dynamically calculate status from actual payment records
+    const currentMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+    const completedGasAuth = await Payment.findOne({
+        user: userId,
+        status: 'completed',
+        month: currentMonth,
+        type: 'gas_bill'
+    }).lean();
+
+    return {
+        payableAmount: user.gasBillCharge || 0,
+        status: user.gasBill === 'success' || completedGasAuth ? 'success' : 'pending'
+    };
+};
+
 module.exports = {
     getUserById,
     updateProfile,
@@ -489,5 +532,6 @@ module.exports = {
     getGrandTotalMarketAmount,
     getGrandTotalMeal,
     getMealCharge,
-    getPaybleAmountforMeal
+    getPaybleAmountforMeal,
+    getPaybleAmountforGasBill
 };

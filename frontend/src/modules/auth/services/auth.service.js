@@ -36,10 +36,28 @@ const logout = async () => {
     }
 };
 
+// Fetch payable amount
+const getPayableAmount = async (userId) => {
+    // If admin is viewing a specific user, use users/:userId/payable, otherwise use users/me/payable
+    const endpoint = userId ? `users/${userId}/payable` : `users/me/payable`;
+    // We use apiClient directly; it prepends the baseURL (/api/v1) automatically
+    const response = await apiClient.get(endpoint);
+    return response.data;
+};
+
+// Fetch payable gas bill amount
+const getPayableGasBill = async (userId) => {
+    const endpoint = userId ? `users/${userId}/payable/gasbill` : `users/me/payable/gasbill`;
+    const response = await apiClient.get(endpoint);
+    return response.data;
+};
+
 const authService = {
     register,
     logout,
     login,
+    getPayableAmount,
+    getPayableGasBill,
 };
 
 export default authService;

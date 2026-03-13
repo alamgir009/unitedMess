@@ -169,6 +169,20 @@ const getPaybleAmountforMeal = asyncHandler(async (req, res) => {
     sendSuccessResponse(res, 200, 'Payable meal charge calculated', payingAmount);
 });
 
+const getPaybleAmountforGasBill = asyncHandler(async (req, res) => {
+    // Allow admin to check any user, self only for regular users
+    const userId = req.params.userId && req.user.role === 'admin'
+        ? req.params.userId
+        : req.user.id;
+
+    if (!isValidObjectId(userId)) {
+        throw new AppError('Invalid user ID', 400);
+    }
+
+    const payingAmount = await userService.getPaybleAmountforGasBill(userId);
+    sendSuccessResponse(res, 200, 'Payable gas bill calculated', payingAmount);
+});
+
 // ==================== Bulk Operations (if needed) ====================
 
 const bulkUpdateStatus = asyncHandler(async (req, res) => {
@@ -226,5 +240,6 @@ module.exports = {
     getMealCharge,
     getPaybleAmountforMeal,
     bulkUpdateStatus,
-    deactivateMyAccount
+    deactivateMyAccount,
+    getPaybleAmountforGasBill
 };

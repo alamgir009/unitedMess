@@ -50,6 +50,51 @@ export const logout = createAsyncThunk('auth/logout', async () => {
     }
 });
 
+// Fetch payable amount for meal — returns full breakdown object
+export const fetchPayableAmount = createAsyncThunk(
+    'auth/fetchPayable',
+    async (userId, thunkAPI) => {
+        try {
+            const response = await authService.getPayableAmount(userId);
+            // user.controller does: sendSuccessResponse(res, 200, '...', payingAmount)
+            // payingAmount is an object: { grandTotalMarketAmount, grandTotalMeal, totalGuestRevenue,
+            //   adjustedMealCharge, userStats: { ... }, payableAmount }
+            const data = response?.data?.data ?? response?.data ?? response;
+            // Return the full object so the invoice panel can render all fields
+            if (typeof data === 'object' && data !== null && 'payableAmount' in data) {
+                return data; // full breakdown
+            }
+            return { payableAmount: Number(data) || 0 };
+        } catch (error) {
+            const message = error.response?.data?.error || error.response?.data?.message || 'Failed to fetch payable amount';
+            return thunkAPI.rejectWithValue(message);
+        }
+    }
+);
+
+// Fetch payable gas bill amount
+export const fetchPayableGasBill = createAsyncThunk(
+    'auth/fetchPayableGasBill',
+    async (userId, thunkAPI) => {
+        try {
+            const response = await authService.getPayableGasBill(userId);
+            const data = response?.data?.data ?? response?.data ?? response;
+            // Keep the full { payableAmount, status } object so the UI can check payment status.
+            // Backend returns { payableAmount: number, status: 'pending'|'success'|... }
+            if (typeof data === 'object' && data !== null) {
+                return {
+                    payableAmount: Number(data.payableAmount) || 0,
+                    status: data.status || 'pending',
+                };
+            }
+            return { payableAmount: Number(data) || 0, status: 'pending' };
+        } catch (error) {
+            const message = error.response?.data?.error || error.response?.data?.message || 'Failed to fetch payable gas bill amount';
+            return thunkAPI.rejectWithValue(message);
+        }
+    }
+);
+
 let userCookie = Cookies.get('user');
 let parsedUser = null;
 if (userCookie) {
@@ -62,6 +107,9 @@ if (userCookie) {
 
 const initialState = {
     user: parsedUser,
+    payableAmount: null,      // backward-compat: numeric payable (or null)
+    payableAmountData: null,  // full breakdown object from /users/me/payable
+    payableGasBill: null,     // gas bill payable
     isError: false,
     isSuccess: false,
     isLoading: false,
@@ -113,6 +161,30 @@ export const authSlice = createSlice({
             })
             .addCase(logout.fulfilled, (state) => {
                 state.user = null;
+                state.payableAmount = null;
+                state.payableAmountData = null;
+            })
+            // Payable Amount — action.payload is now the full breakdown object
+            .addCase(fetchPayableAmount.fulfilled, (state, action) => {
+                const payload = action.payload;
+                if (typeof payload === 'object' && payload !== null) {
+                    state.payableAmountData = payload; // full object (includes paymentStatus, gasBillStatus)
+                    state.payableAmount = payload.payableAmount ?? 0; // numeric for backward-compat
+                } else {
+                    state.payableAmount = Number(payload) || 0;
+                    state.payableAmountData = { payableAmount: state.payableAmount };
+                }
+            })
+            .addCase(fetchPayableAmount.rejected, (state, action) => {
+                console.error("Failed to load payable amount:", action.payload);
+            })
+            // Payable Gas Bill — store { payableAmount, status } object
+            .addCase(fetchPayableGasBill.fulfilled, (state, action) => {
+                // action.payload = { payableAmount: number, status: string }
+                state.payableGasBill = action.payload ?? { payableAmount: 0, status: 'pending' };
+            })
+            .addCase(fetchPayableGasBill.rejected, (state, action) => {
+                console.error("Failed to load payable gas bill amount:", action.payload);
             });
     },
 });

@@ -24,6 +24,7 @@ router.route('/me')
 .patch(...authenticated, userController.updateMe)
 .delete(...authenticated, userController.deactivateMyAccount);
 router.get('/me/payable', ...authenticated, userController.getPaybleAmountforMeal);
+router.get('/me/payable/gasbill', ...authenticated, userController.getPaybleAmountforGasBill);
 
 // ==================== USER MANAGEMENT (Admin Only) ====================
 router.route('/')
@@ -35,6 +36,7 @@ router.post('/:userId/deny', ...adminOnly, userController.denyUser);
 router.patch('/:userId/payment', ...adminOnly, userController.updatePaymentStatus);
 router.patch('/:userId/gas-bill', ...adminOnly, userController.updateGasBillStatus);
 router.get('/:userId/payable', ...adminOnly, userController.getPaybleAmountforMeal);
+router.get('/:userId/payable/gasbill', ...adminOnly, userController.getPaybleAmountforGasBill);
 
 // Generic CRUD (must be last)
 router.route('/:userId')
