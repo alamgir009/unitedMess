@@ -34,11 +34,12 @@ const amountColor = (amount) => {
 /* ═══════════════════════════════════════════
    MARKET CARD — grid view
 ═══════════════════════════════════════════ */
-const MarketCard = ({ market, onEdit, onDelete, isAdmin, index }) => {
+const MarketCard = React.forwardRef(({ market, onEdit, onDelete, isAdmin, index }, ref) => {
     const date = smartDate(market.date);
 
     return (
         <motion.article
+            ref={ref}
             layoutId={`card-${market._id}`}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -131,16 +132,18 @@ const MarketCard = ({ market, onEdit, onDelete, isAdmin, index }) => {
             </div>
         </motion.article>
     );
-};
+});
+MarketCard.displayName = 'MarketCard';
 
 /* ═══════════════════════════════════════════
    MARKET ROW — list view
 ═══════════════════════════════════════════ */
-const MarketRow = ({ market, onEdit, onDelete, isAdmin, index }) => {
+const MarketRow = React.forwardRef(({ market, onEdit, onDelete, isAdmin, index }, ref) => {
     const date = smartDate(market.date);
 
     return (
         <motion.div
+            ref={ref}
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 6 }}
@@ -217,7 +220,8 @@ const MarketRow = ({ market, onEdit, onDelete, isAdmin, index }) => {
             </div>
         </motion.div>
     );
-};
+});
+MarketRow.displayName = 'MarketRow';
 
 /* ═══════════════════════════════════════════
    EMPTY STATE

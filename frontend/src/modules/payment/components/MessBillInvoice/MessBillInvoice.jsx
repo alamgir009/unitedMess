@@ -185,8 +185,20 @@ const MessBillInvoice = ({
     isSendingEmail,
     onSendEmail,
     paymentStatus = 'pending',   // 'pending' | 'success' | 'failed' | 'refunded'
+    paymentRecord,
 }) => {
     if (!data) return null;
+
+    const displayMonth = useMemo(() => {
+        return paymentRecord?.month || INV_MONTH;
+    }, [paymentRecord]);
+
+    const displayDate = useMemo(() => {
+        if (paymentRecord?.paymentDate) {
+            return new Date(paymentRecord.paymentDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+        return INV_DATE;
+    }, [paymentRecord]);
 
     const {
         grandTotalMarketAmount = 0,
@@ -244,12 +256,12 @@ const MessBillInvoice = ({
                         <div className="flex items-center gap-2">
                             <h3 className="text-base font-semibold text-gray-900 dark:text-white">Mess Bill Invoice</h3>
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-medium">
-                                <HiOutlineSparkles className="w-3 h-3" /> {INV_MONTH}
+                                <HiOutlineSparkles className="w-3 h-3" /> {displayMonth}
                             </span>
                         </div>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                             <HiOutlineBuildingOffice2 className="inline w-4 h-4 mr-1 -mt-0.5" />
-                            United Mess · {INV_DATE}
+                            United Mess · {displayDate}
                         </p>
                     </div>
                 </div>
@@ -429,7 +441,7 @@ const MessBillInvoice = ({
 
                 {/* Fine print */}
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-4 text-center">
-                    System‑generated invoice for {INV_MONTH}. For disputes, contact your mess admin.
+                    System‑generated invoice for {displayMonth}. For disputes, contact your mess admin.
                 </p>
             </div>
         </motion.div>

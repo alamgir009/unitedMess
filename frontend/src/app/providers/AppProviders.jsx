@@ -9,7 +9,7 @@ const AppProviders = ({ children }) => {
         <ThemeProvider>
             <ErrorBoundary>
                 <Provider store={store}>
-                    <BrowserRouter>
+                    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                         {children}
                     </BrowserRouter>
                 </Provider>

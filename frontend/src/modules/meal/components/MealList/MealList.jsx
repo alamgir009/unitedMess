@@ -66,13 +66,14 @@ const smartDate = (date) => {
 /* ═══════════════════════════════════════════
    MEAL CARD  ── grid view
 ═══════════════════════════════════════════ */
-const MealCard = ({ meal, onEdit, onDelete, isAdmin, index }) => {
+const MealCard = React.forwardRef(({ meal, onEdit, onDelete, isAdmin, index }, ref) => {
     const cfg = TYPE[meal.type] || TYPE.both;
     const { Icon } = cfg;
     const date = smartDate(meal.date);
 
     return (
         <motion.article
+            ref={ref}
             layoutId={`card-${meal._id}`}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -166,18 +167,20 @@ const MealCard = ({ meal, onEdit, onDelete, isAdmin, index }) => {
             </div>
         </motion.article>
     );
-};
+});
+MealCard.displayName = 'MealCard';
 
 /* ═══════════════════════════════════════════
    MEAL ROW  ── list view
 ═══════════════════════════════════════════ */
-const MealRow = ({ meal, onEdit, onDelete, isAdmin, index }) => {
+const MealRow = React.forwardRef(({ meal, onEdit, onDelete, isAdmin, index }, ref) => {
     const cfg = TYPE[meal.type] || TYPE.both;
     const { Icon } = cfg;
     const date = smartDate(meal.date);
 
     return (
         <motion.div
+            ref={ref}
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 6 }}
@@ -270,7 +273,8 @@ const MealRow = ({ meal, onEdit, onDelete, isAdmin, index }) => {
             </div>
         </motion.div>
     );
-};
+});
+MealRow.displayName = 'MealRow';
 
 /* ═══════════════════════════════════════════
    EMPTY STATE

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     HiOutlineCalendarDays,
@@ -42,18 +42,20 @@ const TYPE = {
 const methodLabel = (m) => ({ cash: '💵 Cash', online: '🌐 Online', razorpay: '⚡ Razorpay' }[m] || m);
 
 /* ════════════════════════════════════════════
-   PAYMENT CARD — grid view
+   PAYMENT CARD — grid view (memoized)
 ════════════════════════════════════════════ */
-const PaymentCard = ({ payment, onEdit, onDelete, isAdmin, canEdit, index }) => {
+const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, isAdmin, canEdit, index }, ref) => {
     const date  = smartDate(payment.paymentDate);
     const stat  = STATUS[payment.status] || STATUS.pending;
     const typeC = TYPE[payment.type]     || TYPE.other;
+    const amount = Number(payment.amount ?? 0);
 
     return (
         <motion.article
+            ref={ref}
             layoutId={`pcrd-${payment._id}`}
             initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0  }}
+            animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96 }}
             transition={{ duration: 0.22, delay: index * 0.03, ease: [0.22, 1, 0.36, 1] }}
             className="group relative flex flex-col rounded-3xl bg-white/70 dark:bg-slate-900/50 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden shadow-lg hover:shadow-xl dark:shadow-black/30 hover:shadow-indigo-500/10 dark:hover:shadow-indigo-400/10 transition-all duration-300 hover:-translate-y-1
@@ -61,177 +63,185 @@ const PaymentCard = ({ payment, onEdit, onDelete, isAdmin, canEdit, index }) => 
                 after:absolute after:inset-x-10 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-black/5 dark:after:via-black/40 after:to-transparent"
         >
             {/* Header row: type badge + date */}
-            <div className="flex items-start justify-between px-4 pt-4">
-                <span className={`inline-flex items-center gap-1 px-2 py-[3px] rounded-[7px] text-[10px] font-bold uppercase tracking-widest ring-1 ${typeC.cls}`}>
+            <div className="flex items-start justify-between px-5 pt-5">
+                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ring-1 ${typeC.cls}`}>
                     {typeC.label}
                 </span>
                 <div className="text-right leading-none">
-                    <p className="text-[11px] font-semibold text-foreground">{date.primary}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">{date.secondary}</p>
+                    <p className="text-xs font-semibold text-foreground">{date.primary}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{date.secondary}</p>
                 </div>
             </div>
 
             {/* Admin: user block */}
             {isAdmin && payment.user && (
-                <div className="mx-4 mt-3 rounded-xl bg-muted/40 dark:bg-white/[0.03] border border-border/50 px-3 py-2 flex flex-col gap-1.5">
+                <div className="mx-5 mt-4 rounded-xl bg-muted/40 dark:bg-white/[0.03] border border-border/50 px-4 py-2.5 flex flex-col gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                        <HiOutlineUser className="w-3 h-3 text-muted-foreground/70 flex-shrink-0" />
-                        <span className="text-xs font-semibold text-foreground truncate">{payment.user.name}</span>
+                        <HiOutlineUser className="w-3.5 h-3.5 text-muted-foreground/70 flex-shrink-0" />
+                        <span className="text-sm font-semibold text-foreground truncate">{payment.user?.name}</span>
                     </div>
-                    {payment.user.email && (
+                    {payment.user?.email && (
                         <div className="flex items-center gap-2 min-w-0">
-                            <HiOutlineEnvelope className="w-3 h-3 text-muted-foreground/60 flex-shrink-0" />
-                            <span className="text-[11px] text-muted-foreground truncate">{payment.user.email}</span>
+                            <HiOutlineEnvelope className="w-3.5 h-3.5 text-muted-foreground/60 flex-shrink-0" />
+                            <span className="text-xs text-muted-foreground truncate">{payment.user.email}</span>
                         </div>
                     )}
                 </div>
             )}
 
             {/* Amount + status */}
-            <div className="flex items-center gap-1.5 px-4 mt-3 flex-wrap">
-                <div className="flex items-baseline gap-0.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 ring-1 ring-indigo-200 dark:ring-indigo-500/20">
-                    <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">₹</span>
-                    <span className="text-sm font-black tabular-nums text-indigo-700 dark:text-indigo-300">
-                        {Number(payment.amount).toLocaleString('en-IN')}
+            <div className="flex items-center gap-3 px-5 mt-4 flex-wrap">
+                <div className="flex items-baseline gap-1 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 ring-1 ring-indigo-200 dark:ring-indigo-500/20">
+                    <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">₹</span>
+                    <span className="text-xl font-black tabular-nums text-indigo-700 dark:text-indigo-300">
+                        {amount.toLocaleString('en-IN')}
                     </span>
                 </div>
-                <span className={`text-[10px] font-bold px-2 py-[3px] rounded-full ring-1 ${stat.cls}`}>{stat.label}</span>
+                <span className={`text-xs font-bold px-3 py-1 rounded-full ring-1 ${stat.cls}`}>{stat.label}</span>
             </div>
 
             {/* Month + method */}
-            <div className="flex items-center gap-3 px-4 mt-2 flex-wrap">
-                <div className="flex items-center gap-1">
-                    <HiOutlineCalendarDays className="w-3 h-3 text-muted-foreground/50" />
-                    <span className="text-[11px] text-foreground/80 font-medium">{payment.month}</span>
+            <div className="flex items-center gap-4 px-5 mt-3 flex-wrap">
+                <div className="flex items-center gap-1.5">
+                    <HiOutlineCalendarDays className="w-4 h-4 text-muted-foreground/50" />
+                    <span className="text-sm text-foreground/80 font-medium">{payment.month}</span>
                 </div>
-                <div className="flex items-center gap-1">
-                    <HiOutlineCreditCard className="w-3 h-3 text-muted-foreground/50" />
-                    <span className="text-[11px] text-muted-foreground">{methodLabel(payment.paymentMethod)}</span>
+                <div className="flex items-center gap-1.5">
+                    <HiOutlineCreditCard className="w-4 h-4 text-muted-foreground/50" />
+                    <span className="text-sm text-muted-foreground">{methodLabel(payment.paymentMethod)}</span>
                 </div>
             </div>
 
             {/* Remarks */}
             {payment.remarks && (
-                <div className="flex items-start gap-1.5 mx-4 mt-1.5 min-w-0">
-                    <HiOutlineChatBubbleBottomCenterText className="w-3 h-3 mt-[1px] text-muted-foreground/50 flex-shrink-0" />
-                    <p className="text-[11px] italic text-muted-foreground/60 leading-relaxed line-clamp-2">"{payment.remarks}"</p>
+                <div className="flex items-start gap-2 mx-5 mt-2 min-w-0">
+                    <HiOutlineChatBubbleBottomCenterText className="w-4 h-4 mt-0.5 text-muted-foreground/50 flex-shrink-0" />
+                    <p className="text-xs italic text-muted-foreground/70 leading-relaxed line-clamp-2">"{payment.remarks}"</p>
                 </div>
             )}
 
-            <div className="flex-1 min-h-[10px]" />
-            <div className="mx-4 mt-3 h-px bg-border/40" />
+            <div className="flex-1 min-h-[12px]" />
+            <div className="mx-5 mt-4 h-px bg-border/40" />
 
             {/* Actions */}
-            <div className="flex items-center gap-2 px-4 py-3">
+            <div className="flex items-center gap-2 px-5 py-4">
                 {canEdit ? (
                     <>
-                        <Button variant="secondary" size="sm" onClick={() => onEdit(payment)} className="flex-1 font-bold text-xs">
-                            <HiOutlinePencilSquare className="w-4 h-4" /> Edit
+                        <Button variant="secondary" size="sm" onClick={() => onEdit(payment)} className="flex-1 font-semibold text-xs">
+                            <HiOutlinePencilSquare className="w-4 h-4 mr-1" /> Edit
                         </Button>
                         <Button variant="danger" size="sm" iconOnly onClick={() => onDelete(payment._id)} aria-label="Delete">
                             <HiOutlineTrash className="w-4 h-4" />
                         </Button>
                     </>
                 ) : (
-                    <Button variant="secondary" size="sm" onClick={() => onEdit(payment)} className="flex-1 font-bold text-xs">
-                        <HiOutlineReceiptRefund className="w-4 h-4" /> View
+                    <Button variant="secondary" size="sm" onClick={() => onEdit(payment)} className="flex-1 font-semibold text-xs">
+                        <HiOutlineReceiptRefund className="w-4 h-4 mr-1" /> View
                     </Button>
                 )}
             </div>
         </motion.article>
     );
-};
+}));
+
+PaymentCard.displayName = 'PaymentCard';
 
 /* ════════════════════════════════════════════
-   PAYMENT ROW — list view
+   PAYMENT ROW — list view (memoized)
 ════════════════════════════════════════════ */
-const PaymentRow = ({ payment, onEdit, onDelete, isAdmin, canEdit, index }) => {
+const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, isAdmin, canEdit, index }, ref) => {
     const date  = smartDate(payment.paymentDate);
     const stat  = STATUS[payment.status] || STATUS.pending;
     const typeC = TYPE[payment.type]     || TYPE.other;
+    const amount = Number(payment.amount ?? 0);
 
     return (
         <motion.div
+            ref={ref}
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 6 }}
             transition={{ duration: 0.16, delay: index * 0.025 }}
-            className="group relative flex items-center gap-3 px-3 py-2.5 rounded-[14px] bg-white/70 dark:bg-slate-900/40 backdrop-blur-xl border border-black/5 dark:border-white/10 hover:bg-white/90 dark:hover:bg-slate-800/50 hover:border-black/10 dark:hover:border-white/20 transition-all duration-200 shadow-sm hover:shadow-md overflow-hidden
+            className="group relative flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/70 dark:bg-slate-900/40 backdrop-blur-xl border border-black/5 dark:border-white/10 hover:bg-white/90 dark:hover:bg-slate-800/50 hover:border-black/10 dark:hover:border-white/20 transition-all duration-200 shadow-sm hover:shadow-md overflow-hidden
                 before:absolute before:inset-x-8 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/70 dark:before:via-white/15 before:to-transparent"
         >
             {/* Icon pill */}
-            <div className="flex-shrink-0 w-8 h-8 rounded-[10px] flex items-center justify-center bg-indigo-50 dark:bg-indigo-400/10 text-indigo-600 dark:text-indigo-400 ring-1 ring-indigo-200 dark:ring-indigo-400/20">
-                <HiOutlineCurrencyRupee className="w-3.5 h-3.5" />
+            <div className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center bg-indigo-50 dark:bg-indigo-400/10 text-indigo-600 dark:text-indigo-400 ring-1 ring-indigo-200 dark:ring-indigo-400/20">
+                <HiOutlineCurrencyRupee className="w-4 h-4" />
             </div>
 
             {/* Info */}
-            <div className="flex-1 min-w-0 flex flex-col gap-[3px]">
+            <div className="flex-1 min-w-0 flex flex-col gap-1">
                 {isAdmin && payment.user && (
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <div className="flex items-center gap-1">
-                            <HiOutlineUser className="w-2.5 h-2.5 text-muted-foreground/60" />
-                            <span className="text-xs font-semibold text-foreground">{payment.user.name}</span>
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <div className="flex items-center gap-1.5">
+                            <HiOutlineUser className="w-3.5 h-3.5 text-muted-foreground/60" />
+                            <span className="text-sm font-semibold text-foreground">{payment.user?.name}</span>
                         </div>
-                        {payment.user.email && (
-                            <span className="text-[11px] text-muted-foreground truncate hidden sm:block">{payment.user.email}</span>
+                        {payment.user?.email && (
+                            <span className="text-xs text-muted-foreground truncate hidden sm:block">{payment.user.email}</span>
                         )}
                     </div>
                 )}
-                <div className="flex items-center gap-1.5 flex-wrap text-xs">
-                    <div className="flex items-center gap-1">
-                        <HiOutlineCalendarDays className="w-3 h-3 text-muted-foreground/60" />
+                <div className="flex items-center gap-2 flex-wrap text-sm">
+                    <div className="flex items-center gap-1.5">
+                        <HiOutlineCalendarDays className="w-4 h-4 text-muted-foreground/60" />
                         <span className="font-medium text-foreground">{date.primary}</span>
                         <span className="text-muted-foreground/50 hidden sm:inline">· {date.secondary}</span>
                     </div>
                     <span className="text-muted-foreground/25">·</span>
                     <span className="font-black tabular-nums text-indigo-700 dark:text-indigo-300">
-                        ₹{Number(payment.amount).toLocaleString('en-IN')}
+                        ₹{amount.toLocaleString('en-IN')}
                     </span>
                     <span className="text-muted-foreground/25">·</span>
-                    <span className={`text-[10px] font-bold px-1.5 py-px rounded-full ring-1 ${typeC.cls}`}>{typeC.label}</span>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ring-1 ${typeC.cls}`}>{typeC.label}</span>
                     {payment.remarks && (
                         <>
                             <span className="text-muted-foreground/25 hidden sm:inline">·</span>
-                            <div className="hidden sm:flex items-center gap-1 min-w-0">
-                                <HiOutlineChatBubbleBottomCenterText className="w-3 h-3 text-muted-foreground/40 flex-shrink-0" />
-                                <span className="text-[11px] italic text-muted-foreground/50 truncate max-w-[180px]">"{payment.remarks}"</span>
+                            <div className="hidden sm:flex items-center gap-1.5 min-w-0">
+                                <HiOutlineChatBubbleBottomCenterText className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
+                                <span className="text-xs italic text-muted-foreground/60 truncate max-w-[200px]">"{payment.remarks}"</span>
                             </div>
                         </>
                     )}
                 </div>
             </div>
 
-            {/* Status badge */}
-            <span className={`hidden md:inline-flex items-center gap-1 text-[10px] font-bold px-2 py-[3px] rounded-full ring-1 flex-shrink-0 ${stat.cls}`}>
+            {/* Status badge (visible on larger screens) */}
+            <span className={`hidden md:inline-flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-full ring-1 flex-shrink-0 ${stat.cls}`}>
                 {stat.label}
             </span>
 
             {/* Actions */}
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150 flex-shrink-0 pl-1">
-                <Button variant="secondary" size="sm" iconOnly onClick={() => onEdit(payment)} title={canEdit ? 'Edit' : 'View'}>
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150 flex-shrink-0 pl-2">
+                <Button variant="secondary" size="sm" iconOnly onClick={() => onEdit(payment)} aria-label={canEdit ? 'Edit' : 'View'}>
                     <HiOutlinePencilSquare className="w-4 h-4" />
                 </Button>
                 {canEdit && (
-                    <Button variant="danger" size="sm" iconOnly onClick={() => onDelete(payment._id)} title="Delete">
+                    <Button variant="danger" size="sm" iconOnly onClick={() => onDelete(payment._id)} aria-label="Delete">
                         <HiOutlineTrash className="w-4 h-4" />
                     </Button>
                 )}
             </div>
         </motion.div>
     );
-};
+}));
+
+PaymentRow.displayName = 'PaymentRow';
 
 /* ── Empty State ── */
 const EmptyState = () => (
-    <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
-        className="col-span-full flex flex-col items-center gap-3 py-16 select-none"
+    <motion.div
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="col-span-full flex flex-col items-center gap-4 py-20 select-none"
     >
-        <div className="w-12 h-12 rounded-2xl bg-muted/60 border border-border/50 flex items-center justify-center">
-            <HiOutlineCurrencyRupee className="w-5 h-5 text-muted-foreground/30" />
+        <div className="w-16 h-16 rounded-2xl bg-muted/60 border border-border/50 flex items-center justify-center">
+            <HiOutlineCurrencyRupee className="w-7 h-7 text-muted-foreground/30" />
         </div>
         <div className="text-center">
-            <p className="text-sm font-semibold text-foreground">No payment records found</p>
-            <p className="text-xs text-muted-foreground mt-0.5 max-w-[200px] mx-auto leading-relaxed">
+            <p className="text-base font-semibold text-foreground">No payment records found</p>
+            <p className="text-sm text-muted-foreground mt-1 max-w-[220px] mx-auto leading-relaxed">
                 Adjust your filters or record a new payment.
             </p>
         </div>
@@ -242,30 +252,56 @@ const EmptyState = () => (
 const PaymentList = ({ payments = [], onEdit, onDelete, isAdmin = false, viewMode = 'grid' }) => {
     if (payments.length === 0) return <EmptyState />;
 
-    if (viewMode === 'list') {
-        return (
-            <div className="flex flex-col gap-1.5">
-                <AnimatePresence mode="popLayout">
-                    {payments.map((p, i) => (
-                        <PaymentRow key={p._id} payment={p} index={i} onEdit={onEdit} onDelete={onDelete}
-                            isAdmin={isAdmin} canEdit={isAdmin}
-                        />
-                    ))}
-                </AnimatePresence>
-            </div>
-        );
-    }
-
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            <AnimatePresence mode="popLayout">
-                {payments.map((p, i) => (
-                    <PaymentCard key={p._id} payment={p} index={i} onEdit={onEdit} onDelete={onDelete}
-                        isAdmin={isAdmin} canEdit={isAdmin}
-                    />
-                ))}
-            </AnimatePresence>
-        </div>
+        <AnimatePresence mode="wait" initial={false}>
+            {viewMode === 'list' ? (
+                <motion.div
+                    key="list"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex flex-col gap-2"
+                >
+                    <AnimatePresence mode="popLayout">
+                        {payments.map((p, i) => (
+                            <PaymentRow
+                                key={p._id}
+                                payment={p}
+                                index={i}
+                                onEdit={onEdit}
+                                onDelete={onDelete}
+                                isAdmin={isAdmin}
+                                canEdit={isAdmin}
+                            />
+                        ))}
+                    </AnimatePresence>
+                </motion.div>
+            ) : (
+                <motion.div
+                    key="grid"
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.96 }}
+                    transition={{ duration: 0.2 }}
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+                >
+                    <AnimatePresence mode="popLayout">
+                        {payments.map((p, i) => (
+                            <PaymentCard
+                                key={p._id}
+                                payment={p}
+                                index={i}
+                                onEdit={onEdit}
+                                onDelete={onDelete}
+                                isAdmin={isAdmin}
+                                canEdit={isAdmin}
+                            />
+                        ))}
+                    </AnimatePresence>
+                </motion.div>
+            )}
+        </AnimatePresence>
     );
 };
 
