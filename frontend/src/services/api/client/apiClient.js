@@ -1,4 +1,5 @@
 import axios from 'axios';
+import Cookies from 'js-cookie';
 
 const apiClient = axios.create({
     baseURL: import.meta.env.VITE_API_URL || '/api/v1',
@@ -61,7 +62,8 @@ apiClient.interceptors.response.use(
                 return apiClient(originalRequest);
             } catch (refreshError) {
                 processQueue(refreshError);
-                // If refresh also fails, redirect to login
+                // If refresh also fails, clear the user session and redirect to login
+                Cookies.remove('user');
                 window.location.href = '/login';
                 return Promise.reject(refreshError);
             } finally {
