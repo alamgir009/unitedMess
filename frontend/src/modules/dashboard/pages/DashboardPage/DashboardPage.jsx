@@ -1,60 +1,27 @@
-import { Utensils, IndianRupee, PieChart, Users } from 'lucide-react';
+import React from 'react';
+import { useSelector } from 'react-redux';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
-import StatsCard from '@/modules/dashboard/components/StatsCard/StatsCard';
-import RecentActivity from '@/modules/dashboard/components/RecentActivity/RecentActivity';
-import { Card, CardHeader, CardTitle, CardContent } from '@/shared/ui/Card/Card';
+import AdminDashboard from './views/AdminDashboard';
+import UserDashboard from './views/UserDashboard';
 
 const DashboardPage = () => {
-    // Mock data for now
-    const stats = [
-        { title: 'Total Meals', value: '45', change: '12%', changeType: 'increase', icon: Utensils, color: 'bg-orange-500' },
-        { title: 'Total Expense', value: '₹12,450', change: '2.4%', changeType: 'decrease', icon: IndianRupee, color: 'bg-green-500' },
-        { title: 'Meal Rate', value: '₹55.2', change: '4.1%', changeType: 'increase', icon: PieChart, color: 'bg-blue-500' },
-        { title: 'Active Members', value: '12', change: '0%', changeType: 'neutral', icon: Users, color: 'bg-purple-500' },
-    ];
+    // Determine the user's role from the auth state
+    const { user } = useSelector((state) => state.auth);
 
-    const recentActivities = [
-        { id: 1, type: 'meal', content: 'Added lunch for', target: 'John Doe', datetime: '2024-01-20T13:00' },
-        { id: 2, type: 'market', content: 'Market done by', target: 'Alice Smith', datetime: '2024-01-20T10:30' },
-        { id: 3, type: 'user', content: 'Payment received from', target: 'Bob Wilson', datetime: '2024-01-19T18:45' },
-        { id: 4, type: 'meal', content: 'Added dinner for', target: 'All Members', datetime: '2024-01-19T20:00' },
-    ];
+    // Default to false to prevent accidental admin access
+    const isAdmin = user?.role === 'admin';
 
     return (
         <MainLayout>
-            <div className="space-y-8">
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50 transition-colors">Dashboard</h2>
-                    <p className="text-muted-foreground text-gray-500 dark:text-gray-400 transition-colors">Overview of your mess activities.</p>
+            <div className="max-w-7xl mx-auto py-6 w-full relative">
+                {/* Decorative global background glow */}
+                <div className="fixed top-0 left-1/2 -translate-x-1/2 w-screen h-scren pointer-events-none z-[-1] overflow-hidden hidden dark:block">
+                    <div className="absolute top-[-10%] sm:top-[-20%] left-1/4 w-[50vw] h-[50vw] rounded-full bg-indigo-900/10 blur-[120px]" />
+                    <div className="absolute top-[20%] right-1/4 w-[40vw] h-[40vw] rounded-full bg-purple-900/10 blur-[100px]" />
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    {stats.map((stat) => (
-                        <StatsCard key={stat.title} {...stat} />
-                    ))}
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                    <Card className="col-span-4">
-                        <CardHeader>
-                            <CardTitle>Analytics</CardTitle>
-                        </CardHeader>
-                        <CardContent className="pl-2">
-                            {/* Placeholder for Chart */}
-                            <div className="h-[200px] flex items-center justify-center text-gray-500 dark:text-gray-400">
-                                Chart Component Placeholder
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="col-span-4 lg:col-span-3">
-                        <CardHeader>
-                            <CardTitle>Recent Activity</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <RecentActivity activities={recentActivities} />
-                        </CardContent>
-                    </Card>
-                </div>
+                {/* Conditional Rendering Strategy for Role-Based UI */}
+                {isAdmin ? <AdminDashboard /> : <UserDashboard />}
             </div>
         </MainLayout>
     );

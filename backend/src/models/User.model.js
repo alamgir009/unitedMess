@@ -86,7 +86,7 @@ const userSchema = new mongoose.Schema({
     cookingCharge: { type: Number, default: 400, min: 0 },
     waterBill: { type: Number, default: 0, min: 0 },
     gasBillCharge: { type: Number, default: 0, min: 0 },
-    paybleAmountforMeal: { type: Number, default: 0, min: 0 },
+    paybleAmountforMeal: { type: Number, default: 0 },
     payment: {
         type: String,
         enum: ['pending', 'success', 'failed', 'refunded'],

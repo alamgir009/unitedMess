@@ -51,7 +51,7 @@ async function updateProfile(userId, updateData, isAdmin = false) {
         throw new AppError('Invalid user ID format', 400);
     }
 
-    const { email, phone, name, image, role , isActive} = updateData;
+    const { email, phone, name, image, role, isActive, userStatus } = updateData;
     const updates = {};
     const session = await User.startSession();
 
@@ -82,7 +82,10 @@ async function updateProfile(userId, updateData, isAdmin = false) {
             if (role && isAdmin) updates.role = role;
             
             // isActive update – only if requester is admin
-            if (isActive && isAdmin) updates.isActive = isActive;
+            if (isActive !== undefined && isAdmin) updates.isActive = isActive;
+
+            // userStatus update - only if requester is admin
+            if (userStatus && isAdmin) updates.userStatus = userStatus;
 
             updates.updatedAt = new Date();
 

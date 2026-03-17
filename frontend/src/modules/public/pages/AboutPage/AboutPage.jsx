@@ -309,7 +309,7 @@ const AboutPage = () => (
                     </p>
                 </Reveal>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {team.map((t) => <TeamCard key={t.name} {...t} />)}
+                    {team.map((t) => <TeamCard key={t.role} {...t} />)}
                 </div>
             </div>
         </section>

@@ -37,7 +37,7 @@ import {
 } from '../../store/payment.slice';
 import { fetchPayableAmount, fetchPayableGasBill } from '../../../auth/store/auth.slice';
 
-import { usePayment } from '../../hooks/Usepayment';
+import { usePayment } from '../../hooks/usePayment';
 import paymentService from '../../services/payment.service';
 
 /* ─── Skeleton loaders ───────────────────────────────────────── */
