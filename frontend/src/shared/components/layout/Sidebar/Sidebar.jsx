@@ -51,16 +51,14 @@ const Sidebar = ({ isOpen, onClose }) => {
             )}>
                 {/* Header */}
                 <div className="flex h-16 shrink-0 items-center justify-between px-6 bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center">
                          {/* Logo image */}
                         <div className="relative shrink-0">
                             <img
-                                src="/assets/icons/new_logo.png"
+                                src="/assets/icons/unitedmess-icon-1024.png"
                                 alt="UnitedMess Logo"
-                                className="w-9 h-9 object-contain rounded-sm transition-all duration-300 group-hover:scale-105 border-2 border-foreground/30"
-                                style={{
-                                    filter: 'drop-shadow(0 2px 6px rgba(99,102,241,0.35))',
-                                }}
+                                className="w-10 h-10 object-contain"
+                                
                             />
                         </div>
                         <span className="font-bold text-base tracking-tight text-foreground leading-none">

@@ -8,13 +8,17 @@ import {
     Settings,
     Bell,
     LogOut,
-    Edit3
+    Edit3,
+    RotateCcw
 } from 'lucide-react';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import { Card, CardContent } from '@/shared/ui/Card/Card';
 import { useDispatch } from 'react-redux';
 import { logout } from '@/modules/auth/store/auth.slice';
 import { useNavigate } from 'react-router-dom';
+import { useCallback, useState, useMemo } from 'react';
+import { EditModal } from '../../components/EditModal/EditModal';
+import { EditForm } from '../../components/EditForm/EditForm';
 
 const ProfilePage = () => {
     const { user } = useSelector((state) => state.auth);
@@ -42,6 +46,38 @@ const ProfilePage = () => {
         hidden: { opacity: 0, y: 15 },
         visible: { opacity: 1, y: 0 }
     };
+
+    const [isModalOpen, setIsModalOpen] = useState(false)
+
+    const handleEdit = () => {
+        setIsModalOpen(true)
+    }
+
+    const handleClose = () => {
+        setIsModalOpen(false)
+    }
+    // const handleClose = useCallback(()=>{ setIsModalOpen(false) },[])
+
+    const memberSinceText = useMemo(() => {
+        const dateValue = user?.createdAt;
+        if (!dateValue) return 'Not available';
+        const date = new Date(dateValue);
+        return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    }, [user?.createdAt]);
+
+    const lastUpdatedText = useMemo(() => {
+        const dateValue = user?.updatedAt || user?.createdAt;
+        if (!dateValue) return 'Not available';
+        const date = new Date(dateValue);
+        return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleString('en-US', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+    }, [user?.updatedAt, user?.createdAt]);
 
     return (
         <MainLayout>
@@ -135,7 +171,8 @@ const ProfilePage = () => {
                         <Card className="border-border/40 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl shadow-lg h-full transition-colors">
                             <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between transition-colors">
                                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50 transition-colors">Personal Details</h3>
-                                <button className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 transition-colors">
+                                <button className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 transition-colors"
+                                    onClick={handleEdit}>
                                     <Edit3 className="w-4 h-4" />
                                     Edit
                                 </button>
@@ -184,7 +221,20 @@ const ProfilePage = () => {
                                             <Shield className="w-4 h-4" /> Member Since
                                         </div>
                                         <div className="sm:col-span-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-                                            {new Date(user?.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                                            {memberSinceText}
+                                        </div>
+                                    </div>
+
+                                    <div className="h-px bg-gray-100 dark:bg-slate-800/60" />
+
+                                    {/* Account ID / Last Updated (mocked for now) */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                                        <div className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                                            <RotateCcw className="w-4 h-4" /> Last Updated
+                                        </div>
+
+                                        <div className="sm:col-span-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                                            {lastUpdatedText}
                                         </div>
                                     </div>
                                 </div>
@@ -192,6 +242,11 @@ const ProfilePage = () => {
                         </Card>
                     </motion.div>
                 </motion.div>
+
+                {/* ———Modal——— */}
+                <EditModal isOpen={isModalOpen} onClose={handleClose} title="Edit Profile">
+                    <EditForm handleClose={handleClose} initialData={user} />
+                </EditModal>
             </div>
         </MainLayout>
     );

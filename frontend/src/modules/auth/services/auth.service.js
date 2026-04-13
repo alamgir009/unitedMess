@@ -58,6 +58,14 @@ const authService = {
     login,
     getPayableAmount,
     getPayableGasBill,
+    updateProfile: async (userData) => {
+        const response = await apiClient.patch('users/me', userData);
+        const updatedUser = response.data?.data?.user || response.data?.data || response.data?.user;
+        if (updatedUser && typeof updatedUser === 'object' && updatedUser._id) {
+            Cookies.set('user', JSON.stringify(updatedUser), { expires: 7, secure: true, sameSite: 'strict' });
+        }
+        return response.data;
+    }
 };
 
 export default authService;

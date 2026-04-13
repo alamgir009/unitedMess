@@ -50,6 +50,23 @@ export const logout = createAsyncThunk('auth/logout', async () => {
     }
 });
 
+export const updateProfile = createAsyncThunk('auth/updateProfile', async (userData, thunkAPI) => {
+    try {
+        const response = await authService.updateProfile(userData);
+        // backend sometimes uses response.message for success
+        toast.success(response.message || 'Profile updated successfully');
+        return response;
+    } catch (error) {
+        const message =
+            error.response?.data?.message ||
+            error.response?.data?.error ||
+            error.message ||
+            'Profile update failed';
+        toast.error(message);
+        return thunkAPI.rejectWithValue(message);
+    }
+});
+
 // Fetch payable amount for meal — returns full breakdown object
 export const fetchPayableAmount = createAsyncThunk(
     'auth/fetchPayable',
@@ -163,6 +180,23 @@ export const authSlice = createSlice({
                 state.user = null;
                 state.payableAmount = null;
                 state.payableAmountData = null;
+            })
+            // Update Profile
+            .addCase(updateProfile.pending, (state) => {
+                state.isLoading = true;
+            })
+            .addCase(updateProfile.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.isSuccess = true;
+                const updatedUser = action.payload?.data?.user || action.payload?.data || action.payload?.user;
+                if (updatedUser && typeof updatedUser === 'object' && updatedUser._id) {
+                    state.user = updatedUser;
+                }
+            })
+            .addCase(updateProfile.rejected, (state, action) => {
+                state.isLoading = false;
+                state.isError = true;
+                state.message = action.payload;
             })
             // Payable Amount — action.payload is now the full breakdown object
             .addCase(fetchPayableAmount.fulfilled, (state, action) => {

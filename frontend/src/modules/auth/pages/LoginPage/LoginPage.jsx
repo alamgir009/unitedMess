@@ -20,7 +20,7 @@ const LoginPage = () => {
     return (
         <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center">
-                <img src="/assets/icons/new_logo.png" alt="UnitedMess Logo" className="h-20 w-auto border-2 border-foreground/50 shadow-lg shadow-foreground/10 rounded-lg" />
+                <img src="/assets/icons/unitedmess-icon-1024.png" alt="UnitedMess Logo" className="h-20 w-auto border-2 border-foreground/50 shadow-lg shadow-foreground/10 rounded-lg" />
                 <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">
                     Sign in to your account
                 </h2>

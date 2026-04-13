@@ -95,28 +95,17 @@ const Navbar = () => {
                     {/* Logo with subtle glow on hover */}
                     <Link
                         to="/"
-                        className="flex items-center gap-2.5 shrink-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl relative"
+                        className="flex items-center  shrink-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl relative"
                         aria-label="UnitedMess home"
                     >
                         <div className="relative shrink-0">
                             <img
-                                src="/assets/icons/new_logo.png"
+                                src="/assets/icons/unitedmess-icon-1024.png"
+                               
                                 alt="UnitedMess Logo"
-                                className="w-9 h-9 object-contain rounded-sm transition-all duration-300 group-hover:scale-105 border-2 border-foreground/30"
-                                style={{
-                                    filter: 'drop-shadow(0 2px 8px rgba(99,102,241,0.5))',
-                                }}
-                            />
-                            {/* Hover glow ring */}
-                            <motion.div
-                                className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100"
-                                style={{
-                                    boxShadow: isDark
-                                        ? '0 0 15px 2px rgba(255,255,255,0.3)'
-                                        : '0 0 15px 2px rgba(99,102,241,0.5)',
-                                }}
-                                animate={{ scale: [1, 1.1, 1] }}
-                                transition={{ repeat: Infinity, duration: 2 }}
+                                // className="w-9 h-9 object-contain rounded-sm transition-all duration-300 group-hover:scale-105 border-2 border-foreground/30"
+                                className="w-10 h-10 object-contain"
+                               
                             />
                         </div>
                         <span className="font-bold text-base tracking-tight text-foreground leading-none">
