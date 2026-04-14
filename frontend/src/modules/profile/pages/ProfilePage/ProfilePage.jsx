@@ -9,7 +9,8 @@ import {
     Bell,
     LogOut,
     Edit3,
-    RotateCcw
+    RotateCcw,
+    CalendarClock 
 } from 'lucide-react';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import { Card, CardContent } from '@/shared/ui/Card/Card';
@@ -66,7 +67,7 @@ const ProfilePage = () => {
     }, [user?.createdAt]);
 
     const lastUpdatedText = useMemo(() => {
-        const dateValue = user?.updatedAt || user?.createdAt;
+        const dateValue = user?.lastLogin || user?.createdAt;
         if (!dateValue) return 'Not available';
         const date = new Date(dateValue);
         return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleString('en-US', {
@@ -77,7 +78,7 @@ const ProfilePage = () => {
             minute: '2-digit',
             hour12: true
         });
-    }, [user?.updatedAt, user?.createdAt]);
+    }, [user?.lastLogin, user?.createdAt]);
 
     return (
         <MainLayout>
@@ -218,7 +219,7 @@ const ProfilePage = () => {
                                     {/* Account ID / Member since (mocked for now) */}
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
                                         <div className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                                            <Shield className="w-4 h-4" /> Member Since
+                                            <CalendarClock className="w-4 h-4" /> Member Since
                                         </div>
                                         <div className="sm:col-span-2 text-sm font-medium text-gray-900 dark:text-gray-100">
                                             {memberSinceText}
@@ -230,7 +231,7 @@ const ProfilePage = () => {
                                     {/* Account ID / Last Updated (mocked for now) */}
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
                                         <div className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                                            <RotateCcw className="w-4 h-4" /> Last Updated
+                                            <RotateCcw className="w-4 h-4" /> Last Loggedin
                                         </div>
 
                                         <div className="sm:col-span-2 text-sm font-medium text-gray-900 dark:text-gray-100">
