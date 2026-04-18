@@ -62,6 +62,12 @@ const deleteMarket = asyncHandler(async (req, res) => {
     res.status(204).send();
 });
 
+const getMarketSchedule = asyncHandler(async (req, res) => {
+    const { year, month } = req.params;
+    const schedule = await marketService.generateMonthlySchedule(year, month);
+    sendSuccessResponse(res, 200, 'Market schedule retrieved successfully', schedule);
+});
+
 // ─── Admin Controllers ──────────────────────────────────────────────────────────
 
 const adminGetUserMarkets = asyncHandler(async (req, res) => {
@@ -122,4 +128,5 @@ module.exports = {
     adminCreateMarket,
     adminUpdateMarket,
     adminDeleteMarket,
+    getMarketSchedule,
 };

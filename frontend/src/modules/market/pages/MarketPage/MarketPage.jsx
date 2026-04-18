@@ -14,10 +14,12 @@ import MarketSearchBar from '../../components/MarketSearchBar/MarketSearchBar';
 import MarketList from '../../components/MarketList/MarketList';
 import MarketForm from '../../components/MarketForm/MarketForm';
 import MarketModal from '../../components/MarketModal/MarketModal';
+import MarketScheduleChart from '../../components/MarketScheduleChart/MarketScheduleChart';
 
 // Redux actions
 import {
     fetchMarkets,
+    fetchMarketSchedule,
     createMarket,
     updateMarket,
     deleteMarket,
@@ -51,7 +53,7 @@ const SkeletonCard = () => (
 ══════════════════════════════════════════════ */
 const MarketPage = () => {
     const dispatch = useDispatch();
-    const { markets, pagination, isLoading, isError, message } = useSelector((s) => s.market);
+    const { markets, schedule, isScheduleLoading, pagination, isLoading, isError, message } = useSelector((s) => s.market);
     const { user } = useSelector((s) => s.auth);
     const isAdmin = user?.role === 'admin';
 
@@ -80,6 +82,11 @@ const MarketPage = () => {
             .catch((err) => {
                 setErrorMsg(typeof err === 'string' ? err : err?.message || 'Failed to load market entries');
             });
+            
+        // Fetch current month schedule
+        const now = new Date();
+        dispatch(fetchMarketSchedule({ year: now.getFullYear(), month: now.getMonth() + 1 }));
+
         return () => { dispatch(reset()); };
     }, [dispatch, page, limit]);
 
@@ -220,6 +227,8 @@ const MarketPage = () => {
                     </AnimatePresence>
 
                     {/* ── Content: skeleton → list/grid → pagination ── */}
+                    <MarketScheduleChart schedule={schedule} isLoading={isScheduleLoading} />
+
                     {isLoading && (!markets || markets.length === 0) ? (
                         <div className={`grid gap-5 ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
                             {[1, 2, 3, 4, 5, 6].map((n) => <SkeletonCard key={n} />)}

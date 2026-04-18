@@ -7,6 +7,9 @@ const authenticated = [protect];
 const adminOnly = [protect, authorize('admin')];
 
 // Authenticated user routes
+router.route('/schedule/:year/:month')
+    .get(...authenticated, marketController.getMarketSchedule);
+
 router.route('/')
     .get(...authenticated, marketController.getMarkets)
     .post(...authenticated, marketController.createMarket);

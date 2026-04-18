@@ -161,6 +161,55 @@ const verifyUserExists = async (userId) => {
     return user;
 };
 
+/**
+ * Generate a monthly market schedule
+ */
+const generateMonthlySchedule = async (year, month) => {
+    const y = parseInt(year, 10);
+    const m = parseInt(month, 10); // 1-12
+
+    if (isNaN(y) || isNaN(m) || m < 1 || m > 12) {
+        throw new AppError('Invalid year or month', 400);
+    }
+
+    // Fetch active users, sorted by createdAt to represent 'member number'
+    const users = await User.find({ isActive: true, userStatus: 'approved' })
+        .sort({ createdAt: 1 })
+        .select('name email _id image')
+        .lean();
+
+    if (!users.length) {
+        return []; // No active users, return empty schedule
+    }
+
+    // Number of days in the requested month
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const schedule = [];
+
+    let userIndex = 0;
+
+    for (let i = 1; i <= daysInMonth; i++) {
+        const currentDate = new Date(y, m - 1, i);
+        let assignedUser = null;
+
+        if (users.length === 1) {
+            // For 1 user, skip every other day to prevent consecutive days
+            assignedUser = (i % 2 !== 0) ? users[0] : null;
+        } else {
+            // For 2 or more users, a simple round-robin guarantees no consecutive days
+            assignedUser = users[userIndex];
+            userIndex = (userIndex + 1) % users.length;
+        }
+
+        schedule.push({
+            date: currentDate,
+            user: assignedUser
+        });
+    }
+
+    return schedule;
+};
+
 module.exports = {
     createMarket,
     queryMarkets,
@@ -168,4 +217,5 @@ module.exports = {
     updateMarketById,
     deleteMarketById,
     verifyUserExists,
+    generateMonthlySchedule,
 };

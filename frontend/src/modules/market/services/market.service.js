@@ -13,6 +13,12 @@ const getMarkets = async (params = { page: 1, limit: 10 }) => {
     return response.data;
 };
 
+// Get monthly market schedule
+const getMarketSchedule = async (year, month) => {
+    const response = await apiClient.get(`${API_URL}/schedule/${year}/${month}`);
+    return response.data;
+};
+
 // Create a new market for the current user
 const createMarket = async (marketData) => {
     const response = await apiClient.post(API_URL, marketData);
@@ -60,6 +66,7 @@ const adminDeleteMarket = async (userId, marketId) => {
 
 const marketService = {
     getMarkets,
+    getMarketSchedule,
     createMarket,
     updateMarket,
     deleteMarket,

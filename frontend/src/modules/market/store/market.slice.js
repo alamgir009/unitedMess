@@ -3,6 +3,8 @@ import marketService from '../services/market.service';
 
 const initialState = {
     markets: [],
+    schedule: [],
+    isScheduleLoading: false,
     pagination: {
         page: 1,
         limit: 10,
@@ -23,6 +25,17 @@ export const fetchMarkets = createAsyncThunk('market/fetchAll', async (params, t
     try {
         const response = await marketService.getMarkets(params);
         return response.data; // Now returns { markets, pagination }
+    } catch (error) {
+        const message = error.response?.data?.error || error.response?.data?.message || error.message || 'Something went wrong';
+        return thunkAPI.rejectWithValue(message);
+    }
+});
+
+// Fetch monthly market schedule
+export const fetchMarketSchedule = createAsyncThunk('market/fetchSchedule', async ({ year, month }, thunkAPI) => {
+    try {
+        const response = await marketService.getMarketSchedule(year, month);
+        return response.data;
     } catch (error) {
         const message = error.response?.data?.error || error.response?.data?.message || error.message || 'Something went wrong';
         return thunkAPI.rejectWithValue(message);
@@ -103,6 +116,19 @@ export const marketSlice = createSlice({
             })
             .addCase(fetchMarkets.rejected, (state, action) => {
                 state.isLoading = false;
+                state.isError = true;
+                state.message = action.payload;
+            })
+            // Fetch Market Schedule
+            .addCase(fetchMarketSchedule.pending, (state) => {
+                state.isScheduleLoading = true;
+            })
+            .addCase(fetchMarketSchedule.fulfilled, (state, action) => {
+                state.isScheduleLoading = false;
+                state.schedule = action.payload;
+            })
+            .addCase(fetchMarketSchedule.rejected, (state, action) => {
+                state.isScheduleLoading = false;
                 state.isError = true;
                 state.message = action.payload;
             })
