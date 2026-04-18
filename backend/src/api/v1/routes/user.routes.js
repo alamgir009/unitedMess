@@ -29,9 +29,9 @@ router.patch('/me/avatar', ...authenticated, upload.single('image'), userControl
 router.get('/me/payable', ...authenticated, userController.getPaybleAmountforMeal);
 router.get('/me/payable/gasbill', ...authenticated, userController.getPaybleAmountforGasBill);
 
-// ==================== USER MANAGEMENT (Admin Only) ====================
+// ==================== USER MANAGEMENT (Admin Only for modifications, Authenticated for viewing) ====================
 router.route('/')
-    .get(...adminOnly, userController.getUsers)
+    .get(...authenticated, userController.getUsers)
 
 // Specific actions before generic routes
 router.post('/:userId/approve', ...adminOnly, userController.approveUser);
