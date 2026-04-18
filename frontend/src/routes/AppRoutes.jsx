@@ -20,6 +20,7 @@ import PaymentPage from '@/modules/payment/pages/PaymentPage/PaymentPage';
 import MessagePage from '@/modules/message/pages/MessagePage/MessagePage';
 import NotificationsPage from '@/modules/notification/pages/NotificationsPage/NotificationsPage';
 import MemberPage from '@/modules/members/pages/members/MemberPage';
+import SettingsPage from '@/modules/settings/pages/SettingsPage/SettingsPage';
 
 const AppRoutes = () => {
     return (
@@ -29,7 +30,6 @@ const AppRoutes = () => {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/food-gallery" element={<FoodGalleryPage />} />
-                <Route path="*" element={<NotFoundPage />} />
             </Route>
 
             {/* ── Auth Routes (no Navbar) ── */}
@@ -102,6 +102,17 @@ const AppRoutes = () => {
                     </ProtectedRoute>
                 }
             />
+            <Route
+                path="/settings"
+                element={
+                    <ProtectedRoute>
+                        <SettingsPage/>
+                    </ProtectedRoute>
+                }
+            />
+
+            {/* ── Catch-all (must be last) ── */}
+            <Route path="*" element={<NotFoundPage />} />
         </Routes>
     );
 };

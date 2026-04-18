@@ -1,7 +1,7 @@
 import React from 'react';
 import {
     Mail, Phone, ShieldCheck, Flame, Droplets,
-    Utensils, Receipt, Users, Banknote, Hash,
+    Utensils, Receipt, Users, Banknote, Hash,Fuel
 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────
@@ -209,7 +209,7 @@ const MemberInvoiceDetails = ({ user }) => {
                     </div>
 
                     {/* ── Mini metrics grid ── */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
                         <MiniMetric
                             icon={Utensils}
                             label="Own Meals"
@@ -224,13 +224,21 @@ const MemberInvoiceDetails = ({ user }) => {
                         />
                         <MiniMetric
                             icon={Flame}
-                            label="Gas Charge"
+                            label="Cooking Charge"
+                            value={`₹\u202F${fmt(user?.cookingCharge ?? 0)}`}
+                            subtext="monthly fixed"
+                        />
+                        <MiniMetric
+                            icon={Fuel}
+                            label="Gas Bill"
                             value={`₹\u202F${fmt(user?.gasBillCharge ?? 0)}`}
+                            subtext="per member share"
                         />
                         <MiniMetric
                             icon={Droplets}
                             label="Water Bill"
                             value={`₹\u202F${fmt(user?.waterBill ?? 0)}`}
+                            subtext="per member share"
                         />
                     </div>
 

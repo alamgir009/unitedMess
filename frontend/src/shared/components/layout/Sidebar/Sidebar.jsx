@@ -8,16 +8,18 @@ import {
     MessageSquare,
     Bell,
     Settings,
+    UserCircle,
     LogOut,
     X
 } from 'lucide-react';
 import { cn } from '@/core/utils/helpers/string.helper';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '@/modules/auth/store/auth.slice';
 
 const Sidebar = ({ isOpen, onClose }) => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const { user } = useSelector((state) => state.auth);
 
     const navigation = [
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -95,6 +97,20 @@ const Sidebar = ({ isOpen, onClose }) => {
 
                 {/* Footer actions */}
                 <div className="border-t border-gray-200 dark:border-slate-800 p-4 space-y-1 transition-colors duration-300">
+                    {user?.role === 'admin' && (
+                        <NavLink
+                            to="/settings"
+                            className={({ isActive }) => cn(
+                                "group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors",
+                                isActive
+                                    ? "bg-blue-50 dark:bg-blue-600/10 text-blue-600 dark:text-blue-400"
+                                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white"
+                            )}
+                        >
+                            <Settings className="mr-3 h-5 w-5 flex-shrink-0" />
+                            System Settings
+                        </NavLink>
+                    )}
                     <NavLink
                         to="/profile"
                         className={({ isActive }) => cn(
@@ -104,8 +120,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                                 : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white"
                         )}
                     >
-                        <Settings className="mr-3 h-5 w-5 flex-shrink-0" />
-                        Settings
+                        <UserCircle className="mr-3 h-5 w-5 flex-shrink-0" />
+                        Profile
                     </NavLink>
                     <button
                         onClick={handleLogout}
