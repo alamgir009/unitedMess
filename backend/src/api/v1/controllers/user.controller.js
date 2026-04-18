@@ -3,6 +3,7 @@ const pick = require('../../../utils/helpers/pick');
 const { userService } = require('../../../services');
 const { sendSuccessResponse } = require('../../../utils/helpers/response.helper');
 const mongoose = require('mongoose');
+const cloudinary = require('cloudinary').v2;
 const AppError = require('../../../utils/errors/AppError');   // <-- added
 
 // Validation helper
@@ -79,6 +80,37 @@ const updateMe = asyncHandler(async (req, res) => {
     const allowedUpdates = pick(req.body, ['name', 'phone', 'image', 'email']);
     const user = await userService.updateProfile(req.user.id, allowedUpdates, false);
     sendSuccessResponse(res, 200, 'Profile updated successfully', user);
+});
+
+const updateAvatar = asyncHandler(async (req, res) => {
+    if (!req.file) {
+        throw new AppError('Please upload an image file.', 400);
+    }
+
+    const userId = req.user.id;
+    const user = await userService.getUserById(userId);
+
+    // Extract existing Cloudinary Public ID and destroy old image
+    if (user.image && user.image.includes('cloudinary.com')) {
+        try {
+           const urlParts = user.image.split('/');
+           const folderAndFile = urlParts.slice(-2).join('/'); // avatars/filename.jpg
+           // Actually, since our folder is unitedMess/avatars, it usually looks like .../upload/v1234/unitedMess/avatars/filename.jpg
+           // Better extraction:
+           // find the part starting with 'unitedMess/'
+           const unitedMessIndex = urlParts.indexOf('unitedMess');
+           if(unitedMessIndex !== -1) {
+               const publicIdWithExt = urlParts.slice(unitedMessIndex).join('/');
+               const publicId = publicIdWithExt.split('.')[0];
+               await cloudinary.uploader.destroy(publicId);
+           }
+        } catch (error) {
+           console.error("Failed to delete old image from Cloudinary:", error);
+        }
+    }
+
+    const updatedUser = await userService.updateProfile(userId, { image: req.file.path }, false);
+    sendSuccessResponse(res, 200, 'Profile picture updated successfully', updatedUser);
 });
 
 // Admin deletes any user
@@ -229,6 +261,7 @@ module.exports = {
     getMe,
     updateUser,
     updateMe,
+    updateAvatar,
     deleteUser,
     approveUser,
     denyUser,

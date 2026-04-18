@@ -20,6 +20,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCallback, useState, useMemo } from 'react';
 import { EditModal } from '../../components/EditModal/EditModal';
 import { EditForm } from '../../components/EditForm/EditForm';
+import { AvatarUpload } from '../../components/AvatarUpload';
 
 const ProfilePage = () => {
     const { user } = useSelector((state) => state.auth);
@@ -110,22 +111,7 @@ const ProfilePage = () => {
                         <Card className="overflow-hidden border-border/40 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl shadow-lg transition-colors">
                             <CardContent className="p-6">
                                 <div className="flex flex-col items-center text-center space-y-4">
-                                    <div className="relative group">
-                                        <div className="w-28 h-28 rounded-full bg-gradient-to-tr from-blue-500 to-cyan-400 p-[3px] shadow-md">
-                                            <div className="w-full h-full rounded-full bg-white dark:bg-slate-950 flex items-center justify-center overflow-hidden relative">
-                                                {user?.image ? (
-                                                    <img src={user.image} alt="Profile" className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <User className="w-12 h-12 text-blue-500 dark:text-blue-400" strokeWidth={1.5} />
-                                                )}
-
-                                                {/* Edit overlay */}
-                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer backdrop-blur-sm rounded-full">
-                                                    <Edit3 className="w-6 h-6 text-white" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <AvatarUpload />
 
                                     <div>
                                         <h3 className="text-xl font-bold text-gray-900 dark:text-gray-50 transition-colors">{user?.name || 'Member User'}</h3>

@@ -67,6 +67,22 @@ export const updateProfile = createAsyncThunk('auth/updateProfile', async (userD
     }
 });
 
+export const updateAvatar = createAsyncThunk('auth/updateAvatar', async (formData, thunkAPI) => {
+    try {
+        const response = await authService.updateAvatar(formData);
+        toast.success(response?.data?.message || 'Profile picture updated successfully');
+        return response;
+    } catch (error) {
+        const message =
+            error.response?.data?.message ||
+            error.response?.data?.error ||
+            error.message ||
+            'Avatar update failed';
+        toast.error(message);
+        return thunkAPI.rejectWithValue(message);
+    }
+});
+
 // Fetch payable amount for meal — returns full breakdown object
 export const fetchPayableAmount = createAsyncThunk(
     'auth/fetchPayable',
@@ -194,6 +210,23 @@ export const authSlice = createSlice({
                 }
             })
             .addCase(updateProfile.rejected, (state, action) => {
+                state.isLoading = false;
+                state.isError = true;
+                state.message = action.payload;
+            })
+            // Update Avatar
+            .addCase(updateAvatar.pending, (state) => {
+                state.isLoading = true;
+            })
+            .addCase(updateAvatar.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.isSuccess = true;
+                const updatedUser = action.payload?.data?.user || action.payload?.data || action.payload?.user;
+                if (updatedUser && typeof updatedUser === 'object' && updatedUser._id) {
+                    state.user = updatedUser;
+                }
+            })
+            .addCase(updateAvatar.rejected, (state, action) => {
                 state.isLoading = false;
                 state.isError = true;
                 state.message = action.payload;

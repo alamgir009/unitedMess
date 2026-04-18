@@ -65,6 +65,18 @@ const authService = {
             Cookies.set('user', JSON.stringify(updatedUser), { expires: 7, secure: true, sameSite: 'strict' });
         }
         return response.data;
+    },
+    updateAvatar: async (formData) => {
+        const response = await apiClient.patch('users/me/avatar', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        const updatedUser = response.data?.data;
+        if (updatedUser && typeof updatedUser === 'object' && updatedUser._id) {
+            Cookies.set('user', JSON.stringify(updatedUser), { expires: 7, secure: true, sameSite: 'strict' });
+        }
+        return response.data;
     }
 };
 

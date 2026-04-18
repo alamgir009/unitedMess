@@ -54,7 +54,8 @@ const userSchema = new mongoose.Schema({
         validate: {
             validator: function (v) {
                 if (!v) return true;
-                return validator.isURL(v, { protocols: ['http', 'https'] });
+                // Allow any valid http or https URL, simpler and more permissive than strict validator.isURL
+                return /^https?:\/\/.+/.test(v);
             },
             message: 'Please provide a valid image URL'
         }

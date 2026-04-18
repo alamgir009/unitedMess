@@ -1,6 +1,7 @@
 const express = require('express');
 const userController = require('../controllers/user.controller');
 const { protect, authorize } = require('../middlewares/auth.middleware');
+const upload = require('../middlewares/upload.middleware');
 
 const router = express.Router();
 
@@ -23,6 +24,8 @@ router.route('/me')
 .get(...authenticated, userController.getMe)
 .patch(...authenticated, userController.updateMe)
 .delete(...authenticated, userController.deactivateMyAccount);
+
+router.patch('/me/avatar', ...authenticated, upload.single('image'), userController.updateAvatar);
 router.get('/me/payable', ...authenticated, userController.getPaybleAmountforMeal);
 router.get('/me/payable/gasbill', ...authenticated, userController.getPaybleAmountforGasBill);
 

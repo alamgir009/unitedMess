@@ -1,4 +1,5 @@
 const express = require('express');
+const config = require('./config'); // Must be loaded before routes so dotenv initializes
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const cors = require('cors');
@@ -8,7 +9,6 @@ const cookieParser = require('cookie-parser');
 const apiV1Routes = require('./api/v1/routes');
 const errorMiddleware = require('./api/v1/middlewares/error.middleware');
 const { setupSocketIO } = require('./sockets');
-const config = require('./config');
 
 const app = express();
 
