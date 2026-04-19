@@ -60,6 +60,20 @@ const deleteMeal = asyncHandler(async (req, res) => {
     res.status(204).send();
 });
 
+// ─── Meal Polling Controllers ───────────────────────────────────────────
+
+const voteMealPoll = asyncHandler(async (req, res) => {
+    const poll = await mealService.voteMealPoll(req.user.id, req.body);
+    sendSuccessResponse(res, 200, 'Vote recorded successfully', poll);
+});
+
+const getMealPollStatus = asyncHandler(async (req, res) => {
+    const date = req.query.date || new Date().toISOString();
+    const status = await mealService.getMealPollStatus(date);
+    sendSuccessResponse(res, 200, 'Meal poll status retrieved successfully', status);
+});
+
+
 // ─── Admin Controllers ──────────────────────────────────────────────────────────
 
 const adminGetUserMeals = asyncHandler(async (req, res) => {
@@ -120,4 +134,6 @@ module.exports = {
     adminCreateMeal,
     adminUpdateMeal,
     adminDeleteMeal,
-};
+    voteMealPoll,
+    getMealPollStatus,
+};

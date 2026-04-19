@@ -21,6 +21,7 @@ import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import MealList from '../../components/MealList/MealList';
 import MealForm from '../../components/MealForm/MealForm';
 import MealModal from '../../components/MealModal/MealModal';
+import MealPolling from '../../components/MealPolling/MealPolling';
 import Pagination from '@/shared/components/ui/Pagination/Pagination';
 import { fetchMeals, createMeal, updateMeal, deleteMeal, reset, adminCreateMeal } from '../../store/meal.slice';
 
@@ -105,6 +106,7 @@ const MealPage = () => {
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
     const [showFilters, setShowFilters] = useState(false);
+    const [pollDate, setPollDate] = useState(new Date().toISOString());
 
     /* pagination local state */
     const [page, setPage] = useState(1);
@@ -276,6 +278,18 @@ const MealPage = () => {
                                 <span className="relative">Add Meal</span>
                             </motion.button>
                         </div>
+                    </motion.div>
+
+                    {/* --- Polling Section --- */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="rounded-[32px] p-6 sm:p-8 bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-2xl relative overflow-hidden"
+                    >
+                        {/* Decorative gradient */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-10" />
+                        <MealPolling selectedDate={pollDate} />
                     </motion.div>
 
                     {/* ── Stats Pills ── */}

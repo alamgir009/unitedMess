@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Meal = require('../models/Meal.model');
+const MealPoll = require('../models/MealPoll.model');
 const User = require('../models/User.model');
 const AppError = require('../utils/errors/AppError');
 const { parseDate } = require('../utils/helpers/date.helper');
@@ -197,6 +198,67 @@ const verifyUserExists = async (userId) => {
     return user;
 };
 
+/**
+ * Vote for a meal poll on a specific date
+ */
+const voteMealPoll = async (userId, pollData) => {
+    const { type, date: dateStr } = pollData;
+    const date = parseDate(dateStr);
+
+    // Update or create vote for this specific user on this specific date
+    const poll = await MealPoll.findOneAndUpdate(
+        { user: userId, date: date },
+        { type, updatedBy: userId },
+        { upsert: true, new: true, runValidators: true }
+    );
+
+    return poll;
+};
+
+/**
+ * Get meal poll status for a specific date (includes carry-over logic)
+ */
+const getMealPollStatus = async (dateStr) => {
+    const targetDate = parseDate(dateStr);
+
+    // 1. Get all active approved users
+    const users = await User.find({ isActive: true, userStatus: 'approved' })
+        .select('name image email')
+        .lean();
+
+    // 2. For each user, find their latest vote ON or BEFORE targetDate
+    const pollData = await Promise.all(users.map(async (user) => {
+        const latestVote = await MealPoll.findOne({
+            user: user._id,
+            date: { $lte: targetDate }
+        })
+            .sort({ date: -1 })
+            .lean();
+
+        return {
+            user,
+            type: latestVote ? latestVote.type : 'off', // Default to 'off' if no vote ever
+            lastUpdated: latestVote ? latestVote.updatedAt : null,
+            voteDate: latestVote ? latestVote.date : null
+        };
+    }));
+
+    // 3. Aggregate stats
+    const stats = {
+        total: pollData.length,
+        day: pollData.filter(p => p.type === 'day' || p.type === 'both').length,
+        night: pollData.filter(p => p.type === 'night' || p.type === 'both').length,
+        off: pollData.filter(p => p.type === 'off').length,
+        both: pollData.filter(p => p.type === 'both').length
+    };
+
+    return {
+        date: targetDate,
+        votes: pollData,
+        stats
+    };
+};
+
 module.exports = {
     createMeal,
     queryMeals,
@@ -204,4 +266,6 @@ module.exports = {
     updateMealById,
     deleteMealById,
     verifyUserExists,
-};
+    voteMealPoll,
+    getMealPollStatus
+};

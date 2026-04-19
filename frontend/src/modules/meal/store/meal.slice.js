@@ -16,6 +16,7 @@ const initialState = {
     isSuccess: false,
     isError: false,
     message: '',
+    pollStatus: null, // { date, votes, stats }
 };
 
 // Fetch meals for the authenticated user
@@ -72,6 +73,31 @@ export const deleteMeal = createAsyncThunk('meal/delete', async (mealId, thunkAP
         return thunkAPI.rejectWithValue(message);
     }
 });
+
+// Vote for meal poll
+export const voteMealPoll = createAsyncThunk('meal/votePoll', async (pollData, thunkAPI) => {
+    try {
+        const response = await mealService.voteMealPoll(pollData);
+        // Refresh poll status after voting
+        thunkAPI.dispatch(fetchPollStatus(pollData.date));
+        return response.data;
+    } catch (error) {
+        const message = error.response?.data?.error || error.response?.data?.message || error.message || 'Something went wrong';
+        return thunkAPI.rejectWithValue(message);
+    }
+});
+
+// Fetch meal poll status
+export const fetchPollStatus = createAsyncThunk('meal/fetchPollStatus', async (date, thunkAPI) => {
+    try {
+        const response = await mealService.getMealPollStatus(date);
+        return response.data;
+    } catch (error) {
+        const message = error.response?.data?.error || error.response?.data?.message || error.message || 'Something went wrong';
+        return thunkAPI.rejectWithValue(message);
+    }
+});
+
 
 export const mealSlice = createSlice({
     name: 'meal',
@@ -167,6 +193,16 @@ export const mealSlice = createSlice({
             .addCase(deleteMeal.rejected, (state, action) => {
                 state.isLoading = false;
                 state.isError = true;
+                state.message = action.payload;
+            })
+            // Fetch Poll Status
+            .addCase(fetchPollStatus.pending, (state) => {
+                // Not setting global isLoading to avoid full page loader
+            })
+            .addCase(fetchPollStatus.fulfilled, (state, action) => {
+                state.pollStatus = action.payload;
+            })
+            .addCase(fetchPollStatus.rejected, (state, action) => {
                 state.message = action.payload;
             });
     },

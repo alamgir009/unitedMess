@@ -58,6 +58,18 @@ const adminDeleteMeal = async (userId, mealId) => {
     return response.data;
 };
 
+// --- Polling Routes ---
+
+const voteMealPoll = async (pollData) => {
+    const response = await apiClient.post(`${API_URL}/poll/vote`, pollData);
+    return response.data;
+};
+
+const getMealPollStatus = async (date) => {
+    const response = await apiClient.get(`${API_URL}/poll/status?date=${date}`);
+    return response.data;
+};
+
 const mealService = {
     getMeals,
     createMeal,
@@ -67,6 +79,8 @@ const mealService = {
     adminCreateMeal,
     adminUpdateMeal,
     adminDeleteMeal,
+    voteMealPoll,
+    getMealPollStatus,
 };
 
-export default mealService;
+export default mealService;

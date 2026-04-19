@@ -25,4 +25,8 @@ router.route('/admin/users/:userId/meals/:mealId')
     .patch(...adminOnly, mealController.adminUpdateMeal)
     .delete(...adminOnly, mealController.adminDeleteMeal);
 
-module.exports = router;
+// Polling routes
+router.post('/poll/vote', ...authenticated, mealController.voteMealPoll);
+router.get('/poll/status', ...authenticated, mealController.getMealPollStatus);
+
+module.exports = router;
