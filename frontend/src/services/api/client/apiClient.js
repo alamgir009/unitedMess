@@ -2,7 +2,7 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 
 const apiClient = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || '/api/v1',
+    baseURL: import.meta.env.VITE_API_URL || 'https://unitedmess.onrender.com',
     withCredentials: true, // Send httpOnly cookies with every request
     headers: {
         'Content-Type': 'application/json',
