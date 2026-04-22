@@ -8,7 +8,6 @@ const cookieParser = require('cookie-parser');
 
 const apiV1Routes = require('./api/v1/routes');
 const errorMiddleware = require('./api/v1/middlewares/error.middleware');
-const { setupSocketIO } = require('./sockets');
 
 const app = express();
 

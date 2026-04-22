@@ -1,19 +1,26 @@
+const http = require('http');
 const app = require('./app');
 const config = require('./config/index');
 const connectDB = require('./database/connection');
 const logger = require('./utils/logger/index');
 const { registerInvoiceCron } = require('./jobs/cron/invoiceCron');
+const { setupSocketIO } = require('./sockets');
+
+// Create HTTP server
+const server = http.createServer(app);
+
+// Initialize Socket.io with the HTTP server
+setupSocketIO(server);
 
 // Connect to MongoDB
 connectDB().then(() => {
-    // Register cron jobs once DB is connected
     registerInvoiceCron();
 });
 
 // Start server
 const PORT = config.app.port || 8080;
 
-const server = app.listen(PORT, () => {
+server.listen(PORT, () => {
     logger.info(`🚀 Server running on port ${PORT} in ${config.app.env} mode`);
 });
 
