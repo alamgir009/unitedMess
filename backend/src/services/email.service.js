@@ -654,7 +654,7 @@ ${companyAddress}
  * @returns {Promise}
  */
 const sendVerificationEmail = async (to, token, name = 'User') => {
-    const verificationUrl = `${config.appUrl || 'http://localhost:8080'}/api/v1/auth/verify-email/${token}`;
+    const verificationUrl = `${config.app.frontendUrl}/auth/verify-email?token=${token}`;
 
     const { html, text } = generateEmailTemplate({
         title: 'Verify Your Email Address',
@@ -685,7 +685,7 @@ const sendVerificationEmail = async (to, token, name = 'User') => {
  * @returns {Promise}
  */
 const sendPasswordResetEmail = async (to, token, name = 'User') => {
-    const resetUrl = `${config.appUrl || 'http://localhost:8080'}/api/v1/auth/reset-password/${token}`;
+    const resetUrl = `${config.app.frontendUrl}/reset-password/${token}`;
 
     const { html, text } = generateEmailTemplate({
         title: 'Reset Your Password',
@@ -716,7 +716,7 @@ const sendPasswordResetEmail = async (to, token, name = 'User') => {
  * @returns {Promise}
  */
 const sendWelcomeEmail = async (to, name) => {
-    const dashboardUrl = `${config.appUrl || 'http://localhost:5173'}/dashboard`;
+    const dashboardUrl = `${config.app.frontendUrl}/dashboard`;
 
     const { html, text } = generateEmailTemplate({
         title: 'Email Verified Successfully!',
@@ -759,7 +759,7 @@ const sendWelcomeEmail = async (to, name) => {
  * @returns {Promise}
  */
 const sendAccountApprovedEmail = async (to, name) => {
-    const loginUrl = `${config.appUrl || 'http://localhost:5173'}/login`;
+    const loginUrl = `${config.app.frontendUrl}/login`;
 
     const { html, text } = generateEmailTemplate({
         title: 'Account Approved!',
@@ -796,7 +796,7 @@ const sendAccountApprovedEmail = async (to, name) => {
  * @returns {Promise}
  */
 const sendAccountDeniedEmail = async (to, name, reason = 'Your application did not meet our current requirements.') => {
-    const supportUrl = `${config.appUrl || 'https://unitedmess.com'}/support`;
+    const supportUrl = `${config.app.frontendUrl}/support`;
 
     const { html, text } = generateEmailTemplate({
         title: 'Account Update',
@@ -833,8 +833,8 @@ const sendAccountDeniedEmail = async (to, name, reason = 'Your application did n
  * @returns {Promise}
  */
 const sendPasswordChangeNotification = async (to, name = 'User') => {
-    const supportUrl = `${config.appUrl || 'https://unitedmess.com'}/support`;
-    const loginUrl = `${config.appUrl || 'https://unitedmess.com'}/login`;
+    const supportUrl = `${config.app.frontendUrl}/support`;
+    const loginUrl = `${config.app.frontendUrl}/login`;
 
     const { html, text } = generateEmailTemplate({
         title: 'Password Changed Successfully',
@@ -874,8 +874,8 @@ const sendPasswordChangeNotification = async (to, name = 'User') => {
  * @returns {Promise}
  */
 const sendPasswordResetConfirmation = async (to, name = 'User') => {
-    const loginUrl = `${config.appUrl || 'https://unitedmess.com'}/login`;
-    const supportUrl = `${config.appUrl || 'https://unitedmess.com'}/support`;
+    const loginUrl = `${config.app.frontendUrl}/login`;
+    const supportUrl = `${config.app.frontendUrl}/support`;
 
     const { html, text } = generateEmailTemplate({
         title: 'Password Reset Successful',
@@ -917,8 +917,8 @@ const sendPasswordResetConfirmation = async (to, name = 'User') => {
  * @returns {Promise}
  */
 const sendAccountLockedEmail = async (to, name = 'User') => {
-    const resetPasswordUrl = `${config.appUrl || 'https://unitedmess.com'}/auth/forgot-password`;
-    const supportUrl = `${config.appUrl || 'https://unitedmess.com'}/support`;
+    const resetPasswordUrl = `${config.app.frontendUrl}/forgot-password`;
+    const supportUrl = `${config.app.frontendUrl}/support`;
 
     const { html, text } = generateEmailTemplate({
         title: 'Account Locked - Security Alert',

@@ -7,25 +7,9 @@ const { sendSuccessResponse } = require('../../../utils/helpers/response.helper'
 // @route   POST /api/v1/auth/register
 // @access  Public
 exports.register = asyncHandler(async (req, res) => {
-    const { user, tokens } = await authService.register(req.body);
+    const { user } = await authService.register(req.body);
 
-    // Set refresh token in httpOnly cookie
-    res.cookie('refreshToken', tokens.refresh.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
-
-    // Set access token in httpOnly cookie
-    res.cookie('accessToken', tokens.access.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 24 * 60 * 60 * 1000, // 24 hr
-    });
-
-    sendSuccessResponse(res, 201, 'User registered successfully', {
+    sendSuccessResponse(res, 201, 'User registered successfully. Please check your email for verification.', {
         user,
     });
 });
@@ -135,6 +119,18 @@ exports.verifyEmail = asyncHandler(async (req, res) => {
     await authService.verifyEmail(req.params.token);
 
     sendSuccessResponse(res, 200, 'Email verified successfully');
+});
+
+// @desc    Resend verification email
+// @route   POST /api/v1/auth/resend-verification
+// @access  Public
+exports.resendVerificationEmail = asyncHandler(async (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        throw new AppError('Email is required', 400);
+    }
+    await authService.resendVerificationEmailByEmail(email);
+    sendSuccessResponse(res, 200, 'Verification email resent successfully');
 });
 
 // @desc    Change password

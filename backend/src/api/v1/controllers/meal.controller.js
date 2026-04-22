@@ -3,6 +3,7 @@ const { mealService } = require('../../../services');
 const { sendSuccessResponse } = require('../../../utils/helpers/response.helper');
 const pick = require('../../../utils/helpers/pick');
 const AppError = require('../../../utils/errors/AppError');
+const { getVisibleBillingStartDate } = require('../../../utils/helpers/date.helper');
 
 // ─── Authenticated User Controllers ────────────────────────────────────────────
 
@@ -19,6 +20,11 @@ const getMeals = asyncHandler(async (req, res) => {
 
     if (!isAdmin) {
         filter.user = req.user.id;
+    }
+
+    // Apply 10th-day visual reset rule if not fetching all history
+    if (!filter.date && !(isAdmin && req.query.allHistory === 'true')) {
+        filter.date = { $gte: getVisibleBillingStartDate() };
     }
 
     const meals = await mealService.queryMeals(filter, options, isAdmin);
@@ -84,6 +90,11 @@ const adminGetUserMeals = asyncHandler(async (req, res) => {
         user: req.params.userId 
     };
     const options = pick(req.query, ['sortBy', 'limit', 'page']);
+
+    // Apply 10th-day visual reset rule if not fetching all history
+    if (!filter.date && req.query.allHistory !== 'true') {
+        filter.date = { $gte: getVisibleBillingStartDate() };
+    }
 
     const meals = await mealService.queryMeals(filter, options);
     sendSuccessResponse(res, 200, 'User meals retrieved successfully', meals);

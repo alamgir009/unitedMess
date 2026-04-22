@@ -23,9 +23,15 @@ const updateGasBillCharge = asyncHandler(async(req, res) => {
 });
 
 
+const updatePlatformFee = asyncHandler(async(req, res) => {
+    const platformFee = await settingService.updatePlatformFee(req.body);
+    sendSuccessResponse(res, 200, 'Platform fee updated', platformFee);
+});
+
 module.exports = {
     updateGuestMealCharge,
     updateCookingCharge,
     updateWaterBill,
-    updateGasBillCharge
+    updateGasBillCharge,
+    updatePlatformFee
 }

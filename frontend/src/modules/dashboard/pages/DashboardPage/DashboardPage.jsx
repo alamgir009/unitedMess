@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import AdminDashboard from './views/AdminDashboard';
 import UserDashboard from './views/UserDashboard';
+import BillingCycleAlert from '../../components/BillingCycleAlert/BillingCycleAlert';
 
 const DashboardPage = () => {
     // Determine the user's role from the auth state
@@ -19,6 +20,9 @@ const DashboardPage = () => {
                     <div className="absolute top-[-10%] sm:top-[-20%] left-1/4 w-[50vw] h-[50vw] rounded-full bg-indigo-900/10 blur-[120px]" />
                     <div className="absolute top-[20%] right-1/4 w-[40vw] h-[40vw] rounded-full bg-purple-900/10 blur-[100px]" />
                 </div>
+
+                {/* Billing Cycle Reset Alert */}
+                <BillingCycleAlert />
 
                 {/* Conditional Rendering Strategy for Role-Based UI */}
                 {isAdmin ? <AdminDashboard /> : <UserDashboard />}

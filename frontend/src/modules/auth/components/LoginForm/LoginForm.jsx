@@ -1,15 +1,19 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
 import { login } from '@/modules/auth/store/auth.slice';
 import Button from '@/shared/ui/Button/Button';
 import Input from '@/shared/ui/Input/Input';
 import { toast } from 'react-hot-toast';
+import { Eye, EyeOff } from 'lucide-react';
 
 const LoginForm = () => {
     const [formData, setFormData] = useState({
         email: '',
         password: '',
     });
+
+    const [showPassword, setShowPassword] = useState(false);
 
     const { email, password } = formData;
     const dispatch = useDispatch();
@@ -81,9 +85,9 @@ const LoginForm = () => {
                 </div>
 
                 <div className="text-sm">
-                    <a href="/forgot-password" className="font-medium text-primary hover:opacity-80 transition-opacity">
+                    <Link to="/forgot-password" title="Forgot password" id="forgot-password-link" className="font-medium text-primary hover:opacity-80 transition-opacity">
                         Forgot your password?
-                    </a>
+                    </Link>
                 </div>
             </div>
 

@@ -1,8 +1,11 @@
 const User = require('../models/User.model');
 const Payment = require('../models/Payment.model');
+const Meal = require('../models/Meal.model');
+const Market = require('../models/Market.model');
 const AppError = require('../utils/errors/AppError');
 const emailService = require('./email.service');
 const mongoose = require('mongoose');
+const { getBillingPeriod } = require('../utils/helpers/date.helper');
 
 // Constants
 const PAYMENT_STATUSES = ['pending', 'success', 'failed'];
@@ -245,30 +248,99 @@ async function deactivateAccount(userId) {
 }
 
 /**
- * Get all users with optimized pagination and filtering
- * @param {Object} filters
- * @param {Object} pagination - { page, limit }
+ * Get all users with optimized pagination and filtering.
+ * Important: Returns current billing-month stats (meals/market) for each user.
  */
 async function getAllUsers(filters = {}, pagination = {}) {
     const page = Math.max(1, Number(pagination.page) || DEFAULT_PAGE);
     const limit = Math.min(MAX_LIMIT, Math.max(1, Number(pagination.limit) || DEFAULT_LIMIT));
     const skip = (page - 1) * limit;
 
-    // Build query dynamically
+    const { start, end } = getBillingPeriod();
+
     const query = Object.entries(filters).reduce((acc, [key, value]) => {
         if (value !== undefined && value !== '') acc[key] = value;
         return acc;
     }, {});
 
-    // Parallel execution with cursor-based optimization hint
+    // Use aggregation to fetch current-period stats per user
+    const aggregationPipeline = [
+        { $match: { ...query, isActive: { $ne: false } } }, // default to showing active, but filter can override
+        { $sort: { createdAt: -1 } },
+        { $skip: skip },
+        { $limit: limit },
+        {
+            $lookup: {
+                from: 'meals',
+                let: { userId: '$_id' },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    { $eq: ['$user', '$$userId'] },
+                                    { $gte: ['$date', start] },
+                                    { $lte: ['$date', end] }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: null,
+                            totalMeal: { $sum: '$mealCount' },
+                            guestMeal: { $sum: '$guestCount' }
+                        }
+                    }
+                ],
+                as: 'mealStats'
+            }
+        },
+        {
+            $lookup: {
+                from: 'markets',
+                let: { userId: '$_id' },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    { $eq: ['$user', '$$userId'] },
+                                    { $gte: ['$date', start] },
+                                    { $lte: ['$date', end] }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: null,
+                            totalMarket: { $sum: '$amount' }
+                        }
+                    }
+                ],
+                as: 'marketStats'
+            }
+        },
+        {
+            $addFields: {
+                totalMeal: { $ifNull: [{ $arrayElemAt: ['$mealStats.totalMeal', 0] }, 0] },
+                guestMeal: { $ifNull: [{ $arrayElemAt: ['$mealStats.guestMeal', 0] }, 0] },
+                totalMarketAmount: { $ifNull: [{ $arrayElemAt: ['$marketStats.totalMarket', 0] }, 0] }
+            }
+        },
+        {
+            $project: {
+                password: 0,
+                __v: 0,
+                mealStats: 0,
+                marketStats: 0
+            }
+        }
+    ];
+
     const [users, total] = await Promise.all([
-        User.find(query)
-            .select('-password -__v') // Exclude sensitive fields
-            .limit(limit)
-            .skip(skip)
-            .sort({ createdAt: -1 })
-            .lean()
-            .exec(),
+        User.aggregate(aggregationPipeline),
         User.countDocuments(query)
     ]);
 
@@ -284,6 +356,7 @@ async function getAllUsers(filters = {}, pagination = {}) {
         }
     };
 }
+
 
 /**
  * Optimized aggregation using $facet for single-query stats
@@ -332,44 +405,97 @@ async function getUserStats() {
 }
 
 /**
- * Optimized financial calculations - Single aggregation
+ * Grand total market spend for the ACTIVE billing month only.
+ * Queries the Market collection directly — never stale User fields.
  */
 async function getGrandTotalMarketAmount() {
-    const [result] = await User.aggregate([
-        { $group: { _id: null, total: { $sum: '$totalMarketAmount' } } }
+    const { start, end } = getBillingPeriod();
+    const [result] = await Market.aggregate([
+        { $match: { date: { $gte: start, $lte: end } } },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
     ]);
     return round2(result?.total || 0);
 }
 
+/**
+ * Grand total meals eaten for the ACTIVE billing month only.
+ * Queries the Meal collection directly — never stale User fields.
+ */
 async function getGrandTotalMeal() {
-    const [result] = await User.aggregate([
-        { $group: { _id: null, total: { $sum: '$totalMeal' } } }
+    const { start, end } = getBillingPeriod();
+    const [result] = await Meal.aggregate([
+        { $match: { date: { $gte: start, $lte: end } } },
+        { $group: { _id: null, total: { $sum: '$mealCount' } } }
     ]);
     return result?.total || 0;
 }
 
+/**
+ * Meal charge per meal for the ACTIVE billing month only.
+ * mealCharge = totalMarket / totalMeals
+ */
 async function getMealCharge() {
-    const [result] = await User.aggregate([
-        {
-            $group: {
-                _id: null,
-                totalMarket: { $sum: '$totalMarketAmount' },
-                totalMeal: { $sum: '$totalMeal' }
-            }
-        },
-        {
-            $project: {
-                charge: {
-                    $cond: [
-                        { $eq: ['$totalMeal', 0] },
-                        0,
-                        { $divide: ['$totalMarket', '$totalMeal'] }
-                    ]
+    const { start, end } = getBillingPeriod();
+
+    const [mealResult] = await Meal.aggregate([
+        { $match: { date: { $gte: start, $lte: end } } },
+        { $group: { _id: null, totalMeal: { $sum: '$mealCount' }, totalGuest: { $sum: '$guestCount' } } }
+    ]);
+    const [marketResult] = await Market.aggregate([
+        { $match: { date: { $gte: start, $lte: end } } },
+        { $group: { _id: null, totalMarket: { $sum: '$amount' } } }
+    ]);
+
+    const totalMeal   = mealResult?.totalMeal   || 0;
+    const totalGuest  = mealResult?.totalGuest  || 0;
+    const totalMarket = marketResult?.totalMarket || 0;
+    const guestRevenue = totalGuest * 60; // default guest meal rate
+
+    const charge = totalMeal > 0 ? (totalMarket - guestRevenue) / totalMeal : 0;
+    return round2(charge);
+}
+
+/**
+ * Combined billing-month stats in one call.
+ * Runs two parallel aggregations against Meal + Market collections.
+ * @returns {{ grandTotalMeal, grandTotalMarket, mealCharge, billingMonth, month, year }}
+ */
+async function getBillingMonthStats() {
+    const { start, end, month, year, monthName } = getBillingPeriod();
+
+    const [mealAgg, marketAgg] = await Promise.all([
+        Meal.aggregate([
+            { $match: { date: { $gte: start, $lte: end } } },
+            {
+                $group: {
+                    _id: null,
+                    totalMeal:  { $sum: '$mealCount' },
+                    totalGuest: { $sum: '$guestCount' }
                 }
             }
-        }
+        ]),
+        Market.aggregate([
+            { $match: { date: { $gte: start, $lte: end } } },
+            { $group: { _id: null, totalMarket: { $sum: '$amount' } } }
+        ])
     ]);
-    return round2(result?.charge || 0);
+
+    const grandTotalMeal   = mealAgg[0]?.totalMeal   || 0;
+    const totalGuest       = mealAgg[0]?.totalGuest  || 0;
+    const grandTotalMarket = marketAgg[0]?.totalMarket || 0;
+    const guestRevenue     = totalGuest * 60;
+    const mealCharge = grandTotalMeal > 0
+        ? round2((grandTotalMarket - guestRevenue) / grandTotalMeal)
+        : 0;
+
+    return {
+        grandTotalMeal,
+        grandTotalMarket: round2(grandTotalMarket),
+        mealCharge,
+        billingMonth: monthName,
+        month,
+        year
+    };
 }
 
 /**
@@ -378,80 +504,58 @@ async function getMealCharge() {
 const getPaybleAmountforMeal = async (userId) => {
     if (!isValidObjectId(userId)) throw new AppError('Invalid user ID', 400);
 
-    // Single aggregation for global + user data
-    const [globalData, user] = await Promise.all([
-        User.aggregate([
-            {
-                $group: {
-                    _id: null,
-                    grandTotalMarket: { $sum: '$totalMarketAmount' },
-                    grandTotalMeal: { $sum: '$totalMeal' },
-                    guestRevenue: {
-                        $sum: { $multiply: ['$guestMeal', '$chargePerGuestMeal'] }
-                    }
-                }
-            }
-        ]),
-        User.findById(userId).lean()
-    ]);
+    // Dynamically require to avoid circular dependencies
+    const invoiceService = require('./invoice.service');
 
+    // Get Active Invoice (which applies the 10th-day rule and restricts queries to the correct month's start/end dates)
+    const invoice = await invoiceService.getActiveInvoice(userId);
+    
+    // Get the global mess stats restricted to that same active month
+    const messStats = await invoiceService.calculateMessStats(invoice.month, invoice.year);
+    
+    const user = await User.findById(userId).lean();
     if (!user) throw new AppError('User not found', 404);
 
-    const stats = globalData[0] || { grandTotalMarket: 0, grandTotalMeal: 0, guestRevenue: 0 };
+    // Calculate if user has paid the gas bill for this active month
+    const completedGasAuth = await Payment.findOne({
+        user: userId,
+        status: 'completed',
+        month: invoice.monthName,
+        type: 'gas_bill'
+    }).lean();
 
-    // Calculate meal rate
-    const adjustedMealCharge = stats.grandTotalMeal > 0
-        ? (stats.grandTotalMarket - stats.guestRevenue) / stats.grandTotalMeal
-        : 0;
-
-    const guestMealAmount = (user.guestMeal || 0) * (user.chargePerGuestMeal || 0);
-    const costOfMeals = user.totalMeal * adjustedMealCharge;
-
-    const rawPayable = user.waterBill + user.cookingCharge +
-        (costOfMeals - user.totalMarketAmount) + guestMealAmount;
-
-    // Rounding logic
-    const rounded = round2(rawPayable);
+    // Rounding logic for continuity
+    const rounded = round2(invoice.totalPayable);
     const finalPayable = (rounded - Math.floor(rounded)) >= 0.5
         ? Math.ceil(rounded)
         : rounded;
 
-    // Async update (don't await, fire-and-forget)
+    // Async update to sync the raw model (fire-and-forget)
     User.findByIdAndUpdate(userId, {
         paybleAmountforMeal: finalPayable,
         lastCalculatedAt: new Date()
     }).catch(console.error);
 
-    // Calculate if user has paid based on actual payment records for the CURRENT month
-    // This is the absolute source of truth, avoiding any User model sync bugs
-    const currentMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
-    const completedPayments = await Payment.find({
-        user: userId,
-        status: 'completed',
-        month: currentMonth
-    }).lean();
-
-    const hasPaidMess = completedPayments.some(p => p.type === 'mess_bill');
-    const hasPaidGas  = completedPayments.some(p => p.type === 'gas_bill');
-
     return {
-        grandTotalMarketAmount: round2(stats.grandTotalMarket),
-        grandTotalMeal: stats.grandTotalMeal,
-        totalGuestRevenue: round2(stats.guestRevenue),
-        adjustedMealCharge: round2(adjustedMealCharge),
+        grandTotalMarketAmount: round2(messStats.totalMarketAmount),
+        grandTotalMeal: messStats.totalMealCount,
+        totalGuestRevenue: round2(messStats.guestRevenue),
+        adjustedMealCharge: round2(invoice.mealRate),
         userStats: {
-            totalMeal: user.totalMeal,
-            totalMarketAmount: round2(user.totalMarketAmount),
-            waterBill: round2(user.waterBill),
-            cookingCharge: round2(user.cookingCharge),
-            costOfMeals: round2(costOfMeals),
-            guestMeal: user.guestMeal || 0,
-            chargePerGuestMeal: user.chargePerGuestMeal || 0,
-            guestMealAmount: round2(guestMealAmount)
+            totalMeal: invoice.mealCount,
+            totalMarketAmount: round2(invoice.marketAmountSpent),
+            waterBill: round2(invoice.fixedCosts?.waterBill || 0),
+            cookingCharge: round2(invoice.fixedCosts?.cookingCharge || 0),
+            costOfMeals: round2(invoice.messCost),
+            guestMeal: invoice.guestMealCount,
+            chargePerGuestMeal: user.chargePerGuestMeal || 60,
+            guestMealAmount: round2(invoice.guestMealRevenue),
+            platformFee: round2(invoice.fixedCosts?.platformFee || user.platformFee || 0)
         },
         payableAmount: finalPayable,
-        paymentStatus: user.payment === 'success' || hasPaidMess ? 'success' : 'pending',
-        gasBillStatus: user.gasBill === 'success' || hasPaidGas  ? 'success' : 'pending',
+        paymentStatus: user.payment === 'success' || invoice.status === 'paid' ? 'success' : 'pending',
+        gasBillStatus: user.gasBill === 'success' || completedGasAuth ? 'success' : 'pending',
+        monthName: invoice.monthName,
     };
 };
 
@@ -535,6 +639,7 @@ module.exports = {
     getGrandTotalMarketAmount,
     getGrandTotalMeal,
     getMealCharge,
+    getBillingMonthStats,
     getPaybleAmountforMeal,
     getPaybleAmountforGasBill
 };

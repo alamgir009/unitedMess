@@ -42,12 +42,9 @@ async function register(userData) {
     await user.save();
 
     // Send verification email
-    await emailService.sendVerificationEmail(user.email, verificationToken);
+    await emailService.sendVerificationEmail(user.email, verificationToken, user.name);
 
-    // Generate auth tokens
-    const tokens = await tokenService.generateAuthTokens(user);
-
-    return { user, tokens };
+    return { user };
 }
 
 /**
@@ -141,8 +138,7 @@ async function forgotPassword(email) {
         .collation({ locale: 'en', strength: 2 });
 
     if (!user) {
-        // Don't reveal if email exists (security best practice)
-        return;
+        throw new AppError('Email address not found', 404);
     }
 
     // Generate reset token
@@ -223,8 +219,26 @@ async function verifyEmail(token) {
     user.emailVerificationExpires = undefined;
     await user.save();
 
-    // Send welcome email
-    await emailService.sendWelcomeEmail(user.email, user.name);
+    // Send welcome email to user
+    try {
+        await emailService.sendWelcomeEmail(user.email, user.name);
+    } catch (emailError) {
+        // Log the error but don't fail the verification since DB is already updated
+        console.error('Failed to send welcome email:', emailError);
+    }
+
+    // Notify Admins
+    try {
+        const admins = await User.find({ role: 'admin', isActive: true }).select('email');
+        if (admins && admins.length > 0) {
+            const adminEmails = admins.map(a => a.email);
+            // We pass the user object for details in the email
+            await emailService.sendNewUserAlertToAdmin(adminEmails, user);
+        }
+    } catch (adminNotifyError) {
+        console.error('Failed to notify admins about new verified user:', adminNotifyError);
+        // We don't throw here to avoid failing the verification process itself
+    }
 }
 
 /**
@@ -310,6 +324,29 @@ async function canRequestPasswordReset(email) {
     }
 
     return true;
+}
+
+/**
+ * Resend email verification by email address
+ * @param {string} email - User email
+ */
+async function resendVerificationEmailByEmail(email) {
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+        // We don't reveal if user exists for security, but usually this is called after registration
+        throw new AppError('User not found', 404);
+    }
+
+    if (user.isEmailVerified) {
+        throw new AppError('Email is already verified', 400);
+    }
+
+    // Generate new verification token
+    const verificationToken = createEmailVerificationToken(user);
+    await user.save({ validateBeforeSave: false });
+
+    // Send verification email
+    await emailService.sendVerificationEmail(user.email, verificationToken, user.name);
 }
 
 // ==================== PRIVATE HELPER FUNCTIONS ====================
@@ -404,5 +441,6 @@ module.exports = {
     verifyEmail,
     changePassword,
     resendVerificationEmail,
+    resendVerificationEmailByEmail,
     canRequestPasswordReset
 };

@@ -90,9 +90,34 @@ async function updateGasBillCharge(updateData) {
     return result;
 }
 
+/**
+ * Distribute a platform fee equally among all users.
+ * Each active user's `platformFee` field is updated.
+ *
+ * @param {Object} updateData - Contains the platformFee amount.
+ * @returns {Promise<Object>} - Result of the update operation.
+ */
+async function updatePlatformFee(updateData) {
+    const { platformFee } = updateData;
+
+    if (typeof platformFee !== 'number' || isNaN(platformFee) || platformFee < 0) {
+        throw new AppError('platformFee must be a valid non‑negative number', 400);
+    }
+    
+    // Applying to ALL users (like cookingCharge) since platform fee is a generic fee per person
+    const result = await User.updateMany(
+        {}, 
+        { $set: { platformFee } },
+        { runValidators: true }
+    );
+
+    return result;
+}
+
 module.exports = {
     updateGuestMealCharge,
     updateCookingCharge,
     updateWaterBill,
-    updateGasBillCharge
+    updateGasBillCharge,
+    updatePlatformFee
 }

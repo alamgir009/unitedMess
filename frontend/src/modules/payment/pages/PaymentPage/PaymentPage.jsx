@@ -27,6 +27,7 @@ import PaymentList      from '../../components/PaymentList/PaymentList';
 import PaymentForm      from '../../components/PaymentForm/PaymentForm';
 import PaymentModal     from '../../components/PaymentModal/PaymentModal';
 import MessBillInvoice  from '../../components/MessBillInvoice/MessBillInvoice';
+import MonthlyInvoiceModal from '../../components/MonthlyInvoiceModal/MonthlyInvoiceModal';
 
 import {
     fetchPayments,
@@ -87,6 +88,7 @@ const PaymentPage = () => {
     const [isPaying,       setIsPaying]       = useState(false);
     const [isSendingEmail, setIsSendingEmail] = useState(false);
     const [isModalOpen,    setIsModalOpen]    = useState(false);
+    const [invoiceModal,   setInvoiceModal]   = useState({ open: false, year: null, month: null, monthName: '' });
     const [editingPayment, setEditingPayment] = useState(null);
     const [isReadOnly,     setIsReadOnly]     = useState(false);
     const [viewMode,       setViewMode]       = useState('grid');
@@ -137,8 +139,13 @@ const PaymentPage = () => {
             const match = payments.find(p => p._id === lastPaymentId);
             if (match) return match;
         }
-        return (payments || []).find(p => p.type === 'mess_bill' && p.status === 'completed') || null;
-    }, [lastPaymentId, payments]);
+        const activeMonth = payableAmountData?.monthName;
+        return (payments || []).find(p => 
+            p.type === 'mess_bill' && 
+            p.status === 'completed' && 
+            (!activeMonth || p.month === activeMonth)
+        ) || null;
+    }, [lastPaymentId, payments, payableAmountData?.monthName]);
 
     const handleSendEmail = useCallback(async () => {
         const targetId = latestMessBillPayment?._id;
@@ -204,6 +211,22 @@ const PaymentPage = () => {
         setIsModalOpen(false);
         setEditingPayment(null);
         setIsReadOnly(false);
+    }, []);
+
+    const handleViewInvoice = useCallback((payment) => {
+        if (!payment || !payment.month) return;
+        const parts = payment.month.split(' '); // e.g., "April 2024"
+        if (parts.length >= 2) {
+            const date = new Date(`${parts[0]} 1, ${parts[1]}`);
+            if (!isNaN(date.getTime())) {
+                setInvoiceModal({
+                    open: true,
+                    year: date.getFullYear(),
+                    month: date.getMonth() + 1,
+                    monthName: payment.month,
+                });
+            }
+        }
     }, []);
 
     /* ── CRUD ── */
@@ -358,6 +381,7 @@ const PaymentPage = () => {
                                     data={payableAmountData}
                                     isAdmin={isAdmin}
                                     user={user}
+                                    platformFee={payableAmountData?.userStats?.platformFee || user?.platformFee || 0}
                                     onPayNow={handleRazorpayCheckout}
                                     isPaying={isPaying}
                                     isSendingEmail={isSendingEmail}
@@ -429,6 +453,7 @@ const PaymentPage = () => {
                                 viewMode={viewMode}
                                 onEdit={openEdit}
                                 onDelete={handleDelete}
+                                onViewInvoice={handleViewInvoice}
                                 isAdmin={isAdmin}
                             />
                             {!hasActive && (
@@ -453,6 +478,14 @@ const PaymentPage = () => {
                         readOnly={isReadOnly}
                     />
                 </PaymentModal>
+
+                <MonthlyInvoiceModal 
+                    isOpen={invoiceModal.open}
+                    onClose={() => setInvoiceModal(prev => ({ ...prev, open: false }))}
+                    year={invoiceModal.year}
+                    month={invoiceModal.month}
+                    monthName={invoiceModal.monthName}
+                />
             </div>
         </MainLayout>
     );

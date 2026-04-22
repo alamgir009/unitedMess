@@ -1,7 +1,7 @@
 import React from 'react';
 import {
     Mail, Phone, ShieldCheck, Flame, Droplets,
-    Utensils, Receipt, Users, Banknote, Hash,Fuel
+    Utensils, Receipt, Users, Banknote, Hash, Fuel
 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────
@@ -39,17 +39,17 @@ const InfoItem = ({ icon: Icon, label, value }) => (
    InvoiceCard — large financial metric tile
 ───────────────────────────────────────────── */
 const GRADIENT_MAP = {
-    amber:   'from-amber-500  to-orange-500  dark:from-amber-400  dark:to-orange-400',
-    blue:    'from-blue-600   to-indigo-600  dark:from-blue-400   dark:to-indigo-400',
+    amber: 'from-amber-500  to-orange-500  dark:from-amber-400  dark:to-orange-400',
+    blue: 'from-blue-600   to-indigo-600  dark:from-blue-400   dark:to-indigo-400',
     emerald: 'from-emerald-600 to-teal-500  dark:from-emerald-400 dark:to-teal-400',
-    indigo:  'from-indigo-600 to-violet-600 dark:from-indigo-400  dark:to-violet-400',
+    indigo: 'from-indigo-600 to-violet-600 dark:from-indigo-400  dark:to-violet-400',
 };
 
 const ICON_MAP = {
-    amber:   'bg-amber-50   dark:bg-amber-500/15  text-amber-600  dark:text-amber-400  border-amber-200  dark:border-amber-500/25',
-    blue:    'bg-blue-50    dark:bg-blue-500/15   text-blue-600   dark:text-blue-400   border-blue-200   dark:border-blue-500/25',
+    amber: 'bg-amber-50   dark:bg-amber-500/15  text-amber-600  dark:text-amber-400  border-amber-200  dark:border-amber-500/25',
+    blue: 'bg-blue-50    dark:bg-blue-500/15   text-blue-600   dark:text-blue-400   border-blue-200   dark:border-blue-500/25',
     emerald: 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/25',
-    indigo:  'bg-indigo-50  dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-200  dark:border-indigo-500/25',
+    indigo: 'bg-indigo-50  dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-200  dark:border-indigo-500/25',
 };
 
 const InvoiceCard = ({ label, amount, accent = 'blue', subtext, icon: Icon }) => (
@@ -166,8 +166,8 @@ const MemberInvoiceDetails = ({ user }) => {
                     <SectionHeading color="blue-500">Identity &amp; Contact</SectionHeading>
 
                     <div className="flex flex-col gap-4 flex-1">
-                        <InfoItem icon={Mail}        label="Email Address" value={user?.email} />
-                        <InfoItem icon={Phone}       label="Phone Number"  value={user?.phone} />
+                        <InfoItem icon={Mail} label="Email Address" value={user?.email} />
+                        <InfoItem icon={Phone} label="Phone Number" value={user?.phone} />
                         <InfoItem
                             icon={ShieldCheck}
                             label="System Role"
@@ -240,6 +240,12 @@ const MemberInvoiceDetails = ({ user }) => {
                             value={`₹\u202F${fmt(user?.waterBill ?? 0)}`}
                             subtext="per member share"
                         />
+                        <MiniMetric
+                            icon={Receipt}
+                            label="Platform Fee"
+                            value={`₹\u202F${fmt(user?.platformFee ?? 0)}`}
+                            subtext="fixed service fee"
+                        />
                     </div>
 
                     {/* ── Grand total cards ── */}
@@ -282,9 +288,9 @@ const MemberInvoiceDetails = ({ user }) => {
       > 0  → Due      (rose)   — show value, payment message
 ───────────────────────────────────────────── */
 const NetPositionBar = ({ user }) => {
-    const payable  = user?.paybleAmountforMeal ?? 0;
-    const isZero   = payable === 0;
-    const isDue    = payable > 0;
+    const payable = user?.paybleAmountforMeal ?? 0;
+    const isZero = payable === 0;
+    const isDue = payable > 0;
     const isCredit = payable < 0;
 
     const containerCls = isZero
@@ -305,8 +311,8 @@ const NetPositionBar = ({ user }) => {
             ? 'bg-rose-100    dark:bg-rose-500/20    text-rose-700    dark:text-rose-400    border-rose-300    dark:border-rose-500/30'
             : 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30';
 
-    const badge   = isZero ? 'Settled' : isDue ? 'Due' : 'Credit';
-    const label   = isZero
+    const badge = isZero ? 'Settled' : isDue ? 'Due' : 'Credit';
+    const label = isZero
         ? 'Already settled'
         : isDue
             ? 'You have to pay'

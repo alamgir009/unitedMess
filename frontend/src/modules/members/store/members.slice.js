@@ -14,12 +14,27 @@ const initialState = {
         prevPage: null,
         nextPage: null
     },
+    // ── Billing-month stats (current month totals from Meal/Market collections) ──
+    billingStats: {
+        grandTotalMeal: 0,
+        grandTotalMarket: 0,
+        mealCharge: 0,
+        billingMonth: '',
+        month: null,
+        year: null,
+    },
+    billingStatsLoading: false,
+    // ── Admin unpaid invoices panel ──
+    unpaidInvoices: [],
+    unpaidInvoicesLoading: false,
+    // ── Generic flags ──
     isError: false,
     isSuccess: false,
     isLoading: false,
     message: '',
 };
 
+// ── Fetch all users ──────────────────────────────────────────────────────────
 export const fetchUsers = createAsyncThunk(
     'members/fetchUsers',
     async (params, thunkAPI) => {
@@ -27,9 +42,7 @@ export const fetchUsers = createAsyncThunk(
             return await membersService.getUsers(params);
         } catch (error) {
             const message =
-                (error.response &&
-                    error.response.data &&
-                    error.response.data.message) ||
+                (error.response?.data?.message) ||
                 error.message ||
                 error.toString();
             return thunkAPI.rejectWithValue(message);
@@ -37,6 +50,7 @@ export const fetchUsers = createAsyncThunk(
     }
 );
 
+// ── Search users ─────────────────────────────────────────────────────────────
 export const searchUsers = createAsyncThunk(
     'members/searchUsers',
     async (params, thunkAPI) => {
@@ -44,9 +58,7 @@ export const searchUsers = createAsyncThunk(
             return await membersService.searchUsers(params);
         } catch (error) {
             const message =
-                (error.response &&
-                    error.response.data &&
-                    error.response.data.message) ||
+                (error.response?.data?.message) ||
                 error.message ||
                 error.toString();
             return thunkAPI.rejectWithValue(message);
@@ -54,16 +66,14 @@ export const searchUsers = createAsyncThunk(
     }
 );
 
-// We can just use one slice for all these actions, 
-// but often we just re-fetch the users after an action to ensure state consistency.
+// ── Approve / Deny ───────────────────────────────────────────────────────────
 export const approveUser = createAsyncThunk(
     'members/approveUser',
     async (userId, thunkAPI) => {
         try {
             return await membersService.approveUser(userId);
         } catch (error) {
-            const message =
-                (error.response && error.response.data && error.response.data.message) || error.message;
+            const message = (error.response?.data?.message) || error.message;
             return thunkAPI.rejectWithValue(message);
         }
     }
@@ -75,21 +85,20 @@ export const denyUser = createAsyncThunk(
         try {
             return await membersService.denyUser(userId);
         } catch (error) {
-            const message =
-                (error.response && error.response.data && error.response.data.message) || error.message;
+            const message = (error.response?.data?.message) || error.message;
             return thunkAPI.rejectWithValue(message);
         }
     }
 );
 
+// ── Payment / Gas-bill status ────────────────────────────────────────────────
 export const updatePaymentStatus = createAsyncThunk(
     'members/updatePaymentStatus',
     async ({ userId, paymentData }, thunkAPI) => {
         try {
             return await membersService.updatePaymentStatus(userId, paymentData);
         } catch (error) {
-            const message =
-                (error.response && error.response.data && error.response.data.message) || error.message;
+            const message = (error.response?.data?.message) || error.message;
             return thunkAPI.rejectWithValue(message);
         }
     }
@@ -101,14 +110,55 @@ export const updateGasBillStatus = createAsyncThunk(
         try {
             return await membersService.updateGasBillStatus(userId, gasBillData);
         } catch (error) {
-            const message =
-                (error.response && error.response.data && error.response.data.message) || error.message;
+            const message = (error.response?.data?.message) || error.message;
             return thunkAPI.rejectWithValue(message);
         }
     }
 );
 
+// ── Billing-month stats (correct current-month totals) ───────────────────────
+export const fetchBillingMonthStats = createAsyncThunk(
+    'members/fetchBillingMonthStats',
+    async (_, thunkAPI) => {
+        try {
+            const response = await membersService.getBillingMonthStats();
+            return response?.data ?? response;
+        } catch (error) {
+            const message = (error.response?.data?.message) || error.message;
+            return thunkAPI.rejectWithValue(message);
+        }
+    }
+);
 
+// ── Admin: unpaid / partially-paid finalized invoices ────────────────────────
+export const fetchAdminUnpaidInvoices = createAsyncThunk(
+    'members/fetchAdminUnpaidInvoices',
+    async ({ month, year } = {}, thunkAPI) => {
+        try {
+            const response = await membersService.getAdminUnpaidInvoices(month, year);
+            return response?.data ?? response;
+        } catch (error) {
+            const message = (error.response?.data?.message) || error.message;
+            return thunkAPI.rejectWithValue(message);
+        }
+    }
+);
+
+// ── Admin: update a specific invoice's paid amount ───────────────────────────
+export const resolveInvoicePayment = createAsyncThunk(
+    'members/resolveInvoicePayment',
+    async ({ invoiceId, paidAmount }, thunkAPI) => {
+        try {
+            const response = await membersService.updateInvoicePayment(invoiceId, paidAmount);
+            return response?.data ?? response;
+        } catch (error) {
+            const message = (error.response?.data?.message) || error.message;
+            return thunkAPI.rejectWithValue(message);
+        }
+    }
+);
+
+// ── Slice ────────────────────────────────────────────────────────────────────
 export const membersSlice = createSlice({
     name: 'members',
     initialState,
@@ -122,7 +172,7 @@ export const membersSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-            // Fetch Users
+            // ── fetchUsers ──────────────────────────────────────────────────
             .addCase(fetchUsers.pending, (state) => {
                 state.isLoading = true;
                 state.isError = false;
@@ -140,7 +190,7 @@ export const membersSlice = createSlice({
                 state.isError = true;
                 state.message = action.payload;
             })
-            // Search Users
+            // ── searchUsers ─────────────────────────────────────────────────
             .addCase(searchUsers.pending, (state) => {
                 state.isLoading = true;
                 state.isError = false;
@@ -157,9 +207,47 @@ export const membersSlice = createSlice({
                 state.isLoading = false;
                 state.isError = true;
                 state.message = action.payload;
+            })
+            // ── fetchBillingMonthStats ───────────────────────────────────────
+            .addCase(fetchBillingMonthStats.pending, (state) => {
+                state.billingStatsLoading = true;
+            })
+            .addCase(fetchBillingMonthStats.fulfilled, (state, action) => {
+                state.billingStatsLoading = false;
+                const d = action.payload || {};
+                state.billingStats = {
+                    grandTotalMeal:   d.grandTotalMeal   ?? 0,
+                    grandTotalMarket: d.grandTotalMarket ?? 0,
+                    mealCharge:       d.mealCharge       ?? 0,
+                    billingMonth:     d.billingMonth     ?? '',
+                    month:            d.month            ?? null,
+                    year:             d.year             ?? null,
+                };
+            })
+            .addCase(fetchBillingMonthStats.rejected, (state) => {
+                state.billingStatsLoading = false;
+            })
+            // ── fetchAdminUnpaidInvoices ─────────────────────────────────────
+            .addCase(fetchAdminUnpaidInvoices.pending, (state) => {
+                state.unpaidInvoicesLoading = true;
+            })
+            .addCase(fetchAdminUnpaidInvoices.fulfilled, (state, action) => {
+                state.unpaidInvoicesLoading = false;
+                state.unpaidInvoices = Array.isArray(action.payload) ? action.payload : [];
+            })
+            .addCase(fetchAdminUnpaidInvoices.rejected, (state) => {
+                state.unpaidInvoicesLoading = false;
+                state.unpaidInvoices = [];
+            })
+            // ── resolveInvoicePayment ────────────────────────────────────────
+            .addCase(resolveInvoicePayment.fulfilled, (state, action) => {
+                const updated = action.payload;
+                if (updated?._id) {
+                    state.unpaidInvoices = state.unpaidInvoices
+                        .map(inv => inv._id === updated._id ? { ...inv, ...updated } : inv)
+                        .filter(inv => inv.status !== 'paid');
+                }
             });
-            // We can add optimistic UI updates for approve/deny here if we want,
-            // but typical pattern is to just dispatch fetchUsers() again in the component after success.
     },
 });
 

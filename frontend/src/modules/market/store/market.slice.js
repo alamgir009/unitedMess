@@ -23,7 +23,12 @@ const initialState = {
 // Fetch markets for the authenticated user
 export const fetchMarkets = createAsyncThunk('market/fetchAll', async (params, thunkAPI) => {
     try {
-        const response = await marketService.getMarkets(params);
+        const { auth } = thunkAPI.getState();
+        const requestParams = { ...params };
+        if (auth.user?.role === 'admin' && auth.adminShowHistory) {
+            requestParams.allHistory = true;
+        }
+        const response = await marketService.getMarkets(requestParams);
         return response.data; // Now returns { markets, pagination }
     } catch (error) {
         const message = error.response?.data?.error || error.response?.data?.message || error.message || 'Something went wrong';

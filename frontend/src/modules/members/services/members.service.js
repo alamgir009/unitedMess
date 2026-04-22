@@ -1,6 +1,7 @@
 import apiClient from '@/services/api/client/apiClient';
 
 const API_URL = 'users';
+const INVOICE_URL = 'invoices';
 
 const getUsers = async (params = {}) => {
     const query = new URLSearchParams(params).toString();
@@ -39,6 +40,39 @@ const bulkUpdateStatus = async (statusData) => {
     return response.data;
 };
 
+/**
+ * Fetch current billing-month aggregated stats (meal count, market total, meal rate).
+ * Uses the 10th-day rule on the backend — always returns the correct period.
+ */
+const getBillingMonthStats = async () => {
+    const response = await apiClient.get(`${API_URL}/stats/billing-month`);
+    return response.data;
+};
+
+/**
+ * Admin: Fetch all finalized invoices that are unpaid or partially paid.
+ * @param {number} [month] - 1-indexed month (optional)
+ * @param {number} [year]  - full year (optional)
+ */
+const getAdminUnpaidInvoices = async (month, year) => {
+    const params = {};
+    if (month) params.month = month;
+    if (year)  params.year  = year;
+    const query = new URLSearchParams(params).toString();
+    const response = await apiClient.get(`${INVOICE_URL}/admin/unpaid${query ? `?${query}` : ''}`);
+    return response.data;
+};
+
+/**
+ * Admin: Update an invoice's paid amount (mark paid / partially paid).
+ * @param {string} invoiceId
+ * @param {number} paidAmount
+ */
+const updateInvoicePayment = async (invoiceId, paidAmount) => {
+    const response = await apiClient.patch(`${INVOICE_URL}/${invoiceId}/payment`, { paidAmount });
+    return response.data;
+};
+
 const membersService = {
     getUsers,
     searchUsers,
@@ -46,7 +80,10 @@ const membersService = {
     denyUser,
     updatePaymentStatus,
     updateGasBillStatus,
-    bulkUpdateStatus
+    bulkUpdateStatus,
+    getBillingMonthStats,
+    getAdminUnpaidInvoices,
+    updateInvoicePayment,
 };
 
 export default membersService;

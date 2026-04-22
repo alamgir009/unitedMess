@@ -128,6 +128,51 @@ export const fetchPayableGasBill = createAsyncThunk(
     }
 );
 
+export const forgotPassword = createAsyncThunk(
+    'auth/forgotPassword',
+    async (email, thunkAPI) => {
+        try {
+            const response = await authService.forgotPassword(email);
+            toast.success('Password reset link sent to your email');
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || error.response?.data?.error || 'Failed to send reset link';
+            toast.error(message);
+            return thunkAPI.rejectWithValue(message);
+        }
+    }
+);
+
+export const resetPassword = createAsyncThunk(
+    'auth/resetPassword',
+    async ({ token, password }, thunkAPI) => {
+        try {
+            const response = await authService.resetPassword(token, password);
+            toast.success('Password reset successfully. You can now login.');
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || error.response?.data?.error || 'Failed to reset password';
+            toast.error(message);
+            return thunkAPI.rejectWithValue(message);
+        }
+    }
+);
+
+export const resendVerification = createAsyncThunk(
+    'auth/resendVerification',
+    async (email, thunkAPI) => {
+        try {
+            const response = await authService.resendVerification(email);
+            toast.success('Verification email resent successfully');
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || error.response?.data?.error || 'Failed to resend verification';
+            toast.error(message);
+            return thunkAPI.rejectWithValue(message);
+        }
+    }
+);
+
 let userCookie = Cookies.get('user');
 let parsedUser = null;
 if (userCookie) {
@@ -138,6 +183,9 @@ if (userCookie) {
     }
 }
 
+// Initialise adminShowHistory from localStorage
+const storedAdminShowHistory = localStorage.getItem('adminShowHistory') === 'true';
+
 const initialState = {
     user: parsedUser,
     payableAmount: null,      // backward-compat: numeric payable (or null)
@@ -147,6 +195,8 @@ const initialState = {
     isSuccess: false,
     isLoading: false,
     message: '',
+    registeredEmail: null, // Temporary storage for registration success state
+    adminShowHistory: storedAdminShowHistory,
 };
 
 export const authSlice = createSlice({
@@ -159,6 +209,13 @@ export const authSlice = createSlice({
             state.isError = false;
             state.message = '';
         },
+        toggleAdminHistory: (state) => {
+            state.adminShowHistory = !state.adminShowHistory;
+            localStorage.setItem('adminShowHistory', state.adminShowHistory);
+        },
+        clearRegisteredEmail: (state) => {
+            state.registeredEmail = null;
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -168,8 +225,12 @@ export const authSlice = createSlice({
             .addCase(register.fulfilled, (state, action) => {
                 state.isLoading = false;
                 state.isSuccess = true;
-                // Backend wraps user in data: { user } via sendSuccessResponse
-                state.user = action.payload?.data?.user || action.payload?.user || null;
+                // We no longer set state.user automatically on registration
+                // because the user must verify email and wait for admin approval
+                state.user = null;
+                // Store the email so the RegisterPage can show it and handle resend
+                state.registeredEmail = action.payload?.data?.user?.email || action.payload?.user?.email || null;
+                state.message = action.payload?.message || 'Registration successful. Please verify your email.';
             })
             .addCase(register.rejected, (state, action) => {
                 state.isLoading = false;
@@ -252,9 +313,52 @@ export const authSlice = createSlice({
             })
             .addCase(fetchPayableGasBill.rejected, (state, action) => {
                 console.error("Failed to load payable gas bill amount:", action.payload);
+            })
+            // Forgot Password
+            .addCase(forgotPassword.pending, (state) => {
+                state.isLoading = true;
+                state.isError = false;
+                state.isSuccess = false;
+            })
+            .addCase(forgotPassword.fulfilled, (state) => {
+                state.isLoading = false;
+                state.isSuccess = true;
+            })
+            .addCase(forgotPassword.rejected, (state, action) => {
+                state.isLoading = false;
+                state.isError = true;
+                state.message = action.payload;
+            })
+            // Reset Password
+            .addCase(resetPassword.pending, (state) => {
+                state.isLoading = true;
+                state.isError = false;
+                state.isSuccess = false;
+            })
+            .addCase(resetPassword.fulfilled, (state) => {
+                state.isLoading = false;
+                state.isSuccess = true;
+            })
+            .addCase(resetPassword.rejected, (state, action) => {
+                state.isLoading = false;
+                state.isError = true;
+                state.message = action.payload;
+            })
+            // Resend Verification
+            .addCase(resendVerification.pending, (state) => {
+                state.isLoading = true;
+            })
+            .addCase(resendVerification.fulfilled, (state) => {
+                state.isLoading = false;
+                state.isSuccess = true;
+            })
+            .addCase(resendVerification.rejected, (state, action) => {
+                state.isLoading = false;
+                state.isError = true;
+                state.message = action.payload;
             });
     },
 });
 
-export const { reset } = authSlice.actions;
+export const { reset, toggleAdminHistory, clearRegisteredEmail } = authSlice.actions;
 export default authSlice.reducer;

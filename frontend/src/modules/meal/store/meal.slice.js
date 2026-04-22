@@ -22,7 +22,12 @@ const initialState = {
 // Fetch meals for the authenticated user
 export const fetchMeals = createAsyncThunk('meal/fetchAll', async (params, thunkAPI) => {
     try {
-        const response = await mealService.getMeals(params);
+        const { auth } = thunkAPI.getState();
+        const requestParams = { ...params };
+        if (auth.user?.role === 'admin' && auth.adminShowHistory) {
+            requestParams.allHistory = true;
+        }
+        const response = await mealService.getMeals(requestParams);
         return response.data; // Now returns { meals, pagination }
     } catch (error) {
         const message = error.response?.data?.error || error.response?.data?.message || error.message || 'Something went wrong';

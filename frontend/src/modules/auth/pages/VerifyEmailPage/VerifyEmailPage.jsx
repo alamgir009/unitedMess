@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
@@ -13,6 +13,8 @@ const VerifyEmailPage = () => {
     const token = searchParams.get('token');
     const [status, setStatus] = useState('verifying'); // verifying, success, error
 
+    const hasRun = useRef(false);
+    
     useEffect(() => {
         if (!token) {
             setStatus('error');
@@ -20,13 +22,16 @@ const VerifyEmailPage = () => {
             return;
         }
 
+        if (hasRun.current) return;
+        hasRun.current = true;
+
         const verifyEmail = async () => {
             try {
                 await axios.get(`${API_URL}/auth/verify-email/${token}`);
                 setStatus('success');
                 toast.success('Email verified successfully!');
                 setTimeout(() => {
-                    navigate('/auth/login');
+                    navigate('/login');
                 }, 3000);
             } catch (error) {
                 console.error(error);
@@ -68,7 +73,7 @@ const VerifyEmailPage = () => {
                         <p className="text-lg">Verification failed.</p>
                         <p className="text-sm text-muted-foreground mt-2">The link may be invalid or expired.</p>
                         <button
-                            onClick={() => navigate('/auth/login')}
+                            onClick={() => navigate('/login')}
                             className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
                         >
                             Back to Login

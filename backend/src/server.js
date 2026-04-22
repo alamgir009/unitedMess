@@ -2,9 +2,13 @@ const app = require('./app');
 const config = require('./config/index');
 const connectDB = require('./database/connection');
 const logger = require('./utils/logger/index');
+const { registerInvoiceCron } = require('./jobs/cron/invoiceCron');
 
 // Connect to MongoDB
-connectDB();
+connectDB().then(() => {
+    // Register cron jobs once DB is connected
+    registerInvoiceCron();
+});
 
 // Start server
 const PORT = config.app.port || 8080;

@@ -228,6 +228,7 @@ const SettingsPage = () => {
                 cookingCharge: user?.cookingCharge ?? 0,
                 waterBill: user?.waterBill ?? 0,
                 gasBillCharge: user?.gasBillCharge ?? 0,
+                platformFee: user?.platformFee ?? 0,
             });
         } catch {
             toast.error('Failed to load current charge values');
@@ -262,6 +263,12 @@ const SettingsPage = () => {
     const handleUpdateGasBill = useCallback(async (value) => {
         const res = await settingsService.updateGasBillCharge({ gasBillCharge: value });
         toast.success(res.data?.message || 'Gas bill distributed!');
+        await fetchCurrentValues();
+    }, [fetchCurrentValues]);
+
+    const handleUpdatePlatformFee = useCallback(async (value) => {
+        const res = await settingsService.updatePlatformFee({ platformFee: value });
+        toast.success(res.data?.message || 'Platform fee updated for all members!');
         await fetchCurrentValues();
     }, [fetchCurrentValues]);
 
@@ -309,6 +316,17 @@ const SettingsPage = () => {
             buttonLabel: 'Distribute Bill',
             currentValue: currentValues?.gasBillCharge,
             onSubmit: handleUpdateGasBill,
+        },
+        {
+            title: 'Platform Fee',
+            description: 'Fixed platform service fee charged per member automatically applied to all pending invoices.',
+            icon: TrendingUp,
+            accentColor: 'blue',
+            badge: 'Per Member',
+            placeholder: 'e.g. 50',
+            buttonLabel: 'Update Fee',
+            currentValue: currentValues?.platformFee,
+            onSubmit: handleUpdatePlatformFee,
         },
     ];
 

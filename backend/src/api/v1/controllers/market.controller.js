@@ -3,6 +3,7 @@ const { marketService } = require('../../../services');
 const { sendSuccessResponse } = require('../../../utils/helpers/response.helper');
 const pick = require('../../../utils/helpers/pick');
 const AppError = require('../../../utils/errors/AppError');
+const { getVisibleBillingStartDate } = require('../../../utils/helpers/date.helper');
 
 // ─── Authenticated User Controllers ────────────────────────────────────────────
 
@@ -20,6 +21,11 @@ const getMarkets = asyncHandler(async (req, res) => {
     // Non-admin users can only see their own markets
     if (!isAdmin) {
         filter.user = req.user.id;
+    }
+
+    // Apply 10th-day visual reset rule if not fetching all history
+    if (!filter.date && !(isAdmin && req.query.allHistory === 'true')) {
+        filter.date = { $gte: getVisibleBillingStartDate() };
     }
 
     // populate only when admin — they need to know which user each market belongs to
@@ -78,6 +84,11 @@ const adminGetUserMarkets = asyncHandler(async (req, res) => {
         user: req.params.userId,  // always lock to the userId in URL
     };
     const options = pick(req.query, ['sortBy', 'limit', 'page']);
+
+    // Apply 10th-day visual reset rule if not fetching all history
+    if (!filter.date && req.query.allHistory !== 'true') {
+        filter.date = { $gte: getVisibleBillingStartDate() };
+    }
 
     const markets = await marketService.queryMarkets(filter, options);
     sendSuccessResponse(res, 200, 'User market entries retrieved successfully', markets);

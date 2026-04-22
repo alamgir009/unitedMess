@@ -8,11 +8,11 @@ import { Users } from 'lucide-react';
    Drives both the sticky header & row cells
 ───────────────────────────────────────────── */
 export const COLUMNS = [
-    { id: 'profile',  label: 'Member Profile',  cols: 'col-span-4', align: 'justify-start' },
-    { id: 'market',   label: 'Market Amount',   cols: 'col-span-2', align: 'justify-start' },
-    { id: 'gas',      label: 'Gas Bill',        cols: 'col-span-2', align: 'justify-start' },
-    { id: 'payment',  label: 'Payment Status',  cols: 'col-span-3', align: 'justify-start' },
-    { id: 'expand',   label: '',                cols: 'col-span-1', align: 'justify-end'   },
+    { id: 'profile', label: 'Member Profile', cols: 'col-span-4', align: 'justify-start' },
+    { id: 'market', label: 'Market Amount', cols: 'col-span-2', align: 'justify-start' },
+    { id: 'gas', label: 'Gas Bill', cols: 'col-span-2', align: 'justify-start' },
+    { id: 'payment', label: 'Payment Status', cols: 'col-span-3', align: 'justify-start' },
+    { id: 'expand', label: '', cols: 'col-span-1', align: 'justify-end' },
 ];
 
 /* ─────────────────────────────────────────────

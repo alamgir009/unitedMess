@@ -187,6 +187,11 @@ const getMealCharge = asyncHandler(async (req, res) => {
     sendSuccessResponse(res, 200, 'Current meal charge rate', { mealCharge });
 });
 
+const getBillingMonthStats = asyncHandler(async (req, res) => {
+    const stats = await userService.getBillingMonthStats();
+    sendSuccessResponse(res, 200, 'Active billing month stats', stats);
+});
+
 const getPaybleAmountforMeal = asyncHandler(async (req, res) => {
     // Allow admin to check any user, self only for regular users
     const userId = req.params.userId && req.user.role === 'admin'
@@ -271,6 +276,7 @@ module.exports = {
     getGrandTotalMarketAmount,
     getGrandTotalMeal,
     getMealCharge,
+    getBillingMonthStats,
     getPaybleAmountforMeal,
     bulkUpdateStatus,
     deactivateMyAccount,

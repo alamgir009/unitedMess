@@ -10,6 +10,7 @@ import {
     HiOutlineEnvelope,
     HiOutlineCreditCard,
     HiOutlineChatBubbleBottomCenterText,
+    HiOutlineDocumentText,
 } from 'react-icons/hi2';
 import { format, isToday, isYesterday, differenceInDays } from 'date-fns';
 import { Button } from '@/shared/components/ui';
@@ -44,7 +45,7 @@ const methodLabel = (m) => ({ cash: '💵 Cash', online: '🌐 Online', razorpay
 /* ════════════════════════════════════════════
    PAYMENT CARD — grid view (memoized)
 ════════════════════════════════════════════ */
-const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, isAdmin, canEdit, index }, ref) => {
+const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInvoice, isAdmin, canEdit, index }, ref) => {
     const date  = smartDate(payment.paymentDate);
     const stat  = STATUS[payment.status] || STATUS.pending;
     const typeC = TYPE[payment.type]     || TYPE.other;
@@ -127,6 +128,11 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, isAdmin,
             <div className="flex items-center gap-2 px-5 py-4">
                 {canEdit ? (
                     <>
+                        {payment.type === 'mess_bill' && payment.status === 'completed' && (
+                            <Button variant="secondary" size="sm" onClick={() => onViewInvoice && onViewInvoice(payment)} className="font-semibold text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 ring-indigo-100 dark:ring-indigo-900">
+                                <HiOutlineDocumentText className="w-4 h-4 mr-1" /> Invoice
+                            </Button>
+                        )}
                         <Button variant="secondary" size="sm" onClick={() => onEdit(payment)} className="flex-1 font-semibold text-xs">
                             <HiOutlinePencilSquare className="w-4 h-4 mr-1" /> Edit
                         </Button>
@@ -135,9 +141,16 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, isAdmin,
                         </Button>
                     </>
                 ) : (
-                    <Button variant="secondary" size="sm" onClick={() => onEdit(payment)} className="flex-1 font-semibold text-xs">
-                        <HiOutlineReceiptRefund className="w-4 h-4 mr-1" /> View
-                    </Button>
+                    <>
+                        {payment.type === 'mess_bill' && payment.status === 'completed' && (
+                            <Button variant="secondary" size="sm" onClick={() => onViewInvoice && onViewInvoice(payment)} className="flex-1 font-semibold text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 ring-indigo-100 dark:ring-indigo-900">
+                                <HiOutlineDocumentText className="w-4 h-4 mr-1" /> Invoice
+                            </Button>
+                        )}
+                        <Button variant="secondary" size="sm" onClick={() => onEdit(payment)} className="flex-1 font-semibold text-xs">
+                            <HiOutlineReceiptRefund className="w-4 h-4 mr-1" /> View
+                        </Button>
+                    </>
                 )}
             </div>
         </motion.article>
@@ -149,7 +162,7 @@ PaymentCard.displayName = 'PaymentCard';
 /* ════════════════════════════════════════════
    PAYMENT ROW — list view (memoized)
 ════════════════════════════════════════════ */
-const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, isAdmin, canEdit, index }, ref) => {
+const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInvoice, isAdmin, canEdit, index }, ref) => {
     const date  = smartDate(payment.paymentDate);
     const stat  = STATUS[payment.status] || STATUS.pending;
     const typeC = TYPE[payment.type]     || TYPE.other;
@@ -214,6 +227,11 @@ const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, isAdmin, 
 
             {/* Actions */}
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150 flex-shrink-0 pl-2">
+                {payment.type === 'mess_bill' && payment.status === 'completed' && (
+                    <Button variant="secondary" size="sm" iconOnly onClick={() => onViewInvoice && onViewInvoice(payment)} aria-label="View Invoice" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 ring-indigo-100 dark:ring-indigo-900 border-indigo-200 dark:border-indigo-800">
+                        <HiOutlineDocumentText className="w-4 h-4" />
+                    </Button>
+                )}
                 <Button variant="secondary" size="sm" iconOnly onClick={() => onEdit(payment)} aria-label={canEdit ? 'Edit' : 'View'}>
                     <HiOutlinePencilSquare className="w-4 h-4" />
                 </Button>
@@ -249,7 +267,7 @@ const EmptyState = () => (
 );
 
 /* ── Main export ── */
-const PaymentList = ({ payments = [], onEdit, onDelete, isAdmin = false, viewMode = 'grid' }) => {
+const PaymentList = ({ payments = [], onEdit, onDelete, onViewInvoice, isAdmin = false, viewMode = 'grid' }) => {
     if (payments.length === 0) return <EmptyState />;
 
     return (
@@ -271,6 +289,7 @@ const PaymentList = ({ payments = [], onEdit, onDelete, isAdmin = false, viewMod
                                 index={i}
                                 onEdit={onEdit}
                                 onDelete={onDelete}
+                                onViewInvoice={onViewInvoice}
                                 isAdmin={isAdmin}
                                 canEdit={isAdmin}
                             />
@@ -294,6 +313,7 @@ const PaymentList = ({ payments = [], onEdit, onDelete, isAdmin = false, viewMod
                                 index={i}
                                 onEdit={onEdit}
                                 onDelete={onDelete}
+                                onViewInvoice={onViewInvoice}
                                 isAdmin={isAdmin}
                                 canEdit={isAdmin}
                             />

@@ -7,18 +7,18 @@ import MemberInvoiceDetails from './MemberInvoiceDetails';
    StatusBadge — pill indicator
 ───────────────────────────────────────────── */
 const STATUS_MAP = {
-    success:  { bg: 'bg-emerald-50 dark:bg-emerald-500/10', text: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-500/25', dot: 'bg-emerald-500' },
+    success: { bg: 'bg-emerald-50 dark:bg-emerald-500/10', text: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-500/25', dot: 'bg-emerald-500' },
     approved: { bg: 'bg-emerald-50 dark:bg-emerald-500/10', text: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-500/25', dot: 'bg-emerald-500' },
-    paid:     { bg: 'bg-emerald-50 dark:bg-emerald-500/10', text: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-500/25', dot: 'bg-emerald-500' },
-    failed:   { bg: 'bg-rose-50 dark:bg-rose-500/10',    text: 'text-rose-700 dark:text-rose-400',    border: 'border-rose-200 dark:border-rose-500/25',    dot: 'bg-rose-500'    },
-    denied:   { bg: 'bg-rose-50 dark:bg-rose-500/10',    text: 'text-rose-700 dark:text-rose-400',    border: 'border-rose-200 dark:border-rose-500/25',    dot: 'bg-rose-500'    },
-    pending:  { bg: 'bg-amber-50 dark:bg-amber-500/10',  text: 'text-amber-700 dark:text-amber-400',  border: 'border-amber-200 dark:border-amber-500/25',  dot: 'bg-amber-400'   },
+    paid: { bg: 'bg-emerald-50 dark:bg-emerald-500/10', text: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-500/25', dot: 'bg-emerald-500' },
+    failed: { bg: 'bg-rose-50 dark:bg-rose-500/10', text: 'text-rose-700 dark:text-rose-400', border: 'border-rose-200 dark:border-rose-500/25', dot: 'bg-rose-500' },
+    denied: { bg: 'bg-rose-50 dark:bg-rose-500/10', text: 'text-rose-700 dark:text-rose-400', border: 'border-rose-200 dark:border-rose-500/25', dot: 'bg-rose-500' },
+    pending: { bg: 'bg-amber-50 dark:bg-amber-500/10', text: 'text-amber-700 dark:text-amber-400', border: 'border-amber-200 dark:border-amber-500/25', dot: 'bg-amber-400' },
 };
 
 const DEFAULT_STATUS = { bg: 'bg-slate-50 dark:bg-slate-800', text: 'text-slate-600 dark:text-slate-400', border: 'border-slate-200 dark:border-slate-700', dot: 'bg-slate-400' };
 
 export const StatusBadge = ({ status }) => {
-    const key   = (status || 'pending').toLowerCase();
+    const key = (status || 'pending').toLowerCase();
     const style = STATUS_MAP[key] ?? DEFAULT_STATUS;
 
     return (

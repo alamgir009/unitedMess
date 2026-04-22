@@ -10,5 +10,6 @@ router.patch('/guest-meal-charge', authorize('admin'), settingsController.update
 router.patch('/cooking-charge', authorize('admin'), settingsController.updateCookingCharge);
 router.patch('/water-bill', authorize('admin'), settingsController.updateWaterBill);
 router.patch('/gas-bill', authorize('admin'), settingsController.updateGasBillCharge);
+router.patch('/platform-fee', authorize('admin'), settingsController.updatePlatformFee);
 
 module.exports = router;

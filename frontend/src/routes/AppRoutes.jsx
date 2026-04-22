@@ -5,6 +5,9 @@ import RegisterPage from '@/modules/auth/pages/RegisterPage/RegisterPage';
 import DashboardPage from '@/modules/dashboard/pages/DashboardPage/DashboardPage';
 import ProfilePage from '@/modules/profile/pages/ProfilePage/ProfilePage';
 import VerifyEmailPage from '@/modules/auth/pages/VerifyEmailPage/VerifyEmailPage';
+import ForgotPasswordPage from '@/modules/auth/pages/ForgotPasswordPage/ForgotPasswordPage';
+import ResetPasswordPage from '@/modules/auth/pages/ResetPasswordPage/ResetPasswordPage';
+import PendingApprovalPage from '@/modules/auth/pages/PendingApprovalPage/PendingApprovalPage';
 
 import HomePage from '@/modules/public/pages/HomePage/HomePage';
 import AboutPage from '@/modules/public/pages/AboutPage/AboutPage';
@@ -36,6 +39,9 @@ const AppRoutes = () => {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+            <Route path="/auth/pending-approval" element={<PendingApprovalPage />} />
 
             {/* ── Private Routes (no Navbar) ── */}
             <Route

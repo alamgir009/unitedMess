@@ -77,6 +77,18 @@ const authService = {
             Cookies.set('user', JSON.stringify(updatedUser), { expires: 7, secure: true, sameSite: 'strict' });
         }
         return response.data;
+    },
+    forgotPassword: async (email) => {
+        const response = await apiClient.post(API_URL + 'forgot-password', { email });
+        return response.data;
+    },
+    resetPassword: async (token, password) => {
+        const response = await apiClient.post(API_URL + `reset-password/${token}`, { password });
+        return response.data;
+    },
+    resendVerification: async (email) => {
+        const response = await apiClient.post(API_URL + 'resend-verification', { email });
+        return response.data;
     }
 };
 

@@ -12,6 +12,7 @@ const authenticated = [protect];
 // ==================== SEARCH & STATS (Admin Only) ====================
 router.get('/search', ...adminOnly, userController.searchUsers);
 router.get('/stats', ...adminOnly, userController.getStats);
+router.get('/stats/billing-month', ...authenticated, userController.getBillingMonthStats);
 router.get('/stats/market-grand-total', ...adminOnly, userController.getGrandTotalMarketAmount);
 router.get('/stats/meal-grand-total', ...adminOnly, userController.getGrandTotalMeal);
 router.get('/stats/meal-charge', ...adminOnly, userController.getMealCharge);

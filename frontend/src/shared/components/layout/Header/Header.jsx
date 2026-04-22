@@ -3,7 +3,7 @@ import { Menu, Transition } from '@headlessui/react';
 import { Bell, Menu as MenuIcon, User } from 'lucide-react';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { useSelector, useDispatch } from 'react-redux';
-import { logout } from '@/modules/auth/store/auth.slice';
+import { logout, toggleAdminHistory } from '@/modules/auth/store/auth.slice';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTheme } from '@/app/providers/ThemeProvider';
@@ -21,7 +21,7 @@ const MoonIcon = () => (
 );
 
 const Header = ({ onMenuClick }) => {
-    const { user } = useSelector((state) => state.auth);
+    const { user, adminShowHistory } = useSelector((state) => state.auth);
     const dispatch = useDispatch();
     const { theme, toggleTheme, isDark } = useTheme();
 
@@ -41,6 +41,28 @@ const Header = ({ onMenuClick }) => {
                     {/* Search placeholder if needed */}
                 </form>
                 <div className="flex items-center gap-x-4 lg:gap-x-6">
+                    {/* Admin History Toggle */}
+                    {user?.role === 'admin' && (
+                        <div className="flex items-center gap-2 mr-2">
+                            <span className="hidden sm:inline text-sm text-gray-600 dark:text-gray-300 font-medium">All History</span>
+                            <button
+                                onClick={() => dispatch(toggleAdminHistory())}
+                                className={cn(
+                                    "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900",
+                                    adminShowHistory ? "bg-blue-600" : "bg-gray-200 dark:bg-slate-700"
+                                )}
+                            >
+                                <span className="sr-only">Toggle historical data</span>
+                                <span
+                                    className={cn(
+                                        "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                                        adminShowHistory ? "translate-x-5" : "translate-x-0"
+                                    )}
+                                />
+                            </button>
+                        </div>
+                    )}
+
                     {/* Theme Toggle */}
                     <button
                         onClick={toggleTheme}

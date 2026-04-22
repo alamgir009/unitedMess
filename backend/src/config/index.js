@@ -12,6 +12,8 @@ module.exports = {
     app: {
         env: process.env.NODE_ENV || 'development',
         port: process.env.PORT || 8080,
+        frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+        backendUrl: process.env.BACKEND_URL || 'http://localhost:8080',
     },
     mongoose: {
         url: process.env.MONGO_URL || process.env.MONGO_URI || 'mongodb://localhost:27017/mess',

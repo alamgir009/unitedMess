@@ -87,91 +87,6 @@ const SectionDivider = memo(({ label }) => (
 ));
 
 /* ────────────────────────────────────────
-   PLATFORM FEE ROW – memoized, with safe onSave
-──────────────────────────────────────── */
-const PlatformFeeRow = memo(({ isAdmin, platformFee, onSave }) => {
-    const [editing, setEditing] = useState(false);
-    const [draft, setDraft] = useState(String(platformFee));
-
-    useEffect(() => setDraft(String(platformFee)), [platformFee]);
-
-    const commit = () => {
-        const val = parseFloat(draft);
-        // Only call onSave if it's a function
-        if (typeof onSave === 'function') {
-            onSave(isNaN(val) ? 0 : val);
-        }
-        setEditing(false);
-    };
-    const cancel = () => {
-        setDraft(String(platformFee));
-        setEditing(false);
-    };
-
-    return (
-        <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800">
-            <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-violet-50 dark:bg-violet-900/20">
-                    <HiOutlineReceiptPercent className="w-4 h-4 text-violet-600 dark:text-violet-400" />
-                </div>
-                <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-200">Platform Fee</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                        {isAdmin ? 'Click to edit' : 'Set by admin'}
-                    </p>
-                </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-                {editing ? (
-                    <>
-                        <span className="text-sm text-gray-500">₹</span>
-                        <input
-                            autoFocus
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={draft}
-                            onChange={(e) => setDraft(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && commit()}
-                            className="w-20 px-2 py-1 text-sm text-right bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 outline-none"
-                        />
-                        <button
-                            onClick={commit}
-                            className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
-                        >
-                            <HiOutlineCheckCircle className="w-4 h-4" />
-                        </button>
-                        <button
-                            onClick={cancel}
-                            className="p-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30"
-                        >
-                            <HiOutlineXMark className="w-4 h-4" />
-                        </button>
-                    </>
-                ) : (
-                    <>
-                        <span className="text-sm font-bold tabular-nums text-violet-600 dark:text-violet-400">
-                            ₹{fmt(platformFee)}
-                        </span>
-                        {isAdmin ? (
-                            <button
-                                onClick={() => setEditing(true)}
-                                className="p-1.5 rounded-lg text-gray-400 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20"
-                            >
-                                <HiOutlinePencilSquare className="w-4 h-4" />
-                            </button>
-                        ) : (
-                            <HiOutlineLockClosed className="w-4 h-4 text-gray-300 dark:text-gray-600" />
-                        )}
-                    </>
-                )}
-            </div>
-        </div>
-    );
-});
-
-/* ────────────────────────────────────────
    MAIN COMPONENT
 ──────────────────────────────────────── */
 const MessBillInvoice = ({
@@ -190,8 +105,8 @@ const MessBillInvoice = ({
     if (!data) return null;
 
     const displayMonth = useMemo(() => {
-        return paymentRecord?.month || INV_MONTH;
-    }, [paymentRecord]);
+        return paymentRecord?.month || data?.monthName || INV_MONTH;
+    }, [paymentRecord, data]);
 
     const displayDate = useMemo(() => {
         if (paymentRecord?.paymentDate) {
@@ -221,7 +136,7 @@ const MessBillInvoice = ({
 
     // Memoized derived values
     const basePayable = data.payableAmount ?? 0;
-    const finalPayable = useMemo(() => basePayable + platformFee, [basePayable, platformFee]);
+    const finalPayable = basePayable; // Natively included by backend calculation
     const isRefund = useMemo(() => finalPayable < 0, [finalPayable]);
     const displayAmt = useMemo(() => Math.abs(finalPayable), [finalPayable]);
     const isPaid = useMemo(() => paymentStatus === 'success', [paymentStatus]);
@@ -320,7 +235,7 @@ const MessBillInvoice = ({
                 <LineItem icon={HiOutlineCurrencyRupee} label="Cost of your meals" value={`₹${fmt(costOfMeals)}`} subText="Proportional share" accent />
                 <LineItem icon={HiOutlineCurrencyRupee} label="Adjusted meal charge" value={`₹${fmt(adjustedMealCharge)}`} subText="After guest deduction" accent />
 
-                <PlatformFeeRow isAdmin={isAdmin} platformFee={platformFee} onSave={onPlatformFeeChange} />
+                <LineItem icon={HiOutlineReceiptPercent} label="Platform Fee" value={`₹${fmt(platformFee || 0)}`} subText="Fixed service fee" />
             </div>
 
             {/* Total & Actions */}
@@ -343,13 +258,12 @@ const MessBillInvoice = ({
                     </div>
 
                     {/* Status badge */}
-                    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
-                        isPaid
+                    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${isPaid
                             ? 'border-emerald-200 dark:border-emerald-800'
                             : isRefund
                                 ? 'border-emerald-200 dark:border-emerald-800'
                                 : 'border-amber-200 dark:border-amber-800'
-                    }`}>
+                        }`}>
                         {isPaid ? (
                             <HiOutlineCheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                         ) : isRefund ? (
@@ -357,13 +271,12 @@ const MessBillInvoice = ({
                         ) : (
                             <HiOutlineCurrencyRupee className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                         )}
-                        <span className={`text-xs font-semibold ${
-                            isPaid
+                        <span className={`text-xs font-semibold ${isPaid
                                 ? 'text-emerald-600 dark:text-emerald-400'
                                 : isRefund
                                     ? 'text-emerald-600 dark:text-emerald-400'
                                     : 'text-amber-600 dark:text-amber-400'
-                        }`}>
+                            }`}>
                             {isPaid ? 'Paid' : isRefund ? 'Refund' : 'Due'}
                         </span>
                     </div>

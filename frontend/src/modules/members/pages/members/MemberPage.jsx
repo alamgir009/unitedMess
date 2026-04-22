@@ -2,16 +2,17 @@ import React, { useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import MemberTable from '../../components/MemberTable';
-import { fetchUsers } from '../../store/members.slice';
+import AdminUnpaidPanel from '../../components/AdminUnpaidPanel';
+import { fetchUsers, fetchBillingMonthStats } from '../../store/members.slice';
 import {
     FileText, RefreshCw, Users, TrendingUp,
-    Utensils, Receipt, AlertCircle, ArrowUpRight
+    Utensils, Receipt, AlertCircle, ArrowUpRight, CalendarDays
 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────
-   Stat Card — extracted for clean rendering
+   Stat Card
 ───────────────────────────────────────────── */
-const StatCard = ({ icon: Icon, label, value, subvalue, accent = false }) => (
+const StatCard = ({ icon: Icon, label, value, subvalue, accent = false, loading = false }) => (
     <div
         className={[
             'relative flex flex-col justify-between min-w-[148px] px-4 py-3.5 rounded-2xl border',
@@ -32,19 +33,28 @@ const StatCard = ({ icon: Icon, label, value, subvalue, accent = false }) => (
 
         {/* Value */}
         <div className="flex items-baseline gap-1.5 leading-none">
-            <span className={[
-                'text-xl font-black tabular-nums',
-                accent ? 'text-white' : 'text-slate-900 dark:text-white',
-            ].join(' ')}>
-                {value}
-            </span>
-            {subvalue && (
+            {loading ? (
                 <span className={[
-                    'text-xs font-semibold',
-                    accent ? 'text-amber-200' : 'text-slate-400 dark:text-slate-500',
-                ].join(' ')}>
-                    {subvalue}
-                </span>
+                    'h-5 w-20 rounded-full animate-pulse',
+                    accent ? 'bg-amber-400/40' : 'bg-slate-100 dark:bg-slate-800',
+                ].join(' ')} />
+            ) : (
+                <>
+                    <span className={[
+                        'text-xl font-black tabular-nums',
+                        accent ? 'text-white' : 'text-slate-900 dark:text-white',
+                    ].join(' ')}>
+                        {value}
+                    </span>
+                    {subvalue && (
+                        <span className={[
+                            'text-xs font-semibold',
+                            accent ? 'text-amber-200' : 'text-slate-400 dark:text-slate-500',
+                        ].join(' ')}>
+                            {subvalue}
+                        </span>
+                    )}
+                </>
             )}
         </div>
 
@@ -100,9 +110,11 @@ const ErrorBanner = ({ message, onRetry }) => (
 ───────────────────────────────────────────── */
 const MemberPage = () => {
     const dispatch = useDispatch();
-    const { users, isLoading, isError, message } = useSelector((state) => state.members);
+    const { users, isLoading, isError, message, billingStats, billingStatsLoading } = useSelector((state) => state.members);
+    const { user: currentUser } = useSelector((state) => state.auth);
+    const isAdmin = currentUser?.role === 'admin';
 
-    /* Safe array resolution — handles any API shape */
+    /* Safe array resolution */
     const safeUsers = useMemo(() => {
         if (Array.isArray(users)) return users;
         for (const key of ['users', 'docs', 'data', 'results', 'items']) {
@@ -111,51 +123,27 @@ const MemberPage = () => {
         return [];
     }, [users]);
 
-    /* Aggregated stats */
-    const stats = useMemo(() => {
-        let activeCount = 0;
-        let totalMarket = 0;
-        let totalMeals = 0;
-        let guestRevenue = 0;
-
-        safeUsers.forEach((u) => {
-            if (u.isActive) activeCount++;
-            totalMarket += u.totalMarketAmount ?? 0;
-            totalMeals  += u.totalMeal ?? 0;
-            guestRevenue += (u.guestMeal ?? 0) * (u.chargePerGuestMeal ?? 0);
-        });
-
-        const adjustedMealRate =
-            totalMeals > 0 ? (totalMarket - guestRevenue) / totalMeals : 0;
-
-        return {
-            activeCount,
-            totalMarket,
-            totalMeals,
-            mealRate: adjustedMealRate.toFixed(2),
-            totalMembers: safeUsers.length,
-        };
-    }, [safeUsers]);
+    /* Active member count from user list (still fine to use for headcount) */
+    const activeCount = useMemo(() =>
+        safeUsers.filter(u => u.isActive).length,
+        [safeUsers]);
 
     useEffect(() => {
         dispatch(fetchUsers({ page: 1, limit: 100 }));
+        dispatch(fetchBillingMonthStats());
     }, [dispatch]);
 
-    const handleRetry = () => dispatch(fetchUsers({ page: 1, limit: 100 }));
+    const handleRetry = () => {
+        dispatch(fetchUsers({ page: 1, limit: 100 }));
+        dispatch(fetchBillingMonthStats());
+    };
 
     return (
         <MainLayout>
-            {/*
-             * Root wrapper — full-height, page background
-             * Safe px scale: 16px mobile → 24px tablet → 32px desktop
-             */}
             <div className="relative flex flex-col min-h-[calc(100vh-4rem)] w-full bg-slate-50 dark:bg-[#020617] px-4 sm:px-6 lg:px-8 py-6 lg:py-8 overflow-x-hidden">
 
                 {/* ── Ambient background blobs ── */}
-                <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-0 overflow-hidden"
-                >
+                <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
                     <div className="absolute -top-32 -right-32 w-[480px] h-[480px] rounded-full bg-blue-500/[0.06] dark:bg-blue-500/[0.04] blur-3xl" />
                     <div className="absolute top-1/2 -left-24 w-[320px] h-[320px] rounded-full bg-indigo-500/[0.05] dark:bg-indigo-500/[0.03] blur-3xl" />
                 </div>
@@ -164,16 +152,11 @@ const MemberPage = () => {
                     Header
                 ════════════════════════════════ */}
                 <header className="relative z-10 mb-8">
-                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
 
                         {/* ── Title block ── */}
                         <div className="flex items-start gap-4">
-                            {/* Icon badge */}
-                            <div
-                                className="shrink-0 p-3 rounded-2xl
-                                           bg-gradient-to-br from-blue-500 to-indigo-600
-                                           shadow-lg shadow-blue-500/25 dark:shadow-blue-700/25"
-                            >
+                            <div className="shrink-0 p-3 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/25 dark:shadow-blue-700/25">
                                 <FileText size={24} strokeWidth={1.75} className="text-white" />
                             </div>
 
@@ -182,13 +165,11 @@ const MemberPage = () => {
                                     <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-slate-900 dark:text-white leading-none">
                                         Directory &amp; Invoices
                                     </h1>
-                                    <span
-                                        className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5
-                                                   rounded-md text-[10px] font-bold uppercase tracking-widest
-                                                   bg-blue-50 dark:bg-blue-500/15
-                                                   text-blue-600 dark:text-blue-400
-                                                   border border-blue-200 dark:border-blue-500/30"
-                                    >
+                                    <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5
+                                                       rounded-md text-[10px] font-bold uppercase tracking-widest
+                                                       bg-blue-50 dark:bg-blue-500/15
+                                                       text-blue-600 dark:text-blue-400
+                                                       border border-blue-200 dark:border-blue-500/30">
                                         <ArrowUpRight size={10} strokeWidth={2.5} />
                                         Live
                                     </span>
@@ -197,31 +178,50 @@ const MemberPage = () => {
                                     Manage registered members, review financial statuses, and
                                     expand rows for a comprehensive invoice breakdown.
                                 </p>
+
+                                {/* ── Billing month badge ── */}
+                                {billingStats.billingMonth && (
+                                    <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5
+                                                    rounded-xl bg-indigo-50 dark:bg-indigo-500/10
+                                                    border border-indigo-200 dark:border-indigo-500/25">
+                                        <CalendarDays size={12} className="text-indigo-500 dark:text-indigo-400" />
+                                        <span className="text-[11.5px] font-bold text-indigo-600 dark:text-indigo-400">
+                                            Billing Period: {billingStats.billingMonth}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
-                        {/* ── Stat cards strip ── */}
+                        {/* ── Stat cards strip ──
+                            Stats now come from the billing-month API endpoint,
+                            which aggregates Meal and Market records for the active
+                            billing period only (respects the 10th-day cutoff rule).
+                        ── */}
                         <div className="flex items-center gap-2.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none flex-shrink-0">
                             <StatCard
                                 icon={Users}
                                 label="Active Members"
-                                value={stats.activeCount}
-                                subvalue={`/ ${stats.totalMembers}`}
+                                value={activeCount}
+                                subvalue={`/ ${safeUsers.length}`}
                             />
                             <StatCard
                                 icon={Receipt}
                                 label="Market Exp."
-                                value={`₹\u202F${stats.totalMarket.toLocaleString('en-IN')}`}
+                                value={`₹\u202F${(billingStats.grandTotalMarket ?? 0).toLocaleString('en-IN')}`}
+                                loading={billingStatsLoading}
                             />
                             <StatCard
                                 icon={Utensils}
                                 label="Total Meals"
-                                value={stats.totalMeals.toLocaleString('en-IN')}
+                                value={(billingStats.grandTotalMeal ?? 0).toLocaleString('en-IN')}
+                                loading={billingStatsLoading}
                             />
                             <StatCard
                                 icon={TrendingUp}
                                 label="Meal Rate"
-                                value={`₹\u202F${stats.mealRate}`}
+                                value={`₹\u202F${(billingStats.mealCharge ?? 0).toFixed(2)}`}
+                                loading={billingStatsLoading}
                                 accent
                             />
                         </div>
@@ -241,7 +241,7 @@ const MemberPage = () => {
                 )}
 
                 {/* ════════════════════════════════
-                    Table section
+                    Member table
                 ════════════════════════════════ */}
                 <main
                     className="relative z-10 flex-1 animate-[fadeSlideUp_0.45s_cubic-bezier(0.22,1,0.36,1)_both]"
@@ -252,6 +252,18 @@ const MemberPage = () => {
                         isLoading={isLoading && safeUsers.length === 0}
                     />
                 </main>
+
+                {/* ════════════════════════════════
+                    Admin — Unresolved Bills Panel
+                    Visible ONLY to admins.
+                    Shows previous months' finalized invoices
+                    that are still unpaid or partially paid.
+                ════════════════════════════════ */}
+                {isAdmin && (
+                    <div className="relative z-10">
+                        <AdminUnpaidPanel />
+                    </div>
+                )}
             </div>
 
             {/* ── Global keyframe ── */}
