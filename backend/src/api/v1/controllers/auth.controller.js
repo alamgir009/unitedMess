@@ -1,7 +1,15 @@
 const asyncHandler = require('../../../utils/helpers/asyncHandler');
 const authService = require('../../../services/auth.service');
-const tokenService = require('../../../services/token.service');
 const { sendSuccessResponse } = require('../../../utils/helpers/response.helper');
+const AppError = require('../../../utils/helpers/AppError');
+
+// Cookie config helper
+const getCookieOptions = (maxAge) => ({
+    httpOnly: true,
+    secure: true,
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge,
+});
 
 // @desc    Register user
 // @route   POST /api/v1/auth/register
@@ -19,31 +27,15 @@ exports.register = asyncHandler(async (req, res) => {
 // @access  Public
 exports.login = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
-    // Get IP and User-Agent for login tracking
     const ip = req.ip;
     const userAgent = req.headers['user-agent'];
 
     const { user, tokens } = await authService.login(email, password, ip, userAgent);
 
-    // Set refresh token in httpOnly cookie
-    res.cookie('refreshToken', tokens.refresh.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    res.cookie('refreshToken', tokens.refresh.token, getCookieOptions(7 * 24 * 60 * 60 * 1000));
+    res.cookie('accessToken', tokens.access.token, getCookieOptions(24 * 60 * 60 * 1000));
 
-    // Set access token in httpOnly cookie
-    res.cookie('accessToken', tokens.access.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 24 * 60 * 60 * 1000, // 15 minutes
-    });
-
-    sendSuccessResponse(res, 200, 'Login successful', {
-        user,
-    });
+    sendSuccessResponse(res, 200, 'Login successful', { user });
 });
 
 // @desc    Logout user
@@ -56,7 +48,14 @@ exports.logout = asyncHandler(async (req, res) => {
         await authService.logout(refreshToken);
     }
 
-    res.clearCookie('refreshToken');
+    const clearOptions = {
+        httpOnly: true,
+        secure: true,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    };
+
+    res.clearCookie('refreshToken', clearOptions);
+    res.clearCookie('accessToken', clearOptions);
 
     sendSuccessResponse(res, 200, 'Logout successful');
 });
@@ -69,20 +68,8 @@ exports.refreshTokens = asyncHandler(async (req, res) => {
 
     const tokens = await authService.refreshAuth(refreshToken);
 
-    res.cookie('refreshToken', tokens.refresh.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
-    // Set access token in httpOnly cookie
-    res.cookie('accessToken', tokens.access.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 24 * 60 * 60 * 1000, // 24 hr
-    });
+    res.cookie('refreshToken', tokens.refresh.token, getCookieOptions(7 * 24 * 60 * 60 * 1000));
+    res.cookie('accessToken', tokens.access.token, getCookieOptions(24 * 60 * 60 * 1000));
 
     sendSuccessResponse(res, 200, 'Tokens refreshed successfully');
 });
@@ -92,23 +79,14 @@ exports.refreshTokens = asyncHandler(async (req, res) => {
 // @access  Public
 exports.forgotPassword = asyncHandler(async (req, res) => {
     await authService.forgotPassword(req.body.email);
-
-    sendSuccessResponse(
-        res,
-        200,
-        'Password reset link sent to email'
-    );
+    sendSuccessResponse(res, 200, 'Password reset link sent to email');
 });
 
 // @desc    Reset password
 // @route   POST /api/v1/auth/reset-password/:token
 // @access  Public
 exports.resetPassword = asyncHandler(async (req, res) => {
-    await authService.resetPassword(
-        req.params.token,
-        req.body.password
-    );
-
+    await authService.resetPassword(req.params.token, req.body.password);
     sendSuccessResponse(res, 200, 'Password reset successful');
 });
 
@@ -117,7 +95,6 @@ exports.resetPassword = asyncHandler(async (req, res) => {
 // @access  Public
 exports.verifyEmail = asyncHandler(async (req, res) => {
     await authService.verifyEmail(req.params.token);
-
     sendSuccessResponse(res, 200, 'Email verified successfully');
 });
 
@@ -126,9 +103,7 @@ exports.verifyEmail = asyncHandler(async (req, res) => {
 // @access  Public
 exports.resendVerificationEmail = asyncHandler(async (req, res) => {
     const { email } = req.body;
-    if (!email) {
-        throw new AppError('Email is required', 400);
-    }
+    if (!email) throw new AppError('Email is required', 400);
     await authService.resendVerificationEmailByEmail(email);
     sendSuccessResponse(res, 200, 'Verification email resent successfully');
 });
@@ -138,12 +113,6 @@ exports.resendVerificationEmail = asyncHandler(async (req, res) => {
 // @access  Private
 exports.changePassword = asyncHandler(async (req, res) => {
     const { currentPassword, newPassword } = req.body;
-
-    await authService.changePassword(
-        req.user.id,
-        currentPassword,
-        newPassword
-    );
-
+    await authService.changePassword(req.user.id, currentPassword, newPassword);
     sendSuccessResponse(res, 200, 'Password changed successfully');
 });
