@@ -4,8 +4,7 @@ import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
 // TODO: Replace with env variable
-// const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
-const API_URL = 'https://unitedmess.onrender.com';
+const API_URL = `${import.meta.env.VITE_API_URL}/api/v1` || 'https://unitedmess.onrender.com/api/v1';
 
 const VerifyEmailPage = () => {
     const [searchParams] = useSearchParams();
