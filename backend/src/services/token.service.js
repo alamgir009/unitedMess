@@ -103,13 +103,15 @@ const generateAuthTokens = async (user) => {
 const refreshAuthTokens = async (refreshToken) => {
     try {
         const refreshTokenDoc = await verifyToken(refreshToken, tokenTypes.REFRESH);
-        const user = refreshTokenDoc.user;
+        // refreshTokenDoc.user is a Mongoose ObjectId (ref not populated) — NOT a full document.
+        // We must convert it to a string so generateAuthTokens gets a valid id.
+        const userId = refreshTokenDoc.user.toString();
 
-        // delete used refresh token
+        // delete used refresh token (rotation)
         await refreshTokenDoc.deleteOne();
 
-        // generate new tokens
-        const tokens = await generateAuthTokens(user);
+        // generate new tokens — pass a plain object so user.id resolves correctly
+        const tokens = await generateAuthTokens({ id: userId });
 
         return tokens;
     } catch (error) {

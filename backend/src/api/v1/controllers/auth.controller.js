@@ -40,7 +40,15 @@ exports.login = asyncHandler(async (req, res) => {
     res.cookie('refreshToken', tokens.refresh.token, getCookieOptions(7 * 24 * 60 * 60 * 1000));
     res.cookie('accessToken', tokens.access.token, getCookieOptions(24 * 60 * 60 * 1000));
 
-    sendSuccessResponse(res, 200, 'Login successful', { user });
+    // Also return tokens in body — required for cross-origin deployments where
+    // SameSite=None cookies are blocked by Chrome's third-party cookie policy.
+    sendSuccessResponse(res, 200, 'Login successful', {
+        user,
+        tokens: {
+            accessToken: tokens.access.token,
+            refreshToken: tokens.refresh.token,
+        },
+    });
 });
 
 // @desc    Logout user
@@ -77,7 +85,13 @@ exports.refreshTokens = asyncHandler(async (req, res) => {
     res.cookie('refreshToken', tokens.refresh.token, getCookieOptions(7 * 24 * 60 * 60 * 1000));
     res.cookie('accessToken', tokens.access.token, getCookieOptions(24 * 60 * 60 * 1000));
 
-    sendSuccessResponse(res, 200, 'Tokens refreshed successfully');
+    // Return new tokens in body so frontend can update in-memory + localStorage stores.
+    sendSuccessResponse(res, 200, 'Tokens refreshed successfully', {
+        tokens: {
+            accessToken: tokens.access.token,
+            refreshToken: tokens.refresh.token,
+        },
+    });
 });
 
 // @desc    Forgot password
