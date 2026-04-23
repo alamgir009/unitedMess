@@ -1,7 +1,7 @@
 const asyncHandler = require('../../../utils/helpers/asyncHandler');
 const authService = require('../../../services/auth.service');
 const { sendSuccessResponse } = require('../../../utils/helpers/response.helper');
-const AppError = require('../../../utils/helpers/AppError');
+const AppError = require('../../../utils/errors/AppError');
 
 // Cookie config helper
 const getCookieOptions = (maxAge) => {
