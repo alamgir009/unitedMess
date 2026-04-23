@@ -4,12 +4,17 @@ const { sendSuccessResponse } = require('../../../utils/helpers/response.helper'
 const AppError = require('../../../utils/helpers/AppError');
 
 // Cookie config helper
-const getCookieOptions = (maxAge) => ({
-    httpOnly: true,
-    secure: true,
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge,
-});
+const getCookieOptions = (maxAge) => {
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    return {
+        httpOnly: true,
+        secure: isProduction, // Must be true for sameSite: 'none'
+        sameSite: isProduction ? 'none' : 'lax',
+        maxAge,
+        path: '/', // Ensure consistent path
+    };
+};
 
 // @desc    Register user
 // @route   POST /api/v1/auth/register
@@ -50,8 +55,9 @@ exports.logout = asyncHandler(async (req, res) => {
 
     const clearOptions = {
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        path: '/',
     };
 
     res.clearCookie('refreshToken', clearOptions);

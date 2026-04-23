@@ -11,6 +11,9 @@ const errorMiddleware = require('./api/v1/middlewares/error.middleware');
 
 const app = express();
 
+// Trust proxy for secure cookies on Render/Heroku etc.
+app.set('trust proxy', 1);
+
 // Security middlewares
 app.use(helmet());
 app.use(mongoSanitize());

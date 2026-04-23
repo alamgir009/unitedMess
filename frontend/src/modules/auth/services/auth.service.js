@@ -10,7 +10,7 @@ const register = async (userData) => {
     // Store user profile info for UI display; tokens are in httpOnly cookies
     if (response.data?.data?.user) {
         // Use cookie instead of localStorage for security
-        Cookies.set('user', JSON.stringify(response.data.data.user), { expires: 7, secure: true, sameSite: 'strict' });
+        Cookies.set('user', JSON.stringify(response.data.data.user), { expires: 7, secure: true, sameSite: 'lax' });
     }
     return response.data;
 };
@@ -21,7 +21,7 @@ const login = async (userData) => {
     // Store user profile info for UI display; tokens are in httpOnly cookies
     if (response.data?.data?.user) {
         // Use cookie instead of localStorage for security
-        Cookies.set('user', JSON.stringify(response.data.data.user), { expires: 7, secure: true, sameSite: 'strict' });
+        Cookies.set('user', JSON.stringify(response.data.data.user), { expires: 7, secure: true, sameSite: 'lax' });
     }
     return response.data;
 };
@@ -62,7 +62,7 @@ const authService = {
         const response = await apiClient.patch('users/me', userData);
         const updatedUser = response.data?.data?.user || response.data?.data || response.data?.user;
         if (updatedUser && typeof updatedUser === 'object' && updatedUser._id) {
-            Cookies.set('user', JSON.stringify(updatedUser), { expires: 7, secure: true, sameSite: 'strict' });
+            Cookies.set('user', JSON.stringify(updatedUser), { expires: 7, secure: true, sameSite: 'lax' });
         }
         return response.data;
     },
@@ -74,7 +74,7 @@ const authService = {
         });
         const updatedUser = response.data?.data;
         if (updatedUser && typeof updatedUser === 'object' && updatedUser._id) {
-            Cookies.set('user', JSON.stringify(updatedUser), { expires: 7, secure: true, sameSite: 'strict' });
+            Cookies.set('user', JSON.stringify(updatedUser), { expires: 7, secure: true, sameSite: 'lax' });
         }
         return response.data;
     },
