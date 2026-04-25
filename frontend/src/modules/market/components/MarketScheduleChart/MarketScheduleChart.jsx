@@ -44,8 +44,7 @@ const MarketScheduleChart = ({ schedule, isLoading }) => {
 
     return (
         <div className="relative mb-10">
-
-            {/* 🔹 Sticky Today Chip */}
+            {/* Sticky Today Chip */}
             <button
                 onClick={scrollToToday}
                 className="
@@ -77,7 +76,7 @@ const MarketScheduleChart = ({ schedule, isLoading }) => {
                     </h2>
                 </div>
 
-                {/* 🔹 Drag Scroll Container */}
+                {/* Scroll Container with Edge Fade Mask */}
                 <motion.div
                     ref={scrollRef}
                     drag="x"
@@ -85,11 +84,17 @@ const MarketScheduleChart = ({ schedule, isLoading }) => {
                     dragElastic={0.08}
                     whileTap={{ cursor: "grabbing" }}
                     className="flex gap-5 overflow-x-auto pb-4 pr-6 cursor-grab"
+                    style={{
+                        // Fintech-grade edge fade: soft transparency at both ends
+                        maskImage: 'linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)',
+                        WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)',
+                        // Smooth scrolling & mask rendering
+                        willChange: 'transform',
+                    }}
                 >
                     {schedule.map((day, i) => {
                         const dateObj = new Date(day.date);
-                        const isToday =
-                            dateObj.toDateString() === todayStr;
+                        const isToday = dateObj.toDateString() === todayStr;
 
                         return (
                             <motion.div
@@ -148,7 +153,7 @@ const MarketScheduleChart = ({ schedule, isLoading }) => {
                                             {day.user.name.split(' ')[0]}
                                         </span>
 
-                                        {/* 🔹 Tooltip */}
+                                        {/* Tooltip */}
                                         <div className="
                                             absolute bottom-full mb-3
                                             px-3 py-2 rounded-lg text-xs
