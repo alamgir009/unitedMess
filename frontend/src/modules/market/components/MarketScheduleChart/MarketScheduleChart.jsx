@@ -76,19 +76,29 @@ const MarketScheduleChart = ({ schedule, isLoading }) => {
                     </h2>
                 </div>
 
-                {/* Scroll Container with Edge Fade Mask */}
+                {/* Scroll Container with Edge Fade Mask + Custom Scrollbar */}
                 <motion.div
                     ref={scrollRef}
                     drag="x"
                     dragConstraints={{ left: -1000, right: 0 }}
                     dragElastic={0.08}
                     whileTap={{ cursor: "grabbing" }}
-                    className="flex gap-5 overflow-x-auto pb-4 pr-6 cursor-grab"
+                    className="
+                        flex gap-5 overflow-x-auto pb-4 pr-6 cursor-grab
+                        [&::-webkit-scrollbar]:h-1.5
+                        [&::-webkit-scrollbar-track]:rounded-full
+                        [&::-webkit-scrollbar-track]:bg-gray-200/50
+                        [&::-webkit-scrollbar-thumb]:rounded-full
+                        [&::-webkit-scrollbar-thumb]:bg-gray-400/70
+                        [&::-webkit-scrollbar-thumb]:hover:bg-gray-500/80
+                        dark:[&::-webkit-scrollbar-track]:bg-gray-800/50
+                        dark:[&::-webkit-scrollbar-thumb]:bg-gray-600/70
+                        dark:[&::-webkit-scrollbar-thumb]:hover:bg-gray-500/80
+                    "
                     style={{
                         // Fintech-grade edge fade: soft transparency at both ends
                         maskImage: 'linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)',
                         WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)',
-                        // Smooth scrolling & mask rendering
                         willChange: 'transform',
                     }}
                 >
@@ -105,7 +115,7 @@ const MarketScheduleChart = ({ schedule, isLoading }) => {
                                 className={`
                                     relative group min-w-[150px] flex-shrink-0
                                     rounded-3xl p-5 flex flex-col items-center
-                                    border transition-all
+                                    border transition-all duration-200
 
                                     ${isToday
                                         ? `
@@ -117,8 +127,10 @@ const MarketScheduleChart = ({ schedule, isLoading }) => {
                                         : `
                                             bg-white/40 dark:bg-white/5
                                             border-white/10
-                                            hover:bg-white/60 dark:hover:bg-white/10
-                                            hover:border-white/30
+                                            hover:bg-white/80 dark:hover:bg-white/10
+                                            hover:border-white/40
+                                            hover:shadow-md
+                                            hover:scale-[1.02]
                                         `
                                     }
                                 `}
