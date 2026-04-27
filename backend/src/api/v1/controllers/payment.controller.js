@@ -3,6 +3,7 @@ const { paymentService } = require('../../../services');
 const { sendSuccessResponse } = require('../../../utils/helpers/response.helper');
 const AppError = require('../../../utils/errors/AppError');
 const pick = require('../../../utils/helpers/pick');
+const config = require('../../../config');
 
 /**
  * POST /payments
@@ -31,7 +32,15 @@ const createOnlineOrder = asyncHandler(async (req, res) => {
     }
 
     const { order, payment } = await paymentService.createOnlinePaymentOrder(req.user.id, amount, type);
-    sendSuccessResponse(res, 201, 'Payment order created', { order, payment });
+
+    // NOTE: Razorpay Key ID is a PUBLIC key — safe to expose to the frontend.
+    // Delivering it from the backend makes the frontend immune to stale Vite
+    // build-time env variables (e.g. on Cloudflare Pages).
+    sendSuccessResponse(res, 201, 'Payment order created', {
+        order,
+        payment,
+        keyId: config.razorpay.keyId,
+    });
 });
 
 /**

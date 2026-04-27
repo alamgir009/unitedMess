@@ -80,13 +80,24 @@ export function usePayment({ user, onSuccess, sendEmail = true }) {
 
             // Step 2: Create order on server
             const orderRes = await paymentService.createOnlineOrder({ amount, type: paymentType });
-            const { order, payment } = orderRes?.data ?? {};
+            // keyId is the Razorpay PUBLIC key returned by the backend.
+            // This makes the checkout immune to stale Cloudflare build-time env variables.
+            // VITE_RAZORPAY_KEY_ID in payment.config.js is kept only as a local-dev fallback.
+            const { order, payment, keyId } = orderRes?.data ?? {};
             if (!order?.id) throw new Error('Invalid order response from server');
+
+            const rzpKey = keyId || RAZORPAY.KEY_ID;
+            if (!rzpKey) {
+                throw new Error(
+                    'Razorpay key is not configured. ' +
+                    'Please ensure RAZORPAY_KEY_ID is set on the backend.'
+                );
+            }
 
             // Step 3: Open modal
             await new Promise((resolve, reject) => {
                 const options = {
-                    key:         RAZORPAY.KEY_ID,
+                    key:         rzpKey,
                     amount:      order.amount,
                     currency:    order.currency ?? 'INR',
                     name:        'United Mess',
