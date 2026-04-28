@@ -51,13 +51,14 @@ module.exports = {
     cors: {
         origin: [
             process.env.FRONTEND_URL,
+            'https://unitedmess.uk',
+            'https://unitedmess.pages.dev',
             'http://localhost:5173',
             'http://127.0.0.1:5173',
             'http://localhost:3000'
         ].filter(Boolean),
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-        // Let cors handle allowedHeaders automatically to avoid network errors
     },
     cloudinary: {
         cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
