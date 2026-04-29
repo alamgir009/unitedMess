@@ -114,6 +114,13 @@ const authService = {
         const response = await apiClient.post(API_URL + 'resend-verification', { email });
         return response.data;
     },
+
+    deactivateAccount: async () => {
+        const response = await apiClient.delete('users/me');
+        // Upon successful deactivation, we might need to clear tokens/cookies. 
+        // This can also be handled in the slice/logout flow.
+        return response.data;
+    },
 };
 
 export default authService;

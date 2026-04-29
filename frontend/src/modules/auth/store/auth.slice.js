@@ -173,6 +173,23 @@ export const resendVerification = createAsyncThunk(
     }
 );
 
+export const deactivateAccount = createAsyncThunk(
+    'auth/deactivateAccount',
+    async (_, thunkAPI) => {
+        try {
+            const response = await authService.deactivateAccount();
+            toast.success('Your account has been deactivated.');
+            // Also call logout locally to clear cookies/tokens
+            await authService.logout();
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || error.response?.data?.error || 'Failed to deactivate account';
+            toast.error(message);
+            return thunkAPI.rejectWithValue(message);
+        }
+    }
+);
+
 let userCookie = Cookies.get('user');
 let parsedUser = null;
 if (userCookie) {
@@ -353,6 +370,22 @@ export const authSlice = createSlice({
                 state.isSuccess = true;
             })
             .addCase(resendVerification.rejected, (state, action) => {
+                state.isLoading = false;
+                state.isError = true;
+                state.message = action.payload;
+            })
+            // Deactivate Account
+            .addCase(deactivateAccount.pending, (state) => {
+                state.isLoading = true;
+            })
+            .addCase(deactivateAccount.fulfilled, (state) => {
+                state.isLoading = false;
+                state.isSuccess = true;
+                state.user = null;
+                state.payableAmount = null;
+                state.payableAmountData = null;
+            })
+            .addCase(deactivateAccount.rejected, (state, action) => {
                 state.isLoading = false;
                 state.isError = true;
                 state.message = action.payload;
