@@ -7,6 +7,7 @@ import { logout, toggleAdminHistory } from '@/modules/auth/store/auth.slice';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTheme } from '@/app/providers/ThemeProvider';
+import NotificationBell from '@/modules/notification/components/NotificationBell/NotificationBell';
 
 const SunIcon = () => (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -81,10 +82,7 @@ const Header = ({ onMenuClick }) => {
                     </button>
 
                     {/* Notifications */}
-                    <button type="button" className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 transition-all">
-                        <span className="sr-only">View notifications</span>
-                        <Bell className="h-5 w-5" aria-hidden="true" />
-                    </button>
+                    <NotificationBell />
 
                     {/* Separator */}
                     <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200 dark:lg:bg-slate-800" aria-hidden="true" />

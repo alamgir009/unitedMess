@@ -92,4 +92,29 @@ const registerInvoiceCron = () => {
     logger.info('[InvoiceCron] 📅 Invoice auto-finalization + billing-cycle reset cron registered (11th of each month at 00:01 IST).');
 };
 
-module.exports = { registerInvoiceCron, runInvoiceFinalization };
+/**
+ * Register the reminder cron schedule.
+ */
+const registerReminderCron = () => {
+    // 0 10 30 * * => 10:00 AM on the 30th of every month
+    cron.schedule('0 10 30 * *', async () => {
+        try {
+            const notificationService = require('../../services/notification.service');
+            await notificationService.sendToAllActiveUsers(
+                'SYSTEM',
+                'End of Month Reminder',
+                'Please update your account and complete your payment before the 10th of the next month. Otherwise, your invoice will be reset.'
+            );
+            logger.info('[ReminderCron] End of month reminder sent to all users.');
+        } catch (error) {
+            logger.error(`[ReminderCron] ❌ Failed to send reminder: ${error.message}`);
+        }
+    }, {
+        scheduled: true,
+        timezone: 'Asia/Kolkata', // IST
+    });
+
+    logger.info('[ReminderCron] 📅 Reminder cron registered (30th of each month at 10:00 AM IST).');
+};
+
+module.exports = { registerInvoiceCron, runInvoiceFinalization, registerReminderCron };

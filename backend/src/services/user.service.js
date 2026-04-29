@@ -6,6 +6,7 @@ const AppError = require('../utils/errors/AppError');
 const emailService = require('./email.service');
 const mongoose = require('mongoose');
 const { getBillingPeriod } = require('../utils/helpers/date.helper');
+const notificationService = require('./notification.service');
 
 // Constants
 const PAYMENT_STATUSES = ['pending', 'success', 'failed'];
@@ -144,6 +145,8 @@ async function approveAccount(userId, approvedBy) {
     emailService.sendAccountApprovedEmail(result.email, result.name)
         .catch(err => console.error('Approval email failed:', err));
 
+    notificationService.createAndSend(userId, 'ACCOUNT', 'Account Approved', 'Your account has been approved. You can now use all features.').catch(console.error);
+
     return result;
 }
 
@@ -184,6 +187,8 @@ async function denyAccount(userId, deniedBy, reason) {
     emailService.sendAccountDeniedEmail(user.email, user.name, reason)
         .catch(err => console.error('Denial email failed:', err));
 
+    notificationService.createAndSend(userId, 'ACCOUNT', 'Account Denied', `Your account was denied. Reason: ${reason}`).catch(console.error);
+
     return user;
 }
 
@@ -206,6 +211,8 @@ async function updatePaymentStatus(userId, status) {
     user.payment = status;
     await user.save();
 
+    notificationService.createAndSend(userId, 'PAYMENT', 'Payment Status Updated', `Your meal payment status is now: ${status}`).catch(console.error);
+
     return user;
 }
 /**
@@ -226,6 +233,8 @@ async function updateGasBillStatus(userId, status) {
     user.gasBill = status;
     await user.save();
 
+    notificationService.createAndSend(userId, 'BILLING', 'Gas Bill Status Updated', `Your gas bill status is now: ${status}`).catch(console.error);
+
     return user;
 }
 
@@ -244,6 +253,9 @@ async function deactivateAccount(userId) {
     ).lean();
 
     if (!user) throw new AppError('User not found', 404);
+
+    notificationService.sendToAdmins('ACCOUNT', 'User Deactivated', `The account for ${user.name} (${user.email}) has been deactivated.`).catch(console.error);
+
     return user;
 }
 

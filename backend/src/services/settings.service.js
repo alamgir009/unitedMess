@@ -1,5 +1,6 @@
 const User = require("../models/User.model");
 const AppError = require("../utils/errors/AppError");
+const notificationService = require('./notification.service');
 
 
 /**
@@ -20,6 +21,8 @@ async function updateGuestMealCharge(updateData) {
         { runValidators: true }
     );
 
+    await notificationService.sendToAllActiveUsers('BILLING', 'Guest Meal Charge Updated', `The guest meal charge has been updated to ${chargePerGuestMeal}.`);
+
     return result;
 }
 
@@ -35,6 +38,9 @@ async function updateCookingCharge(updateData) {
         { $set: { cookingCharge } },
         { runValidators: true }
     );
+
+    await notificationService.sendToAllActiveUsers('BILLING', 'Cooking Charge Updated', `The cooking charge has been updated to ${cookingCharge}.`);
+
     return result;
 }
 
@@ -64,6 +70,8 @@ async function updateWaterBill(updateData) {
         { runValidators: true }
     );
 
+    await notificationService.sendToAllActiveUsers('BILLING', 'Water Bill Updated', `The total water bill has been updated. Your share is ${perUserWaterBill}. Check your invoices.`);
+
     return result;
 }
 
@@ -86,6 +94,8 @@ async function updateGasBillCharge(updateData) {
         { $set: { gasBillCharge: perUsergasBillCharge } },
         { runValidators: true }
     );
+
+    await notificationService.sendToAllActiveUsers('BILLING', 'Gas Bill Updated', `The total gas bill has been updated. Your share is ${perUsergasBillCharge}. Check your invoices.`);
 
     return result;
 }
@@ -110,6 +120,8 @@ async function updatePlatformFee(updateData) {
         { $set: { platformFee } },
         { runValidators: true }
     );
+
+    await notificationService.sendToAllActiveUsers('BILLING', 'Platform Fee Updated', `The platform fee has been updated to ${platformFee}.`);
 
     return result;
 }
