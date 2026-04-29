@@ -264,8 +264,10 @@ async function getAllUsers(filters = {}, pagination = {}) {
     }, {});
 
     // Use aggregation to fetch current-period stats per user
+    // NOTE: No isActive filter is applied by default — the admin sees ALL users.
+    // The caller can pass isActive=true/false in the filter object to narrow results.
     const aggregationPipeline = [
-        { $match: { ...query, isActive: { $ne: false } } }, // default to showing active, but filter can override
+        { $match: query },
         { $sort: { createdAt: -1 } },
         { $skip: skip },
         { $limit: limit },
@@ -341,7 +343,7 @@ async function getAllUsers(filters = {}, pagination = {}) {
 
     const [users, total] = await Promise.all([
         User.aggregate(aggregationPipeline),
-        User.countDocuments(query)
+        User.countDocuments(query)  // uses same filters as aggregation
     ]);
 
     return {

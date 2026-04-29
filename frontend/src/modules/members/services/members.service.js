@@ -9,9 +9,13 @@ const getUsers = async (params = {}) => {
     return response.data;
 };
 
-const searchUsers = async (params = {}) => {
-    const query = new URLSearchParams(params).toString();
-    const response = await apiClient.get(`${API_URL}/search?${query}`);
+const searchUsers = async ({ search, page, limit } = {}) => {
+    // Backend reads `q` as the search term
+    const params = {};
+    if (search?.trim()) params.q = search.trim();
+    if (page)  params.page  = page;
+    if (limit) params.limit = limit;
+    const response = await apiClient.get(`${API_URL}/search?${new URLSearchParams(params).toString()}`);
     return response.data;
 };
 

@@ -86,6 +86,13 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
     }));
   };
 
+  // Dedicated handler for boolean selects (isActive) so the value stays a real boolean,
+  // not the string "true" / "false" that a <select> naturally produces.
+  const handleBooleanChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value === 'true' }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -127,8 +134,9 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
 
   const avatarColor = getAvatarColor(user.name);
   const joinedDate = user.createdAt ? format(new Date(user.createdAt), 'MMM d, yyyy') : 'N/A';
-  const mealPaidColor = user.paymentStatus === 'paid' ? 'green' : 'red';
-  const gasPaidColor = user.gasBillStatus === 'paid' ? 'green' : 'red';
+  // Backend stores payment/gasBill as 'success' | 'pending' | 'failed'
+  const mealPaidColor = user.payment === 'success' ? 'green' : 'red';
+  const gasPaidColor  = user.gasBill === 'success'  ? 'green' : 'red';
   const statusColor =
     user.userStatus === 'approved' ? 'green' : user.userStatus === 'pending' ? 'amber' : 'red';
 
@@ -193,12 +201,12 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
               />
               <InfoBadge
                 label="Meal Bill"
-                value={user.paymentStatus === 'paid' ? '✓ Paid' : '✕ Unpaid'}
+                value={user.payment === 'success' ? '✓ Paid' : '✕ Unpaid'}
                 color={mealPaidColor}
               />
               <InfoBadge
                 label="Gas Bill"
-                value={user.gasBillStatus === 'paid' ? '✓ Paid' : '✕ Unpaid'}
+                value={user.gasBill === 'success' ? '✓ Paid' : '✕ Unpaid'}
                 color={gasPaidColor}
               />
             </div>
@@ -303,10 +311,11 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
                   <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
                     Active State
                   </label>
+                  {/* Use handleBooleanChange so isActive stays a real boolean, not a string */}
                   <select
                     name="isActive"
                     value={formData.isActive.toString()}
-                    onChange={handleChange}
+                    onChange={handleBooleanChange}
                     className="w-full rounded-xl border border-white/30 bg-white/50 px-3 py-2 text-sm font-medium text-slate-900 outline-none transition-all focus:ring-2 focus:ring-orange-500/50 dark:border-slate-700/50 dark:bg-slate-800/50 dark:text-white sm:px-4 sm:py-2.5"
                   >
                     <option value="true">Active</option>

@@ -87,6 +87,7 @@ const PaymentBadge = ({ status }) => {
 const FILTER_TABS = [
     { id: 'all',     label: 'All'     },
     { id: 'active',  label: 'Active'  },
+    { id: 'inactive',  label: 'Inactive'  },
     { id: 'pending', label: 'Pending' },
     { id: 'denied',  label: 'Denied'  },
 ];
@@ -149,11 +150,12 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
 
     /* Tab counts */
     const counts = useMemo(() => {
-        const c = { all: usersWithStatus.length, active: 0, pending: 0, denied: 0 };
+        const c = { all: usersWithStatus.length, active: 0, inactive: 0, pending: 0, denied: 0 };
         usersWithStatus.forEach(({ _displayStatus: s }) => {
-            if (s === 'active')  c.active++;
-            else if (s === 'pending') c.pending++;
-            else if (s === 'denied')  c.denied++;
+            if (s === 'active')        c.active++;
+            else if (s === 'inactive') c.inactive++;
+            else if (s === 'pending')  c.pending++;
+            else if (s === 'denied')   c.denied++;
         });
         return c;
     }, [usersWithStatus]);

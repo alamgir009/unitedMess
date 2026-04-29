@@ -64,11 +64,13 @@ const AdminDashboard = () => {
         dispatch(fetchUsers({ page: 1, limit: 100 }));
     };
 
-    // Computed summary alerts from user list
-    const pendingCount = users.filter(u => u.status === 'pending').length;
-    const unpaidMealCount = users.filter(u => u.paymentStatus !== 'paid' && u.status === 'active').length;
-    const unpaidGasCount = users.filter(u => u.gasBillStatus !== 'paid' && u.status === 'active').length;
-    const activeCount = users.filter(u => u.status === 'active').length;
+    // Computed summary alerts — use real DB field names from the aggregation response
+    const pendingCount    = users.filter(u => u.userStatus === 'pending').length;
+    const deniedCount     = users.filter(u => u.userStatus === 'denied').length;
+    const inactiveCount   = users.filter(u => !u.isActive && u.userStatus !== 'pending' && u.userStatus !== 'denied').length;
+    const unpaidMealCount = users.filter(u => u.payment !== 'success' && u.isActive).length;
+    const unpaidGasCount  = users.filter(u => u.gasBill  !== 'success' && u.isActive).length;
+    const activeCount     = users.filter(u => u.isActive).length;
 
     // Stats cards
     const statsData = [
@@ -140,15 +142,17 @@ const AdminDashboard = () => {
 
 
             {/* Alert Banners */}
-            {(pendingCount > 0 || unpaidMealCount > 0 || unpaidGasCount > 0) && (
+            {(pendingCount > 0 || unpaidMealCount > 0 || unpaidGasCount > 0 || inactiveCount > 0 || deniedCount > 0) && (
                 <div className="flex flex-wrap gap-2 items-center">
                     <span className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mr-1">
                         Alerts:
                     </span>
                     <AlertPill count={pendingCount} label="pending approval" color="amber" icon={FiAlertCircle} />
+                    <AlertPill count={inactiveCount} label="inactive members" color="amber" icon={FiAlertCircle} />
+                    <AlertPill count={deniedCount} label="denied members" color="red" icon={FiAlertCircle} />
                     <AlertPill count={unpaidMealCount} label="unpaid meal bills" color="red" icon={FiDollarSign} />
                     <AlertPill count={unpaidGasCount} label="unpaid gas bills" color="red" icon={FiPieChart} />
-                    {pendingCount === 0 && unpaidMealCount === 0 && unpaidGasCount === 0 && (
+                    {pendingCount === 0 && unpaidMealCount === 0 && unpaidGasCount === 0 && inactiveCount === 0 && deniedCount === 0 && (
                         <AlertPill count={activeCount} label="all settled" color="green" icon={FiCheckSquare} />
                     )}
                 </div>
