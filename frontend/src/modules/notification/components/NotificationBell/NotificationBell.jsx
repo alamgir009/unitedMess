@@ -140,27 +140,38 @@ const NotificationBell = () => {
             {/* ── Dropdown panel ── */}
             <AnimatePresence>
                 {open && (
-                    <motion.div
-                        key="panel"
-                        variants={PANEL_VARIANTS}
-                        initial="hidden"
-                        animate="visible"
-                        exit="exit"
-                        role="dialog"
-                        aria-label="Notifications panel"
-                        className="
-                            absolute right-0 mt-2 z-50 origin-top-right
-                            w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)]
-                            sm:w-96 md:w-[400px]
-                            rounded-2xl overflow-hidden
-                            bg-white/95 dark:bg-slate-900/95
-                            border border-slate-200/60 dark:border-slate-800/60
-                            shadow-2xl shadow-slate-900/20 dark:shadow-slate-950/60
-                            backdrop-blur-xl
-                        "
-                    >
-                        <NotificationList closeMenu={() => setOpen(false)} />
-                    </motion.div>
+                    <>
+                        {/* Mobile backdrop */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setOpen(false)}
+                            className="fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-sm sm:hidden"
+                        />
+                        
+                        <motion.div
+                            key="panel"
+                            variants={PANEL_VARIANTS}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                            role="dialog"
+                            aria-label="Notifications panel"
+                            className="
+                                fixed inset-x-4 top-[70px] z-50 origin-top
+                                sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:origin-top-right
+                                w-auto sm:w-[420px]
+                                rounded-3xl overflow-hidden
+                                bg-white/95 dark:bg-slate-900/95
+                                border border-slate-200/60 dark:border-slate-800/60
+                                shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)]
+                                backdrop-blur-2xl
+                            "
+                        >
+                            <NotificationList closeMenu={() => setOpen(false)} />
+                        </motion.div>
+                    </>
                 )}
             </AnimatePresence>
         </div>

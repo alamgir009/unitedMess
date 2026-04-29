@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { fetchNotifications, markAllAsRead, markAsRead } from '../../store/notification.slice';
 import NotificationItem from '../NotificationItem/NotificationItem';
+import { cn } from '@/core/utils/helpers/string.helper';
 
 // ─── Animation variants ───────────────────────────────────────────────────────
 const LIST_ITEM = {
@@ -164,8 +165,8 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
     let itemIndex = 0; // for stagger delay
 
     return (
-        <div className="flex flex-col max-h-[85svh] sm:max-h-[78vh]
-            bg-white dark:bg-slate-900 overflow-hidden">
+        <div className="flex flex-col h-full max-h-[75vh] sm:max-h-[600px]
+            bg-white dark:bg-slate-900 overflow-hidden shadow-inner">
 
             {/* ── Header ── */}
             <div className="
@@ -178,11 +179,11 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
             ">
                 <div className="flex items-center gap-2.5">
                     <div className="
-                        w-8 h-8 rounded-xl shadow-md
-                        bg-gradient-to-br from-blue-500 to-blue-600
+                        w-9 h-9 rounded-2xl shadow-lg
+                        bg-gradient-to-br from-blue-500 to-indigo-600
                         flex items-center justify-center
                     ">
-                        <BellRing className="w-4 h-4 text-white" aria-hidden />
+                        <BellRing className="w-4.5 h-4.5 text-white" aria-hidden />
                     </div>
                     <div>
                         <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-[15px] tracking-tight">
@@ -294,35 +295,32 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
             {/* ── Footer ── */}
             {items.length > 0 && (
                 <div className="
-                    shrink-0 sticky bottom-0
-                    flex items-center justify-between
-                    px-4 py-3
+                    shrink-0 px-5 py-4
                     border-t border-slate-100 dark:border-slate-800
-                    bg-slate-50/90 dark:bg-slate-900/90
-                    backdrop-blur-sm
+                    bg-slate-50/50 dark:bg-slate-800/20
+                    flex items-center justify-between
                 ">
                     <motion.button
-                        whileTap={{ scale: 0.95 }}
+                        whileHover={{ x: 3 }}
+                        whileTap={{ scale: 0.96 }}
                         onClick={handleRefresh}
-                        className="flex items-center gap-1.5 text-xs text-slate-400
-                            dark:text-slate-500 hover:text-slate-700
-                            dark:hover:text-slate-200 transition-colors"
+                        className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider
+                            text-slate-400 dark:text-slate-500 hover:text-blue-500
+                            dark:hover:text-blue-400 transition-all"
                         aria-label="Refresh notifications"
                     >
-                        <RefreshCw className="w-3.5 h-3.5" aria-hidden />
+                        <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} aria-hidden />
                         Refresh
                     </motion.button>
 
-                    <motion.button
-                        whileTap={{ scale: 0.95 }}
+                    <button
                         onClick={closeMenu}
-                        className="text-xs text-slate-400 dark:text-slate-500
-                            hover:text-slate-600 dark:hover:text-slate-300
-                            transition-colors"
-                        aria-label="Close notifications panel"
+                        className="text-[11px] font-bold uppercase tracking-wider
+                            text-slate-400 dark:text-slate-500 hover:text-slate-700
+                            dark:hover:text-slate-200 transition-colors"
                     >
                         Close
-                    </motion.button>
+                    </button>
                 </div>
             )}
         </div>

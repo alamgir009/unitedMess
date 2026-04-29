@@ -61,22 +61,20 @@ const NotificationItem = memo(({ notification, onSelect }) => {
     return (
         <motion.div
             layout
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{   opacity: 0, x: -8  }}
-            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{   opacity: 0, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
             role="listitem"
             aria-label={`${isUnread ? 'Unread: ' : ''}${title}`}
             onClick={() => onSelect?.(notification)}
             className={cn(
-                'group relative flex items-start gap-3 px-4 py-3.5',
-                'cursor-pointer rounded-xl mx-1.5 my-0.5',
-                'transition-colors duration-150',
-                'hover:bg-gradient-to-r hover:from-slate-50 hover:to-transparent',
-                'dark:hover:from-slate-800/60 dark:hover:to-transparent',
-                isUnread && !isUrgent && 'bg-blue-50/40 dark:bg-slate-800/50',
-                isUrgent && isUnread  && 'bg-red-50/20 dark:bg-red-950/20 border-l-2 border-red-400 dark:border-red-600',
-                !isUnread             && 'opacity-80 hover:opacity-100',
+                'group relative flex items-start gap-4 px-5 py-4',
+                'cursor-pointer transition-all duration-200',
+                'hover:bg-slate-50 dark:hover:bg-slate-800/40',
+                isUnread && !isUrgent && 'bg-blue-50/30 dark:bg-blue-900/10',
+                isUrgent && isUnread  && 'bg-red-50/30 dark:bg-red-950/20 border-l-[3px] border-red-500',
+                !isUnread             && 'opacity-70 hover:opacity-100',
             )}
         >
             <NotificationIcon type={type} />
@@ -97,7 +95,10 @@ const NotificationItem = memo(({ notification, onSelect }) => {
                 </div>
 
                 {/* Message */}
-                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                <p className={cn(
+                    "text-[13px] leading-relaxed line-clamp-2",
+                    isUnread ? "text-slate-600 dark:text-slate-300" : "text-slate-500 dark:text-slate-400"
+                )}>
                     {message}
                 </p>
 
