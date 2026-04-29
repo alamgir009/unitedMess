@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-    BellRing, CheckCircle2, Loader2, RefreshCw, Sparkles,
+    BellRing, CheckCircle2, Loader2, RefreshCw, Sparkles, Bell
 } from 'lucide-react';
 import { fetchNotifications, markAllAsRead, markAsRead } from '../../store/notification.slice';
 import NotificationItem from '../NotificationItem/NotificationItem';
@@ -67,8 +67,8 @@ const EmptyState = ({ hasUnread }) => (
             flex items-center justify-center
         ">
             {hasUnread
-                ? <BellRing  className="w-6 h-6 text-slate-400 dark:text-slate-500" />
-                : <Sparkles  className="w-6 h-6 text-slate-400 dark:text-slate-500" />
+                ? <BellRing  className="w-5 h-5 text-slate-400 dark:text-slate-500" />
+                : <Sparkles  className="w-5 h-5 text-slate-400 dark:text-slate-500" />
             }
         </div>
         <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -183,7 +183,7 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
                         bg-gradient-to-br from-blue-500 to-indigo-600
                         flex items-center justify-center
                     ">
-                        <BellRing className="w-4.5 h-4.5 text-white" aria-hidden />
+                        <Bell className="w-4 h-4 md:w-5 md:h-5 lg:w-5 lg:h-5 text-white" aria-hidden />
                     </div>
                     <div>
                         <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-[15px] tracking-tight">
