@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { useState, useEffect, useRef, memo } from 'react';
 
 // ─────────────────────────────────────────────────────────────
 // Tokens
@@ -12,70 +12,76 @@ const ACCENT2 = '#7c3aed';
 // Motion presets
 // ─────────────────────────────────────────────────────────────
 const fadeUp = {
-  hidden: { opacity: 0, y: 32 },
+  hidden: { opacity: 0, y: 24 },
   show: (d = 0) => ({
     opacity: 1, y: 0,
-    transition: { duration: 0.72, delay: d, ease: [0.16, 1, 0.3, 1] },
+    transition: { duration: 0.6, delay: d, ease: [0.16, 1, 0.3, 1] },
   }),
 };
 
-const stagger = { show: { transition: { staggerChildren: 0.07 } } };
-
-const InView = ({ children, delay = 0, className = '' }) => (
-  <motion.div
-    variants={fadeUp}
-    initial="hidden"
-    whileInView="show"
-    viewport={{ once: true, margin: '-60px' }}
-    custom={delay}
-    className={className}
-  >
-    {children}
-  </motion.div>
-);
+const InView = memo(({ children, delay = 0, className = '' }) => {
+  const shouldReduceMotion = useReducedMotion();
+  return (
+    <motion.div
+      variants={fadeUp}
+      initial={shouldReduceMotion ? 'show' : 'hidden'}
+      whileInView="show"
+      viewport={{ once: true, margin: '-40px' }}
+      custom={delay}
+      className={className}
+      style={{ willChange: 'transform, opacity' }}
+    >
+      {children}
+    </motion.div>
+  );
+});
 
 // ─────────────────────────────────────────────────────────────
 // Animated counter
 // ─────────────────────────────────────────────────────────────
-const Counter = ({ to, prefix = '', suffix = '' }) => {
+const Counter = memo(({ to, prefix = '', suffix = '' }) => {
   const [val, setVal] = useState(0);
   const ref = useRef(null);
+  const shouldReduceMotion = useReducedMotion();
+
   useEffect(() => {
+    if (shouldReduceMotion) { setVal(to); return; }
     const obs = new IntersectionObserver(([e]) => {
       if (!e.isIntersecting) return;
       obs.disconnect();
       let start = 0;
-      const step = Math.ceil(to / 60);
+      const step = Math.ceil(to / 45);
       const t = setInterval(() => {
         start += step;
         if (start >= to) { setVal(to); clearInterval(t); }
         else setVal(start);
       }, 16);
-    }, { threshold: 0.5 });
+    }, { threshold: 0.4 });
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
-  }, [to]);
+  }, [to, shouldReduceMotion]);
+
   return <span ref={ref}>{prefix}{val.toLocaleString('en-IN')}{suffix}</span>;
-};
+});
 
 // ─────────────────────────────────────────────────────────────
 // Pill badge
 // ─────────────────────────────────────────────────────────────
-const Pill = ({ children }) => (
-  <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/80 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground backdrop-blur-sm">
+const Pill = memo(({ children }) => (
+  <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/80 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground backdrop-blur-sm sm:px-4">
     {children}
   </span>
-);
+));
 
 // ─────────────────────────────────────────────────────────────
 // Live dot
 // ─────────────────────────────────────────────────────────────
-const LiveDot = () => (
+const LiveDot = memo(() => (
   <span className="relative flex h-2 w-2">
     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
     <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
   </span>
-);
+));
 
 // ─────────────────────────────────────────────────────────────
 // Data
@@ -105,7 +111,7 @@ const features = [
     badge: 'Security',
     title: 'Enterprise-grade access control',
     description:
-  "Granular role-based permissions for admins, managers, and members — with audit trails and secure authentication flows you'd expect from a top-tier fintech product.",
+      "Granular role-based permissions for admins, managers, and members — with audit trails and secure authentication flows you'd expect from a top-tier fintech product.",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-6 w-6">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -195,44 +201,44 @@ const steps = [
 const testimonials = [
   {
     quote: 'The interface feels premium and trustworthy — like a banking dashboard, not a utility app. That visual credibility is exactly why our members actually use it.',
-    name: 'Arjun Mehta',
-    role: 'Hall Manager, IIT Bombay',
-    avatar: 'AM',
+    name: 'Avijit Roy',
+    role: '.NET Developer, Accenture',
+    avatar: 'AR',
     color: 'from-blue-500 to-indigo-600',
   },
   {
     quote: 'We moved away from spreadsheet chaos in one afternoon. The flow is clean, responsive, and extremely easy to explain to new members every semester.',
-    name: 'Priya Sharma',
-    role: 'Student, Delhi University',
-    avatar: 'PS',
+    name: 'Hafizur Rahaman',
+    role: 'UI/UX Designer, TCS',
+    avatar: 'HR',
     color: 'from-violet-500 to-purple-600',
   },
   {
     quote: 'The analytics are sharp and the dark mode is excellent. Settlement used to take 3 hours — now it takes 10 minutes with full audit clarity.',
-    name: 'Rohan Das',
-    role: 'Mess Secretary, NIT Trichy',
-    avatar: 'RD',
+    name: 'Nayan Islam',
+    role: 'Mess Secretary, United Mess',
+    avatar: 'NI',
     color: 'from-emerald-500 to-teal-600',
   },
   {
     quote: 'Every member in our hostel trusts the numbers now. The transparency engine removed every dispute we used to have about billing.',
-    name: 'Kavya Nair',
-    role: 'Treasurer, VIT Vellore',
-    avatar: 'KN',
+    name: 'Iptikar Ahamed',
+    role: 'DevOps Engineer, Tiger Analytics',
+    avatar: 'IA',
     color: 'from-rose-500 to-pink-600',
   },
   {
     quote: 'Switching was the best decision we made. The onboarding took 15 minutes and the whole mess was migrated without a single complaint.',
-    name: 'Siddharth Rao',
-    role: 'Admin, BITS Pilani',
-    avatar: 'SR',
+    name: 'Sahabaj Ahammed',
+    role: 'QA Engineer, Weavers Solution',
+    avatar: 'SA',
     color: 'from-amber-500 to-orange-600',
   },
   {
     quote: 'The notification system alone saved us — no more chasing members for deposits. The automated reminders work perfectly.',
-    name: 'Neha Gupta',
-    role: 'Mess Manager, Jadavpur University',
-    avatar: 'NG',
+    name: 'Sk Sajahan',
+    role: 'SAP-MM, TCS',
+    avatar: 'SS',
     color: 'from-sky-500 to-cyan-600',
   },
 ];
@@ -268,20 +274,23 @@ const faqItems = [
 // ─────────────────────────────────────────────────────────────
 // FAQ Item
 // ─────────────────────────────────────────────────────────────
-const FAQItem = ({ q, a }) => {
+const FAQItem = memo(({ q, a }) => {
   const [open, setOpen] = useState(false);
   return (
     <div
-      className="rounded-2xl border border-border/70 bg-card/60 backdrop-blur-sm overflow-hidden transition-all duration-200"
-      style={{ cursor: 'pointer' }}
+      className="rounded-2xl border border-border/70 bg-card/60 backdrop-blur-sm overflow-hidden transition-colors duration-200 hover:border-border"
       onClick={() => setOpen((v) => !v)}
+      role="button"
+      aria-expanded={open}
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && setOpen((v) => !v)}
     >
-      <div className="flex items-center justify-between px-6 py-5">
-        <span className="text-sm font-semibold text-foreground">{q}</span>
+      <div className="flex items-center justify-between px-5 py-4 sm:px-6 sm:py-5">
+        <span className="text-sm font-semibold text-foreground pr-4">{q}</span>
         <motion.span
           animate={{ rotate: open ? 45 : 0 }}
           transition={{ duration: 0.2 }}
-          className="ml-4 shrink-0 text-muted-foreground"
+          className="ml-2 shrink-0 text-muted-foreground"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14m-7-7h14" />
@@ -294,85 +303,86 @@ const FAQItem = ({ q, a }) => {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
           >
-            <div className="border-t border-border/50 px-6 py-5 text-sm leading-7 text-muted-foreground">{a}</div>
+            <div className="border-t border-border/50 px-5 py-4 text-sm leading-7 text-muted-foreground sm:px-6 sm:py-5">{a}</div>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
-};
+});
 
 // ─────────────────────────────────────────────────────────────
 // FeatureCard
 // ─────────────────────────────────────────────────────────────
-const FeatureCard = ({ item, index }) => {
+const FeatureCard = memo(({ item, index }) => {
   const t = toneMap[item.tone];
   return (
     <InView delay={0.05 * index}>
-      <div className={`group h-full rounded-3xl border border-border/60 bg-card/60 p-7 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl ${t.border}`}>
-        <div className={`mb-5 inline-flex rounded-2xl bg-gradient-to-br ${t.bg} p-3`}>
+      <div className={`group h-full rounded-2xl border border-border/60 bg-card/60 p-5 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:rounded-3xl sm:p-7 ${t.border}`}>
+        <div className={`mb-4 inline-flex rounded-xl bg-gradient-to-br ${t.bg} p-3 sm:mb-5 sm:rounded-2xl`}>
           <span className={t.text}>{item.icon}</span>
         </div>
         <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest ${t.badge}`}>
           {item.badge}
         </span>
-        <h3 className="mt-3 text-base font-bold tracking-tight text-foreground">{item.title}</h3>
-        <p className="mt-3 text-sm leading-7 text-muted-foreground">{item.description}</p>
+        <h3 className="mt-3 text-[15px] font-bold tracking-tight text-foreground sm:text-base">{item.title}</h3>
+        <p className="mt-2 text-sm leading-[1.75] text-muted-foreground sm:mt-3 sm:leading-7">{item.description}</p>
       </div>
     </InView>
   );
-};
+});
 
 // ─────────────────────────────────────────────────────────────
 // HeroCard — floating dashboard preview
 // ─────────────────────────────────────────────────────────────
-const HeroCard = () => (
+const HeroCard = memo(() => (
   <div className="relative">
-    <div className="absolute -inset-6 rounded-[3rem] bg-gradient-to-br from-blue-500/20 via-transparent to-violet-500/20 blur-3xl" />
+    <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-blue-500/20 via-transparent to-violet-500/20 blur-3xl sm:-inset-6 sm:rounded-[3rem]" />
     <motion.div
-      initial={{ opacity: 0, y: 24, scale: 0.97 }}
+      initial={{ opacity: 0, y: 20, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.9, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-      className="relative overflow-hidden rounded-[2.25rem] border border-border/60 bg-card/80 shadow-[0_40px_100px_-30px_rgba(15,23,42,0.4)] dark:shadow-[0_40px_100px_-30px_rgba(0,0,0,0.7)] backdrop-blur-2xl"
+      transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+      className="relative overflow-hidden rounded-2xl border border-border/60 bg-card/80 shadow-[0_20px_60px_-20px_rgba(15,23,42,0.35)] dark:shadow-[0_20px_60px_-20px_rgba(0,0,0,0.6)] backdrop-blur-2xl sm:rounded-[2.25rem] sm:shadow-[0_40px_100px_-30px_rgba(15,23,42,0.4)] dark:sm:shadow-[0_40px_100px_-30px_rgba(0,0,0,0.7)]"
+      style={{ willChange: 'transform, opacity' }}
     >
       {/* Card header */}
-      <div className="flex items-center justify-between border-b border-border/50 px-6 py-4">
+      <div className="flex items-center justify-between border-b border-border/50 px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded-full bg-red-400/80" />
-          <div className="h-3 w-3 rounded-full bg-yellow-400/80" />
-          <div className="h-3 w-3 rounded-full bg-emerald-400/80" />
+          <div className="h-2.5 w-2.5 rounded-full bg-red-400/80 sm:h-3 sm:w-3" />
+          <div className="h-2.5 w-2.5 rounded-full bg-yellow-400/80 sm:h-3 sm:w-3" />
+          <div className="h-2.5 w-2.5 rounded-full bg-emerald-400/80 sm:h-3 sm:w-3" />
         </div>
         <div className="flex items-center gap-1.5">
           <LiveDot />
-          <span className="text-[11px] font-semibold text-emerald-500">Live</span>
+          <span className="text-[10px] font-semibold text-emerald-500 sm:text-[11px]">Live</span>
         </div>
       </div>
 
-      <div className="p-5 space-y-4">
+      <div className="space-y-3 p-3 sm:space-y-4 sm:p-5">
         {/* Top photo + summary row */}
-        <div className="grid grid-cols-5 gap-4">
-          <div className="col-span-3 overflow-hidden rounded-2xl">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-5 sm:gap-4">
+          <div className="overflow-hidden rounded-xl sm:col-span-3 sm:rounded-2xl">
             <img
               src="https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=800&q=80"
               alt="Mess dining"
-              className="h-44 w-full object-cover"
+              className="h-40 w-full object-cover sm:h-44"
               loading="eager"
             />
           </div>
-          <div className="col-span-2 flex flex-col gap-3">
-            <div className="flex-1 rounded-2xl border border-border/60 bg-background/70 p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Monthly total</p>
-              <p className="mt-2 text-2xl font-black tracking-tight text-foreground">₹18,420</p>
-              <div className="mt-2 flex items-center gap-1">
-                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">↑ 12.4%</span>
+          <div className="flex flex-col gap-2 sm:col-span-2 sm:gap-3">
+            <div className="flex-1 rounded-xl border border-border/60 bg-background/70 p-3 sm:rounded-2xl sm:p-4">
+              <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[10px]">Monthly total</p>
+              <p className="mt-1 text-xl font-black tracking-tight text-foreground sm:mt-2 sm:text-2xl">₹18,420</p>
+              <div className="mt-1 flex items-center gap-1 sm:mt-2">
+                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400 sm:text-[10px]">↑ 12.4%</span>
               </div>
             </div>
-            <div className="flex-1 rounded-2xl border border-border/60 bg-background/70 p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Meal rate</p>
-              <p className="mt-2 text-2xl font-black tracking-tight text-foreground">94%</p>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+            <div className="flex-1 rounded-xl border border-border/60 bg-background/70 p-3 sm:rounded-2xl sm:p-4">
+              <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[10px]">Meal rate</p>
+              <p className="mt-1 text-xl font-black tracking-tight text-foreground sm:mt-2 sm:text-2xl">94%</p>
+              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted sm:mt-2">
                 <div className="h-full w-[94%] rounded-full bg-gradient-to-r from-blue-500 to-violet-500" />
               </div>
             </div>
@@ -380,37 +390,38 @@ const HeroCard = () => (
         </div>
 
         {/* Mini chart bars */}
-        <div className="rounded-2xl border border-border/60 bg-background/60 p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-muted-foreground">Weekly expense trend</span>
-            <span className="text-[11px] font-semibold text-foreground">Apr 2025</span>
+        <div className="rounded-xl border border-border/60 bg-background/60 p-3 sm:rounded-2xl sm:p-4">
+          <div className="mb-2 flex items-center justify-between sm:mb-3">
+            <span className="text-[10px] font-semibold text-muted-foreground sm:text-[11px]">Weekly expense trend</span>
+            <span className="text-[10px] font-semibold text-foreground sm:text-[11px]">Apr 2025</span>
           </div>
-          <div className="flex items-end gap-2 h-16">
+          <div className="flex h-14 items-end gap-1.5 sm:h-16 sm:gap-2">
             {[55, 72, 48, 88, 65, 91, 78].map((h, i) => (
               <motion.div
                 key={i}
                 initial={{ height: 0 }}
                 animate={{ height: `${h}%` }}
-                transition={{ duration: 0.6, delay: 0.4 + i * 0.06, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.5, delay: 0.3 + i * 0.05, ease: [0.16, 1, 0.3, 1] }}
                 className={`flex-1 rounded-t-md ${i === 5 ? 'bg-gradient-to-t from-blue-600 to-violet-500' : 'bg-muted/80'}`}
+                style={{ willChange: 'height' }}
               />
             ))}
           </div>
-          <div className="mt-2 flex justify-between text-[9px] text-muted-foreground font-medium">
+          <div className="mt-2 flex justify-between text-[9px] font-medium text-muted-foreground">
             {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => <span key={i}>{d}</span>)}
           </div>
         </div>
 
         {/* Settlement row */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {[
-            { label: 'Avg. meal cost', value: '₹84.30', up: true },
-            { label: 'Members', value: '34', up: false },
-            { label: 'Pending', value: '6 dues', up: false },
-          ].map(({ label, value, up }) => (
-            <div key={label} className="rounded-xl border border-border/60 bg-background/60 p-3 text-center">
-              <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-              <p className="mt-1 text-sm font-bold text-foreground">{value}</p>
+            { label: 'Avg. meal cost', value: '₹84.30' },
+            { label: 'Members', value: '34' },
+            { label: 'Pending', value: '6 dues' },
+          ].map(({ label, value }) => (
+            <div key={label} className="rounded-lg border border-border/60 bg-background/60 p-2.5 text-center sm:rounded-xl sm:p-3">
+              <p className="text-[8px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-[9px]">{label}</p>
+              <p className="mt-1 text-xs font-bold text-foreground sm:text-sm">{value}</p>
             </div>
           ))}
         </div>
@@ -421,12 +432,13 @@ const HeroCard = () => (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.7, delay: 0.8 }}
-      className="absolute -right-4 top-20 hidden xl:block"
+      transition={{ duration: 0.6, delay: 0.7 }}
+      className="absolute -right-2 top-16 hidden xl:block"
+      style={{ willChange: 'transform, opacity' }}
     >
-      <div className="w-52 rounded-2xl border border-border/70 bg-card/95 p-4 shadow-xl backdrop-blur-xl">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="h-6 w-6 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
+      <div className="w-48 rounded-2xl border border-border/70 bg-card/95 p-3 shadow-xl backdrop-blur-xl sm:w-52 sm:p-4">
+        <div className="mb-2 flex items-center gap-2">
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-500">
             <svg viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2" className="h-3 w-3">
               <path strokeLinecap="round" strokeLinejoin="round" d="M2 8l4 4 8-8" />
             </svg>
@@ -441,12 +453,13 @@ const HeroCard = () => (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.7, delay: 1.0 }}
-      className="absolute -left-4 bottom-24 hidden xl:block"
+      transition={{ duration: 0.6, delay: 0.9 }}
+      className="absolute -left-2 bottom-20 hidden xl:block"
+      style={{ willChange: 'transform, opacity' }}
     >
-      <div className="w-52 rounded-2xl border border-border/70 bg-card/95 p-4 shadow-xl backdrop-blur-xl">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="h-6 w-6 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
+      <div className="w-48 rounded-2xl border border-border/70 bg-card/95 p-3 shadow-xl backdrop-blur-xl sm:w-52 sm:p-4">
+        <div className="mb-2 flex items-center gap-2">
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-indigo-500">
             <svg viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2" className="h-3 w-3">
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 2v4l3 3" /><circle cx="8" cy="8" r="6" />
             </svg>
@@ -458,12 +471,12 @@ const HeroCard = () => (
       </div>
     </motion.div>
   </div>
-);
+));
 
 // ─────────────────────────────────────────────────────────────
 // Scrolling ticker
 // ─────────────────────────────────────────────────────────────
-const Ticker = () => {
+const Ticker = memo(() => {
   const items = [
     '₹ Transparent billing',
     '⊕ Role-based access',
@@ -476,40 +489,38 @@ const Ticker = () => {
   ];
   const doubled = [...items, ...items];
   return (
-    <div className="overflow-hidden border-y border-border/50 bg-card/40 py-3 backdrop-blur-sm">
+    <div className="overflow-hidden border-y border-border/50 bg-card/40 py-2.5 backdrop-blur-sm sm:py-3">
       <motion.div
-        className="flex gap-10 whitespace-nowrap"
+        className="flex gap-8 whitespace-nowrap sm:gap-10"
         animate={{ x: ['0%', '-50%'] }}
         transition={{ duration: 28, repeat: Infinity, ease: 'linear' }}
+        style={{ willChange: 'transform' }}
       >
         {doubled.map((item, i) => (
-          <span key={i} className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">{item}</span>
+          <span key={i} className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground sm:text-xs">{item}</span>
         ))}
       </motion.div>
     </div>
   );
-};
+});
 
 // ─────────────────────────────────────────────────────────────
 // HomePage
 // ─────────────────────────────────────────────────────────────
 const HomePage = () => {
-  const { scrollY } = useScroll();
-  const heroOpacity = useTransform(scrollY, [0, 500], [1, 0]);
-  const heroY = useTransform(scrollY, [0, 500], [0, -60]);
   const [activeTab, setActiveTab] = useState(0);
+  const shouldReduceMotion = useReducedMotion();
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-background text-foreground selection:bg-primary/20">
 
       {/* ── Ambient backdrop ── */}
       <div aria-hidden className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute -left-32 top-0 h-[36rem] w-[36rem] rounded-full bg-blue-600/12 blur-[120px] dark:bg-blue-500/10" />
-        <div className="absolute right-[-12rem] top-16 h-[42rem] w-[42rem] rounded-full bg-violet-600/10 blur-[140px] dark:bg-violet-500/10" />
-        <div className="absolute bottom-[-16rem] left-1/3 h-[38rem] w-[38rem] rounded-full bg-emerald-500/8 blur-[120px] dark:bg-emerald-500/8" />
-        {/* Noise grid */}
+        <div className="absolute -left-32 top-0 h-[24rem] w-[24rem] rounded-full bg-blue-600/12 blur-[100px] dark:bg-blue-500/10 sm:h-[36rem] sm:w-[36rem] sm:blur-[120px]" />
+        <div className="absolute right-[-8rem] top-16 h-[28rem] w-[28rem] rounded-full bg-violet-600/10 blur-[100px] dark:bg-violet-500/10 sm:right-[-12rem] sm:h-[42rem] sm:w-[42rem] sm:blur-[140px]" />
+        <div className="absolute bottom-[-10rem] left-1/3 h-[24rem] w-[24rem] rounded-full bg-emerald-500/8 blur-[100px] dark:bg-emerald-500/8 sm:bottom-[-16rem] sm:h-[38rem] sm:w-[38rem] sm:blur-[120px]" />
         <div
-          className="absolute inset-0 opacity-[0.025] dark:opacity-[0.04]"
+          className="absolute inset-0 opacity-[0.02] dark:opacity-[0.035]"
           style={{
             backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
             backgroundSize: '32px 32px',
@@ -518,15 +529,15 @@ const HomePage = () => {
       </div>
 
       {/* ═══════════════════════════ HERO ═══════════════════════════ */}
-      <section className="relative mx-auto grid min-h-screen max-w-7xl items-center gap-16 px-4 pb-24 pt-24 sm:px-6 lg:grid-cols-[1fr_1.05fr] lg:px-8 lg:pt-28 xl:gap-24">
+      <section className="relative mx-auto grid min-h-[85vh] max-w-7xl items-center gap-8 px-4 pb-16 pt-20 sm:min-h-screen sm:px-6 sm:pb-24 sm:pt-24 lg:grid-cols-[1fr_1.05fr] lg:px-8 lg:pt-28 xl:gap-16">
 
-        <motion.div style={{ opacity: heroOpacity, y: heroY }}>
+        <div>
           {/* Eyebrow */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="mb-7 flex flex-wrap items-center gap-3"
+            className="mb-5 flex flex-wrap items-center gap-2 sm:mb-7 sm:gap-3"
           >
             <Pill>
               <LiveDot />
@@ -544,8 +555,8 @@ const HomePage = () => {
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.75, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-            className="max-w-2xl text-[clamp(2.6rem,6vw,5rem)] font-black leading-[1.04] tracking-[-0.03em] text-foreground"
+            transition={{ duration: 0.7, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+            className="max-w-2xl text-[clamp(2.2rem,5.5vw,5rem)] font-black leading-[1.06] tracking-[-0.03em] text-foreground"
           >
             Mess operations,
             <br />
@@ -561,8 +572,8 @@ const HomePage = () => {
           <motion.p
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.75, delay: 0.18 }}
-            className="mt-7 max-w-xl text-[1.05rem] leading-[1.85] text-muted-foreground"
+            transition={{ duration: 0.7, delay: 0.16 }}
+            className="mt-5 max-w-xl text-base leading-[1.75] text-muted-foreground sm:mt-7 sm:text-[1.05rem] sm:leading-[1.85]"
           >
             United Mess brings a finance-grade experience to meal tracking, contributions, member management,
             and expense control. The clarity of a top fintech product — built for India's communities.
@@ -572,12 +583,12 @@ const HomePage = () => {
           <motion.div
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.75, delay: 0.28 }}
-            className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center"
+            transition={{ duration: 0.7, delay: 0.24 }}
+            className="mt-7 flex flex-col gap-3 sm:mt-9 sm:flex-row sm:items-center"
           >
             <Link
               to="/register"
-              className="group inline-flex items-center justify-center gap-2 rounded-xl px-7 py-4 text-sm font-bold text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              className="group inline-flex h-12 items-center justify-center gap-2 rounded-xl px-6 text-sm font-bold text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:h-auto sm:px-7 sm:py-4"
               style={{ background: 'linear-gradient(135deg, #2563eb, #7c3aed)' }}
             >
               Start free — no card needed
@@ -587,7 +598,7 @@ const HomePage = () => {
             </Link>
             <Link
               to="/login"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-border/70 bg-card/60 px-7 py-4 text-sm font-semibold text-foreground backdrop-blur-md transition-all duration-200 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-border/70 bg-card/60 px-6 text-sm font-semibold text-foreground backdrop-blur-md transition-all duration-200 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-auto sm:px-7 sm:py-4"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 3h6v18h-6M10 17l5-5-5-5M14 12H3" />
@@ -600,19 +611,19 @@ const HomePage = () => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.75, delay: 0.4 }}
-            className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-4"
+            transition={{ duration: 0.7, delay: 0.35 }}
+            className="mt-8 grid grid-cols-2 gap-2 sm:mt-12 sm:gap-3"
           >
             {stats.map((s) => (
-              <div key={s.label} className="rounded-2xl border border-border/60 bg-card/60 px-4 py-4 backdrop-blur-sm">
-                <div className="text-[1.6rem] font-black tabular-nums tracking-tight text-foreground">
+              <div key={s.label} className="rounded-xl border border-border/60 bg-card/60 px-3 py-3 backdrop-blur-sm sm:rounded-2xl sm:px-4 sm:py-4">
+                <div className="text-xl font-black tabular-nums tracking-tight text-foreground sm:text-[1.6rem]">
                   <Counter to={s.value} prefix={s.prefix} suffix={s.suffix} />
                 </div>
-                <div className="mt-1 text-[11px] font-medium text-muted-foreground">{s.label}</div>
+                <div className="mt-0.5 text-[10px] font-medium text-muted-foreground sm:mt-1 sm:text-[11px]">{s.label}</div>
               </div>
             ))}
           </motion.div>
-        </motion.div>
+        </div>
 
         <HeroCard />
       </section>
@@ -621,13 +632,13 @@ const HomePage = () => {
       <Ticker />
 
       {/* ═══════════════════════════ TRUST BAND ═══════════════════════════ */}
-      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="rounded-[2rem] border border-border/60 bg-card/50 px-6 py-8 backdrop-blur-sm">
-          <p className="mb-6 text-center text-[11px] font-bold uppercase tracking-[0.28em] text-muted-foreground">Security & compliance</p>
-          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+        <div className="rounded-2xl border border-border/60 bg-card/50 px-5 py-6 backdrop-blur-sm sm:rounded-[2rem] sm:px-6 sm:py-8">
+          <p className="mb-4 text-center text-[10px] font-bold uppercase tracking-[0.28em] text-muted-foreground sm:mb-6 sm:text-[11px]">Security & compliance</p>
+          <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-10">
             {trustLogos.map(({ label, sub }) => (
               <div key={label} className="text-center">
-                <div className="text-lg font-black tracking-tight text-foreground">{label}</div>
+                <div className="text-base font-black tracking-tight text-foreground sm:text-lg">{label}</div>
                 <div className="text-[10px] font-medium text-muted-foreground">{sub}</div>
               </div>
             ))}
@@ -636,36 +647,36 @@ const HomePage = () => {
       </section>
 
       {/* ═══════════════════════════ FEATURES ═══════════════════════════ */}
-      <section id="features" className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+      <section id="features" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
         <InView className="mx-auto max-w-2xl text-center">
           <Pill>Core capabilities</Pill>
-          <h2 className="mt-5 text-[clamp(1.8rem,4vw,3rem)] font-black tracking-tight text-foreground">
+          <h2 className="mt-4 text-[clamp(1.6rem,4vw,3rem)] font-black tracking-tight text-foreground sm:mt-5">
             Every detail designed to feel premium.
           </h2>
-          <p className="mt-4 text-base leading-8 text-muted-foreground">
+          <p className="mt-3 text-sm leading-7 text-muted-foreground sm:mt-4 sm:text-base sm:leading-8">
             A refined operating layer for mess leaders who want modern design, accurate data architecture,
             and zero visual clutter — all in one coherent product.
           </p>
         </InView>
 
-        <div className="mt-14 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-10 grid gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3">
           {features.map((item, i) => <FeatureCard key={item.title} item={item} index={i} />)}
         </div>
       </section>
 
       {/* ═══════════════════════════ SHOWCASE IMAGE BAND ═══════════════════════════ */}
-      <section className="mx-auto max-w-7xl px-4 pb-24 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 sm:pb-24 lg:px-8">
         <InView>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
             {[
               { src: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=900&q=80', label: 'Transparent dining' },
               { src: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80', label: 'Balanced nutrition' },
               { src: 'https://images.unsplash.com/photo-1567521464027-f127ff144326?auto=format&fit=crop&w=900&q=80', label: 'Community meals' },
             ].map(({ src, label }) => (
-              <div key={label} className="group relative overflow-hidden rounded-3xl">
-                <img src={src} alt={label} className="h-72 w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+              <div key={label} className="group relative overflow-hidden rounded-2xl sm:rounded-3xl">
+                <img src={src} alt={label} className="h-56 w-full object-cover transition-transform duration-700 group-hover:scale-105 sm:h-72" loading="lazy" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent" />
-                <span className="absolute bottom-5 left-5 rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur-md border border-white/20">
+                <span className="absolute bottom-4 left-4 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md border border-white/20 sm:bottom-5 sm:left-5 sm:rounded-xl sm:px-4 sm:py-2 sm:text-sm">
                   {label}
                 </span>
               </div>
@@ -675,34 +686,34 @@ const HomePage = () => {
       </section>
 
       {/* ═══════════════════════════ HOW IT WORKS ═══════════════════════════ */}
-      <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
-        <InView className="mx-auto max-w-2xl text-center mb-16">
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+        <InView className="mx-auto max-w-2xl text-center mb-10 sm:mb-16">
           <Pill>Simple workflow</Pill>
-          <h2 className="mt-5 text-[clamp(1.8rem,4vw,3rem)] font-black tracking-tight text-foreground">
+          <h2 className="mt-4 text-[clamp(1.6rem,4vw,3rem)] font-black tracking-tight text-foreground sm:mt-5">
             From setup to settlement in minutes.
           </h2>
-          <p className="mt-4 text-base leading-8 text-muted-foreground">
+          <p className="mt-3 text-sm leading-7 text-muted-foreground sm:mt-4 sm:text-base sm:leading-8">
             Three steps that remove every bottleneck in traditional mess management.
           </p>
         </InView>
 
         {/* Tabbed steps */}
-        <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-          <div className="space-y-4">
+        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-10">
+          <div className="space-y-3 sm:space-y-4">
             {steps.map((step, idx) => (
               <motion.button
                 key={step.num}
                 onClick={() => setActiveTab(idx)}
-                whileHover={{ x: 4 }}
-                className={`w-full rounded-2xl border p-6 text-left transition-all duration-200 ${
+                whileHover={shouldReduceMotion ? {} : { x: 4 }}
+                className={`w-full rounded-xl border p-4 text-left transition-all duration-200 sm:rounded-2xl sm:p-6 ${
                   activeTab === idx
                     ? 'border-blue-500/50 bg-blue-500/5 shadow-lg shadow-blue-500/10'
                     : 'border-border/60 bg-card/50 hover:border-border hover:bg-card/70'
                 }`}
               >
-                <div className="flex items-start gap-5">
+                <div className="flex items-start gap-4 sm:gap-5">
                   <div
-                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-black text-white transition-all duration-200 ${
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-black text-white transition-all duration-200 sm:h-12 sm:w-12 sm:rounded-2xl ${
                       activeTab === idx
                         ? 'shadow-lg shadow-blue-500/30'
                         : 'opacity-60'
@@ -711,9 +722,9 @@ const HomePage = () => {
                   >
                     {step.num}
                   </div>
-                  <div>
-                    <h3 className="text-base font-bold text-foreground">{step.title}</h3>
-                    <p className="mt-1.5 text-sm leading-7 text-muted-foreground">{step.description}</p>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-bold text-foreground sm:text-base">{step.title}</h3>
+                    <p className="mt-1 text-xs leading-6 text-muted-foreground sm:mt-1.5 sm:text-sm sm:leading-7">{step.description}</p>
                   </div>
                 </div>
               </motion.button>
@@ -723,26 +734,28 @@ const HomePage = () => {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, y: 16 }}
+              initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              transition={{ duration: 0.4 }}
-              className="overflow-hidden rounded-3xl border border-border/60 bg-card/60 shadow-2xl backdrop-blur-sm"
+              exit={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: -12 }}
+              transition={{ duration: 0.3 }}
+              className="overflow-hidden rounded-2xl border border-border/60 bg-card/60 shadow-xl backdrop-blur-sm sm:rounded-3xl sm:shadow-2xl"
+              style={{ willChange: 'transform, opacity' }}
             >
               <img
                 src={steps[activeTab].image}
                 alt={steps[activeTab].title}
-                className="h-72 w-full object-cover sm:h-96"
+                className="h-56 w-full object-cover sm:h-72 sm:h-96"
+                loading="lazy"
               />
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <span
-                  className="inline-flex items-center rounded-full px-3 py-1 text-xs font-bold text-white"
+                  className="inline-flex items-center rounded-full px-3 py-1 text-[10px] font-bold text-white sm:text-xs"
                   style={{ background: 'linear-gradient(135deg, #2563eb, #7c3aed)' }}
                 >
                   Step {steps[activeTab].num}
                 </span>
-                <h3 className="mt-3 text-lg font-bold text-foreground">{steps[activeTab].title}</h3>
-                <p className="mt-2 text-sm leading-7 text-muted-foreground">{steps[activeTab].description}</p>
+                <h3 className="mt-2 text-base font-bold text-foreground sm:mt-3 sm:text-lg">{steps[activeTab].title}</h3>
+                <p className="mt-1.5 text-xs leading-6 text-muted-foreground sm:mt-2 sm:text-sm sm:leading-7">{steps[activeTab].description}</p>
               </div>
             </motion.div>
           </AnimatePresence>
@@ -750,106 +763,108 @@ const HomePage = () => {
       </section>
 
       {/* ═══════════════════════════ COMPARISON TABLE ═══════════════════════════ */}
-      <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
-        <InView className="mx-auto max-w-2xl text-center mb-14">
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+        <InView className="mx-auto max-w-2xl text-center mb-10 sm:mb-14">
           <Pill>Why United Mess</Pill>
-          <h2 className="mt-5 text-[clamp(1.8rem,4vw,3rem)] font-black tracking-tight text-foreground">
+          <h2 className="mt-4 text-[clamp(1.6rem,4vw,3rem)] font-black tracking-tight text-foreground sm:mt-5">
             The clearest choice for serious messes.
           </h2>
         </InView>
         <InView>
-          <div className="overflow-hidden rounded-3xl border border-border/60 bg-card/60 backdrop-blur-sm">
-            <div className="grid grid-cols-4 border-b border-border/50 bg-muted/30 px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              <span>Feature</span>
-              <span className="text-center text-blue-600 dark:text-blue-400">United Mess</span>
-              <span className="text-center">WhatsApp groups</span>
-              <span className="text-center">Spreadsheets</span>
-            </div>
-            {comparisonRows.map(([feature, um, wa, ss]) => (
-              <div key={feature} className="grid grid-cols-4 border-b border-border/40 px-6 py-4 text-sm last:border-0">
-                <span className="font-medium text-foreground">{feature}</span>
-                <span className="flex justify-center">
-                  {um ? (
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/15">
-                      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-3 w-3 text-emerald-600 dark:text-emerald-400">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2 8l4 4 8-8" />
-                      </svg>
-                    </span>
-                  ) : (
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500/10">
-                      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-3 w-3 text-red-500">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4l8 8M12 4l-8 8" />
-                      </svg>
-                    </span>
-                  )}
-                </span>
-                <span className="flex justify-center">
-                  {wa ? (
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/15">
-                      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-3 w-3 text-emerald-600 dark:text-emerald-400">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2 8l4 4 8-8" />
-                      </svg>
-                    </span>
-                  ) : (
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500/10">
-                      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-3 w-3 text-red-500">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4l8 8M12 4l-8 8" />
-                      </svg>
-                    </span>
-                  )}
-                </span>
-                <span className="flex justify-center">
-                  {ss ? (
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/15">
-                      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-3 w-3 text-emerald-600 dark:text-emerald-400">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2 8l4 4 8-8" />
-                      </svg>
-                    </span>
-                  ) : (
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500/10">
-                      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-3 w-3 text-red-500">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4l8 8M12 4l-8 8" />
-                      </svg>
-                    </span>
-                  )}
-                </span>
+          <div className="overflow-x-auto rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm sm:rounded-3xl">
+            <div className="min-w-[540px]">
+              <div className="grid grid-cols-4 border-b border-border/50 bg-muted/30 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground sm:px-6 sm:py-4 sm:text-xs">
+                <span>Feature</span>
+                <span className="text-center text-blue-600 dark:text-blue-400">United Mess</span>
+                <span className="text-center">WhatsApp groups</span>
+                <span className="text-center">Spreadsheets</span>
               </div>
-            ))}
+              {comparisonRows.map(([feature, um, wa, ss]) => (
+                <div key={feature} className="grid grid-cols-4 border-b border-border/40 px-4 py-3 text-xs last:border-0 sm:px-6 sm:py-4 sm:text-sm">
+                  <span className="font-medium text-foreground">{feature}</span>
+                  <span className="flex justify-center">
+                    {um ? (
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/15 sm:h-6 sm:w-6">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-2.5 w-2.5 text-emerald-600 dark:text-emerald-400 sm:h-3 sm:w-3">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2 8l4 4 8-8" />
+                        </svg>
+                      </span>
+                    ) : (
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500/10 sm:h-6 sm:w-6">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-2.5 w-2.5 text-red-500 sm:h-3 sm:w-3">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 4l8 8M12 4l-8 8" />
+                        </svg>
+                      </span>
+                    )}
+                  </span>
+                  <span className="flex justify-center">
+                    {wa ? (
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/15 sm:h-6 sm:w-6">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-2.5 w-2.5 text-emerald-600 dark:text-emerald-400 sm:h-3 sm:w-3">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2 8l4 4 8-8" />
+                        </svg>
+                      </span>
+                    ) : (
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500/10 sm:h-6 sm:w-6">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-2.5 w-2.5 text-red-500 sm:h-3 sm:w-3">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 4l8 8M12 4l-8 8" />
+                        </svg>
+                      </span>
+                    )}
+                  </span>
+                  <span className="flex justify-center">
+                    {ss ? (
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/15 sm:h-6 sm:w-6">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-2.5 w-2.5 text-emerald-600 dark:text-emerald-400 sm:h-3 sm:w-3">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2 8l4 4 8-8" />
+                        </svg>
+                      </span>
+                    ) : (
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500/10 sm:h-6 sm:w-6">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-2.5 w-2.5 text-red-500 sm:h-3 sm:w-3">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 4l8 8M12 4l-8 8" />
+                        </svg>
+                      </span>
+                    )}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </InView>
       </section>
 
       {/* ═══════════════════════════ TESTIMONIALS ═══════════════════════════ */}
-      <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
-        <InView className="mx-auto max-w-2xl text-center mb-14">
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+        <InView className="mx-auto max-w-2xl text-center mb-10 sm:mb-14">
           <Pill>Testimonials</Pill>
-          <h2 className="mt-5 text-[clamp(1.8rem,4vw,3rem)] font-black tracking-tight text-foreground">
+          <h2 className="mt-4 text-[clamp(1.6rem,4vw,3rem)] font-black tracking-tight text-foreground sm:mt-5">
             Trusted by real communities across India.
           </h2>
-          <p className="mt-4 text-base leading-8 text-muted-foreground">
+          <p className="mt-3 text-sm leading-7 text-muted-foreground sm:mt-4 sm:text-base sm:leading-8">
             From IITs to regional colleges — messes that switched never looked back.
           </p>
         </InView>
 
-        <div className="columns-1 gap-5 sm:columns-2 lg:columns-3">
+        <div className="columns-1 gap-4 sm:columns-2 sm:gap-5 lg:columns-3">
           {testimonials.map((item, i) => (
-            <InView key={item.name} delay={0.06 * i} className="mb-5 break-inside-avoid">
-              <blockquote className="rounded-3xl border border-border/60 bg-card/60 p-7 backdrop-blur-sm">
-                <div className="flex gap-1 text-amber-400 mb-5">
+            <InView key={item.name} delay={0.05 * i} className="mb-4 break-inside-avoid sm:mb-5">
+              <blockquote className="rounded-2xl border border-border/60 bg-card/60 p-5 backdrop-blur-sm sm:rounded-3xl sm:p-7">
+                <div className="mb-4 flex gap-1 text-amber-400 sm:mb-5">
                   {Array.from({ length: 5 }).map((_, j) => (
-                    <svg key={j} viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5">
+                    <svg key={j} viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3 sm:h-3.5 sm:w-3.5">
                       <path d="M8 1.5l1.94 3.93 4.33.63-3.14 3.06.74 4.32L8 11.18l-3.87 2.04.74-4.32L1.73 5.56l4.33-.63L8 1.5z" />
                     </svg>
                   ))}
                 </div>
-                <p className="text-sm leading-[1.9] text-muted-foreground">"{item.quote}"</p>
-                <div className="mt-6 flex items-center gap-3">
-                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${item.color} text-xs font-bold text-white`}>
+                <p className="text-xs leading-[1.85] text-muted-foreground sm:text-sm sm:leading-[1.9]">"{item.quote}"</p>
+                <div className="mt-5 flex items-center gap-3 sm:mt-6">
+                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${item.color} text-[11px] font-bold text-white sm:h-10 sm:w-10 sm:text-xs`}>
                     {item.avatar}
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">{item.role}</p>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-foreground sm:text-sm">{item.name}</p>
+                    <p className="text-[11px] text-muted-foreground">{item.role}</p>
                   </div>
                 </div>
               </blockquote>
@@ -859,47 +874,47 @@ const HomePage = () => {
       </section>
 
       {/* ═══════════════════════════ MOBILE APP PREVIEW ═══════════════════════════ */}
-      <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
         <InView>
-          <div className="relative overflow-hidden rounded-[3rem] border border-border/60 bg-gradient-to-br from-blue-600/10 via-card/70 to-violet-600/10 p-8 sm:p-12 lg:p-16 backdrop-blur-sm">
+          <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-blue-600/10 via-card/70 to-violet-600/10 p-6 backdrop-blur-sm sm:rounded-[3rem] sm:p-12 lg:p-16">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(37,99,235,0.18),transparent_55%),radial-gradient(ellipse_at_bottom_left,rgba(124,58,237,0.15),transparent_50%)]" />
-            <div className="relative grid gap-12 lg:grid-cols-2 lg:items-center">
+            <div className="relative grid gap-8 lg:grid-cols-2 lg:items-center lg:gap-12">
               <div>
                 <Pill>Cross-platform</Pill>
-                <h2 className="mt-5 text-[clamp(1.8rem,4vw,3rem)] font-black tracking-tight text-foreground">
+                <h2 className="mt-4 text-[clamp(1.6rem,4vw,3rem)] font-black tracking-tight text-foreground sm:mt-5">
                   Your mess, in your pocket.
                 </h2>
-                <p className="mt-4 text-base leading-8 text-muted-foreground max-w-lg">
+                <p className="mt-3 max-w-lg text-sm leading-7 text-muted-foreground sm:mt-4 sm:text-base sm:leading-8">
                   Fully responsive PWA — installs on iOS and Android from the browser. No app store required.
                   Every workflow is optimised for thumb-reach on mobile screens.
                 </p>
-                <div className="mt-8 grid grid-cols-2 gap-4">
+                <div className="mt-6 grid grid-cols-2 gap-3 sm:mt-8 sm:gap-4">
                   {[
                     { label: 'Instant install', desc: 'No app store needed' },
                     { label: 'Offline-ready', desc: 'Works without network' },
                     { label: 'Push alerts', desc: 'Real-time notifications' },
                     { label: 'Biometric auth', desc: 'Face ID / fingerprint' },
                   ].map(({ label, desc }) => (
-                    <div key={label} className="rounded-2xl border border-border/60 bg-background/60 p-4">
-                      <p className="text-sm font-bold text-foreground">{label}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">{desc}</p>
+                    <div key={label} className="rounded-xl border border-border/60 bg-background/60 p-3 sm:rounded-2xl sm:p-4">
+                      <p className="text-xs font-bold text-foreground sm:text-sm">{label}</p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground sm:mt-1 sm:text-xs">{desc}</p>
                     </div>
                   ))}
                 </div>
               </div>
               <div className="relative flex justify-center lg:justify-end">
-                <div className="relative w-64">
-                  <div className="overflow-hidden rounded-[2.5rem] border-4 border-border/60 bg-card shadow-2xl">
+                <div className="relative w-52 sm:w-64">
+                  <div className="overflow-hidden rounded-[2rem] border-[3px] border-border/60 bg-card shadow-2xl sm:rounded-[2.5rem] sm:border-4">
                     <img
                       src="https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=600&q=80"
                       alt="Mobile app preview"
-                      className="h-[480px] w-full object-cover"
+                      className="h-[400px] w-full object-cover sm:h-[480px]"
+                      loading="lazy"
                     />
                   </div>
-                  {/* Floating pill on phone */}
-                  <div className="absolute -bottom-4 -right-8 rounded-2xl border border-border/70 bg-card/95 px-4 py-3 shadow-xl backdrop-blur-xl">
-                    <p className="text-xs font-bold text-foreground">₹84.30 / meal</p>
-                    <p className="text-[10px] text-muted-foreground">Today's cost</p>
+                  <div className="absolute -bottom-3 -right-6 rounded-xl border border-border/70 bg-card/95 px-3 py-2 shadow-xl backdrop-blur-xl sm:-bottom-4 sm:-right-8 sm:rounded-2xl sm:px-4 sm:py-3">
+                    <p className="text-[11px] font-bold text-foreground sm:text-xs">₹84.30 / meal</p>
+                    <p className="text-[9px] text-muted-foreground sm:text-[10px]">Today's cost</p>
                   </div>
                 </div>
               </div>
@@ -909,19 +924,19 @@ const HomePage = () => {
       </section>
 
       {/* ═══════════════════════════ FAQ ═══════════════════════════ */}
-      <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
-        <div className="grid gap-16 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+        <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-start lg:gap-16">
           <InView>
             <Pill>FAQ</Pill>
-            <h2 className="mt-5 text-[clamp(1.8rem,4vw,3rem)] font-black tracking-tight text-foreground">
+            <h2 className="mt-4 text-[clamp(1.6rem,4vw,3rem)] font-black tracking-tight text-foreground sm:mt-5">
               Everything you need to know.
             </h2>
-            <p className="mt-4 text-base leading-8 text-muted-foreground">
+            <p className="mt-3 text-sm leading-7 text-muted-foreground sm:mt-4 sm:text-base sm:leading-8">
               Still have questions? Reach out to the team — we respond within 2 hours.
             </p>
             <Link
               to="/contact"
-              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-blue-500 hover:text-blue-600"
+              className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-500 hover:text-blue-600 sm:mt-6"
             >
               Contact support
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
@@ -929,26 +944,25 @@ const HomePage = () => {
               </svg>
             </Link>
           </InView>
-          <InView delay={0.1} className="space-y-3">
+          <InView delay={0.1} className="space-y-2.5 sm:space-y-3">
             {faqItems.map((item) => <FAQItem key={item.q} {...item} />)}
           </InView>
         </div>
       </section>
 
       {/* ═══════════════════════════ CTA ═══════════════════════════ */}
-      <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
         <InView>
-          <div className="relative overflow-hidden rounded-[3rem] border border-border/60 p-10 text-center sm:p-16 lg:p-20 backdrop-blur-sm"
+          <div className="relative overflow-hidden rounded-2xl border border-border/60 p-8 text-center backdrop-blur-sm sm:rounded-[3rem] sm:p-16 lg:p-20"
             style={{ background: 'linear-gradient(135deg, rgba(37,99,235,0.12), rgba(124,58,237,0.10) 50%, rgba(6,182,212,0.08))' }}
           >
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(37,99,235,0.2),transparent_50%),radial-gradient(ellipse_at_bottom,rgba(124,58,237,0.16),transparent_50%)]" />
-            {/* Big decorative text */}
             <div
               className="pointer-events-none absolute inset-0 flex items-center justify-center select-none overflow-hidden"
               aria-hidden
             >
               <span
-                className="text-[14rem] font-black tracking-tighter opacity-[0.04] dark:opacity-[0.06]"
+                className="text-[8rem] font-black tracking-tighter opacity-[0.04] dark:opacity-[0.06] sm:text-[14rem]"
                 style={{ lineHeight: 1 }}
               >
                 ₹
@@ -956,17 +970,17 @@ const HomePage = () => {
             </div>
             <div className="relative z-10">
               <Pill>Ready to launch</Pill>
-              <h2 className="mx-auto mt-6 max-w-3xl text-[clamp(2rem,5vw,4rem)] font-black leading-[1.06] tracking-[-0.03em] text-foreground">
+              <h2 className="mx-auto mt-4 max-w-3xl text-[clamp(1.8rem,5vw,4rem)] font-black leading-[1.08] tracking-[-0.03em] text-foreground sm:mt-6 sm:leading-[1.06]">
                 Give your mess the product it deserves.
               </h2>
-              <p className="mx-auto mt-5 max-w-xl text-base leading-8 text-muted-foreground">
+              <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-muted-foreground sm:mt-5 sm:text-base sm:leading-8">
                 Join 12,500+ members across India who trust United Mess for transparent, effortless,
                 finance-grade mess operations. Free forever for small messes.
               </p>
-              <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+              <div className="mt-8 flex flex-col items-center gap-3 sm:mt-10 sm:flex-row sm:justify-center sm:gap-4">
                 <Link
                   to="/register"
-                  className="inline-flex items-center gap-2 rounded-xl px-8 py-4 text-base font-bold text-white shadow-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  className="inline-flex h-12 items-center gap-2 rounded-xl px-6 text-sm font-bold text-white shadow-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:h-auto sm:px-8 sm:py-4 sm:text-base"
                   style={{ background: 'linear-gradient(135deg, #2563eb, #7c3aed)' }}
                 >
                   Create your mess — it's free
@@ -976,12 +990,12 @@ const HomePage = () => {
                 </Link>
                 <Link
                   to="/about"
-                  className="inline-flex items-center gap-2 rounded-xl border border-border/70 bg-card/70 px-8 py-4 text-base font-semibold text-foreground backdrop-blur-md transition-all hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="inline-flex h-12 items-center gap-2 rounded-xl border border-border/70 bg-card/70 px-6 text-sm font-semibold text-foreground backdrop-blur-md transition-all hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-auto sm:px-8 sm:py-4 sm:text-base"
                 >
                   See how it works
                 </Link>
               </div>
-              <p className="mt-6 text-xs text-muted-foreground">No credit card · Free for messes up to 15 members · Setup in 10 minutes</p>
+              <p className="mt-5 text-[11px] text-muted-foreground sm:mt-6 sm:text-xs">No credit card · Free for messes up to 15 members · Setup in 10 minutes</p>
             </div>
           </div>
         </InView>
