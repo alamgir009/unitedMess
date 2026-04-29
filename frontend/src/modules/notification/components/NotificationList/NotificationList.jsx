@@ -1,81 +1,328 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchNotifications, markAsRead, markAllAsRead } from '../../store/notification.slice';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+    BellRing, CheckCircle2, Loader2, RefreshCw, Sparkles,
+} from 'lucide-react';
+import { fetchNotifications, markAllAsRead, markAsRead } from '../../store/notification.slice';
 import NotificationItem from '../NotificationItem/NotificationItem';
-import { BellRing, CheckCircle2 } from 'lucide-react'; 
 
-const NotificationList = ({ closeMenu }) => {
+// ─── Animation variants ───────────────────────────────────────────────────────
+const LIST_ITEM = {
+    hidden:  { opacity: 0, y: 6  },
+    visible: (i) => ({
+        opacity: 1, y: 0,
+        transition: { delay: i * 0.04, type: 'spring', stiffness: 400, damping: 28 },
+    }),
+    exit:    { opacity: 0, y: 4, transition: { duration: 0.12 } },
+};
+
+// ─── Date grouping ────────────────────────────────────────────────────────────
+const groupByDate = (notifications) => {
+    const todayTs     = new Date().setHours(0, 0, 0, 0);
+    const yesterdayTs = todayTs - 86_400_000;
+    const groups      = new Map();
+
+    for (const n of notifications) {
+        const ts  = new Date(n.createdAt).setHours(0, 0, 0, 0);
+        const key = ts === todayTs
+            ? 'Today'
+            : ts === yesterdayTs
+                ? 'Yesterday'
+                : new Date(n.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(n);
+    }
+    return groups;
+};
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+const Skeleton = () => (
+    <div className="space-y-1.5 p-3" aria-busy="true" aria-label="Loading notifications">
+        {Array.from({ length: 4 }, (_, i) => (
+            <div key={i} className="flex items-start gap-3 p-3 rounded-xl animate-pulse">
+                <div className="shrink-0 w-9 h-9 rounded-xl bg-slate-200 dark:bg-slate-700" />
+                <div className="flex-1 space-y-2 py-0.5">
+                    <div className="h-3.5 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
+                    <div className="h-3   bg-slate-200 dark:bg-slate-700 rounded w-full" />
+                    <div className="h-2.5 bg-slate-200 dark:bg-slate-700 rounded w-2/5" />
+                </div>
+            </div>
+        ))}
+    </div>
+);
+
+// ─── Empty state ──────────────────────────────────────────────────────────────
+const EmptyState = ({ hasUnread }) => (
+    <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0  }}
+        className="flex flex-col items-center justify-center py-14 px-6 text-center"
+    >
+        <div className="
+            w-14 h-14 rounded-full mb-4 shadow-inner
+            bg-gradient-to-br from-slate-100 to-slate-200
+            dark:from-slate-800 dark:to-slate-700
+            flex items-center justify-center
+        ">
+            {hasUnread
+                ? <BellRing  className="w-6 h-6 text-slate-400 dark:text-slate-500" />
+                : <Sparkles  className="w-6 h-6 text-slate-400 dark:text-slate-500" />
+            }
+        </div>
+        <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            {hasUnread ? 'No unread notifications' : 'All caught up!'}
+        </h4>
+        <p className="text-xs text-slate-400 dark:text-slate-500 max-w-[180px] leading-relaxed">
+            {hasUnread
+                ? "You've read everything"
+                : "We'll alert you when something needs attention"
+            }
+        </p>
+    </motion.div>
+);
+
+// ─── Group label ──────────────────────────────────────────────────────────────
+const GroupLabel = ({ label }) => (
+    <div className="
+        px-4 py-2 sticky top-0 z-[1]
+        bg-slate-50/90 dark:bg-slate-800/80
+        border-b border-slate-100 dark:border-slate-800/60
+        backdrop-blur-sm
+    ">
+        <span className="text-[10px] font-semibold tracking-widest uppercase
+            text-slate-400 dark:text-slate-500 font-mono">
+            {label}
+        </span>
+    </div>
+);
+
+// ─── Main component ───────────────────────────────────────────────────────────
+const NotificationList = ({ closeMenu, onNotificationClick }) => {
     const dispatch = useDispatch();
-    const { items, loading, unreadCount } = useSelector((state) => state.notification);
+    const {
+        items, loading, unreadCount, hasMore,
+        currentPage, total, markAllLoading,
+    } = useSelector(s => s.notification);
 
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const observerRef                        = useRef(null);
+
+    // Initial fetch guard
     useEffect(() => {
-        dispatch(fetchNotifications({ page: 1, limit: 15 }));
-    }, [dispatch]);
+        if (items.length === 0) {
+            dispatch(fetchNotifications({ page: 1, limit: 20 }));
+        }
+    }, [dispatch, items.length]);
 
-    const handleMarkAsRead = (id) => {
-        dispatch(markAsRead(id));
-    };
+    // Infinite scroll
+    const loadMore = useCallback(async () => {
+        if (!hasMore || isLoadingMore) return;
+        setIsLoadingMore(true);
+        await dispatch(fetchNotifications({ page: currentPage + 1, limit: 20 }));
+        setIsLoadingMore(false);
+    }, [dispatch, hasMore, isLoadingMore, currentPage]);
 
-    const handleMarkAllAsRead = (e) => {
+    const sentinelRef = useCallback(node => {
+        if (loading || isLoadingMore) return;
+        observerRef.current?.disconnect();
+        if (!node) return;
+        observerRef.current = new IntersectionObserver(
+            ([entry]) => { if (entry.isIntersecting && hasMore) loadMore(); },
+            { threshold: 0.5 },
+        );
+        observerRef.current.observe(node);
+    }, [loading, isLoadingMore, hasMore, loadMore]);
+
+    // Handlers
+    const handleMarkAsRead = useCallback(
+        (id) => dispatch(markAsRead(id)),
+        [dispatch],
+    );
+
+    const handleMarkAllAsRead = useCallback((e) => {
         e.preventDefault();
         e.stopPropagation();
         dispatch(markAllAsRead());
-    };
+    }, [dispatch]);
+
+    const handleSelect = useCallback(async (notification) => {
+        const id = notification._id ?? notification.id;
+        if (!notification.isRead) await handleMarkAsRead(id);
+        closeMenu();
+        onNotificationClick?.(notification);
+    }, [closeMenu, handleMarkAsRead, onNotificationClick]);
+
+    const handleRefresh = useCallback(() => {
+        dispatch(fetchNotifications({ page: 1, limit: 20 }));
+    }, [dispatch]);
+
+    const grouped    = groupByDate(items);
+    const groupKeys  = [...grouped.keys()];
+    const lastGroup  = groupKeys.at(-1);
+
+    let itemIndex = 0; // for stagger delay
 
     return (
-        <div className="w-80 md:w-96 flex flex-col max-h-[85vh] bg-white dark:bg-slate-900 overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50">
-                <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-base">Notifications</h3>
-                    {unreadCount > 0 && (
-                        <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400 py-0.5 px-2 rounded-full text-xs font-semibold shadow-sm">
-                            {unreadCount} new
-                        </span>
-                    )}
-                </div>
-                {unreadCount > 0 && (
-                    <button 
-                        onClick={handleMarkAllAsRead}
-                        className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors flex items-center gap-1"
-                    >
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        Mark all read
-                    </button>
-                )}
-            </div>
-            
-            <div className="overflow-y-auto flex-1 p-3 space-y-2" style={{ maxHeight: '60vh' }}>
-                {loading && items.length === 0 ? (
-                    <div className="p-8 text-center text-sm text-gray-500 animate-pulse">Loading notifications...</div>
-                ) : items.length === 0 ? (
-                    <div className="p-10 text-center flex flex-col items-center gap-3">
-                        <div className="w-14 h-14 rounded-full bg-gray-50 dark:bg-slate-800 flex items-center justify-center border border-gray-100 dark:border-slate-700">
-                            <BellRing className="w-6 h-6 text-gray-400" />
-                        </div>
-                        <div className="space-y-1">
-                            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">All caught up!</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">No new notifications to show.</p>
-                        </div>
+        <div className="flex flex-col max-h-[85svh] sm:max-h-[78vh]
+            bg-white dark:bg-slate-900 overflow-hidden">
+
+            {/* ── Header ── */}
+            <div className="
+                sticky top-0 z-10 shrink-0
+                flex items-center justify-between
+                px-5 py-4
+                border-b border-slate-100 dark:border-slate-800
+                bg-white/90 dark:bg-slate-900/90
+                backdrop-blur-sm
+            ">
+                <div className="flex items-center gap-2.5">
+                    <div className="
+                        w-8 h-8 rounded-xl shadow-md
+                        bg-gradient-to-br from-blue-500 to-blue-600
+                        flex items-center justify-center
+                    ">
+                        <BellRing className="w-4 h-4 text-white" aria-hidden />
                     </div>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-[15px] tracking-tight">
+                            Notifications
+                        </h3>
+                        {total > 0 && (
+                            <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
+                                {total} total · {unreadCount} new
+                            </p>
+                        )}
+                    </div>
+                </div>
+
+                <AnimatePresence>
+                    {unreadCount > 0 && (
+                        <motion.button
+                            key="mark-all"
+                            initial={{ opacity: 0, scale: 0.85 }}
+                            animate={{ opacity: 1, scale: 1    }}
+                            exit={{   opacity: 0, scale: 0.85  }}
+                            onClick={handleMarkAllAsRead}
+                            disabled={markAllLoading}
+                            aria-label="Mark all notifications as read"
+                            className="
+                                flex items-center gap-1.5 px-2.5 py-1.5
+                                rounded-lg text-xs font-medium
+                                text-blue-600 dark:text-blue-400
+                                bg-blue-50 dark:bg-blue-950/40
+                                border border-blue-100 dark:border-blue-900/50
+                                hover:bg-blue-100 dark:hover:bg-blue-950/70
+                                disabled:opacity-50 disabled:cursor-not-allowed
+                                transition-all duration-150
+                            "
+                        >
+                            {markAllLoading
+                                ? <Loader2     className="w-3.5 h-3.5 animate-spin" aria-hidden />
+                                : <CheckCircle2 className="w-3.5 h-3.5"             aria-hidden />
+                            }
+                            Mark all read
+                        </motion.button>
+                    )}
+                </AnimatePresence>
+            </div>
+
+            {/* ── Body ── */}
+            <div
+                role="list"
+                aria-label="Notification items"
+                aria-live="polite"
+                className="overflow-y-auto flex-1 overscroll-contain
+                    scrollbar-thin scrollbar-track-transparent
+                    scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700
+                    hover:scrollbar-thumb-slate-300 dark:hover:scrollbar-thumb-slate-600"
+            >
+                {loading && items.length === 0 ? (
+                    <Skeleton />
+                ) : items.length === 0 ? (
+                    <EmptyState hasUnread={unreadCount > 0} />
                 ) : (
-                    items.map((notification) => (
-                        <NotificationItem 
-                            key={notification._id || notification.id} 
-                            notification={notification} 
-                            onRead={handleMarkAsRead} 
-                        />
-                    ))
+                    <div className="divide-y divide-slate-100/60 dark:divide-slate-800/40 py-1">
+                        {groupKeys.map(groupKey => (
+                            <div key={groupKey}>
+                                <GroupLabel label={groupKey} />
+                                <AnimatePresence initial={false}>
+                                    {grouped.get(groupKey).map((notif, idx) => {
+                                        const notifId = notif._id ?? notif.id;
+                                        const isLast  = groupKey === lastGroup &&
+                                            idx === grouped.get(groupKey).length - 1;
+                                        const delay   = itemIndex++;
+
+                                        return (
+                                            <motion.div
+                                                key={notifId}
+                                                custom={delay}
+                                                variants={LIST_ITEM}
+                                                initial="hidden"
+                                                animate="visible"
+                                                exit="exit"
+                                                ref={isLast ? sentinelRef : null}
+                                            >
+                                                <NotificationItem
+                                                    notification={notif}
+                                                    onSelect={handleSelect}
+                                                />
+                                            </motion.div>
+                                        );
+                                    })}
+                                </AnimatePresence>
+                            </div>
+                        ))}
+
+                        {/* Infinite scroll states */}
+                        {isLoadingMore && (
+                            <div className="flex items-center justify-center gap-2 py-5">
+                                <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                                <span className="text-xs text-slate-400 font-mono">Loading more…</span>
+                            </div>
+                        )}
+
+                        {!hasMore && items.length >= 20 && (
+                            <p className="py-6 text-center text-[11px] font-mono text-slate-400 dark:text-slate-500">
+                                — {total} notifications total —
+                            </p>
+                        )}
+                    </div>
                 )}
             </div>
-            
+
+            {/* ── Footer ── */}
             {items.length > 0 && (
-                <div className="p-3 border-t border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-center">
-                    <button 
+                <div className="
+                    shrink-0 sticky bottom-0
+                    flex items-center justify-between
+                    px-4 py-3
+                    border-t border-slate-100 dark:border-slate-800
+                    bg-slate-50/90 dark:bg-slate-900/90
+                    backdrop-blur-sm
+                ">
+                    <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleRefresh}
+                        className="flex items-center gap-1.5 text-xs text-slate-400
+                            dark:text-slate-500 hover:text-slate-700
+                            dark:hover:text-slate-200 transition-colors"
+                        aria-label="Refresh notifications"
+                    >
+                        <RefreshCw className="w-3.5 h-3.5" aria-hidden />
+                        Refresh
+                    </motion.button>
+
+                    <motion.button
+                        whileTap={{ scale: 0.95 }}
                         onClick={closeMenu}
-                        className="text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                        className="text-xs text-slate-400 dark:text-slate-500
+                            hover:text-slate-600 dark:hover:text-slate-300
+                            transition-colors"
+                        aria-label="Close notifications panel"
                     >
                         Close
-                    </button>
+                    </motion.button>
                 </div>
             )}
         </div>

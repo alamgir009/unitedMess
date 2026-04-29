@@ -1,51 +1,151 @@
-import { Info, AlertCircle, CreditCard, UserCog } from 'lucide-react';
+import { memo, useMemo } from 'react';
+import { motion } from 'framer-motion';
+import {
+    Info, AlertCircle, CreditCard, UserCog, TrendingUp,
+    ShieldCheck, Wallet, DollarSign, Clock, CheckCircle2, Sparkles,
+} from 'lucide-react';
 import { cn } from '@/core/utils/helpers/string.helper';
 
-const getIcon = (type) => {
-    switch (type) {
-        case 'PAYMENT': return <CreditCard className="w-5 h-5 text-emerald-500" />;
-        case 'ACCOUNT': return <UserCog className="w-5 h-5 text-blue-500" />;
-        case 'BILLING': return <AlertCircle className="w-5 h-5 text-amber-500" />;
-        case 'SYSTEM': return <Info className="w-5 h-5 text-indigo-500" />;
-        default: return <Info className="w-5 h-5 text-gray-500" />;
-    }
+// ─── Icon registry ────────────────────────────────────────────────────────────
+const ICON_MAP = {
+    PAYMENT:    { Icon: CreditCard,  color: 'text-emerald-500', bg: 'bg-emerald-50    dark:bg-emerald-950/30' },
+    TRANSFER:   { Icon: TrendingUp,  color: 'text-blue-500',    bg: 'bg-blue-50       dark:bg-blue-950/30'    },
+    DEPOSIT:    { Icon: Wallet,      color: 'text-green-500',   bg: 'bg-green-50      dark:bg-green-950/30'   },
+    WITHDRAWAL: { Icon: DollarSign,  color: 'text-amber-500',   bg: 'bg-amber-50      dark:bg-amber-950/30'   },
+    ACCOUNT:    { Icon: UserCog,     color: 'text-indigo-500',  bg: 'bg-indigo-50     dark:bg-indigo-950/30'  },
+    SECURITY:   { Icon: ShieldCheck, color: 'text-purple-500',  bg: 'bg-purple-50     dark:bg-purple-950/30'  },
+    BILLING:    { Icon: AlertCircle, color: 'text-amber-500',   bg: 'bg-amber-50      dark:bg-amber-950/30'   },
+    SYSTEM:     { Icon: Info,        color: 'text-slate-500',   bg: 'bg-slate-50      dark:bg-slate-800/50'   },
+    INVESTMENT: { Icon: TrendingUp,  color: 'text-teal-500',    bg: 'bg-teal-50       dark:bg-teal-950/30'    },
+    REWARD:     { Icon: Sparkles,    color: 'text-amber-500',   bg: 'bg-amber-50      dark:bg-amber-950/30'   },
+};
+const FALLBACK_ICON = { Icon: Info, color: 'text-slate-400', bg: 'bg-slate-50 dark:bg-slate-800/50' };
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const formatRelativeTime = (date) => {
+    const diffSec = Math.floor((Date.now() - new Date(date)) / 1000);
+    if (diffSec < 60)     return 'just now';
+    if (diffSec < 3600)   return `${Math.floor(diffSec / 60)}m ago`;
+    if (diffSec < 86400)  return `${Math.floor(diffSec / 3600)}h ago`;
+    if (diffSec < 604800) return `${Math.floor(diffSec / 86400)}d ago`;
+    return new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 };
 
-const NotificationItem = ({ notification, onRead }) => {
+// ─── Sub-components ───────────────────────────────────────────────────────────
+const NotificationIcon = ({ type }) => {
+    const { Icon, color, bg } = ICON_MAP[type] ?? FALLBACK_ICON;
     return (
-        <div 
-            onClick={() => !notification.isRead && onRead(notification._id || notification.id)}
-            className={cn(
-                "flex items-start gap-3 p-3 transition-all duration-200 cursor-pointer rounded-xl",
-                notification.isRead 
-                    ? "bg-transparent hover:bg-gray-50 dark:hover:bg-slate-800" 
-                    : "bg-blue-50/60 hover:bg-blue-100/60 dark:bg-slate-800/80 dark:hover:bg-slate-800"
-            )}
-        >
-            <div className="mt-1 shrink-0 bg-white dark:bg-slate-900 p-2 rounded-full shadow-sm border border-gray-100 dark:border-slate-700">
-                {getIcon(notification.type)}
-            </div>
-            <div className="flex-1 space-y-1">
-                <p className={cn(
-                    "text-sm",
-                    notification.isRead ? "font-medium text-gray-700 dark:text-gray-300" : "font-semibold text-gray-900 dark:text-gray-100"
-                )}>
-                    {notification.title}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
-                    {notification.message}
-                </p>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
-                    {new Date(notification.createdAt).toLocaleString()}
-                </p>
-            </div>
-            {!notification.isRead && (
-                <div className="shrink-0 mt-2">
-                    <span className="w-2 h-2 rounded-full bg-blue-500 block shadow-[0_0_8px_rgba(59,130,246,0.8)]"></span>
-                </div>
-            )}
+        <div className={cn('shrink-0 rounded-xl p-2 shadow-sm transition-all group-hover:shadow-md', bg)}>
+            <Icon className={cn('w-4.5 h-4.5', color)} aria-hidden />
         </div>
     );
 };
 
+const UnreadPulse = () => (
+    <span className="relative shrink-0 flex h-2 w-2 mt-1" aria-hidden>
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+        <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+    </span>
+);
+
+// ─── Main component ───────────────────────────────────────────────────────────
+const NotificationItem = memo(({ notification, onSelect }) => {
+    const { isRead, priority, type, title, message, createdAt, actionRequired, metadata, _id, id } = notification;
+
+    const isUnread = !isRead;
+    const isUrgent = priority === 'HIGH' || type === 'SECURITY';
+    const notifId  = _id ?? id;
+
+    const relativeTime = useMemo(() => formatRelativeTime(createdAt), [createdAt]);
+
+    return (
+        <motion.div
+            layout
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{   opacity: 0, x: -8  }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            role="listitem"
+            aria-label={`${isUnread ? 'Unread: ' : ''}${title}`}
+            onClick={() => onSelect?.(notification)}
+            className={cn(
+                'group relative flex items-start gap-3 px-4 py-3.5',
+                'cursor-pointer rounded-xl mx-1.5 my-0.5',
+                'transition-colors duration-150',
+                'hover:bg-gradient-to-r hover:from-slate-50 hover:to-transparent',
+                'dark:hover:from-slate-800/60 dark:hover:to-transparent',
+                isUnread && !isUrgent && 'bg-blue-50/40 dark:bg-slate-800/50',
+                isUrgent && isUnread  && 'bg-red-50/20 dark:bg-red-950/20 border-l-2 border-red-400 dark:border-red-600',
+                !isUnread             && 'opacity-80 hover:opacity-100',
+            )}
+        >
+            <NotificationIcon type={type} />
+
+            <div className="flex-1 min-w-0 space-y-1">
+                {/* Title row */}
+                <div className="flex items-start justify-between gap-2">
+                    <p className={cn(
+                        'text-sm leading-snug transition-colors',
+                        isUnread
+                            ? 'font-semibold text-slate-900 dark:text-slate-100'
+                            : 'font-medium text-slate-500 dark:text-slate-400',
+                        isUrgent && 'text-red-700 dark:text-red-400',
+                    )}>
+                        {title}
+                    </p>
+                    {isUnread && <UnreadPulse />}
+                </div>
+
+                {/* Message */}
+                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                    {message}
+                </p>
+
+                {/* Meta row */}
+                <div className="flex items-center gap-2 pt-0.5 flex-wrap">
+                    <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                        <Clock className="w-2.5 h-2.5" aria-hidden />
+                        {relativeTime}
+                    </span>
+
+                    {actionRequired && (
+                        <span className="
+                            text-[10px] px-1.5 py-0.5 rounded-full font-medium
+                            bg-amber-100 text-amber-700
+                            dark:bg-amber-900/40 dark:text-amber-400
+                        ">
+                            Action needed
+                        </span>
+                    )}
+
+                    {type === 'PAYMENT' && metadata?.amount && (
+                        <span className="text-[10px] font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                            {metadata.amount}
+                        </span>
+                    )}
+                </div>
+            </div>
+
+            {/* Hover check — mark read affordance */}
+            <motion.div
+                initial={{ opacity: 0 }}
+                whileHover={{ opacity: 1 }}
+                className="
+                    absolute right-3 top-1/2 -translate-y-1/2
+                    w-6 h-6 rounded-full
+                    bg-slate-100 dark:bg-slate-700
+                    border border-slate-200 dark:border-slate-600
+                    flex items-center justify-center
+                    opacity-0 group-hover:opacity-100
+                    transition-opacity duration-150
+                "
+                aria-hidden
+            >
+                <CheckCircle2 className="w-3.5 h-3.5 text-slate-400 dark:text-slate-400" />
+            </motion.div>
+        </motion.div>
+    );
+});
+
+NotificationItem.displayName = 'NotificationItem';
 export default NotificationItem;
