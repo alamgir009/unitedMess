@@ -744,7 +744,7 @@ const HomePage = () => {
               <img
                 src={steps[activeTab].image}
                 alt={steps[activeTab].title}
-                className="h-56 w-full object-cover sm:h-72 sm:h-96"
+                className="h-56 w-full object-cover sm:h-72"
                 loading="lazy"
               />
               <div className="p-4 sm:p-6">
