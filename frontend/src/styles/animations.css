@@ -349,3 +349,16 @@
 .animation-delay-4000 {
     animation-delay: 4000ms;
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Promote food cards to their own GPU layer only while scrolling */
+@media (hover: none) and (pointer: coarse) {
+  .food-card {
+    transform: translateZ(0);
+  }
+}

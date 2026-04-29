@@ -271,8 +271,8 @@ const AboutPage = () => {
                             <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold sm:w-10 sm:h-10"
                                 style={{ background: 'var(--gradient-primary)' }}>A</div>
                             <div className="text-left">
-                                <p className="text-sm font-semibold text-foreground">Aryan Saha</p>
-                                <p className="text-[11px] text-muted-foreground sm:text-xs">Hall Manager, IIT Delhi</p>
+                                <p className="text-sm font-semibold text-foreground">Asif Ekbal</p>
+                                <p className="text-[11px] text-muted-foreground sm:text-xs">Java Developer, TCS</p>
                             </div>
                         </div>
                     </Reveal>
