@@ -1,20 +1,28 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { HiOutlineXMark } from 'react-icons/hi2';
 import { Button } from '@/shared/components/ui';
 
 /* ------------------------------------------------------------------ */
-/*  Responsive media query hook                                       */
+/*  SSR-safe media query hook                                          */
 /* ------------------------------------------------------------------ */
 const useMediaQuery = (query) => {
-  const [matches, setMatches] = useState(false);
+  const getMatches = () =>
+    typeof window !== 'undefined' ? window.matchMedia(query).matches : false;
+
+  const [matches, setMatches] = useState(getMatches);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const mql = window.matchMedia(query);
-    setMatches(mql.matches);
     const handler = (e) => setMatches(e.matches);
-    mql.addEventListener('change', handler);
-    return () => mql.removeEventListener('change', handler);
+
+    setMatches(mql.matches);
+
+    mql.addEventListener?.('change', handler);
+    return () => mql.removeEventListener?.('change', handler);
   }, [query]);
 
   return matches;
@@ -26,82 +34,115 @@ const useMediaQuery = (query) => {
 const MealModal = ({ isOpen, onClose, title, children }) => {
   const isMobile = useMediaQuery('(max-width: 767px)');
 
-  // Transition durations: 70 ms on mobile, 100 ms on desktop
+  const easing = useMemo(() => [0.16, 1, 0.3, 1], []);
+
   const transition = useMemo(
     () => ({
-      backdrop: { duration: isMobile ? 0.07 : 0.1 },
-      modal: { duration: isMobile ? 0.07 : 0.1, ease: 'easeOut' },
+      backdrop: { duration: isMobile ? 0.12 : 0.18, ease: easing },
+      modal: { duration: isMobile ? 0.16 : 0.2, ease: easing },
     }),
-    [isMobile]
+    [isMobile, easing]
   );
 
-  // Slightly tighter initial scale on mobile for less visual travel
-  const modalInitial = isMobile
-    ? { opacity: 0, scale: 0.98, y: 12 }
-    : { opacity: 0, scale: 0.96, y: 16 };
-  const modalExit = modalInitial; // symmetric exit
+  const initialState = isMobile
+    ? { opacity: 0, scale: 0.985, y: 14 }
+    : { opacity: 0, scale: 0.96, y: 24 };
 
-  return (
+  useEffect(() => {
+    if (!isOpen || typeof document === 'undefined') return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') onClose?.();
+    };
+
+    window.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen, onClose]);
+
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <>
-          {/* ── Backdrop ── */}
-          <motion.div
-            key="backdrop"
+        <div className="fixed inset-0 z-[1000]">
+          <motion.button
+            type="button"
+            aria-label="Close modal"
+            onClick={onClose}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={transition.backdrop}
-            onClick={onClose}
-            className="fixed inset-0 z-[100] bg-black/40 dark:bg-black/70 md:bg-black/30 md:dark:bg-black/60 md:backdrop-blur-sm"
+            className={[
+              'absolute inset-0 h-full w-full',
+              'bg-black/70',
+              'md:bg-black/50 md:backdrop-blur-sm',
+            ].join(' ')}
+            style={{ willChange: 'opacity' }}
           />
 
-          {/* ── Dialog Wrapper ── */}
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 pointer-events-none">
+          <div className="relative flex min-h-full items-center justify-center p-3 sm:p-4">
             <motion.div
-              key="modal"
-              initial={modalInitial}
+              initial={initialState}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={modalExit}
+              exit={initialState}
               transition={transition.modal}
-              className="w-full max-w-lg pointer-events-auto relative overflow-hidden rounded-3xl border border-black/5 dark:border-white/10 shadow-2xl md:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] md:dark:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)]"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="meal-modal-title"
+              className={[
+                'relative w-full max-w-lg overflow-hidden rounded-3xl border',
+                'shadow-[0_24px_80px_rgba(0,0,0,0.25)]',
+                'bg-[rgb(248,250,252)] border-black/10 text-slate-900',
+                'dark:bg-slate-900 dark:border-white/10 dark:text-white',
+                'md:bg-white/70 md:backdrop-blur-xl',
+                'md:dark:bg-slate-900/60',
+              ].join(' ')}
+              style={{ willChange: 'transform, opacity' }}
             >
-              {/* Glass shell */}
-              <div className="absolute inset-0 rounded-3xl bg-white/95 dark:bg-[#0f1428]/95 md:bg-white/80 md:dark:bg-[#0f1428]/80 md:backdrop-blur-md" />
+              <div className="absolute inset-0 md:hidden bg-[rgb(248,250,252)] dark:bg-slate-900" />
 
-              {/* Ambient top glow (desktop only) */}
-              <div className="hidden md:block absolute -top-16 left-1/2 -translate-x-1/2 w-72 h-32 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/20 to-transparent pointer-events-none" />
+              <div
+                className={[
+                  'pointer-events-none absolute left-1/2 top-0 h-24 w-72 -translate-x-1/2 rounded-full',
+                  'bg-blue-500/10 blur-2xl md:blur-3xl',
+                ].join(' ')}
+              />
 
-              {/* ── Header ── */}
-              <div className="relative z-10 flex items-center justify-between px-6 pt-5 pb-4 border-b border-black/5 dark:border-white/10">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-1 h-6 rounded-full flex-shrink-0"
-                    style={{
-                      background:
-                        'linear-gradient(180deg, hsl(210,92%,60%) 0%, hsl(268,76%,60%) 100%)',
-                    }}
-                  />
-                  <h2 className="text-lg font-bold tracking-tight text-foreground">
+              <div className="pointer-events-none absolute inset-0 rounded-3xl border border-black/5 dark:border-white/10" />
+
+              <div className="relative z-10 flex items-center justify-between border-b border-black/10 px-4 py-4 sm:px-6 sm:py-5 dark:border-white/10">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="h-6 w-1 shrink-0 rounded-full bg-gradient-to-b from-sky-500 to-violet-600" />
+                  <h2
+                    id="meal-modal-title"
+                    className="truncate text-lg font-semibold tracking-tight text-slate-900 dark:text-white"
+                  >
                     {title}
                   </h2>
                 </div>
 
-                <Button type="danger" iconOnly onClick={onClose}>
-                  <HiOutlineXMark className="w-4 h-4 text-white group-hover:text-foreground transition-colors" />
+                <Button variant="ghost" iconOnly onClick={onClose} aria-label="Close">
+                  <HiOutlineXMark className="h-5 w-5" />
                 </Button>
               </div>
 
-              {/* ── Body ── */}
-              <div className="relative z-10 px-6 py-5 max-h-[82vh] overflow-y-auto">
-                <div className="hidden md:block absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 to-transparent pointer-events-none -z-10" />
+              <div className="relative z-10 max-h-[82dvh] overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
                 {children}
               </div>
             </motion.div>
           </div>
-        </>
+        </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 
