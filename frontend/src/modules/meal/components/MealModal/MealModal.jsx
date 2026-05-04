@@ -14,7 +14,7 @@ const MealModal = ({ isOpen, onClose, title, children }) => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
+                        transition={{ duration: 0.10 }}
                         onClick={onClose}
                         className="fixed inset-0 z-[100] bg-black/40 dark:bg-black/70 md:bg-black/30 md:dark:bg-black/60 md:backdrop-blur-sm"
                     />
@@ -26,7 +26,7 @@ const MealModal = ({ isOpen, onClose, title, children }) => {
                             initial={{ opacity: 0, scale: 0.96, y: 16 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.96, y: 16 }}
-                            transition={{ duration: 0.2, ease: "easeOut" }}
+                            transition={{ duration: 0.10, ease: "easeOut" }}
                             className="w-full max-w-lg pointer-events-auto relative overflow-hidden rounded-3xl border border-black/5 dark:border-white/10 shadow-2xl md:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] md:dark:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)]"
                         >
                             {/* Glass shell */}
