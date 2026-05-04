@@ -121,9 +121,9 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
             {/* Liquid Ambient Background */}
             <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,rgba(120,119,198,0.15),transparent_50%),radial-gradient(ellipse_at_bottom_left,rgba(244,114,182,0.15),transparent_50%)] dark:bg-[radial-gradient(ellipse_at_top_right,rgba(120,119,198,0.2),transparent_50%),radial-gradient(ellipse_at_bottom_left,rgba(244,114,182,0.2),transparent_50%)]" />
 
-            <div className="relative rounded-[2.25rem] bg-white/95 p-5 sm:p-8 dark:bg-slate-900/95 md:bg-white/60 md:dark:bg-slate-900/40">
+            <div className="relative rounded-[2.25rem] bg-white/95 p-5 sm:p-7 md:p-8 dark:bg-slate-900/95 md:bg-white/60 md:dark:bg-slate-900/40">
                 {/* Header Section */}
-                <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between mb-8">
+                <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between mb-8">
                     <div className="space-y-3">
                         <div className="inline-flex items-center gap-2 rounded-full border border-black/5 bg-white/50 px-3 py-1.5 backdrop-blur-md dark:border-white/10 dark:bg-black/50">
                             <span className="relative flex h-2 w-2">
@@ -150,7 +150,7 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                 </div>
 
                 {/* Grid Options */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     {pollOptions.map((option) => {
                         const count = totals?.[option.id] || 0;
                         const percent = totals.total > 0 ? Math.round((count / totals.total) * 100) : 0;
@@ -231,11 +231,17 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                 </div>
 
                 {/* Clean Voter Standings */}
-                <div className="mt-6 rounded-[24px] border border-black/5 bg-white/95 p-1 md:backdrop-blur-md md:bg-white/40 dark:border-white/5 dark:bg-slate-900/95 md:dark:bg-white/5">
-                    <div className="rounded-[20px] bg-white/50 px-4 py-3 dark:bg-slate-900/50">
-                        <div className="mb-4 flex items-center justify-between">
-                            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Current Standings</h4>
-                            <span className="text-[10px] font-medium text-muted-foreground opacity-60">Updated Live</span>
+                <div className="mt-8 rounded-[24px] border border-black/5 bg-white/95 p-1 md:backdrop-blur-md md:bg-white/40 dark:border-white/5 dark:bg-slate-900/95 md:dark:bg-white/5">
+                    <div className="rounded-[20px] bg-white/50 p-5 sm:p-6 dark:bg-slate-900/50">
+                        <div className="mb-5 flex items-center justify-between border-b border-black/5 pb-4 dark:border-white/5">
+                            <div className="flex items-center gap-2">
+                                <HiOutlineUserGroup className="h-4 w-4 text-muted-foreground" />
+                                <h4 className="text-sm font-bold uppercase tracking-wider text-foreground">Current Standings</h4>
+                            </div>
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+                                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                                Live
+                            </span>
                         </div>
 
                         <div className="space-y-4">
@@ -244,12 +250,12 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                                 if (votersForType.length === 0) return null;
 
                                 return (
-                                    <div key={opt.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl p-3 bg-black/5 dark:bg-white/5 transition-colors">
+                                    <div key={opt.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl p-4 bg-black/[0.03] dark:bg-white/[0.03] transition-colors border border-black/[0.02] dark:border-white/[0.02]">
                                         <div className="flex items-center gap-3">
-                                            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${opt.bg} ${opt.text}`}>
-                                                <opt.icon className="h-4 w-4" />
+                                            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${opt.bg} ${opt.text}`}>
+                                                <opt.icon className="h-5 w-5" />
                                             </div>
-                                            <span className="text-sm font-medium text-foreground w-16">{opt.label}</span>
+                                            <span className="text-sm font-bold text-foreground w-16">{opt.label}</span>
                                         </div>
                                         
                                         <div className="flex flex-wrap gap-2 flex-1 sm:justify-end">
