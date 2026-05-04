@@ -117,11 +117,11 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
     };
 
     return (
-        <div className="relative w-full overflow-hidden rounded-[2.5rem] border border-white/20 bg-white/40 p-1 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-slate-950/40 dark:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.4)]">
+        <div className="relative w-full overflow-hidden rounded-[2.5rem] border border-white/20 bg-white/95 p-1 shadow-sm md:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] md:bg-white/40 md:backdrop-blur-md dark:border-white/10 dark:bg-slate-950/95 md:dark:bg-slate-950/40 md:dark:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.4)]">
             {/* Liquid Ambient Background */}
             <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,rgba(120,119,198,0.15),transparent_50%),radial-gradient(ellipse_at_bottom_left,rgba(244,114,182,0.15),transparent_50%)] dark:bg-[radial-gradient(ellipse_at_top_right,rgba(120,119,198,0.2),transparent_50%),radial-gradient(ellipse_at_bottom_left,rgba(244,114,182,0.2),transparent_50%)]" />
 
-            <div className="relative rounded-[2.25rem] bg-white/60 p-5 sm:p-8 dark:bg-slate-900/40">
+            <div className="relative rounded-[2.25rem] bg-white/95 p-5 sm:p-8 dark:bg-slate-900/95 md:bg-white/60 md:dark:bg-slate-900/40">
                 {/* Header Section */}
                 <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between mb-8">
                     <div className="space-y-3">
@@ -169,7 +169,7 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                                         ? `bg-white/80 dark:bg-slate-800/80 shadow-lg shadow-${option.theme}-500/10 ${option.activeBorder}` 
                                         : 'border-black/5 bg-white/40 hover:bg-white/60 dark:border-white/5 dark:bg-white/5 dark:hover:bg-white/10'
                                     } 
-                                    backdrop-blur-md ${(isVoting || isLoading) ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+                                    md:backdrop-blur-md ${(isVoting || isLoading) ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
                             >
                                 {/* Active State Gradient Overlay */}
                                 <AnimatePresence>
@@ -231,7 +231,7 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                 </div>
 
                 {/* Clean Voter Standings */}
-                <div className="mt-6 rounded-[24px] border border-black/5 bg-white/40 p-1 backdrop-blur-md dark:border-white/5 dark:bg-white/5">
+                <div className="mt-6 rounded-[24px] border border-black/5 bg-white/95 p-1 md:backdrop-blur-md md:bg-white/40 dark:border-white/5 dark:bg-slate-900/95 md:dark:bg-white/5">
                     <div className="rounded-[20px] bg-white/50 px-4 py-3 dark:bg-slate-900/50">
                         <div className="mb-4 flex items-center justify-between">
                             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Current Standings</h4>

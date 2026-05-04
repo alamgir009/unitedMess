@@ -16,37 +16,27 @@ const MealModal = ({ isOpen, onClose, title, children }) => {
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
                         onClick={onClose}
-                        className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm"
+                        className="fixed inset-0 z-[100] bg-black/40 dark:bg-black/70 md:bg-black/30 md:dark:bg-black/60 md:backdrop-blur-sm"
                     />
 
                     {/* ── Dialog Wrapper ── */}
                     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 pointer-events-none">
                         <motion.div
                             key="modal"
-                            initial={{ opacity: 0, scale: 0.94, y: 20 }}
+                            initial={{ opacity: 0, scale: 0.96, y: 16 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.94, y: 20 }}
-                            transition={{ type: 'spring', duration: 0.3, bounce: 0.15 }}
-                            className="w-full max-w-lg pointer-events-auto relative overflow-hidden rounded-3xl border border-white/10 dark:border-white/5"
-                            style={{
-                                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-                            }}
+                            exit={{ opacity: 0, scale: 0.96, y: 16 }}
+                            transition={{ duration: 0.2, ease: "easeOut" }}
+                            className="w-full max-w-lg pointer-events-auto relative overflow-hidden rounded-3xl border border-black/5 dark:border-white/10 shadow-2xl md:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] md:dark:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)]"
                         >
                             {/* Glass shell */}
-                            <div
-                                className="absolute inset-0 rounded-3xl"
-                                style={{
-                                    background: 'var(--glass-bg, linear-gradient(135deg, rgba(15,20,40,0.92) 0%, rgba(20,28,52,0.88) 100%))',
-                                    backdropFilter: 'blur(12px)',
-                                    WebkitBackdropFilter: 'blur(12px)',
-                                }}
-                            />
+                            <div className="absolute inset-0 rounded-3xl bg-white/95 dark:bg-[#0f1428]/95 md:bg-white/80 md:dark:bg-[#0f1428]/80 md:backdrop-blur-md" />
 
                             {/* Ambient top glow */}
-                            <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-72 h-32 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/20 to-transparent pointer-events-none" />
+                            <div className="hidden md:block absolute -top-16 left-1/2 -translate-x-1/2 w-72 h-32 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/20 to-transparent pointer-events-none" />
 
                             {/* ── Header ── */}
-                            <div className="relative z-10 flex items-center justify-between px-6 pt-5 pb-4 border-b border-white/10">
+                            <div className="relative z-10 flex items-center justify-between px-6 pt-5 pb-4 border-b border-black/5 dark:border-white/10">
                                 {/* Accent bar */}
                                 <div className="flex items-center gap-3">
                                     <div
@@ -71,7 +61,7 @@ const MealModal = ({ isOpen, onClose, title, children }) => {
                             {/* ── Body ── */}
                             <div className="relative z-10 px-6 py-5 max-h-[82vh] overflow-y-auto">
                                 {/* Subtle inner glow */}
-                                <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 to-transparent pointer-events-none -z-10" />
+                                <div className="hidden md:block absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 to-transparent pointer-events-none -z-10" />
                                 {children}
                             </div>
                         </motion.div>
