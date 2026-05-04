@@ -129,7 +129,7 @@ const MealModal = ({ isOpen, onClose, title, children }) => {
                   </h2>
                 </div>
 
-                <Button variant="ghost" iconOnly onClick={onClose} aria-label="Close">
+                <Button variant="danger" iconOnly onClick={onClose} aria-label="Close">
                   <HiOutlineXMark className="h-5 w-5" />
                 </Button>
               </div>
