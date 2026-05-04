@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { reset } from '../../store/auth.slice';
 import LoginForm from '../../components/LoginForm/LoginForm';
 import { motion, AnimatePresence } from 'framer-motion';
+import { HiArrowLeft } from 'react-icons/hi2';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -29,6 +30,17 @@ const LoginPage = () => {
     <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden opacity-20">
       <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/20 blur-[120px] rounded-full" />
       <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-primary/10 blur-[120px] rounded-full" />
+    </div>
+
+    {/* Back button */}
+    <div className="absolute top-6 left-6 sm:top-8 sm:left-8 z-50">
+      <Link
+        to="/"
+        className="group flex items-center gap-2 rounded-full border border-black/5 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 px-4 py-2 text-sm font-semibold text-foreground/80 backdrop-blur-md transition-all hover:bg-white/80 dark:hover:bg-slate-900/80 hover:text-foreground shadow-sm hover:shadow-md"
+      >
+        <HiArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+        <span className="hidden sm:inline">Back to Home</span>
+      </Link>
     </div>
 
     <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
