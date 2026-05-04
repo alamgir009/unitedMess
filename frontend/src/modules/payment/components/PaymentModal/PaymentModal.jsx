@@ -1,161 +1,168 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { HiOutlineXMark } from 'react-icons/hi2';
 import { Button } from '@/shared/components/ui';
 
 /* ------------------------------------------------------------------ */
-/*  Responsive media query hook                                       */
+/*  SSR-safe media query hook                                         */
 /* ------------------------------------------------------------------ */
 const useMediaQuery = (query) => {
-  const [matches, setMatches] = useState(false);
+    const getMatches = () =>
+        typeof window !== 'undefined' ? window.matchMedia(query).matches : false;
 
-  useEffect(() => {
-    const mql = window.matchMedia(query);
-    setMatches(mql.matches);
-    const handler = (e) => setMatches(e.matches);
-    mql.addEventListener('change', handler);
-    return () => mql.removeEventListener('change', handler);
-  }, [query]);
+    const [matches, setMatches] = useState(getMatches);
 
-  return matches;
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const mql = window.matchMedia(query);
+        const handler = (e) => setMatches(e.matches);
+
+        setMatches(mql.matches);
+
+        mql.addEventListener?.('change', handler);
+        return () => mql.removeEventListener?.('change', handler);
+    }, [query]);
+
+    return matches;
 };
 
 /* ------------------------------------------------------------------ */
-/*  PaymentModal – buttery 60 fps on mobile, refined on desktop       */
+/*  PaymentModal                                                      */
 /* ------------------------------------------------------------------ */
 const PaymentModal = ({ isOpen, onClose, title, children }) => {
-  const isMobile = useMediaQuery('(max-width: 767px)');
+    const isMobile = useMediaQuery('(max-width: 767px)');
 
-  // Shared easing – natural deceleration, zero bounce
-  const ease = useMemo(() => [0.16, 1, 0.3, 1], []);
+    const easing = useMemo(() => [0.16, 1, 0.3, 1], []);
 
-  // Transitions: 70 ms on mobile, 100 ms on desktop
-  const transition = useMemo(
-    () => ({
-      backdrop: { duration: isMobile ? 0.07 : 0.1, ease },
-      modal: { duration: isMobile ? 0.07 : 0.1, ease },
-    }),
-    [isMobile, ease]
-  );
+    const transition = useMemo(
+        () => ({
+            backdrop: { duration: isMobile ? 0.12 : 0.18, ease: easing },
+            modal: { duration: isMobile ? 0.16 : 0.2, ease: easing },
+        }),
+        [isMobile, easing]
+    );
 
-  // Tighter start on mobile to avoid visual overshoot
-  const modalInitial = isMobile
-    ? { opacity: 0, scale: 0.98, y: 12 }
-    : { opacity: 0, scale: 0.94, y: 20 };
-  const modalExit = modalInitial;
+    const initialState = isMobile
+        ? { opacity: 0, scale: 0.985, y: 14 }
+        : { opacity: 0, scale: 0.96, y: 24 };
 
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop – no blur on mobile */}
-          <motion.div
-            key="backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={transition.backdrop}
-            onClick={onClose}
-            className={[
-              'fixed inset-0 z-[100]',
-              'bg-black/60',
-              // desktop only: subtle blur
-              'md:backdrop-blur-sm',
-            ].join(' ')}
-            style={{ willChange: 'opacity' }}
-            aria-hidden="true"
-          />
+    /* ---------------- Body Scroll Lock + ESC ---------------- */
+    useEffect(() => {
+        if (!isOpen) return;
 
-          {/* Dialog wrapper */}
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 pointer-events-none">
-            <motion.div
-              key="modal"
-              initial={modalInitial}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={modalExit}
-              transition={transition.modal}
-              className="w-full max-w-lg pointer-events-auto relative overflow-hidden rounded-3xl"
-              style={{
-                willChange: 'transform, opacity',
-                boxShadow:
-                  '0 0 0 1px rgba(255,255,255,0.12), 0 25px 60px rgba(0,0,0,0.5), 0 0 80px rgba(99,102,241,0.08)',
-              }}
-            >
-              {/* Glass shell – lightweight blur on mobile */}
-              <div
-                className="absolute inset-0 rounded-3xl"
-                style={{
-                  background:
-                    'var(--glass-bg, linear-gradient(135deg,rgba(15,20,40,0.88)0%,rgba(20,28,52,0.82)100%))',
-                  backdropFilter: isMobile ? 'blur(14px)' : 'blur(28px)',
-                  WebkitBackdropFilter: isMobile ? 'blur(14px)' : 'blur(28px)',
-                }}
-              />
+        const original = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
 
-              {/* Glow – smaller blur on mobile */}
-              <div
-                className={[
-                  'absolute -top-16 left-1/2 -translate-x-1/2 w-72 h-32',
-                  'bg-indigo-500/20 rounded-full pointer-events-none',
-                  isMobile ? 'blur-2xl' : 'blur-3xl',
-                ].join(' ')}
-              />
+        const esc = (e) => e.key === 'Escape' && onClose?.();
+        window.addEventListener('keydown', esc);
 
-              {/* Border – simple on mobile, fancy mask on desktop */}
-              {isMobile ? (
-                <div className="absolute inset-0 rounded-3xl border border-white/10 pointer-events-none" />
-              ) : (
-                <div
-                  className="absolute inset-0 rounded-3xl pointer-events-none"
-                  style={{
-                    background:
-                      'linear-gradient(135deg,rgba(255,255,255,0.14)0%,rgba(255,255,255,0.03)50%,rgba(255,255,255,0)100%)',
-                    mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                    WebkitMask:
-                      'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                    maskComposite: 'exclude',
-                    WebkitMaskComposite: 'destination-out',
-                    padding: '1px',
-                  }}
-                />
-              )}
+        return () => {
+            document.body.style.overflow = original;
+            window.removeEventListener('keydown', esc);
+        };
+    }, [isOpen, onClose]);
 
-              {/* Header */}
-              <div className="relative z-10 flex items-center justify-between px-6 pt-5 pb-4 border-b border-white/10">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-1 h-6 rounded-full flex-shrink-0"
-                    style={{
-                      background:
-                        'linear-gradient(180deg,hsl(245,76%,60%)0%,hsl(245,76%,42%)100%)',
-                    }}
-                  />
-                  <h2 className="text-lg font-bold tracking-tight text-foreground">
-                    {title}
-                  </h2>
+    if (typeof document === 'undefined') return null;
+
+    return createPortal(
+        <AnimatePresence>
+            {isOpen && (
+                <div className="fixed inset-0 z-[1000]">
+                    {/* ---------------- Backdrop ---------------- */}
+                    <motion.button
+                        aria-label="Close modal"
+                        onClick={onClose}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={transition.backdrop}
+                        className={`
+              absolute inset-0 w-full h-full
+              bg-black/70
+              md:bg-black/50 md:backdrop-blur-sm
+            `}
+                    />
+
+                    {/* ---------------- Modal ---------------- */}
+                    <div className="flex min-h-full items-center justify-center p-3 sm:p-4">
+                        <motion.div
+                            initial={initialState}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={initialState}
+                            transition={transition.modal}
+                            role="dialog"
+                            aria-modal="true"
+                            className={`
+                relative w-full max-w-lg overflow-hidden rounded-3xl
+                border
+                shadow-[0_20px_80px_rgba(0,0,0,0.25)]
+                
+                /* LIGHT MODE */
+                bg-white border-black/10 text-slate-900
+                
+                /* DARK MODE */
+                dark:bg-slate-900 dark:border-white/10 dark:text-white
+                
+                /* DESKTOP GLASS ONLY */
+                md:bg-white/70 md:backdrop-blur-xl
+                md:dark:bg-slate-900/60
+              `}>
+                            {/* -------- Mobile solid layer (no transparency leak) -------- */}
+                            <div
+                                className="
+                                absolute inset-0 md:hidden
+                                    
+                                /* Light mode – ultra subtle warm tint */
+                                bg-[rgb(231,235,240)]
+                                    
+                                /* Dark mode */
+                                dark:bg-[rgb(15,23,42)]"/>
+
+                            {/* -------- Subtle Glow -------- */}
+                            <div className="
+                pointer-events-none absolute top-0 left-1/2 -translate-x-1/2
+                w-72 h-24 rounded-full
+                bg-indigo-500/10
+                blur-2xl md:blur-3xl
+              " />
+
+                            {/* -------- Border refinement -------- */}
+                            <div className="pointer-events-none absolute inset-0 rounded-3xl border border-black/5 dark:border-white/10" />
+
+                            {/* ---------------- Header ---------------- */}
+                            <div className="
+                relative z-10 flex items-center justify-between
+                px-4 py-4 sm:px-6 sm:py-5
+                border-b border-black/10 dark:border-white/10
+              ">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="w-1 h-6 rounded-full bg-gradient-to-b from-indigo-500 to-indigo-700" />
+                                    <h2 className="truncate text-lg font-semibold">
+                                        {title}
+                                    </h2>
+                                </div>
+
+                                <Button variant="danger" iconOnly onClick={onClose}>
+                                    <HiOutlineXMark className="w-5 h-5" />
+                                </Button>
+                            </div>
+
+                            {/* ---------------- Body ---------------- */}
+                            <div className="
+                relative z-10 px-4 py-4 sm:px-6 sm:py-5
+                max-h-[82dvh] overflow-y-auto
+              ">
+                                {children}
+                            </div>
+                        </motion.div>
+                    </div>
                 </div>
-                <Button type="danger" iconOnly onClick={onClose}>
-                  <HiOutlineXMark className="w-4 h-4 text-white" />
-                </Button>
-              </div>
-
-              {/* Body – inner glow with reduced blur on mobile */}
-              <div className="relative z-10 px-6 py-5 max-h-[82vh] overflow-y-auto">
-                <div
-                  className={[
-                    'absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2',
-                    'w-64 h-64 bg-indigo-500/5 rounded-full pointer-events-none -z-10',
-                    isMobile ? 'blur-xl' : 'blur-3xl',
-                  ].join(' ')}
-                />
-                {children}
-              </div>
-            </motion.div>
-          </div>
-        </>
-      )}
-    </AnimatePresence>
-  );
+            )}
+        </AnimatePresence>,
+        document.body
+    );
 };
 
 export default PaymentModal;
