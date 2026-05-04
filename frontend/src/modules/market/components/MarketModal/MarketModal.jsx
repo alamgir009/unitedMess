@@ -16,51 +16,27 @@ const MarketModal = ({ isOpen, onClose, title, children }) => {
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
                         onClick={onClose}
-                        className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md"
+                        className="fixed inset-0 z-[100] bg-black/40 dark:bg-black/70 md:bg-black/30 md:dark:bg-black/60 md:backdrop-blur-sm"
                     />
 
                     {/* ── Dialog Wrapper ── */}
                     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 pointer-events-none">
                         <motion.div
                             key="modal"
-                            initial={{ opacity: 0, scale: 0.94, y: 20 }}
+                            initial={{ opacity: 0, scale: 0.96, y: 16 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.94, y: 20 }}
-                            transition={{ type: 'spring', duration: 0.4, bounce: 0.22 }}
-                            className="w-full max-w-lg pointer-events-auto relative overflow-hidden rounded-3xl"
-                            style={{
-                                boxShadow:
-                                    '0 0 0 1px rgba(255,255,255,0.12), 0 25px 60px rgba(0,0,0,0.5), 0 0 80px rgba(59,130,246,0.08)',
-                            }}
+                            exit={{ opacity: 0, scale: 0.96, y: 16 }}
+                            transition={{ duration: 0.2, ease: "easeOut" }}
+                            className="w-full max-w-lg pointer-events-auto relative overflow-hidden rounded-3xl border border-black/5 dark:border-white/10 shadow-2xl md:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] md:dark:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)]"
                         >
                             {/* Glass shell */}
-                            <div
-                                className="absolute inset-0 rounded-3xl"
-                                style={{
-                                    background: 'var(--glass-bg, linear-gradient(135deg, rgba(15,20,40,0.88) 0%, rgba(20,28,52,0.82) 100%))',
-                                    backdropFilter: 'blur(28px)',
-                                    WebkitBackdropFilter: 'blur(28px)',
-                                }}
-                            />
+                            <div className="absolute inset-0 rounded-3xl bg-white/95 dark:bg-[#0f1428]/95 md:bg-white/80 md:dark:bg-[#0f1428]/80 md:backdrop-blur-md" />
 
                             {/* Ambient top glow */}
-                            <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-72 h-32 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none" />
-
-                            {/* Gradient accent border */}
-                            <div
-                                className="absolute inset-0 rounded-3xl pointer-events-none"
-                                style={{
-                                    background: 'linear-gradient(135deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.0) 100%)',
-                                    mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                                    WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                                    maskComposite: 'exclude',
-                                    WebkitMaskComposite: 'destination-out',
-                                    padding: '1px',
-                                }}
-                            />
+                            <div className="hidden md:block absolute -top-16 left-1/2 -translate-x-1/2 w-72 h-32 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-500/20 to-transparent pointer-events-none" />
 
                             {/* ── Header ── */}
-                            <div className="relative z-10 flex items-center justify-between px-6 pt-5 pb-4 border-b border-white/10">
+                            <div className="relative z-10 flex items-center justify-between px-6 pt-5 pb-4 border-b border-black/5 dark:border-white/10">
                                 <div className="flex items-center gap-3">
                                     <div
                                         className="w-1 h-6 rounded-full flex-shrink-0"
@@ -76,7 +52,7 @@ const MarketModal = ({ isOpen, onClose, title, children }) => {
 
                             {/* ── Body ── */}
                             <div className="relative z-10 px-6 py-5 max-h-[82vh] overflow-y-auto">
-                                <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-emerald-500/6 rounded-full blur-3xl pointer-events-none -z-10" />
+                                <div className="hidden md:block absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-500/10 to-transparent pointer-events-none -z-10" />
                                 {children}
                             </div>
                         </motion.div>
