@@ -16,7 +16,7 @@ const MealModal = ({ isOpen, onClose, title, children }) => {
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
                         onClick={onClose}
-                        className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md"
+                        className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm"
                     />
 
                     {/* ── Dialog Wrapper ── */}
@@ -26,38 +26,24 @@ const MealModal = ({ isOpen, onClose, title, children }) => {
                             initial={{ opacity: 0, scale: 0.94, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.94, y: 20 }}
-                            transition={{ type: 'spring', duration: 0.4, bounce: 0.22 }}
-                            className="w-full max-w-lg pointer-events-auto relative overflow-hidden rounded-3xl"
+                            transition={{ type: 'spring', duration: 0.3, bounce: 0.15 }}
+                            className="w-full max-w-lg pointer-events-auto relative overflow-hidden rounded-3xl border border-white/10 dark:border-white/5"
                             style={{
-                                boxShadow:
-                                    '0 0 0 1px rgba(255,255,255,0.12), 0 25px 60px rgba(0,0,0,0.5), 0 0 80px rgba(59,130,246,0.08)',
+                                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
                             }}
                         >
                             {/* Glass shell */}
                             <div
                                 className="absolute inset-0 rounded-3xl"
                                 style={{
-                                    background: 'var(--glass-bg, linear-gradient(135deg, rgba(15,20,40,0.88) 0%, rgba(20,28,52,0.82) 100%))',
-                                    backdropFilter: 'blur(28px)',
-                                    WebkitBackdropFilter: 'blur(28px)',
+                                    background: 'var(--glass-bg, linear-gradient(135deg, rgba(15,20,40,0.92) 0%, rgba(20,28,52,0.88) 100%))',
+                                    backdropFilter: 'blur(12px)',
+                                    WebkitBackdropFilter: 'blur(12px)',
                                 }}
                             />
 
                             {/* Ambient top glow */}
-                            <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-72 h-32 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
-
-                            {/* Gradient accent border */}
-                            <div
-                                className="absolute inset-0 rounded-3xl pointer-events-none"
-                                style={{
-                                    background: 'linear-gradient(135deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.0) 100%)',
-                                    mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                                    WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                                    maskComposite: 'exclude',
-                                    WebkitMaskComposite: 'destination-out',
-                                    padding: '1px',
-                                }}
-                            />
+                            <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-72 h-32 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/20 to-transparent pointer-events-none" />
 
                             {/* ── Header ── */}
                             <div className="relative z-10 flex items-center justify-between px-6 pt-5 pb-4 border-b border-white/10">
@@ -85,7 +71,7 @@ const MealModal = ({ isOpen, onClose, title, children }) => {
                             {/* ── Body ── */}
                             <div className="relative z-10 px-6 py-5 max-h-[82vh] overflow-y-auto">
                                 {/* Subtle inner glow */}
-                                <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary/6 rounded-full blur-3xl pointer-events-none -z-10" />
+                                <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 to-transparent pointer-events-none -z-10" />
                                 {children}
                             </div>
                         </motion.div>

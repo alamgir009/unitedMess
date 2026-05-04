@@ -117,7 +117,7 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
     };
 
     return (
-        <div className="relative w-full overflow-hidden rounded-[2.5rem] border border-white/20 bg-white/40 p-1 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] backdrop-blur-3xl dark:border-white/10 dark:bg-slate-950/40 dark:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.4)]">
+        <div className="relative w-full overflow-hidden rounded-[2.5rem] border border-white/20 bg-white/40 p-1 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-slate-950/40 dark:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.4)]">
             {/* Liquid Ambient Background */}
             <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,rgba(120,119,198,0.15),transparent_50%),radial-gradient(ellipse_at_bottom_left,rgba(244,114,182,0.15),transparent_50%)] dark:bg-[radial-gradient(ellipse_at_top_right,rgba(120,119,198,0.2),transparent_50%),radial-gradient(ellipse_at_bottom_left,rgba(244,114,182,0.2),transparent_50%)]" />
 
@@ -169,7 +169,7 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                                         ? `bg-white/80 dark:bg-slate-800/80 shadow-lg shadow-${option.theme}-500/10 ${option.activeBorder}` 
                                         : 'border-black/5 bg-white/40 hover:bg-white/60 dark:border-white/5 dark:bg-white/5 dark:hover:bg-white/10'
                                     } 
-                                    backdrop-blur-xl ${(isVoting || isLoading) ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+                                    backdrop-blur-md ${(isVoting || isLoading) ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
                             >
                                 {/* Active State Gradient Overlay */}
                                 <AnimatePresence>

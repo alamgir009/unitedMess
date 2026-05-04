@@ -208,9 +208,9 @@ const MealPage = () => {
             <div className="relative min-h-[80vh]">
 
                 {/* Ambient orbs */}
-                <div className="pointer-events-none absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-primary/10 blur-[120px] -z-10" />
-                <div className="pointer-events-none absolute bottom-10 left-0 w-[400px] h-[400px] rounded-full bg-secondary-400/8 blur-[100px] -z-10" />
-                <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full bg-accent/5 blur-[80px] -z-10" />
+                <div className="pointer-events-none absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/20 via-primary/5 to-transparent -z-10" />
+                <div className="pointer-events-none absolute bottom-10 left-0 w-[400px] h-[400px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-secondary-400/10 via-secondary-400/5 to-transparent -z-10" />
+                <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-accent/10 via-accent/5 to-transparent -z-10" />
 
                 <div className="relative z-10 space-y-8">
 
@@ -288,7 +288,7 @@ const MealPage = () => {
                         className="rounded-[32px] p-6 sm:p-8 bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-2xl relative overflow-hidden"
                     >
                         {/* Decorative gradient */}
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-10" />
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 to-transparent -z-10" />
                         <MealPolling selectedDate={pollDate} />
                     </motion.div>
 
@@ -314,8 +314,7 @@ const MealPage = () => {
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.18 }}
-                        className="group relative flex flex-col rounded-[18px] bg-white/60 dark:bg-slate-900/40 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden shadow-lg hover:shadow-xl dark:shadow-black/40 ${cfg.glow} transition-all duration-300 hover:-translate-y-1 before:absolute before:inset-x-12 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/60 dark:before:via-white/20 before:to-transparent after:absolute after:inset-x-12 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-black/20 dark:after:via-black/60 after:to-transparent"
-                    // className="rounded-3xl border border-white/15 dark:border-white/8 bg-card/60 backdrop-blur-xl overflow-hidden shadow-md"
+                        className="group relative flex flex-col rounded-[18px] bg-white/60 dark:bg-slate-900/40 backdrop-blur-md border border-black/5 dark:border-white/10 overflow-hidden shadow-lg hover:shadow-xl dark:shadow-black/40 transition-all duration-300 hover:-translate-y-1 before:absolute before:inset-x-12 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/60 dark:before:via-white/20 before:to-transparent after:absolute after:inset-x-12 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-black/20 dark:after:via-black/60 after:to-transparent"
                     >
                         {/* Top bar */}
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-4">
