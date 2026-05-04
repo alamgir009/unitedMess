@@ -108,13 +108,12 @@ const NotificationBell = () => {
                             exit={{   scale: 0.4, opacity: 0 }}
                             transition={{ type: 'spring', stiffness: 500, damping: 22 }}
                             className="
-                                absolute -top-1 -right-1
-                                flex items-center justify-center
-                                min-w-[18px] h-[18px] px-1
-                                rounded-full text-[9px] font-bold font-mono text-white
-                                bg-gradient-to-br from-red-500 to-rose-600
+                                absolute top-0 right-0 -translate-y-[2px] translate-x-[2px]
+                                flex h-5 min-w-[20px] items-center justify-center px-1.5
+                                rounded-full bg-gradient-to-br from-red-500 to-rose-600
+                                text-[10px] font-bold leading-none text-white
                                 ring-2 ring-white dark:ring-slate-900
-                                shadow-md
+                                shadow-sm
                             "
                         >
                             {badgeLabel}
