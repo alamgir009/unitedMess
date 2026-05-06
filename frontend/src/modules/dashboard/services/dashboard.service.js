@@ -78,7 +78,7 @@ const getUserRecentActivity = async () => {
             title: `Meal Entry`,
             description: desc.join(' · ') || 'Regular meal entry',
             amount: `${m.mealCount || 0} Meal${m.mealCount > 1 || m.mealCount === 0 ? 's' : ''}${m.guestCount ? ` + ${m.guestCount} Guest` : ''}`,
-            datetime: m.date || m.createdAt,
+            datetime: m.createdAt || m.date,
             raw: m,
         };
     });
@@ -89,7 +89,7 @@ const getUserRecentActivity = async () => {
         title: `Market Purchase`,
         description: mk.items || mk.description || 'Grocery purchase',
         amount: `₹${mk.amount || 0}`,
-        datetime: mk.date || mk.createdAt,
+        datetime: mk.createdAt || mk.date,
         raw: mk,
     }));
 

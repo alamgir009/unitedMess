@@ -155,7 +155,14 @@ const MealForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentUse
         e.preventDefault();
         const baseCount = typeCountMap[formData.type] ?? 0;
         const guestAdd = formData.isGuestMeal ? (formData.guestCount || 0) : 0;
-        onSubmit({ ...formData, mealCount: baseCount + guestAdd });
+        
+        // If selected date is today, use full timestamp to preserve exact entry time
+        let submitDate = formData.date;
+        if (formData.date === format(new Date(), 'yyyy-MM-dd')) {
+            submitDate = new Date().toISOString();
+        }
+
+        onSubmit({ ...formData, date: submitDate, mealCount: baseCount + guestAdd });
     };
 
     // Preview badge

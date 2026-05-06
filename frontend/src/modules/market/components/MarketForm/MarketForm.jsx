@@ -86,8 +86,16 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
 
     const handleSubmit = (e) => {
         e.preventDefault();
+
+        // If selected date is today, use full timestamp to preserve exact entry time
+        let submitDate = formData.date;
+        if (formData.date === format(new Date(), 'yyyy-MM-dd')) {
+            submitDate = new Date().toISOString();
+        }
+
         onSubmit({
             ...formData,
+            date: submitDate,
             amount: parseFloat(formData.amount) || 0,
         });
     };
