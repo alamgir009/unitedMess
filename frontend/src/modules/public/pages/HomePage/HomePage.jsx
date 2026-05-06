@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { useState, useEffect, useRef, memo } from 'react';
+import { useState, useEffect, useRef, memo, useMemo } from 'react';
 
 // ─────────────────────────────────────────────────────────────
 // Tokens
@@ -98,8 +98,7 @@ const features = [
     tone: 'blue',
     badge: 'Analytics',
     title: 'Live intelligence dashboard',
-    description:
-      'Real-time tracking of expenses, meal counts, contribution flow, and balance trends — presented in a finance-grade visual layer built for instant decisions.',
+    description: 'Real-time tracking of expenses, meal counts, contribution flow, and balance trends — presented in a finance-grade visual layer built for instant decisions.',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-6 w-6">
         <path strokeLinecap="round" strokeLinejoin="round" d="M4 19V5m0 14h16M8 15v-3m4 3V8m4 7v-5" />
@@ -110,8 +109,7 @@ const features = [
     tone: 'violet',
     badge: 'Security',
     title: 'Enterprise-grade access control',
-    description:
-      "Granular role-based permissions for admins, managers, and members — with audit trails and secure authentication flows you'd expect from a top-tier fintech product.",
+    description: "Granular role-based permissions for admins, managers, and members — with audit trails and secure authentication flows you'd expect from a top-tier fintech product.",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-6 w-6">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -122,8 +120,7 @@ const features = [
     tone: 'emerald',
     badge: 'Operations',
     title: 'Fast member operations',
-    description:
-      'Manage meals, deposits, statuses, and announcements from one clean dashboard. The information hierarchy stays uncluttered even when data gets dense.',
+    description: 'Manage meals, deposits, statuses, and announcements from one clean dashboard. The information hierarchy stays uncluttered even when data gets dense.',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-6 w-6">
         <circle cx="12" cy="8" r="4" /><path strokeLinecap="round" strokeLinejoin="round" d="M6 20a6 6 0 0 1 12 0" />
@@ -134,8 +131,7 @@ const features = [
     tone: 'amber',
     badge: 'Transparency',
     title: 'Fairness-first billing engine',
-    description:
-      'Accurate, auditable cost allocation with clean settlement summaries. Every ₹ is traceable — building the trust that keeps communities together longer.',
+    description: 'Accurate, auditable cost allocation with clean settlement summaries. Every ₹ is traceable — building the trust that keeps communities together longer.',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-6 w-6">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
@@ -146,8 +142,7 @@ const features = [
     tone: 'rose',
     badge: 'Notifications',
     title: 'Smart alert system',
-    description:
-      'Push and in-app notifications for balance changes, meal updates, deposit confirmations, and announcements. Nothing slips through the cracks.',
+    description: 'Push and in-app notifications for balance changes, meal updates, deposit confirmations, and announcements. Nothing slips through the cracks.',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-6 w-6">
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0h6z" />
@@ -158,8 +153,7 @@ const features = [
     tone: 'sky',
     badge: 'Cross-device',
     title: 'Fully responsive experience',
-    description:
-      'Pixel-perfect layouts across mobile, tablet, and desktop with adaptive UI patterns. Dark and light mode both feel premium — not like an afterthought.',
+    description: 'Pixel-perfect layouts across mobile, tablet, and desktop with adaptive UI patterns. Dark and light mode both feel premium — not like an afterthought.',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-6 w-6">
         <rect x="5" y="2" width="14" height="20" rx="2" /><path strokeLinecap="round" d="M12 18h.01" />
@@ -337,141 +331,169 @@ const FeatureCard = memo(({ item, index }) => {
 // ─────────────────────────────────────────────────────────────
 // HeroCard — floating dashboard preview
 // ─────────────────────────────────────────────────────────────
-const HeroCard = memo(() => (
-  <div className="relative">
-    <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-blue-500/20 via-transparent to-violet-500/20 blur-3xl sm:-inset-6 sm:rounded-[3rem]" />
-    <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-      className="relative overflow-hidden rounded-2xl border border-border/60 bg-card/80 shadow-[0_20px_60px_-20px_rgba(15,23,42,0.35)] dark:shadow-[0_20px_60px_-20px_rgba(0,0,0,0.6)] backdrop-blur-2xl sm:rounded-[2.25rem] sm:shadow-[0_40px_100px_-30px_rgba(15,23,42,0.4)] dark:sm:shadow-[0_40px_100px_-30px_rgba(0,0,0,0.7)]"
-      style={{ willChange: 'transform, opacity' }}
-    >
-      {/* Card header */}
-      <div className="flex items-center justify-between border-b border-border/50 px-4 py-3 sm:px-6 sm:py-4">
-        <div className="flex items-center gap-2">
-          <div className="h-2.5 w-2.5 rounded-full bg-red-400/80 sm:h-3 sm:w-3" />
-          <div className="h-2.5 w-2.5 rounded-full bg-yellow-400/80 sm:h-3 sm:w-3" />
-          <div className="h-2.5 w-2.5 rounded-full bg-emerald-400/80 sm:h-3 sm:w-3" />
-        </div>
-        <div className="flex items-center gap-1.5">
-          <LiveDot />
-          <span className="text-[10px] font-semibold text-emerald-500 sm:text-[11px]">Live</span>
-        </div>
-      </div>
+const HeroCard = memo(() => {
+  // ── Dynamically get today's index for the chart (M T W T F S S) ──
+  const todayIndex = useMemo(() => {
+    const day = new Date().getDay(); // 0=Sun, 1=Mon, …, 6=Sat
+    // Mapping: [Sun->6, Mon->0, Tue->1, Wed->2, Thu->3, Fri->4, Sat->5]
+    const map = [6, 0, 1, 2, 3, 4, 5];
+    return map[day];
+  }, []);
 
-      <div className="space-y-3 p-3 sm:space-y-4 sm:p-5">
-        {/* Top photo + summary row */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-5 sm:gap-4">
-          <div className="overflow-hidden rounded-xl sm:col-span-3 sm:rounded-2xl">
-            <img
-              src="https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=800&q=80"
-              alt="Mess dining"
-              className="h-40 w-full object-cover sm:h-44"
-              loading="eager"
-            />
+  return (
+    <div className="relative">
+      <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-blue-500/20 via-transparent to-violet-500/20 blur-3xl sm:-inset-6 sm:rounded-[3rem]" />
+      <motion.div
+        initial={{ opacity: 0, y: 20, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+        className="relative overflow-hidden rounded-2xl border border-border/60 bg-card/80 shadow-[0_20px_60px_-20px_rgba(15,23,42,0.35)] dark:shadow-[0_20px_60px_-20px_rgba(0,0,0,0.6)] backdrop-blur-2xl sm:rounded-[2.25rem] sm:shadow-[0_40px_100px_-30px_rgba(15,23,42,0.4)] dark:sm:shadow-[0_40px_100px_-30px_rgba(0,0,0,0.7)]"
+        style={{ willChange: 'transform, opacity' }}
+      >
+        {/* Card header */}
+        <div className="flex items-center justify-between border-b border-border/50 px-4 py-3 sm:px-6 sm:py-4">
+          <div className="flex items-center gap-2">
+            <div className="h-2.5 w-2.5 rounded-full bg-red-400/80 sm:h-3 sm:w-3" />
+            <div className="h-2.5 w-2.5 rounded-full bg-yellow-400/80 sm:h-3 sm:w-3" />
+            <div className="h-2.5 w-2.5 rounded-full bg-emerald-400/80 sm:h-3 sm:w-3" />
           </div>
-          <div className="flex flex-col gap-2 sm:col-span-2 sm:gap-3">
-            <div className="flex-1 rounded-xl border border-border/60 bg-background/70 p-3 sm:rounded-2xl sm:p-4">
-              <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[10px]">Monthly total</p>
-              <p className="mt-1 text-xl font-black tracking-tight text-foreground sm:mt-2 sm:text-2xl">₹18,420</p>
-              <div className="mt-1 flex items-center gap-1 sm:mt-2">
-                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400 sm:text-[10px]">↑ 12.4%</span>
-              </div>
-            </div>
-            <div className="flex-1 rounded-xl border border-border/60 bg-background/70 p-3 sm:rounded-2xl sm:p-4">
-              <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[10px]">Meal rate</p>
-              <p className="mt-1 text-xl font-black tracking-tight text-foreground sm:mt-2 sm:text-2xl">94%</p>
-              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted sm:mt-2">
-                <div className="h-full w-[94%] rounded-full bg-gradient-to-r from-blue-500 to-violet-500" />
-              </div>
-            </div>
+          <div className="flex items-center gap-1.5">
+            <LiveDot />
+            <span className="text-[10px] font-semibold text-emerald-500 sm:text-[11px]">Live</span>
           </div>
         </div>
 
-        {/* Mini chart bars */}
-        <div className="rounded-xl border border-border/60 bg-background/60 p-3 sm:rounded-2xl sm:p-4">
-          <div className="mb-2 flex items-center justify-between sm:mb-3">
-            <span className="text-[10px] font-semibold text-muted-foreground sm:text-[11px]">Weekly expense trend</span>
-            <span className="text-[10px] font-semibold text-foreground sm:text-[11px]">Apr 2025</span>
-          </div>
-          <div className="flex h-14 items-end gap-1.5 sm:h-16 sm:gap-2">
-            {[55, 72, 48, 88, 65, 91, 78].map((h, i) => (
-              <motion.div
-                key={i}
-                initial={{ height: 0 }}
-                animate={{ height: `${h}%` }}
-                transition={{ duration: 0.5, delay: 0.3 + i * 0.05, ease: [0.16, 1, 0.3, 1] }}
-                className={`flex-1 rounded-t-md ${i === 5 ? 'bg-gradient-to-t from-blue-600 to-violet-500' : 'bg-muted/80'}`}
-                style={{ willChange: 'height' }}
+        <div className="space-y-3 p-3 sm:space-y-4 sm:p-5">
+          {/* Top photo + summary row */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-5 sm:gap-4">
+            <div className="overflow-hidden rounded-xl sm:col-span-3 sm:rounded-2xl">
+              <img
+                src="https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=800&q=80"
+                alt="Mess dining"
+                className="h-40 w-full object-cover sm:h-44"
+                loading="eager"
               />
+            </div>
+            <div className="flex flex-col gap-2 sm:col-span-2 sm:gap-3">
+              <div className="flex-1 rounded-xl border border-border/60 bg-background/70 p-3 sm:rounded-2xl sm:p-4">
+                <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[10px]">Monthly total</p>
+                <p className="mt-1 text-xl font-black tracking-tight text-foreground sm:mt-2 sm:text-2xl">₹18,420</p>
+                <div className="mt-1 flex items-center gap-1 sm:mt-2">
+                  <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400 sm:text-[10px]">↑ 12.4%</span>
+                </div>
+              </div>
+              <div className="flex-1 rounded-xl border border-border/60 bg-background/70 p-3 sm:rounded-2xl sm:p-4">
+                <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[10px]">Meal rate</p>
+                <p className="mt-1 text-xl font-black tracking-tight text-foreground sm:mt-2 sm:text-2xl">94%</p>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted sm:mt-2">
+                  <div className="h-full w-[94%] rounded-full bg-gradient-to-r from-blue-500 to-violet-500" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Mini chart bars — dynamic today highlight */}
+          <div className="rounded-xl border border-border/60 bg-background/60 p-3 sm:rounded-2xl sm:p-4">
+            <div className="mb-2 flex items-center justify-between sm:mb-3">
+              <span className="text-[10px] font-semibold text-muted-foreground sm:text-[11px]">Weekly expense trend</span>
+              <span className="text-[10px] font-semibold text-foreground sm:text-[11px]">Apr 2025</span>
+            </div>
+            <div className="flex h-14 items-end gap-1.5 sm:h-16 sm:gap-2">
+              {[55, 72, 48, 88, 65, 91, 78].map((h, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ height: 0 }}
+                  animate={{ height: `${h}%` }}
+                  transition={{ duration: 0.5, delay: 0.3 + i * 0.05, ease: [0.16, 1, 0.3, 1] }}
+                  className={`flex-1 rounded-t-md ${
+                    i === todayIndex
+                      ? 'bg-gradient-to-t from-blue-600 to-violet-500'
+                      : 'bg-muted/80'
+                  }`}
+                  style={{ willChange: 'height' }}
+                />
+              ))}
+            </div>
+            <div className="mt-2 flex justify-between text-[9px] font-medium text-muted-foreground">
+              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+                <span
+                  key={i}
+                  className={`relative ${
+                    i === todayIndex
+                      ? 'text-foreground font-bold'
+                      : ''
+                  }`}
+                >
+                  {d}
+                  {i === todayIndex && (
+                    <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-gradient-to-r from-blue-500 to-violet-500" />
+                  )}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Settlement row */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {[
+              { label: 'Avg. meal cost', value: '₹84.30' },
+              { label: 'Members', value: '34' },
+              { label: 'Pending', value: '6 dues' },
+            ].map(({ label, value }) => (
+              <div key={label} className="rounded-lg border border-border/60 bg-background/60 p-2.5 text-center sm:rounded-xl sm:p-3">
+                <p className="text-[8px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-[9px]">{label}</p>
+                <p className="mt-1 text-xs font-bold text-foreground sm:text-sm">{value}</p>
+              </div>
             ))}
           </div>
-          <div className="mt-2 flex justify-between text-[9px] font-medium text-muted-foreground">
-            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => <span key={i}>{d}</span>)}
-          </div>
         </div>
+      </motion.div>
 
-        {/* Settlement row */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-3">
-          {[
-            { label: 'Avg. meal cost', value: '₹84.30' },
-            { label: 'Members', value: '34' },
-            { label: 'Pending', value: '6 dues' },
-          ].map(({ label, value }) => (
-            <div key={label} className="rounded-lg border border-border/60 bg-background/60 p-2.5 text-center sm:rounded-xl sm:p-3">
-              <p className="text-[8px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-[9px]">{label}</p>
-              <p className="mt-1 text-xs font-bold text-foreground sm:text-sm">{value}</p>
+      {/* Floating notification cards */}
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6, delay: 0.7 }}
+        className="absolute -right-2 top-16 hidden xl:block"
+        style={{ willChange: 'transform, opacity' }}
+      >
+        <div className="w-48 rounded-2xl border border-border/70 bg-card/95 p-3 shadow-xl backdrop-blur-xl sm:w-52 sm:p-4">
+          <div className="mb-2 flex items-center gap-2">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-500">
+              <svg viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2" className="h-3 w-3">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2 8l4 4 8-8" />
+              </svg>
             </div>
-          ))}
-        </div>
-      </div>
-    </motion.div>
-
-    {/* Floating notification cards */}
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.6, delay: 0.7 }}
-      className="absolute -right-2 top-16 hidden xl:block"
-      style={{ willChange: 'transform, opacity' }}
-    >
-      <div className="w-48 rounded-2xl border border-border/70 bg-card/95 p-3 shadow-xl backdrop-blur-xl sm:w-52 sm:p-4">
-        <div className="mb-2 flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-500">
-            <svg viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2" className="h-3 w-3">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2 8l4 4 8-8" />
-            </svg>
+            <span className="text-xs font-semibold text-foreground">Deposit confirmed</span>
           </div>
-          <span className="text-xs font-semibold text-foreground">Deposit confirmed</span>
+          <p className="text-[11px] text-muted-foreground">Rahul deposited <span className="font-semibold text-foreground">₹2,500</span></p>
+          <p className="mt-1 text-[10px] text-muted-foreground/60">2 min ago</p>
         </div>
-        <p className="text-[11px] text-muted-foreground">Rahul deposited <span className="font-semibold text-foreground">₹2,500</span></p>
-        <p className="mt-1 text-[10px] text-muted-foreground/60">2 min ago</p>
-      </div>
-    </motion.div>
+      </motion.div>
 
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.6, delay: 0.9 }}
-      className="absolute -left-2 bottom-20 hidden xl:block"
-      style={{ willChange: 'transform, opacity' }}
-    >
-      <div className="w-48 rounded-2xl border border-border/70 bg-card/95 p-3 shadow-xl backdrop-blur-xl sm:w-52 sm:p-4">
-        <div className="mb-2 flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-indigo-500">
-            <svg viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2" className="h-3 w-3">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 2v4l3 3" /><circle cx="8" cy="8" r="6" />
-            </svg>
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6, delay: 0.9 }}
+        className="absolute -left-2 bottom-20 hidden xl:block"
+        style={{ willChange: 'transform, opacity' }}
+      >
+        <div className="w-48 rounded-2xl border border-border/70 bg-card/95 p-3 shadow-xl backdrop-blur-xl sm:w-52 sm:p-4">
+          <div className="mb-2 flex items-center gap-2">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-indigo-500">
+              <svg viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2" className="h-3 w-3">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 2v4l3 3" /><circle cx="8" cy="8" r="6" />
+              </svg>
+            </div>
+            <span className="text-xs font-semibold text-foreground">Settlement ready</span>
           </div>
-          <span className="text-xs font-semibold text-foreground">Settlement ready</span>
+          <p className="text-[11px] text-muted-foreground">March report available</p>
+          <p className="mt-1 text-[10px] text-muted-foreground/60">Just now</p>
         </div>
-        <p className="text-[11px] text-muted-foreground">March report available</p>
-        <p className="mt-1 text-[10px] text-muted-foreground/60">Just now</p>
-      </div>
-    </motion.div>
-  </div>
-));
+      </motion.div>
+    </div>
+  );
+});
 
 // ─────────────────────────────────────────────────────────────
 // Scrolling ticker
