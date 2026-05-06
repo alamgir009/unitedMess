@@ -11,6 +11,9 @@ import PendingApprovalPage from '@/modules/auth/pages/PendingApprovalPage/Pendin
 
 import HomePage from '@/modules/public/pages/HomePage/HomePage';
 import AboutPage from '@/modules/public/pages/AboutPage/AboutPage';
+import PrivacyPage from '@/modules/public/pages/PrivacyPage/PrivacyPage';
+import TermsPage from '@/modules/public/pages/TermsPage/TermsPage';
+import ContactPage from '@/modules/public/pages/ContactPage/ContactPage';
 import FoodGalleryPage from '@/modules/public/pages/FoodGalleryPage/FoodGalleryPage';
 import NotFoundPage from '@/modules/public/pages/NotFoundPage/NotFoundPage';
 
@@ -32,6 +35,9 @@ const AppRoutes = () => {
             <Route element={<PublicLayout />}>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/about" element={<AboutPage />} />
+                <Route path="/privacy" element={<PrivacyPage />} />
+                <Route path="/terms" element={<TermsPage />} />
+                <Route path="/contact" element={<ContactPage />} />
                 <Route path="/food-gallery" element={<FoodGalleryPage />} />
             </Route>
 
