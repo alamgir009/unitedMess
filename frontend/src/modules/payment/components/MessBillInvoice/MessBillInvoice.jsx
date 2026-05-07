@@ -99,7 +99,7 @@ const MessBillInvoice = ({
     isPaying,
     isSendingEmail,
     onSendEmail,
-    paymentStatus = 'pending',   // 'pending' | 'success' | 'failed' | 'refunded'
+    paymentStatus = 'pending',   // 'pending' | 'success' | 'partially_paid' | 'failed' | 'refunded'
     paymentRecord,
 }) => {
     if (!data) return null;
@@ -140,6 +140,13 @@ const MessBillInvoice = ({
     const isRefund = useMemo(() => finalPayable < 0, [finalPayable]);
     const displayAmt = useMemo(() => Math.abs(finalPayable), [finalPayable]);
     const isPaid = useMemo(() => paymentStatus === 'success', [paymentStatus]);
+    const isPartiallyPaid = useMemo(() => paymentStatus === 'partially_paid', [paymentStatus]);
+
+    // Partial payment info from paymentRecord
+    const paidAmount      = paymentRecord?.paidAmount      ?? 0;
+    const totalPayable    = paymentRecord?.totalPayable    ?? finalPayable;
+    const remainingAmount = paymentRecord?.remainingAmount ?? Math.max(0, totalPayable - paidAmount);
+    const paidPercent     = totalPayable > 0 ? Math.min(100, Math.round((paidAmount / totalPayable) * 100)) : 0;
 
     // Safe action handlers
     const handlePayNow = () => {
@@ -258,26 +265,34 @@ const MessBillInvoice = ({
                     </div>
 
                     {/* Status badge */}
-                    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${isPaid
+                    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
+                        isPaid
                             ? 'border-emerald-200 dark:border-emerald-800'
-                            : isRefund
-                                ? 'border-emerald-200 dark:border-emerald-800'
-                                : 'border-amber-200 dark:border-amber-800'
+                            : isPartiallyPaid
+                                ? 'border-amber-200 dark:border-amber-700'
+                                : isRefund
+                                    ? 'border-emerald-200 dark:border-emerald-800'
+                                    : 'border-amber-200 dark:border-amber-800'
                         }`}>
                         {isPaid ? (
                             <HiOutlineCheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        ) : isPartiallyPaid ? (
+                            <HiOutlineCurrencyRupee className="w-4 h-4 text-amber-500 dark:text-amber-400" />
                         ) : isRefund ? (
                             <HiOutlineArrowTrendingDown className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                         ) : (
                             <HiOutlineCurrencyRupee className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                         )}
-                        <span className={`text-xs font-semibold ${isPaid
+                        <span className={`text-xs font-semibold ${
+                            isPaid
                                 ? 'text-emerald-600 dark:text-emerald-400'
-                                : isRefund
-                                    ? 'text-emerald-600 dark:text-emerald-400'
-                                    : 'text-amber-600 dark:text-amber-400'
+                                : isPartiallyPaid
+                                    ? 'text-amber-500 dark:text-amber-400'
+                                    : isRefund
+                                        ? 'text-emerald-600 dark:text-emerald-400'
+                                        : 'text-amber-600 dark:text-amber-400'
                             }`}>
-                            {isPaid ? 'Paid' : isRefund ? 'Refund' : 'Due'}
+                            {isPaid ? 'Paid' : isPartiallyPaid ? 'Partially Paid' : isRefund ? 'Refund' : 'Due'}
                         </span>
                     </div>
                 </div>
@@ -295,6 +310,61 @@ const MessBillInvoice = ({
                                 </p>
                             </div>
                         </div>
+
+                    ) : isPartiallyPaid ? (
+                        /* ── Partial payment state ── */
+                        <div className="flex-1 flex flex-col gap-3">
+                            {/* Progress bar */}
+                            <div className="w-full">
+                                <div className="flex justify-between text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
+                                    <span>Paid: ₹{fmt(paidAmount)}</span>
+                                    <span>{paidPercent}%</span>
+                                </div>
+                                <div className="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${paidPercent}%` }}
+                                        transition={{ duration: 0.8, ease: 'easeOut' }}
+                                        className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500"
+                                    />
+                                </div>
+                            </div>
+                            {/* Remaining amount notice */}
+                            <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-amber-700/40">
+                                <HiOutlineCurrencyRupee className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                                <div className="flex-1">
+                                    <p className="text-sm font-bold text-amber-800 dark:text-amber-300">
+                                        ₹{fmt(remainingAmount)} remaining
+                                    </p>
+                                    <p className="text-xs text-amber-700/70 dark:text-amber-400/60 mt-0.5">
+                                        Please pay the remaining balance to fully settle your mess bill.
+                                    </p>
+                                </div>
+                            </div>
+                            {/* Pay remaining button */}
+                            {typeof onPayNow === 'function' && (
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    disabled={!!isPaying}
+                                    onClick={() => onPayNow(remainingAmount, 'mess_bill')}
+                                    className="w-full flex items-center justify-center gap-2 py-3 px-5 rounded-lg text-sm font-semibold text-white
+                                        bg-amber-500 hover:bg-amber-600
+                                        shadow-[0_6px_20px_rgba(245,158,11,0.35),inset_0_1px_0_rgba(255,255,255,0.2)]
+                                        hover:shadow-[0_10px_30px_rgba(245,158,11,0.45)]
+                                        disabled:opacity-60 disabled:cursor-not-allowed
+                                        transition-all duration-300"
+                                >
+                                    {isPaying ? (
+                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    ) : (
+                                        <HiOutlineCurrencyRupee className="w-5 h-5" />
+                                    )}
+                                    <span>{isPaying ? 'Processing…' : `Pay Remaining ₹${fmt(remainingAmount)}`}</span>
+                                </motion.button>
+                            )}
+                        </div>
+
                     ) : isRefund ? (
                         <div className="flex-1 flex items-start gap-3 p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
                             <HiOutlineCheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />

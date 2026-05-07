@@ -214,19 +214,55 @@ const PaymentPage = () => {
     }, []);
 
     const handleViewInvoice = useCallback((payment) => {
-        if (!payment || !payment.month) return;
-        const parts = payment.month.split(' '); // e.g., "April 2024"
+        if (!payment) return;
+
+        // Prefer a direct invoice month string: "April 2024", "May 2026", etc.
+        const monthStr = (payment.month || '').trim();
+        if (!monthStr) {
+            toast.error('Unable to open invoice: payment has no month information.');
+            return;
+        }
+
+        // Strategy 1: "Month YYYY" format (most common in this app)
+        const parts = monthStr.split(/\s+/);
         if (parts.length >= 2) {
-            const date = new Date(`${parts[0]} 1, ${parts[1]}`);
+            const date = new Date(`${parts[0]} 1, ${parts[parts.length - 1]}`);
             if (!isNaN(date.getTime())) {
                 setInvoiceModal({
                     open: true,
                     year: date.getFullYear(),
                     month: date.getMonth() + 1,
-                    monthName: payment.month,
+                    monthName: monthStr,
                 });
+                return;
             }
         }
+
+        // Strategy 2: "YYYY-MM" format
+        const isoMatch = monthStr.match(/^(\d{4})-(\d{1,2})$/);
+        if (isoMatch) {
+            setInvoiceModal({
+                open: true,
+                year: parseInt(isoMatch[1], 10),
+                month: parseInt(isoMatch[2], 10),
+                monthName: monthStr,
+            });
+            return;
+        }
+
+        // Fallback: try native Date parsing
+        const fallback = new Date(monthStr);
+        if (!isNaN(fallback.getTime())) {
+            setInvoiceModal({
+                open: true,
+                year: fallback.getFullYear(),
+                month: fallback.getMonth() + 1,
+                monthName: monthStr,
+            });
+            return;
+        }
+
+        toast.error(`Unable to open invoice: unrecognised month format "${monthStr}".`);
     }, []);
 
     /* ── CRUD ── */
@@ -479,12 +515,14 @@ const PaymentPage = () => {
                     />
                 </PaymentModal>
 
-                <MonthlyInvoiceModal 
+                <MonthlyInvoiceModal
                     isOpen={invoiceModal.open}
                     onClose={() => setInvoiceModal(prev => ({ ...prev, open: false }))}
                     year={invoiceModal.year}
                     month={invoiceModal.month}
                     monthName={invoiceModal.monthName}
+                    onPayNow={handleRazorpayCheckout}
+                    isPaying={isPaying}
                 />
             </div>
         </MainLayout>

@@ -3,6 +3,7 @@ const User = require('../models/User.model');
 const AppError = require('../utils/errors/AppError');
 const razorpayService = require('./razorpay.service');
 const emailService = require('./email.service');
+const { getBillingPeriod } = require('../utils/helpers/date.helper');
 
 // ─────────────────────────────────────────────────────────────
 // Constants
@@ -129,6 +130,14 @@ const createOnlinePaymentOrder = async (userId, amount, type) => {
 
     const amountInPaise = Math.round(amount * 100);
 
+    // ──────────────────────────────────────────────────────────────
+    // CRITICAL: Use getBillingPeriod() — NOT new Date() — so the
+    // payment is stamped with the BILLING month, not the calendar
+    // month. Example: paying on May 7 (days 1-10 → billing = April)
+    // must produce month = "April 2026", not "May 2026".
+    // ──────────────────────────────────────────────────────────────
+    const { monthName: billingMonthName } = getBillingPeriod();
+
     // Create Razorpay order first — if it fails, no DB record is created
     const order = await razorpayService.createOrder(amountInPaise);
 
@@ -136,10 +145,7 @@ const createOnlinePaymentOrder = async (userId, amount, type) => {
         user: userId,
         amount,
         paymentDate: new Date(),
-        month: new Date().toLocaleString('default', {
-            month: 'long',
-            year: 'numeric',
-        }),
+        month: billingMonthName,   // ← billing period month, not today's month
         type,
         status: 'pending',
         paymentMethod: 'razorpay',

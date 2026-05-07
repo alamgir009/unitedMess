@@ -73,21 +73,30 @@ const getInvoice = async (userId, month, year) => {
     // 1. Check if a finalized invoice already exists
     let invoice = await Invoice.findOne({ user: userId, month, year });
     if (invoice && invoice.isFinalized) {
-        // Refresh paidAmount from Payment records even if finalized? 
-        // Usually, yes, so they can pay an old invoice.
+        // Always refresh paidAmount from Payment records so even finalized
+        // invoices reflect the latest payments without manual re-finalization.
         const paid = await calculatePaidAmount(userId, month, year);
         if (paid !== invoice.paidAmount) {
             invoice.paidAmount = paid;
-            // Update status
-            if (invoice.paidAmount >= invoice.totalPayable) invoice.status = 'paid';
-            else if (invoice.paidAmount > 0) invoice.status = 'partially_paid';
-            else invoice.status = 'unpaid';
+            if (invoice.paidAmount >= invoice.totalPayable && invoice.totalPayable > 0) {
+                invoice.status = 'paid';
+            } else if (invoice.paidAmount > 0) {
+                invoice.status = 'partially_paid';
+            } else {
+                invoice.status = 'unpaid';
+            }
             await invoice.save();
         }
-        return invoice;
+        const invoiceObj = invoice.toObject ? invoice.toObject() : invoice;
+        invoiceObj.remainingAmount = Math.max(0, invoiceObj.totalPayable - invoiceObj.paidAmount);
+        return invoiceObj;
     }
 
     // 2. If not finalized, calculate the current (dynamic) state
+    // Always re-sync paidAmount even for non-finalized invoices so the UI
+    // reflects payments made after the invoice document was created.
+    const livePaidAmount = await calculatePaidAmount(userId, month, year);
+
     const user = await User.findById(userId).lean();
     if (!user) throw new AppError('User not found', 404);
 
@@ -155,7 +164,7 @@ const getInvoice = async (userId, month, year) => {
         totalBill: Number(totalBill.toFixed(2)),
         dueCarryOver: Number(Math.max(0, dueCarryOver).toFixed(2)),
         totalPayable: Number((totalBill + Math.max(0, dueCarryOver)).toFixed(2)),
-        paidAmount: await calculatePaidAmount(userId, month, year),
+        paidAmount: livePaidAmount,
         isFinalized: false
     };
 
@@ -165,12 +174,35 @@ const getInvoice = async (userId, month, year) => {
     if (invoice) {
         if (!invoice.isFinalized) {
             Object.assign(invoice, invoiceData);
+            // Sync payment status for unfinalized invoices
+            if (invoice.paidAmount >= invoice.totalPayable && invoice.totalPayable > 0) {
+                invoice.status = 'paid';
+            } else if (invoice.paidAmount > 0) {
+                invoice.status = 'partially_paid';
+            } else {
+                invoice.status = 'unpaid';
+            }
             await invoice.save();
         }
-        return invoice;
+        // Attach computed remainingAmount for the UI (not persisted)
+        const invoiceObj = invoice.toObject ? invoice.toObject() : invoice;
+        invoiceObj.remainingAmount = Math.max(0, invoiceObj.totalPayable - invoiceObj.paidAmount);
+        return invoiceObj;
     }
 
-    return await Invoice.create(invoiceData);
+    // First-time creation — set initial status
+    const totalPayable = invoiceData.totalPayable;
+    if (invoiceData.paidAmount >= totalPayable && totalPayable > 0) {
+        invoiceData.status = 'paid';
+    } else if (invoiceData.paidAmount > 0) {
+        invoiceData.status = 'partially_paid';
+    } else {
+        invoiceData.status = 'unpaid';
+    }
+    const created = await Invoice.create(invoiceData);
+    const createdObj = created.toObject();
+    createdObj.remainingAmount = Math.max(0, createdObj.totalPayable - createdObj.paidAmount);
+    return createdObj;
 };
 
 /**

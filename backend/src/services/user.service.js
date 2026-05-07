@@ -624,12 +624,15 @@ const getPaybleAmountforGasBill = async (userId) => {
 
     if (!user) throw new AppError('User not found', 404);
 
-    // Dynamically calculate status from actual payment records
-    const currentMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+    // CRITICAL: use getBillingPeriod() — NOT new Date() — so the
+    // gas bill status check matches the BILLING month, not the current
+    // calendar month (important on days 1–10 of a new month).
+    const { monthName: billingMonthName } = getBillingPeriod();
+
     const completedGasAuth = await Payment.findOne({
         user: userId,
         status: 'completed',
-        month: currentMonth,
+        month: billingMonthName,
         type: 'gas_bill'
     }).lean();
 
