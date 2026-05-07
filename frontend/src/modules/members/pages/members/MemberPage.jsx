@@ -14,58 +14,67 @@ import {
    Stat Card
 ───────────────────────────────────────────── */
 const StatCard = ({ icon: Icon, label, value, subvalue, accent = false, loading = false, delay = 0 }) => {
-    const colorClasses = accent 
-        ? 'bg-gradient-to-br from-amber-500 to-orange-500 dark:from-amber-600 dark:to-orange-600 border-amber-400/60 dark:border-amber-500/40 text-white shadow-amber-500/25'
-        : 'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 text-slate-900 dark:text-white shadow-sm';
-
-    const iconBg = accent 
-        ? 'bg-white/20' 
-        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
-
     return (
         <motion.div
             initial={{ opacity: 0, y: 8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ delay, duration: 0.35 }}
-            className={`
-                relative flex items-center gap-3 min-w-[160px] px-4 py-3 rounded-2xl
-                border backdrop-blur-md overflow-hidden
-                shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1
-                flex-shrink-0
-                ${colorClasses}
-            `}
+            className={[
+                'group relative overflow-hidden rounded-2xl border p-3.5 text-left',
+                'transition-colors duration-200',
+                'min-h-[110px] sm:min-h-[120px] sm:p-4',
+                'backdrop-blur-md',
+                accent 
+                    ? 'border-transparent bg-white/95 shadow-[0_12px_32px_-8px_rgba(245,158,11,0.40)] ring-1 ring-amber-500/30 dark:bg-slate-900/90'
+                    : 'border-black/[0.06] bg-white/65 hover:bg-white/90 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.07]'
+            ].join(' ')}
         >
-            {/* Content */}
-            <div className="relative z-10 flex items-center gap-3 w-full">
-                <div className={`p-2 rounded-xl flex-shrink-0 ${iconBg}`}>
-                    <Icon className="w-4 h-4" />
-                </div>
-                <div className="min-w-0 flex flex-col justify-center">
-                    <p className={`text-[11px] font-bold uppercase tracking-widest leading-none truncate mb-1 ${accent ? 'text-amber-100' : 'text-slate-400 dark:text-slate-500'}`}>
-                        {label}
-                    </p>
-                    <div className="flex items-baseline gap-1.5">
-                        {loading ? (
-                            <span className={`h-5 w-16 rounded-full animate-pulse ${accent ? 'bg-amber-400/40' : 'bg-slate-100 dark:bg-slate-800'}`} />
-                        ) : (
-                            <>
-                                <p className="text-xl font-black leading-none tabular-nums">
-                                    {value}
-                                </p>
-                                {subvalue && (
-                                    <span className={`text-[10px] font-semibold ${accent ? 'text-amber-200' : 'text-slate-400 dark:text-slate-500'}`}>
-                                        {subvalue}
-                                    </span>
-                                )}
-                            </>
-                        )}
+            {accent && (
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-400/20 via-orange-500/20 to-rose-500/20" />
+            )}
+
+            <div className="relative z-10 flex h-full flex-col justify-between gap-3">
+                {/* top row: icon + label */}
+                <div className="flex items-start gap-2.5">
+                    <div
+                        className={[
+                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl',
+                            'transition-colors duration-200 sm:h-10 sm:w-10',
+                            accent ? 'bg-amber-500/10' : 'bg-black/[0.05] dark:bg-white/10',
+                        ].join(' ')}
+                    >
+                        <Icon
+                            className={[
+                                'h-4 w-4 sm:h-5 sm:w-5',
+                                accent ? 'text-amber-600 dark:text-amber-400' : 'text-foreground/65',
+                            ].join(' ')}
+                        />
+                    </div>
+                    <div className="min-w-0 mt-0.5">
+                        <h4 className="truncate text-[13px] font-semibold tracking-tight text-foreground sm:text-sm">
+                            {label}
+                        </h4>
                     </div>
                 </div>
-            </div>
 
-            {/* Glossy edges */}
-            <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/60 dark:via-white/20 to-transparent pointer-events-none" />
-            <div className="absolute inset-x-8 bottom-0 h-px bg-gradient-to-r from-transparent via-black/5 dark:via-black/5 to-transparent pointer-events-none" />
+                {/* bottom row: value */}
+                <div>
+                    {loading ? (
+                        <div className={`h-6 w-20 rounded-full animate-pulse ${accent ? 'bg-amber-500/30' : 'bg-black/[0.06] dark:bg-white/10'}`} />
+                    ) : (
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-2xl sm:text-3xl font-black tabular-nums text-foreground tracking-tight">
+                                {value}
+                            </span>
+                            {subvalue && (
+                                <span className="text-xs font-semibold text-muted-foreground tabular-nums">
+                                    {subvalue}
+                                </span>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
         </motion.div>
     );
 };
@@ -203,7 +212,7 @@ const MemberPage = () => {
                             which aggregates Meal and Market records for the active
                             billing period only (respects the 10th-day cutoff rule).
                         ── */}
-                        <div className="flex items-center gap-2.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none flex-shrink-0">
+                        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4 w-full lg:w-auto mt-4 lg:mt-0 flex-shrink-0">
                             <StatCard
                                 icon={Users}
                                 label="Active Members"
