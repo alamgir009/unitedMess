@@ -16,6 +16,21 @@ const LOCK_TIME_MS = 2 * 60 * 60 * 1000; // 2 hours
 async function register(userData) {
     const { email, password, name, phone } = userData;
 
+    // Validate name:
+    // Allows letters, spaces, apostrophes, and hyphens
+    // Examples:
+    // John Doe
+    // O'Connor
+    // Mary-Jane
+    const nameRegex = /^[A-Za-z]+([ '-][A-Za-z]+)*$/;
+
+    if (!name || !nameRegex.test(name.trim())) {
+        throw new AppError(
+            "Name can only contain letters, spaces, apostrophes, and hyphens",
+            400
+        );
+    }
+
     // Validate password strength (business logic)
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.isValid) {
@@ -30,7 +45,7 @@ async function register(userData) {
 
     // Create user
     const user = await User.create({
-        name,
+        name: name.trim(),
         email,
         password,
         phone,
@@ -42,7 +57,11 @@ async function register(userData) {
     await user.save();
 
     // Send verification email
-    await emailService.sendVerificationEmail(user.email, verificationToken, user.name);
+    await emailService.sendVerificationEmail(
+        user.email,
+        verificationToken,
+        user.name
+    );
 
     return { user };
 }
