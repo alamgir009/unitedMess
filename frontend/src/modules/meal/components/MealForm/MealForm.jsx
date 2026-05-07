@@ -231,7 +231,6 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
     const handleTypeChange = (val) => {
         if (isRunning) return;
         setFormData(prev => ({ ...prev, type: val }));
-        if (mode === 'range') handleBulkSubmit(val);
     };
 
     /* ── Range validation ── */
@@ -339,7 +338,10 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
 
     /* ─────────────────────── Render ─────────────────────── */
     return (
-        <form onSubmit={mode === 'single' ? handleSingleSubmit : (e) => e.preventDefault()} className="space-y-4 sm:space-y-5">
+        <form
+            onSubmit={mode === 'single' ? handleSingleSubmit : (e) => { e.preventDefault(); handleBulkSubmit(formData.type); }}
+            className="space-y-4 sm:space-y-5"
+        >
 
             {/* ── Mode Toggle (hidden in edit mode) ── */}
             {!initialData && (
@@ -473,7 +475,7 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
                 )}
 
                 {/* ── Meal Type Selector ── */}
-                <Field label={mode === 'range' ? 'Tap type to apply to all selected dates' : 'Meal Type'} icon={HiOutlineSparkles}>
+                <Field label="Meal Type" icon={HiOutlineSparkles}>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         {mealTypes.map((t) => (
                             <TypeBtn
@@ -547,7 +549,7 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
                 </Field>
             </div>
 
-            {/* ── Actions (single mode only — range mode submits via TypeBtn click) ── */}
+            {/* ── Actions (single mode) ── */}
             {mode === 'single' && (
                 <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 sm:pt-5 border-t border-white/10 dark:border-white/5">
                     <Button type="button" variant="secondary" size="md" onClick={onCancel} className="w-full sm:w-auto" disabled={isRunning}>
@@ -559,18 +561,30 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
                 </div>
             )}
 
-            {/* ── Range mode cancel ── */}
+            {/* ── Range mode actions ── */}
             {mode === 'range' && (
-                <div className="pt-3 border-t border-white/10 dark:border-white/5">
+                <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 sm:pt-5 border-t border-white/10 dark:border-white/5">
                     <Button
                         type="button"
                         variant="secondary"
                         size="md"
                         onClick={() => { abortRef.current = true; onCancel?.(); }}
-                        className="w-full"
+                        className="w-full sm:w-auto"
                         disabled={false}
                     >
                         {isRunning ? 'Cancel & Stop' : 'Cancel'}
+                    </Button>
+                    <Button
+                        type="submit"
+                        variant="success"
+                        size="md"
+                        className="w-full sm:flex-[2]"
+                        disabled={isRunning || rangeInvalid || daysCount === 0}
+                    >
+                        {isRunning
+                            ? `Saving ${progress.done} / ${progress.total}…`
+                            : `Save ${daysCount > 0 ? daysCount : ''} Meal${daysCount !== 1 ? 's' : ''}`
+                        }
                     </Button>
                 </div>
             )}
