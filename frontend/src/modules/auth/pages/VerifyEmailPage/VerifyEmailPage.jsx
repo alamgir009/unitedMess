@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
+import { Spinner } from '@/shared/components/ui';
 
 // TODO: Replace with env variable
 const API_URL = `${import.meta.env.VITE_API_URL}/api/v1` || 'https://api.unitedmess.uk/api/v1';
@@ -49,7 +50,7 @@ const VerifyEmailPage = () => {
 
                 {status === 'verifying' && (
                     <div className="flex flex-col items-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+                        <Spinner size="xl" className="mb-4" />
                         <p className="text-muted-foreground">Verifying your email...</p>
                     </div>
                 )}

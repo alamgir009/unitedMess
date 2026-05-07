@@ -1,4 +1,5 @@
 import React from 'react';
+import { Spinner } from '@/shared/components/ui';
 import { motion } from 'framer-motion';
 import {
     HiOutlinePlus,
@@ -82,7 +83,7 @@ const PaymentHeader = ({ isAdmin, viewMode, onViewModeChange, onAddClick, payabl
                         className="ml-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white shadow-lg bg-[#02042B] border border-[#3395FF]/30 hover:border-[#3395FF] hover:shadow-[#3395FF]/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                     >
                         {isPaying === 'gas_bill' ? (
-                            <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            <Spinner size="sm" color="white" className="!w-3.5 !h-3.5 !border-[2px]" />
                         ) : (
                             <SiRazorpay className="w-3.5 h-3.5 text-[#3395FF]" />
                         )}

@@ -4,9 +4,10 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
     BellRing, CheckCircle2, Loader2, RefreshCw, Sparkles, Bell
 } from 'lucide-react';
-import { fetchNotifications, markAllAsRead, markAsRead } from '../../store/notification.slice';
+import { markAllAsRead, markAsRead, fetchNotifications } from '../../store/notification.slice';
 import NotificationItem from '../NotificationItem/NotificationItem';
 import { cn } from '@/core/utils/helpers/string.helper';
+import { Spinner } from '@/shared/components/ui';
 
 // ─── Animation variants ───────────────────────────────────────────────────────
 const LIST_ITEM = {
@@ -219,7 +220,7 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
                             "
                         >
                             {markAllLoading
-                                ? <Loader2     className="w-3.5 h-3.5 animate-spin" aria-hidden />
+                                ? <Spinner size="sm" color="current" className="!w-3.5 !h-3.5" aria-hidden />
                                 : <CheckCircle2 className="w-3.5 h-3.5"             aria-hidden />
                             }
                             Mark all read
@@ -278,7 +279,7 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
                         {/* Infinite scroll states */}
                         {isLoadingMore && (
                             <div className="flex items-center justify-center gap-2 py-5">
-                                <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                                <Spinner size="sm" color="current" className="text-blue-500" />
                                 <span className="text-xs text-slate-400 font-mono">Loading more…</span>
                             </div>
                         )}

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { fetchAdminUnpaidInvoices, resolveInvoicePayment } from '../store/members.slice';
 import { toast } from 'react-hot-toast';
+import { Spinner } from '@/shared/components/ui';
 
 /* ─────────────────────────────────────────────
    Helpers
@@ -143,7 +144,7 @@ const ResolveModal = ({ invoice, onClose, onResolve, isSaving }) => {
                                            active:scale-95 transition-all duration-150
                                            disabled:opacity-60 disabled:cursor-not-allowed">
                                 {isSaving
-                                    ? <Loader2 size={16} className="animate-spin" />
+                                    ? <Spinner size="sm" color="white" />
                                     : <CheckCircle2 size={16} />}
                                 {isSaving ? 'Saving…' : 'Mark Payment'}
                             </button>
@@ -360,7 +361,7 @@ const AdminUnpaidPanel = () => {
                 {/* Loading */}
                 {unpaidInvoicesLoading && (
                     <div className="flex items-center justify-center py-16 gap-3">
-                        <Loader2 size={20} className="animate-spin text-rose-500" />
+                        <Spinner size="md" color="current" className="text-rose-500" />
                         <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Loading invoices…</span>
                     </div>
                 )}

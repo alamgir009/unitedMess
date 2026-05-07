@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Camera, Loader2, User } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { Spinner } from '@/shared/components/ui';
 import { updateAvatar } from '@/modules/auth/store/auth.slice';
 
 export const AvatarUpload = () => {
@@ -76,7 +77,7 @@ export const AvatarUpload = () => {
                         className="absolute inset-0 flex items-center justify-center rounded-full bg-black/30 dark:bg-black/50 opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer backdrop-blur-md"
                     >
                         {isLoading ? (
-                            <Loader2 className="w-7 h-7 text-white animate-spin" />
+                            <Spinner size="lg" color="white" className="!w-7 !h-7" />
                         ) : (
                             <div className="flex flex-col items-center text-white">
                                 <Camera className="w-5 h-5 mb-1" />

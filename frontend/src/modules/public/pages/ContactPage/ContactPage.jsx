@@ -7,7 +7,7 @@ import {
     HiOutlineArrowRight,
     HiOutlineSparkles,
 } from 'react-icons/hi2';
-import { Button } from '@/shared/components/ui';
+import { Button, Spinner } from '@/shared/components/ui';
 
 const Reveal = memo(({ children, delay = 0 }) => {
     const shouldReduceMotion = useReducedMotion();
@@ -142,7 +142,7 @@ const ContactPage = () => {
                                 >
                                     {isSubmitting ? (
                                         <span className="flex items-center gap-2">
-                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            <Spinner size="sm" color="white" />
                                             Sending Securely...
                                         </span>
                                     ) : (

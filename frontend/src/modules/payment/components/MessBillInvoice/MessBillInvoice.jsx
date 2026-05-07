@@ -20,6 +20,7 @@ import {
     HiOutlineBuildingOffice2,
 } from 'react-icons/hi2';
 import { SiRazorpay } from 'react-icons/si';
+import { Spinner } from '@/shared/components/ui';
 
 /* ────────────────────────────────────────
    HELPERS (unchanged)
@@ -356,7 +357,7 @@ const MessBillInvoice = ({
                                         transition-all duration-300"
                                 >
                                     {isPaying ? (
-                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        <Spinner size="sm" color="white" />
                                     ) : (
                                         <HiOutlineCurrencyRupee className="w-5 h-5" />
                                     )}
@@ -389,7 +390,7 @@ const MessBillInvoice = ({
                             transition-all duration-300"
                         >
                             {isPaying ? (
-                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                <Spinner size="sm" color="white" />
                             ) : (
                                 <SiRazorpay className="w-5 h-5" />
                             )}
@@ -413,7 +414,7 @@ const MessBillInvoice = ({
                             transition-all duration-300 disabled:opacity-60"
                         >
                             {isSendingEmail ? (
-                                <div className="w-4 h-4 border-2 border-gray-400/30 border-t-gray-600 dark:border-t-gray-300 rounded-full animate-spin" />
+                                <Spinner size="sm" color="current" className="text-gray-600 dark:text-gray-300" />
                             ) : (
                                 <HiOutlineEnvelope className="w-4 h-4" />
                             )}
