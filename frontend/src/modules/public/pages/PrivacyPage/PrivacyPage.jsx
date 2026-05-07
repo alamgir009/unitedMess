@@ -119,7 +119,7 @@ const PrivacyPage = () => {
                     whileInView={{ opacity: 1 }}
                     className="mt-16 text-center text-sm text-muted-foreground"
                 >
-                    Last updated: May 6, 2026. For questions, contact us at <span className="text-primary font-semibold">unitedmess96@gmail.com</span>
+                    Last updated: May 6, 2026. For questions, contact us at <span className="text-primary font-semibold">{['unitedmess96', 'gmail.com'].join('@')}</span>
                 </motion.p>
             </div>
         </div>

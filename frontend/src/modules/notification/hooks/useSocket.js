@@ -37,20 +37,18 @@ const useSocket = () => {
                     reconnectionDelay: 1000,
                 });
 
-                socketRef.current.on('connect', () => {
-                    console.log('Socket connected:', socketRef.current.id);
-                });
+
 
                 socketRef.current.on('receive_notification', (notification) => {
                     dispatch(addRealTimeNotification(notification));
                 });
 
-                socketRef.current.on('disconnect', () => {
-                    console.log('Socket disconnected');
-                });
+
                 
                 socketRef.current.on('connect_error', (error) => {
-                    console.error('Socket connection error:', error);
+                    if (import.meta.env.DEV) {
+                        console.error('Socket connection error:', error);
+                    }
                 });
             } else if (token && !socketRef.current.auth?.token) {
                 socketRef.current.auth.token = token;

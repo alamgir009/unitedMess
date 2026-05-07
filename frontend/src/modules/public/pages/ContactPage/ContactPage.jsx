@@ -158,8 +158,8 @@ const ContactPage = () => {
                         <ContactMethod 
                             Icon={HiOutlineEnvelope} 
                             title="Email Support" 
-                            value="unitedmess96@gmail.com" 
-                            href="mailto:unitedmess96@gmail.com"
+                            value={['unitedmess96', 'gmail.com'].join('@')} 
+                            href={`mailto:${['unitedmess96', 'gmail.com'].join('@')}`}
                             delay={0.2}
                         />
                         <ContactMethod 

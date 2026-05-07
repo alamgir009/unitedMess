@@ -142,7 +142,7 @@ const TermsPage = () => {
                     className="mt-16 text-center text-sm text-muted-foreground"
                 >
                     Last updated: May 6, 2026. For legal inquiries, please email{' '}
-                    <span className="text-primary font-semibold">unitedmess96@gmail.com</span>
+                    <span className="text-primary font-semibold">{['unitedmess96', 'gmail.com'].join('@')}</span>
                 </motion.p>
             </div>
         </div>
