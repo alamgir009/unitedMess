@@ -24,6 +24,13 @@ export const restoreSession = createAsyncThunk(
     'auth/restoreSession',
     async (_, thunkAPI) => {
         try {
+            // OPTIMIZATION: If the UI 'user' cookie is completely missing, the user is either
+            // a brand new visitor or has explicitly logged out. We can safely skip the backend
+            // refresh check to save a network round-trip and prevent a 401 error in the console.
+            if (!Cookies.get('user')) {
+                return thunkAPI.rejectWithValue('No active session');
+            }
+
             // POST /auth/refresh-token — no body required.
             // The browser sends the httpOnly refresh cookie automatically because
             // apiClient is configured with withCredentials: true.
