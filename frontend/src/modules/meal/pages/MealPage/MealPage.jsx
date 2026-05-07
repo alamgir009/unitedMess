@@ -487,6 +487,7 @@ const MealPage = () => {
                         initialData={editingMeal}
                         onSubmit={handleSubmit}
                         onCancel={closeModal}
+                        onBulkComplete={() => dispatch(fetchMeals({ page, limit }))}
                         isAdmin={isAdmin}
                         currentUser={user}
                     />
