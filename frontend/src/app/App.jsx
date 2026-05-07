@@ -1,67 +1,103 @@
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import AppProviders from './providers/AppProviders';
 import AppRoutes from '@/routes/AppRoutes';
 import { Toaster } from 'react-hot-toast';
-import apiClient, {
-    getRefreshToken,
-    setAccessToken,
-    setRefreshToken,
-    clearAllTokens,
-} from '@/services/api/client/apiClient';
-import Cookies from 'js-cookie';
+import { restoreSession } from '@/modules/auth/store/auth.slice';
+import { injectStore } from '@/services/api/client/apiClient';
+import { store } from '@/store';
 
-// ---------------------------------------------------------------------------
-// Silently restore the in-memory access token from the refresh token stored
-// in localStorage. This is necessary because the access token lives only in
-// memory and is lost on every page refresh.
-// ---------------------------------------------------------------------------
-const restoreSession = async () => {
-    const storedRefreshToken = getRefreshToken();
-    if (!storedRefreshToken) return; // No previous session — nothing to restore
+// Inject the Redux store into apiClient so the BroadcastChannel logout listener
+// can dispatch setUser(null) without creating a circular import.
+injectStore(store);
 
-    try {
-        const res = await apiClient.post('auth/refresh-token', {
-            refreshToken: storedRefreshToken,
-        });
-        const tokens = res.data?.data?.tokens;
-        if (tokens?.accessToken)  setAccessToken(tokens.accessToken);
-        if (tokens?.refreshToken) setRefreshToken(tokens.refreshToken);
-    } catch {
-        // Refresh token is invalid/expired — clear stale data so the user
-        // is cleanly sent to the login page rather than looping on 401s.
-        clearAllTokens();
-        Cookies.remove('user');
-    }
-};
-
-const App = () => {
-    // Block rendering until session restore is complete so ProtectedRoute
-    // doesn't redirect to /login before the access token is in memory.
-    const [sessionReady, setSessionReady] = useState(false);
+// ─────────────────────────────────────────────────────────────────────────────
+// SessionGate
+// ─────────────────────────────────────────────────────────────────────────────
+// Lives INSIDE <Provider> so it can dispatch to Redux.
+//
+// On mount it dispatches restoreSession which:
+//   1. POSTs to /auth/refresh-token (httpOnly cookie sent automatically)
+//   2. Stores new accessToken in memory, user in Redux
+//   3. Sets sessionRestoring = false
+//
+// While sessionRestoring is true the entire app tree is replaced with a
+// full-screen spinner, preventing any premature redirect to /login.
+// ─────────────────────────────────────────────────────────────────────────────
+const SessionGate = ({ children }) => {
+    const dispatch = useDispatch();
+    const sessionRestoring = useSelector((state) => state.auth.sessionRestoring);
 
     useEffect(() => {
-        restoreSession().finally(() => setSessionReady(true));
+        dispatch(restoreSession());
+        // Intentionally empty dep array — run once on mount only
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    if (!sessionReady) {
+    if (sessionRestoring) {
         return (
-            <div className="flex items-center justify-center h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '100vh',
+                    width: '100vw',
+                    background: 'var(--color-bg, #0f172a)',
+                }}
+                aria-label="Restoring session…"
+                role="status"
+            >
+                <div
+                    style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: '50%',
+                        border: '3px solid rgba(99,102,241,0.2)',
+                        borderTopColor: '#6366f1',
+                        animation: 'spin 0.75s linear infinite',
+                    }}
+                />
+                <style>{`
+                    @keyframes spin {
+                        to { transform: rotate(360deg); }
+                    }
+                `}</style>
             </div>
         );
     }
 
+    return children;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// App
+// ─────────────────────────────────────────────────────────────────────────────
+// <AppProviders> wraps <Provider store={store}> which means SessionGate has
+// full access to Redux dispatch/select. The old pattern ran restoreSession()
+// BEFORE the Provider was mounted, so it could never write to Redux.
+// ─────────────────────────────────────────────────────────────────────────────
+const App = () => {
     return (
         <AppProviders>
-            <Suspense
-                fallback={
-                    <div className="flex items-center justify-center h-screen">
-                        Loading...
-                    </div>
-                }
-            >
-                <AppRoutes />
-            </Suspense>
+            <SessionGate>
+                <Suspense
+                    fallback={
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                height: '100vh',
+                            }}
+                        >
+                            Loading…
+                        </div>
+                    }
+                >
+                    <AppRoutes />
+                </Suspense>
+            </SessionGate>
             <Toaster position="top-right" />
         </AppProviders>
     );

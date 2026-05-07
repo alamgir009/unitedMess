@@ -2,8 +2,70 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import authService from '../services/auth.service';
 import { toast } from 'react-hot-toast';
 import Cookies from 'js-cookie';
+import { setAccessToken, clearAccessToken, authChannel } from '@/services/api/client/apiClient';
 
-// Async thunks
+// ─────────────────────────────────────────────────────────────────────────────
+// restoreSession
+// ─────────────────────────────────────────────────────────────────────────────
+// Called once on every page load / new tab open (dispatched from SessionGate).
+//
+// Flow:
+//   1. POST /auth/refresh-token  → browser auto-sends httpOnly refresh cookie.
+//   2. Server rotates the refresh cookie and returns { tokens.accessToken, user }.
+//   3. Store accessToken in memory, user in Redux + display cookie.
+//   4. sessionRestoring = false  →  ProtectedRoute renders / redirects cleanly.
+//
+// Security:
+//   • No refresh token is ever read from / written to localStorage or sessionStorage.
+//   • The httpOnly cookie is entirely opaque to JavaScript.
+//   • On any failure the in-memory token is cleared and the user is sent to login.
+// ─────────────────────────────────────────────────────────────────────────────
+export const restoreSession = createAsyncThunk(
+    'auth/restoreSession',
+    async (_, thunkAPI) => {
+        try {
+            // POST /auth/refresh-token — no body required.
+            // The browser sends the httpOnly refresh cookie automatically because
+            // apiClient is configured with withCredentials: true.
+            // Server validates, rotates the cookie, and returns { tokens.accessToken, user }.
+            const { default: apiClient } = await import('@/services/api/client/apiClient');
+            const refreshRes = await apiClient.post('auth/refresh-token');
+
+            const accessToken = refreshRes.data?.data?.tokens?.accessToken;
+            const user        = refreshRes.data?.data?.user;
+
+            if (!accessToken) {
+                // Server returned 200 but no token → treat as expired
+                return thunkAPI.rejectWithValue('No access token returned');
+            }
+
+            setAccessToken(accessToken);
+
+            // Keep display cookie in sync (7-day calendar alignment)
+            if (user && typeof user === 'object' && user._id) {
+                Cookies.set('user', JSON.stringify(user), {
+                    expires: 7,
+                    secure: true,
+                    sameSite: 'strict',
+                });
+            }
+
+            return user || null;
+        } catch (error) {
+            // Refresh cookie expired, revoked, or network failure
+            clearAccessToken();
+            Cookies.remove('user');
+            return thunkAPI.rejectWithValue(
+                error.response?.data?.message || 'Session expired'
+            );
+        }
+    }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Async thunks — business actions
+// ─────────────────────────────────────────────────────────────────────────────
+
 export const register = createAsyncThunk(
     'auth/register',
     async (userData, thunkAPI) => {
@@ -11,8 +73,6 @@ export const register = createAsyncThunk(
             const response = await authService.register(userData);
             return response;
         } catch (error) {
-            // Backend error middleware sends { success: false, error: '...' }
-            // Some endpoints may also use { message: '...' }
             const message =
                 error.response?.data?.message ||
                 error.response?.data?.error ||
@@ -46,14 +106,18 @@ export const logout = createAsyncThunk('auth/logout', async () => {
     try {
         await authService.logout();
     } catch (error) {
-        console.error("Logout error", error);
+        // Always proceed with local cleanup even if server call fails
+        clearAccessToken();
+        Cookies.remove('user');
+    } finally {
+        // Notify all other tabs to log out immediately
+        authChannel.postMessage({ type: 'AUTH_LOGOUT' });
     }
 });
 
 export const updateProfile = createAsyncThunk('auth/updateProfile', async (userData, thunkAPI) => {
     try {
         const response = await authService.updateProfile(userData);
-        // backend sometimes uses response.message for success
         toast.success(response.message || 'Profile updated successfully');
         return response;
     } catch (error) {
@@ -83,19 +147,14 @@ export const updateAvatar = createAsyncThunk('auth/updateAvatar', async (formDat
     }
 });
 
-// Fetch payable amount for meal — returns full breakdown object
 export const fetchPayableAmount = createAsyncThunk(
     'auth/fetchPayable',
     async (userId, thunkAPI) => {
         try {
             const response = await authService.getPayableAmount(userId);
-            // user.controller does: sendSuccessResponse(res, 200, '...', payingAmount)
-            // payingAmount is an object: { grandTotalMarketAmount, grandTotalMeal, totalGuestRevenue,
-            //   adjustedMealCharge, userStats: { ... }, payableAmount }
             const data = response?.data?.data ?? response?.data ?? response;
-            // Return the full object so the invoice panel can render all fields
             if (typeof data === 'object' && data !== null && 'payableAmount' in data) {
-                return data; // full breakdown
+                return data;
             }
             return { payableAmount: Number(data) || 0 };
         } catch (error) {
@@ -105,15 +164,12 @@ export const fetchPayableAmount = createAsyncThunk(
     }
 );
 
-// Fetch payable gas bill amount
 export const fetchPayableGasBill = createAsyncThunk(
     'auth/fetchPayableGasBill',
     async (userId, thunkAPI) => {
         try {
             const response = await authService.getPayableGasBill(userId);
             const data = response?.data?.data ?? response?.data ?? response;
-            // Keep the full { payableAmount, status } object so the UI can check payment status.
-            // Backend returns { payableAmount: number, status: 'pending'|'success'|... }
             if (typeof data === 'object' && data !== null) {
                 return {
                     payableAmount: Number(data.payableAmount) || 0,
@@ -179,8 +235,8 @@ export const deactivateAccount = createAsyncThunk(
         try {
             const response = await authService.deactivateAccount();
             toast.success('Your account has been deactivated.');
-            // Also call logout locally to clear cookies/tokens
             await authService.logout();
+            authChannel.postMessage({ type: 'AUTH_LOGOUT' });
             return response;
         } catch (error) {
             const message = error.response?.data?.message || error.response?.data?.error || 'Failed to deactivate account';
@@ -190,32 +246,36 @@ export const deactivateAccount = createAsyncThunk(
     }
 );
 
-let userCookie = Cookies.get('user');
-let parsedUser = null;
-if (userCookie) {
-    try {
-        parsedUser = JSON.parse(userCookie);
-    } catch (e) {
-        console.error("Failed to parse user cookie", e);
-    }
-}
-
-// Initialise adminShowHistory from localStorage
+// ─────────────────────────────────────────────────────────────────────────────
+// Initial state
+// ─────────────────────────────────────────────────────────────────────────────
+// sessionRestoring: true → ProtectedRoute renders a spinner and never redirects
+//   to /login until the restore attempt is complete. This prevents the brief
+//   "flash to login" that would otherwise happen before the refresh succeeds.
+//
+// user is intentionally NOT pre-seeded from the cookie here.
+// The restoreSession thunk fetches a fresh copy from the server, ensuring
+// we never grant access based on stale cookie data (role change, deactivation).
+// ─────────────────────────────────────────────────────────────────────────────
 const storedAdminShowHistory = localStorage.getItem('adminShowHistory') === 'true';
 
 const initialState = {
-    user: parsedUser,
-    payableAmount: null,      // backward-compat: numeric payable (or null)
-    payableAmountData: null,  // full breakdown object from /users/me/payable
-    payableGasBill: null,     // gas bill payable
+    user: null,                        // Always null on cold start — populated by restoreSession
+    sessionRestoring: true,            // True until restoreSession settles (success OR failure)
+    payableAmount: null,
+    payableAmountData: null,
+    payableGasBill: null,
     isError: false,
     isSuccess: false,
     isLoading: false,
     message: '',
-    registeredEmail: null, // Temporary storage for registration success state
+    registeredEmail: null,
     adminShowHistory: storedAdminShowHistory,
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Slice
+// ─────────────────────────────────────────────────────────────────────────────
 export const authSlice = createSlice({
     name: 'auth',
     initialState,
@@ -233,19 +293,36 @@ export const authSlice = createSlice({
         clearRegisteredEmail: (state) => {
             state.registeredEmail = null;
         },
+        // Directly set the user in Redux (used by restoreSession thunk & BroadcastChannel listener)
+        setUser: (state, action) => {
+            state.user = action.payload;
+        },
+        // Mark session restore as complete — unblocks ProtectedRoute
+        setSessionReady: (state) => {
+            state.sessionRestoring = false;
+        },
     },
     extraReducers: (builder) => {
         builder
+
+            // ── restoreSession ────────────────────────────────────────────
+            .addCase(restoreSession.fulfilled, (state, action) => {
+                state.user           = action.payload;
+                state.sessionRestoring = false;
+            })
+            .addCase(restoreSession.rejected, (state) => {
+                state.user           = null;
+                state.sessionRestoring = false;
+            })
+
+            // ── register ─────────────────────────────────────────────────
             .addCase(register.pending, (state) => {
                 state.isLoading = true;
             })
             .addCase(register.fulfilled, (state, action) => {
                 state.isLoading = false;
                 state.isSuccess = true;
-                // We no longer set state.user automatically on registration
-                // because the user must verify email and wait for admin approval
                 state.user = null;
-                // Store the email so the RegisterPage can show it and handle resend
                 state.registeredEmail = action.payload?.data?.user?.email || action.payload?.user?.email || null;
                 state.message = action.payload?.message || 'Registration successful. Please verify your email.';
             })
@@ -255,14 +332,17 @@ export const authSlice = createSlice({
                 state.message = action.payload;
                 state.user = null;
             })
+
+            // ── login ─────────────────────────────────────────────────────
             .addCase(login.pending, (state) => {
                 state.isLoading = true;
             })
             .addCase(login.fulfilled, (state, action) => {
                 state.isLoading = false;
                 state.isSuccess = true;
-                // Backend wraps user in data: { user } via sendSuccessResponse
                 state.user = action.payload?.data?.user || action.payload?.user || null;
+                // Session is definitely ready after a fresh login
+                state.sessionRestoring = false;
             })
             .addCase(login.rejected, (state, action) => {
                 state.isLoading = false;
@@ -270,12 +350,16 @@ export const authSlice = createSlice({
                 state.message = action.payload;
                 state.user = null;
             })
+
+            // ── logout ────────────────────────────────────────────────────
             .addCase(logout.fulfilled, (state) => {
                 state.user = null;
                 state.payableAmount = null;
                 state.payableAmountData = null;
+                state.sessionRestoring = false;
             })
-            // Update Profile
+
+            // ── updateProfile ─────────────────────────────────────────────
             .addCase(updateProfile.pending, (state) => {
                 state.isLoading = true;
             })
@@ -292,7 +376,8 @@ export const authSlice = createSlice({
                 state.isError = true;
                 state.message = action.payload;
             })
-            // Update Avatar
+
+            // ── updateAvatar ──────────────────────────────────────────────
             .addCase(updateAvatar.pending, (state) => {
                 state.isLoading = true;
             })
@@ -309,29 +394,31 @@ export const authSlice = createSlice({
                 state.isError = true;
                 state.message = action.payload;
             })
-            // Payable Amount — action.payload is now the full breakdown object
+
+            // ── fetchPayableAmount ────────────────────────────────────────
             .addCase(fetchPayableAmount.fulfilled, (state, action) => {
                 const payload = action.payload;
                 if (typeof payload === 'object' && payload !== null) {
-                    state.payableAmountData = payload; // full object (includes paymentStatus, gasBillStatus)
-                    state.payableAmount = payload.payableAmount ?? 0; // numeric for backward-compat
+                    state.payableAmountData = payload;
+                    state.payableAmount = payload.payableAmount ?? 0;
                 } else {
                     state.payableAmount = Number(payload) || 0;
                     state.payableAmountData = { payableAmount: state.payableAmount };
                 }
             })
             .addCase(fetchPayableAmount.rejected, (state, action) => {
-                console.error("Failed to load payable amount:", action.payload);
+                console.error('Failed to load payable amount:', action.payload);
             })
-            // Payable Gas Bill — store { payableAmount, status } object
+
+            // ── fetchPayableGasBill ───────────────────────────────────────
             .addCase(fetchPayableGasBill.fulfilled, (state, action) => {
-                // action.payload = { payableAmount: number, status: string }
                 state.payableGasBill = action.payload ?? { payableAmount: 0, status: 'pending' };
             })
             .addCase(fetchPayableGasBill.rejected, (state, action) => {
-                console.error("Failed to load payable gas bill amount:", action.payload);
+                console.error('Failed to load payable gas bill amount:', action.payload);
             })
-            // Forgot Password
+
+            // ── forgotPassword ────────────────────────────────────────────
             .addCase(forgotPassword.pending, (state) => {
                 state.isLoading = true;
                 state.isError = false;
@@ -346,7 +433,8 @@ export const authSlice = createSlice({
                 state.isError = true;
                 state.message = action.payload;
             })
-            // Reset Password
+
+            // ── resetPassword ─────────────────────────────────────────────
             .addCase(resetPassword.pending, (state) => {
                 state.isLoading = true;
                 state.isError = false;
@@ -361,7 +449,8 @@ export const authSlice = createSlice({
                 state.isError = true;
                 state.message = action.payload;
             })
-            // Resend Verification
+
+            // ── resendVerification ────────────────────────────────────────
             .addCase(resendVerification.pending, (state) => {
                 state.isLoading = true;
             })
@@ -374,7 +463,8 @@ export const authSlice = createSlice({
                 state.isError = true;
                 state.message = action.payload;
             })
-            // Deactivate Account
+
+            // ── deactivateAccount ─────────────────────────────────────────
             .addCase(deactivateAccount.pending, (state) => {
                 state.isLoading = true;
             })
@@ -393,5 +483,12 @@ export const authSlice = createSlice({
     },
 });
 
-export const { reset, toggleAdminHistory, clearRegisteredEmail } = authSlice.actions;
+export const {
+    reset,
+    toggleAdminHistory,
+    clearRegisteredEmail,
+    setUser,
+    setSessionReady,
+} = authSlice.actions;
+
 export default authSlice.reducer;

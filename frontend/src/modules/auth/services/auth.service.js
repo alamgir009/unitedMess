@@ -1,44 +1,46 @@
-import apiClient, { setAccessToken, setRefreshToken, clearAllTokens } from '@/services/api/client/apiClient';
+import apiClient, { setAccessToken, clearAccessToken } from '@/services/api/client/apiClient';
 import Cookies from 'js-cookie';
 
 const API_URL = 'auth/';
 
-// User profile cookie options (NOT the auth token — just UI display data)
-const USER_COOKIE_OPTS = { expires: 7, secure: true, sameSite: 'lax' };
-
-// ---------------------------------------------------------------------------
-// Helper — persist tokens returned in login / refresh responses
-// ---------------------------------------------------------------------------
-const storeTokensFromResponse = (responseData) => {
-    const tokens = responseData?.data?.tokens;
-    if (tokens?.accessToken)  setAccessToken(tokens.accessToken);
-    if (tokens?.refreshToken) setRefreshToken(tokens.refreshToken);
-};
+// User profile cookie options.
+// This cookie is NOT the auth token — it is only a UI hint (display name, avatar URL).
+// The real authentication is done via the httpOnly refresh cookie managed by the server.
+// Expiry deliberately aligns with server refresh token (7 days) so they expire together.
+const USER_COOKIE_OPTS = { expires: 7, secure: true, sameSite: 'strict' };
 
 // ---------------------------------------------------------------------------
 // Register
 // ---------------------------------------------------------------------------
 const register = async (userData) => {
     const response = await apiClient.post(API_URL + 'register', userData);
-    if (response.data?.data?.user) {
-        Cookies.set('user', JSON.stringify(response.data.data.user), USER_COOKIE_OPTS);
-    }
     return response.data;
 };
 
 // ---------------------------------------------------------------------------
 // Login
 // ---------------------------------------------------------------------------
+// After a successful login:
+//   • Server sets:  httpOnly refresh cookie  (7 days, invisible to JS)
+//   • Server sets:  httpOnly access cookie   (24h, SSR fallback)
+//   • Server body:  { tokens: { accessToken }, user }
+//
+// Frontend stores:
+//   • accessToken → in-memory (this module variable, cleared on page close)
+//   • user        → js-cookie (display hint) + Redux state
+//   • refreshToken → NOT stored anywhere on frontend (httpOnly cookie handles it)
+// ---------------------------------------------------------------------------
 const login = async (userData) => {
     const response = await apiClient.post(API_URL + 'login', userData);
 
-    if (response.data?.data?.user) {
-        Cookies.set('user', JSON.stringify(response.data.data.user), USER_COOKIE_OPTS);
-    }
+    const accessToken = response.data?.data?.tokens?.accessToken;
+    const user        = response.data?.data?.user;
 
-    // Store tokens in memory + localStorage so all subsequent requests are authenticated
-    // even when cross-origin cookies are blocked by the browser.
-    storeTokensFromResponse(response.data);
+    if (accessToken) setAccessToken(accessToken);
+
+    if (user && typeof user === 'object' && user._id) {
+        Cookies.set('user', JSON.stringify(user), USER_COOKIE_OPTS);
+    }
 
     return response.data;
 };
@@ -46,13 +48,24 @@ const login = async (userData) => {
 // ---------------------------------------------------------------------------
 // Logout
 // ---------------------------------------------------------------------------
+// Server will clear the httpOnly refresh + access cookies via Set-Cookie headers.
+// Frontend only needs to clear the in-memory access token and the display cookie.
+// ---------------------------------------------------------------------------
 const logout = async () => {
     try {
         await apiClient.post(API_URL + 'logout');
     } finally {
-        clearAllTokens();
+        clearAccessToken();
         Cookies.remove('user');
     }
+};
+
+// ---------------------------------------------------------------------------
+// Get current user profile (used during session restore)
+// ---------------------------------------------------------------------------
+const getMe = async () => {
+    const response = await apiClient.get('users/me');
+    return response.data;
 };
 
 // ---------------------------------------------------------------------------
@@ -77,6 +90,7 @@ const authService = {
     register,
     login,
     logout,
+    getMe,
     getPayableAmount,
     getPayableGasBill,
 
@@ -117,8 +131,6 @@ const authService = {
 
     deactivateAccount: async () => {
         const response = await apiClient.delete('users/me');
-        // Upon successful deactivation, we might need to clear tokens/cookies. 
-        // This can also be handled in the slice/logout flow.
         return response.data;
     },
 };

@@ -1,11 +1,22 @@
 import axios from 'axios';
-import Cookies from 'js-cookie';
 
 // ---------------------------------------------------------------------------
-// In-memory token store
-// Access token lives ONLY in memory (cleared on page refresh — intentional).
-// Refresh token lives in localStorage so it survives page refreshes.
-// This pattern avoids cross-origin cookie issues between pages.dev & onrender.com.
+// Auth broadcast channel — synchronises login/logout state across browser tabs
+// without storing any tokens in localStorage/sessionStorage.
+// ---------------------------------------------------------------------------
+export const authChannel = (() => {
+    try {
+        return new BroadcastChannel('um_auth');
+    } catch {
+        // BroadcastChannel not supported (very old browsers / SSR) — no-op fallback
+        return { postMessage: () => {}, addEventListener: () => {}, close: () => {} };
+    }
+})();
+
+// ---------------------------------------------------------------------------
+// In-memory access token — lives ONLY in this module's closure.
+// Cleared on every page refresh (intentional). Invisible to XSS scripts.
+// Refresh token lives EXCLUSIVELY in an httpOnly cookie managed by the server.
 // ---------------------------------------------------------------------------
 let inMemoryAccessToken = null;
 
@@ -13,28 +24,31 @@ export const setAccessToken  = (token) => { inMemoryAccessToken = token; };
 export const getAccessToken  = ()      => inMemoryAccessToken;
 export const clearAccessToken = ()     => { inMemoryAccessToken = null; };
 
-export const setRefreshToken  = (token) => localStorage.setItem('refreshToken', token);
-export const getRefreshToken  = ()      => localStorage.getItem('refreshToken');
-export const clearRefreshToken = ()     => localStorage.removeItem('refreshToken');
-
-export const clearAllTokens = () => {
-    clearAccessToken();
-    clearRefreshToken();
-};
+// ---------------------------------------------------------------------------
+// Store reference — injected lazily by SessionGate to avoid circular imports.
+// Used by the BroadcastChannel listener to dispatch actions from outside React.
+// ---------------------------------------------------------------------------
+let _store = null;
+export const injectStore = (store) => { _store = store; };
 
 // ---------------------------------------------------------------------------
 // Axios instance
+// withCredentials: true  → browser sends the httpOnly refresh cookie automatically
+//                          on every request to the same origin (and cross-origin
+//                          if the server allows it via CORS credentials).
+// X-Requested-With       → extra CSRF layer; server can reject requests missing this.
 // ---------------------------------------------------------------------------
 const apiClient = axios.create({
     baseURL: `${import.meta.env.VITE_API_URL}/api/v1` || 'https://api.unitedmess.uk/api/v1',
-    withCredentials: true, // keep for httpOnly cookie fallback on same-origin
+    withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest', // CSRF guard
     },
 });
 
 // ---------------------------------------------------------------------------
-// Request interceptor — attach Bearer token from memory on every request
+// Request interceptor — attach Bearer token from memory on every request.
 // ---------------------------------------------------------------------------
 apiClient.interceptors.request.use(
     (config) => {
@@ -47,13 +61,26 @@ apiClient.interceptors.request.use(
 );
 
 // ---------------------------------------------------------------------------
-// Response interceptor — auto-refresh on 401 using localStorage refresh token
+// Response interceptor — silent token rotation on 401.
+//
+// Flow:
+//   1. Request fails with 401.
+//   2. If not already refreshing, call POST /auth/refresh-token.
+//      The httpOnly refresh cookie is sent automatically — no body needed.
+//   3. Store new access token in memory, retry original request.
+//   4. If refresh fails (cookie expired/revoked): clear state, force login.
+//
+// Race condition guard:
+//   isRefreshing flag + failedQueue prevent multiple simultaneous refresh calls
+//   within the same tab. Cross-tab races are handled by BroadcastChannel.
 // ---------------------------------------------------------------------------
 let isRefreshing = false;
 let failedQueue  = [];
 
-const processQueue = (error) => {
-    failedQueue.forEach((prom) => (error ? prom.reject(error) : prom.resolve()));
+const processQueue = (error, token = null) => {
+    failedQueue.forEach((prom) =>
+        error ? prom.reject(error) : prom.resolve(token)
+    );
     failedQueue = [];
 };
 
@@ -68,11 +95,15 @@ apiClient.interceptors.response.use(
             !originalRequest.url?.includes('refresh-token') &&
             !originalRequest.url?.includes('login')
         ) {
+            // Another tab already refreshed — queue and wait
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {
                     failedQueue.push({ resolve, reject });
                 })
-                    .then(() => apiClient(originalRequest))
+                    .then((token) => {
+                        originalRequest.headers['Authorization'] = `Bearer ${token}`;
+                        return apiClient(originalRequest);
+                    })
                     .catch((err) => Promise.reject(err));
             }
 
@@ -80,26 +111,39 @@ apiClient.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                const storedRefreshToken = getRefreshToken();
+                // No body needed — httpOnly cookie is sent automatically by the browser.
+                const refreshRes = await apiClient.post('auth/refresh-token');
 
-                // Send refresh token both as body (reliable) and rely on httpOnly cookie fallback
-                const refreshRes = await apiClient.post('auth/refresh-token', {
-                    refreshToken: storedRefreshToken || undefined,
-                });
+                const newAccessToken = refreshRes.data?.data?.tokens?.accessToken;
 
-                const newAccessToken  = refreshRes.data?.data?.tokens?.accessToken;
-                const newRefreshToken = refreshRes.data?.data?.tokens?.refreshToken;
+                if (!newAccessToken) throw new Error('No access token in refresh response');
 
-                if (newAccessToken)  setAccessToken(newAccessToken);
-                if (newRefreshToken) setRefreshToken(newRefreshToken);
+                setAccessToken(newAccessToken);
+                processQueue(null, newAccessToken);
 
-                processQueue(null);
+                // Notify other tabs that the token has been refreshed
+                authChannel.postMessage({ type: 'TOKEN_REFRESHED' });
+
+                originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
                 return apiClient(originalRequest);
             } catch (refreshError) {
-                processQueue(refreshError);
-                // Full session clear on unrecoverable refresh failure
-                clearAllTokens();
-                Cookies.remove('user');
+                processQueue(refreshError, null);
+
+                // Unrecoverable — clear in-memory token and force full logout
+                clearAccessToken();
+
+                // Notify other tabs so they also log out cleanly
+                authChannel.postMessage({ type: 'AUTH_LOGOUT' });
+
+                // Dispatch logout to Redux if store is available (avoids import cycle)
+                if (_store) {
+                    const { setUser, setSessionReady } = await import(
+                        '@/modules/auth/store/auth.slice'
+                    );
+                    _store.dispatch(setUser(null));
+                    _store.dispatch(setSessionReady());
+                }
+
                 window.location.href = '/login';
                 return Promise.reject(refreshError);
             } finally {
@@ -110,5 +154,22 @@ apiClient.interceptors.response.use(
         return Promise.reject(error);
     }
 );
+
+// ---------------------------------------------------------------------------
+// Cross-tab sync listener
+// When another tab successfully refreshes, we don't need to do anything here —
+// the next API call will get a 401, which will trigger our own silent refresh
+// using the newly-rotated cookie.
+// When another tab logs out, we clear our in-memory state immediately.
+// ---------------------------------------------------------------------------
+authChannel.addEventListener?.('message', async (event) => {
+    if (event.data?.type === 'AUTH_LOGOUT') {
+        clearAccessToken();
+        if (_store) {
+            const { setUser } = await import('@/modules/auth/store/auth.slice');
+            _store.dispatch(setUser(null));
+        }
+    }
+});
 
 export default apiClient;

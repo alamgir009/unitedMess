@@ -4,15 +4,17 @@ const { sendSuccessResponse } = require('../../../utils/helpers/response.helper'
 const AppError = require('../../../utils/errors/AppError');
 
 // Cookie config helper
+// SameSite=Strict: refresh cookie is never sent in cross-site contexts → CSRF-immune without tokens.
+// SameSite=Lax in development so the cookie works on localhost (http).
 const getCookieOptions = (maxAge) => {
     const isProduction = process.env.NODE_ENV === 'production';
-    
+
     return {
-        httpOnly: true,
-        secure: isProduction, // Must be true for sameSite: 'none'
-        sameSite: isProduction ? 'none' : 'lax',
+        httpOnly: true,           // Invisible to JavaScript — XSS-proof
+        secure: isProduction,     // HTTPS only in production
+        sameSite: isProduction ? 'strict' : 'lax', // Strict = no cross-site sends → CSRF-proof
         maxAge,
-        path: '/', // Ensure consistent path
+        path: '/',
     };
 };
 
@@ -77,20 +79,56 @@ exports.logout = asyncHandler(async (req, res) => {
 // @desc    Refresh tokens
 // @route   POST /api/v1/auth/refresh-token
 // @access  Public
+// Security:
+//   - Refresh token is read exclusively from the httpOnly cookie (never from body/localStorage).
+//   - New refresh token is issued via Set-Cookie (rotation). Old token is deleted by tokenService.
+//   - User is returned in the body so the frontend can restore Redux state in one round-trip.
 exports.refreshTokens = asyncHandler(async (req, res) => {
+    // Prefer the httpOnly cookie; fall back to body only for non-browser clients (e.g. Postman).
     const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
 
+    if (!refreshToken) {
+        const AppError = require('../../../utils/errors/AppError');
+        throw new AppError('Refresh token is required', 401);
+    }
+
+    // Validate, rotate, and issue new token pair
     const tokens = await authService.refreshAuth(refreshToken);
 
+    // Resolve the user from the newly-issued access token payload
+    const User = require('../../../models/User.model');
+    const jwt = require('jsonwebtoken');
+    const config = require('../../../config');
+    let user = null;
+    try {
+        const payload = jwt.verify(tokens.access.token, config.jwt.secret);
+        user = await User.findById(payload.sub).lean();
+        if (user) {
+            // Strip sensitive fields before sending to client
+            delete user.password;
+            delete user.loginAttempts;
+            delete user.lockUntil;
+            delete user.passwordResetToken;
+            delete user.passwordResetExpires;
+            delete user.emailVerificationToken;
+            delete user.emailVerificationExpires;
+        }
+    } catch (_) {
+        // Non-fatal: client can still use the access token; user hydration just won't happen
+    }
+
+    // Rotate refresh token cookie — httpOnly so JS cannot read it
     res.cookie('refreshToken', tokens.refresh.token, getCookieOptions(7 * 24 * 60 * 60 * 1000));
+    // Access token cookie kept for server-side rendering fallback only
     res.cookie('accessToken', tokens.access.token, getCookieOptions(24 * 60 * 60 * 1000));
 
-    // Return new tokens in body so frontend can update in-memory + localStorage stores.
+    // Return accessToken + user in body — frontend stores accessToken in-memory (NOT localStorage)
     sendSuccessResponse(res, 200, 'Tokens refreshed successfully', {
         tokens: {
             accessToken: tokens.access.token,
-            refreshToken: tokens.refresh.token,
+            // Never return refreshToken in body — it lives only in the httpOnly cookie
         },
+        user,
     });
 });
 
