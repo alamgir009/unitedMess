@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { motion } from 'framer-motion';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import MemberTable from '../../components/MemberTable';
 import AdminUnpaidPanel from '../../components/AdminUnpaidPanel';
@@ -12,58 +13,62 @@ import {
 /* ─────────────────────────────────────────────
    Stat Card
 ───────────────────────────────────────────── */
-const StatCard = ({ icon: Icon, label, value, subvalue, accent = false, loading = false }) => (
-    <div
-        className={[
-            'relative flex flex-col justify-between min-w-[148px] px-4 py-3.5 rounded-2xl border',
-            'transition-all duration-200 hover:-translate-y-0.5',
-            accent
-                ? 'bg-gradient-to-br from-amber-500 to-orange-500 dark:from-amber-600 dark:to-orange-600 border-amber-400/60 dark:border-amber-500/40 shadow-md shadow-amber-500/25 dark:shadow-amber-700/25'
-                : 'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700',
-        ].join(' ')}
-    >
-        {/* Label */}
-        <span className={[
-            'inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.08em] mb-2',
-            accent ? 'text-amber-100' : 'text-slate-400 dark:text-slate-500',
-        ].join(' ')}>
-            <Icon size={11} strokeWidth={2.5} />
-            {label}
-        </span>
+const StatCard = ({ icon: Icon, label, value, subvalue, accent = false, loading = false, delay = 0 }) => {
+    const colorClasses = accent 
+        ? 'bg-gradient-to-br from-amber-500 to-orange-500 dark:from-amber-600 dark:to-orange-600 border-amber-400/60 dark:border-amber-500/40 text-white shadow-amber-500/25'
+        : 'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 text-slate-900 dark:text-white shadow-sm';
 
-        {/* Value */}
-        <div className="flex items-baseline gap-1.5 leading-none">
-            {loading ? (
-                <span className={[
-                    'h-5 w-20 rounded-full animate-pulse',
-                    accent ? 'bg-amber-400/40' : 'bg-slate-100 dark:bg-slate-800',
-                ].join(' ')} />
-            ) : (
-                <>
-                    <span className={[
-                        'text-xl font-black tabular-nums',
-                        accent ? 'text-white' : 'text-slate-900 dark:text-white',
-                    ].join(' ')}>
-                        {value}
-                    </span>
-                    {subvalue && (
-                        <span className={[
-                            'text-xs font-semibold',
-                            accent ? 'text-amber-200' : 'text-slate-400 dark:text-slate-500',
-                        ].join(' ')}>
-                            {subvalue}
-                        </span>
-                    )}
-                </>
-            )}
-        </div>
+    const iconBg = accent 
+        ? 'bg-white/20' 
+        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
 
-        {/* Decorative corner dot */}
-        {accent && (
-            <span className="absolute top-3 right-3 w-1.5 h-1.5 rounded-full bg-amber-300/60" />
-        )}
-    </div>
-);
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay, duration: 0.35 }}
+            className={`
+                relative flex items-center gap-3 min-w-[160px] px-4 py-3 rounded-2xl
+                border backdrop-blur-md overflow-hidden
+                shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1
+                flex-shrink-0
+                ${colorClasses}
+            `}
+        >
+            {/* Content */}
+            <div className="relative z-10 flex items-center gap-3 w-full">
+                <div className={`p-2 rounded-xl flex-shrink-0 ${iconBg}`}>
+                    <Icon className="w-4 h-4" />
+                </div>
+                <div className="min-w-0 flex flex-col justify-center">
+                    <p className={`text-[11px] font-bold uppercase tracking-widest leading-none truncate mb-1 ${accent ? 'text-amber-100' : 'text-slate-400 dark:text-slate-500'}`}>
+                        {label}
+                    </p>
+                    <div className="flex items-baseline gap-1.5">
+                        {loading ? (
+                            <span className={`h-5 w-16 rounded-full animate-pulse ${accent ? 'bg-amber-400/40' : 'bg-slate-100 dark:bg-slate-800'}`} />
+                        ) : (
+                            <>
+                                <p className="text-xl font-black leading-none tabular-nums">
+                                    {value}
+                                </p>
+                                {subvalue && (
+                                    <span className={`text-[10px] font-semibold ${accent ? 'text-amber-200' : 'text-slate-400 dark:text-slate-500'}`}>
+                                        {subvalue}
+                                    </span>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Glossy edges */}
+            <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/60 dark:via-white/20 to-transparent pointer-events-none" />
+            <div className="absolute inset-x-8 bottom-0 h-px bg-gradient-to-r from-transparent via-black/5 dark:via-black/5 to-transparent pointer-events-none" />
+        </motion.div>
+    );
+};
 
 /* ─────────────────────────────────────────────
    Error Banner
@@ -204,18 +209,21 @@ const MemberPage = () => {
                                 label="Active Members"
                                 value={activeCount}
                                 subvalue={`/ ${safeUsers.length}`}
+                                delay={0}
                             />
                             <StatCard
                                 icon={Receipt}
                                 label="Market Exp."
                                 value={`₹\u202F${(billingStats.grandTotalMarket ?? 0).toLocaleString('en-IN')}`}
                                 loading={billingStatsLoading}
+                                delay={0.1}
                             />
                             <StatCard
                                 icon={Utensils}
                                 label="Total Meals"
                                 value={(billingStats.grandTotalMeal ?? 0).toLocaleString('en-IN')}
                                 loading={billingStatsLoading}
+                                delay={0.2}
                             />
                             <StatCard
                                 icon={TrendingUp}
@@ -223,6 +231,7 @@ const MemberPage = () => {
                                 value={`₹\u202F${(billingStats.mealCharge ?? 0).toFixed(2)}`}
                                 loading={billingStatsLoading}
                                 accent
+                                delay={0.3}
                             />
                         </div>
                     </div>
