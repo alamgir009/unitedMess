@@ -1,5 +1,6 @@
 import { useSelector } from 'react-redux';
 import { Navigate, useLocation } from 'react-router-dom';
+import { Spinner } from '@/shared/components/ui';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ProtectedRoute
@@ -27,31 +28,21 @@ const ProtectedRoute = ({ children }) => {
     if (sessionRestoring || isLoading) {
         return (
             <div
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: '100vh',
-                    background: 'var(--color-bg, #0f172a)',
-                }}
+                className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-background"
                 role="status"
                 aria-label="Checking authentication…"
             >
-                <div
-                    style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: '50%',
-                        border: '3px solid rgba(99,102,241,0.2)',
-                        borderTopColor: '#6366f1',
-                        animation: 'spin 0.75s linear infinite',
-                    }}
-                />
-                <style>{`
-                    @keyframes spin {
-                        to { transform: rotate(360deg); }
-                    }
-                `}</style>
+                {/* Ambient orbs */}
+                <div className="pointer-events-none absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/20 via-primary/5 to-transparent" />
+                <div className="pointer-events-none absolute bottom-10 left-0 w-[400px] h-[400px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-secondary-400/10 via-secondary-400/5 to-transparent" />
+
+                {/* Glass card wrapper */}
+                <div className="relative flex flex-col items-center gap-4 px-10 py-8 rounded-3xl border border-white/10 dark:border-white/5 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl shadow-2xl">
+                    <Spinner size="xl" color="primary" />
+                    <p className="text-sm font-semibold text-muted-foreground tracking-wide">
+                        Checking authentication…
+                    </p>
+                </div>
             </div>
         );
     }

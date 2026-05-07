@@ -6,23 +6,43 @@ import { Toaster } from 'react-hot-toast';
 import { restoreSession } from '@/modules/auth/store/auth.slice';
 import { injectStore } from '@/services/api/client/apiClient';
 import { store } from '@/store';
+import { Spinner } from '@/shared/components/ui';
 
 // Inject the Redux store into apiClient so the BroadcastChannel logout listener
 // can dispatch setUser(null) without creating a circular import.
 injectStore(store);
 
 // ─────────────────────────────────────────────────────────────────────────────
+// FullScreenLoader — matches the design language used across the whole app
+// (same Spinner component, same glass-card aesthetic as meal/market/dashboard).
+// ─────────────────────────────────────────────────────────────────────────────
+const FullScreenLoader = ({ label = 'Loading…' }) => (
+    <div
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-background"
+        role="status"
+        aria-label={label}
+    >
+        {/* Ambient orb — identical to the ones on MealPage / DashboardPage */}
+        <div className="pointer-events-none absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/20 via-primary/5 to-transparent" />
+        <div className="pointer-events-none absolute bottom-10 left-0 w-[400px] h-[400px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-secondary-400/10 via-secondary-400/5 to-transparent" />
+
+        {/* Glass card wrapper */}
+        <div className="relative flex flex-col items-center gap-4 px-10 py-8 rounded-3xl border border-white/10 dark:border-white/5 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl shadow-2xl">
+            <Spinner size="xl" color="primary" />
+            <p className="text-sm font-semibold text-muted-foreground tracking-wide">
+                {label}
+            </p>
+        </div>
+    </div>
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SessionGate
 // ─────────────────────────────────────────────────────────────────────────────
 // Lives INSIDE <Provider> so it can dispatch to Redux.
-//
-// On mount it dispatches restoreSession which:
-//   1. POSTs to /auth/refresh-token (httpOnly cookie sent automatically)
-//   2. Stores new accessToken in memory, user in Redux
-//   3. Sets sessionRestoring = false
-//
-// While sessionRestoring is true the entire app tree is replaced with a
-// full-screen spinner, preventing any premature redirect to /login.
+// Dispatches restoreSession on mount and holds the full app behind a loader
+// until the result (success or failure) settles — preventing any premature
+// redirect to /login before the httpOnly refresh cookie has been validated.
 // ─────────────────────────────────────────────────────────────────────────────
 const SessionGate = ({ children }) => {
     const dispatch = useDispatch();
@@ -30,41 +50,11 @@ const SessionGate = ({ children }) => {
 
     useEffect(() => {
         dispatch(restoreSession());
-        // Intentionally empty dep array — run once on mount only
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     if (sessionRestoring) {
-        return (
-            <div
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: '100vh',
-                    width: '100vw',
-                    background: 'var(--color-bg, #0f172a)',
-                }}
-                aria-label="Restoring session…"
-                role="status"
-            >
-                <div
-                    style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: '50%',
-                        border: '3px solid rgba(99,102,241,0.2)',
-                        borderTopColor: '#6366f1',
-                        animation: 'spin 0.75s linear infinite',
-                    }}
-                />
-                <style>{`
-                    @keyframes spin {
-                        to { transform: rotate(360deg); }
-                    }
-                `}</style>
-            </div>
-        );
+        return <FullScreenLoader label="Restoring session…" />;
     }
 
     return children;
@@ -73,28 +63,11 @@ const SessionGate = ({ children }) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // App
 // ─────────────────────────────────────────────────────────────────────────────
-// <AppProviders> wraps <Provider store={store}> which means SessionGate has
-// full access to Redux dispatch/select. The old pattern ran restoreSession()
-// BEFORE the Provider was mounted, so it could never write to Redux.
-// ─────────────────────────────────────────────────────────────────────────────
 const App = () => {
     return (
         <AppProviders>
             <SessionGate>
-                <Suspense
-                    fallback={
-                        <div
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                height: '100vh',
-                            }}
-                        >
-                            Loading…
-                        </div>
-                    }
-                >
+                <Suspense fallback={<FullScreenLoader label="Loading…" />}>
                     <AppRoutes />
                 </Suspense>
             </SessionGate>

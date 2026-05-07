@@ -29,7 +29,7 @@ export const restoreSession = createAsyncThunk(
             // apiClient is configured with withCredentials: true.
             // Server validates, rotates the cookie, and returns { tokens.accessToken, user }.
             const { default: apiClient } = await import('@/services/api/client/apiClient');
-            const refreshRes = await apiClient.post('auth/refresh-token');
+            const refreshRes = await apiClient.post('auth/refresh-tokens');
 
             const accessToken = refreshRes.data?.data?.tokens?.accessToken;
             const user        = refreshRes.data?.data?.user;

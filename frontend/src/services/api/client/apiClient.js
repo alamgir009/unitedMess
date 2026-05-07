@@ -92,7 +92,7 @@ apiClient.interceptors.response.use(
         if (
             error.response?.status === 401 &&
             !originalRequest._retry &&
-            !originalRequest.url?.includes('refresh-token') &&
+            !originalRequest.url?.includes('refresh-tokens') &&
             !originalRequest.url?.includes('login')
         ) {
             // Another tab already refreshed — queue and wait
@@ -112,7 +112,7 @@ apiClient.interceptors.response.use(
 
             try {
                 // No body needed — httpOnly cookie is sent automatically by the browser.
-                const refreshRes = await apiClient.post('auth/refresh-token');
+                const refreshRes = await apiClient.post('auth/refresh-tokens');
 
                 const newAccessToken = refreshRes.data?.data?.tokens?.accessToken;
 
