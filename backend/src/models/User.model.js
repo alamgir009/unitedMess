@@ -133,6 +133,7 @@ const userSchema = new mongoose.Schema({
 
 // INDEXES - Database level optimization
 userSchema.index({ email: 1 }, { unique: true, collation: { locale: 'en', strength: 2 } });
+userSchema.index({ isActive: 1, userStatus: 1 });
 userSchema.index({ role: 1, userStatus: 1, createdAt: -1 });
 userSchema.index({ phone: 1 }, { sparse: true });
 userSchema.index({ emailVerificationToken: 1 }, { sparse: true });

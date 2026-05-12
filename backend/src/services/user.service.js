@@ -280,7 +280,22 @@ async function getAllUsers(filters = {}, pagination = {}) {
     // The caller can pass isActive=true/false in the filter object to narrow results.
     const aggregationPipeline = [
         { $match: query },
-        { $sort: { createdAt: -1 } },
+        {
+            $project: {
+                name: 1,
+                email: 1,
+                image: 1,
+                phone: 1,
+                role: 1,
+                userStatus: 1,
+                isActive: 1,
+                payment: 1,
+                gasBill: 1,
+                createdAt: 1,
+                // Add any other specific fields needed for the directory
+            }
+        },
+        { $sort: { name: 1 } }, // Alphabetical sort for member directory
         { $skip: skip },
         { $limit: limit },
         {
@@ -345,8 +360,6 @@ async function getAllUsers(filters = {}, pagination = {}) {
         },
         {
             $project: {
-                password: 0,
-                __v: 0,
                 mealStats: 0,
                 marketStats: 0
             }

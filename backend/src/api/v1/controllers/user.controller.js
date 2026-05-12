@@ -33,8 +33,19 @@ const resolveUserId = (req, allowAdmin = false) => {
 // ==================== CRUD Operations ====================
 
 const getUsers = asyncHandler(async (req, res) => {
-    const filter = pick(req.query, ['userStatus', 'role', 'isActive', 'payment']);
+    const rawFilter = pick(req.query, ['userStatus', 'role', 'isActive', 'payment']);
     const options = pick(req.query, ['page', 'limit', 'sort', 'fields']);
+
+    // Construct clean, typed filter object
+    const filter = {};
+    if (rawFilter.userStatus) filter.userStatus = String(rawFilter.userStatus).toLowerCase().trim();
+    if (rawFilter.role) filter.role = rawFilter.role;
+    if (rawFilter.payment) filter.payment = rawFilter.payment;
+    
+    // Explicit boolean casting for aggregation pipelines
+    if (rawFilter.isActive !== undefined) {
+        filter.isActive = String(rawFilter.isActive).toLowerCase() === 'true';
+    }
 
     // Sanitize numeric params
     if (options.page) options.page = Math.max(1, parseInt(options.page, 10));

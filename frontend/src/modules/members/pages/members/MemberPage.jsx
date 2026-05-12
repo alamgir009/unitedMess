@@ -128,27 +128,43 @@ const MemberPage = () => {
     const { user: currentUser } = useSelector((state) => state.auth);
     const isAdmin = currentUser?.role === 'admin';
 
-    /* Safe array resolution */
+    /* 
+     * Member Directory List
+     * Optimized: Filters for isActive & approved status as a secondary defense.
+     */
     const safeUsers = useMemo(() => {
-        if (Array.isArray(users)) return users;
-        for (const key of ['users', 'docs', 'data', 'results', 'items']) {
-            if (users?.[key] && Array.isArray(users[key])) return users[key];
+        let list = [];
+        const rawUsers = users?.users || users?.docs || (Array.isArray(users) ? users : []);
+        
+        if (Array.isArray(rawUsers)) {
+            list = rawUsers;
         }
-        return [];
+
+        // Secondary defense: ensure only active & approved members are shown
+        return list.filter(u => u.isActive && u.userStatus === 'approved');
     }, [users]);
 
-    /* Active member count from user list (still fine to use for headcount) */
-    const activeCount = useMemo(() =>
-        safeUsers.filter(u => u.isActive).length,
-        [safeUsers]);
+    /* Stat count — now simply safeUsers.length since it's already filtered */
+    const activeCount = safeUsers.length;
 
     useEffect(() => {
-        dispatch(fetchUsers({ page: 1, limit: 100 }));
+        // PRODUCTION READY: Explicitly filter for active/approved members in the directory
+        dispatch(fetchUsers({ 
+            page: 1, 
+            limit: 100, 
+            isActive: true, 
+            userStatus: 'approved' 
+        }));
         dispatch(fetchBillingMonthStats());
     }, [dispatch]);
 
     const handleRetry = () => {
-        dispatch(fetchUsers({ page: 1, limit: 100 }));
+        dispatch(fetchUsers({ 
+            page: 1, 
+            limit: 100, 
+            isActive: true, 
+            userStatus: 'approved' 
+        }));
         dispatch(fetchBillingMonthStats());
     };
 
@@ -217,7 +233,7 @@ const MemberPage = () => {
                                 icon={Users}
                                 label="Active Members"
                                 value={activeCount}
-                                subvalue={`/ ${safeUsers.length}`}
+                                subvalue="Approved"
                                 delay={0}
                             />
                             <StatCard
