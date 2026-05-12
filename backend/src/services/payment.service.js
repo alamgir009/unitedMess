@@ -91,15 +91,19 @@ const createPayment = async (paymentBody) => {
         paymentBody.status = 'completed';
     }
 
-    // Guard: block duplicate payment if user's relevant status is already 'success'
+    // Guard: block duplicate payment if a completed payment already exists for this specific month and type
     if (paymentBody.status === 'completed') {
-        const userField   = getUserFieldByType(paymentBody.type);
-        const fieldStatus = user[userField]; // 'payment' or 'gasBill'
+        const duplicate = await Payment.exists({
+            user: paymentBody.user,
+            type: paymentBody.type,
+            month: paymentBody.month,
+            status: 'completed'
+        });
 
-        if (fieldStatus === 'success') {
+        if (duplicate) {
             const label = paymentBody.type === 'gas_bill' ? 'Gas bill' : 'Payment';
             throw new AppError(
-                `${label} already completed for this user. Raise a refund or contact admin.`,
+                `${label} already completed for this user for ${paymentBody.month}. Raise a refund or contact admin.`,
                 409
             );
         }
@@ -137,6 +141,22 @@ const createOnlinePaymentOrder = async (userId, amount, type) => {
     // must produce month = "April 2026", not "May 2026".
     // ──────────────────────────────────────────────────────────────
     const { monthName: billingMonthName } = getBillingPeriod();
+
+    // Guard: Prevent creating an online order if already paid for the billing month
+    const duplicate = await Payment.exists({
+        user: userId,
+        type,
+        month: billingMonthName,
+        status: 'completed'
+    });
+
+    if (duplicate) {
+        const label = type === 'gas_bill' ? 'Gas bill' : 'Payment';
+        throw new AppError(
+            `${label} already completed for this user for ${billingMonthName}.`,
+            409
+        );
+    }
 
     // Create Razorpay order first — if it fails, no DB record is created
     const order = await razorpayService.createOrder(amountInPaise);
@@ -284,6 +304,27 @@ const updatePaymentById = async (paymentId, updateBody) => {
     }, {});
 
     const oldStatus = payment.status;
+
+    // Guard: Prevent duplicate completed payments on update
+    if (safeUpdate.status === 'completed' && oldStatus !== 'completed') {
+        const targetMonth = safeUpdate.month || payment.month;
+        const duplicate = await Payment.exists({
+            user: payment.user,
+            type: payment.type,
+            month: targetMonth,
+            status: 'completed',
+            _id: { $ne: payment._id }
+        });
+
+        if (duplicate) {
+            const label = payment.type === 'gas_bill' ? 'Gas bill' : 'Payment';
+            throw new AppError(
+                `${label} already completed for this user for ${targetMonth}.`,
+                409
+            );
+        }
+    }
+
     Object.assign(payment, safeUpdate);
     await payment.save();
 
