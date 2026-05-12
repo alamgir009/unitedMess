@@ -970,7 +970,7 @@ const sendAccountLockedEmail = async (to, name = 'User') => {
 const sendPaymentStatusEmail = async (to, name, payment, status) => {
     const isSuccess = status === 'completed';
     const title = isSuccess ? 'Payment Successful' : 'Payment Failed';
-    const previewText = isSuccess ? 'Your payment was successful' : 'Your payment could not be processed';
+    const previewText = isSuccess ? `Your payment for ${payment.month} was successful` : 'Your payment could not be processed';
 
     // Format amount with currency
     const formattedAmount = new Intl.NumberFormat('en-IN', {
@@ -979,15 +979,18 @@ const sendPaymentStatusEmail = async (to, name, payment, status) => {
         minimumFractionDigits: 2,
     }).format(payment.amount);
 
+    const typeLabel = payment.type === 'gas_bill' ? 'Gas Bill' : payment.type === 'mess_bill' ? 'Mess Bill' : 'Other Payment';
+
     const content = `
         <p>Hello ${name},</p>
-        <p>${isSuccess ? 'Your payment has been successfully processed.' : 'We were unable to process your payment.'}</p>
+        <p>${isSuccess ? `Your payment for <strong>${payment.month}</strong> has been successfully processed.` : 'We were unable to process your payment.'}</p>
         <table style="border-collapse: collapse; width: 100%; margin: 20px 0; font-family: Arial, sans-serif;">
+            <tr><td style="padding: 10px; border: 1px solid #ddd;"><strong>Billing Period:</strong></td><td style="padding: 10px; border: 1px solid #ddd;">${payment.month}</td></tr>
             <tr><td style="padding: 10px; border: 1px solid #ddd;"><strong>Amount:</strong></td><td style="padding: 10px; border: 1px solid #ddd;">${formattedAmount}</td></tr>
-            <tr><td style="padding: 10px; border: 1px solid #ddd;"><strong>Payment Type:</strong></td><td style="padding: 10px; border: 1px solid #ddd;">${payment.type === 'mess_bill' ? 'Mess Bill' : 'Gas Bill'}</td></tr>
+            <tr><td style="padding: 10px; border: 1px solid #ddd;"><strong>Payment Type:</strong></td><td style="padding: 10px; border: 1px solid #ddd;">${typeLabel}</td></tr>
             <tr><td style="padding: 10px; border: 1px solid #ddd;"><strong>Date:</strong></td><td style="padding: 10px; border: 1px solid #ddd;">${new Date(payment.paymentDate).toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short' })}</td></tr>
             <tr><td style="padding: 10px; border: 1px solid #ddd;"><strong>Transaction ID:</strong></td><td style="padding: 10px; border: 1px solid #ddd; word-break: break-all;">${payment.transactionId || 'N/A'}</td></tr>
-            <tr><td style="padding: 10px; border: 1px solid #ddd;"><strong>Payment Method:</strong></td><td style="padding: 10px; border: 1px solid #ddd;">${payment.paymentMethod === 'razorpay' ? 'Online (Razorpay)' : 'Cash'}</td></tr>
+            <tr><td style="padding: 10px; border: 1px solid #ddd;"><strong>Payment Method:</strong></td><td style="padding: 10px; border: 1px solid #ddd;">${payment.paymentMethod === 'razorpay' ? 'Online (Razorpay)' : payment.paymentMethod === 'online' ? 'Online Transfer' : 'Cash'}</td></tr>
         </table>
         <p>Thank you for using United Mess.</p>
     `;
@@ -997,12 +1000,16 @@ const sendPaymentStatusEmail = async (to, name, payment, status) => {
         previewText,
         content,
         showButton: false,
-        footerText: isSuccess ? 'We appreciate your business.' : 'If you have any questions, please contact support.'
+        footerText: isSuccess ? 'We appreciate your business. Keep this email for your records.' : 'If you have any questions, please contact support.'
     });
+
+    const subject = isSuccess 
+        ? `Payment Confirmed — ${typeLabel} for ${payment.month}` 
+        : `Payment Failed — ${typeLabel} for ${payment.month}`;
 
     return sendEmail({
         to,
-        subject: `${title} - United Mess`,
+        subject,
         text,
         html
     });

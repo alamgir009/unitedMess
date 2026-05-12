@@ -10,7 +10,24 @@ const config = require('../../../config');
  * Manual payment creation (e.g. cash)
  */
 const createPayment = asyncHandler(async (req, res) => {
-    const payment = await paymentService.createPayment({ ...req.body, user: req.user.id });
+    const { user: targetUserIdBody, userId: targetUserIdAlt } = req.body;
+    const targetUserId = targetUserIdBody || targetUserIdAlt;
+
+    if (!targetUserId) {
+        throw new AppError('Target student ID is required', 400);
+    }
+
+    // Authorization guard: non-admins can only create payments for themselves
+    if (req.user.role !== 'admin' && targetUserId.toString() !== req.user.id.toString()) {
+        throw new AppError('You do not have permission to create payments for other users', 403);
+    }
+
+    const payment = await paymentService.createPayment({
+        ...req.body,
+        user: targetUserId,
+        createdBy: req.user.id
+    });
+
     sendSuccessResponse(res, 201, 'Payment record created successfully', payment);
 });
 

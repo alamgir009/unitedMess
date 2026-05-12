@@ -71,7 +71,7 @@ const App = () => {
                     <AppRoutes />
                 </Suspense>
             </SessionGate>
-            <Toaster position="top-right" />
+            <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
         </AppProviders>
     );
 };

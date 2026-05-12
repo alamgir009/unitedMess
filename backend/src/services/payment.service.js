@@ -19,8 +19,13 @@ const PAYMENT_TO_USER_STATUS = {
 // Fields admin is allowed to update — prevents accidental corruption
 const UPDATABLE_FIELDS = ['status', 'remarks', 'receiptUrl', 'month', 'amount'];
 
-const getUserFieldByType = (paymentType) =>
-    paymentType === 'gas_bill' ? 'gasBill' : 'payment';
+const getUserFieldByType = (paymentType) => {
+    switch (paymentType) {
+        case 'gas_bill': return 'gasBill';
+        case 'mess_bill': return 'payment';
+        default: return 'payment';
+    }
+};
 
 // ─────────────────────────────────────────────────────────────
 // Helpers
@@ -30,14 +35,24 @@ const getUserFieldByType = (paymentType) =>
  * Syncs user.payment or user.gasBill after any payment status change
  */
 const syncUserPaymentStatus = async (userId, paymentType, paymentStatus) => {
-    const userStatus = PAYMENT_TO_USER_STATUS[paymentStatus];
-    if (!userStatus) return; // unknown status — skip
+    try {
+        const userStatus = PAYMENT_TO_USER_STATUS[paymentStatus];
+        if (!userStatus) {
+            console.warn(`[Sync] Unknown payment status: ${paymentStatus}. Skipping user status sync.`);
+            return;
+        }
 
-    await User.findByIdAndUpdate(
-        userId,
-        { [getUserFieldByType(paymentType)]: userStatus }
-        // no { new } option — we don't need the returned doc
-    );
+        const field = getUserFieldByType(paymentType);
+        
+        await User.findByIdAndUpdate(
+            userId,
+            { [field]: userStatus }
+        );
+        console.info(`[Sync] Updated ${field} status to ${userStatus} for user ${userId}`);
+    } catch (error) {
+        // Wrap in its own try/catch — if sync fails, log the error but do NOT fail the whole request
+        console.error(`[Sync Error] Failed to sync payment status for user ${userId}:`, error.message);
+    }
 };
 
 /**
@@ -57,16 +72,22 @@ const verifyUserExists = async (userId) => {
  */
 const sendPaymentEmail = async (user, payment, status) => {
     try {
-        const paymentPlain = payment.toObject ? payment.toObject() : payment;
+        if (!user || !user.email) {
+            console.warn('[Email] Skipping email: user data or email missing.');
+            return;
+        }
+
+        // Email must contain: student name, amount, type, method, month/year, payment ID, date
         await emailService.sendPaymentStatusEmail(
             user.email,
             user.name,
-            paymentPlain,
+            payment,
             status
         );
-    } catch (err) {
-        // Isolated — log only, never propagate
-        console.error(`[PaymentEmail] Failed for user ${user._id}: ${err.message}`);
+        console.info(`[Email] Payment confirmation sent to ${user.email}`);
+    } catch (error) {
+        // Wrap in its own try/catch — if email fails, log and continue (non-blocking)
+        console.error(`[Email Error] Failed to send payment email:`, error.message);
     }
 };
 
@@ -79,43 +100,52 @@ const sendPaymentEmail = async (user, payment, status) => {
  * Cash payments auto-complete server-side — never trust client status
  */
 const createPayment = async (paymentBody) => {
-    // Fetch user once — used for existence check, duplicate guard, and email
-    const user = await User.findById(paymentBody.user)
-        .select('name email payment gasBill')
-        .lean();
+    const { user: userId, createdBy } = paymentBody;
 
-    if (!user) throw new AppError('User not found', 404);
-
-    // Business rule: cash always completes immediately
-    if (paymentBody.paymentMethod === 'cash') {
-        paymentBody.status = 'completed';
+    // Sub-fix A: Correct user fetch
+    const student = await User.findById(userId).select('_id name email payment gasBill');
+    if (!student) {
+        throw new AppError('Target student not found. Payment record cannot be created.', 404);
     }
 
-    // Guard: block duplicate payment if a completed payment already exists for this specific month and type
-    if (paymentBody.status === 'completed') {
-        const duplicate = await Payment.exists({
-            user: paymentBody.user,
-            type: paymentBody.type,
-            month: paymentBody.month,
-            status: 'completed'
-        });
+    // Duplicate guard: prevent double-recording for same user/month/type
+    const existing = await Payment.findOne({
+        user: student._id,
+        month: paymentBody.month,
+        type: paymentBody.type,
+        status: 'completed',
+    });
 
-        if (duplicate) {
-            const label = paymentBody.type === 'gas_bill' ? 'Gas bill' : 'Payment';
-            throw new AppError(
-                `${label} already completed for this user for ${paymentBody.month}. Raise a refund or contact admin.`,
-                409
-            );
-        }
+    if (existing) {
+        throw new AppError(
+            `A completed ${paymentBody.type.replace('_', ' ')} for ${paymentBody.month} already exists for this student.`,
+            400
+        );
     }
 
-    const payment = await Payment.create(paymentBody);
+    // Sub-fix B: Fix payment record creation
+    // Set user field in the Payment document to student._id — never to admin ID
+    const paymentData = {
+        ...paymentBody,
+        user: student._id,
+        createdBy: createdBy || student._id, // Audit trail
+        status: paymentBody.status || 'completed',
+        paymentDate: paymentBody.paymentDate || new Date(),
+    };
 
+    const payment = await Payment.create(paymentData);
+
+    // Sub-fix C & D: Sync and Email (non-blocking)
     if (payment.status === 'completed') {
-        await Promise.all([
-            syncUserPaymentStatus(payment.user, payment.type, payment.status),
-            sendPaymentEmail(user, payment, 'completed')
-        ]);
+        // Sync payment status
+        // Ensure this function receives student._id
+        await syncUserPaymentStatus(student._id, payment.type, payment.status);
+
+        // Send payment email
+        // Ensure this function receives student.email and student.name
+        sendPaymentEmail(student, payment, 'completed').catch(err => {
+            console.error(`[Email Error] Failed to send payment confirmation to ${student.email}:`, err.message);
+        });
     }
 
     return payment;
