@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -7,6 +8,7 @@ import {
     HiOutlineFire, HiOutlineMagnifyingGlass, HiOutlineXMark,
     HiOutlineAdjustmentsHorizontal, HiOutlineCalendarDays,
     HiOutlineExclamationTriangle, HiOutlineInformationCircle,
+    HiOutlineSun, HiOutlineMoon, HiOutlineNoSymbol,
 } from 'react-icons/hi2';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -66,24 +68,155 @@ const TypePill = ({ label, active, onClick }) => (
     </button>
 );
 
-/* ── Inline Delete Confirm ── */
-const DeleteConfirmRow = ({ onConfirm, onCancel }) => (
-    <motion.div
-        initial={{ opacity: 0, y: -6 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -6 }}
-        className="flex items-center gap-3 p-3 rounded-2xl bg-destructive/10 border border-destructive/30"
-    >
-        <HiOutlineExclamationTriangle className="w-4 h-4 text-destructive flex-shrink-0" />
-        <p className="flex-1 text-sm font-semibold text-destructive">Delete this meal record?</p>
-        <button onClick={onCancel} className="px-3 py-1.5 rounded-xl text-xs font-bold bg-muted/40 hover:bg-muted/70 transition-colors">
-            Cancel
-        </button>
-        <button onClick={onConfirm} className="px-3 py-1.5 rounded-xl text-xs font-bold bg-destructive text-white hover:bg-destructive/80 transition-colors">
-            Delete
-        </button>
-    </motion.div>
-);
+
+/* ── Delete Meal Dialog ────────────────────────────────────────────────────────
+   Portal-based modal:
+   • Mobile  → bottom-sheet that springs up from the bottom edge
+   • Desktop → centred card with spring animation
+   • Accessible: Escape to close, aria-labelledby/describedby, role=alertdialog
+   • Body scroll locked while open
+   • Animated loading spinner on confirm button
+   ──────────────────────────────────────────────────────────────────────────── */
+const MEAL_TYPE_META = {
+    both:  { label: 'Both Meals',    Icon: HiOutlineSparkles, color: 'text-primary bg-primary/10'       },
+    day:   { label: 'Day Meal',      Icon: HiOutlineSun,      color: 'text-amber-500 bg-amber-500/10'   },
+    night: { label: 'Night Meal',    Icon: HiOutlineMoon,     color: 'text-indigo-400 bg-indigo-400/10' },
+    off:   { label: 'No Meal (Off)', Icon: HiOutlineNoSymbol, color: 'text-muted-foreground bg-muted/40'},
+};
+
+const DeleteMealDialog = ({ meal, onConfirm, onCancel, isDeleting }) => {
+    const meta      = MEAL_TYPE_META[meal?.type] ?? MEAL_TYPE_META.both;
+    const { Icon }  = meta;
+    const dateLabel = meal?.date ? format(new Date(meal.date), 'EEEE, MMMM d, yyyy') : '—';
+
+    /* Escape key handler */
+    useEffect(() => {
+        const handler = (e) => { if (e.key === 'Escape' && !isDeleting) onCancel(); };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, [onCancel, isDeleting]);
+
+    /* Lock body scroll */
+    useEffect(() => {
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = prev; };
+    }, []);
+
+    if (typeof document === 'undefined') return null;
+
+    return createPortal(
+        <AnimatePresence>
+            {meal && (
+                <div className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center">
+
+                    {/* Backdrop */}
+                    <motion.div
+                        key="del-backdrop"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute inset-0 bg-black/60 md:backdrop-blur-sm"
+                        onClick={() => !isDeleting && onCancel()}
+                        aria-hidden="true"
+                    />
+
+                    {/* Panel — slides up on mobile, pops in on desktop */}
+                    <motion.div
+                        key="del-panel"
+                        role="alertdialog"
+                        aria-modal="true"
+                        aria-labelledby="del-dialog-title"
+                        aria-describedby="del-dialog-desc"
+                        initial={{ opacity: 0, y: 56 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 56 }}
+                        transition={{ type: 'spring', stiffness: 380, damping: 32, mass: 0.8 }}
+                        className={[
+                            'relative z-10 w-full sm:max-w-[380px] mx-auto',
+                            /* Mobile: full-width bottom-sheet; Desktop: floating card */
+                            'rounded-t-[28px] sm:rounded-[28px]',
+                            'bg-white dark:bg-slate-900',
+                            'border-t border-x sm:border border-black/[0.08] dark:border-white/10',
+                            'shadow-[0_-8px_48px_rgba(0,0,0,0.22)] sm:shadow-[0_32px_72px_rgba(0,0,0,0.28)]',
+                            'overflow-hidden',
+                        ].join(' ')}
+                    >
+                        {/* Top accent gradient bar */}
+                        <div className="h-[3px] w-full bg-gradient-to-r from-rose-500 via-red-400 to-orange-400" />
+
+                        {/* Drag indicator — mobile only */}
+                        <div className="flex justify-center pt-3 pb-1 sm:hidden" aria-hidden="true">
+                            <div className="w-10 h-1 rounded-full bg-muted/50" />
+                        </div>
+
+                        <div className="px-6 pt-4 pb-7 sm:px-8 sm:pt-6 sm:pb-8 space-y-5">
+
+                            {/* Warning icon */}
+                            <div className="flex justify-center">
+                                <div className="w-[60px] h-[60px] rounded-[18px] bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 flex items-center justify-center shadow-inner">
+                                    <HiOutlineExclamationTriangle className="w-7 h-7 text-rose-500" />
+                                </div>
+                            </div>
+
+                            {/* Heading */}
+                            <div className="text-center space-y-1">
+                                <h3 id="del-dialog-title" className="text-[17px] font-bold tracking-tight text-foreground">
+                                    Delete Meal Record?
+                                </h3>
+                                <p id="del-dialog-desc" className="text-[13px] text-muted-foreground leading-relaxed">
+                                    This is permanent and cannot be undone.
+                                </p>
+                            </div>
+
+                            {/* Meal preview chip */}
+                            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-muted/30 border border-border/50">
+                                <div className={`p-2 rounded-xl flex-shrink-0 ${meta.color}`}>
+                                    <Icon className="w-4 h-4" />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                                        {meta.label}
+                                    </p>
+                                    <p className="text-sm font-semibold text-foreground truncate">{dateLabel}</p>
+                                </div>
+                            </div>
+
+                            {/* Action buttons */}
+                            <div className="flex flex-col-reverse sm:flex-row gap-2.5">
+                                <button
+                                    type="button"
+                                    onClick={onCancel}
+                                    disabled={isDeleting}
+                                    className="flex-1 h-11 rounded-2xl border border-border/60 bg-muted/30 hover:bg-muted/60 text-sm font-bold text-foreground transition-all active:scale-[0.97] disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={onConfirm}
+                                    disabled={isDeleting}
+                                    className="flex-1 h-11 rounded-2xl bg-gradient-to-r from-rose-500 to-red-500 hover:from-rose-600 hover:to-red-600 text-sm font-bold text-white shadow-lg shadow-rose-500/25 transition-all active:scale-[0.97] disabled:opacity-60 flex items-center justify-center gap-2"
+                                >
+                                    {isDeleting ? (
+                                        <>
+                                            <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin flex-shrink-0" />
+                                            Deleting…
+                                        </>
+                                    ) : (
+                                        'Yes, Delete'
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+        </AnimatePresence>,
+        document.body
+    );
+};
 
 /* ── Main Page ── */
 const MealPage = () => {
@@ -103,7 +236,8 @@ const MealPage = () => {
     const [page, setPage]                 = useState(1);
     const [limit, setLimit]               = useState(20);
     const [errorMsg, setErrorMsg]         = useState('');
-    const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+    const [deletingMeal, setDeletingMeal] = useState(null);  // full meal object shown in dialog
+    const [isDeleting, setIsDeleting]     = useState(false); // spinner on confirm button
 
     /* Fetch on mount and page/limit changes — no reset() in cleanup so
        data survives tab switches and avoids flicker on strict-mode double-invoke */
@@ -144,22 +278,25 @@ const MealPage = () => {
         }
     }, [editingMeal, dispatch, closeModal, isAdmin, user, page, limit]);
 
-    const handleDeleteRequest = useCallback((mealId) => setConfirmDeleteId(mealId), []);
-    const handleDeleteCancel  = useCallback(() => setConfirmDeleteId(null), []);
+    /* Delete handlers — MealList now passes the full meal object, not just the ID */
+    const handleDeleteRequest = useCallback((meal) => setDeletingMeal(meal), []);
+    const handleDeleteCancel  = useCallback(() => { if (!isDeleting) setDeletingMeal(null); }, [isDeleting]);
     const handleDeleteConfirm = useCallback(async () => {
-        if (!confirmDeleteId) return;
-        const id = confirmDeleteId;
-        setConfirmDeleteId(null);
+        if (!deletingMeal || isDeleting) return;
+        setIsDeleting(true);
         try {
             setErrorMsg('');
-            const res = await dispatch(deleteMeal(id)).unwrap();
+            const res = await dispatch(deleteMeal(deletingMeal._id)).unwrap();
             toast.success(res?.message || 'Meal deleted successfully');
+            setDeletingMeal(null);
         } catch (error) {
             const msg = typeof error === 'string' ? error : (error?.message || 'Failed to delete meal');
             setErrorMsg(msg);
             toast.error(msg);
+        } finally {
+            setIsDeleting(false);
         }
-    }, [dispatch, confirmDeleteId]);
+    }, [dispatch, deletingMeal, isDeleting]);
 
     /* Derived stats */
     const totalMeals  = useMemo(() => meals?.reduce((s, m) => s + (m.mealCount || 0), 0) || 0, [meals]);
@@ -359,12 +496,6 @@ const MealPage = () => {
                         )}
                     </AnimatePresence>
 
-                    {/* Inline delete confirm */}
-                    <AnimatePresence>
-                        {confirmDeleteId && (
-                            <DeleteConfirmRow onConfirm={handleDeleteConfirm} onCancel={handleDeleteCancel} />
-                        )}
-                    </AnimatePresence>
 
                     {/* Content */}
                     {isLoading && (!meals || meals.length === 0) ? (
@@ -383,7 +514,7 @@ const MealPage = () => {
                     )}
                 </div>
 
-                {/* Modal */}
+                {/* Meal create/edit modal */}
                 <MealModal isOpen={isModalOpen} onClose={closeModal}
                     title={editingMeal ? 'Edit Meal Record' : (isAdmin ? 'Add Meal Record' : 'Track New Meal')}>
                     <MealForm
@@ -395,6 +526,16 @@ const MealPage = () => {
                         currentUser={user}
                     />
                 </MealModal>
+
+                {/* Delete confirm dialog — portal, sits above everything */}
+                {deletingMeal && (
+                    <DeleteMealDialog
+                        meal={deletingMeal}
+                        onConfirm={handleDeleteConfirm}
+                        onCancel={handleDeleteCancel}
+                        isDeleting={isDeleting}
+                    />
+                )}
             </div>
         </MainLayout>
     );

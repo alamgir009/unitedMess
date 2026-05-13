@@ -158,7 +158,7 @@ const MealCard = React.forwardRef(({ meal, onEdit, onDelete, isAdmin, index }, r
                     variant="danger"
                     size="sm"
                     iconOnly
-                    onClick={() => onDelete(meal._id)}
+                    onClick={() => onDelete(meal)}
                     aria-label="Delete meal"
                 >
                     <HiOutlineTrash className="w-4 h-4" />
@@ -264,7 +264,7 @@ const MealRow = React.forwardRef(({ meal, onEdit, onDelete, isAdmin, index }, re
                     variant="danger"
                     size="sm"
                     iconOnly
-                    onClick={() => onDelete(meal._id)}
+                    onClick={() => onDelete(meal)}
                     title="Delete"
                 >
                     <HiOutlineTrash className="w-4 h-4" />
