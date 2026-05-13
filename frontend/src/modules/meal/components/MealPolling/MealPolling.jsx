@@ -166,10 +166,13 @@ const checkVariants = {
 
 const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
     const dispatch = useDispatch();
-    const { pollStatus, isLoading } = useSelector((s) => s.meal);
-    const { user } = useSelector((s) => s.auth);
+    // NOTE: Do NOT use the global meal.isLoading here — it blocks vote buttons
+    // during fetchMeals (page-level fetch). Use a dedicated local flag instead.
+    const { pollStatus } = useSelector((s) => s.meal);
+    const { user }       = useSelector((s) => s.auth);
 
-    const [isVoting, setIsVoting] = useState(false);
+    const [isVoting, setIsVoting]         = useState(false);
+    const [isPollLoading, setIsPollLoading] = useState(false);
 
     /* Stable ISO date string — recalculated only when selectedDate changes */
     const dateStr = useMemo(() => {
@@ -180,7 +183,8 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
     }, [selectedDate]);
 
     useEffect(() => {
-        dispatch(fetchPollStatus(dateStr));
+        setIsPollLoading(true);
+        dispatch(fetchPollStatus(dateStr)).finally(() => setIsPollLoading(false));
     }, [dispatch, dateStr]);
 
     const votes = pollStatus?.votes ?? [];
@@ -205,11 +209,12 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
 
     const handleVote = useCallback(
         async (type) => {
-            if (isVoting || isLoading) return;
+            if (isVoting) return;
             setIsVoting(true);
             try {
+                // voteMealPoll thunk internally dispatches fetchPollStatus — no
+                // need to dispatch it again here (would cause a double fetch).
                 await dispatch(voteMealPoll({ type, date: dateStr })).unwrap();
-                await dispatch(fetchPollStatus(dateStr));
                 toast.success(`Voted · ${type.charAt(0).toUpperCase()}${type.slice(1)}`);
             } catch (err) {
                 toast.error(
@@ -219,13 +224,35 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                 setIsVoting(false);
             }
         },
-        [dispatch, dateStr, isLoading, isVoting]
+        [dispatch, dateStr, isVoting]
     );
 
     const displayDate = useMemo(() => formatDisplayDate(selectedDate), [selectedDate]);
-    const disabled = isVoting || isLoading;
+    const disabled    = isVoting || isPollLoading;
 
     /* ── render ── */
+
+    // Loading skeleton — shown only on the initial poll fetch
+    if (isPollLoading && !pollStatus) {
+        return (
+            <section className="w-full animate-pulse">
+                <div className="rounded-[2rem] border border-white/10 dark:border-white/10 bg-muted/30 p-6 sm:p-8 space-y-4">
+                    <div className="flex items-center gap-3">
+                        <div className="h-5 w-5 rounded-full bg-muted/60" />
+                        <div className="h-4 w-32 rounded-lg bg-muted/60" />
+                    </div>
+                    <div className="h-7 w-48 rounded-xl bg-muted/50" />
+                    <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+                        {[1, 2, 3, 4].map(n => (
+                            <div key={n} className="h-[130px] rounded-2xl bg-muted/40 border border-white/10" />
+                        ))}
+                    </div>
+                    <div className="h-28 rounded-2xl bg-muted/30 border border-white/10" />
+                </div>
+            </section>
+        );
+    }
+
     return (
         <section className="w-full">
             {/*

@@ -68,10 +68,11 @@ const queryMeals = async (filter, options = {}, populateUser = false) => {
         query.skip(skip).limit(limit);
     }
     
-    query.lean();
+    // NOTE: lean() must be chained (returns a new query instance)
+    query = query.lean();
 
     // In controllers, isAdmin is usually true when we want to populate user
-    if (populateUser) query.populate('user', 'name email role');
+    if (populateUser) query = query.populate('user', 'name email role');
 
     const [meals, total] = await Promise.all([
         query.exec(),
@@ -175,11 +176,15 @@ const deleteMealById = async (mealId) => {
     const meal = await getMealById(mealId);
     if (!meal) throw new AppError('Meal not found', 404);
 
+    // Cast mealId to ObjectId so $pull correctly matches the ObjectId stored
+    // in User.meals (a plain string would fail to match the stored ObjectId).
+    const mealObjectId = new mongoose.Types.ObjectId(mealId);
+
     await Promise.all([
         User.findByIdAndUpdate(
-            meal.user._id,                  // populated — must use ._id
+            meal.user._id,
             {
-                $pull: { meals: mealId },
+                $pull: { meals: mealObjectId },
                 $inc: { totalMeal: -meal.mealCount, guestMeal: -(meal.guestCount || 0) }
             }
         ),

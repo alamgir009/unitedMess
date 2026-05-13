@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { format, eachDayOfInterval, parseISO, differenceInDays } from 'date-fns';
 import {
     HiOutlineSun,
@@ -225,7 +225,12 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
         let newVal = value;
         if (type === 'checkbox') newVal = checked;
         if (type === 'number')   newVal = parseInt(value, 10) || 0;
-        setFormData(prev => ({ ...prev, [name]: newVal }));
+        setFormData(prev => {
+            const next = { ...prev, [name]: newVal };
+            // Reset guest count when the guest meal toggle is turned off
+            if (name === 'isGuestMeal' && !newVal) next.guestCount = 0;
+            return next;
+        });
     };
 
     const handleTypeChange = (val) => {
@@ -255,10 +260,9 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
         e.preventDefault();
         const baseCount = typeCountMap[formData.type] ?? 0;
         const guestAdd  = formData.isGuestMeal ? (formData.guestCount || 0) : 0;
-        let submitDate  = formData.date;
-        if (formData.date === format(new Date(), 'yyyy-MM-dd')) {
-            submitDate = new Date().toISOString();
-        }
+        // Always send a full ISO string so parseDate() on the backend receives a
+        // consistent, timezone-safe value regardless of which date was selected.
+        const submitDate = new Date(formData.date).toISOString();
         onSubmit({ ...formData, date: submitDate, mealCount: baseCount + guestAdd });
     };
 
@@ -333,7 +337,11 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
 
     /* ── Preview count (single mode) ── */
     const previewCount = typeCountMap[formData.type] + (formData.isGuestMeal ? formData.guestCount : 0);
-    const rangeErrMsg  = rangeError || validateRange(rangeFrom, rangeTo);
+    // Memoized so validateRange() is not called on every keystroke unrelated to dates
+    const rangeErrMsg  = useMemo(
+        () => rangeError || validateRange(rangeFrom, rangeTo),
+        [rangeError, rangeFrom, rangeTo, validateRange]
+    );
     const rangeInvalid = mode === 'range' && !!rangeErrMsg;
 
     /* ─────────────────────── Render ─────────────────────── */

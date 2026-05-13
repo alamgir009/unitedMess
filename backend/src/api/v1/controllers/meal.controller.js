@@ -63,7 +63,7 @@ const deleteMeal = asyncHandler(async (req, res) => {
     }
 
     await mealService.deleteMealById(req.params.mealId);
-    res.status(204).send();
+    sendSuccessResponse(res, 200, 'Meal deleted successfully', { id: req.params.mealId });
 });
 
 // ─── Meal Polling Controllers ───────────────────────────────────────────
