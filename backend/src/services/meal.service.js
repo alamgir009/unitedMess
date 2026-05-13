@@ -58,25 +58,29 @@ const queryMeals = async (filter, options = {}, populateUser = false) => {
     }
 
     const getAll = options.limit === 'all';
-    const limit = getAll ? 0 : (parseInt(options.limit) || 10);
-    const page  = parseInt(options.page) || 1;
-    const skip  = getAll ? 0 : (page - 1) * limit;
+    const limit  = getAll ? 0 : (parseInt(options.limit) || 10);
+    const page   = parseInt(options.page) || 1;
+    const skip   = getAll ? 0 : (page - 1) * limit;
 
-    const query = Meal.find(filter).sort(sort);
+    // Use `let` so we can chain modifiers onto the query incrementally
+    // without hitting "Assignment to constant variable".
+    let query = Meal.find(filter).sort(sort);
 
     if (!getAll) {
-        query.skip(skip).limit(limit);
+        query = query.skip(skip).limit(limit);
     }
-    
-    // NOTE: lean() must be chained (returns a new query instance)
+
+    // .lean() returns a new Query instance — must be reassigned
     query = query.lean();
 
-    // In controllers, isAdmin is usually true when we want to populate user
-    if (populateUser) query = query.populate('user', 'name email role');
+    // Populate user fields for admin views
+    if (populateUser) {
+        query = query.populate('user', 'name email role');
+    }
 
     const [meals, total] = await Promise.all([
         query.exec(),
-        Meal.countDocuments(filter)
+        Meal.countDocuments(filter),
     ]);
 
     const totalPages = getAll ? 1 : Math.ceil(total / limit);
@@ -84,14 +88,14 @@ const queryMeals = async (filter, options = {}, populateUser = false) => {
     return {
         meals,
         pagination: {
-            page: getAll ? 1 : page,
-            limit: getAll ? total : limit,
+            page:    getAll ? 1     : page,
+            limit:   getAll ? total : limit,
             total,
-            pages: totalPages,
+            pages:   totalPages,
             hasNext: getAll ? false : skip + meals.length < total,
             hasPrev: getAll ? false : page > 1,
-            isAll: getAll
-        }
+            isAll:   getAll,
+        },
     };
 };
 
