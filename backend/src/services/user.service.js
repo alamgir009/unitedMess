@@ -590,38 +590,54 @@ const getPaybleAmountforMeal = async (userId) => {
  * Search with text index (requires MongoDB text index on name+email)
  */
 async function searchUsers(searchTerm, pagination = {}) {
-    const page = Math.max(1, Number(pagination.page) || DEFAULT_PAGE);
+    const page  = Math.max(1, Number(pagination.page)  || DEFAULT_PAGE);
     const limit = Math.min(MAX_LIMIT, Math.max(1, Number(pagination.limit) || DEFAULT_LIMIT));
-    const skip = (page - 1) * limit;
+    const skip  = (page - 1) * limit;
 
-    const query = searchTerm
-        ? { $text: { $search: searchTerm } } // Use text index if available
-        : {
-            $or: [
-                { name: { $regex: searchTerm, $options: 'i' } },
-                { email: { $regex: searchTerm, $options: 'i' } }
-            ]
+    /**
+     * Try $text search first (fast, requires a MongoDB text index on name+email).
+     * If the index doesn't exist the driver throws a MongoServerError — catch it
+     * and fall back to the slower but always-available $regex approach.
+     */
+    const buildTextQuery  = () => ({ $text: { $search: searchTerm } });
+    const buildRegexQuery = () => ({
+        $or: [
+            { name:  { $regex: searchTerm, $options: 'i' } },
+            { email: { $regex: searchTerm, $options: 'i' } },
+        ],
+    });
+
+    const runQuery = async (query) => {
+        const [users, total] = await Promise.all([
+            User.find(query)
+                .select('-password -__v')
+                .limit(limit)
+                .skip(skip)
+                .sort({ createdAt: -1 })
+                .lean(),
+            User.countDocuments(query),
+        ]);
+        return {
+            users,
+            pagination: {
+                page, limit, total,
+                pages: Math.ceil(total / limit),
+                hasNext: skip + users.length < total,
+                hasPrev: page > 1,
+            },
         };
-
-    const [users, total] = await Promise.all([
-        User.find(query)
-            .select('-password -__v')
-            .limit(limit)
-            .skip(skip)
-            .sort({ createdAt: -1 })
-            .lean(),
-        User.countDocuments(query)
-    ]);
-
-    return {
-        users,
-        pagination: {
-            page, limit, total,
-            pages: Math.ceil(total / limit),
-            hasNext: skip + users.length < total,
-            hasPrev: page > 1
-        }
     };
+
+    try {
+        // Attempt text-index search
+        return await runQuery(buildTextQuery());
+    } catch (err) {
+        // Fallback: if text index is missing (code 27) use regex; re-throw anything else
+        if (err.code === 27 || err.codeName === 'IndexNotFound' || /text index/i.test(err.message)) {
+            return await runQuery(buildRegexQuery());
+        }
+        throw err;
+    }
 }
 
 /**

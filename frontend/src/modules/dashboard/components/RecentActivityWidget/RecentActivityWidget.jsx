@@ -29,7 +29,6 @@ const ActivitySkeleton = () => (
 
 const RecentActivityWidget = ({ activities = [], isLoading }) => {
     const navigate = useNavigate();
-    const hasMeals = activities.some(a => a.type === 'meal');
 
     if (isLoading) {
         return (
@@ -54,7 +53,7 @@ const RecentActivityWidget = ({ activities = [], isLoading }) => {
                     Recent Activity
                 </h3>
                 <button
-                    onClick={() => navigate(hasMeals ? '/meals' : '/markets')}
+                    onClick={() => navigate('/meals')}
                     className="flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors group"
                 >
                     View All

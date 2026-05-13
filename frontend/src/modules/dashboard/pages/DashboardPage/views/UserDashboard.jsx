@@ -87,6 +87,9 @@ const UserDashboard = () => {
         recentActivities,
         isLoading,
         isActivitiesLoading,
+        // Per-section flags added to dashboard.slice
+        userStatsLoaded,
+        isUserStatsError,
     } = useSelector((state) => state.dashboard);
 
     const { user } = useSelector((state) => state.auth);
@@ -180,7 +183,12 @@ const UserDashboard = () => {
                 <PayableWidget
                     mealPayable={userMealPayable?.payableAmount}
                     gasBillPayable={userGasBillPayable?.payableAmount}
+                    // Pass authoritative backend status fields
+                    mealPaymentStatus={userMealPayable?.paymentStatus ?? null}
+                    gasBillStatus={userGasBillPayable?.status ?? null}
                     isLoading={isLoading}
+                    isLoaded={userStatsLoaded}
+                    isError={isUserStatsError}
                 />
 
                 <RecentActivityWidget

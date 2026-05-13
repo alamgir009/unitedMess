@@ -13,6 +13,11 @@ const initialState = {
     isSuccess: false,
     isLoading: false,
     isActivitiesLoading: false,
+    // ── Per-section error/loaded flags (user stats) ──────────────────────────
+    // userStatsLoaded: false means data has never been fetched yet.
+    // Components must NOT infer "paid" from null values until this is true.
+    userStatsLoaded: false,
+    isUserStatsError: false,
     message: '',
 };
 
@@ -119,17 +124,22 @@ export const dashboardSlice = createSlice({
             .addCase(fetchUserDashboardStats.pending, (state) => {
                 state.isLoading = true;
                 state.isError = false;
+                state.isUserStatsError = false;
                 state.isSuccess = false;
             })
             .addCase(fetchUserDashboardStats.fulfilled, (state, action) => {
                 state.isLoading = false;
                 state.isSuccess = true;
+                state.userStatsLoaded = true;
+                state.isUserStatsError = false;
                 state.userMealPayable = action.payload.mealPayable;
                 state.userGasBillPayable = action.payload.gasBillPayable;
             })
             .addCase(fetchUserDashboardStats.rejected, (state, action) => {
                 state.isLoading = false;
                 state.isError = true;
+                state.isUserStatsError = true;
+                state.userStatsLoaded = true; // Loaded (with error) — stop showing skeleton
                 state.message = action.payload;
             })
             // Recent Activity

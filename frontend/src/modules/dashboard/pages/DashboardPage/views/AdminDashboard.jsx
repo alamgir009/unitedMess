@@ -7,10 +7,9 @@ import StatOverview from '../../../components/StatOverview/StatOverview';
 import MembersTable from '../../../components/MembersTable/MembersTable';
 import {
     FiUsers, FiDollarSign, FiPieChart, FiShoppingBag, FiCommand,
-    FiAlertCircle, FiCheckSquare, FiCoffee, FiCreditCard, FiTrendingUp,
-    FiArrowRight, FiRefreshCw
+    FiAlertCircle, FiCheckSquare, FiCoffee, FiTrendingUp,
+    FiRefreshCw
 } from 'react-icons/fi';
-
 
 
 // Summary alert pill
@@ -18,7 +17,7 @@ const AlertPill = ({ count, label, color, icon: Icon }) => {
     if (!count || count === 0) return null;
     const colors = {
         amber: 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/40 text-amber-700 dark:text-amber-400',
-        red: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800/40 text-red-700 dark:text-red-400',
+        red:   'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800/40 text-red-700 dark:text-red-400',
         green: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800/40 text-green-700 dark:text-green-400',
     };
     return (
@@ -30,20 +29,20 @@ const AlertPill = ({ count, label, color, icon: Icon }) => {
 };
 
 const AdminDashboard = () => {
-    const dispatch = useDispatch();
-    const navigate = useNavigate();
+    const dispatch  = useDispatch();
+    const navigate  = useNavigate();
 
     const {
         adminStats,
         marketGrandTotal,
         mealGrandTotal,
         mealCharge,
-        isLoading: isDashboardLoading
+        isLoading: isDashboardLoading,
     } = useSelector((state) => state.dashboard);
 
     const {
         users,
-        isLoading: isMembersLoading
+        isLoading: isMembersLoading,
     } = useSelector((state) => state.members);
 
     useEffect(() => {
@@ -64,7 +63,9 @@ const AdminDashboard = () => {
         dispatch(fetchUsers({ page: 1, limit: 100 }));
     };
 
-    // Computed summary alerts — use real DB field names from the aggregation response
+    // ── Alert counts from visible user list ──────────────────────────────────
+    // NOTE: counts reflect the paginated list (max 100); with very large tenancies
+    // a dedicated count endpoint would be more accurate.
     const pendingCount    = users.filter(u => u.userStatus === 'pending').length;
     const deniedCount     = users.filter(u => u.userStatus === 'denied').length;
     const inactiveCount   = users.filter(u => !u.isActive && u.userStatus !== 'pending' && u.userStatus !== 'denied').length;
@@ -72,11 +73,14 @@ const AdminDashboard = () => {
     const unpaidGasCount  = users.filter(u => u.gasBill  !== 'success' && u.isActive).length;
     const activeCount     = users.filter(u => u.isActive).length;
 
+    const hasAlerts = pendingCount > 0 || unpaidMealCount > 0 || unpaidGasCount > 0 || inactiveCount > 0 || deniedCount > 0;
+    const allSettled = !hasAlerts && users.length > 0;
+
     // Stats cards
     const statsData = [
         {
             title: 'Active Members',
-            value: adminStats?.activeUsers || activeCount || 0,
+            value: adminStats?.activeUsers ?? activeCount ?? 0,
             change: `${users.length} total`,
             changeType: 'increase',
             icon: FiUsers,
@@ -85,28 +89,26 @@ const AdminDashboard = () => {
         },
         {
             title: 'Market Expenses',
-            value: `₹${marketGrandTotal?.grandTotal || 0}`,
+            value: `₹${marketGrandTotal?.grandTotal ?? 0}`,
             icon: FiShoppingBag,
             colorClass: 'bg-gradient-to-br from-rose-500 to-pink-600',
             gradientClass: 'bg-rose-500',
         },
         {
             title: 'Total Meals',
-            value: mealGrandTotal?.overallMeal || 0,
+            value: mealGrandTotal?.overallMeal ?? 0,
             icon: FiCoffee,
             colorClass: 'bg-gradient-to-br from-emerald-500 to-teal-600',
             gradientClass: 'bg-emerald-500',
         },
         {
             title: 'Meal Rate',
-            value: `₹${mealCharge?.mealCharge || 0}`,
+            value: `₹${mealCharge?.mealCharge ?? 0}`,
             icon: FiTrendingUp,
             colorClass: 'bg-gradient-to-br from-amber-500 to-orange-600',
             gradientClass: 'bg-amber-500',
         },
     ];
-
-
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -139,22 +141,30 @@ const AdminDashboard = () => {
                 <StatOverview stats={statsData} />
             </div>
 
-
-
-            {/* Alert Banners */}
-            {(pendingCount > 0 || unpaidMealCount > 0 || unpaidGasCount > 0 || inactiveCount > 0 || deniedCount > 0) && (
+            {/* Alert Banners — only when there ARE alerts ──────────────────── */}
+            {hasAlerts && (
                 <div className="flex flex-wrap gap-2 items-center">
                     <span className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mr-1">
                         Alerts:
                     </span>
-                    <AlertPill count={pendingCount} label="pending approval" color="amber" icon={FiAlertCircle} />
-                    <AlertPill count={inactiveCount} label="inactive members" color="amber" icon={FiAlertCircle} />
-                    <AlertPill count={deniedCount} label="denied members" color="red" icon={FiAlertCircle} />
-                    <AlertPill count={unpaidMealCount} label="unpaid meal bills" color="red" icon={FiDollarSign} />
-                    <AlertPill count={unpaidGasCount} label="unpaid gas bills" color="red" icon={FiPieChart} />
-                    {pendingCount === 0 && unpaidMealCount === 0 && unpaidGasCount === 0 && inactiveCount === 0 && deniedCount === 0 && (
-                        <AlertPill count={activeCount} label="all settled" color="green" icon={FiCheckSquare} />
-                    )}
+                    <AlertPill count={pendingCount}    label="pending approval"  color="amber" icon={FiAlertCircle} />
+                    <AlertPill count={inactiveCount}   label="inactive members"  color="amber" icon={FiAlertCircle} />
+                    <AlertPill count={deniedCount}     label="denied members"    color="red"   icon={FiAlertCircle} />
+                    <AlertPill count={unpaidMealCount} label="unpaid meal bills" color="red"   icon={FiDollarSign}  />
+                    <AlertPill count={unpaidGasCount}  label="unpaid gas bills"  color="red"   icon={FiPieChart}    />
+                </div>
+            )}
+
+            {/* All-settled pill — only when all is clear and users are loaded ── */}
+            {allSettled && (
+                <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mr-1">
+                        Status:
+                    </span>
+                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-xs font-semibold bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800/40 text-green-700 dark:text-green-400">
+                        <FiCheckSquare size={14} />
+                        <span><strong>{activeCount}</strong> all settled</span>
+                    </div>
                 </div>
             )}
 

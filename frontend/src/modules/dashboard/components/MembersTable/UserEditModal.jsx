@@ -180,7 +180,7 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
             onClick={onClose}
             className="rounded-full p-1.5 text-slate-400 transition-colors hover:bg-white/30 hover:text-slate-600 dark:hover:bg-slate-800/60 dark:hover:text-slate-300 sm:p-2"
           >
-            <FiX size={18} sm:size={20} />
+            <FiX size={18} />
           </button>
         </div>
 

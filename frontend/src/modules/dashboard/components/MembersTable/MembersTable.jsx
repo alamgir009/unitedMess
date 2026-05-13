@@ -106,11 +106,15 @@ const SkeletonRow = () => (
                 </div>
             </div>
         </td>
-        {[28, 20, 20].map((w, i) => (
-            <td key={i} className="px-5 py-4">
-                <div className={`h-6 w-${w} rounded-full bg-slate-200/70 dark:bg-slate-700/50`} />
-            </td>
-        ))}
+        <td className="px-5 py-4">
+            <div className="h-6 w-20 rounded-full bg-slate-200/70 dark:bg-slate-700/50" />
+        </td>
+        <td className="px-5 py-4">
+            <div className="h-6 w-16 rounded-full bg-slate-200/70 dark:bg-slate-700/50" />
+        </td>
+        <td className="px-5 py-4">
+            <div className="h-6 w-16 rounded-full bg-slate-200/70 dark:bg-slate-700/50" />
+        </td>
         <td className="px-5 py-4 text-right">
             <div className="ml-auto h-8 w-20 rounded-xl bg-slate-200/70 dark:bg-slate-700/50" />
         </td>

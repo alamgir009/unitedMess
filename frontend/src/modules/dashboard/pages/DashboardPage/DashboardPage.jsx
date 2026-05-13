@@ -16,7 +16,7 @@ const DashboardPage = () => {
         <MainLayout>
             <div className="max-w-7xl mx-auto py-6 w-full relative">
                 {/* Decorative global background glow */}
-                <div className="fixed top-0 left-1/2 -translate-x-1/2 w-screen h-scren pointer-events-none z-[-1] overflow-hidden hidden dark:block">
+                <div className="fixed top-0 left-1/2 -translate-x-1/2 w-screen h-screen pointer-events-none z-[-1] overflow-hidden hidden dark:block">
                     <div className="absolute top-[-10%] sm:top-[-20%] left-1/4 w-[50vw] h-[50vw] rounded-full bg-indigo-900/10 blur-[120px]" />
                     <div className="absolute top-[20%] right-1/4 w-[40vw] h-[40vw] rounded-full bg-purple-900/10 blur-[100px]" />
                 </div>

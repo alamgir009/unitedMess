@@ -3,10 +3,14 @@ import { CalendarClock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const BillingCycleAlert = () => {
-    // Only show if the day of the month is between 1 and 10
-    const today = new Date();
-    const day = today.getDate();
-    
+    // Use IST (Asia/Kolkata) for the day-of-month check so the alert
+    // appears and disappears on the correct calendar day regardless of
+    // the user's local timezone.
+    const nowIST = new Date(
+        new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
+    );
+    const day = nowIST.getDate();
+
     if (day > 10) return null;
 
     return (
