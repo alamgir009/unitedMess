@@ -15,6 +15,7 @@ import MarketList from '../../components/MarketList/MarketList';
 import MarketForm from '../../components/MarketForm/MarketForm';
 import MarketModal from '../../components/MarketModal/MarketModal';
 import MarketScheduleChart from '../../components/MarketScheduleChart/MarketScheduleChart';
+import DeleteMarketDialog from '../../components/DeleteMarketDialog/DeleteMarketDialog';
 
 // Redux actions
 import {
@@ -60,6 +61,10 @@ const MarketPage = () => {
     // ── Modal
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingMarket, setEditingMarket] = useState(null);
+    
+    // ── Delete Dialog
+    const [marketToDelete, setMarketToDelete] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     // ── View & filter
     const [viewMode, setViewMode] = useState('grid');
@@ -117,16 +122,24 @@ const MarketPage = () => {
         }
     }, [editingMarket, dispatch, closeModal, isAdmin, user, page, limit]);
 
-    const handleDelete = useCallback(async (marketId) => {
-        if (!window.confirm('Delete this market entry?')) return;
+    const handleDeleteClick = useCallback((market) => {
+        setMarketToDelete(market);
+    }, []);
+
+    const executeDelete = useCallback(async () => {
+        if (!marketToDelete) return;
         try {
+            setIsDeleting(true);
             setErrorMsg('');
-            const res = await dispatch(deleteMarket(marketId)).unwrap();
+            const res = await dispatch(deleteMarket(marketToDelete._id)).unwrap();
             toast.success(res?.message || 'Market entry deleted successfully');
+            setMarketToDelete(null);
         } catch (err) {
             setErrorMsg(typeof err === 'string' ? err : err?.message || 'Failed to delete market entry');
+        } finally {
+            setIsDeleting(false);
         }
-    }, [dispatch]);
+    }, [dispatch, marketToDelete]);
 
     const clearFilters = useCallback(() => { setSearchQuery(''); setDateFrom(''); setDateTo(''); }, []);
 
@@ -239,7 +252,7 @@ const MarketPage = () => {
                                 markets={filtered}
                                 viewMode={viewMode}
                                 onEdit={openEdit}
-                                onDelete={handleDelete}
+                                onDelete={handleDeleteClick}
                                 isAdmin={isAdmin}
                             />
 
@@ -271,6 +284,13 @@ const MarketPage = () => {
                         currentUser={user}
                     />
                 </MarketModal>
+
+                <DeleteMarketDialog
+                    market={marketToDelete}
+                    isDeleting={isDeleting}
+                    onConfirm={executeDelete}
+                    onCancel={() => setMarketToDelete(null)}
+                />
 
             </div>
         </MainLayout>

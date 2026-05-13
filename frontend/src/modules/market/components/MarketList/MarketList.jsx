@@ -123,7 +123,7 @@ const MarketCard = React.forwardRef(({ market, onEdit, onDelete, isAdmin, index 
                     variant="danger"
                     size="sm"
                     iconOnly
-                    onClick={() => onDelete(market._id)}
+                    onClick={() => onDelete(market)}
                     aria-label="Delete market entry"
                 >
                     <HiOutlineTrash className="w-4 h-4" />
@@ -213,7 +213,7 @@ const MarketRow = React.forwardRef(({ market, onEdit, onDelete, isAdmin, index }
                 <Button variant="secondary" size="sm" iconOnly onClick={() => onEdit(market)} title="Edit">
                     <HiOutlinePencilSquare className="w-4 h-4" />
                 </Button>
-                <Button variant="danger" size="sm" iconOnly onClick={() => onDelete(market._id)} title="Delete">
+                <Button variant="danger" size="sm" iconOnly onClick={() => onDelete(market)} title="Delete">
                     <HiOutlineTrash className="w-4 h-4" />
                 </Button>
             </div>
