@@ -86,7 +86,7 @@ const MemberRow = ({ user, index, isLast }) => {
         'rounded-2xl md:rounded-none',
         // States
         isExpanded
-            ? 'bg-slate-50 dark:bg-slate-800/50 md:bg-slate-50/70 md:dark:bg-slate-800/30 z-20'
+            ? 'bg-slate-50 dark:bg-slate-800/50 md:bg-slate-50/70 md:dark:bg-slate-800/30 z-20 rounded-b-none border-b-0 md:border-b'
             : 'bg-white dark:bg-slate-900 shadow-sm md:shadow-none md:hover:bg-slate-50/80 md:dark:hover:bg-slate-800/40',
         // First row — no top border
         index === 0 ? 'md:border-t-0' : '',
@@ -196,13 +196,11 @@ const MemberRow = ({ user, index, isLast }) => {
             >
                 <div
                     className={[
-                        'px-4 pt-4 pb-6 md:px-8 md:py-6',
+                        'px-5 pt-4 pb-6 md:px-8 md:py-6',
                         'bg-slate-50/60 dark:bg-slate-800/25',
-                        'border-x border-b border-slate-200 dark:border-slate-800',
+                        'border border-t-0 border-slate-200 dark:border-slate-800',
                         'rounded-b-2xl md:rounded-b-none',
                         isLast ? 'md:rounded-b-[1.5rem]' : '',
-                        // Mobile: attach below the card without gap
-                        '-mt-2 md:mt-0 pt-[calc(0.75rem+2px)] md:pt-6',
                     ].join(' ')}
                 >
                     {isExpanded && <MemberInvoiceDetails user={user} />}
