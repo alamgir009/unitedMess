@@ -42,7 +42,16 @@ const PrintInvoice = ({
             borderBottom: '2px solid #4f46e5', paddingBottom: '20px', marginBottom: '24px',
         },
         brandBlock: { display: 'flex', flexDirection: 'column', gap: '4px' },
-        brandName: { fontSize: '22px', fontWeight: '800', color: '#4f46e5', margin: 0 },
+        logoRow: { display: 'flex', alignItems: 'center', gap: '8px' },
+        logoImg: { width: '36px', height: '36px', objectFit: 'contain' },
+        brandName: { fontSize: '24px', fontWeight: '800', color: '#0f172a', margin: 0, letterSpacing: '-0.02em' },
+        brandGradient: {
+            background: 'linear-gradient(135deg, hsl(210, 92%, 42%) 0%, hsl(268, 76%, 52%) 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            color: 'transparent'
+        },
         brandSub: { fontSize: '12px', color: '#6b7280', margin: 0 },
         metaBlock: { textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '3px' },
         metaLabel: { fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 },
@@ -102,7 +111,16 @@ const PrintInvoice = ({
             {/* Header */}
             <div style={s.header}>
                 <div style={s.brandBlock}>
-                    <p style={s.brandName}>United Mess</p>
+                    <div style={s.logoRow}>
+                        <img 
+                            src="/assets/icons/unitedmess-icon-1024.png" 
+                            alt="UnitedMess Logo" 
+                            style={s.logoImg} 
+                        />
+                        <p style={s.brandName}>
+                            United<span style={s.brandGradient}>Mess</span>
+                        </p>
+                    </div>
                     <p style={s.brandSub}>Mess Management Platform</p>
                     <p style={{ ...s.brandSub, marginTop: '8px' }}>{user?.name || '—'}</p>
                     <p style={s.brandSub}>{user?.email || ''}</p>

@@ -22,34 +22,22 @@ export const useDownloadInvoice = () => {
                 width: 680,                   // Fixed width for consistent output
             });
 
-            const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
-
-            const pageW = pdf.internal.pageSize.getWidth();
-            const pageH = pdf.internal.pageSize.getHeight();
             const margin = 10;
+            const pageW = 210; // Standard A4 width in mm
             const usableW = pageW - margin * 2;
-            const usableH = pageH - margin * 2;
-            const pageHeightPx = Math.floor((canvas.width * usableH) / usableW);
+            const canvasImgAspectRatio = canvas.height / canvas.width;
+            const usableH = usableW * canvasImgAspectRatio;
+            const pageH = usableH + margin * 2;
 
-            let offsetY = 0;
-            let page = 0;
+            const pdf = new jsPDF({ 
+                orientation: 'portrait', 
+                unit: 'mm', 
+                format: [pageW, pageH], 
+                compress: true 
+            });
 
-            while (offsetY < canvas.height) {
-                if (page > 0) pdf.addPage();
-
-                const sliceH = Math.min(pageHeightPx, canvas.height - offsetY);
-                const slice = document.createElement('canvas');
-                slice.width = canvas.width;
-                slice.height = sliceH;
-                slice.getContext('2d').drawImage(canvas, 0, offsetY, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
-
-                const sliceData = slice.toDataURL('image/jpeg', 0.85);
-                const sliceRenderedH = (sliceH / canvas.width) * usableW;
-                pdf.addImage(sliceData, 'JPEG', margin, margin, usableW, sliceRenderedH, undefined, 'FAST');
-
-                offsetY += pageHeightPx;
-                page++;
-            }
+            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+            pdf.addImage(imgData, 'JPEG', margin, margin, usableW, usableH, undefined, 'FAST');
 
             pdf.setProperties({ 
                 title: title || fileName, 
