@@ -52,9 +52,13 @@ const EmptyState = () => (
 ───────────────────────────────────────────── */
 const SkeletonRow = () => (
     <div
-        className="grid grid-cols-12 gap-4 items-center px-8 py-5
-                   border-b border-slate-100 dark:border-slate-800/60
-                   animate-pulse"
+        className="grid grid-cols-12 gap-4 items-center
+                   rounded-2xl border border-slate-200 dark:border-slate-800
+                   bg-white dark:bg-slate-900 shadow-sm px-5 py-5
+                   animate-pulse
+                   md:rounded-none md:shadow-none md:bg-transparent
+                   md:border-0 md:border-b md:border-slate-100 md:dark:border-slate-800/60
+                   md:px-8 md:py-5"
     >
         {/* Avatar + text */}
         <div className="col-span-4 flex items-center gap-4">
@@ -83,9 +87,9 @@ const MemberTable = ({ users, isLoading }) => {
     if (isLoading) {
         return (
             <div
-                className="w-full bg-white dark:bg-slate-900
-                           rounded-3xl border border-slate-200 dark:border-slate-800
-                           shadow-sm overflow-hidden"
+                className="w-full md:bg-white md:dark:bg-slate-900
+                           md:rounded-3xl md:border md:border-slate-200 md:dark:border-slate-800
+                           md:shadow-sm md:overflow-hidden"
             >
                 {/* Header */}
                 <div
@@ -125,9 +129,9 @@ const MemberTable = ({ users, isLoading }) => {
              * doesn't create a double-border at top.
              */}
             <div
-                className="w-full bg-white dark:bg-slate-900
-                           rounded-3xl border border-slate-200 dark:border-slate-800
-                           shadow-sm overflow-hidden"
+                className="w-full md:bg-white md:dark:bg-slate-900
+                           md:rounded-3xl md:border md:border-slate-200 md:dark:border-slate-800
+                           md:shadow-sm md:overflow-hidden"
             >
                 {/* ── Sticky desktop column header ── */}
                 <div

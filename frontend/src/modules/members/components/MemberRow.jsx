@@ -87,7 +87,7 @@ const MemberRow = ({ user, index, isLast }) => {
         // States
         isExpanded
             ? 'bg-slate-50 dark:bg-slate-800/50 md:bg-slate-50/70 md:dark:bg-slate-800/30 z-20'
-            : 'bg-white dark:bg-slate-900 md:hover:bg-slate-50/80 md:dark:hover:bg-slate-800/40',
+            : 'bg-white dark:bg-slate-900 shadow-sm md:shadow-none md:hover:bg-slate-50/80 md:dark:hover:bg-slate-800/40',
         // First row — no top border
         index === 0 ? 'md:border-t-0' : '',
         // Last row — round bottom corners and remove bottom border if not expanded
