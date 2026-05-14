@@ -149,7 +149,7 @@ const MemberTable = ({ users, isLoading }) => {
                 </div>
 
                 {/* ── Row list ── */}
-                <div className="flex flex-col gap-3 md:gap-0">
+                <div className="w-full max-w-full flex flex-col gap-3 md:gap-0">
                     {membersList.map((user, index) => (
                         <MemberRow
                             key={user?._id ?? user?.id ?? index}
