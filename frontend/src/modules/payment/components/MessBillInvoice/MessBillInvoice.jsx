@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, memo, useRef } from 'react';
 import { motion } from 'framer-motion';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 import { toast } from 'react-hot-toast';
+import PrintInvoice from './PrintInvoice';
+import { useDownloadInvoice } from './useDownloadInvoice';
 import {
     HiOutlineCurrencyRupee,
     HiOutlineShoppingCart,
@@ -150,49 +150,16 @@ const MessBillInvoice = ({
     const isPartiallyPaid = useMemo(() => paymentStatus === 'partially_paid', [paymentStatus]);
 
     const invoiceRef = useRef(null);
-    const [isDownloading, setIsDownloading] = useState(false);
+    const printRef = useRef(null);
+    const { isDownloading, downloadPDF } = useDownloadInvoice();
 
-    const handleDownloadPDF = async () => {
-        if (!invoiceRef.current) return;
-        try {
-            setIsDownloading(true);
-            const element = invoiceRef.current;
-            
-            // Allow framer-motion animations to settle if needed
-            await new Promise((resolve) => setTimeout(resolve, 300));
-            
-            const canvas = await html2canvas(element, {
-                scale: 2, 
-                useCORS: true,
-                backgroundColor: document.documentElement.classList.contains('dark') ? '#0f172a' : '#ffffff',
-            });
-            
-            const imgData = canvas.toDataURL('image/png');
-            
-            const pdfWidth = 210; 
-            const pdfHeight = 297; 
-            
-            const imgWidth = canvas.width;
-            const imgHeight = canvas.height;
-            const ratio = Math.min((pdfWidth - 20) / imgWidth, (pdfHeight - 20) / imgHeight);
-            
-            const finalWidth = imgWidth * ratio;
-            const finalHeight = imgHeight * ratio;
-            
-            const marginX = (pdfWidth - finalWidth) / 2;
-            const marginY = 10;
-
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            pdf.addImage(imgData, 'PNG', marginX, marginY, finalWidth, finalHeight);
-            
-            pdf.save(`${INV_NO}.pdf`);
-            toast.success('Invoice downloaded successfully');
-        } catch (error) {
-            console.error('Error generating PDF:', error);
-            toast.error('Failed to download invoice');
-        } finally {
-            setIsDownloading(false);
-        }
+    const handleDownloadPDF = () => {
+        downloadPDF({
+            printRef,
+            fileName: INV_NO,
+            title: `Invoice ${INV_NO}`,
+            subject: `Mess Bill - ${displayMonth}`
+        });
     };
 
     // Partial payment info from paymentRecord
@@ -512,6 +479,25 @@ const MessBillInvoice = ({
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-4 text-center">
                     System‑generated invoice for {displayMonth}. For disputes, contact your mess admin.
                 </p>
+            </div>
+
+            <div
+                style={{ position: 'absolute', top: '-9999px', left: '-9999px', zIndex: -1 }}
+                aria-hidden="true"
+            >
+                <div ref={printRef}>
+                    <PrintInvoice
+                        data={data}
+                        user={user}
+                        platformFee={platformFee}
+                        finalPayable={finalPayable}
+                        displayMonth={displayMonth}
+                        displayDate={displayDate}
+                        isRefund={isRefund}
+                        dueCarryOver={dueCarryOver}
+                        invoiceNo={INV_NO}
+                    />
+                </div>
             </div>
         </motion.div>
     );
