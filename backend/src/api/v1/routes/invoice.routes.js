@@ -18,6 +18,9 @@ router.get('/me/history', invoiceController.getInvoiceHistory);
 // Admin can pass ?userId=<id> query param
 router.get('/me/month/:year/:month', invoiceController.getMonthlyInvoice);
 
+// Send invoice PDF via email — receives Base64 PDF from frontend
+router.post('/send-email-pdf', invoiceController.sendInvoiceEmailPdf);
+
 // Get by ID (owner or admin)
 router.get('/:id', invoiceController.getInvoiceById);
 

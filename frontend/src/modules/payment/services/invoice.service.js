@@ -60,12 +60,22 @@ const finalizeMonth = async (month, year) => {
     return res.data;
 };
 
+/**
+ * Send a Base64-encoded invoice PDF to the user's email.
+ * @param {{ pdfBase64: string, fileName: string, monthName: string }} payload
+ */
+const sendInvoicePdf = async ({ pdfBase64, fileName, monthName }) => {
+    const res = await apiClient.post(`${BASE}/send-email-pdf`, { pdfBase64, fileName, monthName });
+    return res.data;
+};
+
 const invoiceService = {
     getActiveInvoice,
     getInvoiceHistory,
     getInvoiceForMonth,
     getInvoiceById,
     finalizeMonth,
+    sendInvoicePdf,
 };
 
 export default invoiceService;

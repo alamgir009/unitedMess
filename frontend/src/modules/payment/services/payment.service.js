@@ -45,12 +45,6 @@ const deletePayment = async (paymentId) => {
     return response.data;
 };
 
-// Send invoice email to the user after successful payment
-const sendInvoiceEmail = async (paymentId) => {
-    const response = await apiClient.post(`${API_URL}/${paymentId}/invoice-email`);
-    return response.data;
-};
-
 const paymentService = {
     getPayments,
     getPaymentById,
@@ -59,7 +53,6 @@ const paymentService = {
     verifyPayment,
     updatePayment,
     deletePayment,
-    sendInvoiceEmail,
 };
 
 export default paymentService;

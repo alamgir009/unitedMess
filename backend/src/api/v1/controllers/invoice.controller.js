@@ -1,7 +1,9 @@
 const invoiceService = require('../../../services/invoice.service');
+const emailService = require('../../../services/email.service');
 const { sendSuccessResponse } = require('../../../utils/helpers/response.helper');
 const asyncHandler = require('../../../utils/helpers/asyncHandler');
 const Invoice = require('../../../models/Invoice.model');
+const User = require('../../../models/User.model');
 const AppError = require('../../../utils/errors/AppError');
 
 /**
@@ -110,6 +112,37 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
     sendSuccessResponse(res, 200, 'Invoice payment updated', invoice);
 });
 
+/**
+ * POST /invoices/send-email-pdf
+ * Receive a Base64-encoded PDF from the frontend and email it to the user.
+ * Body: { pdfBase64: string, fileName: string, monthName: string }
+ */
+const sendInvoiceEmailPdf = asyncHandler(async (req, res) => {
+    const { pdfBase64, fileName, monthName } = req.body;
+
+    if (!pdfBase64) {
+        throw new AppError('PDF data is required', 400);
+    }
+
+    // Resolve target user: admin can send on behalf of any user via ?userId= query
+    let targetUserId = req.user.id;
+    if (req.user.role === 'admin' && req.query.userId) {
+        targetUserId = req.query.userId;
+    }
+
+    const user = await User.findById(targetUserId).lean();
+    if (!user) {
+        throw new AppError('User not found', 404);
+    }
+
+    const pdfBuffer = Buffer.from(pdfBase64, 'base64');
+    const safeName = fileName || `Invoice_${monthName?.replace(/\s+/g, '_') || 'unknown'}.pdf`;
+
+    await emailService.sendInvoiceEmail(user.email, user.name, monthName || 'Current Month', pdfBuffer, safeName);
+
+    sendSuccessResponse(res, 200, `Invoice sent to ${user.email}`);
+});
+
 module.exports = {
     getActiveInvoice,
     getInvoiceHistory,
@@ -118,4 +151,5 @@ module.exports = {
     getInvoiceById,
     getAdminUnpaidInvoices,
     updateInvoicePayment,
+    sendInvoiceEmailPdf,
 };

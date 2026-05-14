@@ -25,11 +25,10 @@ import paymentService from '../services/payment.service';
  * @param {object} opts
  * @param {object}   opts.user            - Current auth user
  * @param {function} opts.onSuccess       - Called after successful payment + verification
- * @param {boolean}  [opts.sendEmail=true]- Auto-send invoice email for mess bill
  *
  * @returns {{ isPaying: boolean, handleCheckout: function }}
  */
-export function usePayment({ user, onSuccess, sendEmail = true }) {
+export function usePayment({ user, onSuccess }) {
     const loadSDK        = useRazorpaySDK();
     const isPayingRef    = useRef(false);
     const isMountedRef   = useRef(true);
@@ -40,20 +39,6 @@ export function usePayment({ user, onSuccess, sendEmail = true }) {
     // but useEffect handles it automatically via the returned teardown.
     const safeSetPaying = useCallback((val) => {
         if (isMountedRef.current) isPayingRef.current = val;
-    }, []);
-
-    const sendInvoiceEmail = useCallback(async (paymentId) => {
-        if (!paymentId) return;
-        try {
-            await paymentService.sendInvoiceEmail(paymentId);
-            toast.success('📧 Invoice sent to your email!');
-        } catch (err) {
-            if (err?.response?.status === 404) {
-                toast('Invoice email coming soon!', { icon: '🔔' });
-            } else {
-                toast.error(err?.response?.data?.message ?? 'Failed to send invoice email');
-            }
-        }
     }, []);
 
     /**
@@ -80,9 +65,6 @@ export function usePayment({ user, onSuccess, sendEmail = true }) {
 
             // Step 2: Create order on server
             const orderRes = await paymentService.createOnlineOrder({ amount, type: paymentType });
-            // keyId is the Razorpay PUBLIC key returned by the backend.
-            // This makes the checkout immune to stale Cloudflare build-time env variables.
-            // VITE_RAZORPAY_KEY_ID in payment.config.js is kept only as a local-dev fallback.
             const { order, payment, keyId } = orderRes?.data ?? {};
             if (!order?.id) throw new Error('Invalid order response from server');
 
@@ -122,11 +104,6 @@ export function usePayment({ user, onSuccess, sendEmail = true }) {
                             // Step 5: Notify parent (refresh data)
                             if (isMountedRef.current) onSuccess?.();
 
-                            // Step 6: Send invoice email (mess bill only)
-                            if (sendEmail && paymentType !== PAYMENT_TYPES.GAS_BILL && payment?._id) {
-                                setTimeout(() => sendInvoiceEmail(payment._id), 1_000);
-                            }
-
                             resolve();
                         } catch (verifyErr) {
                             reject(verifyErr);
@@ -159,7 +136,7 @@ export function usePayment({ user, onSuccess, sendEmail = true }) {
             // Always reset — whether success, failure, dismiss, or unmount
             safeSetPaying(false);
         }
-    }, [loadSDK, user, onSuccess, sendEmail, sendInvoiceEmail, safeSetPaying]);
+    }, [loadSDK, user, onSuccess, safeSetPaying]);
 
     return {
         /** Read-only: current paying state (use useState in your component to track re-renders) */

@@ -6,46 +6,59 @@ import { toast } from 'react-hot-toast';
 export const useDownloadInvoice = () => {
     const [isDownloading, setIsDownloading] = useState(false);
 
+    /**
+     * Core PDF rendering logic — shared by download and email flows.
+     * Returns { pdf, pdfBlob } so callers can either save or convert to Base64.
+     */
+    const renderPDF = async ({ printRef, title, subject }) => {
+        if (!printRef || !printRef.current) return null;
+
+        await new Promise((r) => setTimeout(r, 100));
+
+        const canvas = await html2canvas(printRef.current, {
+            scale: 3,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff',
+            removeContainer: true,
+            imageTimeout: 0,
+            width: 680,
+        });
+
+        const margin = 10;
+        const pageW = 210;
+        const usableW = pageW - margin * 2;
+        const canvasImgAspectRatio = canvas.height / canvas.width;
+        const usableH = usableW * canvasImgAspectRatio;
+        const pageH = usableH + margin * 2;
+
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: [pageW, pageH],
+            compress: true,
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.75);
+        pdf.addImage(imgData, 'JPEG', margin, margin, usableW, usableH, undefined, 'FAST');
+
+        pdf.setProperties({
+            title: title || 'Invoice',
+            subject: subject || 'Invoice',
+            creator: 'United Mess',
+        });
+
+        const pdfBlob = pdf.output('blob');
+        return { pdf, pdfBlob };
+    };
+
     const downloadPDF = async ({ printRef, fileName, title, subject }) => {
         if (!printRef || !printRef.current) return;
         try {
             setIsDownloading(true);
-            await new Promise((r) => setTimeout(r, 100)); // allow React to flush renders
-
-            const canvas = await html2canvas(printRef.current, {
-                scale: 3, // Increased scale for ultra-crisp fintech grade quality
-                useCORS: true,
-                logging: false,
-                backgroundColor: '#ffffff',   // Always white
-                removeContainer: true,
-                imageTimeout: 0,
-                width: 680,                   // Fixed width for consistent output
-            });
-
-            const margin = 10;
-            const pageW = 210; // Standard A4 width in mm
-            const usableW = pageW - margin * 2;
-            const canvasImgAspectRatio = canvas.height / canvas.width;
-            const usableH = usableW * canvasImgAspectRatio;
-            const pageH = usableH + margin * 2;
-
-            const pdf = new jsPDF({ 
-                orientation: 'portrait', 
-                unit: 'mm', 
-                format: [pageW, pageH], 
-                compress: true 
-            });
-
-            // Adjusted JPEG quality to 0.75 to keep file size small while maintaining crisp text due to high scale
-            const imgData = canvas.toDataURL('image/jpeg', 0.75);
-            pdf.addImage(imgData, 'JPEG', margin, margin, usableW, usableH, undefined, 'FAST');
-
-            pdf.setProperties({ 
-                title: title || fileName, 
-                subject: subject || 'Invoice', 
-                creator: 'United Mess' 
-            });
-            pdf.save(`${fileName}.pdf`);
+            const result = await renderPDF({ printRef, title, subject });
+            if (!result) return;
+            result.pdf.save(`${fileName}.pdf`);
             toast.success('Invoice downloaded');
         } catch (err) {
             console.error('PDF error:', err);
@@ -55,5 +68,28 @@ export const useDownloadInvoice = () => {
         }
     };
 
-    return { isDownloading, downloadPDF };
+    /**
+     * Generate PDF and return it as a Base64 string (for email sending).
+     */
+    const generatePDFBase64 = async ({ printRef, title, subject }) => {
+        try {
+            const result = await renderPDF({ printRef, title, subject });
+            if (!result) return null;
+
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const base64 = reader.result.split(',')[1]; // strip data:application/pdf;base64,
+                    resolve(base64);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(result.pdfBlob);
+            });
+        } catch (err) {
+            console.error('PDF base64 error:', err);
+            return null;
+        }
+    };
+
+    return { isDownloading, downloadPDF, generatePDFBase64 };
 };

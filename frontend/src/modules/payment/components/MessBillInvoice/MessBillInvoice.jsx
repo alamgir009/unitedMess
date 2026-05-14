@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import PrintInvoice from './PrintInvoice';
 import { useDownloadInvoice } from './useDownloadInvoice';
+import invoiceService from '../../services/invoice.service';
 import {
     HiOutlineCurrencyRupee,
     HiOutlineShoppingCart,
@@ -151,7 +152,8 @@ const MessBillInvoice = ({
 
     const invoiceRef = useRef(null);
     const printRef = useRef(null);
-    const { isDownloading, downloadPDF } = useDownloadInvoice();
+    const { isDownloading, downloadPDF, generatePDFBase64 } = useDownloadInvoice();
+    const [sendingEmail, setSendingEmail] = useState(false);
 
     const handleDownloadPDF = () => {
         downloadPDF({
@@ -175,9 +177,34 @@ const MessBillInvoice = ({
         }
     };
 
-    const handleSendEmail = () => {
-        if (typeof onSendEmail === 'function') {
+    const handleSendEmail = async () => {
+        // If an external handler is provided, delegate to it (legacy support)
+        if (typeof onSendEmail === 'function' && !onSendEmail.toString().includes('generatePDFBase64')) {
             onSendEmail();
+            return;
+        }
+
+        setSendingEmail(true);
+        try {
+            const base64 = await generatePDFBase64({
+                printRef,
+                title: `Invoice ${INV_NO}`,
+                subject: `Mess Bill - ${displayMonth}`,
+            });
+            if (!base64) {
+                toast.error('Failed to generate invoice PDF');
+                return;
+            }
+            await invoiceService.sendInvoicePdf({
+                pdfBase64: base64,
+                fileName: `${INV_NO}.pdf`,
+                monthName: displayMonth,
+            });
+            toast.success('📧 Invoice sent to your email!');
+        } catch (err) {
+            toast.error(err?.response?.data?.message ?? 'Failed to send invoice email');
+        } finally {
+            setSendingEmail(false);
         }
     };
 
@@ -449,29 +476,27 @@ const MessBillInvoice = ({
                             <span className="hidden sm:inline">Download</span>
                         </motion.button>
 
-                        {typeof onSendEmail === 'function' && (
-                            <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                disabled={!!isSendingEmail}
-                                onClick={handleSendEmail}
-                                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-medium 
-                                border border-gray-300/60 dark:border-white/10 
-                                bg-white/70 dark:bg-gray-800/60 backdrop-blur-md
-                                text-gray-700 dark:text-gray-200 
-                                shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.4)] 
-                                hover:shadow-[0_8px_24px_rgba(0,0,0,0.15)] 
-                                hover:bg-white/80 dark:hover:bg-gray-700/60
-                                transition-all duration-300 disabled:opacity-60"
-                            >
-                                {isSendingEmail ? (
-                                    <Spinner size="sm" color="current" className="text-gray-600 dark:text-gray-300" />
-                                ) : (
-                                    <HiOutlineEnvelope className="w-4 h-4" />
-                                )}
-                                <span className="hidden sm:inline">Email</span>
-                            </motion.button>
-                        )}
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            disabled={!!(isSendingEmail || sendingEmail)}
+                            onClick={handleSendEmail}
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-medium 
+                            border border-gray-300/60 dark:border-white/10 
+                            bg-white/70 dark:bg-gray-800/60 backdrop-blur-md
+                            text-gray-700 dark:text-gray-200 
+                            shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.4)] 
+                            hover:shadow-[0_8px_24px_rgba(0,0,0,0.15)] 
+                            hover:bg-white/80 dark:hover:bg-gray-700/60
+                            transition-all duration-300 disabled:opacity-60"
+                        >
+                            {(isSendingEmail || sendingEmail) ? (
+                                <Spinner size="sm" color="current" className="text-gray-600 dark:text-gray-300" />
+                            ) : (
+                                <HiOutlineEnvelope className="w-4 h-4" />
+                            )}
+                            <span className="hidden sm:inline">Email</span>
+                        </motion.button>
                     </div>
                 </div>
 

@@ -17,13 +17,14 @@ const transport = nodemailer.createTransport(config.email?.smtp || {
  * @param {Object} options - Email options
  * @returns {Promise}
  */
-const sendEmail = async ({ to, subject, text, html }) => {
+const sendEmail = async ({ to, subject, text, html, attachments }) => {
     const msg = {
         from: config.email?.from || 'United Mess <noreply@unitedmess.com>',
         to,
         subject,
         text,
-        html
+        html,
+        attachments
     };
 
     try {
@@ -1015,6 +1016,46 @@ const sendPaymentStatusEmail = async (to, name, payment, status) => {
     });
 };
 
+/**
+ * Send invoice email with PDF attachment
+ * @param {string} to - recipient email
+ * @param {string} name - recipient name
+ * @param {string} monthName - billing month display name
+ * @param {Buffer} pdfBuffer - PDF file buffer
+ * @param {string} fileName - PDF filename
+ * @returns {Promise}
+ */
+const sendInvoiceEmail = async (to, name, monthName, pdfBuffer, fileName = 'invoice.pdf') => {
+    const formattedAmount = '—'; // placeholder; actual amount displayed in PDF
+
+    const content = `
+        <p>Dear ${name},</p>
+        <p>Your mess bill invoice for <strong>${monthName}</strong> is attached to this email.</p>
+        <p>You can find a detailed breakdown of all charges, including meal costs, market spend, fixed fees, and any carry-over balances in the attached PDF.</p>
+        <p>If you have any questions regarding your bill, please contact your mess admin or reply to this email.</p>
+    `;
+
+    const { html, text } = generateEmailTemplate({
+        title: `Your Mess Bill — ${monthName}`,
+        previewText: `Invoice for ${monthName} from United Mess is ready`,
+        content,
+        showButton: false,
+        footerText: 'This is a system-generated invoice. Please keep it for your records.'
+    });
+
+    return sendEmail({
+        to,
+        subject: `Your Mess Bill Invoice — ${monthName} | United Mess`,
+        text,
+        html,
+        attachments: [{
+            filename: fileName,
+            content: pdfBuffer,
+            contentType: 'application/pdf'
+        }]
+    });
+};
+
 module.exports = {
     transport,
     sendEmail,
@@ -1026,5 +1067,6 @@ module.exports = {
     sendPasswordChangeNotification,
     sendPasswordResetConfirmation,
     sendAccountLockedEmail,
-    sendPaymentStatusEmail
+    sendPaymentStatusEmail,
+    sendInvoiceEmail
 };

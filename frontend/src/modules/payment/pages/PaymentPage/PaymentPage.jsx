@@ -39,7 +39,6 @@ import {
 import { fetchPayableAmount, fetchPayableGasBill } from '../../../auth/store/auth.slice';
 
 import { usePayment } from '../../hooks/usePayment';
-import paymentService from '../../services/payment.service';
 
 /* ─── Skeleton loaders ───────────────────────────────────────── */
 const SkeletonCard = () => (
@@ -86,7 +85,6 @@ const PaymentPage = () => {
 
     /* ── state ── */
     const [isPaying,       setIsPaying]       = useState(false);
-    const [isSendingEmail, setIsSendingEmail] = useState(false);
     const [isModalOpen,    setIsModalOpen]    = useState(false);
     const [invoiceModal,   setInvoiceModal]   = useState({ open: false, year: null, month: null, monthName: '' });
     const [editingPayment, setEditingPayment] = useState(null);
@@ -115,7 +113,6 @@ const PaymentPage = () => {
             setIsPaying(false);
             refreshData();
         },
-        sendEmail: true,
     });
 
     /**
@@ -146,29 +143,6 @@ const PaymentPage = () => {
             (!activeMonth || p.month === activeMonth)
         ) || null;
     }, [lastPaymentId, payments, payableAmountData?.monthName]);
-
-    const handleSendEmail = useCallback(async () => {
-        const targetId = latestMessBillPayment?._id;
-
-        if (!targetId) {
-            toast.error('No recent mess bill payment found to send invoice for.');
-            return;
-        }
-
-        setIsSendingEmail(true);
-        try {
-            await paymentService.sendInvoiceEmail(targetId);
-            toast.success('📧 Invoice sent to your email!');
-        } catch (err) {
-            if (err?.response?.status === 404) {
-                toast('Invoice email coming soon!', { icon: '🔔' });
-            } else {
-                toast.error(err?.response?.data?.message ?? 'Failed to send invoice email');
-            }
-        } finally {
-            setIsSendingEmail(false);
-        }
-    }, [latestMessBillPayment]);
 
     /* ── fetch payments ── */
     useEffect(() => {
@@ -420,8 +394,6 @@ const PaymentPage = () => {
                                     platformFee={payableAmountData?.userStats?.platformFee || user?.platformFee || 0}
                                     onPayNow={handleRazorpayCheckout}
                                     isPaying={isPaying}
-                                    isSendingEmail={isSendingEmail}
-                                    onSendEmail={handleSendEmail}
                                     paymentStatus={messBillStatus}
                                     paymentRecord={latestMessBillPayment}
                                 />
