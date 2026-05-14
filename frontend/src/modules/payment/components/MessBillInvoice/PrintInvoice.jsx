@@ -3,16 +3,16 @@ import React, { memo } from 'react';
 const fmt = (n) =>
     Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
-const PrintInvoice = ({ 
-    data, 
-    user, 
-    platformFee, 
-    finalPayable, 
-    displayMonth, 
-    displayDate, 
-    isRefund, 
+const PrintInvoice = ({
+    data,
+    user,
+    platformFee,
+    finalPayable,
+    displayMonth,
+    displayDate,
+    isRefund,
     dueCarryOver,
-    invoiceNo 
+    invoiceNo
 }) => {
     const {
         grandTotalMarketAmount = 0,
@@ -42,8 +42,22 @@ const PrintInvoice = ({
             borderBottom: '2px solid #4f46e5', paddingBottom: '20px', marginBottom: '24px',
         },
         brandBlock: { display: 'flex', flexDirection: 'column', gap: '4px' },
-        logoRow: { display: 'flex', alignItems: 'center', gap: '8px' },
-        logoImg: { width: '36px', height: '36px', objectFit: 'contain' },
+        // logoRow: { display: 'flex', alignItems: 'center', gap: '8px' },
+        // logoImg: { width: '36px', height: '36px', objectFit: 'contain' },
+        logoRow: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            lineHeight: 1,
+        },
+
+        logoImg: {
+            width: '46px',
+            height: '46px',
+            objectFit: 'contain',
+            display: 'block',
+            marginRight: '-2px',
+        },
         brandName: { fontSize: '24px', fontWeight: '800', color: '#0f172a', margin: 0, letterSpacing: '-0.02em' },
         brandGradient: {
             background: 'linear-gradient(135deg, hsl(210, 92%, 42%) 0%, hsl(268, 76%, 52%) 100%)',
@@ -112,21 +126,39 @@ const PrintInvoice = ({
             <div style={s.header}>
                 <div style={s.brandBlock}>
                     <div style={s.logoRow}>
-                        <img 
-                            src={typeof window !== 'undefined' ? `${window.location.origin}/assets/icons/unitedmess-icon-1024.png` : '/assets/icons/unitedmess-icon-1024.png'} 
-                            alt="UnitedMess Logo" 
+                        <img
+                            src={typeof window !== 'undefined' ? `${window.location.origin}/assets/icons/unitedmess-icon-1024.png` : '/assets/icons/unitedmess-icon-1024.png'}
+                            alt="UnitedMess Logo"
                             style={s.logoImg}
                             crossOrigin="anonymous"
                         />
-                        <svg width="150" height="32" viewBox="0 0 150 32" style={{ display: 'block', marginLeft: '2px' }}>
+                        <svg
+                            width="138"
+                            height="34"
+                            viewBox="0 0 138 34"
+                            style={{
+                                display: 'block',
+                                overflow: 'visible',
+                            }}
+                        >
                             <defs>
                                 <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                                     <stop offset="0%" stopColor="hsl(210, 92%, 42%)" />
                                     <stop offset="100%" stopColor="hsl(268, 76%, 52%)" />
                                 </linearGradient>
                             </defs>
-                            <text x="0" y="24" fontFamily="Arial, sans-serif" fontSize="24" fontWeight="800" fill="#0f172a" letterSpacing="-0.5px">
-                                United<tspan fill="url(#brandGrad)">Mess</tspan>
+
+                            <text
+                                x="0"
+                                y="25"
+                                fontFamily="Inter, Arial, sans-serif"
+                                fontSize="26"
+                                fontWeight="800"
+                                fill="#0f172a"
+                                letterSpacing="-1px"
+                            >
+                                United
+                                <tspan fill="url(#brandGrad)">Mess</tspan>
                             </text>
                         </svg>
                     </div>
