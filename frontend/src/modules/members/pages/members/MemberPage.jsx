@@ -170,7 +170,7 @@ const MemberPage = () => {
 
     return (
         <MainLayout>
-            <div className="relative flex flex-col min-h-[calc(100vh-4rem)] w-full bg-slate-50 dark:bg-[#020617] px-4 sm:px-6 lg:px-8 py-6 lg:py-8 overflow-x-hidden">
+            <div className="relative flex flex-col min-h-[calc(100vh-4rem)] w-full bg-slate-50 dark:bg-[#020617] py-6 lg:py-8 overflow-x-hidden">
 
                 {/* ── Ambient background blobs ── */}
                 <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -181,7 +181,7 @@ const MemberPage = () => {
                 {/* ════════════════════════════════
                     Header
                 ════════════════════════════════ */}
-                <header className="relative z-10 mb-8">
+                <header className="relative z-10 mb-8 px-4 sm:px-6 lg:px-8">
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
 
                         {/* ── Title block ── */}
@@ -269,7 +269,7 @@ const MemberPage = () => {
                     Error banner
                 ════════════════════════════════ */}
                 {isError && (
-                    <div className="relative z-10">
+                    <div className="relative z-10 px-4 sm:px-6 lg:px-8">
                         <ErrorBanner message={message} onRetry={handleRetry} />
                     </div>
                 )}
@@ -294,7 +294,7 @@ const MemberPage = () => {
                     that are still unpaid or partially paid.
                 ════════════════════════════════ */}
                 {isAdmin && (
-                    <div className="relative z-10">
+                    <div className="relative z-10 px-4 sm:px-6 lg:px-8">
                         <AdminUnpaidPanel />
                     </div>
                 )}
