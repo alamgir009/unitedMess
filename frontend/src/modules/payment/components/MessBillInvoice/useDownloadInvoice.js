@@ -13,7 +13,7 @@ export const useDownloadInvoice = () => {
             await new Promise((r) => setTimeout(r, 100)); // allow React to flush renders
 
             const canvas = await html2canvas(printRef.current, {
-                scale: 1.5,
+                scale: 3, // Increased scale for ultra-crisp fintech grade quality
                 useCORS: true,
                 logging: false,
                 backgroundColor: '#ffffff',   // Always white
@@ -36,7 +36,8 @@ export const useDownloadInvoice = () => {
                 compress: true 
             });
 
-            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+            // Adjusted JPEG quality to 0.75 to keep file size small while maintaining crisp text due to high scale
+            const imgData = canvas.toDataURL('image/jpeg', 0.75);
             pdf.addImage(imgData, 'JPEG', margin, margin, usableW, usableH, undefined, 'FAST');
 
             pdf.setProperties({ 
