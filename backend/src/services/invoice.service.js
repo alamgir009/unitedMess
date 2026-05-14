@@ -162,8 +162,8 @@ const getInvoice = async (userId, month, year) => {
             platformFee: Number(user.platformFee || 0),
         },
         totalBill: Number(totalBill.toFixed(2)),
-        dueCarryOver: Number(Math.max(0, dueCarryOver).toFixed(2)),
-        totalPayable: Number((totalBill + Math.max(0, dueCarryOver)).toFixed(2)),
+        dueCarryOver: Number(dueCarryOver.toFixed(2)),
+        totalPayable: Number(totalBill.toFixed(2)),
         paidAmount: livePaidAmount,
         isFinalized: false
     };

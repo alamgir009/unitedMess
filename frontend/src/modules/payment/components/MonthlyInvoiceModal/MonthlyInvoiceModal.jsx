@@ -47,6 +47,7 @@ const toInvoiceDisplayData = (invoice) => {
         totalGuestRevenue:      invoice.guestMealRevenue   ?? 0,
         adjustedMealCharge:     invoice.messCost           ?? 0,
         payableAmount:          invoice.totalPayable       ?? 0,
+        dueCarryOver:           invoice.dueCarryOver       ?? 0,
         monthName:              invoice.monthName,
         userStats: {
             totalMeal:           invoice.mealCount          ?? 0,

@@ -18,6 +18,7 @@ import {
     HiOutlineEnvelope,
     HiOutlineSparkles,
     HiOutlineBuildingOffice2,
+    HiOutlineClock,
 } from 'react-icons/hi2';
 import { SiRazorpay } from 'react-icons/si';
 import { Spinner } from '@/shared/components/ui';
@@ -121,6 +122,7 @@ const MessBillInvoice = ({
         grandTotalMeal = 0,
         totalGuestRevenue = 0,
         adjustedMealCharge = 0,
+        dueCarryOver = 0,
         userStats = {},
     } = data;
 
@@ -244,6 +246,13 @@ const MessBillInvoice = ({
                 <LineItem icon={HiOutlineCurrencyRupee} label="Adjusted meal charge" value={`₹${fmt(adjustedMealCharge)}`} subText="After guest deduction" accent />
 
                 <LineItem icon={HiOutlineReceiptPercent} label="Platform Fee" value={`₹${fmt(platformFee || 0)}`} subText="Fixed service fee" />
+                
+                {dueCarryOver > 0 && (
+                    <>
+                        <SectionDivider label="Previous Balance" />
+                        <LineItem icon={HiOutlineClock} label="Carry-over Amount" value={`₹${fmt(dueCarryOver)}`} subText="Unpaid balance from past months" accent />
+                    </>
+                )}
             </div>
 
             {/* Total & Actions */}

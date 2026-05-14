@@ -553,9 +553,7 @@ const getPaybleAmountforMeal = async (userId) => {
 
     // Rounding logic for continuity
     const rounded = round2(invoice.totalPayable);
-    const finalPayable = (rounded - Math.floor(rounded)) >= 0.5
-        ? Math.ceil(rounded)
-        : rounded;
+    const finalPayable = Math.round(rounded);
 
     // Async update to sync the raw model (fire-and-forget)
     User.findByIdAndUpdate(userId, {
@@ -579,6 +577,7 @@ const getPaybleAmountforMeal = async (userId) => {
             guestMealAmount: round2(invoice.guestMealRevenue),
             platformFee: round2(invoice.fixedCosts?.platformFee || user.platformFee || 0)
         },
+        dueCarryOver: round2(invoice.dueCarryOver || 0),
         payableAmount: finalPayable,
         paymentStatus: user.payment === 'success' || invoice.status === 'paid' ? 'success' : 'pending',
         gasBillStatus: user.gasBill === 'success' || completedGasAuth ? 'success' : 'pending',
