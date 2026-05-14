@@ -133,9 +133,9 @@ const PrintInvoice = ({
                             crossOrigin="anonymous"
                         />
                         <svg
-                            width="138"
+                            width="180"
                             height="34"
-                            viewBox="0 0 138 34"
+                            viewBox="0 0 180 34"
                             style={{
                                 display: 'block',
                                 overflow: 'visible',
@@ -157,8 +157,7 @@ const PrintInvoice = ({
                                 fill="#0f172a"
                                 letterSpacing="-1px"
                             >
-                                United
-                                <tspan fill="url(#brandGrad)">Mess</tspan>
+                                United<tspan fill="url(#brandGrad)">Mess</tspan>
                             </text>
                         </svg>
                     </div>
