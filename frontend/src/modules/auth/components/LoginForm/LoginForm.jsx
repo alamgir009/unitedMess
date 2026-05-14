@@ -4,16 +4,14 @@ import { Link } from 'react-router-dom';
 import { login } from '@/modules/auth/store/auth.slice';
 import Button from '@/shared/ui/Button/Button';
 import Input from '@/shared/ui/Input/Input';
+import PasswordInput from '@/shared/ui/PasswordInput/PasswordInput';
 import { toast } from 'react-hot-toast';
-import { Eye, EyeOff } from 'lucide-react';
 
 const LoginForm = () => {
     const [formData, setFormData] = useState({
         email: '',
         password: '',
     });
-
-    const [showPassword, setShowPassword] = useState(false);
 
     const { email, password } = formData;
     const dispatch = useDispatch();
@@ -59,10 +57,9 @@ const LoginForm = () => {
                 <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">
                     Password
                 </label>
-                <Input
+                <PasswordInput
                     id="password"
                     name="password"
-                    type="password"
                     autoComplete="current-password"
                     required
                     value={password}

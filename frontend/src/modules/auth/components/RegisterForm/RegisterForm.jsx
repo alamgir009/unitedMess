@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { register } from '@/modules/auth/store/auth.slice';
 import Button from '@/shared/ui/Button/Button';
 import Input from '@/shared/ui/Input/Input';
+import PasswordInput from '@/shared/ui/PasswordInput/PasswordInput';
 import { toast } from 'react-hot-toast';
 
 // ==================== CONSTANTS ====================
@@ -314,10 +315,9 @@ const RegisterForm = () => {
         <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">
           Password
         </label>
-        <Input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="new-password"
           required
           value={password}
@@ -332,10 +332,9 @@ const RegisterForm = () => {
         <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground mb-1">
           Confirm Password
         </label>
-        <Input
+        <PasswordInput
           id="confirmPassword"
           name="confirmPassword"
-          type="password"
           autoComplete="new-password"
           required
           value={confirmPassword}
