@@ -1,5 +1,8 @@
-import React, { useState, useEffect, useMemo, memo } from 'react';
+import React, { useState, useEffect, useMemo, memo, useRef } from 'react';
 import { motion } from 'framer-motion';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
+import { toast } from 'react-hot-toast';
 import {
     HiOutlineCurrencyRupee,
     HiOutlineShoppingCart,
@@ -19,6 +22,7 @@ import {
     HiOutlineSparkles,
     HiOutlineBuildingOffice2,
     HiOutlineClock,
+    HiOutlineArrowDownTray,
 } from 'react-icons/hi2';
 import { SiRazorpay } from 'react-icons/si';
 import { Spinner } from '@/shared/components/ui';
@@ -145,6 +149,52 @@ const MessBillInvoice = ({
     const isPaid = useMemo(() => paymentStatus === 'success', [paymentStatus]);
     const isPartiallyPaid = useMemo(() => paymentStatus === 'partially_paid', [paymentStatus]);
 
+    const invoiceRef = useRef(null);
+    const [isDownloading, setIsDownloading] = useState(false);
+
+    const handleDownloadPDF = async () => {
+        if (!invoiceRef.current) return;
+        try {
+            setIsDownloading(true);
+            const element = invoiceRef.current;
+            
+            // Allow framer-motion animations to settle if needed
+            await new Promise((resolve) => setTimeout(resolve, 300));
+            
+            const canvas = await html2canvas(element, {
+                scale: 2, 
+                useCORS: true,
+                backgroundColor: document.documentElement.classList.contains('dark') ? '#0f172a' : '#ffffff',
+            });
+            
+            const imgData = canvas.toDataURL('image/png');
+            
+            const pdfWidth = 210; 
+            const pdfHeight = 297; 
+            
+            const imgWidth = canvas.width;
+            const imgHeight = canvas.height;
+            const ratio = Math.min((pdfWidth - 20) / imgWidth, (pdfHeight - 20) / imgHeight);
+            
+            const finalWidth = imgWidth * ratio;
+            const finalHeight = imgHeight * ratio;
+            
+            const marginX = (pdfWidth - finalWidth) / 2;
+            const marginY = 10;
+
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            pdf.addImage(imgData, 'PNG', marginX, marginY, finalWidth, finalHeight);
+            
+            pdf.save(`${INV_NO}.pdf`);
+            toast.success('Invoice downloaded successfully');
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            toast.error('Failed to download invoice');
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
     // Partial payment info from paymentRecord
     const paidAmount      = paymentRecord?.paidAmount      ?? 0;
     const totalPayable    = paymentRecord?.totalPayable    ?? finalPayable;
@@ -166,6 +216,7 @@ const MessBillInvoice = ({
 
     return (
         <motion.div
+            ref={invoiceRef}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
@@ -407,13 +458,13 @@ const MessBillInvoice = ({
                         </motion.button>
                     )}
 
-                    {typeof onSendEmail === 'function' && (
+                    <div className="flex gap-3 w-full sm:w-auto">
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            disabled={!!isSendingEmail}
-                            onClick={handleSendEmail}
-                            className="flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-medium 
+                            disabled={isDownloading}
+                            onClick={handleDownloadPDF}
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-medium 
                             border border-gray-300/60 dark:border-white/10 
                             bg-white/70 dark:bg-gray-800/60 backdrop-blur-md
                             text-gray-700 dark:text-gray-200 
@@ -421,15 +472,40 @@ const MessBillInvoice = ({
                             hover:shadow-[0_8px_24px_rgba(0,0,0,0.15)] 
                             hover:bg-white/80 dark:hover:bg-gray-700/60
                             transition-all duration-300 disabled:opacity-60"
+                            title="Download Invoice PDF"
                         >
-                            {isSendingEmail ? (
+                            {isDownloading ? (
                                 <Spinner size="sm" color="current" className="text-gray-600 dark:text-gray-300" />
                             ) : (
-                                <HiOutlineEnvelope className="w-4 h-4" />
+                                <HiOutlineArrowDownTray className="w-4 h-4" />
                             )}
-                            <span className="hidden sm:inline">Email Invoice</span>
+                            <span className="hidden sm:inline">Download</span>
                         </motion.button>
-                    )}
+
+                        {typeof onSendEmail === 'function' && (
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                disabled={!!isSendingEmail}
+                                onClick={handleSendEmail}
+                                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-medium 
+                                border border-gray-300/60 dark:border-white/10 
+                                bg-white/70 dark:bg-gray-800/60 backdrop-blur-md
+                                text-gray-700 dark:text-gray-200 
+                                shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.4)] 
+                                hover:shadow-[0_8px_24px_rgba(0,0,0,0.15)] 
+                                hover:bg-white/80 dark:hover:bg-gray-700/60
+                                transition-all duration-300 disabled:opacity-60"
+                            >
+                                {isSendingEmail ? (
+                                    <Spinner size="sm" color="current" className="text-gray-600 dark:text-gray-300" />
+                                ) : (
+                                    <HiOutlineEnvelope className="w-4 h-4" />
+                                )}
+                                <span className="hidden sm:inline">Email</span>
+                            </motion.button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Fine print */}
