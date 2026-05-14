@@ -113,13 +113,22 @@ const PrintInvoice = ({
                 <div style={s.brandBlock}>
                     <div style={s.logoRow}>
                         <img 
-                            src="/assets/icons/unitedmess-icon-1024.png" 
+                            src={typeof window !== 'undefined' ? `${window.location.origin}/assets/icons/unitedmess-icon-1024.png` : '/assets/icons/unitedmess-icon-1024.png'} 
                             alt="UnitedMess Logo" 
-                            style={s.logoImg} 
+                            style={s.logoImg}
+                            crossOrigin="anonymous"
                         />
-                        <p style={s.brandName}>
-                            United<span style={s.brandGradient}>Mess</span>
-                        </p>
+                        <svg width="150" height="32" viewBox="0 0 150 32" style={{ display: 'block', marginLeft: '2px' }}>
+                            <defs>
+                                <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stopColor="hsl(210, 92%, 42%)" />
+                                    <stop offset="100%" stopColor="hsl(268, 76%, 52%)" />
+                                </linearGradient>
+                            </defs>
+                            <text x="0" y="24" fontFamily="Arial, sans-serif" fontSize="24" fontWeight="800" fill="#0f172a" letterSpacing="-0.5px">
+                                United<tspan fill="url(#brandGrad)">Mess</tspan>
+                            </text>
+                        </svg>
                     </div>
                     <p style={s.brandSub}>Mess Management Platform</p>
                     <p style={{ ...s.brandSub, marginTop: '8px' }}>{user?.name || '—'}</p>
