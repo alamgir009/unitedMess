@@ -115,9 +115,22 @@ const MealPage = () => {
             if (editingMeal) {
                 const res = await dispatch(updateMeal({ mealId: editingMeal._id, mealData: formData })).unwrap();
                 toast.success(res?.message || 'Meal updated successfully');
-            } else if (isAdmin && formData.userId && formData.userId !== user?._id && formData.userId !== user?.id) {
-                const res = await dispatch(adminCreateMeal({ userId: formData.userId, mealData: formData })).unwrap();
-                toast.success(res?.message || 'Meal created successfully');
+            } else if (isAdmin && formData.userIds?.length > 0) {
+                /* Bulk create for selected members */
+                let created = 0, errors = 0;
+                for (const uid of formData.userIds) {
+                    try {
+                        await dispatch(adminCreateMeal({ userId: uid, mealData: formData })).unwrap();
+                        created++;
+                    } catch {
+                        errors++;
+                    }
+                }
+                if (errors === 0) {
+                    toast.success(`Meals created for ${created} member${created !== 1 ? 's' : ''}`);
+                } else {
+                    toast.success(`${created} created, ${errors} failed`);
+                }
             } else {
                 const res = await dispatch(createMeal(formData)).unwrap();
                 toast.success(res?.message || 'Meal created successfully');
@@ -125,12 +138,11 @@ const MealPage = () => {
             closeModal();
             dispatch(fetchMeals({ page, limit }));
         } catch (error) {
-            /* Stay in modal so user can see/fix the error without losing form state */
             const msg = typeof error === 'string' ? error : (error?.message || 'Failed to save meal');
             setErrorMsg(msg);
             toast.error(msg);
         }
-    }, [editingMeal, dispatch, closeModal, isAdmin, user, page, limit]);
+    }, [editingMeal, dispatch, closeModal, isAdmin, page, limit]);
 
     /* Delete handlers — MealList now passes the full meal object, not just the ID */
     const handleDeleteRequest = useCallback((meal) => setDeletingMeal(meal), []);

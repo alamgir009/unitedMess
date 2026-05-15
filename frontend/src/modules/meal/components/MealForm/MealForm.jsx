@@ -14,7 +14,7 @@ import {
 } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 import apiClient from '@/services/api/client/apiClient';
-import { Button, Avatar } from '@/shared/components/ui';
+import { Button, Avatar, MemberSelect } from '@/shared/components/ui';
 
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Constants                                                                  */
@@ -179,6 +179,7 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
         guestCount: 0,
         remarks:    '',
         userId:     currentUser?._id || currentUser?.id || '',
+        userIds:    [],
     });
 
     /* ── Range-specific state ── */
@@ -216,16 +217,18 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
     /* ── Populate from initialData (edit mode) ── */
     useEffect(() => {
         if (initialData) {
+            const targetUserId = typeof initialData.user === 'object' ? initialData.user?._id : (initialData.user || '');
             setFormData({
                 date:       initialData.date ? format(new Date(initialData.date), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
                 type:       initialData.type || 'both',
                 isGuestMeal: initialData.isGuestMeal || false,
                 guestCount: initialData.guestCount || 0,
                 remarks:    initialData.remarks || '',
-                userId:     typeof initialData.user === 'object' ? initialData.user?._id : (initialData.user || ''),
+                userId:     targetUserId,
+                userIds:    targetUserId ? [targetUserId] : [],
             });
         } else {
-            setFormData(prev => ({ ...prev, userId: currentUser?._id || currentUser?.id || '' }));
+            setFormData(prev => ({ ...prev, userId: currentUser?._id || currentUser?.id || '', userIds: [] }));
         }
     }, [initialData, currentUser]);
 
@@ -281,7 +284,19 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
         // Always send a full ISO string so parseDate() on the backend receives a
         // consistent, timezone-safe value regardless of which date was selected.
         const submitDate = new Date(formData.date).toISOString();
-        onSubmit({ ...formData, date: submitDate, mealCount: baseCount + guestAdd });
+
+        const payload = { ...formData, date: submitDate, mealCount: baseCount + guestAdd };
+
+        // In edit mode, send single userId; in create mode, send userIds array
+        if (initialData) {
+            payload.userId = formData.userId;
+            delete payload.userIds;
+        } else {
+            delete payload.userId;
+            if (!payload.userIds || payload.userIds.length === 0) return;
+        }
+
+        onSubmit(payload);
     };
 
     /* ── Bulk submit (range mode) ── */
@@ -291,7 +306,10 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
         setRangeError('');
 
         const dates = eachDayOfInterval({ start: parseISO(rangeFrom), end: parseISO(rangeTo) });
-        const total = dates.length;
+        const targetUsers = isAdmin && formData.userIds?.length > 0
+            ? formData.userIds
+            : [formData.userId || currentUser?._id || currentUser?.id].filter(Boolean);
+        const total = dates.length * targetUsers.length;
 
         setIsRunning(true);
         setProgress({ done: 0, total });
@@ -302,29 +320,32 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
 
         const counters = { created: 0, skipped: 0, failed: 0, unauthorized: false };
 
-        const tasks = dates.map((d) => async () => {
-            const dateStr = format(d, 'yyyy-MM-dd');
-            const payload = {
-                date:       dateStr,
-                type:       selectedType,
-                isGuestMeal: formData.isGuestMeal,
-                guestCount: formData.isGuestMeal ? (formData.guestCount || 0) : 0,
-                remarks:    formData.remarks || '',
-                mealCount:  baseCount + guestAdd,
-                ...(isAdmin && formData.userId ? { _adminUserId: formData.userId } : {}),
-            };
-            const result = await postMealWithRetry({ payload, abortRef });
-
-            if (result.status === 'unauthorized') {
-                counters.unauthorized = true;
-                abortRef.current = true;
-            } else {
-                counters[result.status] = (counters[result.status] || 0) + 1;
+        const tasks = [];
+        for (const uid of targetUsers) {
+            for (const d of dates) {
+                const dateStr = format(d, 'yyyy-MM-dd');
+                const payload = {
+                    date:          dateStr,
+                    type:          selectedType,
+                    isGuestMeal:   formData.isGuestMeal,
+                    guestCount:    formData.isGuestMeal ? (formData.guestCount || 0) : 0,
+                    remarks:       formData.remarks || '',
+                    mealCount:     baseCount + guestAdd,
+                    _adminUserId:  uid,
+                };
+                tasks.push(async () => {
+                    const result = await postMealWithRetry({ payload, abortRef });
+                    if (result.status === 'unauthorized') {
+                        counters.unauthorized = true;
+                        abortRef.current = true;
+                    } else {
+                        counters[result.status] = (counters[result.status] || 0) + 1;
+                    }
+                    setProgress(prev => ({ ...prev, done: prev.done + 1 }));
+                    return result;
+                });
             }
-
-            setProgress(prev => ({ ...prev, done: prev.done + 1 }));
-            return result;
-        });
+        }
 
         await throttledPool({ tasks, concurrency: CONCURRENCY, onSettled: () => {} });
 
@@ -351,7 +372,7 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
 
         onBulkComplete?.();
         onCancel?.();
-    }, [rangeFrom, rangeTo, formData, isAdmin, validateRange, onBulkComplete, onCancel]);
+    }, [rangeFrom, rangeTo, formData, isAdmin, currentUser, validateRange, onBulkComplete, onCancel]);
 
     /* ── Preview count (single mode) ── */
     const previewCount = typeCountMap[formData.type] + (formData.isGuestMeal ? formData.guestCount : 0);
@@ -457,30 +478,15 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
                                 )}
                             </div>
                         ) : (
-                            <div className="relative">
-                                <select
-                                    name="userId"
-                                    value={formData.userId}
-                                    onChange={handleChange}
-                                    required
-                                    disabled={isUsersLoading || isRunning || readOnly}
-                                    className={`${inputBase} appearance-none cursor-pointer pr-9 ${(isUsersLoading || isRunning || readOnly) ? inputDisabled : ''}`}
-                                >
-                                    <option value="" disabled>
-                                        {isUsersLoading ? 'Loading members…' : 'Select a member'}
-                                    </option>
-                                    {users.map((u) => (
-                                        <option key={u._id} value={u._id}>
-                                            {u.name}{u.email ? ` (${u.email})` : ''}
-                                        </option>
-                                    ))}
-                                </select>
-                                {!readOnly && !isRunning && (
-                                    <svg className="absolute inset-y-0 right-3 my-auto w-4 h-4 pointer-events-none text-muted-foreground/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                )}
-                            </div>
+                            <MemberSelect
+                                users={users}
+                                value={formData.userIds}
+                                onChange={(ids) => setFormData(p => ({ ...p, userIds: ids }))}
+                                loading={isUsersLoading}
+                                disabled={isRunning || readOnly}
+                                accentColor="primary"
+                                placeholder="Select members…"
+                            />
                         )}
                     </Field>
                 )}

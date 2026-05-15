@@ -9,7 +9,7 @@ import {
     HiOutlineLockClosed,
 } from 'react-icons/hi2';
 import apiClient from '@/services/api/client/apiClient';
-import { Button, Avatar } from '@/shared/components/ui';
+import { Button, Avatar, MemberSelect } from '@/shared/components/ui';
 
 /* ─── Design tokens ─────────────────────────────────────────── */
 
@@ -50,6 +50,7 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
         items: '',
         description: '',
         userId: currentUser?._id || currentUser?.id || '',
+        userIds: [],
     });
 
     const [users, setUsers] = useState([]);
@@ -76,6 +77,9 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
     /* Populate form when editing */
     useEffect(() => {
         if (initialData) {
+            const targetUserId = typeof initialData.user === 'object'
+                ? initialData.user?._id
+                : initialData.user || '';
             setFormData({
                 date: initialData.date
                     ? format(new Date(initialData.date), 'yyyy-MM-dd')
@@ -83,15 +87,14 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
                 amount: initialData.amount ?? '',
                 items: initialData.items || '',
                 description: initialData.description || '',
-                userId:
-                    typeof initialData.user === 'object'
-                        ? initialData.user?._id
-                        : initialData.user || '',
+                userId: targetUserId,
+                userIds: targetUserId ? [targetUserId] : [],
             });
         } else {
             setFormData((prev) => ({
                 ...prev,
                 userId: currentUser?._id || currentUser?.id || '',
+                userIds: [],
             }));
         }
     }, [initialData, currentUser]);
@@ -113,11 +116,21 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
             submitDate = new Date().toISOString();
         }
 
-        onSubmit({
+        const payload = {
             ...formData,
             date: submitDate,
             amount: parseFloat(formData.amount) || 0,
-        });
+        };
+
+        if (initialData) {
+            payload.userId = formData.userId;
+            delete payload.userIds;
+        } else {
+            delete payload.userId;
+            if (!payload.userIds || payload.userIds.length === 0) return;
+        }
+
+        onSubmit(payload);
     };
 
     return (
@@ -162,30 +175,15 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
                                 )}
                             </div>
                         ) : (
-                            <div className="relative">
-                                <select
-                                    name="userId"
-                                    value={formData.userId}
-                                    onChange={handleChange}
-                                    required
-                                    disabled={isUsersLoading || readOnly}
-                                    className={`${inputBase} appearance-none cursor-pointer pr-9 ${readOnly ? inputDisabled : ''}`}
-                                >
-                                    <option value="" disabled>
-                                        {isUsersLoading ? 'Loading members…' : 'Select a member'}
-                                    </option>
-                                    {users.map((u) => (
-                                        <option key={u._id} value={u._id}>
-                                            {u.name}{u.email ? ` (${u.email})` : ''}
-                                        </option>
-                                    ))}
-                                </select>
-                                {!readOnly && (
-                                    <svg className="absolute inset-y-0 right-3 my-auto w-4 h-4 pointer-events-none text-muted-foreground/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                )}
-                            </div>
+                            <MemberSelect
+                                users={users}
+                                value={formData.userIds}
+                                onChange={(ids) => setFormData(p => ({ ...p, userIds: ids }))}
+                                loading={isUsersLoading}
+                                disabled={readOnly}
+                                accentColor="emerald"
+                                placeholder="Select members…"
+                            />
                         )}
                     </Field>
                 )}

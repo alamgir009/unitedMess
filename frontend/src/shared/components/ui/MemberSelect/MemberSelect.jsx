@@ -1,20 +1,69 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { HiOutlineChevronDown, HiOutlineMagnifyingGlass, HiOutlineCheck, HiOutlineXMark, HiOutlineUser, HiOutlineCheckCircle } from 'react-icons/hi2';
-import { Avatar } from '@/shared/components/ui';
+import { HiOutlineChevronDown, HiOutlineMagnifyingGlass, HiOutlineCheck, HiOutlineXMark, HiOutlineUser } from 'react-icons/hi2';
+import Avatar from '../Avatar/Avatar.jsx';
+
+const accentMap = {
+    indigo: {
+        ring:         'focus:ring-indigo-500/30 focus:border-indigo-500/60',
+        selected:     'bg-indigo-500/10 text-indigo-500',
+        checkbox:     'border-indigo-500 bg-indigo-500',
+        text:         'text-indigo-500 hover:text-indigo-400',
+        badge:        'bg-indigo-500/20 text-indigo-500',
+        hoverCheck:   'hover:border-indigo-500/50',
+        checkIcon:    'text-white',
+    },
+    emerald: {
+        ring:         'focus:ring-emerald-500/30 focus:border-emerald-500/60',
+        selected:     'bg-emerald-500/10 text-emerald-500',
+        checkbox:     'border-emerald-500 bg-emerald-500',
+        text:         'text-emerald-500 hover:text-emerald-400',
+        badge:        'bg-emerald-500/20 text-emerald-500',
+        hoverCheck:   'hover:border-emerald-500/50',
+        checkIcon:    'text-white',
+    },
+    primary: {
+        ring:         'focus:ring-primary/30 focus:border-primary/60',
+        selected:     'bg-primary/10 text-primary',
+        checkbox:     'border-primary bg-primary',
+        text:         'text-primary hover:text-primary',
+        badge:        'bg-primary/20 text-primary',
+        hoverCheck:   'hover:border-primary/50',
+        checkIcon:    'text-white',
+    },
+    slate: {
+        ring:         'focus:ring-slate-500/30 focus:border-slate-500/60',
+        selected:     'bg-slate-500/10 text-slate-500',
+        checkbox:     'border-slate-500 bg-slate-500',
+        text:         'text-slate-500 hover:text-slate-400',
+        badge:        'bg-slate-500/20 text-slate-500',
+        hoverCheck:   'hover:border-slate-500/50',
+        checkIcon:    'text-white',
+    },
+};
 
 const inputBase =
     'w-full px-3 py-2 rounded-xl border border-border/60 ' +
     'bg-background/70 backdrop-blur-md ' +
-    'focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/60 ' +
     'outline-none transition-all duration-200 ' +
     'text-sm text-foreground placeholder:text-muted-foreground/50 ' +
     'shadow-sm hover:border-border';
 
-const MultiMemberSelect = ({ users = [], value = [], onChange, loading = false, disabled = false }) => {
+const MemberSelect = ({
+    users = [],
+    value = [],
+    onChange,
+    loading = false,
+    disabled = false,
+    placeholder = 'Select members…',
+    accentColor = 'primary',
+    filterUser,
+}) => {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
     const ref = useRef(null);
     const searchRef = useRef(null);
+
+    const ac = accentMap[accentColor] || accentMap.primary;
 
     useEffect(() => {
         const handler = (e) => {
@@ -42,17 +91,19 @@ const MultiMemberSelect = ({ users = [], value = [], onChange, loading = false, 
         );
     }, [visibleUsers, search]);
 
-    const isFullyPaid = useCallback((u) =>
-        u.payment === 'success' && u.gasBill === 'success',
-    []);
+    const isUserBlocked = useCallback(
+        (u) => (typeof filterUser === 'function' ? filterUser(u) : false),
+        [filterUser]
+    );
 
     const selectedCount = value.length;
-    const allFilteredSelected = filtered.length > 0 && filtered.every(u => isFullyPaid(u) || value.includes(u._id));
+    const allFilteredSelected = filtered.length > 0 &&
+        filtered.every(u => isUserBlocked(u) || value.includes(u._id));
 
     const toggle = (userId) => {
         if (disabled) return;
         const user = users.find(u => u._id === userId);
-        if (!user || isFullyPaid(user)) return;
+        if (!user || isUserBlocked(user)) return;
         onChange(
             value.includes(userId)
                 ? value.filter(id => id !== userId)
@@ -62,7 +113,7 @@ const MultiMemberSelect = ({ users = [], value = [], onChange, loading = false, 
 
     const selectAll = () => {
         if (disabled) return;
-        const selectable = filtered.filter(u => !isFullyPaid(u) && !value.includes(u._id));
+        const selectable = filtered.filter(u => !isUserBlocked(u) && !value.includes(u._id));
         if (selectable.length === 0) return;
         onChange([...value, ...selectable.map(u => u._id)]);
     };
@@ -77,21 +128,21 @@ const MultiMemberSelect = ({ users = [], value = [], onChange, loading = false, 
             <button
                 type="button"
                 onClick={() => !disabled && setOpen(o => !o)}
-                className={`${inputBase} flex items-center justify-between gap-2 text-left
+                className={`${inputBase} ${ac.ring} flex items-center justify-between gap-2 text-left
                     ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
             >
                 <span className="flex items-center gap-2 truncate">
                     <HiOutlineUser className="w-4 h-4 shrink-0 text-muted-foreground/70" />
                     <span className="truncate text-sm">
                         {selectedCount === 0
-                            ? 'Select members…'
+                            ? placeholder
                             : `${selectedCount} member${selectedCount !== 1 ? 's' : ''} selected`
                         }
                     </span>
                 </span>
                 <span className="flex items-center gap-2">
                     {selectedCount > 0 && (
-                        <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-indigo-500/20 text-indigo-500 text-[11px] font-bold leading-none">
+                        <span className={`flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full ${ac.badge} text-[11px] font-bold leading-none`}>
                             {selectedCount}
                         </span>
                     )}
@@ -115,7 +166,7 @@ const MultiMemberSelect = ({ users = [], value = [], onChange, loading = false, 
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
                                 placeholder="Search members…"
-                                className={`${inputBase} pl-9 h-9 text-xs`}
+                                className={`${inputBase} ${ac.ring} pl-9 h-9 text-xs`}
                             />
                             {search && (
                                 <button
@@ -135,8 +186,8 @@ const MultiMemberSelect = ({ users = [], value = [], onChange, loading = false, 
                             <button
                                 type="button"
                                 onClick={selectAll}
-                                disabled={allFilteredSelected || filtered.every(u => isFullyPaid(u))}
-                                className="text-[11px] font-semibold uppercase tracking-wider text-indigo-500 hover:text-indigo-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                disabled={allFilteredSelected || filtered.every(u => isUserBlocked(u))}
+                                className={`text-[11px] font-semibold uppercase tracking-wider ${ac.text} transition-colors disabled:opacity-30 disabled:cursor-not-allowed`}
                             >
                                 Select All
                             </button>
@@ -174,20 +225,20 @@ const MultiMemberSelect = ({ users = [], value = [], onChange, loading = false, 
                         /* Member list */
                         <div className="max-h-[260px] overflow-y-auto overscroll-contain py-1">
                             {filtered.map(u => {
-                                const paid = isFullyPaid(u);
+                                const blocked = isUserBlocked(u);
                                 const selected = value.includes(u._id);
                                 return (
                                     <button
                                         key={u._id}
                                         type="button"
                                         onClick={() => toggle(u._id)}
-                                        disabled={paid}
+                                        disabled={blocked}
                                         className={`
                                             w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-all duration-100
-                                            ${paid
+                                            ${blocked
                                                 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 cursor-not-allowed'
                                                 : selected
-                                                    ? 'bg-indigo-500/10 text-indigo-500 font-medium'
+                                                    ? `${ac.selected} font-medium`
                                                     : 'hover:bg-muted/40 text-foreground'
                                             }
                                         `}
@@ -195,15 +246,15 @@ const MultiMemberSelect = ({ users = [], value = [], onChange, loading = false, 
                                         {/* Checkbox */}
                                         <span className={`
                                             relative flex items-center justify-center w-4 h-4 shrink-0 rounded border-2 transition-all duration-100
-                                            ${paid
+                                            ${blocked
                                                 ? 'border-emerald-400/60 bg-emerald-400/20'
                                                 : selected
-                                                    ? 'border-indigo-500 bg-indigo-500'
-                                                    : 'border-muted-foreground/30 hover:border-indigo-500/50'
+                                                    ? ac.checkbox
+                                                    : `border-muted-foreground/30 ${ac.hoverCheck}`
                                             }
                                         `}>
-                                            {(paid || selected) && (
-                                                <HiOutlineCheck className={`w-3 h-3 ${paid ? 'text-emerald-500' : 'text-white'}`} strokeWidth={3} />
+                                            {(blocked || selected) && (
+                                                <HiOutlineCheck className={`w-3 h-3 ${blocked ? 'text-emerald-500' : ac.checkIcon}`} strokeWidth={3} />
                                             )}
                                         </span>
 
@@ -220,10 +271,10 @@ const MultiMemberSelect = ({ users = [], value = [], onChange, loading = false, 
                                             </span>
                                         </span>
 
-                                        {/* Paid badge */}
-                                        {paid && (
+                                        {/* Blocked badge */}
+                                        {blocked && (
                                             <span className="flex items-center gap-1 shrink-0 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                                                <HiOutlineCheckCircle className="w-3.5 h-3.5" />
+                                                <HiOutlineCheck className="w-3.5 h-3.5" />
                                                 All paid
                                             </span>
                                         )}
@@ -238,4 +289,4 @@ const MultiMemberSelect = ({ users = [], value = [], onChange, loading = false, 
     );
 };
 
-export default MultiMemberSelect;
+export default MemberSelect;

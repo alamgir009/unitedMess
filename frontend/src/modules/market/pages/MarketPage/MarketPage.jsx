@@ -107,9 +107,21 @@ const MarketPage = () => {
             if (editingMarket) {
                 const res = await dispatch(updateMarket({ marketId: editingMarket._id, marketData: formData })).unwrap();
                 toast.success(res?.message || 'Market entry updated successfully');
-            } else if (isAdmin && formData.userId && formData.userId !== user._id && formData.userId !== user.id) {
-                const res = await dispatch(adminCreateMarket({ userId: formData.userId, marketData: formData })).unwrap();
-                toast.success(res?.message || 'Market entry created successfully');
+            } else if (isAdmin && formData.userIds?.length > 0) {
+                let created = 0, errors = 0;
+                for (const uid of formData.userIds) {
+                    try {
+                        await dispatch(adminCreateMarket({ userId: uid, marketData: formData })).unwrap();
+                        created++;
+                    } catch {
+                        errors++;
+                    }
+                }
+                if (errors === 0) {
+                    toast.success(`Entries created for ${created} member${created !== 1 ? 's' : ''}`);
+                } else {
+                    toast.success(`${created} created, ${errors} failed`);
+                }
             } else {
                 const res = await dispatch(createMarket(formData)).unwrap();
                 toast.success(res?.message || 'Market entry created successfully');
@@ -120,7 +132,7 @@ const MarketPage = () => {
             setErrorMsg(typeof err === 'string' ? err : err?.message || 'Failed to save market entry');
             closeModal();
         }
-    }, [editingMarket, dispatch, closeModal, isAdmin, user, page, limit]);
+    }, [editingMarket, dispatch, closeModal, isAdmin, page, limit]);
 
     const handleDeleteClick = useCallback((market) => {
         setMarketToDelete(market);

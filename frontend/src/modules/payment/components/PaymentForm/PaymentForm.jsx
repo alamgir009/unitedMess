@@ -14,9 +14,8 @@ import {
 import { BsCashCoin, BsGlobe2 } from 'react-icons/bs';
 import { MdPendingActions, MdCheckCircleOutline, MdErrorOutline, MdRefresh } from 'react-icons/md';
 import apiClient from '@/services/api/client/apiClient';
-import { Button, Avatar } from '@/shared/components/ui';
+import { Button, Avatar, MemberSelect } from '@/shared/components/ui';
 import { SiRazorpay } from "react-icons/si";
-import MultiMemberSelect from './MultiMemberSelect';
 
 /* ─── Constants ─────────────────────────────────────────────── */
 
@@ -322,12 +321,14 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                                 )}
                             </div>
                         ) : (
-                            <MultiMemberSelect
+                            <MemberSelect
                                 users={users}
                                 value={formData.userIds}
                                 onChange={(ids) => setFormData(p => ({ ...p, userIds: ids }))}
                                 loading={isUsersLoading}
                                 disabled={readOnly}
+                                accentColor="indigo"
+                                filterUser={(u) => u.payment === 'success' && u.gasBill === 'success'}
                             />
                         )}
                     </Field>

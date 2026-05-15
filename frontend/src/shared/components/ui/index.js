@@ -12,4 +12,5 @@ export { default as Loader, Spinner, DotsLoader, PulseLoader, Skeleton } from '.
 export { default as Modal } from './Modal/index.js';
 export { default as Tabs, TabsList, TabsTrigger, TabsContent } from './Tabs/index.js';
 export { default as Dropdown } from './Dropdown/index.js';
+export { default as MemberSelect } from './MemberSelect/index.js';
 export { ToastContainer, useToast } from './Toast/index.js';
