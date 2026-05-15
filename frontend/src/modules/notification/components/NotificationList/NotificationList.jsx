@@ -136,7 +136,7 @@ const GroupLabel = ({ label }) => (
 const NotificationList = ({ closeMenu, onNotificationClick }) => {
     const {
         items, loading, unreadCount, hasMore,
-        currentPage, total, markAllLoading,
+        currentPage, total, markAllLoading, error,
         loadMore, markSingleAsRead, markAllAsRead, refresh,
     } = useNotifications({ limit: 20 });
 
