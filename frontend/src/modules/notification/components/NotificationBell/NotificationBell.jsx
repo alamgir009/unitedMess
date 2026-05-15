@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchNotifications } from '../../store/notification.slice';
+import useNotifications from '../../hooks/useNotifications';
 import NotificationList from '../NotificationList/NotificationList';
 import useSocket from '../../hooks/useSocket';
 
@@ -25,6 +25,7 @@ const BELL_SHAKE = {
 const NotificationBell = () => {
     const dispatch = useDispatch();
     const { unreadCount, lastRealtimeUpdate } = useSelector(s => s.notification);
+    const {} = useNotifications({ autoFetch: false }); // hook initialized but data comes from store
 
     const [open, setOpen]           = useState(false);
     const [isShaking, setIsShaking] = useState(false);
@@ -32,11 +33,6 @@ const NotificationBell = () => {
     const panelRef                  = useRef(null);
 
     useSocket();
-
-    // Initial load
-    useEffect(() => {
-        dispatch(fetchNotifications({ page: 1, limit: 20 }));
-    }, [dispatch]);
 
     // Bell shake on new notification
     useEffect(() => {

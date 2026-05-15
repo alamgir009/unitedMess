@@ -4,6 +4,7 @@ const config = require('./config/index');
 const connectDB = require('./database/connection');
 const logger = require('./utils/logger/index');
 const { registerInvoiceCron, registerReminderCron } = require('./jobs/cron/invoiceCron');
+const { registerNotificationCron } = require('./jobs/cron/notificationCron');
 const { setupSocketIO } = require('./sockets');
 
 // Create HTTP server
@@ -16,6 +17,7 @@ setupSocketIO(server);
 connectDB().then(() => {
     registerInvoiceCron();
     registerReminderCron();
+    registerNotificationCron();
 });
 
 // Start server

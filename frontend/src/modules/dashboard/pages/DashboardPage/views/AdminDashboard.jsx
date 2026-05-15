@@ -1,14 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { fetchAdminDashboardStats } from '../../../store/dashboard.slice';
 import { fetchUsers, searchUsers } from '../../../../members/store/members.slice';
 import StatOverview from '../../../components/StatOverview/StatOverview';
 import MembersTable from '../../../components/MembersTable/MembersTable';
+import SendNotificationModal from '@/modules/notification/components/SendNotificationModal/SendNotificationModal';
 import {
     FiUsers, FiDollarSign, FiPieChart, FiShoppingBag, FiCommand,
     FiAlertCircle, FiCheckSquare, FiCoffee, FiTrendingUp,
-    FiRefreshCw
+    FiRefreshCw, FiSend
 } from 'react-icons/fi';
 
 
@@ -31,6 +32,7 @@ const AlertPill = ({ count, label, color, icon: Icon }) => {
 const AdminDashboard = () => {
     const dispatch  = useDispatch();
     const navigate  = useNavigate();
+    const [showNotificationModal, setShowNotificationModal] = useState(false);
 
     const {
         adminStats,
@@ -126,14 +128,28 @@ const AdminDashboard = () => {
                         Global admin overview and controls
                     </p>
                 </div>
-                <button
-                    onClick={handleRefresh}
-                    disabled={isDashboardLoading || isMembersLoading}
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
-                >
-                    <FiRefreshCw size={14} className={isDashboardLoading || isMembersLoading ? 'animate-spin' : ''} />
-                    Refresh
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setShowNotificationModal(true)}
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-950/50 transition-colors"
+                    >
+                        <FiSend size={14} />
+                        Send Notification
+                    </button>
+                    <button
+                        onClick={handleRefresh}
+                        disabled={isDashboardLoading || isMembersLoading}
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+                    >
+                        <FiRefreshCw size={14} className={isDashboardLoading || isMembersLoading ? 'animate-spin' : ''} />
+                        Refresh
+                    </button>
+                </div>
+
+                <SendNotificationModal
+                    isOpen={showNotificationModal}
+                    onClose={() => setShowNotificationModal(false)}
+                />
             </div>
 
             {/* Stats Cards */}

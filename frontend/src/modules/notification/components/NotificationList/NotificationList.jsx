@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-    BellRing, CheckCircle2, Loader2, RefreshCw, Sparkles, Bell
+    BellRing, CheckCircle2, Loader2, RefreshCw, Sparkles, Bell, AlertCircle
 } from 'lucide-react';
-import { markAllAsRead, markAsRead, fetchNotifications } from '../../store/notification.slice';
+import useNotifications from '../../hooks/useNotifications';
 import NotificationItem from '../NotificationItem/NotificationItem';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { Spinner } from '@/shared/components/ui';
@@ -84,6 +83,40 @@ const EmptyState = ({ hasUnread }) => (
     </motion.div>
 );
 
+// ─── Error state ──────────────────────────────────────────────────────────────
+const ErrorState = ({ error, onRetry }) => (
+    <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0  }}
+        className="flex flex-col items-center justify-center py-14 px-6 text-center"
+    >
+        <div className="
+            w-14 h-14 rounded-full mb-4 shadow-inner
+            bg-gradient-to-br from-red-50 to-red-100
+            dark:from-red-900/20 dark:to-red-800/30
+            flex items-center justify-center
+        ">
+            <AlertCircle className="w-5 h-5 text-red-400 dark:text-red-400" />
+        </div>
+        <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            Failed to load
+        </h4>
+        <p className="text-xs text-slate-400 dark:text-slate-500 max-w-[220px] leading-relaxed mb-3">
+            {error || 'Something went wrong while fetching notifications.'}
+        </p>
+        <button
+            onClick={onRetry}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40
+                border border-blue-100 dark:border-blue-900/50
+                hover:bg-blue-100 dark:hover:bg-blue-950/70 transition-all"
+        >
+            <RefreshCw className="w-3 h-3" />
+            Try again
+        </button>
+    </motion.div>
+);
+
 // ─── Group label ──────────────────────────────────────────────────────────────
 const GroupLabel = ({ label }) => (
     <div className="
@@ -101,63 +134,51 @@ const GroupLabel = ({ label }) => (
 
 // ─── Main component ───────────────────────────────────────────────────────────
 const NotificationList = ({ closeMenu, onNotificationClick }) => {
-    const dispatch = useDispatch();
     const {
         items, loading, unreadCount, hasMore,
         currentPage, total, markAllLoading,
-    } = useSelector(s => s.notification);
+        loadMore, markSingleAsRead, markAllAsRead, refresh,
+    } = useNotifications({ limit: 20 });
 
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const observerRef                        = useRef(null);
 
-    // Initial fetch guard
-    useEffect(() => {
-        if (items.length === 0) {
-            dispatch(fetchNotifications({ page: 1, limit: 20 }));
-        }
-    }, [dispatch, items.length]);
-
     // Infinite scroll
-    const loadMore = useCallback(async () => {
+    const handleLoadMore = useCallback(async () => {
         if (!hasMore || isLoadingMore) return;
         setIsLoadingMore(true);
-        await dispatch(fetchNotifications({ page: currentPage + 1, limit: 20 }));
+        await loadMore();
         setIsLoadingMore(false);
-    }, [dispatch, hasMore, isLoadingMore, currentPage]);
+    }, [hasMore, isLoadingMore, loadMore]);
 
     const sentinelRef = useCallback(node => {
         if (loading || isLoadingMore) return;
         observerRef.current?.disconnect();
         if (!node) return;
         observerRef.current = new IntersectionObserver(
-            ([entry]) => { if (entry.isIntersecting && hasMore) loadMore(); },
+            ([entry]) => { if (entry.isIntersecting && hasMore) handleLoadMore(); },
             { threshold: 0.5 },
         );
         observerRef.current.observe(node);
-    }, [loading, isLoadingMore, hasMore, loadMore]);
+    }, [loading, isLoadingMore, hasMore, handleLoadMore]);
 
     // Handlers
-    const handleMarkAsRead = useCallback(
-        (id) => dispatch(markAsRead(id)),
-        [dispatch],
-    );
+    const handleSelect = useCallback(async (notification) => {
+        const id = notification._id ?? notification.id;
+        if (!notification.isRead) await markSingleAsRead(id);
+        closeMenu();
+        onNotificationClick?.(notification);
+    }, [closeMenu, markSingleAsRead, onNotificationClick]);
 
     const handleMarkAllAsRead = useCallback((e) => {
         e.preventDefault();
         e.stopPropagation();
-        dispatch(markAllAsRead());
-    }, [dispatch]);
-
-    const handleSelect = useCallback(async (notification) => {
-        const id = notification._id ?? notification.id;
-        if (!notification.isRead) await handleMarkAsRead(id);
-        closeMenu();
-        onNotificationClick?.(notification);
-    }, [closeMenu, handleMarkAsRead, onNotificationClick]);
+        markAllAsRead();
+    }, [markAllAsRead]);
 
     const handleRefresh = useCallback(() => {
-        dispatch(fetchNotifications({ page: 1, limit: 20 }));
-    }, [dispatch]);
+        refresh();
+    }, [refresh]);
 
     const grouped    = groupByDate(items);
     const groupKeys  = [...grouped.keys()];
@@ -241,6 +262,8 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
             >
                 {loading && items.length === 0 ? (
                     <Skeleton />
+                ) : error ? (
+                    <ErrorState error={error} onRetry={handleRefresh} />
                 ) : items.length === 0 ? (
                     <EmptyState hasUnread={unreadCount > 0} />
                 ) : (

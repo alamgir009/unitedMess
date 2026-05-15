@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
     Info, AlertCircle, CreditCard, UserCog, TrendingUp,
@@ -19,7 +19,12 @@ const ICON_MAP = {
     INVESTMENT: { Icon: TrendingUp,  color: 'text-teal-500',    bg: 'bg-teal-50       dark:bg-teal-950/30'    },
     REWARD:     { Icon: Sparkles,    color: 'text-amber-500',   bg: 'bg-amber-50      dark:bg-amber-950/30'   },
 };
-const FALLBACK_ICON = { Icon: Info, color: 'text-slate-400', bg: 'bg-slate-50 dark:bg-slate-800/50' };
+const FALLBACK_ICON = (() => {
+    if (typeof console !== 'undefined' && console.warn) {
+        console.warn('NotificationItem: Unknown notification type, using fallback icon');
+    }
+    return { Icon: Info, color: 'text-slate-400', bg: 'bg-slate-50 dark:bg-slate-800/50' };
+})();
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const formatRelativeTime = (date) => {
@@ -56,7 +61,14 @@ const NotificationItem = memo(({ notification, onSelect }) => {
     const isUrgent = priority === 'HIGH' || type === 'SECURITY';
     const notifId  = _id ?? id;
 
-    const relativeTime = useMemo(() => formatRelativeTime(createdAt), [createdAt]);
+    const [relativeTime, setRelativeTime] = useState(() => formatRelativeTime(createdAt));
+    useEffect(() => {
+        setRelativeTime(formatRelativeTime(createdAt));
+        const interval = setInterval(() => {
+            setRelativeTime(formatRelativeTime(createdAt));
+        }, 60000);
+        return () => clearInterval(interval);
+    }, [createdAt]);
 
     return (
         <motion.div

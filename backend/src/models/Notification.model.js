@@ -4,12 +4,22 @@ const notificationSchema = new mongoose.Schema({
     recipient: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: [true, 'Recipient is required']
+        required: [true, 'Recipient is required'],
+        index: true
     },
     type: {
         type: String,
-        enum: ['SYSTEM', 'PAYMENT', 'ACCOUNT', 'BILLING'],
+        enum: [
+            'PAYMENT', 'TRANSFER', 'DEPOSIT', 'WITHDRAWAL',
+            'ACCOUNT', 'SECURITY', 'BILLING', 'SYSTEM',
+            'INVESTMENT', 'REWARD', 'CUSTOM'
+        ],
         required: [true, 'Notification type is required']
+    },
+    priority: {
+        type: String,
+        enum: ['LOW', 'NORMAL', 'HIGH', 'CRITICAL'],
+        default: 'NORMAL'
     },
     title: {
         type: String,
@@ -24,10 +34,39 @@ const notificationSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    readAt: {
+        type: Date,
+        default: null
+    },
+    actionRequired: {
+        type: Boolean,
+        default: false
+    },
+    actionUrl: {
+        type: String,
+        default: null
+    },
+    metadata: {
+        type: mongoose.Schema.Types.Mixed,
+        default: null
+    },
+    deliveryStatus: {
+        type: String,
+        enum: ['PENDING', 'SENT', 'DELIVERED', 'FAILED'],
+        default: 'PENDING'
+    },
+    idempotencyKey: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
+    expiresAt: {
+        type: Date,
+        default: null
+    },
     createdAt: {
         type: Date,
-        default: Date.now,
-        expires: '7d' // Automatically delete after 7 days
+        default: Date.now
     }
 }, {
     timestamps: true,
@@ -35,8 +74,10 @@ const notificationSchema = new mongoose.Schema({
     toObject: { virtuals: true }
 });
 
-// Index for faster queries on recipient and isRead status
-notificationSchema.index({ recipient: 1, isRead: 1, createdAt: -1 });
+notificationSchema.index({ recipient: 1, createdAt: -1 });
+notificationSchema.index({ recipient: 1, isRead: 1 });
+notificationSchema.index({ type: 1, priority: 1 });
+notificationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 const Notification = mongoose.model('Notification', notificationSchema);
 module.exports = Notification;

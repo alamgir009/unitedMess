@@ -14,11 +14,13 @@ export const fetchNotifications = createAsyncThunk(
 
 export const markAsRead = createAsyncThunk(
     'notification/markAsRead',
-    async (notificationId, { rejectWithValue }) => {
+    async (notificationId, { dispatch, rejectWithValue }) => {
+        dispatch(markAsReadOptimistic(notificationId));
         try {
             const data = await NotificationService.markAsRead(notificationId);
-            return data.data; // Return the updated notification
+            return data.data;
         } catch (error) {
+            dispatch(markAsReadRollback(notificationId));
             return rejectWithValue(error.response?.data?.message || 'Failed to mark as read');
         }
     }
@@ -42,6 +44,8 @@ const initialState = {
     pagination: { page: 1, limit: 20, total: 0, pages: 0 },
     loading: false,
     error: null,
+    markAllLoading: false,
+    lastRealtimeUpdate: null,
 };
 
 const notificationSlice = createSlice({
@@ -54,12 +58,30 @@ const notificationSlice = createSlice({
             if (!notification.isRead) {
                 state.unreadCount += 1;
             }
+            state.lastRealtimeUpdate = Date.now();
         },
         resetNotifications: (state) => {
             state.items = [];
             state.unreadCount = 0;
             state.pagination = { page: 1, limit: 20, total: 0, pages: 0 };
-        }
+            state.lastRealtimeUpdate = null;
+        },
+        markAsReadOptimistic: (state, action) => {
+            const id = action.payload;
+            const index = state.items.findIndex(n => n.id === id || n._id === id);
+            if (index !== -1 && !state.items[index].isRead) {
+                state.items[index].isRead = true;
+                state.unreadCount = Math.max(0, state.unreadCount - 1);
+            }
+        },
+        markAsReadRollback: (state, action) => {
+            const id = action.payload;
+            const index = state.items.findIndex(n => n.id === id || n._id === id);
+            if (index !== -1 && state.items[index].isRead) {
+                state.items[index].isRead = false;
+                state.unreadCount += 1;
+            }
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -78,7 +100,7 @@ const notificationSlice = createSlice({
                 state.loading = false;
                 state.error = action.payload;
             })
-            // Mark As Read
+            // Mark As Read (fallback for when optimistic succeeds)
             .addCase(markAsRead.fulfilled, (state, action) => {
                 const updatedNotification = action.payload;
                 const index = state.items.findIndex(n => n.id === updatedNotification.id || n._id === updatedNotification._id);
@@ -88,12 +110,19 @@ const notificationSlice = createSlice({
                 }
             })
             // Mark All As Read
+            .addCase(markAllAsRead.pending, (state) => {
+                state.markAllLoading = true;
+            })
             .addCase(markAllAsRead.fulfilled, (state) => {
                 state.items.forEach(n => { n.isRead = true; });
                 state.unreadCount = 0;
+                state.markAllLoading = false;
+            })
+            .addCase(markAllAsRead.rejected, (state) => {
+                state.markAllLoading = false;
             });
     }
 });
 
-export const { addRealTimeNotification, resetNotifications } = notificationSlice.actions;
+export const { addRealTimeNotification, resetNotifications, markAsReadOptimistic, markAsReadRollback } = notificationSlice.actions;
 export default notificationSlice.reducer;

@@ -43,7 +43,11 @@ const useSocket = () => {
                     dispatch(addRealTimeNotification(notification));
                 });
 
-
+                socketRef.current.on('connect', () => {
+                    if (import.meta.env.DEV) {
+                        console.log('Socket reconnected, resubscribing...');
+                    }
+                });
                 
                 socketRef.current.on('connect_error', (error) => {
                     if (import.meta.env.DEV) {
