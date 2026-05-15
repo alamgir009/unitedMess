@@ -4,146 +4,124 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { HiOutlineXMark } from 'react-icons/hi2';
 import { Button } from '@/shared/components/ui';
 
-/* ------------------------------------------------------------------ */
-/*  SSR-safe media query hook                                          */
-/* ------------------------------------------------------------------ */
 const useMediaQuery = (query) => {
-  const getMatches = () =>
-    typeof window !== 'undefined' ? window.matchMedia(query).matches : false;
+    const getMatches = () =>
+        typeof window !== 'undefined' ? window.matchMedia(query).matches : false;
 
-  const [matches, setMatches] = useState(getMatches);
+    const [matches, setMatches] = useState(getMatches);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
 
-    const mql = window.matchMedia(query);
-    const handler = (e) => setMatches(e.matches);
+        const mql = window.matchMedia(query);
+        const handler = (e) => setMatches(e.matches);
 
-    setMatches(mql.matches);
+        setMatches(mql.matches);
 
-    mql.addEventListener?.('change', handler);
-    return () => mql.removeEventListener?.('change', handler);
-  }, [query]);
+        mql.addEventListener?.('change', handler);
+        return () => mql.removeEventListener?.('change', handler);
+    }, [query]);
 
-  return matches;
+    return matches;
 };
 
-/* ------------------------------------------------------------------ */
-/*  MealModal                                                         */
-/* ------------------------------------------------------------------ */
 const MealModal = ({ isOpen, onClose, title, children }) => {
-  const isMobile = useMediaQuery('(max-width: 767px)');
+    const isMobile = useMediaQuery('(max-width: 767px)');
 
-  const easing = useMemo(() => [0.16, 1, 0.3, 1], []);
+    const transition = useMemo(
+        () => ({
+            backdrop: { duration: isMobile ? 0.1 : 0.15, ease: [0.16, 1, 0.3, 1] },
+            modal: { duration: isMobile ? 0.12 : 0.18, ease: [0.16, 1, 0.3, 1] },
+        }),
+        [isMobile]
+    );
 
-  const transition = useMemo(
-    () => ({
-      backdrop: { duration: isMobile ? 0.12 : 0.18, ease: easing },
-      modal: { duration: isMobile ? 0.16 : 0.2, ease: easing },
-    }),
-    [isMobile, easing]
-  );
+    const initialState = isMobile
+        ? { opacity: 0, scale: 0.985, y: 14 }
+        : { opacity: 0, scale: 0.96, y: 24 };
 
-  const initialState = isMobile
-    ? { opacity: 0, scale: 0.985, y: 14 }
-    : { opacity: 0, scale: 0.96, y: 24 };
+    useEffect(() => {
+        if (!isOpen) return;
 
-  useEffect(() => {
-    if (!isOpen || typeof document === 'undefined') return;
+        const original = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
 
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+        const esc = (e) => e.key === 'Escape' && onClose?.();
+        window.addEventListener('keydown', esc);
 
-    const handleEscape = (event) => {
-      if (event.key === 'Escape') onClose?.();
-    };
+        return () => {
+            document.body.style.overflow = original;
+            window.removeEventListener('keydown', esc);
+        };
+    }, [isOpen, onClose]);
 
-    window.addEventListener('keydown', handleEscape);
+    if (typeof document === 'undefined') return null;
 
-    return () => {
-      document.body.style.overflow = originalOverflow;
-      window.removeEventListener('keydown', handleEscape);
-    };
-  }, [isOpen, onClose]);
+    return createPortal(
+        <AnimatePresence>
+            {isOpen && (
+                <div className="fixed inset-0 z-[1000] contain-[layout_style_paint]">
+                    {/* Backdrop — solid overlay, no blur on mobile */}
+                    <motion.button
+                        aria-label="Close modal"
+                        onClick={onClose}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={transition.backdrop}
+                        className="absolute inset-0 w-full h-full bg-black/60 md:bg-black/50"
+                    />
 
-  if (typeof document === 'undefined') return null;
+                    {/* Modal */}
+                    <div className="flex min-h-full items-center justify-center p-3 sm:p-4">
+                        <motion.div
+                            initial={initialState}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={initialState}
+                            transition={transition.modal}
+                            role="dialog"
+                            aria-modal="true"
+                            style={{ willChange: 'transform, opacity' }}
+                            className="
+                                relative w-full max-w-lg overflow-hidden rounded-3xl
+                                border border-black/10 dark:border-white/10
+                                bg-white dark:bg-slate-900 text-slate-900 dark:text-white
+                                shadow-2xl
+                                md:bg-white/95 md:dark:bg-slate-900/95
+                            "
+                        >
+                            {/* Header */}
+                            <div className="
+                                relative z-10 flex items-center justify-between
+                                px-4 py-4 sm:px-6 sm:py-5
+                                border-b border-black/10 dark:border-white/10
+                            ">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="w-1 h-6 rounded-full bg-gradient-to-b from-sky-500 to-violet-600" />
+                                    <h2 className="truncate text-lg font-semibold">
+                                        {title}
+                                    </h2>
+                                </div>
 
-  return createPortal(
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-[1000]">
-          <motion.button
-            type="button"
-            aria-label="Close modal"
-            onClick={onClose}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={transition.backdrop}
-            className={[
-              'absolute inset-0 h-full w-full',
-              'bg-black/70',
-              'md:bg-black/50 md:backdrop-blur-sm',
-            ].join(' ')}
-            style={{ willChange: 'opacity' }}
-          />
+                                <Button variant="danger" iconOnly onClick={onClose}>
+                                    <HiOutlineXMark className="w-5 h-5" />
+                                </Button>
+                            </div>
 
-          <div className="relative flex min-h-full items-center justify-center p-3 sm:p-4">
-            <motion.div
-              initial={initialState}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={initialState}
-              transition={transition.modal}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="meal-modal-title"
-              className={[
-                'relative w-full max-w-lg overflow-hidden rounded-3xl border',
-                'shadow-[0_24px_80px_rgba(0,0,0,0.25)]',
-                'bg-[rgb(248,250,252)] border-black/10 text-slate-900',
-                'dark:bg-slate-900 dark:border-white/10 dark:text-white',
-                'md:bg-white/70 md:backdrop-blur-xl',
-                'md:dark:bg-slate-900/60',
-              ].join(' ')}
-              style={{ willChange: 'transform, opacity' }}
-            >
-              <div className="absolute inset-0 md:hidden bg-[rgb(248,250,252)] dark:bg-slate-900" />
-
-              <div
-                className={[
-                  'pointer-events-none absolute left-1/2 top-0 h-24 w-72 -translate-x-1/2 rounded-full',
-                  'bg-blue-500/10 blur-2xl md:blur-3xl',
-                ].join(' ')}
-              />
-
-              <div className="pointer-events-none absolute inset-0 rounded-3xl border border-black/5 dark:border-white/10" />
-
-              <div className="relative z-10 flex items-center justify-between border-b border-black/10 px-4 py-4 sm:px-6 sm:py-5 dark:border-white/10">
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="h-6 w-1 shrink-0 rounded-full bg-gradient-to-b from-sky-500 to-violet-600" />
-                  <h2
-                    id="meal-modal-title"
-                    className="truncate text-lg font-semibold tracking-tight text-slate-900 dark:text-white"
-                  >
-                    {title}
-                  </h2>
+                            {/* Body */}
+                            <div className="
+                                relative z-10 px-4 py-4 sm:px-6 sm:py-5
+                                max-h-[82dvh] overflow-y-auto
+                            ">
+                                {children}
+                            </div>
+                        </motion.div>
+                    </div>
                 </div>
-
-                <Button variant="danger" iconOnly onClick={onClose} aria-label="Close">
-                  <HiOutlineXMark className="h-5 w-5" />
-                </Button>
-              </div>
-
-              <div className="relative z-10 max-h-[82dvh] overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
-                {children}
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      )}
-    </AnimatePresence>,
-    document.body
-  );
+            )}
+        </AnimatePresence>,
+        document.body
+    );
 };
 
 export default MealModal;
