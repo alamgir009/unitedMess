@@ -1,10 +1,13 @@
 import { useCallback, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bell, Filter, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Bell, Filter, RefreshCw, CheckCircle2, Send, ChevronDown, ChevronUp } from 'lucide-react';
+import { useSelector } from 'react-redux';
 import useNotifications from '../../hooks/useNotifications';
 import NotificationItem from '../../components/NotificationItem/NotificationItem';
+import NotificationService from '../../services/notification.service';
 import { Spinner } from '@/shared/components/ui';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
+import toast from 'react-hot-toast';
 
 const FILTER_TABS = ['All', 'Unread', 'Action Required'];
 
@@ -40,10 +43,122 @@ const Skeleton = () => (
     </div>
 );
 
+const AdminComposeCard = ({ onSent }) => {
+    const [open, setOpen] = useState(false);
+    const [title, setTitle] = useState('');
+    const [message, setMessage] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!title.trim() || !message.trim()) return;
+        setSubmitting(true);
+        try {
+            await NotificationService.sendAdminNotification({
+                targetType: 'ALL',
+                title: title.trim(),
+                message: message.trim(),
+                type: 'CUSTOM',
+                priority: 'NORMAL',
+            });
+            toast.success('Notification sent to all users');
+            setTitle('');
+            setMessage('');
+            onSent?.();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to send notification');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-4">
+            <button
+                type="button"
+                onClick={() => setOpen(!open)}
+                className="w-full flex items-center justify-between px-5 py-3.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+            >
+                <span className="flex items-center gap-2">
+                    <Send className="w-4 h-4 text-blue-500" />
+                    Send Notification to All Users
+                </span>
+                {open ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+            </button>
+
+            <AnimatePresence initial={false}>
+                {open && (
+                    <motion.div
+                        key="compose-body"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2, ease: 'easeInOut' }}
+                        className="overflow-hidden"
+                    >
+                        <form onSubmit={handleSubmit} className="px-5 pb-5 space-y-3 border-t border-slate-100 dark:border-slate-800 pt-4">
+                            <div>
+                                <div className="flex items-center justify-between mb-1">
+                                    <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Title</label>
+                                    <span className="text-[10px] text-slate-400">{title.length}/80</span>
+                                </div>
+                                <input
+                                    type="text"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value.slice(0, 80))}
+                                    maxLength={80}
+                                    placeholder="Notification title"
+                                    required
+                                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                                />
+                            </div>
+                            <div>
+                                <div className="flex items-center justify-between mb-1">
+                                    <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Message</label>
+                                    <span className="text-[10px] text-slate-400">{message.length}/300</span>
+                                </div>
+                                <textarea
+                                    value={message}
+                                    onChange={(e) => setMessage(e.target.value.slice(0, 300))}
+                                    maxLength={300}
+                                    rows={3}
+                                    placeholder="Notification message"
+                                    required
+                                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-none"
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={submitting || !title.trim() || !message.trim()}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                            >
+                                {submitting ? (
+                                    <>
+                                        <Spinner size="sm" color="white" className="!w-4 !h-4" />
+                                        Sending...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Send className="w-4 h-4" />
+                                        Send to All Users
+                                    </>
+                                )}
+                            </button>
+                        </form>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
 const NotificationsPage = () => {
     const [activeFilter, setActiveFilter] = useState('All');
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const observerRef = useRef(null);
+
+    const { user } = useSelector((state) => state.auth);
+    const isAdmin = user?.role === 'admin';
 
     const {
         items, loading, unreadCount, hasMore,
@@ -135,6 +250,11 @@ const NotificationsPage = () => {
                         </button>
                     </div>
                 </div>
+
+                {/* Admin Compose Card */}
+                {isAdmin && (
+                    <AdminComposeCard onSent={refresh} />
+                )}
 
                 {/* Filter Tabs */}
                 <div className="flex items-center gap-1 mb-4 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl w-fit">
