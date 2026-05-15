@@ -2,29 +2,48 @@ import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import {
     HiOutlineCalendarDays,
-    HiOutlineCurrencyDollar,
+    HiOutlineCurrencyRupee,
     HiOutlineShoppingCart,
     HiOutlineChatBubbleBottomCenterText,
     HiOutlineUser,
+    HiOutlineLockClosed,
 } from 'react-icons/hi2';
 import apiClient from '@/services/api/client/apiClient';
-import { Button } from '@/shared/components/ui';
+import { Button, Avatar } from '@/shared/components/ui';
 
-/* ── Field wrapper ── */
+/* ─── Design tokens ─────────────────────────────────────────── */
+
+const inputBase =
+    'w-full px-3 py-2 rounded-xl border border-border/60 ' +
+    'bg-background/70 backdrop-blur-md ' +
+    'focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/60 ' +
+    'outline-none transition-all duration-200 ' +
+    'text-sm text-foreground placeholder:text-muted-foreground/50 ' +
+    'shadow-sm hover:border-border';
+
+const inputDisabled = 'opacity-60 cursor-not-allowed pointer-events-none select-none';
+
+/* ─── Field wrapper ─────────────────────────────────────────── */
 const Field = ({ label, icon: Icon, children, className = '' }) => (
-    <div className={`space-y-1.5 sm:space-y-2 ${className}`}>
-        <label className="flex items-center gap-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            {Icon && <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
+    <div className={`flex flex-col gap-1 ${className}`}>
+        <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground select-none">
+            {Icon && <Icon className="w-3 h-3 shrink-0 opacity-70" />}
             {label}
         </label>
         {children}
     </div>
 );
 
-const inputBase =
-    'w-full px-3 py-2 sm:px-4 sm:py-3 rounded-xl border border-white/20 dark:border-white/10 bg-background/60 backdrop-blur-md focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/50 outline-none transition-all duration-200 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground/60 shadow-inner';
+/* ─── ReadOnly banner ───────────────────────────────────────── */
+const ReadOnlyBanner = () => (
+    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">
+        <HiOutlineLockClosed className="w-3.5 h-3.5 flex-shrink-0" />
+        <p className="text-xs font-semibold">View only — only admins can edit market records</p>
+    </div>
+);
 
-const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentUser }) => {
+/* ─── MarketForm ────────────────────────────────────────────── */
+const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentUser, readOnly = false }) => {
     const [formData, setFormData] = useState({
         date: format(new Date(), 'yyyy-MM-dd'),
         amount: '',
@@ -78,6 +97,7 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
     }, [initialData, currentUser]);
 
     const handleChange = (e) => {
+        if (readOnly) return;
         const { name, value, type } = e.target;
         let newVal = value;
         if (type === 'number') newVal = value === '' ? '' : parseFloat(value) || 0;
@@ -86,8 +106,8 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        if (readOnly) return;
 
-        // If selected date is today, use full timestamp to preserve exact entry time
         let submitDate = formData.date;
         if (formData.date === format(new Date(), 'yyyy-MM-dd')) {
             submitDate = new Date().toISOString();
@@ -101,69 +121,94 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full">
 
-            {/* ── Amount Preview ── */}
-            <div className="flex items-center justify-center py-2 sm:py-3 rounded-xl sm:rounded-2xl border border-emerald-500/20 bg-emerald-500/5 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 via-teal-400/5 to-cyan-500/5" />
-                <div className="relative text-center">
-                    <span className="text-3xl sm:text-4xl font-black text-foreground">
-                        ₹{formData.amount === '' ? '0' : Number(formData.amount).toLocaleString()}
+            {/* Read-only notice */}
+            {readOnly && <ReadOnlyBanner />}
+
+            {/* ── Amount preview banner ── */}
+            <div className="relative flex items-center justify-center py-3 rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/5 via-teal-500/5 to-cyan-500/5 overflow-hidden shrink-0">
+                <div className="flex items-baseline gap-2">
+                    <span className="text-[28px] font-black text-foreground leading-none tracking-tight">
+                        ₹{formData.amount === '' ? '0' : Number(formData.amount).toLocaleString('en-IN')}
                     </span>
-                    <span className="text-xs sm:text-sm font-semibold text-muted-foreground ml-1 sm:ml-2">
-                        will be recorded
-                    </span>
+                    <span className="text-xs font-medium text-muted-foreground">purchase amount</span>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:gap-5">
+            {/* ── Form fields ── */}
+            <div className="flex flex-col gap-3">
 
-                {/* ── Admin User Selection ── */}
+                {/* Admin: member selector */}
                 {isAdmin && (
                     <Field label="Member" icon={HiOutlineUser}>
-                        <div className="relative">
-                            <select
-                                name="userId"
-                                value={formData.userId}
-                                onChange={handleChange}
-                                required
-                                disabled={isUsersLoading || !!initialData}
-                                className={`${inputBase} appearance-none cursor-pointer disabled:opacity-70`}
-                            >
-                                <option value="" disabled>
-                                    {isUsersLoading ? 'Loading users...' : 'Select a member'}
-                                </option>
-                                {users.map((u) => (
-                                    <option key={u._id} value={u._id}>
-                                        {u.name} {u.email ? `(${u.email})` : ''}
-                                    </option>
-                                ))}
-                            </select>
-                            <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-muted-foreground">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                                </svg>
+                        {initialData ? (
+                            /* Edit mode — show single member as read-only tag */
+                            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-border/60 bg-background/70 backdrop-blur-md text-sm">
+                                <Avatar
+                                    name={typeof initialData.user === 'object' ? initialData.user?.name : ''}
+                                    size="xs"
+                                />
+                                <span className="flex-1 truncate font-medium">
+                                    {typeof initialData.user === 'object'
+                                        ? initialData.user?.name
+                                        : 'Member'
+                                    }
+                                </span>
+                                {typeof initialData.user === 'object' && initialData.user?.email && (
+                                    <span className="text-[11px] text-muted-foreground/60 truncate hidden sm:inline">
+                                        {initialData.user.email}
+                                    </span>
+                                )}
                             </div>
-                        </div>
+                        ) : (
+                            <div className="relative">
+                                <select
+                                    name="userId"
+                                    value={formData.userId}
+                                    onChange={handleChange}
+                                    required
+                                    disabled={isUsersLoading || readOnly}
+                                    className={`${inputBase} appearance-none cursor-pointer pr-9 ${readOnly ? inputDisabled : ''}`}
+                                >
+                                    <option value="" disabled>
+                                        {isUsersLoading ? 'Loading members…' : 'Select a member'}
+                                    </option>
+                                    {users.map((u) => (
+                                        <option key={u._id} value={u._id}>
+                                            {u.name}{u.email ? ` (${u.email})` : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                                {!readOnly && (
+                                    <svg className="absolute inset-y-0 right-3 my-auto w-4 h-4 pointer-events-none text-muted-foreground/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                )}
+                            </div>
+                        )}
                     </Field>
                 )}
 
-                {/* ── Date ── */}
+                {/* Date */}
                 <Field label="Date" icon={HiOutlineCalendarDays}>
                     <input
                         type="date"
                         name="date"
                         value={formData.date}
                         onChange={handleChange}
-                        required
-                        className={inputBase}
+                        required={!readOnly}
+                        disabled={readOnly}
+                        className={`${inputBase} ${readOnly ? inputDisabled : ''}`}
                     />
                 </Field>
 
-                {/* ── Amount ── */}
-                <Field label="Amount (₹)" icon={HiOutlineCurrencyDollar}>
+                {/* Amount */}
+                <Field label="Amount (₹)" icon={HiOutlineCurrencyRupee}>
                     <div className="relative">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-500 font-bold text-sm pointer-events-none">₹</span>
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-500 font-semibold text-sm pointer-events-none select-none">
+                            ₹
+                        </span>
                         <input
                             type="number"
                             name="amount"
@@ -171,59 +216,58 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
                             onChange={handleChange}
                             min="0"
                             step="0.01"
-                            required
+                            required={!readOnly}
                             placeholder="0.00"
-                            className={`${inputBase} pl-8`}
+                            disabled={readOnly}
+                            className={`${inputBase} pl-7 ${readOnly ? inputDisabled : ''}`}
                         />
                     </div>
                 </Field>
 
-                {/* ── Items ── */}
+                {/* Items */}
                 <Field label="Items Purchased" icon={HiOutlineShoppingCart}>
                     <input
                         type="text"
                         name="items"
                         value={formData.items}
                         onChange={handleChange}
-                        required
+                        required={!readOnly}
                         placeholder="e.g. Rice, Vegetables, Oil…"
-                        className={inputBase}
+                        disabled={readOnly}
+                        className={`${inputBase} ${readOnly ? inputDisabled : ''}`}
                     />
                 </Field>
 
-                {/* ── Description ── */}
+                {/* Description */}
                 <Field label="Description (Optional)" icon={HiOutlineChatBubbleBottomCenterText}>
                     <textarea
                         name="description"
                         value={formData.description}
                         onChange={handleChange}
                         rows={2}
-                        className={`${inputBase} resize-none`}
-                        placeholder="Add extra notes about this purchase…"
+                        disabled={readOnly}
+                        className={`${inputBase} resize-none ${readOnly ? inputDisabled : ''}`}
+                        placeholder={readOnly ? '' : 'Add extra notes about this purchase…'}
                     />
                 </Field>
             </div>
 
-            {/* ── Actions ── */}
-            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 sm:pt-6 border-t border-white/10 dark:border-white/5">
+            {/* ── Action buttons ── */}
+            <div className="flex gap-2.5 pt-3 border-t border-border/30 shrink-0">
                 <Button
-                    type="button"
-                    variant="secondary"
-                    size="md"
-                    onClick={onCancel}
-                    className="w-full sm:w-auto"
+                    type="button" variant="secondary" size="sm"
+                    onClick={onCancel} className="flex-1"
                 >
-                    Cancel
+                    {readOnly ? 'Close' : 'Cancel'}
                 </Button>
-
-                <Button
-                    type="submit"
-                    variant="success"
-                    size="md"
-                    className="w-full sm:flex-[2]"
-                >
-                    {initialData ? 'Update Entry' : 'Save Entry'}
-                </Button>
+                {!readOnly && (
+                    <Button
+                        type="submit" variant="success" size="sm"
+                        className="flex-[2]"
+                    >
+                        {initialData ? 'Update Entry' : 'Save Entry'}
+                    </Button>
+                )}
             </div>
         </form>
     );

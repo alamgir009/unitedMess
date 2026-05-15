@@ -10,10 +10,11 @@ import {
     HiOutlineChatBubbleBottomCenterText,
     HiOutlineUser,
     HiOutlineArrowRight,
+    HiOutlineLockClosed,
 } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 import apiClient from '@/services/api/client/apiClient';
-import { Button } from '@/shared/components/ui';
+import { Button, Avatar } from '@/shared/components/ui';
 
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Constants                                                                  */
@@ -94,9 +95,9 @@ const throttledPool = async ({ tasks, concurrency, onSettled }) => {
 /*  Sub-components                                                             */
 /* ─────────────────────────────────────────────────────────────────────────── */
 const Field = ({ label, icon: Icon, children, className = '' }) => (
-    <div className={`space-y-1.5 sm:space-y-2 ${className}`}>
-        <label className="flex items-center gap-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            {Icon && <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
+    <div className={`flex flex-col gap-1 ${className}`}>
+        <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground select-none">
+            {Icon && <Icon className="w-3 h-3 shrink-0 opacity-70" />}
             {label}
         </label>
         {children}
@@ -104,7 +105,14 @@ const Field = ({ label, icon: Icon, children, className = '' }) => (
 );
 
 const inputBase =
-    'w-full px-3 py-2 sm:px-4 sm:py-3 rounded-xl border border-white/20 dark:border-white/10 bg-background/60 backdrop-blur-md focus:ring-2 focus:ring-primary/40 focus:border-primary/50 outline-none transition-all duration-200 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground/60 shadow-inner';
+    'w-full px-3 py-2 rounded-xl border border-border/60 ' +
+    'bg-background/70 backdrop-blur-md ' +
+    'focus:ring-2 focus:ring-primary/30 focus:border-primary/60 ' +
+    'outline-none transition-all duration-200 ' +
+    'text-sm text-foreground placeholder:text-muted-foreground/50 ' +
+    'shadow-sm hover:border-border';
+
+const inputDisabled = 'opacity-60 cursor-not-allowed pointer-events-none select-none';
 
 const TypeBtn = ({ value, current, onClick, icon: Icon, label, description, color, disabled }) => {
     const isActive = current === value;
@@ -131,6 +139,14 @@ const TypeBtn = ({ value, current, onClick, icon: Icon, label, description, colo
     );
 };
 
+/* ─── ReadOnly banner ───────────────────────────────────────── */
+const ReadOnlyBanner = () => (
+    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">
+        <HiOutlineLockClosed className="w-3.5 h-3.5 flex-shrink-0" />
+        <p className="text-xs font-semibold">View only — only admins can edit meal records</p>
+    </div>
+);
+
 /** Mode toggle tab */
 const ModeTab = ({ mode, current, onChange, label }) => (
     <button
@@ -151,7 +167,7 @@ const ModeTab = ({ mode, current, onChange, label }) => (
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  MealForm                                                                   */
 /* ─────────────────────────────────────────────────────────────────────────── */
-const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = false, currentUser }) => {
+const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = false, currentUser, readOnly = false }) => {
     /* ── Mode ── */
     const [mode, setMode] = useState('single'); // 'single' | 'range'
 
@@ -221,6 +237,7 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
 
     /* ── Handlers ── */
     const handleChange = (e) => {
+        if (readOnly) return;
         const { name, value, type, checked } = e.target;
         let newVal = value;
         if (type === 'checkbox') newVal = checked;
@@ -234,7 +251,7 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
     };
 
     const handleTypeChange = (val) => {
-        if (isRunning) return;
+        if (isRunning || readOnly) return;
         setFormData(prev => ({ ...prev, type: val }));
     };
 
@@ -258,6 +275,7 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
     /* ── Single-day submit (delegated to MealPage via onSubmit) ── */
     const handleSingleSubmit = (e) => {
         e.preventDefault();
+        if (readOnly) return;
         const baseCount = typeCountMap[formData.type] ?? 0;
         const guestAdd  = formData.isGuestMeal ? (formData.guestCount || 0) : 0;
         // Always send a full ISO string so parseDate() on the backend receives a
@@ -348,8 +366,11 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
     return (
         <form
             onSubmit={mode === 'single' ? handleSingleSubmit : (e) => { e.preventDefault(); handleBulkSubmit(formData.type); }}
-            className="space-y-4 sm:space-y-5"
+            className="flex flex-col gap-3 w-full"
         >
+
+            {/* Read-only notice */}
+            {readOnly && <ReadOnlyBanner />}
 
             {/* ── Mode Toggle (hidden in edit mode) ── */}
             {!initialData && (
@@ -365,12 +386,13 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
 
             {/* ── Single-day preview badge ── */}
             {mode === 'single' && (
-                <div className="flex items-center justify-center py-2 sm:py-3 rounded-xl sm:rounded-2xl border border-primary/20 bg-primary/5 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-secondary-400/5 to-accent/5" />
-                    <div className="relative text-center">
-                        <span className="text-3xl sm:text-4xl font-black text-foreground">{previewCount}</span>
-                        <span className="text-xs sm:text-sm font-semibold text-muted-foreground ml-1 sm:ml-2">
-                            meal{previewCount !== 1 ? 's' : ''} will be recorded
+                <div className="relative flex items-center justify-center py-3 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-secondary-400/5 to-accent/5 overflow-hidden shrink-0">
+                    <div className="flex items-baseline gap-2">
+                        <span className="text-[28px] font-black text-foreground leading-none tracking-tight">
+                            {previewCount}
+                        </span>
+                        <span className="text-xs font-medium text-muted-foreground">
+                            meal{previewCount !== 1 ? 's' : ''} to record
                         </span>
                     </div>
                 </div>
@@ -378,16 +400,18 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
 
             {/* ── Range preview badge ── */}
             {mode === 'range' && !isRunning && (
-                <div className={`flex items-center justify-center py-2 rounded-xl border relative overflow-hidden transition-colors ${
-                    rangeInvalid ? 'border-destructive/30 bg-destructive/5' : 'border-primary/20 bg-primary/5'
+                <div className={`relative flex items-center justify-center py-3 rounded-2xl border overflow-hidden shrink-0 transition-colors ${
+                    rangeInvalid ? 'border-destructive/30 bg-destructive/5' : 'border-primary/20 bg-gradient-to-r from-primary/5 via-secondary-400/5 to-accent/5'
                 }`}>
                     {rangeInvalid ? (
                         <p className="text-xs font-semibold text-destructive px-4 text-center">{rangeErrMsg}</p>
                     ) : (
-                        <p className="text-xs sm:text-sm font-semibold text-muted-foreground">
-                            <span className="text-2xl font-black text-foreground mr-1">{daysCount}</span>
-                            day{daysCount !== 1 ? 's' : ''} selected — click a type below to apply
-                        </p>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-[28px] font-black text-foreground leading-none tracking-tight">{daysCount}</span>
+                            <span className="text-xs font-medium text-muted-foreground">
+                                day{daysCount !== 1 ? 's' : ''} selected — pick a type to apply
+                            </span>
+                        </div>
                     )}
                 </div>
             )}
@@ -413,30 +437,51 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
                 {/* ── Admin Member Select ── */}
                 {isAdmin && (
                     <Field label="Member" icon={HiOutlineUser}>
-                        <div className="relative">
-                            <select
-                                name="userId"
-                                value={formData.userId}
-                                onChange={handleChange}
-                                required
-                                disabled={isUsersLoading || !!initialData || isRunning}
-                                className={`${inputBase} appearance-none cursor-pointer disabled:opacity-70`}
-                            >
-                                <option value="" disabled>
-                                    {isUsersLoading ? 'Loading members…' : 'Select a member'}
-                                </option>
-                                {users.map((u) => (
-                                    <option key={u._id} value={u._id}>
-                                        {u.name}{u.email ? ` (${u.email})` : ''}
-                                    </option>
-                                ))}
-                            </select>
-                            <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-muted-foreground">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                                </svg>
+                        {initialData ? (
+                            /* Edit mode — show single member as read-only tag */
+                            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-border/60 bg-background/70 backdrop-blur-md text-sm">
+                                <Avatar
+                                    name={typeof initialData.user === 'object' ? initialData.user?.name : ''}
+                                    size="xs"
+                                />
+                                <span className="flex-1 truncate font-medium">
+                                    {typeof initialData.user === 'object'
+                                        ? initialData.user?.name
+                                        : 'Member'
+                                    }
+                                </span>
+                                {typeof initialData.user === 'object' && initialData.user?.email && (
+                                    <span className="text-[11px] text-muted-foreground/60 truncate hidden sm:inline">
+                                        {initialData.user.email}
+                                    </span>
+                                )}
                             </div>
-                        </div>
+                        ) : (
+                            <div className="relative">
+                                <select
+                                    name="userId"
+                                    value={formData.userId}
+                                    onChange={handleChange}
+                                    required
+                                    disabled={isUsersLoading || isRunning || readOnly}
+                                    className={`${inputBase} appearance-none cursor-pointer pr-9 ${(isUsersLoading || isRunning || readOnly) ? inputDisabled : ''}`}
+                                >
+                                    <option value="" disabled>
+                                        {isUsersLoading ? 'Loading members…' : 'Select a member'}
+                                    </option>
+                                    {users.map((u) => (
+                                        <option key={u._id} value={u._id}>
+                                            {u.name}{u.email ? ` (${u.email})` : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                                {!readOnly && !isRunning && (
+                                    <svg className="absolute inset-y-0 right-3 my-auto w-4 h-4 pointer-events-none text-muted-foreground/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                )}
+                            </div>
+                        )}
                     </Field>
                 )}
 
@@ -448,9 +493,9 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
                             name="date"
                             value={formData.date}
                             onChange={handleChange}
-                            required
-                            disabled={isRunning}
-                            className={inputBase}
+                            required={!readOnly}
+                            disabled={isRunning || readOnly}
+                            className={`${inputBase} ${readOnly ? inputDisabled : ''}`}
                         />
                     </Field>
                 )}
@@ -463,9 +508,9 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
                                 type="date"
                                 value={rangeFrom}
                                 onChange={(e) => { setRangeFrom(e.target.value); setRangeError(''); }}
-                                required
-                                disabled={isRunning}
-                                className={inputBase}
+                                required={!readOnly}
+                                disabled={isRunning || readOnly}
+                                className={`${inputBase} ${readOnly ? inputDisabled : ''}`}
                             />
                         </Field>
                         <Field label="To" icon={HiOutlineArrowRight}>
@@ -474,9 +519,9 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
                                 value={rangeTo}
                                 min={rangeFrom}
                                 onChange={(e) => { setRangeTo(e.target.value); setRangeError(''); }}
-                                required
-                                disabled={isRunning}
-                                className={inputBase}
+                                required={!readOnly}
+                                disabled={isRunning || readOnly}
+                                className={`${inputBase} ${readOnly ? inputDisabled : ''}`}
                             />
                         </Field>
                     </div>
@@ -495,7 +540,7 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
                                 label={t.label}
                                 description={t.description}
                                 color={t.color}
-                                disabled={isRunning || (mode === 'range' && rangeInvalid)}
+                                disabled={isRunning || readOnly || (mode === 'range' && rangeInvalid)}
                             />
                         ))}
                     </div>
@@ -503,14 +548,14 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
 
                 {/* ── Guest Meal ── */}
                 <div className="flex flex-col sm:flex-row items-stretch gap-3">
-                    <label className="flex items-center gap-3 cursor-pointer p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-white/10 dark:border-white/5 bg-muted/10 hover:bg-muted/20 transition-colors group flex-1 h-full">
+                    <label className={`flex items-center gap-3 p-3 rounded-xl border border-border/60 bg-background/70 backdrop-blur-md transition-colors group flex-1 h-full ${readOnly ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-muted/20'}`}>
                         <div className="relative flex items-center flex-shrink-0">
                             <input
                                 type="checkbox"
                                 name="isGuestMeal"
                                 checked={formData.isGuestMeal}
                                 onChange={handleChange}
-                                disabled={isRunning}
+                                disabled={isRunning || readOnly}
                                 className="peer sr-only"
                             />
                             <div className="w-12 h-6 bg-muted-foreground/25 peer-focus:ring-2 peer-focus:ring-primary/40 rounded-full transition-colors peer-checked:bg-primary" />
@@ -534,11 +579,11 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
                                 max="20"
                                 value={formData.guestCount}
                                 onChange={handleChange}
-                                disabled={isRunning}
-                                className="w-full h-full px-3 py-2 sm:py-3 rounded-xl sm:rounded-2xl border border-amber-500/30 bg-amber-500/5 focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500/50 outline-none transition-all text-sm text-amber-600 dark:text-amber-300 font-bold shadow-inner text-center"
+                                disabled={isRunning || readOnly}
+                                className={`w-full h-full px-3 py-2 rounded-xl border border-amber-500/30 bg-amber-500/5 focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500/50 outline-none transition-all text-sm text-amber-600 dark:text-amber-300 font-bold shadow-inner text-center ${readOnly ? inputDisabled : ''}`}
                                 placeholder="#"
                             />
-                            <span className="absolute -top-2 left-2 px-1 text-[8px] sm:text-[10px] font-bold text-amber-500/70 bg-background rounded">guests</span>
+                            <span className="absolute -top-2 left-2 px-1 text-[10px] font-bold text-amber-500/70 bg-background rounded">guests</span>
                         </div>
                     )}
                 </div>
@@ -550,50 +595,54 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
                         value={formData.remarks}
                         onChange={handleChange}
                         rows={2}
-                        disabled={isRunning}
-                        className={`${inputBase} resize-none`}
-                        placeholder="Add special notes about this meal…"
+                        disabled={isRunning || readOnly}
+                        className={`${inputBase} resize-none ${readOnly ? inputDisabled : ''}`}
+                        placeholder={readOnly ? '' : 'Add special notes about this meal…'}
                     />
                 </Field>
             </div>
 
             {/* ── Actions (single mode) ── */}
             {mode === 'single' && (
-                <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 sm:pt-5 border-t border-white/10 dark:border-white/5">
-                    <Button type="button" variant="secondary" size="md" onClick={onCancel} className="w-full sm:w-auto" disabled={isRunning}>
-                        Cancel
+                <div className="flex gap-2.5 pt-3 border-t border-border/30 shrink-0">
+                    <Button type="button" variant="secondary" size="sm" onClick={onCancel} className="flex-1" disabled={isRunning}>
+                        {readOnly ? 'Close' : 'Cancel'}
                     </Button>
-                    <Button type="submit" variant="success" size="md" className="w-full sm:flex-[2]" disabled={isRunning}>
-                        {initialData ? 'Update Meal' : 'Save Meal'}
-                    </Button>
+                    {!readOnly && (
+                        <Button type="submit" variant="success" size="sm" className="flex-[2]" disabled={isRunning}>
+                            {initialData ? 'Update Meal' : 'Save Meal'}
+                        </Button>
+                    )}
                 </div>
             )}
 
             {/* ── Range mode actions ── */}
             {mode === 'range' && (
-                <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 sm:pt-5 border-t border-white/10 dark:border-white/5">
+                <div className="flex gap-2.5 pt-3 border-t border-border/30 shrink-0">
                     <Button
                         type="button"
                         variant="secondary"
-                        size="md"
+                        size="sm"
                         onClick={() => { abortRef.current = true; onCancel?.(); }}
-                        className="w-full sm:w-auto"
+                        className="flex-1"
                         disabled={false}
                     >
                         {isRunning ? 'Cancel & Stop' : 'Cancel'}
                     </Button>
-                    <Button
-                        type="submit"
-                        variant="success"
-                        size="md"
-                        className="w-full sm:flex-[2]"
-                        disabled={isRunning || rangeInvalid || daysCount === 0}
-                    >
-                        {isRunning
-                            ? `Saving ${progress.done} / ${progress.total}…`
-                            : `Save ${daysCount > 0 ? daysCount : ''} Meal${daysCount !== 1 ? 's' : ''}`
-                        }
-                    </Button>
+                    {!readOnly && (
+                        <Button
+                            type="submit"
+                            variant="success"
+                            size="sm"
+                            className="flex-[2]"
+                            disabled={isRunning || rangeInvalid || daysCount === 0}
+                        >
+                            {isRunning
+                                ? `Saving ${progress.done} / ${progress.total}…`
+                                : `Save ${daysCount > 0 ? daysCount : ''} Meal${daysCount !== 1 ? 's' : ''}`
+                            }
+                        </Button>
+                    )}
                 </div>
             )}
         </form>
