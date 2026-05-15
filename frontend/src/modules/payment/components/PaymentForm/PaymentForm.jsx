@@ -14,8 +14,9 @@ import {
 import { BsCashCoin, BsGlobe2 } from 'react-icons/bs';
 import { MdPendingActions, MdCheckCircleOutline, MdErrorOutline, MdRefresh } from 'react-icons/md';
 import apiClient from '@/services/api/client/apiClient';
-import { Button } from '@/shared/components/ui';
+import { Button, Avatar } from '@/shared/components/ui';
 import { SiRazorpay } from "react-icons/si";
+import MultiMemberSelect from './MultiMemberSelect';
 
 /* ─── Constants ─────────────────────────────────────────────── */
 
@@ -190,7 +191,8 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
         paymentMethod: 'cash',
         transactionId: '',
         remarks:       '',
-        userId:        currentUser?._id || currentUser?.id || '',
+        userId:        '',
+        userIds:       [],
     });
 
     const [users, setUsers]              = useState([]);
@@ -212,6 +214,9 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
             const pd = initialData.paymentDate
                 ? format(new Date(initialData.paymentDate), 'yyyy-MM-dd')
                 : format(new Date(), 'yyyy-MM-dd');
+            const targetUserId = typeof initialData.user === 'object'
+                ? initialData.user?._id
+                : (initialData.user || '');
             setFormData({
                 amount:        initialData.amount        ?? '',
                 paymentDate:   pd,
@@ -221,12 +226,11 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                 paymentMethod: initialData.paymentMethod || 'cash',
                 transactionId: initialData.transactionId || '',
                 remarks:       initialData.remarks       || '',
-                userId:        typeof initialData.user === 'object'
-                                   ? initialData.user?._id
-                                   : (initialData.user || ''),
+                userId:        targetUserId,
+                userIds:       targetUserId ? [targetUserId] : [],
             });
         } else {
-            setFormData(p => ({ ...p, userId: currentUser?._id || currentUser?.id || '' }));
+            setFormData(p => ({ ...p, userId: '', userIds: [] }));
         }
     }, [initialData, currentUser]);
 
@@ -248,10 +252,22 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (readOnly) return; // safety guard
+        if (readOnly) return;
 
-        // Strip status for non-admin — backend will enforce, but be explicit
         const payload = { ...formData, amount: parseFloat(formData.amount) || 0 };
+
+        // For new payments: use userIds array; for edits: use single userId
+        if (initialData) {
+            // Edit mode — send single userId (existing flow)
+            payload.userId = formData.userId;
+            delete payload.userIds;
+        } else {
+            // Create mode — send userIds array
+            payload.userIds = formData.userIds;
+            delete payload.userId;
+            if (!payload.userIds || payload.userIds.length === 0) return;
+        }
+
         if (!isAdmin) delete payload.status;
         onSubmit(payload);
     };
@@ -286,24 +302,34 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                 {/* Admin: member selector */}
                 {isAdmin && (
                     <Field label="Member" icon={HiOutlineUser}>
-                        <div className="relative">
-                            <select
-                                name="userId" value={formData.userId} onChange={handleChange}
-                                required
-                                disabled={isUsersLoading || !!initialData || readOnly}
-                                className={`${inputBase} appearance-none cursor-pointer disabled:opacity-60 pr-9`}
-                            >
-                                <option value="" disabled>
-                                    {isUsersLoading ? 'Loading members…' : 'Select a member'}
-                                </option>
-                                {users.map(u => (
-                                    <option key={u._id} value={u._id}>
-                                        {u.name}{u.email ? ` (${u.email})` : ''}
-                                    </option>
-                                ))}
-                            </select>
-                            <HiOutlineChevronDown className="absolute inset-y-0 right-3 my-auto w-4 h-4 pointer-events-none text-muted-foreground/60" />
-                        </div>
+                        {initialData ? (
+                            /* Edit/View mode — show single member as read-only tag */
+                            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-border/60 bg-background/70 backdrop-blur-md text-sm">
+                                <Avatar
+                                    name={typeof initialData.user === 'object' ? initialData.user?.name : ''}
+                                    size="xs"
+                                />
+                                <span className="flex-1 truncate font-medium">
+                                    {typeof initialData.user === 'object'
+                                        ? initialData.user?.name
+                                        : 'Member'
+                                    }
+                                </span>
+                                {typeof initialData.user === 'object' && initialData.user?.email && (
+                                    <span className="text-[11px] text-muted-foreground/60 truncate hidden sm:inline">
+                                        {initialData.user.email}
+                                    </span>
+                                )}
+                            </div>
+                        ) : (
+                            <MultiMemberSelect
+                                users={users}
+                                value={formData.userIds}
+                                onChange={(ids) => setFormData(p => ({ ...p, userIds: ids }))}
+                                loading={isUsersLoading}
+                                disabled={readOnly}
+                            />
+                        )}
                     </Field>
                 )}
 

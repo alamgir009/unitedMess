@@ -52,6 +52,15 @@ export const deletePayment = createAsyncThunk('payment/delete', async (paymentId
     }
 });
 
+export const createBulkPayments = createAsyncThunk('payment/createBulk', async (paymentData, thunkAPI) => {
+    try {
+        const res = await paymentService.createBulkPayments(paymentData);
+        return res.data;
+    } catch (err) {
+        return thunkAPI.rejectWithValue(err.response?.data?.error || err.response?.data?.message || err.message);
+    }
+});
+
 /* ── Slice ── */
 
 export const paymentSlice = createSlice({
@@ -99,6 +108,16 @@ export const paymentSlice = createSlice({
                 if (payment?._id) state.payments.unshift(payment);
             })
             .addCase(createPayment.rejected, (state, action) => { state.isLoading = false; state.isError = true; state.message = action.payload; })
+
+            // createBulkPayments — action.payload = array of created payment docs
+            .addCase(createBulkPayments.pending, (state) => { state.isLoading = true; })
+            .addCase(createBulkPayments.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.isSuccess = true;
+                const payments = action.payload?.data ?? action.payload;
+                if (Array.isArray(payments)) state.payments.unshift(...payments);
+            })
+            .addCase(createBulkPayments.rejected, (state, action) => { state.isLoading = false; state.isError = true; state.message = action.payload; })
 
             // updatePayment (admin only) — action.payload = updated payment doc
             .addCase(updatePayment.pending, (state) => { state.isLoading = true; })

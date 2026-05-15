@@ -11,8 +11,9 @@ router.route('/')
     .get(...authenticated, paymentController.getPayments)
     .post(...authenticated, paymentController.createPayment);
 
-router.post('/order',  ...authenticated, paymentController.createOnlineOrder);
-router.post('/verify', ...authenticated, paymentController.verifyPayment);
+router.post('/order',     ...authenticated, paymentController.createOnlineOrder);
+router.post('/verify',    ...authenticated, paymentController.verifyPayment);
+router.post('/bulk',      ...adminOnly,     paymentController.createBulkPayments);
 
 router.route('/:paymentId')
     .get(   ...authenticated, paymentController.getPayment)

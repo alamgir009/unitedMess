@@ -86,7 +86,7 @@ const NotificationItem = memo(({ notification, onSelect }) => {
                 'cursor-pointer transition-all duration-200 active:scale-[0.99] sm:active:scale-100',
                 'hover:bg-slate-50 dark:hover:bg-slate-800/40',
                 isUnread && !isUrgent && 'bg-blue-50/30 dark:bg-blue-900/10',
-                isUrgent && isUnread  && 'bg-red-50/30 dark:bg-red-950/20 border-l-[3px] sm:border-l-[3px] border-l-2 border-red-500',
+                isUrgent && isUnread  && 'bg-red-50/30 dark:bg-red-950/20 sm:border-l-[3px] border-l-2 border-red-500',
                 !isUnread             && 'opacity-70 hover:opacity-100',
             )}
         >

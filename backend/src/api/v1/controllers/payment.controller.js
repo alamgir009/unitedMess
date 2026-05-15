@@ -122,8 +122,33 @@ const deletePayment = asyncHandler(async (req, res) => {
     res.status(204).send();
 });
 
+/**
+ * POST /payments/bulk  [admin only]
+ * Atomic creation of identical payments for multiple users
+ */
+const createBulkPayments = asyncHandler(async (req, res) => {
+    const { userIds, ...rest } = req.body;
+
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+        throw new AppError('userIds array is required with at least one user', 400);
+    }
+
+    if (userIds.length > 100) {
+        throw new AppError('Maximum 100 users per bulk payment operation', 400);
+    }
+
+    const payments = await paymentService.createBulkPayments({
+        ...rest,
+        userIds,
+        createdBy: req.user.id,
+    });
+
+    sendSuccessResponse(res, 201, `${payments.length} payment records created successfully`, payments);
+});
+
 module.exports = {
     createPayment,
+    createBulkPayments,
     createOnlineOrder,
     verifyPayment,
     getPayments,

@@ -32,6 +32,7 @@ import MonthlyInvoiceModal from '../../components/MonthlyInvoiceModal/MonthlyInv
 import {
     fetchPayments,
     createPayment,
+    createBulkPayments,
     updatePayment,
     deletePayment,
     reset,
@@ -253,8 +254,14 @@ const PaymentPage = () => {
                     paymentData: formData,
                 })).unwrap();
                 toast.success('Payment updated successfully');
+            } else if (formData.userIds && formData.userIds.length > 1) {
+                await dispatch(createBulkPayments(formData)).unwrap();
+                toast.success(`Payments recorded for ${formData.userIds.length} members`);
             } else {
-                await dispatch(createPayment(formData)).unwrap();
+                // Single user — send as single userId for backward compat
+                const singleData = { ...formData, userId: formData.userIds?.[0] || '' };
+                delete singleData.userIds;
+                await dispatch(createPayment(singleData)).unwrap();
                 toast.success('Payment recorded successfully');
             }
             closeModal();

@@ -402,11 +402,104 @@ const deletePaymentById = async (paymentId) => {
 };
 
 // ─────────────────────────────────────────────────────────────
+// Bulk Create (admin only, transactional)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Create payments for multiple users in a single atomic transaction.
+ * All-or-nothing — if any user fails validation, no payments are created.
+ *
+ * @param {{ userIds: string[], createdBy: string, amount, paymentDate, month, type, status, paymentMethod, transactionId, remarks }} body
+ * @returns {Promise<Array>} created payment documents
+ */
+const createBulkPayments = async (body) => {
+    const { userIds, createdBy, ...paymentData } = body;
+
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+        throw new AppError('userIds array is required with at least one user', 400);
+    }
+
+    // Validate all users exist — one query, no N+1
+    const users = await User.find({ _id: { $in: userIds } })
+        .select('_id name email payment gasBill')
+        .lean();
+
+    if (users.length !== userIds.length) {
+        const foundIds = new Set(users.map(u => u._id.toString()));
+        const missing = userIds.filter(id => !foundIds.has(id.toString()));
+        throw new AppError(`Users not found: ${missing.join(', ')}`, 404);
+    }
+
+    // Duplicate guard per user — prevent double-recording for same month/type
+    const duplicates = await Payment.find({
+        user: { $in: userIds },
+        month: paymentData.month,
+        type: paymentData.type,
+        status: 'completed',
+    }).populate('user', 'name').lean();
+
+    if (duplicates.length > 0) {
+        const names = duplicates.map(d =>
+            typeof d.user === 'object' ? d.user?.name : 'Unknown'
+        );
+        throw new AppError(
+            `A completed ${(paymentData.type || 'payment').replace('_', ' ')} for ${paymentData.month} already exists for: ${[...new Set(names)].join(', ')}`,
+            409
+        );
+    }
+
+    const session = await mongoose.startSession();
+    let createdPayments;
+
+    try {
+        session.startTransaction();
+
+        const docs = users.map(user => ({
+            user: user._id,
+            amount: paymentData.amount ?? 0,
+            paymentDate: paymentData.paymentDate || new Date(),
+            month: paymentData.month,
+            type: paymentData.type || 'mess_bill',
+            status: paymentData.status || 'completed',
+            paymentMethod: paymentData.paymentMethod || 'cash',
+            transactionId: paymentData.transactionId || '',
+            remarks: paymentData.remarks || '',
+            createdBy: createdBy || user._id,
+        }));
+
+        createdPayments = await Payment.create(docs, { session });
+
+        // Sync user payment statuses in parallel
+        const syncs = createdPayments.map(p =>
+            syncUserPaymentStatus(p.user, p.type, p.status)
+        );
+        await Promise.all(syncs);
+
+        await session.commitTransaction();
+    } catch (err) {
+        await session.abortTransaction();
+        throw err instanceof AppError ? err : new AppError('Failed to create bulk payments', 500);
+    } finally {
+        session.endSession();
+    }
+
+    // Emails fire non-blocking — never fail the request
+    users.forEach((user, i) => {
+        if (createdPayments[i]?.status === 'completed') {
+            sendPaymentEmail(user, createdPayments[i], 'completed').catch(() => {});
+        }
+    });
+
+    return createdPayments;
+};
+
+// ─────────────────────────────────────────────────────────────
 // Exports
 // ─────────────────────────────────────────────────────────────
 
 module.exports = {
     createPayment,
+    createBulkPayments,
     createOnlinePaymentOrder,
     verifyOnlinePayment,
     queryPayments,

@@ -45,6 +45,12 @@ const deletePayment = async (paymentId) => {
     return response.data;
 };
 
+// Create payments for multiple users at once (admin only)
+const createBulkPayments = async (bulkData) => {
+    const response = await apiClient.post(`${API_URL}/bulk`, bulkData);
+    return response.data;
+};
+
 const paymentService = {
     getPayments,
     getPaymentById,
@@ -53,6 +59,7 @@ const paymentService = {
     verifyPayment,
     updatePayment,
     deletePayment,
+    createBulkPayments,
 };
 
 export default paymentService;
