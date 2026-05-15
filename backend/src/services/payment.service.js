@@ -402,12 +402,14 @@ const deletePaymentById = async (paymentId) => {
 };
 
 // ─────────────────────────────────────────────────────────────
-// Bulk Create (admin only, transactional)
+// Bulk Create (admin only)
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Create payments for multiple users in a single atomic transaction.
- * All-or-nothing — if any user fails validation, no payments are created.
+ * Create payments for multiple users atomically.
+ * Validates all users exist + duplicate guard, then bulk-inserts.
+ * Errors (including Mongoose ValidationError) propagate naturally
+ * so the error middleware returns the correct HTTP status.
  *
  * @param {{ userIds: string[], createdBy: string, amount, paymentDate, month, type, status, paymentMethod, transactionId, remarks }} body
  * @returns {Promise<Array>} created payment documents
@@ -439,49 +441,36 @@ const createBulkPayments = async (body) => {
     }).populate('user', 'name').lean();
 
     if (duplicates.length > 0) {
-        const names = duplicates.map(d =>
+        const names = [...new Set(duplicates.map(d =>
             typeof d.user === 'object' ? d.user?.name : 'Unknown'
-        );
+        ))];
         throw new AppError(
-            `A completed ${(paymentData.type || 'payment').replace('_', ' ')} for ${paymentData.month} already exists for: ${[...new Set(names)].join(', ')}`,
+            `A completed ${(paymentData.type || 'payment').replace('_', ' ')} for ${paymentData.month} already exists for: ${names.join(', ')}`,
             409
         );
     }
 
-    const session = await mongoose.startSession();
-    let createdPayments;
+    const docs = users.map(user => ({
+        user: user._id,
+        amount: paymentData.amount ?? 0,
+        paymentDate: paymentData.paymentDate || new Date(),
+        month: paymentData.month,
+        type: paymentData.type || 'mess_bill',
+        status: paymentData.status || 'completed',
+        paymentMethod: paymentData.paymentMethod || 'cash',
+        transactionId: paymentData.transactionId || '',
+        remarks: paymentData.remarks || '',
+        createdBy: createdBy || user._id,
+    }));
 
-    try {
-        session.startTransaction();
+    // Payment.create validates all docs — if any fail, a Mongoose
+    // ValidationError propagates up and the error middleware returns 400.
+    const createdPayments = await Payment.create(docs);
 
-        const docs = users.map(user => ({
-            user: user._id,
-            amount: paymentData.amount ?? 0,
-            paymentDate: paymentData.paymentDate || new Date(),
-            month: paymentData.month,
-            type: paymentData.type || 'mess_bill',
-            status: paymentData.status || 'completed',
-            paymentMethod: paymentData.paymentMethod || 'cash',
-            transactionId: paymentData.transactionId || '',
-            remarks: paymentData.remarks || '',
-            createdBy: createdBy || user._id,
-        }));
-
-        createdPayments = await Payment.create(docs, { session });
-
-        // Sync user payment statuses in parallel
-        const syncs = createdPayments.map(p =>
-            syncUserPaymentStatus(p.user, p.type, p.status)
-        );
-        await Promise.all(syncs);
-
-        await session.commitTransaction();
-    } catch (err) {
-        await session.abortTransaction();
-        throw err instanceof AppError ? err : new AppError('Failed to create bulk payments', 500);
-    } finally {
-        session.endSession();
-    }
+    // Sync user payment statuses in parallel
+    await Promise.all(createdPayments.map(p =>
+        syncUserPaymentStatus(p.user, p.type, p.status)
+    ));
 
     // Emails fire non-blocking — never fail the request
     users.forEach((user, i) => {

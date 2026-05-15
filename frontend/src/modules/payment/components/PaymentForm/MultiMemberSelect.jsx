@@ -28,14 +28,19 @@ const MultiMemberSelect = ({ users = [], value = [], onChange, loading = false, 
         if (open) setTimeout(() => searchRef.current?.focus(), 80);
     }, [open]);
 
+    const visibleUsers = useMemo(() =>
+        users.filter(u => u.userStatus === 'approved' && u.isActive !== false),
+        [users]
+    );
+
     const filtered = useMemo(() => {
-        if (!search.trim()) return users;
+        if (!search.trim()) return visibleUsers;
         const q = search.toLowerCase().trim();
-        return users.filter(u =>
+        return visibleUsers.filter(u =>
             u.name?.toLowerCase().includes(q) ||
             u.email?.toLowerCase().includes(q)
         );
-    }, [users, search]);
+    }, [visibleUsers, search]);
 
     const isFullyPaid = useCallback((u) =>
         u.payment === 'success' && u.gasBill === 'success',

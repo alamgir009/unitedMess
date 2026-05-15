@@ -202,7 +202,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
     useEffect(() => {
         if (!isAdmin) return;
         setUsersLoad(true);
-        apiClient.get('users?limit=100')
+        apiClient.get('users?limit=100&userStatus=approved&isActive=true')
             .then(r => setUsers(r.data?.data?.users || r.data?.users || []))
             .catch(console.error)
             .finally(() => setUsersLoad(false));
