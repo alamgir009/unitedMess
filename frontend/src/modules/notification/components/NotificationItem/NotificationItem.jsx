@@ -35,12 +35,14 @@ const formatRelativeTime = (date) => {
 const NotificationIcon = ({ type }) => {
     const resolved = ICON_MAP[type];
     if (!resolved) {
-        console.warn('NotificationItem: Unknown notification type "' + type + '", using fallback icon');
+        if (typeof console !== 'undefined') {
+            console.warn('NotificationItem: Unknown notification type "' + type + '", using fallback icon');
+        }
     }
     const { Icon, color, bg } = resolved ?? FALLBACK_ICON;
     return (
         <div className={cn('shrink-0 rounded-xl p-2 shadow-sm transition-all group-hover:shadow-md', bg)}>
-            <Icon className={cn('w-4.5 h-4.5', color)} aria-hidden />
+            <Icon className={cn('w-4 h-4 sm:w-[18px] sm:h-[18px]', color)} aria-hidden />
         </div>
     );
 };
@@ -80,11 +82,11 @@ const NotificationItem = memo(({ notification, onSelect }) => {
             aria-label={`${isUnread ? 'Unread: ' : ''}${title}`}
             onClick={() => onSelect?.(notification)}
             className={cn(
-                'group relative flex items-start gap-4 px-5 py-4',
-                'cursor-pointer transition-all duration-200',
+                'group relative flex items-start gap-3 sm:gap-4 px-4 sm:px-5 py-3 sm:py-4',
+                'cursor-pointer transition-all duration-200 active:scale-[0.99] sm:active:scale-100',
                 'hover:bg-slate-50 dark:hover:bg-slate-800/40',
                 isUnread && !isUrgent && 'bg-blue-50/30 dark:bg-blue-900/10',
-                isUrgent && isUnread  && 'bg-red-50/30 dark:bg-red-950/20 border-l-[3px] border-red-500',
+                isUrgent && isUnread  && 'bg-red-50/30 dark:bg-red-950/20 border-l-[3px] sm:border-l-[3px] border-l-2 border-red-500',
                 !isUnread             && 'opacity-70 hover:opacity-100',
             )}
         >
@@ -107,7 +109,7 @@ const NotificationItem = memo(({ notification, onSelect }) => {
 
                 {/* Message */}
                 <p className={cn(
-                    "text-[13px] leading-relaxed line-clamp-2",
+                    "text-[13px] leading-relaxed line-clamp-3 sm:line-clamp-2",
                     isUnread ? "text-slate-600 dark:text-slate-300" : "text-slate-500 dark:text-slate-400"
                 )}>
                     {message}
@@ -138,23 +140,21 @@ const NotificationItem = memo(({ notification, onSelect }) => {
                 </div>
             </div>
 
-            {/* Hover check — mark read affordance */}
-            <motion.div
-                initial={{ opacity: 0 }}
-                whileHover={{ opacity: 1 }}
+            {/* Mark read affordance */}
+            <div
                 className="
-                    absolute right-3 top-1/2 -translate-y-1/2
+                    absolute right-2 sm:right-3 top-1/2 -translate-y-1/2
                     w-6 h-6 rounded-full
                     bg-slate-100 dark:bg-slate-700
                     border border-slate-200 dark:border-slate-600
                     flex items-center justify-center
-                    opacity-0 group-hover:opacity-100
+                    opacity-30 sm:opacity-0 sm:group-hover:opacity-100
                     transition-opacity duration-150
                 "
                 aria-hidden
             >
                 <CheckCircle2 className="w-3.5 h-3.5 text-slate-400 dark:text-slate-400" />
-            </motion.div>
+            </div>
         </motion.div>
     );
 });

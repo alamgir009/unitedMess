@@ -203,7 +203,7 @@ const NotificationsPage = () => {
 
     return (
         <MainLayout>
-            <div className="max-w-3xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-3xl mx-auto py-4 sm:py-6 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
@@ -217,14 +217,26 @@ const NotificationsPage = () => {
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                        <button
+                            onClick={refresh}
+                            disabled={loading}
+                            className="flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-sm font-medium
+                                text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800
+                                border border-slate-200 dark:border-slate-700
+                                hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
+                            aria-label="Refresh notifications"
+                        >
+                            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                            <span className="hidden sm:inline">Refresh</span>
+                        </button>
                         {unreadCount > 0 && (
                             <motion.button
                                 initial={{ opacity: 0, scale: 0.85 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 onClick={markAllAsRead}
                                 disabled={markAllLoading}
-                                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium
+                                className="flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-sm font-medium
                                     text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40
                                     border border-blue-100 dark:border-blue-900/50
                                     hover:bg-blue-100 dark:hover:bg-blue-950/70
@@ -234,20 +246,9 @@ const NotificationsPage = () => {
                                     ? <Spinner size="sm" color="current" className="!w-4 !h-4" />
                                     : <CheckCircle2 className="w-4 h-4" />
                                 }
-                                Mark all read
+                                <span className="hidden sm:inline">Mark all read</span>
                             </motion.button>
                         )}
-                        <button
-                            onClick={refresh}
-                            disabled={loading}
-                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium
-                                text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800
-                                border border-slate-200 dark:border-slate-700
-                                hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
-                        >
-                            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                            Refresh
-                        </button>
                     </div>
                 </div>
 
@@ -257,25 +258,27 @@ const NotificationsPage = () => {
                 )}
 
                 {/* Filter Tabs */}
-                <div className="flex items-center gap-1 mb-4 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl w-fit">
-                    {FILTER_TABS.map((tab) => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveFilter(tab)}
-                            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                                activeFilter === tab
-                                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
-                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
-                            }`}
-                        >
-                            {tab}
-                            {tab === 'Unread' && unreadCount > 0 && (
-                                <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-blue-500 text-white">
-                                    {unreadCount}
-                                </span>
-                            )}
-                        </button>
-                    ))}
+                <div className="overflow-x-auto -mx-4 sm:mx-0 mb-4 px-4 sm:px-0 scrollbar-none">
+                    <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl w-fit">
+                        {FILTER_TABS.map((tab) => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveFilter(tab)}
+                                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+                                    activeFilter === tab
+                                        ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
+                                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                                }`}
+                            >
+                                {tab}
+                                {tab === 'Unread' && unreadCount > 0 && (
+                                    <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-blue-500 text-white">
+                                        {unreadCount}
+                                    </span>
+                                )}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Body */}
@@ -283,7 +286,7 @@ const NotificationsPage = () => {
                     {loading && items.length === 0 ? (
                         <Skeleton />
                     ) : error ? (
-                        <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+                        <div className="flex flex-col items-center justify-center py-10 md:py-20 px-6 text-center">
                             <div className="w-14 h-14 rounded-full mb-4 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/30 flex items-center justify-center">
                                 <Bell className="w-5 h-5 text-red-400" />
                             </div>
@@ -305,7 +308,7 @@ const NotificationsPage = () => {
                             </button>
                         </div>
                     ) : filteredItems.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+                        <div className="flex flex-col items-center justify-center py-10 md:py-20 px-6 text-center">
                             <div className="w-14 h-14 rounded-full mb-4 shadow-inner bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center">
                                 <Bell className="w-5 h-5 text-slate-400 dark:text-slate-500" />
                             </div>
@@ -340,7 +343,9 @@ const NotificationsPage = () => {
                                                 transition={{ delay: delay * 0.03, type: 'spring', stiffness: 400, damping: 28 }}
                                                 ref={isLast ? sentinelRef : null}
                                             >
-                                                <NotificationItem notification={notif} onSelect={handleSelect} />
+                                                <div className="active:scale-[0.98] sm:active:scale-100 transition-transform">
+                                                    <NotificationItem notification={notif} onSelect={handleSelect} />
+                                                </div>
                                             </motion.div>
                                         );
                                     })}

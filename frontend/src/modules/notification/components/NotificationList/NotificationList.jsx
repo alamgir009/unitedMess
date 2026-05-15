@@ -187,7 +187,7 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
     let itemIndex = 0; // for stagger delay
 
     return (
-        <div className="flex flex-col h-full max-h-[75vh] sm:max-h-[600px]
+        <div className="flex flex-col h-full max-h-[70vh] sm:max-h-[600px]
             bg-white dark:bg-slate-900 overflow-hidden shadow-inner">
 
             {/* ── Header ── */}
