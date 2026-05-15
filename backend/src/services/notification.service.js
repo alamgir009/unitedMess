@@ -180,15 +180,6 @@ const createAndSend = async (userId, type, title, message, options = {}) => {
  */
 const broadcastToAll = async (type, title, message, options = {}) => {
     try {
-        const notification = await createNotification({
-            userId: null,
-            type,
-            title,
-            message,
-            priority: options.priority,
-            idempotencyKey: options.idempotencyKey,
-        });
-
         let lastId = null;
         let totalBatchCount = 0;
         let hasMore = true;
