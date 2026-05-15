@@ -118,7 +118,7 @@ const IconDropdown = ({ name, value, onChange, options, disabled = false }) => {
             </button>
 
             {open && !disabled && (
-                <div className="absolute z-50 top-full mt-1.5 w-full rounded-xl border border-border/60 bg-background/98 backdrop-blur-xl shadow-lg overflow-hidden">
+                <div className="absolute z-50 top-full mt-1.5 w-full rounded-xl border border-border/60 bg-white dark:bg-slate-900 shadow-lg overflow-hidden">
                     {options.map(opt => (
                         <button
                             key={opt.value}
