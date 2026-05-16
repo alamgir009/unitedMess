@@ -1,26 +1,53 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bell } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import useNotifications from '../../hooks/useNotifications';
 import NotificationList from '../NotificationList/NotificationList';
 
-const OVERLAY_VARIANTS = {
+/* ─── Body Scroll Lock (SSR safe) ───────────────────────────────────────── */
+let lockCount = 0;
+
+function lockBodyScroll() {
+    if (typeof document === 'undefined') return;
+    if (lockCount === 0) {
+        const scrollY = window.scrollY;
+        document.body.style.overflow = 'hidden';
+        document.body.style.paddingRight = `${window.innerWidth - document.documentElement.clientWidth}px`;
+        document.body.dataset.scrollY = String(scrollY);
+    }
+    lockCount++;
+}
+
+function unlockBodyScroll() {
+    if (typeof document === 'undefined') return;
+    lockCount = Math.max(0, lockCount - 1);
+    if (lockCount === 0) {
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+        delete document.body.dataset.scrollY;
+    }
+}
+
+/* ─── Framer Variants ───────────────────────────────────────────────────── */
+const BACKDROP_VARIANTS = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { duration: 0.2 } },
-    exit: { opacity: 0, transition: { duration: 0.15 } },
+    visible: { opacity: 1 },
+    exit: { opacity: 0 },
 };
 
-const MOBILE_PANEL_VARIANTS = {
-    hidden: { y: '100%' },
-    visible: { y: 0, transition: { type: 'spring', stiffness: 400, damping: 35 } },
-    exit: { y: '100%', transition: { duration: 0.15, ease: 'easeIn' } },
+const PANEL_VARIANTS = {
+    hidden: { opacity: 0, y: 48, scale: 0.98 },
+    visible: { opacity: 1, y: 0, scale: 1 },
+    exit: { opacity: 0, y: 48, scale: 0.98 },
 };
 
-const DESKTOP_PANEL_VARIANTS = {
-    hidden: { opacity: 0, scale: 0.96, y: -8 },
-    visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] } },
-    exit: { opacity: 0, scale: 0.96, y: -8, transition: { duration: 0.12, ease: 'easeIn' } },
+const PANEL_TRANSITION = {
+    type: 'spring',
+    stiffness: 420,
+    damping: 36,
+    mass: 1,
 };
 
 const BELL_SHAKE = {
@@ -36,6 +63,7 @@ const NotificationBell = () => {
     const [isShaking, setIsShaking] = useState(false);
     const prevCount = useRef(unreadCount);
 
+    // Shake animation on new notification
     useEffect(() => {
         if (lastRealtimeUpdate && unreadCount > prevCount.current) {
             setIsShaking(true);
@@ -45,11 +73,17 @@ const NotificationBell = () => {
         prevCount.current = unreadCount;
     }, [unreadCount, lastRealtimeUpdate]);
 
+    // Keyboard accessibility & Scroll locking
     useEffect(() => {
+        if (!open) return;
         const handler = (e) => { if (e.key === 'Escape') setOpen(false); };
-        document.addEventListener('keydown', handler);
-        return () => document.removeEventListener('keydown', handler);
-    }, []);
+        window.addEventListener('keydown', handler);
+        lockBodyScroll();
+        return () => {
+            window.removeEventListener('keydown', handler);
+            unlockBodyScroll();
+        };
+    }, [open]);
 
     const badgeLabel = unreadCount > 99 ? '99+' : unreadCount;
 
@@ -75,9 +109,7 @@ const NotificationBell = () => {
                     }
                 `}
             >
-                <motion.span
-                    animate={isShaking ? BELL_SHAKE.animate : BELL_SHAKE.initial}
-                >
+                <motion.span animate={isShaking ? BELL_SHAKE.animate : BELL_SHAKE.initial}>
                     <Bell className="w-5 h-5" aria-hidden />
                 </motion.span>
 
@@ -94,8 +126,7 @@ const NotificationBell = () => {
                                 flex h-5 min-w-[20px] items-center justify-center px-1.5
                                 rounded-full bg-gradient-to-br from-red-500 to-rose-600
                                 text-[10px] font-bold leading-none text-white
-                                ring-2 ring-white dark:ring-slate-900
-                                shadow-sm
+                                ring-2 ring-white dark:ring-slate-900 shadow-sm
                             "
                         >
                             {badgeLabel}
@@ -117,48 +148,60 @@ const NotificationBell = () => {
                 </AnimatePresence>
             </motion.button>
 
-            <AnimatePresence>
-                {open && (
-                    <>
-                        <motion.div
-                            key="overlay"
-                            variants={OVERLAY_VARIANTS}
-                            initial="hidden"
-                            animate="visible"
-                            exit="exit"
-                            onClick={() => setOpen(false)}
-                            className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-xl"
-                        />
-
-                        <motion.div
-                            key="panel-mobile"
-                            variants={MOBILE_PANEL_VARIANTS}
-                            initial="hidden"
-                            animate="visible"
-                            exit="exit"
-                            role="dialog"
-                            aria-label="Notifications panel"
-                            className="fixed inset-x-0 bottom-0 top-[64px] z-50 md:hidden bg-white dark:bg-slate-900 overflow-hidden rounded-t-3xl shadow-[0_-8px_30px_rgba(0,0,0,0.12)]"
+            {typeof document !== 'undefined' && createPortal(
+                <AnimatePresence mode="wait">
+                    {open && (
+                        <div
+                            className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center"
+                            style={{ isolation: 'isolate' }}
                         >
-                            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
-                            <NotificationList closeMenu={() => setOpen(false)} />
-                        </motion.div>
+                            <motion.div
+                                key="backdrop"
+                                variants={BACKDROP_VARIANTS}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
+                                transition={{ duration: 0.18 }}
+                                className="absolute inset-0 bg-black/60"
+                                onClick={() => setOpen(false)}
+                                aria-hidden="true"
+                            />
 
-                        <motion.div
-                            key="panel-desktop"
-                            variants={DESKTOP_PANEL_VARIANTS}
-                            initial="hidden"
-                            animate="visible"
-                            exit="exit"
-                            role="dialog"
-                            aria-label="Notifications panel"
-                            className="hidden md:block fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-xl max-h-[80vh] bg-white dark:bg-slate-900 rounded-3xl overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.3)]"
-                        >
-                            <NotificationList closeMenu={() => setOpen(false)} />
-                        </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
+                            <motion.div
+                                key="panel"
+                                role="dialog"
+                                aria-label="Notifications panel"
+                                variants={PANEL_VARIANTS}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
+                                transition={PANEL_TRANSITION}
+                                style={{
+                                    willChange: 'transform, opacity',
+                                    transform: 'translateZ(0)',
+                                }}
+                                className={[
+                                    'relative z-10 w-full sm:max-w-[480px] mx-auto',
+                                    'rounded-t-[28px] sm:rounded-[28px]',
+                                    'bg-white dark:bg-slate-900',
+                                    'border-t border-x sm:border border-black/[0.08] dark:border-white/10',
+                                    'shadow-2xl overflow-hidden',
+                                    // Flex to manage NotificationList height
+                                    'flex flex-col max-h-[85vh] sm:max-h-[80vh]'
+                                ].join(' ')}
+                            >
+                                {/* Mobile Drag Indicator */}
+                                <div className="flex justify-center pt-3 pb-2 sm:hidden shrink-0 bg-white dark:bg-slate-900" aria-hidden="true">
+                                    <div className="w-10 h-1 rounded-full bg-black/10 dark:bg-white/20" />
+                                </div>
+
+                                <NotificationList closeMenu={() => setOpen(false)} />
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
         </div>
     );
 };
