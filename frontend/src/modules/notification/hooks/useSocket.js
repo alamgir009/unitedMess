@@ -44,7 +44,7 @@ const useSocket = () => {
                     
                     // Play notification sound if the browser allows it
                     try {
-                        const audio = new Audio('/assets/audio/notification.ogg');
+                        const audio = new Audio('/assets/audio/iPhonesmstone.ogg');
                         audio.volume = 0.5;
                         audio.play().catch((err) => {
                             if (import.meta.env.DEV) {

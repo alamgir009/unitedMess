@@ -54,11 +54,15 @@ const notificationSlice = createSlice({
     reducers: {
         addRealTimeNotification: (state, action) => {
             const notification = action.payload;
-            state.items.unshift(notification);
-            if (!notification.isRead) {
-                state.unreadCount += 1;
+            const exists = state.items.some(n => (n._id || n.id) === (notification._id || notification.id));
+            
+            if (!exists) {
+                state.items.unshift(notification);
+                if (!notification.isRead) {
+                    state.unreadCount += 1;
+                }
+                state.lastRealtimeUpdate = Date.now();
             }
-            state.lastRealtimeUpdate = Date.now();
         },
         resetNotifications: (state) => {
             state.items = [];
