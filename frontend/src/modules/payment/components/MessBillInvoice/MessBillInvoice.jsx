@@ -313,7 +313,7 @@ const MessBillInvoice = ({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, ease: 'easeOut' }}
-            className="relative mx-auto w-full max-w-none rounded-3xl bg-white/70 dark:bg-slate-900/50 backdrop-blur-2xl border border-black/5 dark:border-white/10 overflow-hidden shadow-2xl dark:shadow-black/40 ring-1 ring-black/5 dark:ring-white/5 transition-all duration-300"
+            className="relative mx-auto w-full max-w-none rounded-3xl bg-white/70 dark:bg-slate-900/50 backdrop-blur-2xl border border-black/5 dark:border-white/10 overflow-hidden shadow-lg dark:shadow-black/20 ring-1 ring-black/5 dark:ring-white/5 transition-all duration-300"
         >
             {/* ── Collapsed summary bar ── */}
             <button
