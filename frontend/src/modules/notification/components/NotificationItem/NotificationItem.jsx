@@ -1,10 +1,12 @@
 import { memo, useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import {
     Info, AlertCircle, CreditCard, UserCog, TrendingUp,
     ShieldCheck, Wallet, DollarSign, Clock, CheckCircle2, Sparkles,
 } from 'lucide-react';
 import { cn } from '@/core/utils/helpers/string.helper';
 
+// ─── Icon registry ────────────────────────────────────────────────────────────
 const ICON_MAP = {
     PAYMENT:    { Icon: CreditCard,  color: 'text-emerald-500', bg: 'bg-emerald-50    dark:bg-emerald-950/30' },
     TRANSFER:   { Icon: TrendingUp,  color: 'text-blue-500',    bg: 'bg-blue-50       dark:bg-blue-950/30'    },
@@ -19,6 +21,7 @@ const ICON_MAP = {
 };
 const FALLBACK_ICON = { Icon: Info, color: 'text-slate-400', bg: 'bg-slate-50 dark:bg-slate-800/50' };
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 const formatRelativeTime = (date) => {
     const diffSec = Math.floor((Date.now() - new Date(date)) / 1000);
     if (diffSec < 60)     return 'just now';
@@ -28,56 +31,72 @@ const formatRelativeTime = (date) => {
     return new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 };
 
+// ─── Sub-components ───────────────────────────────────────────────────────────
 const NotificationIcon = ({ type }) => {
     const resolved = ICON_MAP[type];
+    if (!resolved) {
+        if (typeof console !== 'undefined') {
+            console.warn('NotificationItem: Unknown notification type "' + type + '", using fallback icon');
+        }
+    }
     const { Icon, color, bg } = resolved ?? FALLBACK_ICON;
     return (
-        <div className={cn('shrink-0 rounded-xl p-2 shadow-sm transition-shadow group-hover:shadow-md', bg)}>
-            <Icon className={cn('w-4 h-4', color)} aria-hidden />
+        <div className={cn('shrink-0 rounded-xl p-2 shadow-sm transition-all group-hover:shadow-md', bg)}>
+            <Icon className={cn('w-4 h-4 sm:w-[18px] sm:h-[18px]', color)} aria-hidden />
         </div>
     );
 };
 
 const UnreadPulse = () => (
-    <span className="relative shrink-0 flex h-2 w-2 mt-0.5" aria-hidden>
+    <span className="relative shrink-0 flex h-2 w-2 mt-1" aria-hidden>
         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
         <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
     </span>
 );
 
+// ─── Main component ───────────────────────────────────────────────────────────
 const NotificationItem = memo(({ notification, onSelect }) => {
     const { isRead, priority, type, title, message, createdAt, actionRequired, metadata, _id, id } = notification;
 
     const isUnread = !isRead;
     const isUrgent = priority === 'HIGH' || type === 'SECURITY';
+    const notifId  = _id ?? id;
 
     const [relativeTime, setRelativeTime] = useState(() => formatRelativeTime(createdAt));
     useEffect(() => {
         setRelativeTime(formatRelativeTime(createdAt));
-        const interval = setInterval(() => { setRelativeTime(formatRelativeTime(createdAt)); }, 60000);
+        const interval = setInterval(() => {
+            setRelativeTime(formatRelativeTime(createdAt));
+        }, 60000);
         return () => clearInterval(interval);
     }, [createdAt]);
 
     return (
-        <div
+        <motion.div
+            layout
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{   opacity: 0, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
             role="listitem"
             aria-label={`${isUnread ? 'Unread: ' : ''}${title}`}
             onClick={() => onSelect?.(notification)}
             className={cn(
-                'group relative flex items-start gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3',
-                'cursor-pointer transition-all duration-150 ease-out',
+                'group relative flex items-start gap-3 sm:gap-4 px-4 sm:px-5 py-3 sm:py-4',
+                'cursor-pointer transition-all duration-200 active:scale-[0.99] sm:active:scale-100',
                 'hover:bg-slate-50 dark:hover:bg-slate-800/40',
                 isUnread && !isUrgent && 'bg-blue-50/30 dark:bg-blue-900/10',
-                isUrgent && isUnread  && 'bg-red-50/30 dark:bg-red-950/20 border-l-2 sm:border-l-[3px] border-red-500',
+                isUrgent && isUnread  && 'bg-red-50/30 dark:bg-red-950/20 sm:border-l-[3px] border-l-2 border-red-500',
                 !isUnread             && 'opacity-70 hover:opacity-100',
             )}
         >
             <NotificationIcon type={type} />
 
             <div className="flex-1 min-w-0 space-y-1">
-                <div className="flex items-start justify-between gap-1.5">
+                {/* Title row */}
+                <div className="flex items-start justify-between gap-2">
                     <p className={cn(
-                        'text-sm leading-snug transition-colors break-words',
+                        'text-sm leading-snug transition-colors',
                         isUnread
                             ? 'font-semibold text-slate-900 dark:text-slate-100'
                             : 'font-medium text-slate-500 dark:text-slate-400',
@@ -88,39 +107,55 @@ const NotificationItem = memo(({ notification, onSelect }) => {
                     {isUnread && <UnreadPulse />}
                 </div>
 
+                {/* Message */}
                 <p className={cn(
-                    'text-[13px] leading-relaxed line-clamp-3 sm:line-clamp-2 break-words',
-                    isUnread ? 'text-slate-600 dark:text-slate-300' : 'text-slate-500 dark:text-slate-400'
+                    "text-[13px] leading-relaxed line-clamp-3 sm:line-clamp-2",
+                    isUnread ? "text-slate-600 dark:text-slate-300" : "text-slate-500 dark:text-slate-400"
                 )}>
                     {message}
                 </p>
 
+                {/* Meta row */}
                 <div className="flex items-center gap-2 pt-0.5 flex-wrap">
-                    <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 flex items-center gap-1 shrink-0">
+                    <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 flex items-center gap-1">
                         <Clock className="w-2.5 h-2.5" aria-hidden />
                         {relativeTime}
                     </span>
 
                     {actionRequired && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 shrink-0">
+                        <span className="
+                            text-[10px] px-1.5 py-0.5 rounded-full font-medium
+                            bg-amber-100 text-amber-700
+                            dark:bg-amber-900/40 dark:text-amber-400
+                        ">
                             Action needed
                         </span>
                     )}
 
                     {type === 'PAYMENT' && metadata?.amount && (
-                        <span className="text-[10px] font-mono font-semibold text-emerald-600 dark:text-emerald-400 shrink-0">
+                        <span className="text-[10px] font-mono font-semibold text-emerald-600 dark:text-emerald-400">
                             {metadata.amount}
                         </span>
                     )}
                 </div>
             </div>
 
-            <div className="shrink-0 flex items-center self-center ml-1 sm:ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center">
-                    <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400" />
-                </div>
+            {/* Mark read affordance */}
+            <div
+                className="
+                    absolute right-2 sm:right-3 top-1/2 -translate-y-1/2
+                    w-6 h-6 rounded-full
+                    bg-slate-100 dark:bg-slate-700
+                    border border-slate-200 dark:border-slate-600
+                    flex items-center justify-center
+                    opacity-30 sm:opacity-0 sm:group-hover:opacity-100
+                    transition-opacity duration-150
+                "
+                aria-hidden
+            >
+                <CheckCircle2 className="w-3.5 h-3.5 text-slate-400 dark:text-slate-400" />
             </div>
-        </div>
+        </motion.div>
     );
 });
 

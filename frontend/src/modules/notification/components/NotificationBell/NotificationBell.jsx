@@ -1,70 +1,49 @@
 import { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Bell, Wifi, WifiOff } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Bell } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import useNotifications from '../../hooks/useNotifications';
 import NotificationList from '../NotificationList/NotificationList';
-import useSocket, { STATUS } from '../../hooks/useSocket';
 
-const PANEL_VARIANTS = {
-    hidden:  { opacity: 0, scale: 0.96, y: -8 },
-    visible: { opacity: 1, scale: 1,    y: 0, transition: { duration: 0.18, ease: [0.16, 1, 0.3, 1] } },
-    exit:    { opacity: 0, scale: 0.96, y: -8, transition: { duration: 0.12, ease: 'easeIn' } },
+const OVERLAY_VARIANTS = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { duration: 0.2 } },
+    exit: { opacity: 0, transition: { duration: 0.15 } },
 };
 
-const ConnectionDot = ({ status }) => {
-    const dotClass = status === STATUS.CONNECTED
-        ? 'bg-green-500'
-        : status === STATUS.CONNECTING
-        ? 'bg-amber-400 animate-pulse'
-        : 'bg-red-500';
+const MOBILE_PANEL_VARIANTS = {
+    hidden: { y: '100%' },
+    visible: { y: 0, transition: { type: 'spring', stiffness: 400, damping: 35 } },
+    exit: { y: '100%', transition: { duration: 0.15, ease: 'easeIn' } },
+};
 
-    return (
-        <div className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center" title={
-            status === STATUS.CONNECTED ? 'Connected' :
-            status === STATUS.CONNECTING ? 'Connecting...' :
-            'Disconnected'
-        }>
-            <span className={`w-2.5 h-2.5 rounded-full ring-2 ring-white dark:ring-slate-900 ${dotClass}`} />
-        </div>
-    );
+const DESKTOP_PANEL_VARIANTS = {
+    hidden: { opacity: 0, scale: 0.96, y: -8 },
+    visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] } },
+    exit: { opacity: 0, scale: 0.96, y: -8, transition: { duration: 0.12, ease: 'easeIn' } },
+};
+
+const BELL_SHAKE = {
+    animate: { rotate: [0, -14, 14, -10, 10, -6, 6, 0], transition: { duration: 0.55, ease: 'easeInOut' } },
+    initial: { rotate: 0 },
 };
 
 const NotificationBell = () => {
-    const prefersReducedMotion = useReducedMotion();
     const { unreadCount, lastRealtimeUpdate } = useSelector(s => s.notification);
     useNotifications({ autoFetch: false });
 
-    const [open, setOpen]           = useState(false);
+    const [open, setOpen] = useState(false);
     const [isShaking, setIsShaking] = useState(false);
-    const prevCount                 = useRef(unreadCount);
-    const panelRef                  = useRef(null);
-    const isOpening                 = useRef(false);
-
-    const { status } = useSocket();
+    const prevCount = useRef(unreadCount);
 
     useEffect(() => {
-        if (isOpening.current || !lastRealtimeUpdate || unreadCount <= prevCount.current) {
-            prevCount.current = unreadCount;
-            return;
+        if (lastRealtimeUpdate && unreadCount > prevCount.current) {
+            setIsShaking(true);
+            const id = setTimeout(() => setIsShaking(false), 600);
+            return () => clearTimeout(id);
         }
-        setIsShaking(true);
-        isOpening.current = true;
-        const id = setTimeout(() => { setIsShaking(false); isOpening.current = false; }, 600);
         prevCount.current = unreadCount;
-        return () => clearTimeout(id);
     }, [unreadCount, lastRealtimeUpdate]);
-
-    useEffect(() => {
-        if (!open) return;
-        const handler = (e) => {
-            if (panelRef.current && !panelRef.current.contains(e.target)) {
-                setOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
-    }, [open]);
 
     useEffect(() => {
         const handler = (e) => { if (e.key === 'Escape') setOpen(false); };
@@ -75,22 +54,31 @@ const NotificationBell = () => {
     const badgeLabel = unreadCount > 99 ? '99+' : unreadCount;
 
     return (
-        <div ref={panelRef} className="relative inline-block">
+        <div className="relative inline-block">
             <motion.button
                 type="button"
-                whileTap={prefersReducedMotion ? {} : { scale: 0.93 }}
+                whileTap={{ scale: 0.93 }}
                 onClick={() => setOpen(v => !v)}
                 aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
                 aria-haspopup="true"
                 aria-expanded={open}
-                className="relative flex items-center justify-center w-11 h-11 rounded-xl border transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 bg-transparent border-transparent text-slate-500 dark:text-slate-400 hover:bg-slate-100/70 dark:hover:bg-slate-800/70 hover:border-slate-200 dark:hover:border-slate-700"
+                className={`
+                    relative flex items-center justify-center
+                    w-11 h-11 rounded-xl
+                    border transition-all duration-200
+                    focus:outline-none focus-visible:ring-2
+                    focus-visible:ring-blue-500/50 focus-visible:ring-offset-2
+                    dark:focus-visible:ring-offset-slate-900
+                    ${open
+                        ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100'
+                        : 'bg-transparent border-transparent text-slate-500 dark:text-slate-400 hover:bg-slate-100/70 dark:hover:bg-slate-800/70 hover:border-slate-200 dark:hover:border-slate-700'
+                    }
+                `}
             >
                 <motion.span
-                    animate={!prefersReducedMotion && isShaking ? { rotate: [0, -14, 14, -10, 10, -6, 6, 0], transition: { duration: 0.55, ease: 'easeInOut' } } : { rotate: 0 }}
-                    className="relative"
+                    animate={isShaking ? BELL_SHAKE.animate : BELL_SHAKE.initial}
                 >
                     <Bell className="w-5 h-5" aria-hidden />
-                    <ConnectionDot status={status} />
                 </motion.span>
 
                 <AnimatePresence>
@@ -100,58 +88,72 @@ const NotificationBell = () => {
                             initial={{ scale: 0.4, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.4, opacity: 0 }}
-                            transition={{ duration: 0.2, ease: 'easeOut' }}
-                            className="absolute top-0 right-0 -translate-y-[2px] translate-x-[2px] flex h-5 min-w-[20px] items-center justify-center px-1.5 rounded-full bg-gradient-to-br from-red-500 to-rose-600 text-[10px] font-bold leading-none text-white ring-2 ring-white dark:ring-slate-900 shadow-sm"
+                            transition={{ type: 'spring', stiffness: 500, damping: 22 }}
+                            className="
+                                absolute top-0 right-0 -translate-y-[2px] translate-x-[2px]
+                                flex h-5 min-w-[20px] items-center justify-center px-1.5
+                                rounded-full bg-gradient-to-br from-red-500 to-rose-600
+                                text-[10px] font-bold leading-none text-white
+                                ring-2 ring-white dark:ring-slate-900
+                                shadow-sm
+                            "
                         >
                             {badgeLabel}
                         </motion.span>
                     )}
                 </AnimatePresence>
 
-                {status !== STATUS.CONNECTED && !open && (
-                    <span className="absolute -bottom-1 -left-1">
-                        {status === STATUS.DISCONNECTED
-                            ? <WifiOff className="w-3 h-3 text-red-400" />
-                            : <Wifi className="w-3 h-3 text-amber-400 animate-pulse" />
-                        }
-                    </span>
-                )}
+                <AnimatePresence>
+                    {isShaking && (
+                        <motion.span
+                            key="ring"
+                            initial={{ scale: 0.8, opacity: 0.6 }}
+                            animate={{ scale: 1.8, opacity: 0 }}
+                            exit={{}}
+                            transition={{ duration: 0.6 }}
+                            className="absolute inset-0 rounded-full bg-blue-400 dark:bg-blue-500 pointer-events-none"
+                        />
+                    )}
+                </AnimatePresence>
             </motion.button>
 
             <AnimatePresence>
                 {open && (
                     <>
                         <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.15 }}
+                            key="overlay"
+                            variants={OVERLAY_VARIANTS}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
                             onClick={() => setOpen(false)}
-                            className="fixed inset-0 z-40 bg-slate-900/20 sm:hidden"
+                            className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-xl"
                         />
 
                         <motion.div
-                            key="panel"
-                            variants={PANEL_VARIANTS}
+                            key="panel-mobile"
+                            variants={MOBILE_PANEL_VARIANTS}
                             initial="hidden"
                             animate="visible"
                             exit="exit"
                             role="dialog"
                             aria-label="Notifications panel"
-                            style={{ willChange: 'transform, opacity' }}
-                            className="fixed inset-x-0 top-[calc(64px+env(safe-area-inset-top,0px))] z-50 origin-top sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:origin-top-right w-auto sm:w-[420px] rounded-none sm:rounded-3xl overflow-hidden bg-white dark:bg-slate-900 border-t sm:border border-slate-200/60 dark:border-slate-800/60 shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-lg sm:backdrop-blur-2xl transform-gpu"
+                            className="fixed inset-x-0 bottom-0 top-[64px] z-50 md:hidden bg-white dark:bg-slate-900 overflow-hidden rounded-t-3xl shadow-[0_-8px_30px_rgba(0,0,0,0.12)]"
                         >
-                            {status !== STATUS.CONNECTED && (
-                                <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-800/30">
-                                    {status === STATUS.ERROR
-                                        ? <WifiOff className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
-                                        : <Wifi className="w-3 h-3 text-amber-600 dark:text-amber-400 animate-pulse shrink-0" />
-                                    }
-                                    <span className="text-[11px] text-amber-700 dark:text-amber-300 font-medium">
-                                        {status === STATUS.CONNECTING ? 'Connecting...' : 'Reconnecting...'}
-                                    </span>
-                                </div>
-                            )}
+                            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+                            <NotificationList closeMenu={() => setOpen(false)} />
+                        </motion.div>
+
+                        <motion.div
+                            key="panel-desktop"
+                            variants={DESKTOP_PANEL_VARIANTS}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                            role="dialog"
+                            aria-label="Notifications panel"
+                            className="hidden md:block fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-xl max-h-[80vh] bg-white dark:bg-slate-900 rounded-3xl overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.3)]"
+                        >
                             <NotificationList closeMenu={() => setOpen(false)} />
                         </motion.div>
                     </>
