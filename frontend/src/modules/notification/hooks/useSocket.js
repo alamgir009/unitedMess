@@ -41,6 +41,19 @@ const useSocket = () => {
 
                 socketRef.current.on('receive_notification', (notification) => {
                     dispatch(addRealTimeNotification(notification));
+                    
+                    // Play notification sound if the browser allows it
+                    try {
+                        const audio = new Audio('/assets/audio/notification.ogg');
+                        audio.volume = 0.5;
+                        audio.play().catch((err) => {
+                            if (import.meta.env.DEV) {
+                                console.log('Audio autoplay blocked by browser:', err);
+                            }
+                        });
+                    } catch (e) {
+                        console.error('Failed to play notification sound', e);
+                    }
                 });
 
                 socketRef.current.on('connect', () => {

@@ -16,6 +16,8 @@ self.addEventListener('push', (event) => {
         body: data.body || '',
         icon: data.icon || '/assets/icons/unitedmess-icon-1024.png',
         badge: data.badge || '/assets/icons/unitedmess-icon-1024.png',
+        vibrate: [200, 100, 200],
+        silent: false,
         data: {
             url: data.data?.url || '/notifications',
             notificationId: data.data?.notificationId || null,

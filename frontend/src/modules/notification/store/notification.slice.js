@@ -92,9 +92,19 @@ const notificationSlice = createSlice({
             })
             .addCase(fetchNotifications.fulfilled, (state, action) => {
                 state.loading = false;
-                state.items = action.payload.data.notifications;
-                state.unreadCount = action.payload.data.unreadCount;
-                state.pagination = action.payload.data.pagination;
+                const { notifications, unreadCount, pagination } = action.payload.data;
+                if (pagination.page === 1) {
+                    state.items = notifications;
+                } else {
+                    const newItems = notifications.filter(
+                        newNotif => !state.items.some(
+                            oldNotif => (oldNotif._id || oldNotif.id) === (newNotif._id || newNotif.id)
+                        )
+                    );
+                    state.items = [...state.items, ...newItems];
+                }
+                state.unreadCount = unreadCount;
+                state.pagination = pagination;
             })
             .addCase(fetchNotifications.rejected, (state, action) => {
                 state.loading = false;
