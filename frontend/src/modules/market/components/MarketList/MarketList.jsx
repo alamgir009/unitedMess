@@ -11,18 +11,8 @@ import {
     HiOutlineEnvelope,
     HiOutlineShoppingBag,
 } from 'react-icons/hi2';
-import { format, isToday, isYesterday, differenceInDays } from 'date-fns';
 import { Button } from '@/shared/components/ui';
-
-/* ─── Smart date helper ─── */
-const smartDate = (date) => {
-    const d = new Date(date);
-    if (isToday(d)) return { primary: 'Today', secondary: format(d, 'MMM d') };
-    if (isYesterday(d)) return { primary: 'Yesterday', secondary: format(d, 'MMM d') };
-    if (differenceInDays(new Date(), d) < 7)
-        return { primary: format(d, 'EEEE'), secondary: format(d, 'MMM d') };
-    return { primary: format(d, 'MMM d'), secondary: format(d, 'yyyy') };
-};
+import { formatSmartDate } from '@/core/utils/helpers/date.helper';
 
 /* ─── Amount color utility ─── */
 const amountColor = (amount) => {
@@ -35,7 +25,7 @@ const amountColor = (amount) => {
    MARKET CARD — grid view
 ═══════════════════════════════════════════ */
 const MarketCard = React.forwardRef(({ market, onEdit, onDelete, isAdmin, index }, ref) => {
-    const date = smartDate(market.date);
+    const date = formatSmartDate(market.date);
 
     return (
         <motion.article
@@ -138,7 +128,7 @@ MarketCard.displayName = 'MarketCard';
    MARKET ROW — list view
 ═══════════════════════════════════════════ */
 const MarketRow = React.forwardRef(({ market, onEdit, onDelete, isAdmin, index }, ref) => {
-    const date = smartDate(market.date);
+    const date = formatSmartDate(market.date);
 
     return (
         <motion.div

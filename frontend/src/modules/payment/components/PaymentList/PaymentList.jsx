@@ -12,17 +12,8 @@ import {
     HiOutlineChatBubbleBottomCenterText,
     HiOutlineDocumentText,
 } from 'react-icons/hi2';
-import { format, isToday, isYesterday, differenceInDays } from 'date-fns';
 import { Button } from '@/shared/components/ui';
-
-/* ── Smart date ── */
-const smartDate = (date) => {
-    const d = new Date(date);
-    if (isToday(d))     return { primary: 'Today',     secondary: format(d, 'MMM d') };
-    if (isYesterday(d)) return { primary: 'Yesterday', secondary: format(d, 'MMM d') };
-    if (differenceInDays(new Date(), d) < 7) return { primary: format(d, 'EEEE'), secondary: format(d, 'MMM d') };
-    return { primary: format(d, 'MMM d'), secondary: format(d, 'yyyy') };
-};
+import { formatSmartDate } from '@/core/utils/helpers/date.helper';
 
 /* ── Status config ── */
 const STATUS = {
@@ -46,7 +37,7 @@ const methodLabel = (m) => ({ cash: '💵 Cash', online: '🌐 Online', razorpay
    PAYMENT CARD — grid view (memoized)
 ════════════════════════════════════════════ */
 const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInvoice, isAdmin, canEdit, index }, ref) => {
-    const date  = smartDate(payment.paymentDate);
+    const date  = formatSmartDate(payment.paymentDate);
     const stat  = STATUS[payment.status] || STATUS.pending;
     const typeC = TYPE[payment.type]     || TYPE.other;
     const amount = Number(payment.amount ?? 0);
@@ -165,7 +156,7 @@ PaymentCard.displayName = 'PaymentCard';
    PAYMENT ROW — list view (memoized)
 ════════════════════════════════════════════ */
 const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInvoice, isAdmin, canEdit, index }, ref) => {
-    const date  = smartDate(payment.paymentDate);
+    const date  = formatSmartDate(payment.paymentDate);
     const stat  = STATUS[payment.status] || STATUS.pending;
     const typeC = TYPE[payment.type]     || TYPE.other;
     const amount = Number(payment.amount ?? 0);

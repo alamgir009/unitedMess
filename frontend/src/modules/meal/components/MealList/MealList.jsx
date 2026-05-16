@@ -14,8 +14,8 @@ import {
     HiOutlineEnvelope,
     HiOutlineSquares2X2,
 } from 'react-icons/hi2';
-import { format, isToday, isYesterday, differenceInDays } from 'date-fns';
-import { Button } from '@/shared/components/ui';// ← adjust to your Button path
+import { Button } from '@/shared/components/ui';
+import { formatSmartDate } from '@/core/utils/helpers/date.helper';
 
 /* ═══════════════════════════════════════════
    TYPE CONFIG
@@ -52,24 +52,12 @@ const TYPE = {
 };
 
 /* ═══════════════════════════════════════════
-   SMART DATE
-═══════════════════════════════════════════ */
-const smartDate = (date) => {
-    const d = new Date(date);
-    if (isToday(d)) return { primary: 'Today', secondary: format(d, 'MMM d') };
-    if (isYesterday(d)) return { primary: 'Yesterday', secondary: format(d, 'MMM d') };
-    if (differenceInDays(new Date(), d) < 7)
-        return { primary: format(d, 'EEEE'), secondary: format(d, 'MMM d') };
-    return { primary: format(d, 'MMM d'), secondary: format(d, 'yyyy') };
-};
-
-/* ═══════════════════════════════════════════
    MEAL CARD  ── grid view
 ═══════════════════════════════════════════ */
 const MealCard = React.forwardRef(({ meal, onEdit, onDelete, isAdmin, index }, ref) => {
     const cfg = TYPE[meal.type] || TYPE.both;
     const { Icon } = cfg;
-    const date = smartDate(meal.date);
+    const date = formatSmartDate(meal.date);
 
     return (
         <motion.article
@@ -175,7 +163,7 @@ MealCard.displayName = 'MealCard';
 const MealRow = React.forwardRef(({ meal, onEdit, onDelete, isAdmin, index }, ref) => {
     const cfg = TYPE[meal.type] || TYPE.both;
     const { Icon } = cfg;
-    const date = smartDate(meal.date);
+    const date = formatSmartDate(meal.date);
 
     return (
         <motion.div

@@ -1,5 +1,5 @@
-import { format } from 'date-fns';
 import { User, ShoppingBag, Utensils } from 'lucide-react';
+import { formatActivityDate } from '@/core/utils/helpers/date.helper';
 
 const RecentActivity = ({ activities = [] }) => {
     return (
@@ -28,7 +28,7 @@ const RecentActivity = ({ activities = [] }) => {
                                         </p>
                                     </div>
                                     <div className="whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400 transition-colors">
-                                        <time dateTime={activity.datetime}>{format(new Date(activity.datetime), 'MMM d, h:mm a')}</time>
+                                        <time dateTime={new Date(activity.datetime).toISOString()}>{formatActivityDate(activity.datetime)}</time>
                                     </div>
                                 </div>
                             </div>

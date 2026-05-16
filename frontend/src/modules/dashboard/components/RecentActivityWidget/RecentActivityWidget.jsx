@@ -1,20 +1,8 @@
-import React from 'react';
+import { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiActivity, FiCoffee, FiShoppingBag, FiArrowRight, FiInbox } from 'react-icons/fi';
 import { cn } from '@/core/utils/helpers/string.helper';
-import { format, isToday, isYesterday } from 'date-fns';
-
-const formatActivityDate = (dateStr) => {
-    if (!dateStr) return '';
-    try {
-        const date = new Date(dateStr);
-        if (isToday(date)) return `Today, ${format(date, 'h:mm a')}`;
-        if (isYesterday(date)) return `Yesterday, ${format(date, 'h:mm a')}`;
-        return format(date, 'MMM d, yyyy');
-    } catch {
-        return '';
-    }
-};
+import { formatActivityDate } from '@/core/utils/helpers/date.helper';
 
 const ActivitySkeleton = () => (
     <div className="flex items-center gap-4 p-3 animate-pulse">
@@ -27,7 +15,47 @@ const ActivitySkeleton = () => (
     </div>
 );
 
-const RecentActivityWidget = ({ activities = [], isLoading }) => {
+const ActivityIcon = memo(function ActivityIcon({ type }) {
+    return (
+        <div className={cn(
+            'p-2.5 rounded-xl shrink-0 shadow-sm',
+            type === 'meal'
+                ? 'bg-orange-50 text-orange-500 dark:bg-orange-900/20 dark:text-orange-400'
+                : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'
+        )}>
+            {type === 'meal'
+                ? <FiCoffee size={16} />
+                : <FiShoppingBag size={16} />
+            }
+        </div>
+    );
+});
+
+const ActivityRow = memo(function ActivityRow({ activity }) {
+    return (
+        <div className="group flex items-center justify-between px-5 py-3.5 hover:bg-gray-50/70 dark:hover:bg-slate-800/40 transition-colors cursor-default">
+            <div className="flex items-center gap-3.5 min-w-0">
+                <ActivityIcon type={activity.type} />
+                <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                        {activity.title}
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 truncate mt-0.5">
+                        {activity.description}
+                    </p>
+                </div>
+            </div>
+            <div className="text-right shrink-0 ml-3">
+                <p className="text-sm font-bold text-gray-800 dark:text-gray-200">{activity.amount}</p>
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 whitespace-nowrap">
+                    {formatActivityDate(activity.datetime)}
+                </p>
+            </div>
+        </div>
+    );
+});
+
+const RecentActivityWidget = memo(function RecentActivityWidget({ activities = [], isLoading }) {
     const navigate = useNavigate();
 
     if (isLoading) {
@@ -46,7 +74,6 @@ const RecentActivityWidget = ({ activities = [], isLoading }) => {
 
     return (
         <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-3xl border border-white/20 dark:border-slate-800 shadow-sm flex flex-col h-full overflow-hidden">
-            {/* Header */}
             <div className="px-6 pt-6 pb-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
                 <h3 className="text-base font-bold text-gray-900 dark:text-gray-50 flex items-center gap-2">
                     <FiActivity className="text-indigo-500" size={16} />
@@ -61,7 +88,6 @@ const RecentActivityWidget = ({ activities = [], isLoading }) => {
                 </button>
             </div>
 
-            {/* List */}
             <div className="flex-1 overflow-y-auto divide-y divide-gray-50 dark:divide-slate-800/40 custom-scrollbar">
                 {activities.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-14 gap-3 text-gray-400 dark:text-gray-500">
@@ -79,43 +105,11 @@ const RecentActivityWidget = ({ activities = [], isLoading }) => {
                     </div>
                 ) : (
                     activities.map((activity) => (
-                        <div
-                            key={activity.id}
-                            className="group flex items-center justify-between px-5 py-3.5 hover:bg-gray-50/70 dark:hover:bg-slate-800/40 transition-colors cursor-default"
-                        >
-                            <div className="flex items-center gap-3.5 min-w-0">
-                                <div className={cn(
-                                    'p-2.5 rounded-xl shrink-0 shadow-sm',
-                                    activity.type === 'meal'
-                                        ? 'bg-orange-50 text-orange-500 dark:bg-orange-900/20 dark:text-orange-400'
-                                        : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'
-                                )}>
-                                    {activity.type === 'meal'
-                                        ? <FiCoffee size={16} />
-                                        : <FiShoppingBag size={16} />
-                                    }
-                                </div>
-                                <div className="min-w-0">
-                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                                        {activity.title}
-                                    </p>
-                                    <p className="text-xs text-gray-400 dark:text-gray-500 truncate mt-0.5">
-                                        {activity.description}
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="text-right shrink-0 ml-3">
-                                <p className="text-sm font-bold text-gray-800 dark:text-gray-200">{activity.amount}</p>
-                                <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 whitespace-nowrap">
-                                    {formatActivityDate(activity.datetime)}
-                                </p>
-                            </div>
-                        </div>
+                        <ActivityRow key={activity.id} activity={activity} />
                     ))
                 )}
             </div>
 
-            {/* Footer linked to relevant page */}
             {activities.length > 0 && (
                 <div className="px-6 py-3 border-t border-gray-50 dark:border-slate-800/50 bg-gray-50/50 dark:bg-slate-800/20">
                     <p className="text-[10px] text-gray-400 dark:text-gray-500">
@@ -125,6 +119,6 @@ const RecentActivityWidget = ({ activities = [], isLoading }) => {
             )}
         </div>
     );
-};
+});
 
 export default RecentActivityWidget;

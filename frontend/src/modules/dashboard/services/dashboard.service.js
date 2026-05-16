@@ -65,6 +65,16 @@ const getUserRecentActivity = async () => {
         return [];
     };
 
+    const safeDatetime = (doc) => {
+        if (doc.createdAt) return new Date(doc.createdAt).getTime();
+        if (doc.date) {
+            const d = new Date(doc.date);
+            d.setHours(12, 0, 0, 0);
+            return d.getTime();
+        }
+        return Date.now();
+    };
+
     const meals = extractArray(mealsRes, 'meals').map(m => {
         const typeStr = m.type ? m.type.charAt(0).toUpperCase() + m.type.slice(1) : 'Standard';
         const desc = [];
@@ -78,7 +88,7 @@ const getUserRecentActivity = async () => {
             title: `Meal Entry`,
             description: desc.join(' · ') || 'Regular meal entry',
             amount: `${m.mealCount || 0} Meal${m.mealCount > 1 || m.mealCount === 0 ? 's' : ''}${m.guestCount ? ` + ${m.guestCount} Guest` : ''}`,
-            datetime: m.createdAt || m.date,
+            datetime: safeDatetime(m),
             raw: m,
         };
     });
@@ -89,14 +99,12 @@ const getUserRecentActivity = async () => {
         title: `Market Purchase`,
         description: mk.items || mk.description || 'Grocery purchase',
         amount: `₹${mk.amount || 0}`,
-        datetime: mk.createdAt || mk.date,
+        datetime: safeDatetime(mk),
         raw: mk,
     }));
 
-    // Merge 3 meals and 3 markets and sort by most recent
-    const combined = [...meals.slice(0, 3), ...markets.slice(0, 3)].sort((a, b) =>
-        new Date(b.datetime) - new Date(a.datetime)
-    );
+    const combined = [...meals.slice(0, 3), ...markets.slice(0, 3)]
+        .sort((a, b) => b.datetime - a.datetime);
 
     return combined;
 };
