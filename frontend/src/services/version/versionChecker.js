@@ -4,6 +4,26 @@ import { showUpdateToast } from './UpdateNotification';
 
 let currentVersion = '';
 let hasNotified = false;
+let canNotify = false;
+
+const COOLDOWN_MS = 15000;
+const INTENT_COOLDOWN_MS = 30000;
+const INTENT_EXPIRY_MS = 60000;
+
+// Detect if this page load was triggered by clicking "Update" — extend cooldown
+let cooldownMs = COOLDOWN_MS;
+try {
+    const raw = sessionStorage.getItem('__um_update_intent');
+    if (raw) {
+        sessionStorage.removeItem('__um_update_intent');
+        const intent = JSON.parse(raw);
+        if (intent && Date.now() - intent.time < INTENT_EXPIRY_MS) {
+            cooldownMs = INTENT_COOLDOWN_MS;
+        }
+    }
+} catch { /* ignore */ }
+
+setTimeout(() => { canNotify = true; }, cooldownMs);
 
 const getApiBase = () => {
     const apiUrl = import.meta.env.VITE_API_URL || 'https://api.unitedmess.uk/api/v1';
@@ -11,13 +31,14 @@ const getApiBase = () => {
 };
 
 const notify = (source, newVersion) => {
-    // Prevent duplicate notifications until the user reloads the app
+    if (!canNotify) return;
     if (hasNotified) return;
 
-    // If user clicked "Later" for this specific version, don't bother them again
     if (newVersion) {
-        const ignored = localStorage.getItem('ignoredUpdateVersion');
-        if (ignored === newVersion) return;
+        try {
+            const ignored = localStorage.getItem('__um_ignored_version');
+            if (ignored === newVersion) return;
+        } catch { /* ignore */ }
     }
 
     hasNotified = true;
@@ -28,9 +49,10 @@ const notify = (source, newVersion) => {
 const setupSWListener = () => {
     if (!('serviceWorker' in navigator)) return;
     const handler = (event) => {
-        if (event.data?.type === 'NEW_VERSION_READY') {
-            notify('service_worker', event.data?.version);
-        }
+        if (event.data?.type !== 'NEW_VERSION_READY') return;
+        const swVersion = event.data?.version;
+        if (swVersion && swVersion === currentVersion) return;
+        notify('service_worker', swVersion);
     };
     navigator.serviceWorker.addEventListener('message', handler);
     return () => navigator.serviceWorker.removeEventListener('message', handler);
@@ -58,9 +80,7 @@ const setupSocket = () => {
         }
     });
 
-    socketInstance.on('connect_error', () => {
-        // Socket failed — polling and SW will cover us
-    });
+    socketInstance.on('connect_error', () => {});
 
     return () => {
         socketInstance.disconnect();
@@ -71,18 +91,15 @@ const setupSocket = () => {
 const setupPolling = () => {
     const check = async () => {
         try {
-            // Guarantee we hit /api/v1/version regardless of how VITE_API_URL is configured
             const endpoint = `${getApiBase()}/api/v1/version?t=${Date.now()}`;
-            const res = await fetch(endpoint, { 
+            const res = await fetch(endpoint, {
                 cache: 'no-store',
                 headers: {
                     'Pragma': 'no-cache',
                     'Cache-Control': 'no-cache'
                 }
             });
-            
             if (!res.ok) return;
-            
             const data = await res.json();
             if (currentVersion && data.version && data.version !== currentVersion) {
                 notify('poll', data.version);
@@ -90,36 +107,26 @@ const setupPolling = () => {
             if (!currentVersion && data.version) {
                 currentVersion = data.version;
             }
-        } catch (error) {
-            // Ignore network errors during polling (e.g., if the user is offline or server is temporarily down)
-        }
+        } catch { /* ignore */ }
     };
-    
-    // Initial check delayed to not block main app load
     setTimeout(check, 5000);
-    const pollingTimer = setInterval(check, 5 * 60 * 1000); // Poll every 5 minutes
-    
+    const pollingTimer = setInterval(check, 5 * 60 * 1000);
     return () => clearInterval(pollingTimer);
 };
 
-// Layer 4: Vite dynamic import failure recovery
+// Layer 4: Vite chunk load failure recovery
 const setupVitePreloadListener = () => {
-    const handler = (event) => {
-        console.warn('Vite preload error detected. Reloading to fetch new chunks...', event);
-        window.location.href = window.location.pathname + '?v=' + Date.now(); 
-    };
+    const handler = () => { window.location.reload(); };
     window.addEventListener('vite:preloadError', handler);
     return () => window.removeEventListener('vite:preloadError', handler);
 };
 
 export const initVersionChecker = () => {
-    // Read the build-time injected version from Vite config
     try {
         const info = typeof __BUILD_INFO__ !== 'undefined' ? __BUILD_INFO__ : null;
         if (info && info.version) currentVersion = info.version;
     } catch { /* not available */ }
 
-    // Reset notification state if component re-mounts
     hasNotified = false;
 
     const cleanups = [
@@ -128,12 +135,9 @@ export const initVersionChecker = () => {
         setupVitePreloadListener()
     ];
 
-    // Delayed socket setup (wait for token to be available and not block render)
     const socketTimer = setTimeout(() => {
         const socketCleanup = setupSocket();
-        if (socketCleanup) {
-            cleanups.push(socketCleanup);
-        }
+        if (socketCleanup) cleanups.push(socketCleanup);
     }, 2000);
 
     return () => {

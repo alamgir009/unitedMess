@@ -5,7 +5,7 @@ const TOAST_ID = 'app-update-notification';
 const showUpdateToast = (source, newVersion) => {
     toast(
         (t) => (
-            <div className="flex items-center gap-4 px-2 py-1">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 px-2 py-1">
                 <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground">Update available</p>
                     <p className="text-xs text-muted-foreground">A new version of UnitedMess is ready</p>
@@ -13,11 +13,15 @@ const showUpdateToast = (source, newVersion) => {
                 <button
                     onClick={() => {
                         toast.dismiss(t.id);
-                        // Force a cache-busting hard reload by navigating with a unique query param
-                        const cacheBuster = newVersion || Date.now();
-                        window.location.href = window.location.pathname + '?v=' + cacheBuster;
+                        try {
+                            sessionStorage.setItem(
+                                '__um_update_intent',
+                                JSON.stringify({ version: newVersion || '', time: Date.now() })
+                            );
+                        } catch { /* quota exceeded — proceed */ }
+                        window.location.reload();
                     }}
-                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                    className="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 sm:px-3 py-2.5 sm:py-1.5 text-xs font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                 >
                     Update
                 </button>
@@ -25,11 +29,12 @@ const showUpdateToast = (source, newVersion) => {
                     onClick={() => {
                         toast.dismiss(t.id);
                         if (newVersion) {
-                            // Remember that the user ignored this specific version so we don't nag them again
-                            localStorage.setItem('ignoredUpdateVersion', newVersion);
+                            try {
+                                localStorage.setItem('__um_ignored_version', newVersion);
+                            } catch { /* quota exceeded */ }
                         }
                     }}
-                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+                    className="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 sm:px-3 py-2.5 sm:py-1.5 text-xs font-semibold rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
                 >
                     Later
                 </button>
@@ -37,7 +42,7 @@ const showUpdateToast = (source, newVersion) => {
         ),
         {
             id: TOAST_ID,
-            duration: Infinity, // Important: Don't auto-dismiss this critical notification
+            duration: Infinity,
             position: 'bottom-right',
             style: {
                 background: 'var(--toast-bg, hsl(var(--card)))',
@@ -45,6 +50,7 @@ const showUpdateToast = (source, newVersion) => {
                 borderRadius: '12px',
                 padding: '12px 16px',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                maxWidth: 'calc(100vw - 32px)',
             },
         }
     );
