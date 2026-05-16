@@ -1,6 +1,24 @@
 /* eslint-env serviceworker */
 /* global clients */
 
+const CACHE_NAME = 'unitedmess-v1';
+
+self.addEventListener('install', () => {
+    self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        clients.claim().then(() => {
+            clients.matchAll({ type: 'window' }).then((windowClients) => {
+                windowClients.forEach((client) => {
+                    client.postMessage({ type: 'NEW_VERSION_READY' });
+                });
+            });
+        })
+    );
+});
+
 self.addEventListener('push', (event) => {
     let data = { title: 'UnitedMess', body: '', icon: '/assets/icons/unitedmess-icon-1024.png' };
 

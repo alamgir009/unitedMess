@@ -8,8 +8,26 @@ if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         // VAPID Web Push service worker
         navigator.serviceWorker.register('/service-worker.js', { type: 'classic', scope: '/' })
-            .then(() => {
+            .then((registration) => {
                 if (import.meta.env.DEV) console.log('Service Worker registered');
+
+                // Poll for SW updates every 60s
+                setInterval(() => {
+                    registration.update().catch(() => {});
+                }, 60000);
+
+                // Listen for a new SW being found
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    if (!newWorker) return;
+
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            // New SW installed but waiting — tell it to activate
+                            newWorker.postMessage({ type: 'SKIP_WAITING' });
+                        }
+                    });
+                });
             })
             .catch((err) => {
                 console.error('Service Worker registration failed:', err);

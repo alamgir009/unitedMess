@@ -5,7 +5,8 @@ const connectDB = require('./database/connection');
 const logger = require('./utils/logger/index');
 const { registerInvoiceCron, registerReminderCron } = require('./jobs/cron/invoiceCron');
 const { registerNotificationCron } = require('./jobs/cron/notificationCron');
-const { setupSocketIO } = require('./sockets');
+const { setupSocketIO, emitToAll } = require('./sockets');
+const pkg = require('../package.json');
 
 // Create HTTP server
 const server = http.createServer(app);
@@ -25,6 +26,12 @@ const PORT = config.app.port || 8080;
 
 server.listen(PORT, () => {
     logger.info(`🚀 Server running on port ${PORT} in ${config.app.env} mode`);
+    // Broadcast current version to all connected clients
+    emitToAll('server:version', {
+        version: pkg.version,
+        name: pkg.name,
+        uptime: Date.now(),
+    });
 });
 
 // Handle unhandled promise rejections

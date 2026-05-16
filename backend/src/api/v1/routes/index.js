@@ -10,6 +10,7 @@ const paymentRoutes = require('./payment.routes');
 const settingsRoutes  = require('./setting.route');
 const notificationRoutes = require('./notification.routes');
 const invoiceRoutes = require('./invoice.routes');
+const versionController = require('../controllers/version.controller');
 // ...
 
 // Use routes
@@ -21,6 +22,8 @@ router.use('/payments', paymentRoutes);
 router.use('/setting', settingsRoutes );
 router.use('/notifications', notificationRoutes);
 router.use('/invoices', invoiceRoutes);
+
+router.get('/version', versionController.getVersion);
 
 router.get('/', (req, res) => {
     res.json({ message: 'API v1 running' });

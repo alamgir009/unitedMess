@@ -7,6 +7,7 @@ import { restoreSession } from '@/modules/auth/store/auth.slice';
 import { injectStore } from '@/services/api/client/apiClient';
 import { store } from '@/store';
 import { Spinner } from '@/shared/components/ui';
+import { initVersionChecker } from '@/services/version/versionChecker';
 
 // Inject the Redux store into apiClient so the BroadcastChannel logout listener
 // can dispatch setUser(null) without creating a circular import.
@@ -35,6 +36,20 @@ const FullScreenLoader = ({ label = 'Loading…' }) => (
         </div>
     </div>
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// VersionInit
+// ─────────────────────────────────────────────────────────────────────────────
+// Starts the 3-layer auto-refresh detector (SW lifecycle + Socket.io + polling).
+// Mounted once, runs for the lifetime of the app.
+// ─────────────────────────────────────────────────────────────────────────────
+const VersionInit = () => {
+    useEffect(() => {
+        const cleanup = initVersionChecker();
+        return () => cleanup();
+    }, []);
+    return null;
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SessionGate
@@ -66,6 +81,7 @@ const SessionGate = ({ children }) => {
 const App = () => {
     return (
         <AppProviders>
+            <VersionInit />
             <SessionGate>
                 <Suspense fallback={<FullScreenLoader label="Loading…" />}>
                     <AppRoutes />

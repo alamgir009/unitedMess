@@ -2,6 +2,7 @@ const socketIO = require('socket.io');
 const jwt = require('jsonwebtoken');
 const config = require('../config/index');
 const logger = require('../utils/logger/index');
+const pkg = require('../../package.json');
 
 let io;
 // In-memory mapping of userId -> socket.id
@@ -57,6 +58,13 @@ const setupSocketIO = (server) => {
             userSockets.set(userId, new Set());
         }
         userSockets.get(userId).add(socket.id);
+
+        // Send current version to the newly connected client
+        socket.emit('server:version', {
+            version: pkg.version,
+            name: pkg.name,
+            uptime: Date.now(),
+        });
 
         logger.info(`Socket connected for user ${userId} [${socket.id}]`);
 
