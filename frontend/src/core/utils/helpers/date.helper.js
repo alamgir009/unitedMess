@@ -78,6 +78,7 @@ export const formatActivityDate = (dateStr) => {
     }
 };
 
+// new comment
 export const formatSmartDate = (dateStr) => {
     if (!dateStr) return { primary: '', secondary: '' };
     try {
