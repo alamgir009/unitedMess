@@ -1,11 +1,14 @@
 const crypto = require('crypto');
 const notificationService = require('../../../services/notification.service');
+const Notification = require('../../../models/Notification.model');
 const PushSubscription = require('../../../models/PushSubscription.model');
 const User = require('../../../models/User.model');
 const asyncHandler = require('../../../utils/helpers/asyncHandler');
 const { sendSuccessResponse } = require('../../../utils/helpers/response.helper');
+const pick = require('../../../utils/helpers/pick');
 const config = require('../../../config');
 const logger = require('../../../utils/logger/index');
+const fcmController = require('./fcm.controller');
 
 const getUserNotifications = asyncHandler(async (req, res) => {
     const { limit, page } = req.query;
@@ -132,9 +135,34 @@ const getPushConfig = asyncHandler(async (req, res) => {
     });
 });
 
+const deliveryReceipt = asyncHandler(async (req, res) => {
+    const { notificationId, event, timestamp } = req.body;
+    if (notificationId && notificationId !== 'default') {
+        Notification.findByIdAndUpdate(notificationId, {
+            deliveryStatus: event === 'received' ? 'DELIVERED' : 'SENT',
+            $push: { 'metadata.deliveryEvents': { event, timestamp, userAgent: req.headers['user-agent'] } },
+        }).catch(() => {});
+    }
+    res.status(204).send();
+});
+
+const getNotificationPreferences = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user.id).select('notificationPreferences').lean();
+    sendSuccessResponse(res, 200, 'Preferences retrieved', user?.notificationPreferences || {});
+});
+
+const updateNotificationPreferences = asyncHandler(async (req, res) => {
+    const allowed = pick(req.body, ['push', 'email', 'sms', 'types', 'quietHours']);
+    const user = await User.findByIdAndUpdate(
+        req.user.id,
+        { notificationPreferences: allowed },
+        { new: true, select: 'notificationPreferences' }
+    );
+    sendSuccessResponse(res, 200, 'Preferences updated', user.notificationPreferences);
+});
+
 const ownershipCheck = asyncHandler(async (req, res, next) => {
     const { notificationId } = req.params;
-    const Notification = require('../../../models/Notification.model');
     const notification = await Notification.findById(notificationId).select('recipient').lean();
     if (!notification) {
         return res.status(404).json({ success: false, message: 'Notification not found' });
@@ -153,5 +181,10 @@ module.exports = {
     unsubscribeFromPush,
     sendCustomAdminNotification,
     getPushConfig,
+    deliveryReceipt,
+    getNotificationPreferences,
+    updateNotificationPreferences,
     ownershipCheck,
+    registerFcmToken: fcmController.registerFcmToken,
+    unregisterFcmToken: fcmController.unregisterFcmToken,
 };

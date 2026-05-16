@@ -37,6 +37,26 @@ const NotificationService = {
         const response = await apiClient.get('/notifications/push-config');
         return response.data;
     },
+
+    getPreferences: async () => {
+        const response = await apiClient.get('/notifications/preferences');
+        return response.data;
+    },
+
+    updatePreferences: async (preferences) => {
+        const response = await apiClient.patch('/notifications/preferences', preferences);
+        return response.data;
+    },
+
+    registerFcmToken: async (payload) => {
+        const response = await apiClient.post('/notifications/fcm-token', payload);
+        return response.data;
+    },
+
+    unregisterFcmToken: async (payload) => {
+        const response = await apiClient.delete('/notifications/fcm-token', { data: payload });
+        return response.data;
+    },
 };
 
 export default NotificationService;

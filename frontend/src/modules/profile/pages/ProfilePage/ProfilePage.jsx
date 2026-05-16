@@ -13,18 +13,27 @@ import {
     UserX,
     AlertTriangle,
     CheckCircle,
-    X
+    X,
+    Bell,
+    Smartphone,
+    Mail as MailIcon,
+    Moon,
+    ChevronDown,
+    ChevronUp,
 } from 'lucide-react';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import { Card, CardContent } from '@/shared/ui/Card/Card';
 import { logout, deactivateAccount } from '@/modules/auth/store/auth.slice';
 import { useNavigate } from 'react-router-dom';
-import { useCallback, useState, useMemo } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { EditModal } from '../../components/EditModal/EditModal';
 import { EditForm } from '../../components/EditForm/EditForm';
 import { AvatarUpload } from '../../components/AvatarUpload';
-import { toast } from 'react-hot-toast'; // or your project's toast system
+import { toast } from 'react-hot-toast';
 import { Spinner } from '@/shared/components/ui';
+import usePushManager from '@/modules/notification/hooks/usePushManager';
+import useFcmPush from '@/modules/notification/hooks/useFcmPush';
+import NotificationService from '@/modules/notification/services/notification.service';
 
 // ---------------------------------------------------------------------------- //
 // Reusable Confirm Dialog – replaces window.confirm with a polished modal       //
@@ -104,6 +113,45 @@ const ProfilePage = () => {
     const [deactivationLoading, setDeactivationLoading] = useState(false);
     const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
     const [avatarError, setAvatarError] = useState(null);
+
+    // ── Notification Preferences ── //
+    const {
+        isSubscribed: fcmEnabled,
+        loading: fcmLoading,
+        toggle: toggleFcm,
+        supported: fcmSupported,
+        error: fcmError,
+    } = useFcmPush();
+
+    const {
+        isSubscribed: vapidEnabled,
+        loading: vapidLoading,
+        toggle: toggleVapid,
+        supported: vapidSupported,
+        error: vapidError,
+    } = usePushManager();
+
+    const [notifPrefs, setNotifPrefs] = useState(null);
+    const [prefsLoading, setPrefsLoading] = useState(true);
+    const [prefsOpen, setPrefsOpen] = useState(false);
+
+    useEffect(() => {
+        if (!user) return;
+        NotificationService.getPreferences()
+            .then((res) => setNotifPrefs(res?.data || null))
+            .catch(() => {})
+            .finally(() => setPrefsLoading(false));
+    }, [user]);
+
+    const handlePrefsUpdate = useCallback(async (updates) => {
+        try {
+            const res = await NotificationService.updatePreferences(updates);
+            setNotifPrefs(res?.data || updates);
+            toast.success('Notification preferences updated');
+        } catch (err) {
+            toast.error(err?.response?.data?.message || 'Failed to update preferences');
+        }
+    }, []);
 
     // ── Avatar upload size validation (max 5 MB) ── //
     const handleAvatarError = useCallback((error) => {
@@ -364,6 +412,167 @@ const ProfilePage = () => {
                                         </div>
                                     </div>
                                 </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* ── Notification Preferences ── */}
+                        <Card className="border-border/40 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl shadow-lg transition-colors">
+                            <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50 flex items-center gap-2">
+                                    <Bell className="w-4 h-4 text-blue-500" />
+                                    Notifications
+                                </h3>
+                                <button
+                                    onClick={() => setPrefsOpen(!prefsOpen)}
+                                    className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1 transition-colors"
+                                >
+                                    {prefsOpen ? 'Less' : 'Manage'}
+                                    {prefsOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                </button>
+                            </div>
+                            <CardContent className="p-6 space-y-4">
+                                {prefsLoading ? (
+                                    <div className="flex items-center justify-center py-4">
+                                        <Spinner size="sm" color="current" className="text-blue-500" />
+                                    </div>
+                                ) : notifPrefs ? (
+                                    <>
+                                        {/* FCM Push (Primary) */}
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                                                    <Smartphone className="w-4 h-4" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">FCM Push (Primary)</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                        {fcmSupported
+                                                            ? fcmEnabled ? 'Subscribed' : 'Not subscribed'
+                                                            : 'Not supported'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            {fcmSupported && (
+                                                <button
+                                                    onClick={toggleFcm}
+                                                    disabled={fcmLoading}
+                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
+                                                        fcmEnabled ? 'bg-blue-500' : 'bg-gray-300 dark:bg-slate-700'
+                                                    }`}
+                                                    role="switch"
+                                                    aria-checked={fcmEnabled}
+                                                >
+                                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
+                                                        fcmEnabled ? 'translate-x-6' : 'translate-x-1'
+                                                    }`} />
+                                                </button>
+                                            )}
+                                        </div>
+                                        {fcmError && (
+                                            <p className="text-xs text-red-500 pl-11">{fcmError}</p>
+                                        )}
+
+                                        {/* VAPID Push (Fallback) */}
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400">
+                                                    <Smartphone className="w-4 h-4" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">VAPID Push (Fallback)</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                        {vapidSupported
+                                                            ? vapidEnabled ? 'Subscribed' : 'Not subscribed'
+                                                            : 'Not supported'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            {vapidSupported && (
+                                                <button
+                                                    onClick={toggleVapid}
+                                                    disabled={vapidLoading}
+                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
+                                                        vapidEnabled ? 'bg-blue-500' : 'bg-gray-300 dark:bg-slate-700'
+                                                    }`}
+                                                    role="switch"
+                                                    aria-checked={vapidEnabled}
+                                                >
+                                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
+                                                        vapidEnabled ? 'translate-x-6' : 'translate-x-1'
+                                                    }`} />
+                                                </button>
+                                            )}
+                                        </div>
+                                        {vapidError && (
+                                            <p className="text-xs text-red-500 pl-11">{vapidError}</p>
+                                        )}
+
+                                        {/* Email notifications toggle */}
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400">
+                                                    <MailIcon className="w-4 h-4" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Email Notifications</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                        {notifPrefs.email ? 'Enabled' : 'Disabled'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => handlePrefsUpdate({ email: !notifPrefs.email })}
+                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
+                                                    notifPrefs.email ? 'bg-blue-500' : 'bg-gray-300 dark:bg-slate-700'
+                                                }`}
+                                                role="switch"
+                                                aria-checked={notifPrefs.email}
+                                            >
+                                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
+                                                    notifPrefs.email ? 'translate-x-6' : 'translate-x-1'
+                                                }`} />
+                                            </button>
+                                        </div>
+
+                                        {/* Quiet Hours */}
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400">
+                                                    <Moon className="w-4 h-4" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Quiet Hours</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                        {notifPrefs.quietHours?.enabled
+                                                            ? `${notifPrefs.quietHours.start || '22:00'} - ${notifPrefs.quietHours.end || '08:00'}`
+                                                            : 'Off'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => handlePrefsUpdate({
+                                                    quietHours: {
+                                                        ...notifPrefs.quietHours,
+                                                        enabled: !notifPrefs.quietHours?.enabled,
+                                                    }
+                                                })}
+                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
+                                                    notifPrefs.quietHours?.enabled ? 'bg-blue-500' : 'bg-gray-300 dark:bg-slate-700'
+                                                }`}
+                                                role="switch"
+                                                aria-checked={notifPrefs.quietHours?.enabled || false}
+                                            >
+                                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
+                                                    notifPrefs.quietHours?.enabled ? 'translate-x-6' : 'translate-x-1'
+                                                }`} />
+                                            </button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="flex items-center justify-center py-4">
+                                        <p className="text-xs text-gray-400">Could not load preferences</p>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     </motion.div>

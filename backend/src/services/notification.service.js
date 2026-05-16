@@ -5,6 +5,7 @@ const User = require('../models/User.model');
 const { emitToUser, emitToAll } = require('../sockets');
 const config = require('../config');
 const logger = require('../utils/logger/index');
+const fcmService = require('./fcm.service');
 
 let webPush = null;
 try {
@@ -143,7 +144,7 @@ const handlePushFailure = async (subscriptionId, error) => {
 };
 
 /**
- * Create, save, and send a notification via socket + web push.
+ * Create, save, and send a notification via socket + FCM (primary) + VAPID (fallback).
  */
 const createAndSend = async (userId, type, title, message, options = {}) => {
     try {
@@ -165,9 +166,13 @@ const createAndSend = async (userId, type, title, message, options = {}) => {
 
         Notification.findByIdAndUpdate(notification._id, { deliveryStatus: 'SENT' }).catch(() => {});
 
-        sendWebPush(userId, notifObj).catch(err => {
-            logger.error(`Web push background error: ${err.message}`);
-        });
+        // Dual delivery: try FCM first, fall back to VAPID
+        const fcmResult = await fcmService.sendToUser(userId, notifObj).catch(() => null);
+        if (!fcmResult?.success) {
+            sendWebPush(userId, notifObj).catch(err => {
+                logger.error(`Web push background error: ${err.message}`);
+            });
+        }
 
         return notifObj;
     } catch (error) {

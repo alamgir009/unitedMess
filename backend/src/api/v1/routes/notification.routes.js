@@ -27,4 +27,15 @@ router.post(
 // Push config (for VAPID key rotation)
 router.get('/push-config', notificationController.getPushConfig);
 
+// FCM token management
+router.post('/fcm-token', notificationController.registerFcmToken);
+router.delete('/fcm-token', notificationController.unregisterFcmToken);
+
+// Delivery receipt (beacon from service worker)
+router.post('/delivery-receipt', notificationController.deliveryReceipt);
+
+// Notification preferences
+router.get('/preferences', notificationController.getNotificationPreferences);
+router.patch('/preferences', notificationController.updateNotificationPreferences);
+
 module.exports = router;
