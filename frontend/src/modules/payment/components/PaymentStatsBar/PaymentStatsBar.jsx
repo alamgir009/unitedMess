@@ -8,13 +8,14 @@ import {
 } from 'react-icons/hi2';
 
 /* ─── Single stat cell ─── */
-const StatCell = ({ icon: Icon, label, value, accentClass, delay = 0 }) => (
+const StatCell = ({ icon: Icon, label, value, accentClass, delay = 0, shimmer = false }) => (
     <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
         className={`relative flex items-center gap-3 px-4 py-3.5 rounded-2xl border overflow-hidden
-            shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${accentClass}`}
+            shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${accentClass}
+            ${shimmer ? 'before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/60 dark:before:via-white/25 before:to-transparent before:animate-shimmer' : ''}`}
     >
         {/* Shimmer top line */}
         <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/60 dark:via-white/20 to-transparent pointer-events-none" />
@@ -54,6 +55,7 @@ const PaymentStatsBar = ({ payments = [], isAdmin }) => {
             value: totalRecords,
             accent: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-700 dark:text-indigo-400',
             delay: 0.08,
+            shimmer: true,
         },
         {
             icon:  HiOutlineCheckCircle,
@@ -92,6 +94,7 @@ const PaymentStatsBar = ({ payments = [], isAdmin }) => {
                     value={s.value}
                     accentClass={s.accent}
                     delay={s.delay}
+                    shimmer={s.shimmer}
                 />
             ))}
         </div>

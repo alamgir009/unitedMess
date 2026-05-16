@@ -28,7 +28,7 @@ import {
     HiOutlineDevicePhoneMobile,
     HiOutlineChevronDown,
 } from 'react-icons/hi2';
-import { SiRazorpay, SiGooglepay, SiPhonepe } from 'react-icons/si';
+import { SiGooglepay, SiPhonepe } from 'react-icons/si';
 import { BsCreditCard2Front } from 'react-icons/bs';
 import { Spinner } from '@/shared/components/ui';
 
@@ -313,7 +313,7 @@ const MessBillInvoice = ({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, ease: 'easeOut' }}
-            className="relative mx-auto w-full max-w-2xl rounded-3xl bg-white/70 dark:bg-slate-900/50 backdrop-blur-2xl border border-black/5 dark:border-white/10 overflow-hidden shadow-2xl dark:shadow-black/40 ring-1 ring-black/5 dark:ring-white/5 transition-all duration-300"
+            className="relative mx-auto w-full max-w-none rounded-3xl bg-white/70 dark:bg-slate-900/50 backdrop-blur-2xl border border-black/5 dark:border-white/10 overflow-hidden shadow-2xl dark:shadow-black/40 ring-1 ring-black/5 dark:ring-white/5 transition-all duration-300"
         >
             {/* ── Collapsed summary bar ── */}
             <button
@@ -546,10 +546,8 @@ const MessBillInvoice = ({
                         >
                             {isPaying ? (
                                 <Spinner size="sm" color="white" />
-                            ) : (
-                                <SiRazorpay className="w-5 h-5" />
-                            )}
-                            <span>{isPaying ? 'Processing…' : `Pay ₹${fmt(finalPayable)} via ${selectedPaymentMethod.toUpperCase()}`}</span>
+                            ) : null}
+                            <span>{isPaying ? 'Processing…' : `Pay ₹${fmt(finalPayable)}`}</span>
                             <HiOutlineShieldCheck className="w-4 h-4 opacity-80" />
                         </motion.button>
                     )}

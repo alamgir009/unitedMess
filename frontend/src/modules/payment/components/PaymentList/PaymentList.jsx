@@ -45,7 +45,7 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewIn
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.22, delay: index * 0.03, ease: [0.22, 1, 0.36, 1] }}
-            className="group relative flex flex-col rounded-2xl bg-white/75 dark:bg-slate-900/60
+            className="group relative flex flex-col h-full rounded-2xl bg-white/75 dark:bg-slate-900/60
                 backdrop-blur-xl border border-black/6 dark:border-white/10
                 shadow-md hover:shadow-xl dark:shadow-black/30
                 hover:shadow-indigo-500/8 dark:hover:shadow-indigo-400/8

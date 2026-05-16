@@ -10,7 +10,7 @@ import {
     HiOutlineCheckCircle,
     HiOutlineBoltSlash,
 } from 'react-icons/hi2';
-import { SiRazorpay } from 'react-icons/si';
+
 
 /* ─── Tiny icon-only toggle button ─── */
 const ViewBtn = ({ active, onClick, label, children }) => (
@@ -137,9 +137,7 @@ const PaymentHeader = ({
                         >
                             {isPaying ? (
                                 <Spinner size="sm" color="white" className="!w-3 !h-3 !border-[2px]" />
-                            ) : (
-                                <SiRazorpay className="w-3.5 h-3.5 text-[#3395FF]" />
-                            )}
+                            ) : null}
                             Pay
                         </motion.button>
                     </motion.div>

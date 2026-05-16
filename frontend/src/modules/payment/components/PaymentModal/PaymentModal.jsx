@@ -83,7 +83,7 @@ const PaymentModal = ({ isOpen, onClose, title, children }) => {
                             {/* ── Header ── */}
                             <div className="relative flex items-center justify-between px-5 py-4 sm:px-6 sm:py-5 border-b border-black/8 dark:border-white/8">
                                 {/* Accent bar */}
-                                <div className="absolute left-0 top-4 bottom-4 w-1 rounded-r-full bg-gradient-to-b from-indigo-400 via-indigo-600 to-violet-600" />
+                                <div className="absolute left-0 top-4 bottom-4 w-1.5 rounded-r-full bg-gradient-to-b from-indigo-400 via-indigo-600 to-violet-600" />
 
                                 <div className="flex items-center gap-3 min-w-0 pl-4">
                                     <h2 className="truncate text-lg font-bold text-foreground tracking-tight">

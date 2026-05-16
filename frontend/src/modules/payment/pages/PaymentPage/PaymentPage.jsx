@@ -348,7 +348,7 @@ const PaymentPage = () => {
                 <div className="pointer-events-none absolute bottom-10 left-0 w-[400px] h-[400px] rounded-full bg-violet-400/8 blur-[100px] -z-10" />
                 <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full bg-purple-500/5 blur-[80px] -z-10" />
 
-                <div className="relative z-10 space-y-6">
+                <div className="relative z-10 space-y-5 md:space-y-6">
 
                     {/* Header */}
                     <PaymentHeader
