@@ -244,7 +244,7 @@ const MessBillInvoice = ({
             </div>
 
             {/* Summary Stats */}
-            <div className="px-6 pt-5">
+            <div className="px-2 pt-4">
                 <div className="flex flex-wrap gap-4">
                     <StatCard
                         icon={HiOutlineShoppingCart}
