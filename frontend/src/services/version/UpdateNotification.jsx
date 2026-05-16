@@ -1,7 +1,9 @@
 import toast from 'react-hot-toast';
 
+const TOAST_ID = 'app-update-notification';
+
 const showUpdateToast = (source) => {
-    const toastId = toast(
+    toast(
         (t) => (
             <div className="flex items-center gap-4 px-2 py-1">
                 <div className="flex-1 min-w-0">
@@ -11,7 +13,8 @@ const showUpdateToast = (source) => {
                 <button
                     onClick={() => {
                         toast.dismiss(t.id);
-                        window.location.reload();
+                        // Force a cache-busting hard reload
+                        window.location.href = window.location.href;
                     }}
                     className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                 >
@@ -26,7 +29,8 @@ const showUpdateToast = (source) => {
             </div>
         ),
         {
-            duration: 10000,
+            id: TOAST_ID,
+            duration: Infinity, // Important: Don't auto-dismiss this critical notification
             position: 'bottom-right',
             style: {
                 background: 'var(--toast-bg, hsl(var(--card)))',
