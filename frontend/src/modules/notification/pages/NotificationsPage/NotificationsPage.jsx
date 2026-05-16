@@ -73,7 +73,7 @@ const AdminComposeCard = ({ onSent }) => {
     };
 
     return (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
             <button
                 type="button"
                 onClick={() => setOpen(!open)}
@@ -203,167 +203,172 @@ const NotificationsPage = () => {
 
     return (
         <MainLayout>
-            <div className="max-w-3xl mx-auto py-4 sm:py-6 sm:px-6 lg:px-8">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl">
-                            <Bell className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Notifications</h1>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">
-                                {total} total &middot; {unreadCount} unread
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                        <button
-                            onClick={refresh}
-                            disabled={loading}
-                            className="flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-sm font-medium
-                                text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800
-                                border border-slate-200 dark:border-slate-700
-                                hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
-                            aria-label="Refresh notifications"
-                        >
-                            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                            <span className="hidden sm:inline">Refresh</span>
-                        </button>
-                        {unreadCount > 0 && (
-                            <motion.button
-                                initial={{ opacity: 0, scale: 0.85 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                onClick={markAllAsRead}
-                                disabled={markAllLoading}
-                                className="flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-sm font-medium
-                                    text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40
-                                    border border-blue-100 dark:border-blue-900/50
-                                    hover:bg-blue-100 dark:hover:bg-blue-950/70
-                                    disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                            >
-                                {markAllLoading
-                                    ? <Spinner size="sm" color="current" className="!w-4 !h-4" />
-                                    : <CheckCircle2 className="w-4 h-4" />
-                                }
-                                <span className="hidden sm:inline">Mark all read</span>
-                            </motion.button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Admin Compose Card */}
-                {isAdmin && (
-                    <AdminComposeCard onSent={refresh} />
-                )}
-
-                {/* Filter Tabs */}
-                <div className="overflow-x-auto -mx-4 sm:mx-0 mb-4 px-4 sm:px-0 scrollbar-none">
-                    <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl w-fit">
-                        {FILTER_TABS.map((tab) => (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveFilter(tab)}
-                                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-                                    activeFilter === tab
-                                        ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
-                                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
-                                }`}
-                            >
-                                {tab}
-                                {tab === 'Unread' && unreadCount > 0 && (
-                                    <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-blue-500 text-white">
-                                        {unreadCount}
-                                    </span>
-                                )}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Body */}
-                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    {loading && items.length === 0 ? (
-                        <Skeleton />
-                    ) : error ? (
-                        <div className="flex flex-col items-center justify-center py-10 md:py-20 px-6 text-center">
-                            <div className="w-14 h-14 rounded-full mb-4 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/30 flex items-center justify-center">
-                                <Bell className="w-5 h-5 text-red-400" />
+            <div className="-mx-4 sm:mx-0 h-full flex flex-col pt-4 sm:pt-6">
+                {/* Fixed top section */}
+                <div className="shrink-0 px-4 sm:px-6 lg:px-8 space-y-4 mb-4">
+                    {/* Header */}
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl">
+                                <Bell className="w-6 h-6" />
                             </div>
-                            <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                                Failed to load
-                            </h4>
-                            <p className="text-xs text-slate-400 dark:text-slate-500 max-w-[220px] leading-relaxed mb-3">
-                                {error || 'Something went wrong while fetching notifications.'}
-                            </p>
+                            <div>
+                                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Notifications</h1>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">
+                                    {total} total &middot; {unreadCount} unread
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 sm:gap-2">
                             <button
                                 onClick={refresh}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-                                    text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40
-                                    border border-blue-100 dark:border-blue-900/50
-                                    hover:bg-blue-100 dark:hover:bg-blue-950/70 transition-all"
+                                disabled={loading}
+                                className="flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-sm font-medium
+                                    text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800
+                                    border border-slate-200 dark:border-slate-700
+                                    hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
+                                aria-label="Refresh notifications"
                             >
-                                <RefreshCw className="w-3 h-3" />
-                                Try again
+                                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                                <span className="hidden sm:inline">Refresh</span>
                             </button>
-                        </div>
-                    ) : filteredItems.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-10 md:py-20 px-6 text-center">
-                            <div className="w-14 h-14 rounded-full mb-4 shadow-inner bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center">
-                                <Bell className="w-5 h-5 text-slate-400 dark:text-slate-500" />
-                            </div>
-                            <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                                {activeFilter === 'All' ? 'All caught up!' : `No ${activeFilter.toLowerCase()} notifications`}
-                            </h4>
-                            <p className="text-xs text-slate-400 dark:text-slate-500 max-w-[200px] leading-relaxed">
-                                {activeFilter === 'All'
-                                    ? "We'll alert you when something needs attention"
-                                    : `Try switching to a different filter`}
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="divide-y divide-slate-100/60 dark:divide-slate-800/40">
-                            {groupKeys.map((groupKey) => (
-                                <div key={groupKey}>
-                                    <div className="px-5 py-2 sticky top-0 z-[1] bg-slate-50/90 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800/60 backdrop-blur-sm">
-                                        <span className="text-[10px] font-semibold tracking-widest uppercase text-slate-400 dark:text-slate-500 font-mono">
-                                            {groupKey}
-                                        </span>
-                                    </div>
-                                    {grouped.get(groupKey).map((notif, idx) => {
-                                        const notifId = notif._id ?? notif.id;
-                                        const isLast = groupKey === lastGroup && idx === grouped.get(groupKey).length - 1;
-                                        const delay = itemIndex++;
-                                        return (
-                                            <motion.div
-                                                key={notifId}
-                                                custom={delay}
-                                                initial={{ opacity: 0, y: 6 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: delay * 0.03, type: 'spring', stiffness: 400, damping: 28 }}
-                                                ref={isLast ? sentinelRef : null}
-                                            >
-                                                <div className="active:scale-[0.98] sm:active:scale-100 transition-transform">
-                                                    <NotificationItem notification={notif} onSelect={handleSelect} />
-                                                </div>
-                                            </motion.div>
-                                        );
-                                    })}
-                                </div>
-                            ))}
-                            {isLoadingMore && (
-                                <div className="flex items-center justify-center gap-2 py-5">
-                                    <Spinner size="sm" color="current" className="text-blue-500" />
-                                    <span className="text-xs text-slate-400 font-mono">Loading more&hellip;</span>
-                                </div>
-                            )}
-                            {!hasMore && items.length >= 20 && (
-                                <p className="py-6 text-center text-[11px] font-mono text-slate-400 dark:text-slate-500">
-                                    &mdash; {total} notifications total &mdash;
-                                </p>
+                            {unreadCount > 0 && (
+                                <motion.button
+                                    initial={{ opacity: 0, scale: 0.85 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    onClick={markAllAsRead}
+                                    disabled={markAllLoading}
+                                    className="flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-sm font-medium
+                                        text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40
+                                        border border-blue-100 dark:border-blue-900/50
+                                        hover:bg-blue-100 dark:hover:bg-blue-950/70
+                                        disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                >
+                                    {markAllLoading
+                                        ? <Spinner size="sm" color="current" className="!w-4 !h-4" />
+                                        : <CheckCircle2 className="w-4 h-4" />
+                                    }
+                                    <span className="hidden sm:inline">Mark all read</span>
+                                </motion.button>
                             )}
                         </div>
+                    </div>
+
+                    {/* Admin Compose Card */}
+                    {isAdmin && (
+                        <AdminComposeCard onSent={refresh} />
                     )}
+
+                    {/* Filter Tabs */}
+                    <div className="overflow-x-auto scrollbar-none">
+                        <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl w-fit">
+                            {FILTER_TABS.map((tab) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveFilter(tab)}
+                                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+                                        activeFilter === tab
+                                            ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
+                                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                                    }`}
+                                >
+                                    {tab}
+                                    {tab === 'Unread' && unreadCount > 0 && (
+                                        <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-blue-500 text-white">
+                                            {unreadCount}
+                                        </span>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Scrollable list — edge-to-edge on mobile */}
+                <div className="flex-1 overflow-y-auto min-h-0 sm:px-6 lg:px-8 pb-4 sm:pb-6">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden rounded-none sm:rounded-2xl">
+                        {loading && items.length === 0 ? (
+                            <Skeleton />
+                        ) : error ? (
+                            <div className="flex flex-col items-center justify-center py-10 md:py-20 px-6 text-center">
+                                <div className="w-14 h-14 rounded-full mb-4 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/30 flex items-center justify-center">
+                                    <Bell className="w-5 h-5 text-red-400" />
+                                </div>
+                                <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                    Failed to load
+                                </h4>
+                                <p className="text-xs text-slate-400 dark:text-slate-500 max-w-[220px] leading-relaxed mb-3">
+                                    {error || 'Something went wrong while fetching notifications.'}
+                                </p>
+                                <button
+                                    onClick={refresh}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                                        text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40
+                                        border border-blue-100 dark:border-blue-900/50
+                                        hover:bg-blue-100 dark:hover:bg-blue-950/70 transition-all"
+                                >
+                                    <RefreshCw className="w-3 h-3" />
+                                    Try again
+                                </button>
+                            </div>
+                        ) : filteredItems.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-10 md:py-20 px-6 text-center">
+                                <div className="w-14 h-14 rounded-full mb-4 shadow-inner bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center">
+                                    <Bell className="w-5 h-5 text-slate-400 dark:text-slate-500" />
+                                </div>
+                                <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                    {activeFilter === 'All' ? 'All caught up!' : `No ${activeFilter.toLowerCase()} notifications`}
+                                </h4>
+                                <p className="text-xs text-slate-400 dark:text-slate-500 max-w-[200px] leading-relaxed">
+                                    {activeFilter === 'All'
+                                        ? "We'll alert you when something needs attention"
+                                        : `Try switching to a different filter`}
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-slate-100/60 dark:divide-slate-800/40">
+                                {groupKeys.map((groupKey) => (
+                                    <div key={groupKey}>
+                                        <div className="px-5 py-2 sticky top-0 z-[1] bg-slate-50/90 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800/60 backdrop-blur-sm">
+                                            <span className="text-[10px] font-semibold tracking-widest uppercase text-slate-400 dark:text-slate-500 font-mono">
+                                                {groupKey}
+                                            </span>
+                                        </div>
+                                        {grouped.get(groupKey).map((notif, idx) => {
+                                            const notifId = notif._id ?? notif.id;
+                                            const isLast = groupKey === lastGroup && idx === grouped.get(groupKey).length - 1;
+                                            const delay = itemIndex++;
+                                            return (
+                                                <motion.div
+                                                    key={notifId}
+                                                    custom={delay}
+                                                    initial={{ opacity: 0, y: 6 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: delay * 0.03, type: 'spring', stiffness: 400, damping: 28 }}
+                                                    ref={isLast ? sentinelRef : null}
+                                                >
+                                                    <div className="active:scale-[0.98] sm:active:scale-100 transition-transform">
+                                                        <NotificationItem notification={notif} onSelect={handleSelect} />
+                                                    </div>
+                                                </motion.div>
+                                            );
+                                        })}
+                                    </div>
+                                ))}
+                                {isLoadingMore && (
+                                    <div className="flex items-center justify-center gap-2 py-5">
+                                        <Spinner size="sm" color="current" className="text-blue-500" />
+                                        <span className="text-xs text-slate-400 font-mono">Loading more&hellip;</span>
+                                    </div>
+                                )}
+                                {!hasMore && items.length >= 20 && (
+                                    <p className="py-6 text-center text-[11px] font-mono text-slate-400 dark:text-slate-500">
+                                        &mdash; {total} notifications total &mdash;
+                                    </p>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </MainLayout>

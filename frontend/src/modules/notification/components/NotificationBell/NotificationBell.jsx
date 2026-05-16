@@ -154,7 +154,7 @@ const NotificationBell = () => {
                             role="dialog"
                             aria-label="Notifications panel"
                             className="
-                                fixed inset-x-4 top-[70px] z-50 origin-top
+                                fixed inset-x-0 top-[70px] z-50 origin-top
                                 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:origin-top-right
                                 w-auto sm:w-[420px]
                                 rounded-3xl overflow-hidden
