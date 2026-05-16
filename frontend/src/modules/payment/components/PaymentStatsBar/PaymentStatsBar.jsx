@@ -8,13 +8,14 @@ import {
 } from 'react-icons/hi2';
 
 /* ─── Single stat cell ─── */
-const StatCell = ({ icon: Icon, label, value, accentClass, delay = 0, shimmer = false }) => (
+const StatCell = ({ icon: Icon, label, value, accentClass, delay = 0, shimmer = false, fullWidth = false }) => (
     <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
         className={`relative flex items-center gap-3 px-4 py-3.5 rounded-2xl border overflow-hidden
             shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${accentClass}
+            ${fullWidth ? 'col-span-2 md:col-span-1' : ''}
             ${shimmer ? 'before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/60 dark:before:via-white/25 before:to-transparent before:animate-shimmer' : ''}`}
     >
         {/* Shimmer top line */}
@@ -86,7 +87,7 @@ const PaymentStatsBar = ({ payments = [], isAdmin }) => {
 
     return (
         <div className={`grid gap-3 grid-cols-2 ${isAdmin ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
-            {stats.map((s) => (
+            {stats.map((s, i) => (
                 <StatCell
                     key={s.label}
                     icon={s.icon}
@@ -95,6 +96,7 @@ const PaymentStatsBar = ({ payments = [], isAdmin }) => {
                     accentClass={s.accent}
                     delay={s.delay}
                     shimmer={s.shimmer}
+                    fullWidth={i === stats.length - 1}
                 />
             ))}
         </div>

@@ -7,12 +7,13 @@ import {
 } from 'react-icons/hi2';
 
 /* ── Single animated stat pill ── */
-const StatPill = ({ icon: Icon, label, value, color, delay = 0 }) => (
+const StatPill = ({ icon: Icon, label, value, color, delay = 0, fullWidth = false }) => (
     <motion.div
         initial={{ opacity: 0, y: 8, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ delay, duration: 0.35 }}
-        className={`relative flex items-center gap-3 px-4 py-3 rounded-2xl border backdrop-blur-md overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${color}`}
+        className={`relative flex items-center gap-3 px-4 py-3 rounded-2xl border backdrop-blur-md overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${color}
+            ${fullWidth ? 'col-span-2' : ''}`}
     >
         <div className="relative z-10 flex items-center gap-3 w-full">
             <div className="p-2 rounded-xl bg-white/10 flex-shrink-0">
@@ -34,37 +35,25 @@ const StatPill = ({ icon: Icon, label, value, color, delay = 0 }) => (
  * MarketStatsBar
  * Displays summary stat pills: total records, total spent (₹), and members (admin only).
  */
-const MarketStatsBar = ({ totalRecords, totalAmount, uniqueUsers, isAdmin }) => (
-    <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.1 }}
-        className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap"
-    >
-        <StatPill
-            delay={0.10}
-            icon={HiOutlineShoppingBag}
-            label="Total Records"
-            value={totalRecords}
-            color="bg-primary-500/10 border-primary-500/20 text-primary-600 dark:text-primary-400"
-        />
-        <StatPill
-            delay={0.15}
-            icon={HiOutlineCurrencyDollar}
-            label="Total Spent"
-            value={`₹${totalAmount.toLocaleString('en-IN')}`}
-            color="bg-secondary-500/10 border-secondary-500/20 text-secondary-600 dark:text-secondary-400"
-        />
-        {isAdmin && (
-            <StatPill
-                delay={0.20}
-                icon={HiOutlineUserGroup}
-                label="Members"
-                value={uniqueUsers}
-                color="bg-amber-400/10 border-amber-400/20 text-amber-400"
-            />
-        )}
-    </motion.div>
-);
+const MarketStatsBar = ({ totalRecords, totalAmount, uniqueUsers, isAdmin }) => {
+    const pills = [
+        { delay: 0.10, icon: HiOutlineShoppingBag, label: 'Total Records', value: totalRecords, color: 'bg-primary-500/10 border-primary-500/20 text-primary-600 dark:text-primary-400' },
+        { delay: 0.15, icon: HiOutlineCurrencyDollar, label: 'Total Spent', value: `₹${totalAmount.toLocaleString('en-IN')}`, color: 'bg-secondary-500/10 border-secondary-500/20 text-secondary-600 dark:text-secondary-400' },
+        ...(isAdmin ? [{ delay: 0.20, icon: HiOutlineUserGroup, label: 'Members', value: uniqueUsers, color: 'bg-amber-400/10 border-amber-400/20 text-amber-400' }] : []),
+    ];
+
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap"
+        >
+            {pills.map((p, i) => (
+                <StatPill key={p.label} {...p} fullWidth={i === pills.length - 1} />
+            ))}
+        </motion.div>
+    );
+};
 
 export default MarketStatsBar;

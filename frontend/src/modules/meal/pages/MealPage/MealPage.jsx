@@ -38,12 +38,13 @@ const SkeletonCard = () => (
     </div>
 );
 
-const StatPill = ({ icon: Icon, label, value, color, delay = 0 }) => (
+const StatPill = ({ icon: Icon, label, value, color, delay = 0, fullWidth = false }) => (
     <motion.div
         initial={{ opacity: 0, y: 8, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ delay, duration: 0.35 }}
-        className={`relative flex items-center gap-3 px-4 py-3 rounded-2xl border backdrop-blur-md overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${color}`}
+        className={`relative flex items-center gap-3 px-4 py-3 rounded-2xl border backdrop-blur-md overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${color}
+            ${fullWidth ? 'col-span-2' : ''}`}
     >
         <div className="relative z-10 flex items-center gap-3 w-full">
             <div className="p-2 rounded-xl bg-white/10 flex-shrink-0">
@@ -249,14 +250,17 @@ const MealPage = () => {
                     {/* Stats */}
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
                         className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
-                        <StatPill delay={0.10} icon={HiOutlineSparkles} label="Total Records" value={meals?.length || 0} color="bg-primary/10 border-primary/20 text-primary" />
-                        <StatPill delay={0.15} icon={HiOutlineFire}     label="Total Meals"   value={totalMeals}          color="bg-accent/10 border-accent/20 text-accent" />
-                        {guestMeals > 0 && (
-                            <StatPill delay={0.20} icon={HiOutlineUserGroup} label="Guest Meals" value={guestMeals} color="bg-amber-500/10 border-amber-500/20 text-amber-500" />
-                        )}
-                        {isAdmin && (
-                            <StatPill delay={0.25} icon={HiOutlineShieldCheck} label="Members" value={uniqueUsers} color="bg-secondary-400/10 border-secondary-400/20 text-secondary-400" />
-                        )}
+                        {(() => {
+                            const pills = [
+                                { delay: 0.10, icon: HiOutlineSparkles, label: 'Total Records', value: meals?.length || 0, color: 'bg-primary/10 border-primary/20 text-primary' },
+                                { delay: 0.15, icon: HiOutlineFire, label: 'Total Meals', value: totalMeals, color: 'bg-accent/10 border-accent/20 text-accent' },
+                                ...(guestMeals > 0 ? [{ delay: 0.20, icon: HiOutlineUserGroup, label: 'Guest Meals', value: guestMeals, color: 'bg-amber-500/10 border-amber-500/20 text-amber-500' }] : []),
+                                ...(isAdmin ? [{ delay: 0.25, icon: HiOutlineShieldCheck, label: 'Members', value: uniqueUsers, color: 'bg-secondary-400/10 border-secondary-400/20 text-secondary-400' }] : []),
+                            ];
+                            return pills.map((p, i) => (
+                                <StatPill key={p.label} {...p} fullWidth={i === pills.length - 1} />
+                            ));
+                        })()}
                     </motion.div>
 
                     {/* Search + Filter Bar */}
