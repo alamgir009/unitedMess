@@ -10,11 +10,18 @@ const getApiBase = () => {
     return apiUrl.replace(/\/api\/v1\/?$/, '');
 };
 
-const notify = (source) => {
+const notify = (source, newVersion) => {
     // Prevent duplicate notifications until the user reloads the app
     if (hasNotified) return;
+
+    // If user clicked "Later" for this specific version, don't bother them again
+    if (newVersion) {
+        const ignored = localStorage.getItem('ignoredUpdateVersion');
+        if (ignored === newVersion) return;
+    }
+
     hasNotified = true;
-    showUpdateToast(source);
+    showUpdateToast(source, newVersion);
 };
 
 // Layer 1: Service Worker messages
@@ -22,7 +29,7 @@ const setupSWListener = () => {
     if (!('serviceWorker' in navigator)) return;
     const handler = (event) => {
         if (event.data?.type === 'NEW_VERSION_READY') {
-            notify('service_worker');
+            notify('service_worker', event.data?.version);
         }
     };
     navigator.serviceWorker.addEventListener('message', handler);
@@ -44,7 +51,7 @@ const setupSocket = () => {
 
     socketInstance.on('server:version', (data) => {
         if (currentVersion && data.version && data.version !== currentVersion) {
-            notify('socket');
+            notify('socket', data.version);
         }
         if (!currentVersion && data.version) {
             currentVersion = data.version;
@@ -64,9 +71,9 @@ const setupSocket = () => {
 const setupPolling = () => {
     const check = async () => {
         try {
-            const baseUrl = import.meta.env.VITE_API_URL || '/api/v1';
-            // Add cache-busting timestamp to prevent intermediate caches from serving stale version data
-            const res = await fetch(`${baseUrl}/version?t=${Date.now()}`, { 
+            // Guarantee we hit /api/v1/version regardless of how VITE_API_URL is configured
+            const endpoint = `${getApiBase()}/api/v1/version?t=${Date.now()}`;
+            const res = await fetch(endpoint, { 
                 cache: 'no-store',
                 headers: {
                     'Pragma': 'no-cache',
@@ -78,7 +85,7 @@ const setupPolling = () => {
             
             const data = await res.json();
             if (currentVersion && data.version && data.version !== currentVersion) {
-                notify('poll');
+                notify('poll', data.version);
             }
             if (!currentVersion && data.version) {
                 currentVersion = data.version;
@@ -96,12 +103,10 @@ const setupPolling = () => {
 };
 
 // Layer 4: Vite dynamic import failure recovery
-// If a user navigates to a new route after a deployment, Vite will fail to fetch the old chunk.
-// We catch this specific error and automatically force a reload to get the new version.
 const setupVitePreloadListener = () => {
     const handler = (event) => {
         console.warn('Vite preload error detected. Reloading to fetch new chunks...', event);
-        window.location.href = window.location.href; // Force hard reload
+        window.location.href = window.location.pathname + '?v=' + Date.now(); 
     };
     window.addEventListener('vite:preloadError', handler);
     return () => window.removeEventListener('vite:preloadError', handler);

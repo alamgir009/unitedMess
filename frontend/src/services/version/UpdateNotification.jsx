@@ -2,7 +2,7 @@ import toast from 'react-hot-toast';
 
 const TOAST_ID = 'app-update-notification';
 
-const showUpdateToast = (source) => {
+const showUpdateToast = (source, newVersion) => {
     toast(
         (t) => (
             <div className="flex items-center gap-4 px-2 py-1">
@@ -13,15 +13,22 @@ const showUpdateToast = (source) => {
                 <button
                     onClick={() => {
                         toast.dismiss(t.id);
-                        // Force a cache-busting hard reload
-                        window.location.href = window.location.href;
+                        // Force a cache-busting hard reload by navigating with a unique query param
+                        const cacheBuster = newVersion || Date.now();
+                        window.location.href = window.location.pathname + '?v=' + cacheBuster;
                     }}
                     className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                 >
                     Update
                 </button>
                 <button
-                    onClick={() => toast.dismiss(t.id)}
+                    onClick={() => {
+                        toast.dismiss(t.id);
+                        if (newVersion) {
+                            // Remember that the user ignored this specific version so we don't nag them again
+                            localStorage.setItem('ignoredUpdateVersion', newVersion);
+                        }
+                    }}
                     className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
                 >
                     Later
