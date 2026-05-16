@@ -26,6 +26,7 @@ import {
     HiOutlineArrowDownTray,
     HiOutlineShieldCheck,
     HiOutlineDevicePhoneMobile,
+    HiOutlineChevronDown,
 } from 'react-icons/hi2';
 import { SiRazorpay, SiGooglepay, SiPhonepe } from 'react-icons/si';
 import { BsCreditCard2Front } from 'react-icons/bs';
@@ -145,60 +146,33 @@ const SectionDivider = memo(({ label }) => (
     </div>
 ));
 
-/** Premium payment method selector (replaces dropdown) */
-const PaymentMethodSelector = memo(({ methods, selected, onSelect }) => {
-    return (
-        <div className="space-y-3">
-            <label className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                Payment Method
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {methods.map((method) => {
-                    const isSelected = selected === method.id;
-                    const colorMap = {
-                        indigo: 'border-indigo-300 dark:border-indigo-700 bg-indigo-50/80 dark:bg-indigo-900/30',
-                        purple: 'border-purple-300 dark:border-purple-700 bg-purple-50/80 dark:bg-purple-900/30',
-                        blue: 'border-blue-300 dark:border-blue-700 bg-blue-50/80 dark:bg-blue-900/30',
-                    };
-                    const selectedClass = colorMap[method.color] || 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800';
-
-                    return (
-                        <motion.button
-                            key={method.id}
-                            type="button"
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.97 }}
-                            onClick={() => onSelect(method.id)}
-                            className={`relative flex items-start gap-4 p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer text-left
-                                ${isSelected ? selectedClass + ' shadow-lg ring-2 ring-offset-1 ring-indigo-500/50 dark:ring-indigo-400/30' : 'border-gray-200 dark:border-gray-700 bg-white/60 dark:bg-gray-800/40 hover:border-gray-300 dark:hover:border-gray-600'}`}
-                        >
-                            <div
-                                className={`p-2.5 rounded-lg ${
-                                    isSelected ? 'bg-white/70 dark:bg-gray-800/70' : 'bg-gray-100 dark:bg-gray-700'
-                                }`}
-                            >
-                                <method.icon className={`w-5 h-5 ${isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500'}`} />
-                            </div>
-                            <div className="min-w-0">
-                                <p className="text-sm font-semibold text-gray-900 dark:text-white">{method.label}</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{method.description}</p>
-                            </div>
-                            {isSelected && (
-                                <motion.div
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    className="absolute top-3 right-3 w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center"
-                                >
-                                    <HiOutlineCheckCircle className="w-4 h-4 text-white" />
-                                </motion.div>
-                            )}
-                        </motion.button>
-                    );
-                })}
-            </div>
+/** Horizontal pill method selector */
+const PaymentMethodSelector = memo(({ methods, selected, onSelect }) => (
+    <div className="space-y-2">
+        <p className="text-[10px] uppercase font-bold tracking-widest text-gray-500 dark:text-gray-400">Payment Method</p>
+        <div className="flex items-center gap-2 p-1 rounded-2xl bg-gray-100/80 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/40">
+            {methods.map((m) => {
+                const active = selected === m.id;
+                return (
+                    <motion.button
+                        key={m.id}
+                        type="button"
+                        whileTap={{ scale: 0.96 }}
+                        onClick={() => onSelect(m.id)}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold transition-all duration-200 ${
+                            active
+                                ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-300 shadow-sm ring-1 ring-black/5 dark:ring-white/10'
+                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                        }`}
+                    >
+                        <m.icon className={`w-3.5 h-3.5 flex-shrink-0 ${active ? 'text-indigo-500' : ''}`} />
+                        <span>{m.label}</span>
+                    </motion.button>
+                );
+            })}
         </div>
-    );
-});
+    </div>
+));
 
 /* ────────────────────────────────────────
    MAIN INVOICE COMPONENT
@@ -261,7 +235,10 @@ const MessBillInvoice = ({
     const remainingAmount = paymentRecord?.remainingAmount ?? Math.max(0, totalPayable - paidAmount);
     const paidPercent = totalPayable > 0 ? Math.min(100, Math.round((paidAmount / totalPayable) * 100)) : 0;
 
-    // ── Payment method state (replaces dropdown) ──
+    // ── Invoice expand/collapse (collapsed by default) ──
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    // ── Payment method state ──
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('upi');
 
     const invoiceRef = useRef(null);
@@ -320,6 +297,16 @@ const MessBillInvoice = ({
         }
     };
 
+    // Status label helpers
+    const statusLabel = isPaid ? 'Paid' : isPartiallyPaid ? 'Partial' : isRefund ? 'Refund' : 'Due';
+    const statusCls   = isPaid
+        ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-emerald-400/30'
+        : isPartiallyPaid
+        ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-amber-400/30'
+        : isRefund
+        ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-emerald-400/30'
+        : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-amber-400/30';
+
     return (
         <motion.div
             ref={invoiceRef}
@@ -328,6 +315,59 @@ const MessBillInvoice = ({
             transition={{ duration: 0.35, ease: 'easeOut' }}
             className="relative mx-auto w-full max-w-2xl rounded-3xl bg-white/70 dark:bg-slate-900/50 backdrop-blur-2xl border border-black/5 dark:border-white/10 overflow-hidden shadow-2xl dark:shadow-black/40 ring-1 ring-black/5 dark:ring-white/5 transition-all duration-300"
         >
+            {/* ── Collapsed summary bar ── */}
+            <button
+                type="button"
+                onClick={() => setIsExpanded(p => !p)}
+                className="w-full flex items-center justify-between gap-4 px-6 py-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors text-left"
+                aria-expanded={isExpanded}
+            >
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 flex-shrink-0">
+                        <HiOutlineDocumentText className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-bold text-gray-900 dark:text-white tracking-tight">Mess Bill Invoice</p>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full ring-1 uppercase tracking-wide bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-700/50">
+                                {displayMonth}
+                            </span>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            United Mess · {displayDate}
+                        </p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="text-right">
+                        <p className="text-lg font-black tabular-nums text-gray-900 dark:text-white">
+                            {isRefund ? '−' : ''}₹{fmt(displayAmt)}
+                        </p>
+                        <span className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-full ring-1 ${statusCls}`}>
+                            {statusLabel}
+                        </span>
+                    </div>
+                    <motion.div
+                        animate={{ rotate: isExpanded ? 180 : 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="w-7 h-7 rounded-full bg-muted/50 border border-border/40 flex items-center justify-center text-muted-foreground"
+                    >
+                        <HiOutlineChevronDown className="w-4 h-4" />
+                    </motion.div>
+                </div>
+            </button>
+
+            {/* ── Expandable full invoice ── */}
+            <AnimatePresence initial={false}>
+            {isExpanded && (
+            <motion.div
+                key="invoice-body"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                className="overflow-hidden border-t border-gray-200 dark:border-gray-800/60"
+            >
             {/* ── Header ── */}
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 px-6 md:px-8 pt-6 md:pt-8 pb-5 border-b border-gray-200 dark:border-gray-800/60">
                 <div className="flex items-start gap-4">
@@ -542,6 +582,10 @@ const MessBillInvoice = ({
                     System‑generated invoice for {displayMonth}. For disputes, contact your mess admin.
                 </p>
             </div>
+
+            </motion.div>
+            )}
+            </AnimatePresence>
 
             {/* Hidden print container */}
             <div style={{ position: 'absolute', top: '-9999px', left: '-9999px', zIndex: -1 }} aria-hidden="true">

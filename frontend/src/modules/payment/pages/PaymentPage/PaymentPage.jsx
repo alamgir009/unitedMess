@@ -341,14 +341,14 @@ const PaymentPage = () => {
     /* ── render ── */
     return (
         <MainLayout>
-            <div className="relative min-h-[80vh]">
+            <div className="relative min-h-[80vh]" style={{ touchAction: 'pan-y' }}>
 
                 {/* Ambient background orbs */}
                 <div className="pointer-events-none absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-[120px] -z-10" />
                 <div className="pointer-events-none absolute bottom-10 left-0 w-[400px] h-[400px] rounded-full bg-violet-400/8 blur-[100px] -z-10" />
                 <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full bg-purple-500/5 blur-[80px] -z-10" />
 
-                <div className="relative z-10 space-y-8">
+                <div className="relative z-10 space-y-6">
 
                     {/* Header */}
                     <PaymentHeader
@@ -356,7 +356,6 @@ const PaymentPage = () => {
                         viewMode={viewMode}
                         onViewModeChange={setViewMode}
                         onAddClick={openCreate}
-                        payableAmount={payableAmountData?.payableAmount ?? null}
                         payableGasBill={gasBillVal}
                         gasBillStatus={gasBillStatus}
                         onPayNowClick={handleRazorpayCheckout}
