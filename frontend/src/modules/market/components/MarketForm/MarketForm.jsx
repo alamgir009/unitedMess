@@ -111,10 +111,7 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
         e.preventDefault();
         if (readOnly) return;
 
-        let submitDate = formData.date;
-        if (formData.date === format(new Date(), 'yyyy-MM-dd')) {
-            submitDate = new Date().toISOString();
-        }
+        const submitDate = new Date(formData.date).toISOString();
 
         const payload = {
             ...formData,
@@ -127,7 +124,7 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
             delete payload.userIds;
         } else {
             delete payload.userId;
-            if (!payload.userIds || payload.userIds.length === 0) return;
+            if (isAdmin && (!payload.userIds || payload.userIds.length === 0)) return;
         }
 
         onSubmit(payload);

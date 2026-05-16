@@ -293,7 +293,7 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
             delete payload.userIds;
         } else {
             delete payload.userId;
-            if (!payload.userIds || payload.userIds.length === 0) return;
+            if (isAdmin && (!payload.userIds || payload.userIds.length === 0)) return;
         }
 
         onSubmit(payload);
