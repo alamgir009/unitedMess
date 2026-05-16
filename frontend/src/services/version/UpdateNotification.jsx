@@ -11,15 +11,29 @@ const showUpdateToast = (source, newVersion) => {
                     <p className="text-xs text-muted-foreground">A new version of UnitedMess is ready</p>
                 </div>
                 <button
-                    onClick={() => {
+                    onClick={async () => {
                         toast.dismiss(t.id);
+                        
+                        // Set the intent for versionChecker's cooldown
                         try {
                             sessionStorage.setItem(
                                 '__um_update_intent',
                                 JSON.stringify({ version: newVersion || '', time: Date.now() })
                             );
-                        } catch { /* quota exceeded — proceed */ }
-                        window.location.reload();
+                        } catch { /* ignore */ }
+
+                        // On mobile devices, browsers heavily cache assets. 
+                        // We must clear CacheStorage manually before reloading.
+                        if ('caches' in window) {
+                            try {
+                                const cacheNames = await caches.keys();
+                                await Promise.all(cacheNames.map(name => caches.delete(name)));
+                            } catch { /* ignore */ }
+                        }
+
+                        // Force a network reload by adding a cache-busting query parameter.
+                        // We use location.replace so the reload doesn't add to the history stack.
+                        window.location.replace(window.location.pathname + '?update=' + Date.now());
                     }}
                     className="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 sm:px-3 py-2.5 sm:py-1.5 text-xs font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                 >
