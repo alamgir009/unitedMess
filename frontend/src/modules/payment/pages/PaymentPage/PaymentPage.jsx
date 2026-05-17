@@ -182,7 +182,7 @@ const PaymentPage = () => {
         if (!isAdmin) return;
         setEditingPayment(null);
         setIsReadOnly(false);
-        setPreselectedUserId(memberId || null);
+        setPreselectedUserId(memberId || user?._id);
         setIsModalOpen(true);
     }, [isAdmin]);
 
