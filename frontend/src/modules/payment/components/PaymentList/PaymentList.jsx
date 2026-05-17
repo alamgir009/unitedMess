@@ -134,7 +134,7 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewIn
                         <Button variant="secondary" size="sm" onClick={() => onEdit(payment)} className="flex-1 text-xs">
                             <HiOutlinePencilSquare className="w-3.5 h-3.5 mr-1" /> Edit
                         </Button>
-                        <Button variant="danger" size="sm" iconOnly onClick={() => onDelete(payment._id)} aria-label="Delete">
+                        <Button variant="danger" size="sm" iconOnly onClick={() => onDelete(payment)} aria-label="Delete">
                             <HiOutlineTrash className="w-3.5 h-3.5" />
                         </Button>
                     </>

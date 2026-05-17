@@ -28,6 +28,7 @@ import PaymentForm      from '../../components/PaymentForm/PaymentForm';
 import PaymentModal     from '../../components/PaymentModal/PaymentModal';
 import MessBillInvoice  from '../../components/MessBillInvoice/MessBillInvoice';
 import MonthlyInvoiceModal from '../../components/MonthlyInvoiceModal/MonthlyInvoiceModal';
+import PaymentDeleteDialog from '../../components/PaymentDeleteDialog/PaymentDeleteDialog';
 
 import {
     fetchPayments,
@@ -100,6 +101,8 @@ const PaymentPage = () => {
     const [showFilters,    setShowFilters]    = useState(false);
     const [page,           setPage]           = useState(1);
     const [limit,          setLimit]          = useState(20);
+    const [deletingPayment, setDeletingPayment] = useState(null);
+    const [isDeleting, setIsDeleting]           = useState(false);
 
     /* ── payment hook ── */
     const refreshData = useCallback(() => {
@@ -272,30 +275,29 @@ const PaymentPage = () => {
         }
     }, [editingPayment, isAdmin, dispatch, closeModal, page, limit]);
 
-    const handleDelete = useCallback(async (paymentId) => {
-        if (!isAdmin) return;
-        // Use a toast-based confirmation instead of window.confirm
-        toast((t) => (
-            <span>
-                Delete this payment?{' '}
-                <button
-                    onClick={async () => {
-                        toast.dismiss(t.id);
-                        try {
-                            await dispatch(deletePayment(paymentId)).unwrap();
-                            toast.success('Payment deleted');
-                            dispatch(fetchPayments({ page, limit }));
-                        } catch (err) {
-                            toast.error(err?.message ?? 'Delete failed');
-                        }
-                    }}
-                    style={{ marginLeft: 8, fontWeight: 600, color: '#ef4444', cursor: 'pointer' }}
-                >
-                    Confirm
-                </button>
-            </span>
-        ), { duration: 5_000 });
-    }, [isAdmin, dispatch, page, limit]);
+    const handleDelete = useCallback((payment) => {
+        if (!isAdmin || !payment) return;
+        setDeletingPayment(payment);
+    }, [isAdmin]);
+
+    const handleDeleteCancel = useCallback(() => {
+        if (!isDeleting) setDeletingPayment(null);
+    }, [isDeleting]);
+
+    const handleDeleteConfirm = useCallback(async () => {
+        if (!deletingPayment || isDeleting) return;
+        setIsDeleting(true);
+        try {
+            await dispatch(deletePayment(deletingPayment._id)).unwrap();
+            toast.success('Payment deleted');
+            setDeletingPayment(null);
+            dispatch(fetchPayments({ page, limit }));
+        } catch (err) {
+            toast.error(err?.message ?? 'Failed to delete payment');
+        } finally {
+            setIsDeleting(false);
+        }
+    }, [deletingPayment, isDeleting, dispatch, page, limit]);
 
     const clearFilters = useCallback(() => {
         setSearchQuery(''); setDateFrom(''); setDateTo('');
@@ -502,6 +504,15 @@ const PaymentPage = () => {
                     onPayNow={handleRazorpayCheckout}
                     isPaying={isPaying}
                 />
+
+                {deletingPayment && (
+                    <PaymentDeleteDialog
+                        payment={deletingPayment}
+                        onConfirm={handleDeleteConfirm}
+                        onCancel={handleDeleteCancel}
+                        isDeleting={isDeleting}
+                    />
+                )}
             </div>
         </MainLayout>
     );
