@@ -15,7 +15,7 @@ const StatPill = ({ icon: Icon, label, value, colorKey, fullWidth = false }) => 
     <div
         className={[
             'flex items-center gap-3 px-4 py-3 rounded-2xl border',
-            'shadow-sm hover:shadow-md transition-shadow duration-200',
+            'shadow-sm hover:shadow-md',
             fullWidth ? 'col-span-2' : '',
             PILL_STYLES[colorKey],
         ].join(' ')}
