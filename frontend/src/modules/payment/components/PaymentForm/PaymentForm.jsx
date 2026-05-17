@@ -237,12 +237,14 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
         }
     }, [initialData, currentUser, preselectedUserId]);
 
-    /* Dynamic filter: block users who already have a completed payment for the selected type */
+    /* Dynamic filter: block users who already have a completed payment for the selected type.
+       Already-selected users are never blocked — lets pre-selected members render as selected. */
     const filterUser = useCallback((u) => {
+        if (formData.userIds.includes(u._id)) return false;
         if (formData.type === 'mess_bill') return u.payment === 'success';
         if (formData.type === 'gas_bill') return u.gasBill === 'success';
         return false;
-    }, [formData.type]);
+    }, [formData.type, formData.userIds]);
 
     /* Unified change handler — auto-syncs month from date */
     const handleChange = (e) => {
