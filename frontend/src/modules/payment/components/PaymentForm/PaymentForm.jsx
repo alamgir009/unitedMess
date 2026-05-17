@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { format } from 'date-fns';
 import {
     HiOutlineCurrencyRupee,
@@ -16,6 +16,7 @@ import { MdPendingActions, MdCheckCircleOutline, MdErrorOutline, MdRefresh } fro
 import apiClient from '@/services/api/client/apiClient';
 import { Button, Avatar, MemberSelect } from '@/shared/components/ui';
 import { SiRazorpay } from "react-icons/si";
+import toast from 'react-hot-toast';
 
 /* ─── Constants ─────────────────────────────────────────────── */
 
@@ -172,14 +173,16 @@ const ReadOnlyBanner = () => (
 
 /* ─── PaymentForm ───────────────────────────────────────────── */
 /**
- * @param {Object}   initialData  - payment record to edit/view (null for create)
- * @param {Function} onSubmit     - called with form data (create/update)
- * @param {Function} onCancel     - close modal
- * @param {boolean}  isAdmin      - admin role flag
- * @param {Object}   currentUser  - logged-in user object
- * @param {boolean}  readOnly     - view-only mode for non-admins viewing their payment
+ * @param {Object}   initialData        - payment record to edit/view (null for create)
+ * @param {Function} onSubmit           - called with form data (create/update)
+ * @param {Function} onCancel           - close modal
+ * @param {boolean}  isAdmin            - admin role flag
+ * @param {Object}   currentUser        - logged-in user object
+ * @param {boolean}  readOnly           - view-only mode for non-admins viewing their payment
+ * @param {boolean}  isSubmitting       - disable form while submitting
+ * @param {string}   preselectedUserId  - pre-select member in MemberSelect (create mode only)
  */
-const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentUser, readOnly = false }) => {
+const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentUser, readOnly = false, isSubmitting = false, preselectedUserId = null }) => {
 
     const [formData, setFormData] = useState({
         amount:        '',
@@ -229,13 +232,21 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                 userIds:       targetUserId ? [targetUserId] : [],
             });
         } else {
-            setFormData(p => ({ ...p, userId: '', userIds: [] }));
+            const ids = preselectedUserId ? [preselectedUserId] : [];
+            setFormData(p => ({ ...p, userId: preselectedUserId || '', userIds: ids }));
         }
-    }, [initialData, currentUser]);
+    }, [initialData, currentUser, preselectedUserId]);
+
+    /* Dynamic filter: block users who already have a completed payment for the selected type */
+    const filterUser = useCallback((u) => {
+        if (formData.type === 'mess_bill') return u.payment === 'success';
+        if (formData.type === 'gas_bill') return u.gasBill === 'success';
+        return false;
+    }, [formData.type]);
 
     /* Unified change handler — auto-syncs month from date */
     const handleChange = (e) => {
-        if (readOnly) return; // double-guard — no changes in read-only mode
+        if (readOnly || isSubmitting) return;
         const { name, value, type } = e.target;
         setFormData(p => {
             const next = {
@@ -251,20 +262,20 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (readOnly) return;
+        if (readOnly || isSubmitting) return;
 
         const payload = { ...formData, amount: parseFloat(formData.amount) || 0 };
 
-        // For new payments: use userIds array; for edits: use single userId
         if (initialData) {
-            // Edit mode — send single userId (existing flow)
             payload.userId = formData.userId;
             delete payload.userIds;
         } else {
-            // Create mode — send userIds array
             payload.userIds = formData.userIds;
             delete payload.userId;
-            if (!payload.userIds || payload.userIds.length === 0) return;
+            if (!payload.userIds || payload.userIds.length === 0) {
+                toast.error('Please select at least one member');
+                return;
+            }
         }
 
         if (!isAdmin) delete payload.status;
@@ -326,9 +337,9 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                                 value={formData.userIds}
                                 onChange={(ids) => setFormData(p => ({ ...p, userIds: ids }))}
                                 loading={isUsersLoading}
-                                disabled={readOnly}
+                                disabled={readOnly || isSubmitting}
                                 accentColor="indigo"
-                                filterUser={(u) => u.payment === 'success' && u.gasBill === 'success'}
+                                filterUser={filterUser}
                             />
                         )}
                     </Field>
@@ -345,8 +356,8 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                             onChange={handleChange} min="0" step="0.01"
                             required={!readOnly}
                             placeholder="0.00"
-                            disabled={readOnly}
-                            className={`${inputBase} pl-7 ${readOnly ? inputDisabled : ''}`}
+                            disabled={readOnly || isSubmitting}
+                            className={`${inputBase} pl-7 ${readOnly || isSubmitting ? inputDisabled : ''}`}
                         />
                     </div>
                 </Field>
@@ -358,22 +369,22 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                             type="date" name="paymentDate" value={formData.paymentDate}
                             onChange={handleChange}
                             required={!readOnly}
-                            disabled={readOnly}
-                            className={`${inputBase} ${readOnly ? inputDisabled : ''}`}
+                            disabled={readOnly || isSubmitting}
+                            className={`${inputBase} ${readOnly || isSubmitting ? inputDisabled : ''}`}
                         />
                     </Field>
                     <Field label="For Month" icon={HiOutlineCalendarDays}>
                         <div className="relative">
                             <select
                                 name="month" value={formData.month} onChange={handleChange}
-                                disabled={readOnly}
-                                className={`${inputBase} appearance-none cursor-pointer pr-9 ${readOnly ? inputDisabled : ''}`}
+                                disabled={readOnly || isSubmitting}
+                                className={`${inputBase} appearance-none cursor-pointer pr-9 ${readOnly || isSubmitting ? inputDisabled : ''}`}
                             >
                                 {monthOptions.map(mo => (
                                     <option key={mo} value={mo}>{mo}</option>
                                 ))}
                             </select>
-                            {!readOnly && (
+                            {!readOnly && !isSubmitting && (
                                 <HiOutlineChevronDown className="absolute inset-y-0 right-3 my-auto w-4 h-4 pointer-events-none text-muted-foreground/60" />
                             )}
                         </div>
@@ -388,7 +399,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                                 key={t.value} value={t.value} current={formData.type}
                                 onClick={v => setFormData(p => ({ ...p, type: v }))}
                                 label={t.label} color={t.color}
-                                disabled={readOnly}
+                                disabled={readOnly || isSubmitting}
                             />
                         ))}
                     </div>
@@ -400,16 +411,15 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                         <IconDropdown
                             name="paymentMethod" value={formData.paymentMethod}
                             onChange={handleChange} options={PAYMENT_METHODS}
-                            disabled={readOnly}
+                            disabled={readOnly || isSubmitting}
                         />
                     </Field>
-                    {/* Status — admin only, never shown to regular users */}
                     {showStatus && (
                         <Field label="Status" icon={HiOutlineCheckCircle}>
                             <IconDropdown
                                 name="status" value={formData.status}
                                 onChange={handleChange} options={STATUS_OPTIONS}
-                                disabled={readOnly}
+                                disabled={readOnly || isSubmitting}
                             />
                         </Field>
                     )}
@@ -421,8 +431,8 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                         <input
                             type="text" name="transactionId" value={formData.transactionId}
                             onChange={handleChange} placeholder="e.g. pay_XXXXXXXXXX"
-                            disabled={readOnly}
-                            className={`${inputBase} ${readOnly ? inputDisabled : ''}`}
+                            disabled={readOnly || isSubmitting}
+                            className={`${inputBase} ${readOnly || isSubmitting ? inputDisabled : ''}`}
                         />
                     </Field>
                 )}
@@ -432,8 +442,8 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                     <textarea
                         name="remarks" value={formData.remarks} onChange={handleChange}
                         rows={2}
-                        disabled={readOnly}
-                        className={`${inputBase} resize-none ${readOnly ? inputDisabled : ''}`}
+                        disabled={readOnly || isSubmitting}
+                        className={`${inputBase} resize-none ${readOnly || isSubmitting ? inputDisabled : ''}`}
                         placeholder={readOnly ? '' : 'Add any notes about this payment…'}
                     />
                 </Field>
@@ -443,17 +453,28 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
             <div className="flex gap-2.5 pt-3 border-t border-border/30 shrink-0">
                 <Button
                     type="button" variant="secondary" size="sm"
-                    onClick={onCancel} className={readOnly ? 'flex-1' : 'flex-1'}
+                    onClick={onCancel} disabled={isSubmitting}
+                    className={readOnly ? 'flex-1' : 'flex-1'}
                 >
                     {readOnly ? 'Close' : 'Cancel'}
                 </Button>
-                {/* Submit button hidden in read-only mode */}
                 {!readOnly && (
                     <Button
                         type="submit" variant="success" size="sm"
+                        disabled={isSubmitting}
                         className="flex-[2]"
                     >
-                        {initialData ? 'Update Payment' : 'Record Payment'}
+                        {isSubmitting ? (
+                            <span className="flex items-center justify-center gap-2">
+                                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                </svg>
+                                {initialData ? 'Updating…' : 'Recording…'}
+                            </span>
+                        ) : (
+                            initialData ? 'Update Payment' : 'Record Payment'
+                        )}
                     </Button>
                 )}
             </div>

@@ -233,7 +233,7 @@ const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInv
                     <HiOutlinePencilSquare className="w-3.5 h-3.5" />
                 </Button>
                 {canEdit && (
-                    <Button variant="danger" size="sm" iconOnly onClick={() => onDelete(payment._id)} aria-label="Delete">
+                    <Button variant="danger" size="sm" iconOnly onClick={() => onDelete(payment)} aria-label="Delete">
                         <HiOutlineTrash className="w-3.5 h-3.5" />
                     </Button>
                 )}

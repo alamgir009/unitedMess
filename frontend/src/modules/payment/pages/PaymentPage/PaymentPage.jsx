@@ -11,7 +11,7 @@
  *  ✓ Dead platformFee state removed
  */
 
-import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AnimatePresence, motion } from 'framer-motion';
 import { HiOutlineXMark, HiOutlineCheckBadge } from 'react-icons/hi2';
@@ -160,8 +160,11 @@ const PaymentPage = () => {
     /* ── fetch payable amounts ── */
     useEffect(() => {
         if (user?._id || user?.id) {
-            dispatch(fetchPayableAmount());
-            dispatch(fetchPayableGasBill());
+            Promise.all([
+                dispatch(fetchPayableAmount()),
+                dispatch(fetchPayableGasBill()),
+            ]).then(() => setInvoiceFetchDone(true))
+              .catch(() => setInvoiceFetchDone(true));
         }
     }, [dispatch, user?._id, user?.id]);
 
@@ -171,17 +174,22 @@ const PaymentPage = () => {
         markUnmounted();
     }, [dispatch, markUnmounted]);
 
+    /* ── member preselection ── */
+    const [preselectedUserId, setPreselectedUserId] = useState(null);
+
     /* ── modal handlers ── */
-    const openCreate = useCallback(() => {
+    const openCreate = useCallback((memberId) => {
         if (!isAdmin) return;
         setEditingPayment(null);
         setIsReadOnly(false);
+        setPreselectedUserId(memberId || null);
         setIsModalOpen(true);
     }, [isAdmin]);
 
     const openEdit = useCallback((p) => {
         setEditingPayment(p);
         setIsReadOnly(!isAdmin);
+        setPreselectedUserId(null);
         setIsModalOpen(true);
     }, [isAdmin]);
 
@@ -189,6 +197,7 @@ const PaymentPage = () => {
         setIsModalOpen(false);
         setEditingPayment(null);
         setIsReadOnly(false);
+        setPreselectedUserId(null);
     }, []);
 
     const handleViewInvoice = useCallback((payment) => {
@@ -243,13 +252,16 @@ const PaymentPage = () => {
         toast.error(`Unable to open invoice: unrecognised month format "${monthStr}".`);
     }, []);
 
+    /* ── submitting state ── */
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     /* ── CRUD ── */
     const handleSubmit = useCallback(async (formData) => {
         if (!isAdmin) {
             toast.error('Only administrators can manage payment records');
-            closeModal();
             return;
         }
+        setIsSubmitting(true);
         try {
             if (editingPayment) {
                 await dispatch(updatePayment({
@@ -261,7 +273,6 @@ const PaymentPage = () => {
                 await dispatch(createBulkPayments(formData)).unwrap();
                 toast.success(`Payments recorded for ${formData.userIds.length} members`);
             } else {
-                // Single user — send as single userId for backward compat
                 const singleData = { ...formData, userId: formData.userIds?.[0] || '' };
                 delete singleData.userIds;
                 await dispatch(createPayment(singleData)).unwrap();
@@ -271,7 +282,8 @@ const PaymentPage = () => {
             dispatch(fetchPayments({ page, limit }));
         } catch (err) {
             toast.error(typeof err === 'string' ? err : err?.message ?? 'Failed to save payment');
-            closeModal();
+        } finally {
+            setIsSubmitting(false);
         }
     }, [editingPayment, isAdmin, dispatch, closeModal, page, limit]);
 
@@ -338,7 +350,8 @@ const PaymentPage = () => {
     const gasBillStatus   = payableGasBill?.status           || 'pending';
     const bothPaid        = messBillStatus === 'success' && gasBillStatus === 'success';
     const hasInvoiceData  = !!payableAmountData && 'payableAmount' in payableAmountData;
-    const isInvoiceLoading = !payableAmountData && !!(user?._id || user?.id);
+    const [invoiceFetchDone, setInvoiceFetchDone] = useState(false);
+    const isInvoiceLoading = !invoiceFetchDone && !hasInvoiceData && !!(user?._id || user?.id);
 
     /* ── render ── */
     return (
@@ -492,6 +505,8 @@ const PaymentPage = () => {
                         isAdmin={isAdmin}
                         currentUser={user}
                         readOnly={isReadOnly}
+                        isSubmitting={isSubmitting}
+                        preselectedUserId={preselectedUserId}
                     />
                 </PaymentModal>
 
