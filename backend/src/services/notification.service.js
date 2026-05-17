@@ -214,28 +214,32 @@ const broadcastToAll = async (type, title, message, options = {}) => {
                 deliveryStatus: 'SENT',
             }));
 
-            await Notification.insertMany(notificationsToInsert);
-            totalBatchCount += batch.length;
+            try {
+                const insertedDocs = await Notification.insertMany(notificationsToInsert, { ordered: false });
+                totalBatchCount += insertedDocs.length;
 
-            batch.forEach(user => {
-                sendSocketEvent(user._id.toString(), {
-                    type, title, message,
-                    priority: options.priority || 'NORMAL',
-                    isRead: false,
-                    createdAt: new Date(),
+                insertedDocs.forEach(notif => {
+                    const notifObj = notif.toObject ? notif.toObject() : notif;
+                    sendSocketEvent(notif.recipient.toString(), notifObj);
                 });
-            });
+            } catch (insertError) {
+                logger.error(`Error inserting broadcast batch: ${insertError.message}`);
+                
+                const insertedDocs = insertError.insertedDocs || [];
+                if (insertedDocs.length < notificationsToInsert.length) {
+                    logger.warn(`Partial failure in broadcast batch: ${notificationsToInsert.length - insertedDocs.length} failed to insert.`);
+                }
+                
+                totalBatchCount += insertedDocs.length;
+                insertedDocs.forEach(notif => {
+                    const notifObj = notif.toObject ? notif.toObject() : notif;
+                    sendSocketEvent(notif.recipient.toString(), notifObj);
+                });
+            }
 
             lastId = batch[batch.length - 1]._id;
             if (batch.length < BATCH_SIZE) hasMore = false;
         }
-
-        emitToAll('receive_notification', {
-            type, title, message,
-            priority: options.priority || 'NORMAL',
-            isRead: false,
-            createdAt: new Date(),
-        });
 
         logger.info(`Broadcast notification sent to ${totalBatchCount} users`);
         return { success: true, count: totalBatchCount };
@@ -271,16 +275,26 @@ const sendToAdmins = async (type, title, message, options = {}) => {
             deliveryStatus: 'SENT',
         }));
 
-        await Notification.insertMany(notificationsToInsert);
-
-        admins.forEach(admin => {
-            sendSocketEvent(admin._id.toString(), {
-                type, title, message,
-                priority: options.priority || 'NORMAL',
-                isRead: false,
-                createdAt: new Date(),
+        try {
+            const insertedDocs = await Notification.insertMany(notificationsToInsert, { ordered: false });
+            
+            insertedDocs.forEach(notif => {
+                const notifObj = notif.toObject ? notif.toObject() : notif;
+                sendSocketEvent(notif.recipient.toString(), notifObj);
             });
-        });
+        } catch (insertError) {
+            logger.error(`Error inserting admin notifications: ${insertError.message}`);
+            
+            const insertedDocs = insertError.insertedDocs || [];
+            if (insertedDocs.length < notificationsToInsert.length) {
+                logger.warn(`Partial failure in admin broadcast: ${notificationsToInsert.length - insertedDocs.length} failed to insert.`);
+            }
+            
+            insertedDocs.forEach(notif => {
+                const notifObj = notif.toObject ? notif.toObject() : notif;
+                sendSocketEvent(notif.recipient.toString(), notifObj);
+            });
+        }
     } catch (error) {
         logger.error(`Error sending admin notification: ${error.message}`);
     }
