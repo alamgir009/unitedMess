@@ -10,6 +10,7 @@ import {
     HiOutlineExclamationTriangle, HiOutlineInformationCircle,
     HiOutlineSun, HiOutlineMoon, HiOutlineNoSymbol,
 } from 'react-icons/hi2';
+import { IoFastFoodOutline } from "react-icons/io5";
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
@@ -253,9 +254,9 @@ const MealPage = () => {
                         {(() => {
                             const pills = [
                                 { delay: 0.10, icon: HiOutlineSparkles, label: 'Total Records', value: meals?.length || 0, color: 'bg-primary/10 border-primary/20 text-primary' },
-                                { delay: 0.15, icon: HiOutlineFire, label: 'Total Meals', value: totalMeals, color: 'bg-accent/10 border-accent/20 text-accent' },
+                                { delay: 0.15, icon: IoFastFoodOutline, label: 'Total Meals', value: totalMeals, color: 'bg-accent/10 border-accent/20 text-accent' },
                                 ...(guestMeals > 0 ? [{ delay: 0.20, icon: HiOutlineUserGroup, label: 'Guest Meals', value: guestMeals, color: 'bg-amber-500/10 border-amber-500/20 text-amber-500' }] : []),
-                                ...(isAdmin ? [{ delay: 0.25, icon: HiOutlineShieldCheck, label: 'Members', value: uniqueUsers, color: 'bg-secondary-400/10 border-secondary-400/20 text-secondary-400' }] : []),
+                                ...(isAdmin ? [{ delay: 0.25, icon: HiOutlineUserGroup, label: 'Members', value: uniqueUsers, color: 'bg-secondary-400/10 border-secondary-400/20 text-secondary-400' }] : []),
                             ];
                             return pills.map((p, i) => (
                                 <StatPill key={p.label} {...p} fullWidth={i === pills.length - 1} />

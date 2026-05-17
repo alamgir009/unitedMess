@@ -1,7 +1,7 @@
 import React from 'react';
 import {
     HiOutlineShoppingBag,
-    HiOutlineCurrencyDollar,
+    HiOutlineCurrencyRupee,
     HiOutlineUserGroup,
 } from 'react-icons/hi2';
 
@@ -40,7 +40,7 @@ const MarketStatsBar = ({ totalRecords, totalAmount, uniqueUsers, isAdmin }) => 
             colorKey: 'primary',
         },
         {
-            icon: HiOutlineCurrencyDollar,
+            icon: HiOutlineCurrencyRupee,
             label: 'Total Spent',
             value: `₹${totalAmount.toLocaleString('en-IN')}`,
             colorKey: 'secondary',
