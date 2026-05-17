@@ -132,13 +132,27 @@ const MemberSelect = ({
                     ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
             >
                 <span className="flex items-center gap-2 truncate">
-                    <HiOutlineUser className="w-4 h-4 shrink-0 text-muted-foreground/70" />
-                    <span className="truncate text-sm">
-                        {selectedCount === 0
-                            ? placeholder
-                            : `${selectedCount} member${selectedCount !== 1 ? 's' : ''} selected`
-                        }
-                    </span>
+                    {selectedCount === 1 ? (
+                        <>
+                            <Avatar
+                                name={users.find(u => value.includes(u._id))?.name || ''}
+                                size="xs"
+                            />
+                            <span className="truncate text-sm font-medium">
+                                {users.find(u => value.includes(u._id))?.name || '1 member selected'}
+                            </span>
+                        </>
+                    ) : (
+                        <>
+                            <HiOutlineUser className="w-4 h-4 shrink-0 text-muted-foreground/70" />
+                            <span className="truncate text-sm">
+                                {selectedCount === 0
+                                    ? placeholder
+                                    : `${selectedCount} members selected`
+                                }
+                            </span>
+                        </>
+                    )}
                 </span>
                 <span className="flex items-center gap-2">
                     {selectedCount > 0 && (

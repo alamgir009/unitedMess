@@ -182,9 +182,10 @@ const PaymentPage = () => {
         if (!isAdmin) return;
         setEditingPayment(null);
         setIsReadOnly(false);
-        setPreselectedUserId(memberId || user?._id);
+        const selectedId = typeof memberId === 'string' ? memberId : (user?._id || user?.id);
+        setPreselectedUserId(selectedId);
         setIsModalOpen(true);
-    }, [isAdmin]);
+    }, [isAdmin, user?._id]);
 
     const openEdit = useCallback((p) => {
         setEditingPayment(p);
