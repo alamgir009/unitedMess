@@ -24,7 +24,7 @@ const COUNTRY_CODES = [
 // Validation helpers
 const validateEmail = (email) => /^[^\s@]+@([^\s@.,]+\.)+[^\s@.,]{2,}$/.test(email);
 const validatePhoneNumber = (phone) => /^\d{5,15}$/.test(phone);
-const validatePassword = (password) => password.length >= 8;
+const validatePassword = (password) => password.length >= 10;
 
 // ==================== CUSTOM DROPDOWN COMPONENT ====================
 // Fintech-grade, accessible, searchable, keyboard navigable
@@ -212,7 +212,7 @@ const RegisterForm = () => {
       return false;
     }
     if (!validatePassword(password)) {
-      toast.error('Password must be at least 8 characters');
+      toast.error('Password must be at least 10 characters');
       return false;
     }
     if (password !== confirmPassword) {
@@ -322,7 +322,7 @@ const RegisterForm = () => {
           required
           value={password}
           onChange={onChange}
-          placeholder="Min 8 characters"
+          placeholder="Min 10 characters"
           aria-required="true"
         />
       </div>
