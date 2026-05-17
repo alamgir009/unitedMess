@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { io } from 'socket.io-client';
 import { addRealTimeNotification } from '../store/notification.slice';
 import { getAccessToken } from '@/services/api/client/apiClient';
+import toast from 'react-hot-toast';
 
 // Use standard API URL resolution for socket connection
 const getSocketUrl = () => {
@@ -15,6 +16,7 @@ const useSocket = () => {
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.auth);
     const socketRef = useRef(null);
+    const processedNotifications = useRef(new Set());
 
     useEffect(() => {
         if (!user) {
@@ -40,17 +42,40 @@ const useSocket = () => {
 
 
                 socketRef.current.on('receive_notification', (notification) => {
+                    const notifId = notification._id || notification.id;
+                    
+                    // Strict local deduplication
+                    if (notifId) {
+                        if (processedNotifications.current.has(notifId)) return;
+                        processedNotifications.current.add(notifId);
+                        
+                        // Prevent set from growing indefinitely
+                        if (processedNotifications.current.size > 100) {
+                            const firstItem = processedNotifications.current.values().next().value;
+                            processedNotifications.current.delete(firstItem);
+                        }
+                    }
+
                     dispatch(addRealTimeNotification(notification));
+                    
+                    // Display instant visual feedback
+                    toast.success(notification.title || 'New Notification', {
+                        icon: '🔔',
+                        duration: 4000,
+                    });
                     
                     // Play notification sound if the browser allows it
                     try {
-                        const audio = new Audio('/assets/audio/iPhonesmstone.ogg');
-                        audio.volume = 0.5;
-                        audio.play().catch((err) => {
-                            if (import.meta.env.DEV) {
-                                console.log('Audio autoplay blocked by browser:', err);
-                            }
-                        });
+                        const playSound = () => {
+                            const audio = new Audio('/assets/audio/iPhonesmstone.ogg');
+                            audio.volume = 0.5;
+                            audio.play().catch((err) => {
+                                if (import.meta.env.DEV) {
+                                    console.log('Audio autoplay blocked by browser:', err);
+                                }
+                            });
+                        };
+                        playSound();
                     } catch (e) {
                         console.error('Failed to play notification sound', e);
                     }

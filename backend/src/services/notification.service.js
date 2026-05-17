@@ -164,7 +164,10 @@ const createAndSend = async (userId, type, title, message, options = {}) => {
 
         sendSocketEvent(userId, notifObj);
 
-        Notification.findByIdAndUpdate(notification._id, { deliveryStatus: 'SENT' }).catch(() => {});
+        // Update status in background to maintain low latency, but log failures
+        Notification.findByIdAndUpdate(notification._id, { deliveryStatus: 'SENT' }).catch((err) => {
+            logger.error(`Failed to mark notification ${notification._id} as SENT: ${err.message}`);
+        });
 
         // Dual delivery: try FCM first, fall back to VAPID
         const fcmResult = await fcmService.sendToUser(userId, notifObj).catch(() => null);

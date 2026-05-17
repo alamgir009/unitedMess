@@ -8,6 +8,7 @@ import { injectStore } from '@/services/api/client/apiClient';
 import { store } from '@/store';
 import { Spinner } from '@/shared/components/ui';
 import { initVersionChecker } from '@/services/version/versionChecker';
+import useSocket from '@/modules/notification/hooks/useSocket';
 
 // Inject the Redux store into apiClient so the BroadcastChannel logout listener
 // can dispatch setUser(null) without creating a circular import.
@@ -52,6 +53,16 @@ const VersionInit = () => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SocketInit
+// ─────────────────────────────────────────────────────────────────────────────
+// Headless component to manage the global WebSocket connection.
+// ─────────────────────────────────────────────────────────────────────────────
+const SocketInit = () => {
+    useSocket();
+    return null;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SessionGate
 // ─────────────────────────────────────────────────────────────────────────────
 // Lives INSIDE <Provider> so it can dispatch to Redux.
@@ -83,6 +94,7 @@ const App = () => {
         <AppProviders>
             <VersionInit />
             <SessionGate>
+                <SocketInit />
                 <Suspense fallback={<FullScreenLoader label="Loading…" />}>
                     <AppRoutes />
                 </Suspense>
