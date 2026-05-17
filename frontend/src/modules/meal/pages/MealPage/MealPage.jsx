@@ -250,7 +250,7 @@ const MealPage = () => {
 
                     {/* Stats */}
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
-                        className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
+                        className={`grid grid-cols-2 gap-3 ${isAdmin ? 'md:grid-cols-3 lg:grid-cols-4' : 'md:grid-cols-3'}`}>
                         {(() => {
                             const pills = [
                                 { delay: 0.10, icon: HiOutlineSparkles, label: 'Total Records', value: meals?.length || 0, color: 'bg-primary/10 border-primary/20 text-primary' },
@@ -259,7 +259,7 @@ const MealPage = () => {
                                 ...(isAdmin ? [{ delay: 0.25, icon: HiOutlineUserGroup, label: 'Members', value: uniqueUsers, color: 'bg-secondary-400/10 border-secondary-400/20 text-secondary-400' }] : []),
                             ];
                             return pills.map((p, i) => (
-                                <StatPill key={p.label} {...p} fullWidth={i === pills.length - 1} />
+                                <StatPill key={p.label} {...p} fullWidth={isAdmin && i === pills.length - 1 && pills.length % 2 !== 0} />
                             ));
                         })()}
                     </motion.div>

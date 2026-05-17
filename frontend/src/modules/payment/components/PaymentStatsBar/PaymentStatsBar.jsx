@@ -15,7 +15,7 @@ const StatCell = ({ icon: Icon, label, value, accentClass, delay = 0, shimmer = 
         transition={{ delay, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
         className={`relative flex items-center gap-3 px-4 py-3.5 rounded-2xl border overflow-hidden
             shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${accentClass}
-            ${fullWidth ? 'col-span-2 md:col-span-1' : ''}
+            ${fullWidth ? 'col-span-2' : ''}
             ${shimmer ? 'before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/60 dark:before:via-white/25 before:to-transparent before:animate-shimmer' : ''}`}
     >
         {/* Shimmer top line */}
@@ -96,7 +96,7 @@ const PaymentStatsBar = ({ payments = [], isAdmin }) => {
                     accentClass={s.accent}
                     delay={s.delay}
                     shimmer={s.shimmer}
-                    fullWidth={i === stats.length - 1}
+                    fullWidth={isAdmin && i === stats.length - 1 && stats.length % 2 !== 0}
                 />
             ))}
         </div>

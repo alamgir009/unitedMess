@@ -51,12 +51,12 @@ const MarketStatsBar = ({ totalRecords, totalAmount, uniqueUsers, isAdmin }) => 
     ];
 
     return (
-        <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
+        <div className={`grid grid-cols-2 gap-3 ${isAdmin ? 'md:grid-cols-3 lg:grid-cols-4' : 'md:grid-cols-3'}`}>
             {pills.map((p, i) => (
                 <StatPill
                     key={p.label}
                     {...p}
-                    fullWidth={i === pills.length - 1 && pills.length % 2 !== 0}
+                    fullWidth={isAdmin && i === pills.length - 1 && pills.length % 2 !== 0}
                 />
             ))}
         </div>
