@@ -58,6 +58,21 @@ export const createMeal = createAsyncThunk('meal/create', async (mealData, thunk
     }
 });
 
+// Bulk create meals for date range
+export const bulkCreateMeals = createAsyncThunk('meal/bulkCreate', async (bulkData, thunkAPI) => {
+    try {
+        const response = await mealService.bulkCreateMeals(bulkData);
+        return response.data;
+    } catch (error) {
+        const message =
+            error.response?.data?.error ||
+            error.response?.data?.message ||
+            error.message ||
+            'Something went wrong';
+        return thunkAPI.rejectWithValue(message);
+    }
+});
+
 // Create meal for a specific user (admin)
 export const adminCreateMeal = createAsyncThunk(
     'meal/adminCreate',
@@ -219,6 +234,21 @@ export const mealSlice = createSlice({
                 if (meal?._id) state.meals.unshift(meal);
             })
             .addCase(adminCreateMeal.rejected, (state, action) => {
+                state.isLoading = false;
+                state.isError   = true;
+                state.message   = action.payload;
+            })
+
+            // ── Bulk Create Meal ───────────────────────────────────────────
+            .addCase(bulkCreateMeals.pending, (state) => {
+                state.isLoading = true;
+                state.isError   = false;
+            })
+            .addCase(bulkCreateMeals.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.isSuccess = true;
+            })
+            .addCase(bulkCreateMeals.rejected, (state, action) => {
                 state.isLoading = false;
                 state.isError   = true;
                 state.message   = action.payload;

@@ -12,6 +12,133 @@ const mealTypeCountMap = {
   night: 1,
 };
 
+const MAX_BULK_DAYS = 31;
+const MAX_USER_MEALS = 200;
+
+/**
+ * Bulk create meals for date range and multiple users
+ */
+const bulkCreateMeals = async ({ startDate, endDate, type, userIds, isGuestMeal, guestCount, remarks, createdBy }) => {
+  const start = parseDate(startDate);
+  const end = parseDate(endDate);
+
+  if (start > end) {
+    throw new AppError('Start date must be on or before end date', 400);
+  }
+
+  const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+  if (daysDiff > MAX_BULK_DAYS) {
+    throw new AppError(`Maximum range is ${MAX_BULK_DAYS} days`, 400);
+  }
+
+  if (!userIds || userIds.length === 0) {
+    throw new AppError('At least one user must be selected', 400);
+  }
+
+  const mealCount = mealTypeCountMap[type] ?? 0;
+  const guestAdd = isGuestMeal ? (guestCount || 0) : 0;
+  const totalMealCount = mealCount + guestAdd;
+
+  const users = await User.find({ _id: { $in: userIds } }).select('_id meals').lean();
+  if (users.length !== userIds.length) {
+    throw new AppError('One or more users not found', 404);
+  }
+
+  for (const user of users) {
+    if ((user.meals?.length || 0) + daysDiff > MAX_USER_MEALS) {
+      throw new AppError(`User ${user._id} would exceed maximum meal records (${MAX_USER_MEALS})`, 400);
+    }
+  }
+
+  const dates = [];
+  for (let i = 0; i < daysDiff; i++) {
+    const d = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate() + i));
+    dates.push(d);
+  }
+
+  const existingMeals = await Meal.find({
+    user: { $in: userIds },
+    date: { $in: dates },
+    type,
+  }).select('user date type').lean();
+
+  const existingSet = new Set(
+    existingMeals.map(m => `${m.user.toString()}-${m.date.getTime()}-${m.type}`)
+  );
+
+  const insertOps = [];
+  const userMealMap = {};
+  const userGuestMap = {};
+  const userMealIds = {};
+
+  for (const uid of userIds) {
+    userMealMap[uid] = 0;
+    userGuestMap[uid] = 0;
+    userMealIds[uid] = [];
+
+    for (const d of dates) {
+      const key = `${uid}-${d.getTime()}-${type}`;
+      if (existingSet.has(key)) continue;
+
+      const mealId = new mongoose.Types.ObjectId();
+      insertOps.push({
+        insertOne: {
+          document: {
+            _id: mealId,
+            user: uid,
+            date: d,
+            type,
+            mealCount: totalMealCount,
+            isGuestMeal: isGuestMeal || false,
+            guestCount: guestAdd,
+            remarks: remarks || '',
+          },
+        },
+      });
+
+      userMealIds[uid].push(mealId);
+      userMealMap[uid] += mealCount;
+      userGuestMap[uid] += guestAdd;
+    }
+  }
+
+  let insertedCount = 0;
+  let skippedCount = existingMeals.length;
+
+  if (insertOps.length > 0) {
+    const bulkResult = await Meal.bulkWrite(insertOps, { ordered: false });
+    insertedCount = bulkResult.insertedCount || 0;
+  }
+
+  const userUpdateOps = [];
+  for (const uid of userIds) {
+    const mealInc = userMealMap[uid];
+    const guestInc = userGuestMap[uid];
+    const mealIds = userMealIds[uid];
+    if (mealInc > 0 || guestInc > 0) {
+      userUpdateOps.push({
+        updateOne: {
+          filter: { _id: uid },
+          update: {
+            $push: { meals: { $each: mealIds } },
+            $inc: { totalMeal: mealInc, guestMeal: guestInc },
+          },
+        },
+      });
+    }
+  }
+
+  if (userUpdateOps.length > 0) {
+    await User.bulkWrite(userUpdateOps);
+  }
+
+  return {
+    inserted: insertedCount,
+    skipped: skippedCount,
+    total: userIds.length * daysDiff,
+  };
+};
+
 /**
  * Create a meal
  */
@@ -270,6 +397,7 @@ const getMealPollStatus = async (dateStr) => {
 
 module.exports = {
     createMeal,
+    bulkCreateMeals,
     queryMeals,
     getMealById,
     updateMealById,

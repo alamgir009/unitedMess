@@ -19,6 +19,12 @@ const createMeal = async (mealData) => {
     return response.data;
 };
 
+// Bulk create meals for date range and multiple users
+const bulkCreateMeals = async (bulkData) => {
+    const response = await apiClient.post(`${API_URL}/bulk`, bulkData);
+    return response.data;
+};
+
 // Update a specific meal for the current user
 const updateMeal = async (mealId, mealData) => {
     const response = await apiClient.patch(`${API_URL}/${mealId}`, mealData);
@@ -73,6 +79,7 @@ const getMealPollStatus = async (date) => {
 const mealService = {
     getMeals,
     createMeal,
+    bulkCreateMeals,
     updateMeal,
     deleteMeal,
     adminGetUserMeals,

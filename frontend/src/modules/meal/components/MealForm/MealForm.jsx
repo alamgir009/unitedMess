@@ -20,8 +20,6 @@ import { Button, Avatar, MemberSelect } from '@/shared/components/ui';
 /*  Constants                                                                  */
 /* ─────────────────────────────────────────────────────────────────────────── */
 const MAX_RANGE_DAYS = 31;
-const CONCURRENCY   = 5;   // max parallel requests
-const MAX_RETRIES   = 3;   // per date
 const typeCountMap  = { both: 2, day: 1, night: 1, off: 0 };
 
 const mealTypes = [
@@ -34,62 +32,6 @@ const mealTypes = [
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Helpers                                                                    */
 /* ─────────────────────────────────────────────────────────────────────────── */
-
-/**
- * Exponential backoff delay (ms): 100 → 200 → 400
- */
-const delay = (ms) => new Promise((r) => setTimeout(r, ms));
-
-/**
- * POST a single meal with up to MAX_RETRIES retries.
- * Returns { status: 'created' | 'skipped' | 'failed' | 'aborted', date }
- */
-const postMealWithRetry = async ({ payload, abortRef }) => {
-    const dateStr = payload.date;
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-        if (abortRef.current) return { status: 'aborted', date: dateStr };
-        try {
-            const url = payload._adminUserId
-                ? `meals/admin/users/${payload._adminUserId}/meals`
-                : 'meals';
-            const body = { ...payload };
-            delete body._adminUserId;
-            await apiClient.post(url, body);
-            return { status: 'created', date: dateStr };
-        } catch (err) {
-            const status = err?.response?.status;
-            if (status === 409) return { status: 'skipped', date: dateStr };  // duplicate — not an error
-            if (status === 401) return { status: 'unauthorized', date: dateStr }; // session expired
-            if (attempt < MAX_RETRIES && (!status || status >= 500)) {
-                await delay(100 * 2 ** (attempt - 1)); // 100, 200, 400 ms
-                continue;
-            }
-            return { status: 'failed', date: dateStr };
-        }
-    }
-    return { status: 'failed', date: dateStr };
-};
-
-/**
- * Run tasks with bounded concurrency (no external deps).
- */
-const throttledPool = async ({ tasks, concurrency, onSettled }) => {
-    const results = [];
-    let idx = 0;
-
-    const worker = async () => {
-        while (idx < tasks.length) {
-            const taskIdx = idx++;
-            const result = await tasks[taskIdx]();
-            results[taskIdx] = result;
-            onSettled(result);
-        }
-    };
-
-    const workers = Array.from({ length: Math.min(concurrency, tasks.length) }, worker);
-    await Promise.all(workers);
-    return results;
-};
 
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Sub-components                                                             */
@@ -311,73 +253,60 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
 
         setRangeError('');
 
-        const dates = eachDayOfInterval({ start: parseISO(rangeFrom), end: parseISO(rangeTo) });
         const targetUsers = isAdmin && formData.userIds?.length > 0
             ? formData.userIds
             : [formData.userId || currentUser?._id || currentUser?.id].filter(Boolean);
-        const total = dates.length * targetUsers.length;
 
         setIsRunning(true);
-        setProgress({ done: 0, total });
+        setProgress({ done: 0, total: 1 });
         abortRef.current = false;
 
-        const baseCount = typeCountMap[selectedType] ?? 0;
-        const guestAdd  = formData.isGuestMeal ? (formData.guestCount || 0) : 0;
+        try {
+            const payload = {
+                startDate: rangeFrom,
+                endDate: rangeTo,
+                type: selectedType,
+                userIds: targetUsers,
+                isGuestMeal: formData.isGuestMeal,
+                guestCount: formData.isGuestMeal ? (formData.guestCount || 0) : 0,
+                remarks: formData.remarks || '',
+            };
 
-        const counters = { created: 0, skipped: 0, failed: 0, unauthorized: false };
+            const response = await apiClient.post('meals/bulk', payload);
+            const result = response.data?.data || response.data;
 
-        const tasks = [];
-        for (const uid of targetUsers) {
-            for (const d of dates) {
-                const dateStr = format(d, 'yyyy-MM-dd');
-                const payload = {
-                    date:          dateStr,
-                    type:          selectedType,
-                    isGuestMeal:   formData.isGuestMeal,
-                    guestCount:    formData.isGuestMeal ? (formData.guestCount || 0) : 0,
-                    remarks:       formData.remarks || '',
-                    mealCount:     baseCount + guestAdd,
-                    _adminUserId:  uid,
-                };
-                tasks.push(async () => {
-                    const result = await postMealWithRetry({ payload, abortRef });
-                    if (result.status === 'unauthorized') {
-                        counters.unauthorized = true;
-                        abortRef.current = true;
-                    } else {
-                        counters[result.status] = (counters[result.status] || 0) + 1;
-                    }
-                    setProgress(prev => ({ ...prev, done: prev.done + 1 }));
-                    return result;
-                });
+            const inserted = result?.inserted || 0;
+            const skipped = result?.skipped || 0;
+            const total = result?.total || 0;
+
+            setProgress({ done: 1, total: 1 });
+
+            if (inserted > 0) {
+                const parts = [];
+                parts.push(`${inserted} added`);
+                if (skipped > 0) parts.push(`${skipped} already existed`);
+                toast.success(parts.join(' · '));
+            } else if (skipped > 0) {
+                toast(`All ${skipped} dates already have meals.`, { icon: 'ℹ️' });
+            } else {
+                toast.error('No meals were created.');
             }
-        }
 
-        await throttledPool({ tasks, concurrency: CONCURRENCY, onSettled: () => {} });
-
-        setIsRunning(false);
-
-        if (counters.unauthorized) {
-            toast.error('Session expired. Please log in again.');
+            onBulkComplete?.();
             onCancel?.();
-            return;
+        } catch (err) {
+            const status = err?.response?.status;
+            const message = err?.response?.data?.message || err?.message || 'Failed to create bulk meals';
+
+            if (status === 401) {
+                toast.error('Session expired. Please log in again.');
+                onCancel?.();
+            } else {
+                toast.error(message);
+            }
+        } finally {
+            setIsRunning(false);
         }
-
-        const parts = [];
-        if (counters.created)  parts.push(`${counters.created} added`);
-        if (counters.skipped)  parts.push(`${counters.skipped} already existed`);
-        if (counters.failed)   parts.push(`${counters.failed} failed`);
-
-        if (counters.created > 0) {
-            toast.success(parts.join(' · '));
-        } else if (counters.skipped > 0 && counters.failed === 0) {
-            toast(`All dates already have meals. ${counters.skipped} skipped.`, { icon: 'ℹ️' });
-        } else {
-            toast.error(parts.join(' · ') || 'Batch completed with errors.');
-        }
-
-        onBulkComplete?.();
-        onCancel?.();
     }, [rangeFrom, rangeTo, formData, isAdmin, currentUser, validateRange, onBulkComplete, onCancel]);
 
     /* ── Preview count (single mode) ── */

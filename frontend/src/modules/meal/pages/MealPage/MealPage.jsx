@@ -20,7 +20,7 @@ import MealForm from '../../components/MealForm/MealForm';
 import MealModal from '../../components/MealModal/MealModal';
 import MealPolling from '../../components/MealPolling/MealPolling';
 import Pagination from '@/shared/components/ui/Pagination/Pagination';
-import { fetchMeals, createMeal, updateMeal, deleteMeal, reset, adminCreateMeal } from '../../store/meal.slice';
+import { fetchMeals, createMeal, bulkCreateMeals, updateMeal, deleteMeal, reset, adminCreateMeal } from '../../store/meal.slice';
 import DeleteMealDialog from '../../components/DeleteMealDialog/DeleteMealDialog';
 
 /* ── Skeleton ── */
@@ -119,20 +119,29 @@ const MealPage = () => {
                 const res = await dispatch(updateMeal({ mealId: editingMeal._id, mealData: formData })).unwrap();
                 toast.success(res?.message || 'Meal updated successfully');
             } else if (isAdmin && formData.userIds?.length > 0) {
-                /* Bulk create for selected members */
-                let created = 0, errors = 0;
-                for (const uid of formData.userIds) {
-                    try {
-                        await dispatch(adminCreateMeal({ userId: uid, mealData: formData })).unwrap();
-                        created++;
-                    } catch {
-                        errors++;
-                    }
-                }
-                if (errors === 0) {
-                    toast.success(`Meals created for ${created} member${created !== 1 ? 's' : ''}`);
+                const payload = {
+                    startDate: formData.date,
+                    endDate: formData.date,
+                    type: formData.type,
+                    userIds: formData.userIds,
+                    isGuestMeal: formData.isGuestMeal,
+                    guestCount: formData.guestCount || 0,
+                    remarks: formData.remarks || '',
+                };
+
+                const res = await dispatch(bulkCreateMeals(payload)).unwrap();
+                const result = res?.data || res;
+                const inserted = result?.inserted || 0;
+                const skipped = result?.skipped || 0;
+
+                if (inserted > 0) {
+                    const parts = [`${inserted} added`];
+                    if (skipped > 0) parts.push(`${skipped} already existed`);
+                    toast.success(parts.join(' · '));
+                } else if (skipped > 0) {
+                    toast(`All ${skipped} meals already existed.`, { icon: 'ℹ️' });
                 } else {
-                    toast.success(`${created} created, ${errors} failed`);
+                    toast.success('Meals created successfully');
                 }
             } else {
                 const res = await dispatch(createMeal(formData)).unwrap();

@@ -16,6 +16,9 @@ const adminOnly    = [protect, authorize('admin')];
 router.post('/poll/vote',   ...authenticated, mealController.voteMealPoll);
 router.get('/poll/status',  ...authenticated, mealController.getMealPollStatus);
 
+// ── Bulk meal creation ────────────────────────────────────────────────────────
+router.post('/bulk', ...authenticated, mealController.bulkCreateMeals);
+
 // ── Admin-only routes: manage any user's meals ────────────────────────────────
 router.route('/admin/users/:userId/meals')
     .get( ...adminOnly, mealController.adminGetUserMeals)

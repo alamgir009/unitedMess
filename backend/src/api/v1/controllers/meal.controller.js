@@ -12,6 +12,38 @@ const createMeal = asyncHandler(async (req, res) => {
     sendSuccessResponse(res, 201, 'Meal created successfully', meal);
 });
 
+const bulkCreateMeals = asyncHandler(async (req, res) => {
+    const { startDate, endDate, type, userIds, isGuestMeal, guestCount, remarks } = req.body;
+
+    if (!startDate || !endDate) {
+        throw new AppError('startDate and endDate are required', 400);
+    }
+
+    if (!type) {
+        throw new AppError('type is required', 400);
+    }
+
+    const isAdmin = req.user.role === 'admin';
+    const targetUsers = isAdmin && userIds?.length > 0 ? userIds : [req.user.id];
+
+    const result = await mealService.bulkCreateMeals({
+        startDate,
+        endDate,
+        type,
+        userIds: targetUsers,
+        isGuestMeal: isGuestMeal || false,
+        guestCount: guestCount || 0,
+        remarks: remarks || '',
+        createdBy: req.user.id,
+    });
+
+    const message = result.inserted > 0
+        ? `Successfully added ${result.inserted} meal(s), ${result.skipped} already existed`
+        : `All ${result.skipped} meal(s) already existed`;
+
+    sendSuccessResponse(res, 201, message, result);
+});
+
 const getMeals = asyncHandler(async (req, res) => {
     const filter = pick(req.query, ['date']);
     const options = pick(req.query, ['sortBy', 'limit', 'page']);
@@ -137,6 +169,7 @@ const adminDeleteMeal = asyncHandler(async (req, res) => {
 
 module.exports = {
     createMeal,
+    bulkCreateMeals,
     getMeals,
     getMeal,
     updateMeal,
