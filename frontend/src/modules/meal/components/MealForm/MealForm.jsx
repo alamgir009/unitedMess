@@ -303,6 +303,12 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
     const handleBulkSubmit = useCallback(async (selectedType) => {
         const err = validateRange(rangeFrom, rangeTo);
         if (err) { setRangeError(err); return; }
+
+        if (isAdmin && (!formData.userIds || formData.userIds.length === 0)) {
+            setRangeError('Please select at least one member.');
+            return;
+        }
+
         setRangeError('');
 
         const dates = eachDayOfInterval({ start: parseISO(rangeFrom), end: parseISO(rangeTo) });
@@ -641,7 +647,7 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
                             variant="success"
                             size="sm"
                             className="flex-[2]"
-                            disabled={isRunning || rangeInvalid || daysCount === 0}
+                            disabled={isRunning || rangeInvalid || daysCount === 0 || (isAdmin && formData.userIds?.length === 0)}
                         >
                             {isRunning
                                 ? `Saving ${progress.done} / ${progress.total}…`

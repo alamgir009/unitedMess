@@ -274,8 +274,8 @@ const MealPage = () => {
                                     </h3>
                                     <p className="text-xs text-muted-foreground truncate">
                                         {isRosterOpen
-                                            ? 'Viewing meal preferences & standings'
-                                            : 'Tap to view meal preferences & standings'}
+                                            ? 'Viewing meal preferences'
+                                            : 'Tap to view meal preferences'}
                                     </p>
                                 </div>
                             </div>
