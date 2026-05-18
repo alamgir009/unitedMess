@@ -242,31 +242,31 @@ const MealPage = () => {
                         </div>
                     </motion.div>
 
-                    {/* Collapsible Dining Roster */}
-                    {/* ── Collapsible Dining Roster (Ultra‑Smooth & GPU‑Friendly) ── */}
+                    {/* ── Collapsible Dining Roster – Mobile‑First Fintech Design ── */}
                     <motion.div
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
                         className={`
-                            rounded-[20px] border border-white/20 dark:border-white/10 
-                            bg-white dark:bg-slate-950 
-                            md:bg-white/60 md:dark:bg-slate-950/60 
-                            shadow-sm md:shadow-xl 
-                            overflow-hidden transition-shadow duration-300
+                            rounded-2xl sm:rounded-[20px] 
+                            border border-border/60 dark:border-white/10
+                            bg-card dark:bg-card             
+                            shadow-sm md:shadow-lg
+                            overflow-hidden                    
+                            transition-shadow duration-300
                             ${isRosterOpen ? 'ring-1 ring-primary/20 shadow-primary/5' : ''}
                         `}
                     >
-                        {/* ── Header Toggle ── */}
+                        {/* ── Header Toggle – full width, perfect corner match ── */}
                         <button
                             onClick={() => setIsRosterOpen(p => !p)}
-                            className="w-full px-4 sm:px-5 py-4 sm:py-5 flex items-center justify-between gap-4 text-left group"
+                            className="w-full px-4 py-4 sm:px-5 sm:py-5 flex items-center justify-between gap-3 text-left group"
                             aria-expanded={isRosterOpen}
                         >
                             <div className="flex items-center gap-3 min-w-0">
-                                {/* subtle fintech icon */}
-                                <div className="p-2 rounded-xl bg-primary/5 dark:bg-primary/10 text-primary">
-                                    <IoFastFoodOutline className="w-5 h-5" />
+                                {/* icon badge – slightly smaller on mobile */}
+                                <div className="p-2 sm:p-2.5 rounded-xl bg-primary/10 dark:bg-primary/10 text-primary">
+                                    <IoFastFoodOutline className="w-4 h-4 sm:w-5 sm:h-5" />
                                 </div>
                                 <div>
                                     <h3 className="text-sm sm:text-base font-semibold text-foreground tracking-tight">
@@ -279,35 +279,32 @@ const MealPage = () => {
                                     </p>
                                 </div>
                             </div>
-                            {/* Chevron – GPU animated, no layout recalc */}
+
+                            {/* Chevron – GPU‑friendly, no layout thrash */}
                             <motion.div
                                 animate={{ rotate: isRosterOpen ? 180 : 0 }}
                                 transition={{ duration: 0.2, ease: 'easeInOut' }}
                                 className="text-muted-foreground group-hover:text-foreground transition-colors"
                             >
-                                <HiOutlineChevronDown className="w-5 h-5" />
+                                <HiOutlineChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />
                             </motion.div>
                         </button>
 
-                        {/* ── Collapsible Body (CSS‑only Grid Trick + Content Fade) ── */}
+                        {/* ── Collapsible Body – pure CSS grid trick, no JS height calc ── */}
                         <div
-                            className={`
-      grid 
-      transition-all duration-400 ease-out will-change-[grid-template-rows] 
-    `}
+                            className="grid transition-all duration-400 ease-out will-change-[grid-template-rows]"
                             style={{
                                 gridTemplateRows: isRosterOpen ? '1fr' : '0fr',
-                                transitionTimingFunction: 'cubic-bezier(0.33, 1, 0.68, 1)',   // premium easing
+                                transitionTimingFunction: 'cubic-bezier(0.33, 1, 0.68, 1)',
                             }}
                         >
                             <div className="overflow-hidden">
-                                {/* Inner content fades in after a tiny delay, slides up very slightly */}
                                 <div
                                     className={`
-          px-4 pb-4 sm:px-5 sm:pb-5 
-          transition-all duration-400 ease-out
-          ${isRosterOpen ? 'opacity-100 translate-y-0 delay-100' : 'opacity-0 -translate-y-2'}
-        `}
+                                    px-4 pb-4 sm:px-5 sm:pb-5 
+                                    transition-all duration-400 ease-out
+                                    ${isRosterOpen ? 'opacity-100 translate-y-0 delay-100' : 'opacity-0 -translate-y-1.5'}
+                                    `}
                                 >
                                     <MealPolling selectedDate={new Date().toISOString()} />
                                 </div>
