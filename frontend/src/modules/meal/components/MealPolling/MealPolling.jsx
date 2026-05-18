@@ -236,7 +236,8 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
     if (isPollLoading && !pollStatus) {
         return (
             <section className="w-full animate-pulse">
-                <div className="rounded-[2rem] border border-white/10 dark:border-white/10 bg-muted/30 p-6 sm:p-8 space-y-4">
+                {/* skeleton: edge-to-edge on mobile, card on md+ */}
+                <div className="space-y-4 py-4 md:rounded-[2rem] md:border md:border-white/10 md:bg-muted/20 md:p-6">
                     <div className="flex items-center gap-3">
                         <div className="h-5 w-5 rounded-full bg-muted/60" />
                         <div className="h-4 w-32 rounded-lg bg-muted/60" />
@@ -254,38 +255,28 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
     }
 
     return (
-        <section className="relative w-full">
+        <section className="w-full">
             {/*
-              Single unified card shell — overflow-hidden clips against the
-              SAME border-radius that renders the visible card edge at every
-              breakpoint. No inner/outer layer gap → no gradient bleed.
-
-              Mobile / sm  → flush edges, soft 1rem radius, solid bg
-              md+          → glass card: blur, border, shadow, larger radius
+              Mobile / sm  → edge-to-edge, no radius, no padding-x, transparent bg.
+              md+          → self-contained glass card: rounded corners, border,
+                             backdrop-blur, shadow — full fintech card treatment.
             */}
             <div
                 className={[
-                    /* ── containment (must come first) ── */
-                    'relative w-full overflow-hidden isolate',
-                    /* ── responsive radius — always matches the clip boundary ── */
-                    'rounded-2xl sm:rounded-3xl md:rounded-[2rem]',
-                    /* ── mobile: opaque base, no border/shadow ── */
-                    'bg-white dark:bg-slate-950',
-                    'px-3 py-4 sm:px-4 sm:py-5',
+                    /* ── layout & clipping ── */
+                    'relative w-full overflow-hidden',
+                    /* ── mobile: flat, edge-to-edge, zero chrome ── */
+                    'py-2',
                     /* ── md+: glass morphism card ── */
-                    'md:border md:border-white/20 dark:md:border-white/10',
-                    'md:bg-white/70 dark:md:bg-slate-950/55',
+                    'md:rounded-[2rem]',
+                    'md:border md:border-black/[0.06] dark:md:border-white/10',
+                    'md:bg-white/80 dark:md:bg-slate-900/70',
                     'md:backdrop-blur-xl md:backdrop-saturate-150',
-                    'md:shadow-[0_24px_56px_-10px_rgba(15,23,42,0.10)]',
-                    'dark:md:shadow-[0_24px_56px_-10px_rgba(0,0,0,0.42)]',
+                    'md:shadow-[0_8px_32px_-8px_rgba(15,23,42,0.10),0_2px_8px_-2px_rgba(15,23,42,0.04)]',
+                    'dark:md:shadow-[0_8px_40px_-10px_rgba(0,0,0,0.45)]',
                     'md:px-6 md:py-6',
                 ].join(' ')}
             >
-                    {/* decorative radial mesh — fully clipped by overflow-hidden above */}
-                    <div
-                        aria-hidden
-                        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,rgba(129,140,248,0.14),transparent_42%),radial-gradient(circle_at_bottom_left,rgba(244,114,182,0.10),transparent_40%)]"
-                    />
                     {/* ── HEADER ── */}
                     <header className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
                         {/* title block */}
