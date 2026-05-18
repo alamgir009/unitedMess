@@ -29,7 +29,7 @@ const MarketCard = React.forwardRef(({ market, onEdit, onDelete, isAdmin, index 
     return (
         <article
             ref={ref}
-            className="group relative flex flex-col rounded-[18px] bg-card/95 dark:bg-slate-900/95 border border-black/5 dark:border-white/10 overflow-hidden shadow-sm hover:shadow-md dark:shadow-black/40 transition-shadow duration-200 overflow-hidden"
+            className="group relative flex flex-col rounded-[18px] bg-card/95 dark:bg-slate-900/95 border border-black/5 dark:border-white/10 shadow-sm hover:shadow-md dark:shadow-black/40 transition-shadow duration-200 overflow-hidden"
         >
             {/* ── Header ── */}
             <div className="flex items-start justify-between px-4 pt-3.5">
