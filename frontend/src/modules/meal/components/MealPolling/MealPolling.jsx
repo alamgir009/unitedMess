@@ -254,7 +254,7 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
     }
 
     return (
-        <section className="w-full">
+        <section className="relative w-full overflow-hidden">
             {/*
         Outer shell:
         - Mobile / sm  → edge-to-edge, no border/shadow/padding-x
@@ -262,8 +262,8 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
       */}
             <div
                 className={[
-                    'relative w-full',
-                    'md:rounded-[2rem]',
+                    'relative w-full overflow-hidden',
+                    'rounded-2xl sm:rounded-[2rem]',
                     'md:border md:border-white/20 dark:md:border-white/10',
                     'md:bg-white/60 dark:md:bg-slate-950/50',
                     'md:shadow-[0_24px_56px_-10px_rgba(15,23,42,0.10)] dark:md:shadow-[0_24px_56px_-10px_rgba(0,0,0,0.42)]',
@@ -273,17 +273,17 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
             >
                 <div
                     className={[
-                        'relative overflow-hidden',
+                        'relative overflow-hidden isolate',
                         'px-0 py-3 sm:px-0 sm:py-5',
                         'md:rounded-[1.75rem] md:px-6 md:py-6',
                         'bg-white/98 dark:bg-slate-950/98',
                         'md:bg-white/70 dark:md:bg-slate-950/45',
                     ].join(' ')}
                 >
-                    {/* decorative radial mesh — pointer-events-none, no layout impact */}
+                    {/* decorative radial mesh — clipped by overflow-hidden on the parent */}
                     <div
                         aria-hidden
-                        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,rgba(129,140,248,0.13),transparent_40%),radial-gradient(circle_at_bottom_left,rgba(244,114,182,0.10),transparent_38%)]"
+                        className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_top_right,rgba(129,140,248,0.13),transparent_40%),radial-gradient(circle_at_bottom_left,rgba(244,114,182,0.10),transparent_38%)]"
                     />
                     {/* ── HEADER ── */}
                     <header className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
@@ -441,8 +441,8 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                     </div>
 
                     {/* ── STANDINGS SECTION ── */}
-                    <div className="mt-5 rounded-2xl border border-black/[0.05] bg-white/90 p-0.5 shadow-sm dark:border-white/10 dark:bg-slate-950/85 sm:mt-6">
-                        <div className="rounded-[0.85rem] bg-white/70 p-3.5 sm:p-4 dark:bg-slate-900/50">
+                    <div className="relative mt-5 overflow-hidden rounded-2xl border border-black/[0.05] bg-white/90 p-0.5 shadow-sm dark:border-white/10 dark:bg-slate-950/85 sm:mt-6">
+                        <div className="overflow-hidden rounded-[0.85rem] bg-white/70 p-3.5 sm:p-4 dark:bg-slate-900/50">
                             {/* section header */}
                             <div className="mb-3 flex items-center justify-between border-b border-black/[0.05] pb-2.5 dark:border-white/10">
                                 <div className="flex items-center gap-2">
