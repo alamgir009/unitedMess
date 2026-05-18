@@ -254,36 +254,37 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
     }
 
     return (
-        <section className="relative w-full overflow-hidden">
+        <section className="relative w-full">
             {/*
-        Outer shell:
-        - Mobile / sm  → edge-to-edge, no border/shadow/padding-x
-        - md+          → card with rounded corners + glass effect
-      */}
+              Single unified card shell — overflow-hidden clips against the
+              SAME border-radius that renders the visible card edge at every
+              breakpoint. No inner/outer layer gap → no gradient bleed.
+
+              Mobile / sm  → flush edges, soft 1rem radius, solid bg
+              md+          → glass card: blur, border, shadow, larger radius
+            */}
             <div
                 className={[
-                    'relative w-full overflow-hidden',
-                    'rounded-2xl sm:rounded-[2rem]',
+                    /* ── containment (must come first) ── */
+                    'relative w-full overflow-hidden isolate',
+                    /* ── responsive radius — always matches the clip boundary ── */
+                    'rounded-2xl sm:rounded-3xl md:rounded-[2rem]',
+                    /* ── mobile: opaque base, no border/shadow ── */
+                    'bg-white dark:bg-slate-950',
+                    'px-3 py-4 sm:px-4 sm:py-5',
+                    /* ── md+: glass morphism card ── */
                     'md:border md:border-white/20 dark:md:border-white/10',
-                    'md:bg-white/60 dark:md:bg-slate-950/50',
-                    'md:shadow-[0_24px_56px_-10px_rgba(15,23,42,0.10)] dark:md:shadow-[0_24px_56px_-10px_rgba(0,0,0,0.42)]',
-                    'md:backdrop-blur-xl',
-                    'md:p-1',
+                    'md:bg-white/70 dark:md:bg-slate-950/55',
+                    'md:backdrop-blur-xl md:backdrop-saturate-150',
+                    'md:shadow-[0_24px_56px_-10px_rgba(15,23,42,0.10)]',
+                    'dark:md:shadow-[0_24px_56px_-10px_rgba(0,0,0,0.42)]',
+                    'md:px-6 md:py-6',
                 ].join(' ')}
             >
-                <div
-                    className={[
-                        'relative overflow-hidden isolate',
-                        'px-0 py-3 sm:px-0 sm:py-5',
-                        'md:rounded-[1.75rem] md:px-6 md:py-6',
-                        'bg-white/98 dark:bg-slate-950/98',
-                        'md:bg-white/70 dark:md:bg-slate-950/45',
-                    ].join(' ')}
-                >
-                    {/* decorative radial mesh — clipped by overflow-hidden on the parent */}
+                    {/* decorative radial mesh — fully clipped by overflow-hidden above */}
                     <div
                         aria-hidden
-                        className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_top_right,rgba(129,140,248,0.13),transparent_40%),radial-gradient(circle_at_bottom_left,rgba(244,114,182,0.10),transparent_38%)]"
+                        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,rgba(129,140,248,0.14),transparent_42%),radial-gradient(circle_at_bottom_left,rgba(244,114,182,0.10),transparent_40%)]"
                     />
                     {/* ── HEADER ── */}
                     <header className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
@@ -514,7 +515,6 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                             </div>
                         </div>
                     </div>
-                </div>
             </div>
         </section>
     );
