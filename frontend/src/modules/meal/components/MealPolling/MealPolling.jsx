@@ -262,7 +262,7 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
       */}
             <div
                 className={[
-                    'relative w-full overflow-hidden',
+                    'relative w-full',
                     'md:rounded-[2rem]',
                     'md:border md:border-white/20 dark:md:border-white/10',
                     'md:bg-white/60 dark:md:bg-slate-950/50',
@@ -271,28 +271,20 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                     'md:p-1',
                 ].join(' ')}
             >
-                {/* decorative radial mesh — pointer-events-none, no layout impact */}
-                <div
-                    aria-hidden
-                    className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,rgba(129,140,248,0.13),transparent_40%),radial-gradient(circle_at_bottom_left,rgba(244,114,182,0.10),transparent_38%)]"
-                />
-
-                {/*
-          Inner card:
-          - Mobile      → full-bleed, px-4 py-5
-          - sm          → px-5 py-6
-          - md+         → rounded inner card, px-7 py-7
-        */}
-
                 <div
                     className={[
-                        'relative',
+                        'relative overflow-hidden',
                         'px-0 py-3 sm:px-0 sm:py-5',
                         'md:rounded-[1.75rem] md:px-6 md:py-6',
                         'bg-white/98 dark:bg-slate-950/98',
                         'md:bg-white/70 dark:md:bg-slate-950/45',
                     ].join(' ')}
                 >
+                    {/* decorative radial mesh — pointer-events-none, no layout impact */}
+                    <div
+                        aria-hidden
+                        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,rgba(129,140,248,0.13),transparent_40%),radial-gradient(circle_at_bottom_left,rgba(244,114,182,0.10),transparent_38%)]"
+                    />
                     {/* ── HEADER ── */}
                     <header className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
                         {/* title block */}
