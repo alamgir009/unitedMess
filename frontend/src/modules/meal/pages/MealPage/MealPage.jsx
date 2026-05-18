@@ -77,7 +77,7 @@ const TypePill = ({ label, active, onClick }) => (
 /* ── Main Page ── */
 const MealPage = () => {
     const dispatch = useDispatch();
-    const { meals, pagination, isLoading, isError, message, pollStatus } = useSelector((s) => s.meal);
+    const { meals, pagination, isLoading, isError, message } = useSelector((s) => s.meal);
     const { user } = useSelector((s) => s.auth);
     const isAdmin = user?.role === 'admin';
 
@@ -174,13 +174,6 @@ const MealPage = () => {
         isAdmin ? new Set(meals?.map(m => (typeof m.user === 'object' ? m.user?._id : m.user)) || []).size : 0,
     [meals, isAdmin]);
 
-    const rosterSummary = useMemo(() => {
-        const votes = pollStatus?.votes ?? [];
-        const uid = user?._id || user?.id;
-        const myVote = votes.find(v => (v.user?._id || v.user?.id) === uid);
-        return { myStatus: myVote ? 'Recorded' : 'Pending' };
-    }, [pollStatus, user]);
-
     const filtered = useMemo(() => (meals || []).filter((meal) => {
         if (typeFilter !== 'all' && meal.type !== typeFilter) return false;
         if (dateFrom && new Date(meal.date) < new Date(dateFrom)) return false;
@@ -250,16 +243,17 @@ const MealPage = () => {
                     </motion.div>
 
                     {/* Collapsible Dining Roster */}
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-                        <motion.button
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="rounded-[20px] border border-white/20 dark:border-white/10 bg-white/95 dark:bg-slate-900/95 md:bg-white/40 md:dark:bg-slate-900/40 md:backdrop-blur-xl shadow-sm md:shadow-2xl overflow-hidden"
+                    >
+                        <button
                             onClick={() => setIsRosterOpen(p => !p)}
-                            whileHover={{ scale: 1.005 }}
-                            whileTap={{ scale: 0.995 }}
-                            className="w-full rounded-[20px] border border-white/20 dark:border-white/10 bg-white/95 dark:bg-slate-900/95 md:bg-white/40 md:dark:bg-slate-900/40 md:backdrop-blur-xl shadow-sm md:shadow-2xl p-4 sm:p-5 text-left relative overflow-hidden group"
+                            className="w-full p-4 sm:p-5 text-left relative group"
                         >
-                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary via-secondary to-primary/50 rounded-l-[20px]" />
-
-                            <div className="flex items-center justify-between gap-4 pl-3">
+                            <div className="flex items-center justify-between gap-4">
                                 <div className="flex items-center gap-3 min-w-0">
                                     <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
                                         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
@@ -272,31 +266,25 @@ const MealPage = () => {
                                         </p>
                                     </div>
                                 </div>
+                                <motion.div
+                                    animate={{ rotate: isRosterOpen ? 180 : 0 }}
+                                    transition={{ duration: 0.2, ease: 'easeInOut' }}
+                                >
+                                    <HiOutlineChevronDown className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                                </motion.div>
+                            </div>
+                        </button>
 
-                                <div className="flex items-center gap-3 flex-shrink-0">
-                                    <span className={`hidden sm:inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold ${rosterSummary.myStatus === 'Recorded' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'}`}>
-                                        {rosterSummary.myStatus}
-                                    </span>
-                                    <motion.div animate={{ rotate: isRosterOpen ? 180 : 0 }} transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}>
-                                        <HiOutlineChevronDown className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                                    </motion.div>
+                        <div
+                            className="grid transition-[grid-template-rows] duration-300 ease-out"
+                            style={{ gridTemplateRows: isRosterOpen ? '1fr' : '0fr' }}
+                        >
+                            <div className="overflow-hidden">
+                                <div className="px-4 pb-4 sm:px-5 sm:pb-5">
+                                    <MealPolling selectedDate={new Date().toISOString()} />
                                 </div>
                             </div>
-                        </motion.button>
-
-                        <AnimatePresence>
-                            {isRosterOpen && (
-                                <motion.div
-                                    initial={{ height: 0, opacity: 0, marginTop: 0 }}
-                                    animate={{ height: 'auto', opacity: 1, marginTop: 12 }}
-                                    exit={{ height: 0, opacity: 0, marginTop: 0 }}
-                                    transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-                                    className="overflow-hidden"
-                                >
-                                    <MealPolling selectedDate={new Date().toISOString()} />
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                        </div>
                     </motion.div>
 
                     {/* Stats */}
