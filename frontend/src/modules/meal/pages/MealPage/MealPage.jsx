@@ -81,20 +81,20 @@ const MealPage = () => {
     const { user } = useSelector((s) => s.auth);
     const isAdmin = user?.role === 'admin';
 
-    const [isRosterOpen, setIsRosterOpen]   = useState(false);
-    const [isModalOpen, setIsModalOpen]   = useState(false);
-    const [editingMeal, setEditingMeal]   = useState(null);
-    const [viewMode, setViewMode]         = useState('grid');
-    const [searchQuery, setSearchQuery]   = useState('');
-    const [typeFilter, setTypeFilter]     = useState('all');
-    const [dateFrom, setDateFrom]         = useState('');
-    const [dateTo, setDateTo]             = useState('');
-    const [showFilters, setShowFilters]   = useState(false);
-    const [page, setPage]                 = useState(1);
-    const [limit, setLimit]               = useState(20);
-    const [errorMsg, setErrorMsg]         = useState('');
+    const [isRosterOpen, setIsRosterOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingMeal, setEditingMeal] = useState(null);
+    const [viewMode, setViewMode] = useState('grid');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [typeFilter, setTypeFilter] = useState('all');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
+    const [showFilters, setShowFilters] = useState(false);
+    const [page, setPage] = useState(1);
+    const [limit, setLimit] = useState(20);
+    const [errorMsg, setErrorMsg] = useState('');
     const [deletingMeal, setDeletingMeal] = useState(null);  // full meal object shown in dialog
-    const [isDeleting, setIsDeleting]     = useState(false); // spinner on confirm button
+    const [isDeleting, setIsDeleting] = useState(false); // spinner on confirm button
 
     /* Fetch on mount and page/limit changes — no reset() in cleanup so
        data survives tab switches and avoids flicker on strict-mode double-invoke */
@@ -107,9 +107,9 @@ const MealPage = () => {
             });
     }, [dispatch, page, limit]);
 
-    const openCreate  = useCallback(() => { setEditingMeal(null); setIsModalOpen(true); }, []);
-    const openEdit    = useCallback((meal) => { setEditingMeal(meal); setIsModalOpen(true); }, []);
-    const closeModal  = useCallback(() => { setIsModalOpen(false); setEditingMeal(null); }, []);
+    const openCreate = useCallback(() => { setEditingMeal(null); setIsModalOpen(true); }, []);
+    const openEdit = useCallback((meal) => { setEditingMeal(meal); setIsModalOpen(true); }, []);
+    const closeModal = useCallback(() => { setIsModalOpen(false); setEditingMeal(null); }, []);
     const clearFilters = useCallback(() => { setSearchQuery(''); setTypeFilter('all'); setDateFrom(''); setDateTo(''); }, []);
 
     const handleSubmit = useCallback(async (formData) => {
@@ -149,7 +149,7 @@ const MealPage = () => {
 
     /* Delete handlers — MealList now passes the full meal object, not just the ID */
     const handleDeleteRequest = useCallback((meal) => setDeletingMeal(meal), []);
-    const handleDeleteCancel  = useCallback(() => { if (!isDeleting) setDeletingMeal(null); }, [isDeleting]);
+    const handleDeleteCancel = useCallback(() => { if (!isDeleting) setDeletingMeal(null); }, [isDeleting]);
     const handleDeleteConfirm = useCallback(async () => {
         if (!deletingMeal || isDeleting) return;
         setIsDeleting(true);
@@ -168,21 +168,21 @@ const MealPage = () => {
     }, [dispatch, deletingMeal, isDeleting]);
 
     /* Derived stats */
-    const totalMeals  = useMemo(() => meals?.reduce((s, m) => s + (m.mealCount || 0), 0) || 0, [meals]);
-    const guestMeals  = useMemo(() => meals?.reduce((s, m) => s + (m.guestCount || 0), 0) || 0, [meals]);
+    const totalMeals = useMemo(() => meals?.reduce((s, m) => s + (m.mealCount || 0), 0) || 0, [meals]);
+    const guestMeals = useMemo(() => meals?.reduce((s, m) => s + (m.guestCount || 0), 0) || 0, [meals]);
     const uniqueUsers = useMemo(() =>
         isAdmin ? new Set(meals?.map(m => (typeof m.user === 'object' ? m.user?._id : m.user)) || []).size : 0,
-    [meals, isAdmin]);
+        [meals, isAdmin]);
 
     const filtered = useMemo(() => (meals || []).filter((meal) => {
         if (typeFilter !== 'all' && meal.type !== typeFilter) return false;
         if (dateFrom && new Date(meal.date) < new Date(dateFrom)) return false;
-        if (dateTo   && new Date(meal.date) > new Date(dateTo))   return false;
+        if (dateTo && new Date(meal.date) > new Date(dateTo)) return false;
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase();
             const dateStr = format(new Date(meal.date), 'yyyy-MM-dd MMMM do EEEE').toLowerCase();
-            const name    = (typeof meal.user === 'object' ? meal.user?.name  : '') || '';
-            const email   = (typeof meal.user === 'object' ? meal.user?.email : '') || '';
+            const name = (typeof meal.user === 'object' ? meal.user?.name : '') || '';
+            const email = (typeof meal.user === 'object' ? meal.user?.email : '') || '';
             const remarks = meal.remarks || '';
             if (!dateStr.includes(q) && !name.toLowerCase().includes(q) &&
                 !email.toLowerCase().includes(q) && !remarks.toLowerCase().includes(q)) return false;
@@ -190,7 +190,7 @@ const MealPage = () => {
         return true;
     }), [meals, typeFilter, dateFrom, dateTo, searchQuery]);
 
-    const hasActive  = typeFilter !== 'all' || dateFrom || dateTo || searchQuery.trim();
+    const hasActive = typeFilter !== 'all' || dateFrom || dateTo || searchQuery.trim();
     const isFiltered = hasActive;
 
     return (
@@ -243,44 +243,72 @@ const MealPage = () => {
                     </motion.div>
 
                     {/* Collapsible Dining Roster */}
+                    {/* ── Collapsible Dining Roster (Ultra‑Smooth & GPU‑Friendly) ── */}
                     <motion.div
-                        initial={{ opacity: 0, y: 10 }}
+                        initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="rounded-[20px] border border-white/20 dark:border-white/10 bg-white/95 dark:bg-slate-900/95 md:bg-white/40 md:dark:bg-slate-900/40 md:backdrop-blur-xl shadow-sm md:shadow-2xl overflow-hidden"
+                        transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
+                        className={`
+                            rounded-[20px] border border-white/20 dark:border-white/10 
+                            bg-white dark:bg-slate-950 
+                            md:bg-white/60 md:dark:bg-slate-950/60 
+                            shadow-sm md:shadow-xl 
+                            overflow-hidden transition-shadow duration-300
+                            ${isRosterOpen ? 'ring-1 ring-primary/20 shadow-primary/5' : ''}
+                        `}
                     >
+                        {/* ── Header Toggle ── */}
                         <button
                             onClick={() => setIsRosterOpen(p => !p)}
-                            className="w-full p-4 sm:p-5 text-left relative group"
+                            className="w-full px-4 sm:px-5 py-4 sm:py-5 flex items-center justify-between gap-4 text-left group"
+                            aria-expanded={isRosterOpen}
                         >
-                            <div className="flex items-center justify-between gap-4">
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
-                                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                                        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                                    </span>
-                                    <div>
-                                        <h3 className="text-sm sm:text-base font-semibold text-foreground tracking-tight">Dining Roster</h3>
-                                        <p className="text-xs text-muted-foreground truncate">
-                                            {isRosterOpen ? 'Viewing meal preferences & standings' : 'Tap to view meal preferences & standings'}
-                                        </p>
-                                    </div>
+                            <div className="flex items-center gap-3 min-w-0">
+                                {/* subtle fintech icon */}
+                                <div className="p-2 rounded-xl bg-primary/5 dark:bg-primary/10 text-primary">
+                                    <IoFastFoodOutline className="w-5 h-5" />
                                 </div>
-                                <motion.div
-                                    animate={{ rotate: isRosterOpen ? 180 : 0 }}
-                                    transition={{ duration: 0.2, ease: 'easeInOut' }}
-                                >
-                                    <HiOutlineChevronDown className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                                </motion.div>
+                                <div>
+                                    <h3 className="text-sm sm:text-base font-semibold text-foreground tracking-tight">
+                                        Dining Roster
+                                    </h3>
+                                    <p className="text-xs text-muted-foreground truncate">
+                                        {isRosterOpen
+                                            ? 'Viewing meal preferences & standings'
+                                            : 'Tap to view meal preferences & standings'}
+                                    </p>
+                                </div>
                             </div>
+                            {/* Chevron – GPU animated, no layout recalc */}
+                            <motion.div
+                                animate={{ rotate: isRosterOpen ? 180 : 0 }}
+                                transition={{ duration: 0.2, ease: 'easeInOut' }}
+                                className="text-muted-foreground group-hover:text-foreground transition-colors"
+                            >
+                                <HiOutlineChevronDown className="w-5 h-5" />
+                            </motion.div>
                         </button>
 
+                        {/* ── Collapsible Body (CSS‑only Grid Trick + Content Fade) ── */}
                         <div
-                            className="grid transition-[grid-template-rows] duration-300 ease-out"
-                            style={{ gridTemplateRows: isRosterOpen ? '1fr' : '0fr' }}
+                            className={`
+      grid 
+      transition-all duration-400 ease-out will-change-[grid-template-rows] 
+    `}
+                            style={{
+                                gridTemplateRows: isRosterOpen ? '1fr' : '0fr',
+                                transitionTimingFunction: 'cubic-bezier(0.33, 1, 0.68, 1)',   // premium easing
+                            }}
                         >
                             <div className="overflow-hidden">
-                                <div className="px-4 pb-4 sm:px-5 sm:pb-5">
+                                {/* Inner content fades in after a tiny delay, slides up very slightly */}
+                                <div
+                                    className={`
+          px-4 pb-4 sm:px-5 sm:pb-5 
+          transition-all duration-400 ease-out
+          ${isRosterOpen ? 'opacity-100 translate-y-0 delay-100' : 'opacity-0 -translate-y-2'}
+        `}
+                                >
                                     <MealPolling selectedDate={new Date().toISOString()} />
                                 </div>
                             </div>
