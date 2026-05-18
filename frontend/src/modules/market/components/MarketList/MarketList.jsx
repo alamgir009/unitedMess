@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
     HiOutlineCalendarDays,
     HiOutlineCurrencyDollar,
@@ -28,13 +27,9 @@ const MarketCard = React.forwardRef(({ market, onEdit, onDelete, isAdmin, index 
     const date = formatSmartDate(market.date);
 
     return (
-        <motion.article
+        <article
             ref={ref}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96 }}
-            transition={{ duration: 0.22, delay: Math.min(index * 0.035, 0.3), ease: [0.22, 1, 0.36, 1] }}
-            className="group relative flex flex-col rounded-[18px] bg-white/95 dark:bg-slate-900/95 md:bg-white/60 md:dark:bg-slate-900/40 md:backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden shadow-sm md:shadow-lg hover:shadow-xl dark:shadow-black/40 hover:shadow-emerald-500/[0.06] transition-all duration-300 hover:-translate-y-1 before:absolute before:inset-x-12 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/60 dark:before:via-white/20 before:to-transparent after:absolute after:inset-x-12 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-black/20 dark:after:via-black/60 after:to-transparent"
+            className="group relative flex flex-col rounded-[18px] bg-card/95 dark:bg-slate-900/95 border border-black/5 dark:border-white/10 overflow-hidden shadow-sm hover:shadow-md dark:shadow-black/40 transition-shadow duration-200 overflow-hidden"
         >
             {/* ── Header ── */}
             <div className="flex items-start justify-between px-4 pt-3.5">
@@ -119,7 +114,7 @@ const MarketCard = React.forwardRef(({ market, onEdit, onDelete, isAdmin, index 
                     <HiOutlineTrash className="w-4 h-4" />
                 </Button>
             </div>
-        </motion.article>
+        </article>
     );
 });
 MarketCard.displayName = 'MarketCard';
@@ -131,13 +126,9 @@ const MarketRow = React.forwardRef(({ market, onEdit, onDelete, isAdmin, index }
     const date = formatSmartDate(market.date);
 
     return (
-        <motion.div
+        <div
             ref={ref}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 6 }}
-            transition={{ duration: 0.16, delay: Math.min(index * 0.025, 0.3) }}
-            className="group relative flex items-center gap-3 px-3 py-2.5 rounded-[14px] bg-white/95 dark:bg-slate-900/95 md:bg-white/60 md:dark:bg-slate-900/40 md:backdrop-blur-xl border border-black/5 dark:border-white/10 hover:bg-white/80 dark:hover:bg-slate-800/50 hover:border-black/10 dark:hover:border-white/20 transition-all duration-200 shadow-sm hover:shadow-md overflow-hidden before:absolute before:inset-x-8 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/60 dark:before:via-white/20 before:to-transparent after:absolute after:inset-x-8 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-black/10 dark:after:via-black/40 after:to-transparent"
+            className="group relative flex items-center gap-3 px-3 py-2.5 rounded-[14px] bg-card/95 dark:bg-slate-900/95 border border-black/5 dark:border-white/10 hover:bg-card/80 dark:hover:bg-slate-800/50 hover:border-black/10 dark:hover:border-white/20 transition-colors duration-200 shadow-sm hover:shadow-md overflow-hidden"
         >
             {/* Icon pill */}
             <div className="flex-shrink-0 w-8 h-8 rounded-[10px] flex items-center justify-center bg-emerald-50 dark:bg-emerald-400/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-300/60 dark:ring-emerald-400/20">
@@ -207,7 +198,7 @@ const MarketRow = React.forwardRef(({ market, onEdit, onDelete, isAdmin, index }
                     <HiOutlineTrash className="w-4 h-4" />
                 </Button>
             </div>
-        </motion.div>
+        </div>
     );
 });
 MarketRow.displayName = 'MarketRow';
@@ -216,11 +207,7 @@ MarketRow.displayName = 'MarketRow';
    EMPTY STATE
 ═══════════════════════════════════════════ */
 const EmptyState = () => (
-    <motion.div
-        initial={{ opacity: 0, scale: 0.97 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="col-span-full flex flex-col items-center gap-3 py-16 select-none"
-    >
+    <div className="col-span-full flex flex-col items-center gap-3 py-16 select-none">
         <div className="w-12 h-12 rounded-2xl bg-muted/60 dark:bg-white/[0.04] border border-border/50 flex items-center justify-center">
             <HiOutlineShoppingBag className="w-5 h-5 text-muted-foreground/30" />
         </div>
@@ -230,7 +217,7 @@ const EmptyState = () => (
                 Adjust your filters or add a new market entry.
             </p>
         </div>
-    </motion.div>
+    </div>
 );
 
 /* ═══════════════════════════════════════════
@@ -244,27 +231,8 @@ const MarketList = ({ markets = [], onEdit, onDelete, isAdmin = false, viewMode 
     if (viewMode === 'list') {
         return (
             <div className="flex flex-col gap-1.5">
-                <AnimatePresence mode="popLayout">
-                    {markets.map((market, i) => (
-                        <MarketRow
-                            key={market._id}
-                            market={market}
-                            index={i}
-                            onEdit={onEdit}
-                            onDelete={onDelete}
-                            isAdmin={isAdmin}
-                        />
-                    ))}
-                </AnimatePresence>
-            </div>
-        );
-    }
-
-    return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            <AnimatePresence mode="popLayout">
                 {markets.map((market, i) => (
-                    <MarketCard
+                    <MarketRow
                         key={market._id}
                         market={market}
                         index={i}
@@ -273,7 +241,25 @@ const MarketList = ({ markets = [], onEdit, onDelete, isAdmin = false, viewMode 
                         isAdmin={isAdmin}
                     />
                 ))}
-            </AnimatePresence>
+            </div>
+        );
+    }
+
+    return (
+        <div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
+            style={{ contentVisibility: 'auto', containIntrinsicSize: '0 500px' }}
+        >
+            {markets.map((market, i) => (
+                <MarketCard
+                    key={market._id}
+                    market={market}
+                    index={i}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    isAdmin={isAdmin}
+                />
+            ))}
         </div>
     );
 };

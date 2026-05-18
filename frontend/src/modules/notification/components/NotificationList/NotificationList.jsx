@@ -8,16 +8,6 @@ import NotificationItem from '../NotificationItem/NotificationItem';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { Spinner } from '@/shared/components/ui';
 
-// ─── Animation variants ───────────────────────────────────────────────────────
-const LIST_ITEM = {
-    hidden:  { opacity: 0, y: 6  },
-    visible: (i) => ({
-        opacity: 1, y: 0,
-        transition: { delay: i * 0.04, type: 'spring', stiffness: 400, damping: 28 },
-    }),
-    exit:    { opacity: 0, y: 4, transition: { duration: 0.12 } },
-};
-
 // ─── Date grouping ────────────────────────────────────────────────────────────
 const groupByDate = (notifications) => {
     const todayTs     = new Date().setHours(0, 0, 0, 0);
@@ -184,8 +174,6 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
     const groupKeys  = [...grouped.keys()];
     const lastGroup  = groupKeys.at(-1);
 
-    let itemIndex = 0; // for stagger delay
-
     return (
         <div className="flex flex-col h-full bg-white dark:bg-slate-900 overflow-hidden">
 
@@ -261,31 +249,23 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
                         {groupKeys.map(groupKey => (
                             <div key={groupKey}>
                                 <GroupLabel label={groupKey} />
-                                <AnimatePresence initial={false}>
-                                    {grouped.get(groupKey).map((notif, idx) => {
-                                        const notifId = notif._id ?? notif.id;
-                                        const isLast  = groupKey === lastGroup &&
-                                            idx === grouped.get(groupKey).length - 1;
-                                        const delay   = itemIndex++;
+                                {grouped.get(groupKey).map((notif, idx) => {
+                                    const notifId = notif._id ?? notif.id;
+                                    const isLast  = groupKey === lastGroup &&
+                                        idx === grouped.get(groupKey).length - 1;
 
-                                        return (
-                                            <motion.div
-                                                key={notifId}
-                                                custom={delay}
-                                                variants={LIST_ITEM}
-                                                initial="hidden"
-                                                animate="visible"
-                                                exit="exit"
-                                                ref={isLast ? sentinelRef : null}
-                                            >
-                                                <NotificationItem
-                                                    notification={notif}
-                                                    onSelect={handleSelect}
-                                                />
-                                            </motion.div>
-                                        );
-                                    })}
-                                </AnimatePresence>
+                                    return (
+                                        <div
+                                            key={notifId}
+                                            ref={isLast ? sentinelRef : null}
+                                        >
+                                            <NotificationItem
+                                                notification={notif}
+                                                onSelect={handleSelect}
+                                            />
+                                        </div>
+                                    );
+                                })}
                             </div>
                         ))}
 

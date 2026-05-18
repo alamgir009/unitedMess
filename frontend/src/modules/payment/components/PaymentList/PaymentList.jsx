@@ -1,5 +1,4 @@
 import React, { memo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
     HiOutlineCalendarDays,
     HiOutlineCurrencyRupee,
@@ -38,18 +37,12 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewIn
     const amount = Number(payment.amount ?? 0);
 
     return (
-        <motion.article
+        <article
             ref={ref}
-            layoutId={`pcrd-${payment._id}`}
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.22, delay: index * 0.03, ease: [0.22, 1, 0.36, 1] }}
-            className="group relative flex flex-col h-full rounded-2xl bg-white/75 dark:bg-slate-900/60
-                backdrop-blur-xl border border-black/6 dark:border-white/10
-                shadow-md hover:shadow-xl dark:shadow-black/30
-                hover:shadow-indigo-500/8 dark:hover:shadow-indigo-400/8
-                transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+            className="group relative flex flex-col h-full rounded-2xl bg-card/75 dark:bg-slate-900/60
+                border border-black/6 dark:border-white/10
+                shadow-sm hover:shadow-md dark:shadow-black/30
+                transition-shadow duration-200 overflow-hidden"
         >
             {/* top shimmer */}
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 dark:via-white/20 to-transparent" />
@@ -153,7 +146,7 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewIn
                     </>
                 )}
             </div>
-        </motion.article>
+        </article>
     );
 }));
 PaymentCard.displayName = 'PaymentCard';
@@ -166,17 +159,13 @@ const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInv
     const amount = Number(payment.amount ?? 0);
 
     return (
-        <motion.div
+        <div
             ref={ref}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 6 }}
-            transition={{ duration: 0.18, delay: index * 0.025 }}
             className="relative flex items-center gap-3 px-4 py-3 rounded-2xl
-                bg-white/70 dark:bg-slate-900/45 backdrop-blur-xl
+                bg-card/70 dark:bg-slate-900/45
                 border border-black/5 dark:border-white/10
-                hover:bg-white/90 dark:hover:bg-slate-800/55
-                transition-all duration-200 shadow-sm hover:shadow-md overflow-hidden"
+                hover:bg-card/90 dark:hover:bg-slate-800/55
+                transition-colors duration-200 shadow-sm hover:shadow-md overflow-hidden"
         >
             {/* Icon */}
             <div className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center
@@ -238,18 +227,14 @@ const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInv
                     </Button>
                 )}
             </div>
-        </motion.div>
+        </div>
     );
 }));
 PaymentRow.displayName = 'PaymentRow';
 
 /* ── Empty State ── */
 const EmptyState = () => (
-    <motion.div
-        initial={{ opacity: 0, scale: 0.97 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="col-span-full flex flex-col items-center gap-4 py-24 select-none"
-    >
+    <div className="col-span-full flex flex-col items-center gap-4 py-24 select-none">
         <div className="w-16 h-16 rounded-2xl bg-muted/50 border border-border/40 flex items-center justify-center">
             <HiOutlineCurrencyRupee className="w-7 h-7 text-muted-foreground/25" />
         </div>
@@ -259,7 +244,7 @@ const EmptyState = () => (
                 Adjust your filters or record a new payment.
             </p>
         </div>
-    </motion.div>
+    </div>
 );
 
 /* ── Main export ── */
@@ -267,34 +252,28 @@ const PaymentList = ({ payments = [], onEdit, onDelete, onViewInvoice, isAdmin =
     if (payments.length === 0) return <EmptyState />;
 
     return (
-        <AnimatePresence mode="wait" initial={false}>
+        <>
             {viewMode === 'list' ? (
-                <motion.div key="list"
-                    initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.2 }} className="flex flex-col gap-2">
-                    <AnimatePresence mode="popLayout">
-                        {payments.map((p, i) => (
-                            <PaymentRow key={p._id} payment={p} index={i}
-                                onEdit={onEdit} onDelete={onDelete} onViewInvoice={onViewInvoice}
-                                isAdmin={isAdmin} canEdit={isAdmin} />
-                        ))}
-                    </AnimatePresence>
-                </motion.div>
+                <div className="flex flex-col gap-2">
+                    {payments.map((p, i) => (
+                        <PaymentRow key={p._id} payment={p} index={i}
+                            onEdit={onEdit} onDelete={onDelete} onViewInvoice={onViewInvoice}
+                            isAdmin={isAdmin} canEdit={isAdmin} />
+                    ))}
+                </div>
             ) : (
-                <motion.div key="grid"
-                    initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }}
-                    transition={{ duration: 0.2 }}
-                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    <AnimatePresence mode="popLayout">
-                        {payments.map((p, i) => (
-                            <PaymentCard key={p._id} payment={p} index={i}
-                                onEdit={onEdit} onDelete={onDelete} onViewInvoice={onViewInvoice}
-                                isAdmin={isAdmin} canEdit={isAdmin} />
-                        ))}
-                    </AnimatePresence>
-                </motion.div>
+                <div
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+                    style={{ contentVisibility: 'auto', containIntrinsicSize: '0 500px' }}
+                >
+                    {payments.map((p, i) => (
+                        <PaymentCard key={p._id} payment={p} index={i}
+                            onEdit={onEdit} onDelete={onDelete} onViewInvoice={onViewInvoice}
+                            isAdmin={isAdmin} canEdit={isAdmin} />
+                    ))}
+                </div>
             )}
-        </AnimatePresence>
+        </>
     );
 };
 

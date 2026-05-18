@@ -31,8 +31,6 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     scroll-behavior: smooth;
-    /* Smooth theme transitions */
-    transition: background-color 300ms ease, color 300ms ease;
   }
 
   body {
@@ -114,18 +112,18 @@
   /* ─── Glass Morphism ─── */
   .glass {
     background: var(--glass-bg);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur-light);
+    -webkit-backdrop-filter: var(--glass-blur-light);
     border: 1px solid var(--glass-border);
-    box-shadow: var(--glass-shadow), var(--glass-inset);
+    box-shadow: var(--shadow-sm);
   }
 
   .glass-heavy {
-    background: var(--glass-bg);
-    backdrop-filter: var(--glass-blur-heavy);
-    -webkit-backdrop-filter: var(--glass-blur-heavy);
+    background: var(--surface-overlay);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
     border: 1px solid var(--glass-border);
-    box-shadow: var(--glass-shadow), var(--glass-inset);
+    box-shadow: var(--shadow-md);
   }
 
   /* Fallback for browsers without backdrop-filter */
