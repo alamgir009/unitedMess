@@ -139,9 +139,9 @@ const NotificationToggle = ({ icon: Icon, iconBg, iconColor, title, description,
         <button
             onClick={onToggle}
             disabled={loading}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 shrink-0 ml-3 ${
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/50 shrink-0 ml-3 ${
                 loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-            } ${enabled ? 'bg-blue-500' : 'bg-gray-300 dark:bg-slate-600'}`}
+            } ${enabled ? 'bg-teal-500' : 'bg-gray-300 dark:bg-slate-600'}`}
             role="switch"
             aria-checked={enabled}
         >
@@ -283,16 +283,16 @@ const ProfilePage = () => {
 
     return (
         <MainLayout>
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-5xl mx-auto sm:px-6 lg:px-8">
                 {/* Page Header */}
                 <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4 }}
-                    className="pt-2 pb-6 sm:pt-4 sm:pb-8"
+                    className="px-4 sm:px-0 pt-2 pb-6 sm:pt-4 sm:pb-8"
                 >
                     <div className="flex items-center gap-3 mb-2">
-                        <div className="h-8 w-1 rounded-full bg-gradient-to-b from-blue-500 to-indigo-600" />
+                        <div className="h-8 w-1 rounded-full bg-gradient-to-b from-teal-500 to-cyan-600" />
                         <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
                             My Profile
                         </h2>
@@ -306,12 +306,12 @@ const ProfilePage = () => {
                     variants={containerVariants}
                     initial="hidden"
                     animate="visible"
-                    className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 pb-8"
+                    className="grid grid-cols-1 lg:grid-cols-12 gap-0 sm:gap-6 lg:gap-8 pb-8"
                 >
                     {/* Left Column: Avatar & Quick Info */}
-                    <motion.div variants={itemVariants} className="lg:col-span-4 xl:col-span-3 space-y-5">
+                    <motion.div variants={itemVariants} className="lg:col-span-4 xl:col-span-3 space-y-0 sm:space-y-5">
                         {/* Avatar Card */}
-                        <Card className="overflow-hidden border-gray-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-shadow">
+                        <Card className="overflow-hidden rounded-none sm:rounded-xl border-0 sm:border border-gray-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-none sm:shadow-sm hover:shadow-md transition-shadow mb-px sm:mb-0">
                             <CardContent className="p-6">
                                 <div className="flex flex-col items-center text-center space-y-4">
                                     <AvatarUpload
@@ -334,14 +334,14 @@ const ProfilePage = () => {
                                         </h3>
                                         <div className="flex items-center justify-center gap-1.5">
                                             {isAdmin ? (
-                                                <Crown className="w-3.5 h-3.5 text-amber-500" />
+                                                <Crown className="w-3.5 h-3.5 text-violet-500" />
                                             ) : (
-                                                <Users className="w-3.5 h-3.5 text-blue-500" />
+                                                <Users className="w-3.5 h-3.5 text-teal-500" />
                                             )}
-                                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                            <span className={`inline-flex items-center gap-1 text-xs font-semibold tracking-wide px-2.5 py-0.5 rounded-full ${
                                                 isAdmin
-                                                    ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/40'
-                                                    : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/40'
+                                                    ? 'bg-violet-50 dark:bg-violet-900/25 text-violet-700 dark:text-violet-300 border border-violet-200/70 dark:border-violet-700/50'
+                                                    : 'bg-teal-50 dark:bg-teal-900/25 text-teal-700 dark:text-teal-300 border border-teal-200/70 dark:border-teal-700/50'
                                             }`}>
                                                 {isAdmin ? 'Administrator' : 'Member'}
                                             </span>
@@ -352,7 +352,7 @@ const ProfilePage = () => {
                         </Card>
 
                         {/* Quick Actions */}
-                        <Card className="border-gray-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-sm">
+                        <Card className="rounded-none sm:rounded-xl border-0 sm:border border-gray-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-none sm:shadow-sm mt-px sm:mt-0">
                             <CardContent className="p-2">
                                 <div className="space-y-1">
                                     {isAdmin && (
@@ -402,10 +402,10 @@ const ProfilePage = () => {
                     </motion.div>
 
                     {/* Right Column: Details & Notifications */}
-                    <motion.div variants={itemVariants} className="lg:col-span-8 xl:col-span-9 space-y-5">
+                    <motion.div variants={itemVariants} className="lg:col-span-8 xl:col-span-9 space-y-0 sm:space-y-5 mt-px sm:mt-0">
                         {/* Personal Details Card */}
-                        <Card className="border-gray-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-shadow">
-                            <div className="px-5 sm:px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
+                        <Card className="rounded-none sm:rounded-xl border-0 sm:border border-gray-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-none sm:shadow-sm hover:shadow-md transition-shadow">
+                            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
                                 <div className="flex items-center gap-2.5">
                                     <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20">
                                         <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -416,14 +416,14 @@ const ProfilePage = () => {
                                 </div>
                                 <button
                                     onClick={() => setIsModalOpen(true)}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/30 rounded-lg transition-colors"
                                     aria-label="Edit personal details"
                                 >
                                     <Edit3 className="w-3.5 h-3.5" />
                                     Edit
                                 </button>
                             </div>
-                            <CardContent className="px-5 sm:px-6 py-2">
+                            <CardContent className="px-4 sm:px-6 py-2">
                                 <div className="divide-y-0">
                                     <ProfileRow icon={User} label="Full Name" value={user?.name || '—'} />
                                     <ProfileRow icon={Mail} label="Email" value={user?.email || '—'} />
@@ -435,8 +435,8 @@ const ProfilePage = () => {
                         </Card>
 
                         {/* Notification Preferences */}
-                        <Card className="border-gray-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-shadow">
-                            <div className="px-5 sm:px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
+                        <Card className="rounded-none sm:rounded-xl border-0 sm:border border-gray-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-none sm:shadow-sm hover:shadow-md transition-shadow mt-px sm:mt-0">
+                            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
                                 <div className="flex items-center gap-2.5">
                                     <div className="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-900/20">
                                         <Bell className="w-4 h-4 text-purple-600 dark:text-purple-400" />
@@ -447,7 +447,7 @@ const ProfilePage = () => {
                                 </div>
                                 <button
                                     onClick={() => setPrefsOpen(!prefsOpen)}
-                                    className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                                    className="inline-flex items-center gap-1 text-xs font-semibold text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors"
                                 >
                                     {prefsOpen ? 'Hide' : 'Manage'}
                                     {prefsOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -462,7 +462,7 @@ const ProfilePage = () => {
                                         transition={{ duration: 0.25, ease: 'easeInOut' }}
                                         className="overflow-hidden"
                                     >
-                                        <CardContent className="px-5 sm:px-6 py-4 space-y-1">
+                                        <CardContent className="px-4 sm:px-6 py-4 space-y-1">
                                             {prefsLoading ? (
                                                 <div className="flex items-center justify-center py-6">
                                                     <Spinner size="sm" color="current" className="text-blue-500" />
