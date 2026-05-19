@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { reset } from '../../store/auth.slice';
 import LoginForm from '../../components/LoginForm/LoginForm';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,20 +8,22 @@ import { HiArrowLeft } from 'react-icons/hi2';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
-  const { user, isSuccess } = useSelector((state) => state.auth);
+  const { user, isSuccess, sessionRestoring } = useSelector((state) => state.auth);
+
+  // Where to redirect after login — defaults to dashboard
+  const from = location.state?.from?.pathname || '/dashboard';
 
   useEffect(() => {
-    // Only redirect to dashboard if user exists and is approved
+    // Wait for session restore to settle before deciding where to redirect
+    if (sessionRestoring) return;
+
     if (user && user.userStatus === 'approved') {
-      navigate('/dashboard');
+      navigate(from, { replace: true });
       dispatch(reset());
-    } else if (user && user.userStatus === 'pending') {
-      // If user is logged in but pending, we might want to redirect to a pending page
-      // or just let them see an error message. For now, let's keep them here
-      // and show the status if handled by the form.
     }
-  }, [user, navigate, dispatch]);
+  }, [user, sessionRestoring, from, navigate, dispatch]);
 
   return (
   <div className="min-h-screen bg-background flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">

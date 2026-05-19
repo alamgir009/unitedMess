@@ -157,10 +157,9 @@ apiClient.interceptors.response.use(
 
 // ---------------------------------------------------------------------------
 // Cross-tab sync listener
-// When another tab successfully refreshes, we don't need to do anything here —
-// the next API call will get a 401, which will trigger our own silent refresh
-// using the newly-rotated cookie.
 // When another tab logs out, we clear our in-memory state immediately.
+// When another tab refreshes tokens and we have no in-memory token (e.g. page
+// was just loaded), proactively refresh so we don't wait for the next 401.
 // ---------------------------------------------------------------------------
 authChannel.addEventListener?.('message', async (event) => {
     if (event.data?.type === 'AUTH_LOGOUT') {
@@ -168,6 +167,22 @@ authChannel.addEventListener?.('message', async (event) => {
         if (_store) {
             const { setUser } = await import('@/modules/auth/store/auth.slice');
             _store.dispatch(setUser(null));
+        }
+    }
+
+    if (event.data?.type === 'TOKEN_REFRESHED' && !inMemoryAccessToken && _store) {
+        // Another tab refreshed the httpOnly cookie. Our in-memory token is empty
+        // (page just loaded). Proactively refresh so the next API call succeeds.
+        try {
+            const refreshRes = await apiClient.post('auth/refresh-tokens');
+            const newAccessToken = refreshRes.data?.data?.tokens?.accessToken;
+            if (newAccessToken) {
+                setAccessToken(newAccessToken);
+                const { setUser } = await import('@/modules/auth/store/auth.slice');
+                _store.dispatch(setUser(refreshRes.data?.data?.user || null));
+            }
+        } catch {
+            // Refresh failed — let the normal flow handle it (redirect to login)
         }
     }
 });

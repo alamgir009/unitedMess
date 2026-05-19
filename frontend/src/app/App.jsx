@@ -1,4 +1,4 @@
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import AppProviders from './providers/AppProviders';
 import AppRoutes from '@/routes/AppRoutes';
@@ -24,11 +24,9 @@ const FullScreenLoader = ({ label = 'Loading…' }) => (
         role="status"
         aria-label={label}
     >
-        {/* Ambient orb — identical to the ones on MealPage / DashboardPage */}
         <div className="pointer-events-none absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/20 via-primary/5 to-transparent" />
         <div className="pointer-events-none absolute bottom-10 left-0 w-[400px] h-[400px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-secondary-400/10 via-secondary-400/5 to-transparent" />
 
-        {/* Glass card wrapper */}
         <div className="relative flex flex-col items-center gap-4 px-10 py-8 rounded-3xl border border-white/10 dark:border-white/5 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl shadow-2xl">
             <Spinner size="xl" color="primary" />
             <p className="text-sm font-semibold text-muted-foreground tracking-wide">
@@ -59,6 +57,53 @@ const VersionInit = () => {
 // ─────────────────────────────────────────────────────────────────────────────
 const SocketInit = () => {
     useSocket();
+    return null;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SessionKeepAlive
+// ─────────────────────────────────────────────────────────────────────────────
+// Proactively refreshes the access token every 20 minutes while the user is
+// active. Prevents surprise 401 errors during active sessions.
+// ─────────────────────────────────────────────────────────────────────────────
+const SessionKeepAlive = () => {
+    const lastActivityRef = useRef(Date.now());
+    const intervalRef = useRef(null);
+    const user = useSelector((state) => state.auth.user);
+
+    const refreshSession = useCallback(async () => {
+        try {
+            const { default: apiClient } = await import('@/services/api/client/apiClient');
+            await apiClient.post('auth/refresh-tokens');
+        } catch {
+            // Refresh will fail gracefully — the 401 interceptor handles it
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!user) return;
+
+        const updateActivity = () => { lastActivityRef.current = Date.now(); };
+
+        // Track user activity
+        const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+        events.forEach((e) => window.addEventListener(e, updateActivity, { passive: true }));
+
+        // Check every 5 minutes: if user was active in the last 20 minutes, refresh
+        intervalRef.current = setInterval(() => {
+            const idleMs = Date.now() - lastActivityRef.current;
+            const twentyMinutes = 20 * 60 * 1000;
+            if (idleMs < twentyMinutes) {
+                refreshSession();
+            }
+        }, 5 * 60 * 1000);
+
+        return () => {
+            events.forEach((e) => window.removeEventListener(e, updateActivity));
+            if (intervalRef.current) clearInterval(intervalRef.current);
+        };
+    }, [user, refreshSession]);
+
     return null;
 };
 
@@ -95,6 +140,7 @@ const App = () => {
             <VersionInit />
             <SessionGate>
                 <SocketInit />
+                <SessionKeepAlive />
                 <Suspense fallback={<FullScreenLoader label="Loading…" />}>
                     <AppRoutes />
                 </Suspense>

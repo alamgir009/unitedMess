@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, CheckCircle2, ArrowRight, RefreshCw, AlertCircle } from 'lucide-react';
 import { reset, resendVerification, clearRegisteredEmail } from '../../store/auth.slice';
@@ -10,7 +10,16 @@ import { HiArrowLeft } from 'react-icons/hi2';
 
 const RegisterPage = () => {
     const dispatch = useDispatch();
-    const { isSuccess, registeredEmail, isLoading } = useSelector((state) => state.auth);
+    const navigate = useNavigate();
+    const { isSuccess, registeredEmail, isLoading, user, sessionRestoring } = useSelector((state) => state.auth);
+    
+    // Redirect authenticated users away from register page
+    useEffect(() => {
+        if (sessionRestoring) return;
+        if (user && user.userStatus === 'approved') {
+            navigate('/dashboard', { replace: true });
+        }
+    }, [user, sessionRestoring, navigate]);
     
     // Countdown state for resend button (60 seconds)
     const [countdown, setCountdown] = useState(0);

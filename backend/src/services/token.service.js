@@ -119,11 +119,22 @@ const refreshAuthTokens = async (refreshToken) => {
     }
 };
 
+/**
+ * Revoke all refresh tokens for a specific user
+ * Used when password changes or account is deactivated
+ * @param {string} userId
+ * @returns {Promise}
+ */
+const revokeAllUserTokens = async (userId) => {
+    await RefreshToken.deleteMany({ user: userId, type: tokenTypes.REFRESH, blacklisted: false });
+};
+
 module.exports = {
     generateToken,
     saveToken,
     verifyToken,
     generateAuthTokens,
     revokeToken,
-    refreshAuthTokens
+    refreshAuthTokens,
+    revokeAllUserTokens,
 };
