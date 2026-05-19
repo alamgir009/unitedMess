@@ -73,6 +73,9 @@ const MarketPage = () => {
     const [dateTo, setDateTo] = useState('');
     const [showFilters, setShowFilters] = useState(false);
 
+    // ── Scheduler collapse
+    const [isSchedulerOpen, setIsSchedulerOpen] = useState(false);
+
     // ── Pagination
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(20);
@@ -252,7 +255,12 @@ const MarketPage = () => {
                     </AnimatePresence>
 
                     {/* ── Content: skeleton → list/grid → pagination ── */}
-                    <MarketScheduleChart schedule={schedule} isLoading={isScheduleLoading} />
+                    <MarketScheduleChart
+                        schedule={schedule}
+                        isLoading={isScheduleLoading}
+                        isCollapsed={!isSchedulerOpen}
+                        onToggle={() => setIsSchedulerOpen((p) => !p)}
+                    />
 
                     {isLoading && (!markets || markets.length === 0) ? (
                         <div className={`grid gap-5 ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
