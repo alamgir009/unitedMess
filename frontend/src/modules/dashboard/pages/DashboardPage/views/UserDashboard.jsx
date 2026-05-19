@@ -139,41 +139,6 @@ const UserDashboard = () => {
                         </p>
                     </div>
 
-                    {/* Right: badges */}
-                    <div className="flex items-center gap-2 shrink-0 flex-wrap">
-
-                        {/* Role */}
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/25 text-indigo-700 dark:text-indigo-300">
-                            <BadgeCheck size={13} strokeWidth={2.2} />
-                            <span className="capitalize">{user?.role ?? 'user'}</span>
-                        </div>
-
-                        {/* Active / Inactive */}
-                        <div
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider border ${
-                                user?.isActive
-                                    ? 'bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/25 text-green-700 dark:text-green-400'
-                                    : 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/25 text-red-700 dark:text-red-400'
-                            }`}
-                        >
-                            <span className={`w-1.5 h-1.5 rounded-full ${user?.isActive ? 'bg-green-500' : 'bg-red-500'}`} />
-                            {user?.isActive
-                                ? <ShieldCheck size={13} strokeWidth={2.2} />
-                                : <ShieldOff   size={13} strokeWidth={2.2} />
-                            }
-                            {user?.isActive ? 'Active' : 'Inactive'}
-                        </div>
-
-                        {/* Portal tag */}
-                        <div
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider"
-                            style={{ background: g.pillBg, border: g.pillBorder, color: g.pillColor }}
-                        >
-                            <Building2 size={13} color={g.iconColor} strokeWidth={2.2} />
-                            Mess Portal
-                        </div>
-
-                    </div>
                 </div>
             </div>
 
