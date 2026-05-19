@@ -20,6 +20,7 @@ import NotFoundPage from '@/modules/public/pages/NotFoundPage/NotFoundPage';
 import PublicLayout from '@/shared/components/layout/PublicLayout/PublicLayout';
 
 import ProtectedRoute from '@/shared/components/routes/ProtectedRoute';
+import GuestRoute from '@/shared/components/routes/GuestRoute';
 import MealPage from '@/modules/meal/pages/MealPage/MealPage';
 import MarketPage from '@/modules/market/pages/MarketPage/MarketPage';
 import PaymentPage from '@/modules/payment/pages/PaymentPage/PaymentPage';
@@ -33,7 +34,11 @@ const AppRoutes = () => {
         <Routes>
             {/* ── Public Routes (with Navbar) ── */}
             <Route element={<PublicLayout />}>
-                <Route path="/" element={<HomePage />} />
+                <Route path="/" element={
+                    <GuestRoute>
+                        <HomePage />
+                    </GuestRoute>
+                } />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
@@ -42,8 +47,16 @@ const AppRoutes = () => {
             </Route>
 
             {/* ── Auth Routes (no Navbar) ── */}
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/login" element={
+                <GuestRoute>
+                    <LoginPage />
+                </GuestRoute>
+            } />
+            <Route path="/register" element={
+                <GuestRoute>
+                    <RegisterPage />
+                </GuestRoute>
+            } />
             <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password/:token" element={<ResetPasswordPage />} />

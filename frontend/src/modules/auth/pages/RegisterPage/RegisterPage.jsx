@@ -13,13 +13,7 @@ const RegisterPage = () => {
     const navigate = useNavigate();
     const { isSuccess, registeredEmail, isLoading, user, sessionRestoring } = useSelector((state) => state.auth);
     
-    // Redirect authenticated users away from register page
-    useEffect(() => {
-        if (sessionRestoring) return;
-        if (user && user.userStatus === 'approved') {
-            navigate('/dashboard', { replace: true });
-        }
-    }, [user, sessionRestoring, navigate]);
+    // Redirect authenticated users away from register page is now handled by GuestRoute.
     
     // Countdown state for resend button (60 seconds)
     const [countdown, setCountdown] = useState(0);

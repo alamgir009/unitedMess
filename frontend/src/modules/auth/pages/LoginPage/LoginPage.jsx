@@ -12,18 +12,7 @@ const LoginPage = () => {
   const dispatch = useDispatch();
   const { user, isSuccess, sessionRestoring } = useSelector((state) => state.auth);
 
-  // Where to redirect after login — defaults to dashboard
-  const from = location.state?.from?.pathname || '/dashboard';
-
-  useEffect(() => {
-    // Wait for session restore to settle before deciding where to redirect
-    if (sessionRestoring) return;
-
-    if (user && user.userStatus === 'approved') {
-      navigate(from, { replace: true });
-      dispatch(reset());
-    }
-  }, [user, sessionRestoring, from, navigate, dispatch]);
+  // Where to redirect after login is now handled by GuestRoute.
 
   return (
   <div className="min-h-screen bg-background flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
