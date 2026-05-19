@@ -352,19 +352,16 @@ const ProfilePage = () => {
                                             {user?.name || 'Member User'}
                                         </h3>
                                         {/* ── Role Badge — flat solid, GPU-friendly ── */}
-                                    <div className="flex items-center justify-center mt-1.5">
-                                        {isAdmin ? (
-                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold tracking-widest uppercase bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-700/50">
-                                                <Crown className="w-2.5 h-2.5" />
-                                                Admin
-                                            </span>
-                                        ) : (
-                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-gray-500 ">
-                                                <Users className="w-2.5 h-2.5" />
-                                                Member
-                                            </span>
-                                        )}
-                                    </div>
+                                        <div className="flex items-center justify-center mt-1.5">
+                                            {isAdmin && (
+                                                <div className="flex items-center justify-center mt-1.5">
+                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold tracking-widest uppercase bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-700/50">
+                                                        <Crown className="w-2.5 h-2.5" />
+                                                        Admin
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </CardContent>
