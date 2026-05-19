@@ -3,10 +3,10 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { Spinner } from '@/shared/components/ui';
 
 const ProtectedRoute = ({ children }) => {
-    const { user, isLoading, sessionRestoring } = useSelector((state) => state.auth);
+    const { user, sessionRestoring } = useSelector((state) => state.auth);
     const location = useLocation();
 
-    if (sessionRestoring || isLoading) {
+    if (sessionRestoring) {
         return (
             <div
                 className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-background"

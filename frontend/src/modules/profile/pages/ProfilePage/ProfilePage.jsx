@@ -4,7 +4,6 @@ import {
     User,
     Mail,
     Phone,
-    Shield,
     Settings,
     LogOut,
     Edit3,
@@ -12,7 +11,6 @@ import {
     CalendarClock,
     UserX,
     AlertTriangle,
-    CheckCircle,
     X,
     Bell,
     Smartphone,
@@ -20,6 +18,8 @@ import {
     Moon,
     ChevronDown,
     ChevronUp,
+    Crown,
+    Users,
 } from 'lucide-react';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import { Card, CardContent } from '@/shared/ui/Card/Card';
@@ -36,7 +36,7 @@ import useFcmPush from '@/modules/notification/hooks/useFcmPush';
 import NotificationService from '@/modules/notification/services/notification.service';
 
 // ---------------------------------------------------------------------------- //
-// Reusable Confirm Dialog – replaces window.confirm with a polished modal       //
+// Reusable Confirm Dialog
 // ---------------------------------------------------------------------------- //
 const ConfirmDialog = ({ isOpen, onClose, onConfirm, title, message, confirmLabel = 'Confirm', variant = 'danger' }) => {
     if (!isOpen) return null;
@@ -47,49 +47,50 @@ const ConfirmDialog = ({ isOpen, onClose, onConfirm, title, message, confirmLabe
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
                 onClick={onClose}
             >
                 <motion.div
-                    initial={{ scale: 0.95, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.95, opacity: 0 }}
+                    initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                    transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                     onClick={(e) => e.stopPropagation()}
-                    className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-gray-100 dark:border-slate-800"
+                    className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-gray-200/80 dark:border-slate-700/80"
                 >
                     <div className="flex items-start gap-4">
-                        <div className={`p-2 rounded-full ${
+                        <div className={`p-2.5 rounded-xl shrink-0 ${
                             variant === 'danger'
-                                ? 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400'
-                                : 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                                ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+                                : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
                         }`}>
                             <AlertTriangle className="w-5 h-5" />
                         </div>
-                        <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">{title}</h3>
-                            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{message}</p>
+                        <div className="flex-1 min-w-0">
+                            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50">{title}</h3>
+                            <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{message}</p>
                         </div>
                         <button
                             onClick={onClose}
-                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 -mt-1 -mr-1"
                             aria-label="Close"
                         >
-                            <X className="w-5 h-5" />
+                            <X className="w-4 h-4" />
                         </button>
                     </div>
                     <div className="mt-6 flex justify-end gap-3">
                         <button
                             onClick={onClose}
-                            className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                            className="px-4 py-2.5 text-sm font-medium rounded-xl border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
                         >
                             Cancel
                         </button>
                         <button
                             onClick={() => { onConfirm(); onClose(); }}
-                            className={`px-4 py-2 text-sm font-medium rounded-lg text-white transition-colors ${
+                            className={`px-4 py-2.5 text-sm font-medium rounded-xl text-white transition-all shadow-lg active:scale-[0.98] ${
                                 variant === 'danger'
-                                    ? 'bg-red-600 hover:bg-red-700'
-                                    : 'bg-blue-600 hover:bg-blue-700'
+                                    ? 'bg-red-600 hover:bg-red-700 shadow-red-500/20'
+                                    : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'
                             }`}
                         >
                             {confirmLabel}
@@ -102,19 +103,71 @@ const ConfirmDialog = ({ isOpen, onClose, onConfirm, title, message, confirmLabe
 };
 
 // ---------------------------------------------------------------------------- //
-// Profile Page                                                                 //
+// Profile Detail Row
+// ---------------------------------------------------------------------------- //
+const ProfileRow = ({ icon: Icon, label, value, isLast = false }) => (
+    <>
+        <div className="group flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-4">
+            <div className="flex items-center gap-2.5 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-44 shrink-0">
+                <div className="p-1.5 rounded-lg bg-gray-100 dark:bg-slate-800 group-hover:bg-gray-150 dark:group-hover:bg-slate-750 transition-colors">
+                    <Icon className="w-3.5 h-3.5" />
+                </div>
+                <span className="text-xs font-semibold uppercase tracking-wider">{label}</span>
+            </div>
+            <div className="text-sm font-medium text-gray-900 dark:text-gray-100 sm:flex-1 break-words">
+                {value}
+            </div>
+        </div>
+        {!isLast && <div className="h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-slate-700 to-transparent" />}
+    </>
+);
+
+// ---------------------------------------------------------------------------- //
+// Notification Toggle Row
+// ---------------------------------------------------------------------------- //
+const NotificationToggle = ({ icon: Icon, iconBg, iconColor, title, description, enabled, loading, onToggle, error }) => (
+    <div className="flex items-center justify-between py-3">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className={`p-2 rounded-xl shrink-0 ${iconBg}`}>
+                <Icon className={`w-4 h-4 ${iconColor}`} />
+            </div>
+            <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{title}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{description}</p>
+            </div>
+        </div>
+        <button
+            onClick={onToggle}
+            disabled={loading}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 shrink-0 ml-3 ${
+                loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+            } ${enabled ? 'bg-blue-500' : 'bg-gray-300 dark:bg-slate-600'}`}
+            role="switch"
+            aria-checked={enabled}
+        >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
+                enabled ? 'translate-x-6' : 'translate-x-1'
+            }`} />
+        </button>
+        {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+    </div>
+);
+
+// ---------------------------------------------------------------------------- //
+// Profile Page
 // ---------------------------------------------------------------------------- //
 const ProfilePage = () => {
     const { user } = useSelector((state) => state.auth);
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
+    const isAdmin = user?.role === 'admin';
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [deactivationLoading, setDeactivationLoading] = useState(false);
     const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
     const [avatarError, setAvatarError] = useState(null);
 
-    // ── Notification Preferences ── //
     const {
         isSubscribed: fcmEnabled,
         loading: fcmLoading,
@@ -146,14 +199,13 @@ const ProfilePage = () => {
     const handlePrefsUpdate = useCallback(async (updates) => {
         try {
             const res = await NotificationService.updatePreferences(updates);
-            setNotifPrefs(res?.data || updates);
+            setNotifPrefs((prev) => ({ ...prev, ...updates, ...(res?.data || {}) }));
             toast.success('Notification preferences updated');
         } catch (err) {
             toast.error(err?.response?.data?.message || 'Failed to update preferences');
         }
     }, []);
 
-    // ── Avatar upload size validation (max 5 MB) ── //
     const handleAvatarError = useCallback((error) => {
         if (error?.message?.includes('size')) {
             setAvatarError('File size must be less than 5 MB.');
@@ -169,7 +221,6 @@ const ProfilePage = () => {
         toast.success('Profile picture updated.');
     }, []);
 
-    // ── Logout ── //
     const handleLogout = async () => {
         try {
             await dispatch(logout()).unwrap();
@@ -179,21 +230,18 @@ const ProfilePage = () => {
         }
     };
 
-    // ── Deactivate account ── //
     const handleDeactivate = async () => {
         setDeactivationLoading(true);
         try {
             await dispatch(deactivateAccount()).unwrap();
             navigate('/');
         } catch (error) {
-            // Error toast is handled inside the slice, but fallback:
             toast.error(error?.message || 'Deactivation failed.');
         } finally {
             setDeactivationLoading(false);
         }
     };
 
-    // ── Date formatters (memoized) ── //
     const memberSinceText = useMemo(() => {
         const dateValue = user?.createdAt;
         if (!dateValue) return 'Not available';
@@ -219,13 +267,12 @@ const ProfilePage = () => {
               });
     }, [user?.lastLogin, user?.createdAt]);
 
-    // ── Motion variants ── //
     const containerVariants = {
         hidden: { opacity: 0, y: 20 },
         visible: {
             opacity: 1,
             y: 0,
-            transition: { duration: 0.5, staggerChildren: 0.1 }
+            transition: { duration: 0.5, staggerChildren: 0.08 }
         }
     };
 
@@ -236,354 +283,264 @@ const ProfilePage = () => {
 
     return (
         <MainLayout>
-            <div className="max-w-4xl mx-auto space-y-8 px-4 sm:px-6 lg:px-8 py-6">
-                {/* ── Page Header ── */}
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Page Header */}
                 <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4 }}
-                    className="flex items-center justify-between"
+                    className="pt-2 pb-6 sm:pt-4 sm:pb-8"
                 >
-                    <div>
-                        <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50 transition-colors">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="h-8 w-1 rounded-full bg-gradient-to-b from-blue-500 to-indigo-600" />
+                        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
                             My Profile
                         </h2>
-                        <p className="text-muted-foreground text-gray-500 dark:text-gray-400 mt-1 transition-colors">
-                            Manage your personal information and account security.
-                        </p>
                     </div>
+                    <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 ml-4">
+                        Manage your personal information, notifications, and account security.
+                    </p>
                 </motion.div>
 
                 <motion.div
                     variants={containerVariants}
                     initial="hidden"
                     animate="visible"
-                    className="grid grid-cols-1 md:grid-cols-3 gap-6"
+                    className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 pb-8"
                 >
-                    {/* ── Left Column: Avatar & Quick Info ── */}
-                    <motion.div variants={itemVariants} className="md:col-span-1 space-y-6">
-                        <Card className="overflow-hidden border-border/40 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl shadow-lg transition-colors">
+                    {/* Left Column: Avatar & Quick Info */}
+                    <motion.div variants={itemVariants} className="lg:col-span-4 xl:col-span-3 space-y-5">
+                        {/* Avatar Card */}
+                        <Card className="overflow-hidden border-gray-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-shadow">
                             <CardContent className="p-6">
                                 <div className="flex flex-col items-center text-center space-y-4">
                                     <AvatarUpload
-                                        maxSize={5 * 1024 * 1024} // 5 MB
+                                        maxSize={5 * 1024 * 1024}
                                         onError={handleAvatarError}
                                         onSuccess={handleAvatarSuccess}
                                     />
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 font-normal">
+                                    <p className="text-xs text-gray-400 dark:text-gray-500">
                                         JPG, PNG or GIF. Max 5 MB.
                                     </p>
                                     {avatarError && (
-                                        <div className="flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400 animate-pulse">
+                                        <div className="flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400">
                                             <AlertTriangle className="w-3.5 h-3.5" />
                                             {avatarError}
                                         </div>
                                     )}
-                                    <div>
-                                        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-50 transition-colors">
+                                    <div className="space-y-1">
+                                        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50 truncate max-w-full">
                                             {user?.name || 'Member User'}
                                         </h3>
-                                        <p className="text-sm font-medium text-blue-600 dark:text-blue-400 flex items-center justify-center gap-1 mt-1">
-                                            <Shield className="w-3.5 h-3.5" />
-                                            {user?.role === 'admin' ? 'Administrator' : 'Member'}
-                                        </p>
+                                        <div className="flex items-center justify-center gap-1.5">
+                                            {isAdmin ? (
+                                                <Crown className="w-3.5 h-3.5 text-amber-500" />
+                                            ) : (
+                                                <Users className="w-3.5 h-3.5 text-blue-500" />
+                                            )}
+                                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                                isAdmin
+                                                    ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/40'
+                                                    : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/40'
+                                            }`}>
+                                                {isAdmin ? 'Administrator' : 'Member'}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
 
                         {/* Quick Actions */}
-                        <Card className="border-border/40 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl shadow-md transition-colors">
-                            <CardContent className="p-4 space-y-2">
-                                <button
-                                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors text-gray-700 dark:text-gray-300"
-                                    onClick={() => navigate('/settings')} // placeholder
-                                >
-                                    <span className="flex items-center gap-3 text-sm font-medium">
-                                        <Settings className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                                        Account Settings
-                                    </span>
-                                </button>
-
-                                <div className="h-px bg-gray-200 dark:bg-slate-800 my-2" />
-
-                                <button
-                                    onClick={handleLogout}
-                                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors text-red-600 dark:text-red-400"
-                                >
-                                    <span className="flex items-center gap-3 text-sm font-medium">
-                                        <LogOut className="w-4 h-4" />
-                                        Sign Out
-                                    </span>
-                                </button>
-
-                                <div className="h-px bg-gray-200 dark:bg-slate-800 my-2" />
-
-                                <button
-                                    onClick={() => setShowDeactivateConfirm(true)}
-                                    disabled={deactivationLoading}
-                                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors text-red-600 dark:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    <span className="flex items-center gap-3 text-sm font-medium">
-                                        <UserX className="w-4 h-4" />
-                                        Deactivate Account
-                                    </span>
-                                    {deactivationLoading && (
-                                        <Spinner size="sm" color="current" className="text-red-600 dark:text-red-400" />
+                        <Card className="border-gray-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-sm">
+                            <CardContent className="p-2">
+                                <div className="space-y-1">
+                                    {isAdmin && (
+                                        <>
+                                            <button
+                                                className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800/60 transition-colors text-gray-700 dark:text-gray-300 group"
+                                                onClick={() => navigate('/settings')}
+                                            >
+                                                <span className="flex items-center gap-3 text-sm font-medium">
+                                                    <Settings className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors" />
+                                                    Account Settings
+                                                </span>
+                                                <ChevronDown className="w-4 h-4 -rotate-90 text-gray-300 dark:text-slate-600" />
+                                            </button>
+                                            <div className="h-px bg-gray-100 dark:bg-slate-800 mx-3" />
+                                        </>
                                     )}
-                                </button>
+
+                                    <button
+                                        onClick={handleLogout}
+                                        className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 group"
+                                    >
+                                        <span className="flex items-center gap-3 text-sm font-medium">
+                                            <LogOut className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-red-500 dark:group-hover:text-red-400 transition-colors" />
+                                            Sign Out
+                                        </span>
+                                    </button>
+
+                                    <div className="h-px bg-gray-100 dark:bg-slate-800 mx-3" />
+
+                                    <button
+                                        onClick={() => setShowDeactivateConfirm(true)}
+                                        disabled={deactivationLoading}
+                                        className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed group"
+                                    >
+                                        <span className="flex items-center gap-3 text-sm font-medium">
+                                            <UserX className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-red-500 dark:group-hover:text-red-400 transition-colors" />
+                                            Deactivate Account
+                                        </span>
+                                        {deactivationLoading && (
+                                            <Spinner size="sm" color="current" className="text-red-600 dark:text-red-400" />
+                                        )}
+                                    </button>
+                                </div>
                             </CardContent>
                         </Card>
                     </motion.div>
 
-                    {/* ── Right Column: Details ── */}
-                    <motion.div variants={itemVariants} className="md:col-span-2 space-y-6">
-                        <Card className="border-border/40 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl shadow-lg h-full transition-colors">
-                            <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between transition-colors">
-                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50 transition-colors">
-                                    Personal Details
-                                </h3>
+                    {/* Right Column: Details & Notifications */}
+                    <motion.div variants={itemVariants} className="lg:col-span-8 xl:col-span-9 space-y-5">
+                        {/* Personal Details Card */}
+                        <Card className="border-gray-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="px-5 sm:px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                                        <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                    </div>
+                                    <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50">
+                                        Personal Details
+                                    </h3>
+                                </div>
                                 <button
                                     onClick={() => setIsModalOpen(true)}
-                                    className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 transition-colors"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
                                     aria-label="Edit personal details"
                                 >
-                                    <Edit3 className="w-4 h-4" />
+                                    <Edit3 className="w-3.5 h-3.5" />
                                     Edit
                                 </button>
                             </div>
-                            <CardContent className="p-6">
-                                <div className="space-y-6">
-                                    {/* Full Name */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
-                                        <div className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                                            <User className="w-4 h-4" /> Full Name
-                                        </div>
-                                        <div className="sm:col-span-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-                                            {user?.name || '—'}
-                                        </div>
-                                    </div>
-
-                                    <div className="h-px bg-gray-100 dark:bg-slate-800/60" />
-
-                                    {/* Email */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
-                                        <div className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                                            <Mail className="w-4 h-4" /> Email Address
-                                        </div>
-                                        <div className="sm:col-span-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-                                            {user?.email || '—'}
-                                        </div>
-                                    </div>
-
-                                    <div className="h-px bg-gray-100 dark:bg-slate-800/60" />
-
-                                    {/* Phone */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
-                                        <div className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                                            <Phone className="w-4 h-4" /> Phone Number
-                                        </div>
-                                        <div className="sm:col-span-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-                                            {user?.phone || '+91 XXX XXX XXXX'}
-                                        </div>
-                                    </div>
-
-                                    <div className="h-px bg-gray-100 dark:bg-slate-800/60" />
-
-                                    {/* Member Since */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
-                                        <div className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                                            <CalendarClock className="w-4 h-4" /> Member Since
-                                        </div>
-                                        <div className="sm:col-span-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-                                            {memberSinceText}
-                                        </div>
-                                    </div>
-
-                                    <div className="h-px bg-gray-100 dark:bg-slate-800/60" />
-
-                                    {/* Last Login */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
-                                        <div className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                                            <RotateCcw className="w-4 h-4" /> Last Login
-                                        </div>
-                                        <div className="sm:col-span-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-                                            {lastUpdatedText}
-                                        </div>
-                                    </div>
+                            <CardContent className="px-5 sm:px-6 py-2">
+                                <div className="divide-y-0">
+                                    <ProfileRow icon={User} label="Full Name" value={user?.name || '—'} />
+                                    <ProfileRow icon={Mail} label="Email" value={user?.email || '—'} />
+                                    <ProfileRow icon={Phone} label="Phone" value={user?.phone || '+91 XXX XXX XXXX'} />
+                                    <ProfileRow icon={CalendarClock} label="Member Since" value={memberSinceText} />
+                                    <ProfileRow icon={RotateCcw} label="Last Login" value={lastUpdatedText} isLast />
                                 </div>
                             </CardContent>
                         </Card>
 
-                        {/* ── Notification Preferences ── */}
-                        <Card className="border-border/40 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl shadow-lg transition-colors">
-                            <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
-                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50 flex items-center gap-2">
-                                    <Bell className="w-4 h-4 text-blue-500" />
-                                    Notifications
-                                </h3>
+                        {/* Notification Preferences */}
+                        <Card className="border-gray-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="px-5 sm:px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-900/20">
+                                        <Bell className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                                    </div>
+                                    <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50">
+                                        Notifications
+                                    </h3>
+                                </div>
                                 <button
                                     onClick={() => setPrefsOpen(!prefsOpen)}
-                                    className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1 transition-colors"
+                                    className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
                                 >
-                                    {prefsOpen ? 'Less' : 'Manage'}
+                                    {prefsOpen ? 'Hide' : 'Manage'}
                                     {prefsOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                                 </button>
                             </div>
-                            <CardContent className="p-6 space-y-4">
-                                {prefsLoading ? (
-                                    <div className="flex items-center justify-center py-4">
-                                        <Spinner size="sm" color="current" className="text-blue-500" />
-                                    </div>
-                                ) : notifPrefs ? (
-                                    <>
-                                        {/* FCM Push (Primary) */}
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
-                                                    <Smartphone className="w-4 h-4" />
+                            <AnimatePresence>
+                                {prefsOpen && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        transition={{ duration: 0.25, ease: 'easeInOut' }}
+                                        className="overflow-hidden"
+                                    >
+                                        <CardContent className="px-5 sm:px-6 py-4 space-y-1">
+                                            {prefsLoading ? (
+                                                <div className="flex items-center justify-center py-6">
+                                                    <Spinner size="sm" color="current" className="text-blue-500" />
                                                 </div>
-                                                <div>
-                                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">FCM Push (Primary)</p>
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                        {fcmSupported
-                                                            ? fcmEnabled ? 'Subscribed' : 'Not subscribed'
-                                                            : 'Not supported'}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            {fcmSupported && (
-                                                <button
-                                                    onClick={toggleFcm}
-                                                    disabled={fcmLoading}
-                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
-                                                        fcmEnabled ? 'bg-blue-500' : 'bg-gray-300 dark:bg-slate-700'
-                                                    }`}
-                                                    role="switch"
-                                                    aria-checked={fcmEnabled}
-                                                >
-                                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
-                                                        fcmEnabled ? 'translate-x-6' : 'translate-x-1'
-                                                    }`} />
-                                                </button>
-                                            )}
-                                        </div>
-                                        {fcmError && (
-                                            <p className="text-xs text-red-500 pl-11">{fcmError}</p>
-                                        )}
-
-                                        {/* VAPID Push (Fallback) */}
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400">
-                                                    <Smartphone className="w-4 h-4" />
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">VAPID Push (Fallback)</p>
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                        {vapidSupported
-                                                            ? vapidEnabled ? 'Subscribed' : 'Not subscribed'
-                                                            : 'Not supported'}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            {vapidSupported && (
-                                                <button
-                                                    onClick={toggleVapid}
-                                                    disabled={vapidLoading}
-                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
-                                                        vapidEnabled ? 'bg-blue-500' : 'bg-gray-300 dark:bg-slate-700'
-                                                    }`}
-                                                    role="switch"
-                                                    aria-checked={vapidEnabled}
-                                                >
-                                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
-                                                        vapidEnabled ? 'translate-x-6' : 'translate-x-1'
-                                                    }`} />
-                                                </button>
-                                            )}
-                                        </div>
-                                        {vapidError && (
-                                            <p className="text-xs text-red-500 pl-11">{vapidError}</p>
-                                        )}
-
-                                        {/* Email notifications toggle */}
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400">
-                                                    <MailIcon className="w-4 h-4" />
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Email Notifications</p>
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                        {notifPrefs.email ? 'Enabled' : 'Disabled'}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={() => handlePrefsUpdate({ email: !notifPrefs.email })}
-                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
-                                                    notifPrefs.email ? 'bg-blue-500' : 'bg-gray-300 dark:bg-slate-700'
-                                                }`}
-                                                role="switch"
-                                                aria-checked={notifPrefs.email}
-                                            >
-                                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
-                                                    notifPrefs.email ? 'translate-x-6' : 'translate-x-1'
-                                                }`} />
-                                            </button>
-                                        </div>
-
-                                        {/* Quiet Hours */}
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400">
-                                                    <Moon className="w-4 h-4" />
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Quiet Hours</p>
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                        {notifPrefs.quietHours?.enabled
-                                                            ? `${notifPrefs.quietHours.start || '22:00'} - ${notifPrefs.quietHours.end || '08:00'}`
+                                            ) : notifPrefs ? (
+                                                <>
+                                                    <NotificationToggle
+                                                        icon={Smartphone}
+                                                        iconBg="bg-blue-50 dark:bg-blue-900/20"
+                                                        iconColor="text-blue-600 dark:text-blue-400"
+                                                        title="FCM Push"
+                                                        description={fcmSupported ? (fcmEnabled ? 'Subscribed' : 'Not subscribed') : 'Not supported on this device'}
+                                                        enabled={fcmEnabled}
+                                                        loading={fcmLoading}
+                                                        onToggle={toggleFcm}
+                                                        error={fcmError}
+                                                    />
+                                                    <div className="h-px bg-gray-100 dark:bg-slate-800" />
+                                                    <NotificationToggle
+                                                        icon={Smartphone}
+                                                        iconBg="bg-green-50 dark:bg-green-900/20"
+                                                        iconColor="text-green-600 dark:text-green-400"
+                                                        title="VAPID Push"
+                                                        description={vapidSupported ? (vapidEnabled ? 'Subscribed' : 'Not subscribed') : 'Not supported on this device'}
+                                                        enabled={vapidEnabled}
+                                                        loading={vapidLoading}
+                                                        onToggle={toggleVapid}
+                                                        error={vapidError}
+                                                    />
+                                                    <div className="h-px bg-gray-100 dark:bg-slate-800" />
+                                                    <NotificationToggle
+                                                        icon={MailIcon}
+                                                        iconBg="bg-purple-50 dark:bg-purple-900/20"
+                                                        iconColor="text-purple-600 dark:text-purple-400"
+                                                        title="Email Notifications"
+                                                        description={notifPrefs.email ? 'Enabled' : 'Disabled'}
+                                                        enabled={notifPrefs.email}
+                                                        loading={false}
+                                                        onToggle={() => handlePrefsUpdate({ email: !notifPrefs.email })}
+                                                    />
+                                                    <div className="h-px bg-gray-100 dark:bg-slate-800" />
+                                                    <NotificationToggle
+                                                        icon={Moon}
+                                                        iconBg="bg-indigo-50 dark:bg-indigo-900/20"
+                                                        iconColor="text-indigo-600 dark:text-indigo-400"
+                                                        title="Quiet Hours"
+                                                        description={notifPrefs.quietHours?.enabled
+                                                            ? `${notifPrefs.quietHours.start || '22:00'} – ${notifPrefs.quietHours.end || '08:00'}`
                                                             : 'Off'}
-                                                    </p>
+                                                        enabled={notifPrefs.quietHours?.enabled || false}
+                                                        loading={false}
+                                                        onToggle={() => handlePrefsUpdate({
+                                                            quietHours: {
+                                                                ...notifPrefs.quietHours,
+                                                                enabled: !notifPrefs.quietHours?.enabled,
+                                                            }
+                                                        })}
+                                                    />
+                                                </>
+                                            ) : (
+                                                <div className="flex items-center justify-center py-6">
+                                                    <p className="text-xs text-gray-400">Could not load preferences</p>
                                                 </div>
-                                            </div>
-                                            <button
-                                                onClick={() => handlePrefsUpdate({
-                                                    quietHours: {
-                                                        ...notifPrefs.quietHours,
-                                                        enabled: !notifPrefs.quietHours?.enabled,
-                                                    }
-                                                })}
-                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
-                                                    notifPrefs.quietHours?.enabled ? 'bg-blue-500' : 'bg-gray-300 dark:bg-slate-700'
-                                                }`}
-                                                role="switch"
-                                                aria-checked={notifPrefs.quietHours?.enabled || false}
-                                            >
-                                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
-                                                    notifPrefs.quietHours?.enabled ? 'translate-x-6' : 'translate-x-1'
-                                                }`} />
-                                            </button>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="flex items-center justify-center py-4">
-                                        <p className="text-xs text-gray-400">Could not load preferences</p>
-                                    </div>
+                                            )}
+                                        </CardContent>
+                                    </motion.div>
                                 )}
-                            </CardContent>
+                            </AnimatePresence>
                         </Card>
                     </motion.div>
                 </motion.div>
 
-                {/* ── Edit Profile Modal ── */}
+                {/* Edit Profile Modal */}
                 <EditModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Edit Profile">
                     <EditForm handleClose={() => setIsModalOpen(false)} initialData={user} />
                 </EditModal>
 
-                {/* ── Deactivation Confirmation Dialog ── */}
+                {/* Deactivation Confirmation */}
                 <ConfirmDialog
                     isOpen={showDeactivateConfirm}
                     onClose={() => setShowDeactivateConfirm(false)}

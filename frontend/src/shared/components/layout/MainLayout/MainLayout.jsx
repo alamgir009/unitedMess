@@ -7,7 +7,7 @@ const MainLayout = ({ children }) => {
 
     return (
         <div className="h-full bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
-            <div className="flex h-screen overflow-hidden">
+            <div className="flex h-[100dvh] overflow-hidden">
                 <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
                 <div className="flex flex-1 flex-col overflow-hidden">

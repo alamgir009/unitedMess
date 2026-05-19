@@ -21,6 +21,7 @@ import PublicLayout from '@/shared/components/layout/PublicLayout/PublicLayout';
 
 import ProtectedRoute from '@/shared/components/routes/ProtectedRoute';
 import GuestRoute from '@/shared/components/routes/GuestRoute';
+import AdminRoute from '@/shared/components/routes/AdminRoute';
 import MealPage from '@/modules/meal/pages/MealPage/MealPage';
 import MarketPage from '@/modules/market/pages/MarketPage/MarketPage';
 import PaymentPage from '@/modules/payment/pages/PaymentPage/PaymentPage';
@@ -130,9 +131,9 @@ const AppRoutes = () => {
             <Route
                 path="/settings"
                 element={
-                    <ProtectedRoute>
+                    <AdminRoute>
                         <SettingsPage/>
-                    </ProtectedRoute>
+                    </AdminRoute>
                 }
             />
 
