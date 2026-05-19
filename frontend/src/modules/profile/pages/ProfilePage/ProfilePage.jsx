@@ -20,6 +20,7 @@ import {
     ChevronUp,
     Crown,
     Users,
+    WifiOff,
 } from 'lucide-react';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import { Card, CardContent } from '@/shared/ui/Card/Card';
@@ -126,34 +127,41 @@ const ProfileRow = ({ icon: Icon, label, value, isLast = false }) => (
 // Notification Toggle Row
 // ---------------------------------------------------------------------------- //
 const NotificationToggle = ({ icon: Icon, iconBg, iconColor, title, description, enabled, loading, onToggle, error }) => (
-    <div className="flex items-center justify-between py-3">
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className={`p-2 rounded-xl shrink-0 ${iconBg}`}>
-                <Icon className={`w-4 h-4 ${iconColor}`} />
+    <div className="py-3">
+        <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className={`p-2 rounded-xl shrink-0 ${iconBg}`}>
+                    <Icon className={`w-4 h-4 ${iconColor}`} />
+                </div>
+                <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-tight">{title}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{description}</p>
+                </div>
             </div>
-            <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{title}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{description}</p>
-            </div>
+            <button
+                onClick={onToggle}
+                disabled={loading}
+                className={`relative inline-flex h-[22px] w-10 items-center rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-indigo-400 shrink-0 ml-4 ${
+                    loading ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
+                } ${
+                    enabled
+                        ? 'bg-indigo-500'
+                        : 'bg-gray-200 dark:bg-slate-600'
+                }`}
+                role="switch"
+                aria-checked={enabled}
+            >
+                <span className={`inline-block h-[16px] w-[16px] transform rounded-full bg-white shadow transition-transform duration-200 ${
+                    enabled ? 'translate-x-[22px]' : 'translate-x-[3px]'
+                }`} />
+            </button>
         </div>
-        <button
-            onClick={onToggle}
-            disabled={loading}
-            style={enabled ? { boxShadow: '0 0 0 3px rgba(99,102,241,0.15)' } : {}}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 shrink-0 ml-3 ${
-                loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-            } ${enabled
-                ? 'bg-gradient-to-r from-indigo-500 to-violet-500'
-                : 'bg-gray-200 dark:bg-slate-700'
-            }`}
-            role="switch"
-            aria-checked={enabled}
-        >
-            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200 ${
-                enabled ? 'translate-x-6' : 'translate-x-1'
-            }`} />
-        </button>
-        {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+        {error && (
+            <div className="flex items-center gap-1.5 mt-1.5 ml-11">
+                <AlertTriangle className="w-3 h-3 text-red-500 shrink-0" />
+                <p className="text-xs text-red-600 dark:text-red-400 leading-snug">{error}</p>
+            </div>
+        )}
     </div>
 );
 
@@ -190,13 +198,20 @@ const ProfilePage = () => {
 
     const [notifPrefs, setNotifPrefs] = useState(null);
     const [prefsLoading, setPrefsLoading] = useState(true);
+    const [prefsError, setPrefsError] = useState(false);
     const [prefsOpen, setPrefsOpen] = useState(false);
 
     useEffect(() => {
         if (!user) return;
+        setPrefsLoading(true);
+        setPrefsError(false);
         NotificationService.getPreferences()
-            .then((res) => setNotifPrefs(res?.data || null))
-            .catch(() => {})
+            .then((res) => {
+                const data = res?.data ?? null;
+                setNotifPrefs(data);
+                if (!data) setPrefsError(true);
+            })
+            .catch(() => setPrefsError(true))
             .finally(() => setPrefsLoading(false));
     }, [user]);
 
@@ -336,32 +351,16 @@ const ProfilePage = () => {
                                         <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50 truncate max-w-full">
                                             {user?.name || 'Member User'}
                                         </h3>
-                                        {/* ── Fintech-grade Role Badge ── */}
-                                    <div className="flex items-center justify-center mt-1">
+                                        {/* ── Role Badge — flat solid, GPU-friendly ── */}
+                                    <div className="flex items-center justify-center mt-1.5">
                                         {isAdmin ? (
-                                            <span
-                                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-widest uppercase"
-                                                style={{
-                                                    background: 'linear-gradient(135deg,#7c3aed 0%,#a855f7 60%,#c084fc 100%)',
-                                                    color: '#fff',
-                                                    letterSpacing: '0.1em',
-                                                    boxShadow: '0 2px 8px rgba(124,58,237,0.30), inset 0 1px 0 rgba(255,255,255,0.15)',
-                                                }}
-                                            >
-                                                <Crown className="w-3 h-3" />
-                                                Administrator
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold tracking-widest uppercase bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-700/50">
+                                                <Crown className="w-2.5 h-2.5" />
+                                                Admin
                                             </span>
                                         ) : (
-                                            <span
-                                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-widest uppercase"
-                                                style={{
-                                                    background: 'linear-gradient(135deg,#0f766e 0%,#0d9488 60%,#2dd4bf 100%)',
-                                                    color: '#fff',
-                                                    letterSpacing: '0.1em',
-                                                    boxShadow: '0 2px 8px rgba(13,148,136,0.28), inset 0 1px 0 rgba(255,255,255,0.15)',
-                                                }}
-                                            >
-                                                <Users className="w-3 h-3" />
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold tracking-widest uppercase bg-teal-50 dark:bg-teal-900/25 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-700/50">
+                                                <Users className="w-2.5 h-2.5" />
                                                 Member
                                             </span>
                                         )}
@@ -436,12 +435,7 @@ const ProfilePage = () => {
                                 </div>
                                 <button
                                     onClick={() => setIsModalOpen(true)}
-                                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold tracking-wide rounded-lg transition-all active:scale-95"
-                                    style={{
-                                        background: 'linear-gradient(135deg,#4f46e5 0%,#6366f1 50%,#818cf8 100%)',
-                                        color: '#fff',
-                                        boxShadow: '0 2px 8px rgba(99,102,241,0.30), inset 0 1px 0 rgba(255,255,255,0.12)',
-                                    }}
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg border border-indigo-300 dark:border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors active:scale-95"
                                     aria-label="Edit personal details"
                                 >
                                     <Edit3 className="w-3.5 h-3.5" />
@@ -472,14 +466,8 @@ const ProfilePage = () => {
                                 </div>
                                 <button
                                     onClick={() => setPrefsOpen(!prefsOpen)}
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold tracking-wide rounded-lg transition-all active:scale-95"
-                                    style={{
-                                        background: prefsOpen
-                                            ? 'linear-gradient(135deg,#4f46e5 0%,#6366f1 100%)'
-                                            : 'rgba(99,102,241,0.08)',
-                                        color: prefsOpen ? '#fff' : '#6366f1',
-                                        boxShadow: prefsOpen ? '0 2px 8px rgba(99,102,241,0.25)' : 'none',
-                                    }}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                                    aria-expanded={prefsOpen}
                                 >
                                     {prefsOpen ? 'Hide' : 'Manage'}
                                     {prefsOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -494,13 +482,39 @@ const ProfilePage = () => {
                                         transition={{ duration: 0.25, ease: 'easeInOut' }}
                                         className="overflow-hidden"
                                     >
-                                        <CardContent className="px-4 sm:px-6 py-4 space-y-1">
+                                        <CardContent className="px-4 sm:px-6 pt-2 pb-4 space-y-0">
                                             {prefsLoading ? (
-                                                <div className="flex items-center justify-center py-6">
-                                                    <Spinner size="sm" color="current" className="text-blue-500" />
+                                                <div className="flex items-center gap-2.5 justify-center py-8">
+                                                    <Spinner size="sm" color="current" className="text-indigo-500" />
+                                                    <span className="text-xs text-gray-400 dark:text-gray-500">Loading preferences…</span>
+                                                </div>
+                                            ) : prefsError ? (
+                                                <div className="flex flex-col items-center gap-2 py-8 text-center">
+                                                    <div className="p-2 rounded-xl bg-red-50 dark:bg-red-900/20">
+                                                        <WifiOff className="w-5 h-5 text-red-500 dark:text-red-400" />
+                                                    </div>
+                                                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Could not load preferences</p>
+                                                    <p className="text-xs text-gray-400 dark:text-gray-500">Check your connection and try again.</p>
+                                                    <button
+                                                        onClick={() => {
+                                                            setPrefsLoading(true);
+                                                            setPrefsError(false);
+                                                            NotificationService.getPreferences()
+                                                                .then((res) => {
+                                                                    const data = res?.data ?? null;
+                                                                    setNotifPrefs(data);
+                                                                    if (!data) setPrefsError(true);
+                                                                })
+                                                                .catch(() => setPrefsError(true))
+                                                                .finally(() => setPrefsLoading(false));
+                                                        }}
+                                                        className="mt-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                                                    >
+                                                        Retry
+                                                    </button>
                                                 </div>
                                             ) : notifPrefs ? (
-                                                <>
+                                                <div className="divide-y divide-gray-100 dark:divide-slate-800">
                                                     <NotificationToggle
                                                         icon={Smartphone}
                                                         iconBg="bg-blue-50 dark:bg-blue-900/20"
@@ -512,7 +526,6 @@ const ProfilePage = () => {
                                                         onToggle={toggleFcm}
                                                         error={fcmError}
                                                     />
-                                                    <div className="h-px bg-gray-100 dark:bg-slate-800" />
                                                     <NotificationToggle
                                                         icon={Smartphone}
                                                         iconBg="bg-green-50 dark:bg-green-900/20"
@@ -524,7 +537,6 @@ const ProfilePage = () => {
                                                         onToggle={toggleVapid}
                                                         error={vapidError}
                                                     />
-                                                    <div className="h-px bg-gray-100 dark:bg-slate-800" />
                                                     <NotificationToggle
                                                         icon={MailIcon}
                                                         iconBg="bg-purple-50 dark:bg-purple-900/20"
@@ -535,7 +547,6 @@ const ProfilePage = () => {
                                                         loading={false}
                                                         onToggle={() => handlePrefsUpdate({ email: !notifPrefs.email })}
                                                     />
-                                                    <div className="h-px bg-gray-100 dark:bg-slate-800" />
                                                     <NotificationToggle
                                                         icon={Moon}
                                                         iconBg="bg-indigo-50 dark:bg-indigo-900/20"
@@ -553,10 +564,14 @@ const ProfilePage = () => {
                                                             }
                                                         })}
                                                     />
-                                                </>
+                                                </div>
                                             ) : (
-                                                <div className="flex items-center justify-center py-6">
-                                                    <p className="text-xs text-gray-400">Could not load preferences</p>
+                                                <div className="flex flex-col items-center gap-2 py-8 text-center">
+                                                    <div className="p-2 rounded-xl bg-gray-100 dark:bg-slate-800">
+                                                        <Bell className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                                                    </div>
+                                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">No preferences available</p>
+                                                    <p className="text-xs text-gray-400 dark:text-gray-500">Notification settings have not been configured yet.</p>
                                                 </div>
                                             )}
                                         </CardContent>
