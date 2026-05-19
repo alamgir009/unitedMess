@@ -139,13 +139,17 @@ const NotificationToggle = ({ icon: Icon, iconBg, iconColor, title, description,
         <button
             onClick={onToggle}
             disabled={loading}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/50 shrink-0 ml-3 ${
+            style={enabled ? { boxShadow: '0 0 0 3px rgba(99,102,241,0.15)' } : {}}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 shrink-0 ml-3 ${
                 loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-            } ${enabled ? 'bg-teal-500' : 'bg-gray-300 dark:bg-slate-600'}`}
+            } ${enabled
+                ? 'bg-gradient-to-r from-indigo-500 to-violet-500'
+                : 'bg-gray-200 dark:bg-slate-700'
+            }`}
             role="switch"
             aria-checked={enabled}
         >
-            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200 ${
                 enabled ? 'translate-x-6' : 'translate-x-1'
             }`} />
         </button>
@@ -311,7 +315,7 @@ const ProfilePage = () => {
                     {/* Left Column: Avatar & Quick Info */}
                     <motion.div variants={itemVariants} className="lg:col-span-4 xl:col-span-3 space-y-0 sm:space-y-5">
                         {/* Avatar Card */}
-                        <Card className="overflow-hidden rounded-none sm:rounded-xl border-0 sm:border border-gray-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-none sm:shadow-sm hover:shadow-md transition-shadow mb-px sm:mb-0">
+                        <Card className="overflow-hidden rounded-2xl border border-gray-200/70 dark:border-slate-700/70 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-shadow mb-3 sm:mb-0">
                             <CardContent className="p-6">
                                 <div className="flex flex-col items-center text-center space-y-4">
                                     <AvatarUpload
@@ -332,27 +336,43 @@ const ProfilePage = () => {
                                         <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50 truncate max-w-full">
                                             {user?.name || 'Member User'}
                                         </h3>
-                                        <div className="flex items-center justify-center gap-1.5">
-                                            {isAdmin ? (
-                                                <Crown className="w-3.5 h-3.5 text-violet-500" />
-                                            ) : (
-                                                <Users className="w-3.5 h-3.5 text-teal-500" />
-                                            )}
-                                            <span className={`inline-flex items-center gap-1 text-xs font-semibold tracking-wide px-2.5 py-0.5 rounded-full ${
-                                                isAdmin
-                                                    ? 'bg-violet-50 dark:bg-violet-900/25 text-violet-700 dark:text-violet-300 border border-violet-200/70 dark:border-violet-700/50'
-                                                    : 'bg-teal-50 dark:bg-teal-900/25 text-teal-700 dark:text-teal-300 border border-teal-200/70 dark:border-teal-700/50'
-                                            }`}>
-                                                {isAdmin ? 'Administrator' : 'Member'}
+                                        {/* ── Fintech-grade Role Badge ── */}
+                                    <div className="flex items-center justify-center mt-1">
+                                        {isAdmin ? (
+                                            <span
+                                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-widest uppercase"
+                                                style={{
+                                                    background: 'linear-gradient(135deg,#7c3aed 0%,#a855f7 60%,#c084fc 100%)',
+                                                    color: '#fff',
+                                                    letterSpacing: '0.1em',
+                                                    boxShadow: '0 2px 8px rgba(124,58,237,0.30), inset 0 1px 0 rgba(255,255,255,0.15)',
+                                                }}
+                                            >
+                                                <Crown className="w-3 h-3" />
+                                                Administrator
                                             </span>
-                                        </div>
+                                        ) : (
+                                            <span
+                                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-widest uppercase"
+                                                style={{
+                                                    background: 'linear-gradient(135deg,#0f766e 0%,#0d9488 60%,#2dd4bf 100%)',
+                                                    color: '#fff',
+                                                    letterSpacing: '0.1em',
+                                                    boxShadow: '0 2px 8px rgba(13,148,136,0.28), inset 0 1px 0 rgba(255,255,255,0.15)',
+                                                }}
+                                            >
+                                                <Users className="w-3 h-3" />
+                                                Member
+                                            </span>
+                                        )}
+                                    </div>
                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
 
                         {/* Quick Actions */}
-                        <Card className="rounded-none sm:rounded-xl border-0 sm:border border-gray-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-none sm:shadow-sm mt-px sm:mt-0">
+                        <Card className="rounded-2xl border border-gray-200/70 dark:border-slate-700/70 bg-white dark:bg-slate-900 shadow-sm">
                             <CardContent className="p-2">
                                 <div className="space-y-1">
                                     {isAdmin && (
@@ -402,9 +422,9 @@ const ProfilePage = () => {
                     </motion.div>
 
                     {/* Right Column: Details & Notifications */}
-                    <motion.div variants={itemVariants} className="lg:col-span-8 xl:col-span-9 space-y-0 sm:space-y-5 mt-px sm:mt-0">
+                    <motion.div variants={itemVariants} className="lg:col-span-8 xl:col-span-9 space-y-0 sm:space-y-5 mt-3 sm:mt-0">
                         {/* Personal Details Card */}
-                        <Card className="rounded-none sm:rounded-xl border-0 sm:border border-gray-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-none sm:shadow-sm hover:shadow-md transition-shadow">
+                        <Card className="rounded-2xl border border-gray-200/70 dark:border-slate-700/70 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-shadow">
                             <div className="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
                                 <div className="flex items-center gap-2.5">
                                     <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20">
@@ -416,7 +436,12 @@ const ProfilePage = () => {
                                 </div>
                                 <button
                                     onClick={() => setIsModalOpen(true)}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/30 rounded-lg transition-colors"
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold tracking-wide rounded-lg transition-all active:scale-95"
+                                    style={{
+                                        background: 'linear-gradient(135deg,#4f46e5 0%,#6366f1 50%,#818cf8 100%)',
+                                        color: '#fff',
+                                        boxShadow: '0 2px 8px rgba(99,102,241,0.30), inset 0 1px 0 rgba(255,255,255,0.12)',
+                                    }}
                                     aria-label="Edit personal details"
                                 >
                                     <Edit3 className="w-3.5 h-3.5" />
@@ -435,7 +460,7 @@ const ProfilePage = () => {
                         </Card>
 
                         {/* Notification Preferences */}
-                        <Card className="rounded-none sm:rounded-xl border-0 sm:border border-gray-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-none sm:shadow-sm hover:shadow-md transition-shadow mt-px sm:mt-0">
+                        <Card className="rounded-2xl border border-gray-200/70 dark:border-slate-700/70 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-shadow mt-3 sm:mt-0">
                             <div className="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
                                 <div className="flex items-center gap-2.5">
                                     <div className="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-900/20">
@@ -447,7 +472,14 @@ const ProfilePage = () => {
                                 </div>
                                 <button
                                     onClick={() => setPrefsOpen(!prefsOpen)}
-                                    className="inline-flex items-center gap-1 text-xs font-semibold text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors"
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold tracking-wide rounded-lg transition-all active:scale-95"
+                                    style={{
+                                        background: prefsOpen
+                                            ? 'linear-gradient(135deg,#4f46e5 0%,#6366f1 100%)'
+                                            : 'rgba(99,102,241,0.08)',
+                                        color: prefsOpen ? '#fff' : '#6366f1',
+                                        boxShadow: prefsOpen ? '0 2px 8px rgba(99,102,241,0.25)' : 'none',
+                                    }}
                                 >
                                     {prefsOpen ? 'Hide' : 'Manage'}
                                     {prefsOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
