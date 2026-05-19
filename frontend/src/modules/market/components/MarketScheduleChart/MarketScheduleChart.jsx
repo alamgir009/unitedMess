@@ -107,88 +107,91 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
                         </div>
                     </div>
 
-                    {/* Collapsed member strip */}
-                    {isCollapsed && upcomingMembers.length > 0 && (
-                        <div className="flex items-center flex-shrink-0 mr-2">
-                            <div className="flex items-center -space-x-3">
-                                {displayedMembers.map((day, i) => {
-                                    const dateObj = new Date(day.date);
-                                    const isToday = dateObj.toDateString() === todayStr;
-                                    return (
-                                        <div
-                                            key={i}
-                                            className={`
+                    {/* ── Right Section ── */}
+                    <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 ml-auto">
+                        {/* Collapsed member strip */}
+                        {isCollapsed && upcomingMembers.length > 0 && (
+                            <div className="flex items-center">
+                                <div className="flex items-center -space-x-3">
+                                    {displayedMembers.map((day, i) => {
+                                        const dateObj = new Date(day.date);
+                                        const isToday = dateObj.toDateString() === todayStr;
+                                        return (
+                                            <div
+                                                key={i}
+                                                className={`
+                                                    relative w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden 
+                                                    flex items-center justify-center flex-shrink-0
+                                                    ring-2 ring-card dark:ring-card
+                                                    transition-transform duration-300 hover:-translate-y-1 hover:z-10
+                                                    ${isToday
+                                                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-400/30 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
+                                                        : 'bg-muted/80 text-muted-foreground border border-white/10'
+                                                    }
+                                                `}
+                                                title={`${day.user.name.split(' ')[0]} - ${dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`}
+                                            >
+                                                {day.user.image ? (
+                                                    <img
+                                                        src={day.user.image}
+                                                        alt={day.user.name}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <span className="text-xs sm:text-sm font-bold uppercase">
+                                                        {day.user.name.charAt(0)}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                    {remainingCount > 0 && (
+                                        <div 
+                                            className="
                                                 relative w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden 
                                                 flex items-center justify-center flex-shrink-0
                                                 ring-2 ring-card dark:ring-card
-                                                transition-transform duration-300 hover:-translate-y-1 hover:z-10
-                                                ${isToday
-                                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-400/30'
-                                                    : 'bg-muted/80 text-muted-foreground border border-white/10'
-                                                }
-                                            `}
-                                            title={`${day.user.name.split(' ')[0]} - ${dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`}
+                                                bg-muted/50 dark:bg-muted/30 backdrop-blur-sm border border-white/10
+                                                text-xs sm:text-sm font-bold text-foreground
+                                            "
                                         >
-                                            {day.user.image ? (
-                                                <img
-                                                    src={day.user.image}
-                                                    alt={day.user.name}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            ) : (
-                                                <span className="text-xs sm:text-sm font-bold uppercase">
-                                                    {day.user.name.charAt(0)}
-                                                </span>
-                                            )}
+                                            +{remainingCount}
                                         </div>
-                                    );
-                                })}
-                                {remainingCount > 0 && (
-                                    <div 
-                                        className="
-                                            relative w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden 
-                                            flex items-center justify-center flex-shrink-0
-                                            ring-2 ring-card dark:ring-card
-                                            bg-muted/50 dark:bg-muted/30 backdrop-blur-sm border border-white/10
-                                            text-xs sm:text-sm font-bold text-foreground
-                                        "
-                                    >
-                                        +{remainingCount}
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {/* Expanded: Today chip */}
-                    {!isCollapsed && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                scrollToToday();
-                            }}
-                            className="
-                                flex-shrink-0
-                                px-3 py-1 rounded-full text-xs font-medium
-                                bg-emerald-500/10 text-emerald-400
-                                border border-emerald-400/30
-                                backdrop-blur-md
-                                hover:bg-emerald-500/20
-                                transition-all shadow-sm
-                            "
+                        {/* Expanded: Today chip */}
+                        {!isCollapsed && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    scrollToToday();
+                                }}
+                                className="
+                                    flex-shrink-0
+                                    px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-xs font-medium
+                                    bg-emerald-500/10 text-emerald-400
+                                    border border-emerald-400/30
+                                    backdrop-blur-md
+                                    hover:bg-emerald-500/20
+                                    transition-all shadow-sm
+                                "
+                            >
+                                Today
+                            </button>
+                        )}
+
+                        {/* Chevron */}
+                        <motion.div
+                            animate={{ rotate: isCollapsed ? 0 : 180 }}
+                            transition={{ duration: 0.2, ease: 'easeInOut' }}
+                            className="text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0 ml-1"
                         >
-                            Today
-                        </button>
-                    )}
-
-                    {/* Chevron */}
-                    <motion.div
-                        animate={{ rotate: isCollapsed ? 0 : 180 }}
-                        transition={{ duration: 0.2, ease: 'easeInOut' }}
-                        className="text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0"
-                    >
-                        <HiOutlineChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </motion.div>
+                            <HiOutlineChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </motion.div>
+                    </div>
                 </button>
 
                 {/* ── Collapsible Body ── */}
