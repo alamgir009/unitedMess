@@ -109,30 +109,17 @@
 
 @layer components {
 
-  /* ─── Glass Morphism ─── */
+  /* ─── Solid Surfaces (replaces glass morphism) ─── */
   .glass {
-    background: var(--glass-bg);
-    backdrop-filter: var(--glass-blur-light);
-    -webkit-backdrop-filter: var(--glass-blur-light);
-    border: 1px solid var(--glass-border);
+    background: var(--surface-raised);
+    border: 1px solid var(--border-color);
     box-shadow: var(--shadow-sm);
   }
 
   .glass-heavy {
     background: var(--surface-overlay);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    border: 1px solid var(--glass-border);
+    border: 1px solid var(--border-color);
     box-shadow: var(--shadow-md);
-  }
-
-  /* Fallback for browsers without backdrop-filter */
-  @supports not (backdrop-filter: blur(1px)) {
-
-    .glass,
-    .glass-heavy {
-      background: var(--surface-raised);
-    }
   }
 
   /* ─── Card Variants ─── */
@@ -144,8 +131,10 @@
   }
 
   .card-glass {
-    @apply glass;
+    background: var(--surface-raised);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
   }
 
   .card-elevated {
@@ -174,12 +163,6 @@
 }
 
 @layer utilities {
-
-  /* ─── GPU acceleration hints ─── */
-  .gpu {
-    will-change: transform, opacity;
-    transform: translateZ(0);
-  }
 
   /* ─── Touch targets ─── */
   .touch-target {

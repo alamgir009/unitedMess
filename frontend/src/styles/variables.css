@@ -64,12 +64,12 @@
     --radius-3xl: 2rem;
     --radius-full: 9999px;
 
-    /* ─── Transitions ─── */
-    --transition-fast: 100ms cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-spring: 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
-    --transition-smooth: 300ms cubic-bezier(0.23, 1, 0.32, 1);
+    /* ─── Transitions (ultra-fast for low-end devices) ─── */
+    --transition-fast: 50ms ease;
+    --transition-normal: 100ms ease;
+    --transition-slow: 150ms ease;
+    --transition-spring: 100ms ease;
+    --transition-smooth: 100ms ease;
 
     /* ─── Z-Index Scale ─── */
     --z-0: 0;
@@ -81,9 +81,4 @@
     --z-modal: 300;
     --z-toast: 400;
     --z-tooltip: 500;
-
-    /* ─── Glass Effect ─── */
-    --glass-blur: blur(20px);
-    --glass-blur-heavy: blur(32px);
-    --glass-blur-light: blur(12px);
 }
