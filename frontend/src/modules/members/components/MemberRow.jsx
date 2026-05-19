@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { ChevronDown, UserX } from 'lucide-react';
 import { Avatar } from '@/shared/components/ui';
 import MemberInvoiceDetails from './MemberInvoiceDetails';
@@ -17,7 +17,7 @@ const STATUS_MAP = {
 
 const DEFAULT_STATUS = { bg: 'bg-slate-50 dark:bg-slate-800', text: 'text-slate-600 dark:text-slate-400', border: 'border-slate-200 dark:border-slate-700', dot: 'bg-slate-400' };
 
-export const StatusBadge = ({ status }) => {
+export const StatusBadge = React.memo(({ status }) => {
     const key = (status || 'pending').toLowerCase();
     const style = STATUS_MAP[key] ?? DEFAULT_STATUS;
 
@@ -34,12 +34,13 @@ export const StatusBadge = ({ status }) => {
             {key}
         </span>
     );
-};
+});
+StatusBadge.displayName = 'StatusBadge';
 
 /* ─────────────────────────────────────────────
    ExpandButton — desktop right column
 ───────────────────────────────────────────── */
-const ExpandButton = ({ isExpanded }) => (
+const ExpandButton = React.memo(({ isExpanded }) => (
     <div
         className={[
             'w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200',
@@ -54,27 +55,29 @@ const ExpandButton = ({ isExpanded }) => (
             className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
         />
     </div>
-);
+));
+ExpandButton.displayName = 'ExpandButton';
 
 /* ─────────────────────────────────────────────
    Mobile label — appears above each value on sm
 ───────────────────────────────────────────── */
-const MobileLabel = ({ children }) => (
+const MobileLabel = React.memo(({ children }) => (
     <span className="md:hidden text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
         {children}
     </span>
-);
+));
+MobileLabel.displayName = 'MobileLabel';
 
 /* ─────────────────────────────────────────────
    MemberRow
 ───────────────────────────────────────────── */
-const MemberRow = ({ user, index, isLast }) => {
+const MemberRow = React.memo(({ user, index, isLast }) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
     const toggle = useCallback(() => setIsExpanded((v) => !v), []);
 
-    /* Row variants */
-    const rowBase = [
+    /* Row variants — memoized to avoid .join(' ') on every render */
+    const rowBase = useMemo(() => [
         'group w-full relative cursor-pointer',
         'transition-colors duration-150',
         // Desktop layout
@@ -92,7 +95,9 @@ const MemberRow = ({ user, index, isLast }) => {
         index === 0 ? 'md:border-t-0' : '',
         // Last row — round bottom corners and remove bottom border if not expanded
         isLast && !isExpanded ? 'md:border-b-0' : '',
-    ].join(' ');
+    ].join(' '), [isExpanded, index, isLast]);
+
+    const formattedMarketAmount = useMemo(() => (user.totalMarketAmount ?? 0).toLocaleString('en-IN'), [user.totalMarketAmount]);
 
     return (
         <div className="flex flex-col w-full">
@@ -164,7 +169,7 @@ const MemberRow = ({ user, index, isLast }) => {
                 <div className="md:col-span-2 flex items-center justify-between md:block gap-2">
                     <MobileLabel>Market Amount</MobileLabel>
                     <span className="text-[14px] md:text-[15px] font-extrabold text-slate-700 dark:text-slate-200 tabular-nums">
-                        ₹&nbsp;{(user.totalMarketAmount ?? 0).toLocaleString('en-IN')}
+                        ₹&nbsp;{formattedMarketAmount}
                     </span>
                 </div>
 
@@ -208,6 +213,7 @@ const MemberRow = ({ user, index, isLast }) => {
             </div>
         </div>
     );
-};
+});
+MemberRow.displayName = 'MemberRow';
 
-export default React.memo(MemberRow);
+export default MemberRow;

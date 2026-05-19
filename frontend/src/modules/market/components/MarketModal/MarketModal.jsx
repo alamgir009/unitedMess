@@ -36,9 +36,12 @@ const MarketModal = ({ isOpen, onClose, title, children }) => {
         [isMobile]
     );
 
-    const initialState = isMobile
-        ? { opacity: 0, scale: 0.985, y: 14 }
-        : { opacity: 0, scale: 0.96, y: 24 };
+    const initialState = useMemo(
+        () => (isMobile
+            ? { opacity: 0, scale: 0.985, y: 14 }
+            : { opacity: 0, scale: 0.96, y: 24 }),
+        [isMobile]
+    );
 
     useEffect(() => {
         if (!isOpen) return;

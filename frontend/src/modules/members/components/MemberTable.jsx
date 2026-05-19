@@ -18,7 +18,7 @@ export const COLUMNS = [
 /* ─────────────────────────────────────────────
    Empty state
 ───────────────────────────────────────────── */
-const EmptyState = () => (
+const EmptyState = React.memo(() => (
     <div
         className="flex flex-col items-center justify-center py-28 px-6
                    bg-white dark:bg-slate-900
@@ -45,12 +45,13 @@ const EmptyState = () => (
             Wait for users to register or ensure the database is connected.
         </p>
     </div>
-);
+));
+EmptyState.displayName = 'EmptyState';
 
 /* ─────────────────────────────────────────────
    Loading skeleton — matches table layout
 ───────────────────────────────────────────── */
-const SkeletonRow = () => (
+const SkeletonRow = React.memo(() => (
     <div
         className="grid grid-cols-12 gap-4 items-center
                    rounded-2xl border border-slate-200 dark:border-slate-800
@@ -75,7 +76,8 @@ const SkeletonRow = () => (
             <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800" />
         </div>
     </div>
-);
+));
+SkeletonRow.displayName = 'SkeletonRow';
 
 /* ─────────────────────────────────────────────
    MemberTable

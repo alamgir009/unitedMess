@@ -1,6 +1,5 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { motion } from 'framer-motion';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import MemberTable from '../../components/MemberTable';
 import AdminUnpaidPanel from '../../components/AdminUnpaidPanel';
@@ -11,19 +10,18 @@ import {
 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────
-   Stat Card
+   Stat Card — memoized, CSS-only animation for speed
 ───────────────────────────────────────────── */
-const StatCard = ({ icon: Icon, label, value, subvalue, accent = false, loading = false, delay = 0 }) => {
+const StatCard = React.memo(({ icon: Icon, label, value, subvalue, accent = false, loading = false, delay = 0 }) => {
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay, duration: 0.35 }}
+        <div
+            style={{ animationDelay: `${delay}s` }}
             className={[
                 'group relative overflow-hidden rounded-2xl border p-3.5 text-left',
                 'transition-colors duration-200',
                 'min-h-[110px] sm:min-h-[120px] sm:p-4',
                 'backdrop-blur-md',
+                'animate-[fadeSlideUp_0.35s_cubic-bezier(0.22,1,0.36,1)_both]',
                 accent 
                     ? 'border-transparent bg-white/95 shadow-[0_12px_32px_-8px_rgba(245,158,11,0.40)] ring-1 ring-amber-500/30 dark:bg-slate-900/90'
                     : 'border-black/[0.06] bg-white/65 hover:bg-white/90 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.07]'
@@ -75,14 +73,15 @@ const StatCard = ({ icon: Icon, label, value, subvalue, accent = false, loading 
                     )}
                 </div>
             </div>
-        </motion.div>
+        </div>
     );
-};
+});
+StatCard.displayName = 'StatCard';
 
 /* ─────────────────────────────────────────────
    Error Banner
 ───────────────────────────────────────────── */
-const ErrorBanner = ({ message, onRetry }) => (
+const ErrorBanner = React.memo(({ message, onRetry }) => (
     <div
         role="alert"
         className="mb-6 flex items-center justify-between gap-4 px-5 py-4
@@ -107,7 +106,7 @@ const ErrorBanner = ({ message, onRetry }) => (
         </div>
         <button
             onClick={onRetry}
-            aria-label="Retry loading members"
+            aria-label="retry loading members"
             className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold
                        bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400
                        hover:bg-rose-200 dark:hover:bg-rose-500/30
@@ -117,12 +116,13 @@ const ErrorBanner = ({ message, onRetry }) => (
             Retry
         </button>
     </div>
-);
+));
+ErrorBanner.displayName = 'ErrorBanner';
 
 /* ─────────────────────────────────────────────
    MemberPage — Main
 ───────────────────────────────────────────── */
-const MemberPage = () => {
+const MemberPage = React.memo(() => {
     const dispatch = useDispatch();
     const { users, isLoading, isError, message, billingStats, billingStatsLoading } = useSelector((state) => state.members);
     const { user: currentUser } = useSelector((state) => state.auth);
@@ -158,7 +158,7 @@ const MemberPage = () => {
         dispatch(fetchBillingMonthStats());
     }, [dispatch]);
 
-    const handleRetry = () => {
+    const handleRetry = useCallback(() => {
         dispatch(fetchUsers({ 
             page: 1, 
             limit: 100, 
@@ -166,7 +166,11 @@ const MemberPage = () => {
             userStatus: 'approved' 
         }));
         dispatch(fetchBillingMonthStats());
-    };
+    }, [dispatch]);
+
+    const formattedMarketExp = useMemo(() => `₹\u202F${(billingStats.grandTotalMarket ?? 0).toLocaleString('en-IN')}`, [billingStats.grandTotalMarket]);
+    const formattedTotalMeals = useMemo(() => (billingStats.grandTotalMeal ?? 0).toLocaleString('en-IN'), [billingStats.grandTotalMeal]);
+    const formattedMealRate = useMemo(() => `₹\u202F${(billingStats.mealCharge ?? 0).toFixed(2)}`, [billingStats.mealCharge]);
 
     return (
         <MainLayout>
@@ -223,11 +227,7 @@ const MemberPage = () => {
                             </div>
                         </div>
 
-                        {/* ── Stat cards strip ──
-                            Stats now come from the billing-month API endpoint,
-                            which aggregates Meal and Market records for the active
-                            billing period only (respects the 10th-day cutoff rule).
-                        ── */}
+                        {/* ── Stat cards strip ── */}
                         <div className="grid grid-cols-2 gap-3 xl:grid-cols-4 w-full lg:w-auto mt-4 lg:mt-0 flex-shrink-0">
                             <StatCard
                                 icon={Users}
@@ -239,21 +239,21 @@ const MemberPage = () => {
                             <StatCard
                                 icon={Receipt}
                                 label="Market Exp."
-                                value={`₹\u202F${(billingStats.grandTotalMarket ?? 0).toLocaleString('en-IN')}`}
+                                value={formattedMarketExp}
                                 loading={billingStatsLoading}
                                 delay={0.1}
                             />
                             <StatCard
                                 icon={Utensils}
                                 label="Total Meals"
-                                value={(billingStats.grandTotalMeal ?? 0).toLocaleString('en-IN')}
+                                value={formattedTotalMeals}
                                 loading={billingStatsLoading}
                                 delay={0.2}
                             />
                             <StatCard
                                 icon={TrendingUp}
                                 label="Meal Rate"
-                                value={`₹\u202F${(billingStats.mealCharge ?? 0).toFixed(2)}`}
+                                value={formattedMealRate}
                                 loading={billingStatsLoading}
                                 accent
                                 delay={0.3}
@@ -311,6 +311,7 @@ const MemberPage = () => {
             `}</style>
         </MainLayout>
     );
-};
+});
+MemberPage.displayName = 'MemberPage';
 
 export default MemberPage;

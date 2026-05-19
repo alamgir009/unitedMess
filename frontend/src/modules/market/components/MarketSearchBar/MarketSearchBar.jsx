@@ -7,7 +7,7 @@ import { SearchBar } from '@/shared/components/ui';
  * Search input + collapsible date-range filter panel.
  * Keeps NO state of its own — everything is lifted to the parent (MarketPage).
  */
-const MarketSearchBar = ({
+const MarketSearchBar = React.memo(({
     isAdmin,
     searchQuery,
     onSearchChange,
@@ -63,6 +63,7 @@ const MarketSearchBar = ({
             </div>
         </div>
     </SearchBar>
-);
+));
+MarketSearchBar.displayName = 'MarketSearchBar';
 
 export default MarketSearchBar;

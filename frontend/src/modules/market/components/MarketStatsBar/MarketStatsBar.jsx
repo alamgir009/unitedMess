@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     HiOutlineShoppingBag,
     HiOutlineCurrencyRupee,
@@ -11,7 +11,7 @@ const PILL_STYLES = {
     amber: 'bg-amber-400/10 border-amber-400/20 text-amber-500 dark:text-amber-400',
 };
 
-const StatPill = ({ icon: Icon, label, value, colorKey, fullWidth = false }) => (
+const StatPill = React.memo(({ icon: Icon, label, value, colorKey, fullWidth = false }) => (
     <div
         className={[
             'flex items-center gap-3 px-4 py-3 rounded-2xl border',
@@ -28,11 +28,11 @@ const StatPill = ({ icon: Icon, label, value, colorKey, fullWidth = false }) => 
             <p className="text-xl font-black leading-tight tabular-nums">{value}</p>
         </div>
     </div>
-);
+));
+StatPill.displayName = 'StatPill';
 
-//   MarketStatsBar
-const MarketStatsBar = ({ totalRecords, totalAmount, uniqueUsers, isAdmin }) => {
-    const pills = [
+const MarketStatsBar = React.memo(({ totalRecords, totalAmount, uniqueUsers, isAdmin }) => {
+    const pills = useMemo(() => [
         {
             icon: HiOutlineShoppingBag,
             label: 'Total Records',
@@ -48,7 +48,7 @@ const MarketStatsBar = ({ totalRecords, totalAmount, uniqueUsers, isAdmin }) => 
         ...(isAdmin
             ? [{ icon: HiOutlineUserGroup, label: 'Members', value: uniqueUsers, colorKey: 'amber' }]
             : []),
-    ];
+    ], [totalRecords, totalAmount, uniqueUsers, isAdmin]);
 
     return (
         <div className={`grid grid-cols-2 gap-3 ${isAdmin ? 'md:grid-cols-3 lg:grid-cols-4' : 'md:grid-cols-3'}`}>
@@ -61,6 +61,7 @@ const MarketStatsBar = ({ totalRecords, totalAmount, uniqueUsers, isAdmin }) => 
             ))}
         </div>
     );
-};
+});
+MarketStatsBar.displayName = 'MarketStatsBar';
 
 export default MarketStatsBar;

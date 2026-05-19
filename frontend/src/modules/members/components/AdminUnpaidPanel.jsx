@@ -27,7 +27,7 @@ function buildMonthOptions() {
     const opts = [];
     const now = new Date();
     for (let i = 1; i <= 6; i++) {
-        let m = now.getMonth() + 1 - i; // 1-indexed current month - i
+        let m = now.getMonth() + 1 - i;
         let y = now.getFullYear();
         if (m <= 0) { m += 12; y--; }
         opts.push({ label: `${MONTHS[m - 1]} ${y}`, month: m, year: y });
@@ -38,7 +38,7 @@ function buildMonthOptions() {
 /* ─────────────────────────────────────────────
    StatusPill
 ───────────────────────────────────────────── */
-const StatusPill = ({ status }) => {
+const StatusPill = React.memo(({ status }) => {
     const map = {
         unpaid: 'bg-rose-50   dark:bg-rose-500/10   text-rose-700  dark:text-rose-400  border-rose-200  dark:border-rose-500/25',
         partially_paid: 'bg-amber-50  dark:bg-amber-500/10  text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/25',
@@ -51,12 +51,13 @@ const StatusPill = ({ status }) => {
             {label}
         </span>
     );
-};
+});
+StatusPill.displayName = 'StatusPill';
 
 /* ─────────────────────────────────────────────
    ResolveModal — inline quick action
 ───────────────────────────────────────────── */
-const ResolveModal = ({ invoice, onClose, onResolve, isSaving }) => {
+const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
     const outstanding = invoice.totalPayable - invoice.paidAmount;
     const [amount, setAmount] = useState(String(Math.max(0, outstanding)));
 
@@ -154,14 +155,15 @@ const ResolveModal = ({ invoice, onClose, onResolve, isSaving }) => {
             </div>
         </div>
     );
-};
+});
+ResolveModal.displayName = 'ResolveModal';
 
 /* ─────────────────────────────────────────────
    InvoiceRow
 ───────────────────────────────────────────── */
-const InvoiceRow = ({ invoice, onResolve, isSaving }) => {
+const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
     const [showModal, setShowModal] = useState(false);
-    const outstanding = invoice.totalPayable - invoice.paidAmount;
+    const outstanding = useMemo(() => invoice.totalPayable - invoice.paidAmount, [invoice.totalPayable, invoice.paidAmount]);
     const user = invoice.user ?? {};
 
     return (
@@ -234,12 +236,13 @@ const InvoiceRow = ({ invoice, onResolve, isSaving }) => {
             )}
         </>
     );
-};
+});
+InvoiceRow.displayName = 'InvoiceRow';
 
 /* ─────────────────────────────────────────────
    AdminUnpaidPanel — root export
 ───────────────────────────────────────────── */
-const AdminUnpaidPanel = () => {
+const AdminUnpaidPanel = React.memo(() => {
     const dispatch = useDispatch();
     const { unpaidInvoices, unpaidInvoicesLoading } = useSelector(s => s.members);
 
@@ -274,6 +277,12 @@ const AdminUnpaidPanel = () => {
             setSavingId(null);
         }
     }, [dispatch]);
+
+    // Memoize total outstanding calculation
+    const totalOutstanding = useMemo(
+        () => unpaidInvoices.reduce((sum, inv) => sum + (inv.totalPayable - inv.paidAmount), 0),
+        [unpaidInvoices]
+    );
 
     return (
         <section
@@ -404,15 +413,14 @@ const AdminUnpaidPanel = () => {
                         </div>
                         <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400">
                             <DollarSign size={11} />
-                            Total outstanding: ₹ {fmt(
-                                unpaidInvoices.reduce((sum, inv) => sum + (inv.totalPayable - inv.paidAmount), 0)
-                            )}
+                            Total outstanding: ₹ {fmt(totalOutstanding)}
                         </div>
                     </div>
                 )}
             </div>
         </section>
     );
-};
+});
+AdminUnpaidPanel.displayName = 'AdminUnpaidPanel';
 
 export default AdminUnpaidPanel;

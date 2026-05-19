@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     Mail, Phone, ShieldCheck, Flame, Droplets,
     Utensils, Receipt, Users, Banknote, Hash, Fuel
@@ -15,7 +15,7 @@ const fmt = (n) =>
 /* ─────────────────────────────────────────────
    InfoItem — contact/identity row
 ───────────────────────────────────────────── */
-const InfoItem = ({ icon: Icon, label, value }) => (
+const InfoItem = React.memo(({ icon: Icon, label, value }) => (
     <div className="flex items-center gap-3.5">
         <div
             className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center
@@ -33,7 +33,8 @@ const InfoItem = ({ icon: Icon, label, value }) => (
             </span>
         </div>
     </div>
-);
+));
+InfoItem.displayName = 'InfoItem';
 
 /* ─────────────────────────────────────────────
    InvoiceCard — large financial metric tile
@@ -52,7 +53,7 @@ const ICON_MAP = {
     indigo: 'bg-indigo-50  dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-200  dark:border-indigo-500/25',
 };
 
-const InvoiceCard = ({ label, amount, accent = 'blue', subtext, icon: Icon }) => (
+const InvoiceCard = React.memo(({ label, amount, accent = 'blue', subtext, icon: Icon }) => (
     <div
         className="group relative overflow-hidden flex flex-col p-5 md:p-6
                    bg-white dark:bg-slate-900
@@ -91,12 +92,13 @@ const InvoiceCard = ({ label, amount, accent = 'blue', subtext, icon: Icon }) =>
                         opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
         />
     </div>
-);
+));
+InvoiceCard.displayName = 'InvoiceCard';
 
 /* ─────────────────────────────────────────────
    MiniMetric — compact breakdown row tile
 ───────────────────────────────────────────── */
-const MiniMetric = ({ icon: Icon, label, value, subtext }) => (
+const MiniMetric = React.memo(({ icon: Icon, label, value, subtext }) => (
     <div
         className="flex items-center justify-between gap-3
                    px-4 py-3.5 rounded-2xl
@@ -131,24 +133,36 @@ const MiniMetric = ({ icon: Icon, label, value, subtext }) => (
             )}
         </div>
     </div>
-);
+));
+MiniMetric.displayName = 'MiniMetric';
 
 /* ─────────────────────────────────────────────
    Section heading component
 ───────────────────────────────────────────── */
-const SectionHeading = ({ color = 'blue-500', children }) => (
+const SectionHeading = React.memo(({ color = 'blue-500', children }) => (
     <div className="flex items-center gap-3 mb-5">
         <div className={`w-1 h-5 rounded-full bg-${color}`} />
         <h4 className="text-base font-black text-slate-900 dark:text-white tracking-tight leading-none">
             {children}
         </h4>
     </div>
-);
+));
+SectionHeading.displayName = 'SectionHeading';
 
 /* ─────────────────────────────────────────────
    MemberInvoiceDetails — root component
 ───────────────────────────────────────────── */
-const MemberInvoiceDetails = ({ user }) => {
+const MemberInvoiceDetails = React.memo(({ user }) => {
+    const formattedPayable = useMemo(() => fmt(user?.paybleAmountforMeal ?? 0), [user?.paybleAmountforMeal]);
+    const formattedMarket = useMemo(() => fmt(user?.totalMarketAmount ?? 0), [user?.totalMarketAmount]);
+    const formattedMeals = useMemo(() => fmt(user?.totalMeal ?? 0), [user?.totalMeal]);
+    const formattedGuest = useMemo(() => fmt(user?.guestMeal ?? 0), [user?.guestMeal]);
+    const formattedCooking = useMemo(() => fmt(user?.cookingCharge ?? 0), [user?.cookingCharge]);
+    const formattedGas = useMemo(() => fmt(user?.gasBillCharge ?? 0), [user?.gasBillCharge]);
+    const formattedWater = useMemo(() => fmt(user?.waterBill ?? 0), [user?.waterBill]);
+    const formattedPlatform = useMemo(() => fmt(user?.platformFee ?? 0), [user?.platformFee]);
+    const formattedGuestRate = useMemo(() => fmt(user?.chargePerGuestMeal ?? 0), [user?.chargePerGuestMeal]);
+
     return (
         <div className="w-full animate-[expandIn_0.35s_cubic-bezier(0.22,1,0.36,1)_both]">
 
@@ -213,37 +227,37 @@ const MemberInvoiceDetails = ({ user }) => {
                         <MiniMetric
                             icon={Utensils}
                             label="Own Meals"
-                            value={fmt(user?.totalMeal ?? 0)}
+                            value={formattedMeals}
                             subtext="total count"
                         />
                         <MiniMetric
                             icon={Users}
                             label="Guest Meals"
-                            value={fmt(user?.guestMeal ?? 0)}
-                            subtext={`₹${fmt(user?.chargePerGuestMeal ?? 0)} each`}
+                            value={formattedGuest}
+                            subtext={`₹${formattedGuestRate} each`}
                         />
                         <MiniMetric
                             icon={Flame}
                             label="Cooking Charge"
-                            value={`₹\u202F${fmt(user?.cookingCharge ?? 0)}`}
+                            value={`₹\u202F${formattedCooking}`}
                             subtext="monthly fixed"
                         />
                         <MiniMetric
                             icon={Fuel}
                             label="Gas Bill"
-                            value={`₹\u202F${fmt(user?.gasBillCharge ?? 0)}`}
+                            value={`₹\u202F${formattedGas}`}
                             subtext="per member share"
                         />
                         <MiniMetric
                             icon={Droplets}
                             label="Water Bill"
-                            value={`₹\u202F${fmt(user?.waterBill ?? 0)}`}
+                            value={`₹\u202F${formattedWater}`}
                             subtext="per member share"
                         />
                         <MiniMetric
                             icon={Receipt}
                             label="Platform Fee"
-                            value={`₹\u202F${fmt(user?.platformFee ?? 0)}`}
+                            value={`₹\u202F${formattedPlatform}`}
                             subtext="fixed service fee"
                         />
                     </div>
@@ -279,7 +293,8 @@ const MemberInvoiceDetails = ({ user }) => {
             `}</style>
         </div>
     );
-};
+});
+MemberInvoiceDetails.displayName = 'MemberInvoiceDetails';
 
 /* ─────────────────────────────────────────────
    NetPositionBar
@@ -287,7 +302,7 @@ const MemberInvoiceDetails = ({ user }) => {
       < 0  → Credit   (emerald) — show abs value, refund message
       > 0  → Due      (rose)   — show value, payment message
 ───────────────────────────────────────────── */
-const NetPositionBar = ({ user }) => {
+const NetPositionBar = React.memo(({ user }) => {
     const payable = user?.paybleAmountforMeal ?? 0;
     const isZero = payable === 0;
     const isDue = payable > 0;
@@ -318,6 +333,8 @@ const NetPositionBar = ({ user }) => {
             ? 'You have to pay'
             : 'You will get a refund of';
 
+    const absPayable = useMemo(() => Math.abs(payable), [payable]);
+
     return (
         <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 rounded-2xl border ${containerCls}`}>
             <div className="flex flex-col gap-0.5">
@@ -331,7 +348,7 @@ const NetPositionBar = ({ user }) => {
                     </span>
                 ) : (
                     <span className={`text-xl font-black tabular-nums ${amountCls}`}>
-                        {label}&nbsp;₹&nbsp;{fmt(Math.abs(payable))}
+                        {label}&nbsp;₹&nbsp;{fmt(absPayable)}
                     </span>
                 )}
             </div>
@@ -341,6 +358,7 @@ const NetPositionBar = ({ user }) => {
             </span>
         </div>
     );
-};
+});
+NetPositionBar.displayName = 'NetPositionBar';
 
 export default MemberInvoiceDetails;

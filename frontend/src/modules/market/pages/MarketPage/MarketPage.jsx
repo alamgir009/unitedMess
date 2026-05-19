@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AnimatePresence, motion } from 'framer-motion';
 import { HiOutlineXMark } from 'react-icons/hi2';
@@ -12,7 +12,6 @@ import MarketHeader from '../../components/MarketHeader/MarketHeader';
 import MarketStatsBar from '../../components/MarketStatsBar/MarketStatsBar';
 import MarketSearchBar from '../../components/MarketSearchBar/MarketSearchBar';
 import MarketList from '../../components/MarketList/MarketList';
-import MarketForm from '../../components/MarketForm/MarketForm';
 import MarketModal from '../../components/MarketModal/MarketModal';
 import MarketScheduleChart from '../../components/MarketScheduleChart/MarketScheduleChart';
 import DeleteMarketDialog from '../../components/DeleteMarketDialog/DeleteMarketDialog';
@@ -28,8 +27,10 @@ import {
     adminCreateMarket,
 } from '../../store/market.slice';
 
+const MarketForm = lazy(() => import('../../components/MarketForm/MarketForm'));
+
 /* ── Skeleton loader card ── */
-const SkeletonCard = () => (
+const SkeletonCard = React.memo(() => (
     <div className="rounded-3xl border border-white/10 dark:border-white/5 bg-card/50 p-6 animate-pulse">
         <div className="flex justify-between mb-4">
             <div className="space-y-2">
@@ -42,7 +43,8 @@ const SkeletonCard = () => (
         <div className="h-3 w-2/3 bg-muted/20 rounded mb-6" />
         <div className="h-9 w-full bg-muted/30 rounded-2xl" />
     </div>
-);
+));
+SkeletonCard.displayName = 'SkeletonCard';
 
 /* ══════════════════════════════════════════════
    MARKET PAGE
@@ -188,6 +190,13 @@ const MarketPage = () => {
 
     const hasActive = !!(dateFrom || dateTo || searchQuery.trim());
 
+    /* ── Stable pagination callbacks ── */
+    const handlePageChange = useCallback((p) => setPage(p), []);
+    const handleLimitChange = useCallback((l) => { setLimit(l); setPage(1); }, []);
+
+    /* ── Stable error dismiss callback ── */
+    const dismissError = useCallback(() => { setErrorMsg(''); dispatch(reset()); }, [dispatch]);
+
     /* ── Render ── */
     return (
         <MainLayout>
@@ -231,7 +240,7 @@ const MarketPage = () => {
                                     {errorMsg || message || 'Something went wrong. Please try again.'}
                                 </p>
                                 <button
-                                    onClick={() => { setErrorMsg(''); dispatch(reset()); }}
+                                    onClick={dismissError}
                                     className="flex-shrink-0 p-1 rounded-lg hover:bg-red-500/10 transition-colors text-red-400 hover:text-red-600"
                                     title="Dismiss"
                                 >
@@ -283,8 +292,8 @@ const MarketPage = () => {
                             {!hasActive && (
                                 <Pagination
                                     pagination={pagination}
-                                    onPageChange={(p) => setPage(p)}
-                                    onLimitChange={(l) => { setLimit(l); setPage(1); }}
+                                    onPageChange={handlePageChange}
+                                    onLimitChange={handleLimitChange}
                                 />
                             )}
                         </>
@@ -300,13 +309,17 @@ const MarketPage = () => {
                         ? 'Edit Market Entry'
                         : isAdmin ? 'Add Market Entry' : 'Log New Purchase'}
                 >
-                    <MarketForm
-                        initialData={editingMarket}
-                        onSubmit={handleSubmit}
-                        onCancel={closeModal}
-                        isAdmin={isAdmin}
-                        currentUser={user}
-                    />
+                    {isModalOpen && (
+                        <Suspense fallback={<div className="flex items-center justify-center py-8"><div className="animate-spin w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full" /></div>}>
+                            <MarketForm
+                                initialData={editingMarket}
+                                onSubmit={handleSubmit}
+                                onCancel={closeModal}
+                                isAdmin={isAdmin}
+                                currentUser={user}
+                            />
+                        </Suspense>
+                    )}
                 </MarketModal>
 
                 <DeleteMarketDialog

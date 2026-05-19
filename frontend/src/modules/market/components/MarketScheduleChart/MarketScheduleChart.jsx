@@ -117,12 +117,12 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
                         {isCollapsed && upcomingMembers.length > 0 && (
                             <div className="flex items-center">
                                 <div className="flex items-center -space-x-3">
-                                    {displayedMembers.map((day, i) => {
+                                    {displayedMembers.map((day) => {
                                         const dateObj = new Date(day.date);
                                         const isToday = dateObj.toDateString() === todayStr;
                                         return (
                                             <div
-                                                key={i}
+                                                key={day._id || day.date}
                                                 className={`
                                                     relative w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden 
                                                     flex items-center justify-center flex-shrink-0
@@ -234,16 +234,13 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
                                         scrollSnapType: 'x mandatory',
                                     }}
                                 >
-                                    {schedule.map((day, i) => {
+                                    {schedule.map((day) => {
                                         const dateObj = new Date(day.date);
                                         const isToday = dateObj.toDateString() === todayStr;
 
                                         return (
-                                            <motion.div
-                                                key={i}
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: i * 0.03 }}
+                                            <div
+                                                key={day._id || day.date}
                                                 className={`
                                                     relative group min-w-[150px] flex-shrink-0
                                                     rounded-3xl p-5 flex flex-col items-center
@@ -313,7 +310,7 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
                                                 ) : (
                                                     <div className="mt-6 text-xs opacity-50">Off</div>
                                                 )}
-                                            </motion.div>
+                                            </div>
                                         );
                                     })}
                                 </div>

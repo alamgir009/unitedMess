@@ -13,7 +13,7 @@ import {
  * Renders the page title, role badge, view-mode toggle (grid/list),
  * and the "Add Entry" button.
  */
-const MarketHeader = ({ isAdmin, viewMode, onViewModeChange, onAddClick }) => {
+const MarketHeader = React.memo(({ isAdmin, viewMode, onViewModeChange, onAddClick }) => {
     return (
         <motion.div
             initial={{ opacity: 0, y: -14 }}
@@ -91,6 +91,7 @@ const MarketHeader = ({ isAdmin, viewMode, onViewModeChange, onAddClick }) => {
             </div>
         </motion.div>
     );
-};
+});
+MarketHeader.displayName = 'MarketHeader';
 
 export default MarketHeader;

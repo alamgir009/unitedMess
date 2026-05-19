@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     HiOutlineCalendarDays,
     HiOutlineCurrencyDollar,
@@ -13,25 +13,25 @@ import {
 import { Button } from '@/shared/components/ui';
 import { formatSmartDate } from '@/core/utils/helpers/date.helper';
 
-/* ─── Amount color utility ─── */
+/* Amount color utility */
 const amountColor = (amount) => {
     if (amount >= 1000) return 'text-rose-500 dark:text-rose-400';
     if (amount >= 500) return 'text-amber-500 dark:text-amber-400';
     return 'text-emerald-600 dark:text-emerald-400';
 };
 
-/* ═══════════════════════════════════════════
-   MARKET CARD — grid view
-═══════════════════════════════════════════ */
-const MarketCard = React.forwardRef(({ market, onEdit, onDelete, isAdmin, index }, ref) => {
-    const date = formatSmartDate(market.date);
+/* MARKET CARD -- grid view */
+const MarketCard = React.memo(React.forwardRef(({ market, onEdit, onDelete, isAdmin }, ref) => {
+    const date = useMemo(() => formatSmartDate(market.date), [market.date]);
+    const formattedAmount = useMemo(() => Number(market.amount).toLocaleString('en-IN'), [market.amount]);
+    const amtColor = useMemo(() => amountColor(market.amount), [market.amount]);
 
     return (
         <article
             ref={ref}
             className="group relative flex flex-col rounded-[18px] bg-card/95 dark:bg-slate-900/95 border border-black/5 dark:border-white/10 shadow-sm hover:shadow-md dark:shadow-black/40 transition-shadow duration-200 overflow-hidden"
         >
-            {/* ── Header ── */}
+            {/* Header */}
             <div className="flex items-start justify-between px-4 pt-3.5">
                 <span className="inline-flex items-center gap-1 px-2 py-[3px] rounded-[7px] text-[10px] font-bold uppercase tracking-widest bg-emerald-50 dark:bg-emerald-400/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-300/60 dark:ring-emerald-400/20">
                     <HiOutlineShoppingBag className="w-2.5 h-2.5" />
@@ -43,7 +43,7 @@ const MarketCard = React.forwardRef(({ market, onEdit, onDelete, isAdmin, index 
                 </div>
             </div>
 
-            {/* ── Admin user block ── */}
+            {/* Admin user block */}
             {isAdmin && market.user && (
                 <div className="mx-4 mt-3 rounded-xl bg-muted/50 dark:bg-white/[0.03] border border-border/50 px-3 py-2 flex flex-col gap-1.5">
                     <div className="flex items-center gap-2 min-w-0">
@@ -59,17 +59,17 @@ const MarketCard = React.forwardRef(({ market, onEdit, onDelete, isAdmin, index 
                 </div>
             )}
 
-            {/* ── Amount chip ── */}
+            {/* Amount chip */}
             <div className="flex items-center gap-1.5 px-4 mt-3 flex-wrap">
                 <div className="flex items-baseline gap-0.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-emerald-200 dark:ring-emerald-500/20">
                     <span className="text-xs font-bold text-emerald-500">₹</span>
-                    <span className={`text-sm font-black tabular-nums leading-none ${amountColor(market.amount)}`}>
-                        {Number(market.amount).toLocaleString('en-IN')}
+                    <span className={`text-sm font-black tabular-nums leading-none ${amtColor}`}>
+                        {formattedAmount}
                     </span>
                 </div>
             </div>
 
-            {/* ── Items ── */}
+            {/* Items */}
             <div className="flex items-start gap-1.5 mx-4 mt-2 min-w-0">
                 <HiOutlineShoppingCart className="w-3 h-3 mt-[2px] text-muted-foreground/50 flex-shrink-0" />
                 <p className="text-[11px] font-medium text-foreground/80 leading-relaxed line-clamp-2">
@@ -77,7 +77,7 @@ const MarketCard = React.forwardRef(({ market, onEdit, onDelete, isAdmin, index 
                 </p>
             </div>
 
-            {/* ── Description ── */}
+            {/* Description */}
             {market.description && (
                 <div className="flex items-start gap-1.5 mx-4 mt-1.5 min-w-0">
                     <HiOutlineChatBubbleBottomCenterText className="w-3 h-3 mt-[1px] text-muted-foreground/50 flex-shrink-0" />
@@ -90,10 +90,10 @@ const MarketCard = React.forwardRef(({ market, onEdit, onDelete, isAdmin, index 
             {/* Spacer */}
             <div className="flex-1 min-h-[10px]" />
 
-            {/* ── Divider ── */}
+            {/* Divider */}
             <div className="mx-4 mt-3 h-px bg-border/40" />
 
-            {/* ── Action row ── */}
+            {/* Action row */}
             <div className="flex items-center gap-2 px-4 py-3">
                 <Button
                     variant="secondary"
@@ -116,14 +116,14 @@ const MarketCard = React.forwardRef(({ market, onEdit, onDelete, isAdmin, index 
             </div>
         </article>
     );
-});
+}));
 MarketCard.displayName = 'MarketCard';
 
-/* ═══════════════════════════════════════════
-   MARKET ROW — list view
-═══════════════════════════════════════════ */
-const MarketRow = React.forwardRef(({ market, onEdit, onDelete, isAdmin, index }, ref) => {
-    const date = formatSmartDate(market.date);
+/* MARKET ROW -- list view */
+const MarketRow = React.memo(React.forwardRef(({ market, onEdit, onDelete, isAdmin }, ref) => {
+    const date = useMemo(() => formatSmartDate(market.date), [market.date]);
+    const formattedAmount = useMemo(() => Number(market.amount).toLocaleString('en-IN'), [market.amount]);
+    const amtColor = useMemo(() => amountColor(market.amount), [market.amount]);
 
     return (
         <div
@@ -135,7 +135,7 @@ const MarketRow = React.forwardRef(({ market, onEdit, onDelete, isAdmin, index }
                 <HiOutlineShoppingBag className="w-3.5 h-3.5" />
             </div>
 
-            {/* ── Info ── */}
+            {/* Info */}
             <div className="flex-1 min-w-0 flex flex-col gap-[3px]">
                 {/* Admin: name + email */}
                 {isAdmin && market.user && (
@@ -151,28 +151,28 @@ const MarketRow = React.forwardRef(({ market, onEdit, onDelete, isAdmin, index }
                         )}
                     </div>
                 )}
-                {/* Date · amount · items */}
+                {/* Date . amount . items */}
                 <div className="flex items-center gap-1.5 flex-wrap text-xs">
                     <div className="flex items-center gap-1">
                         <HiOutlineCalendarDays className="w-3 h-3 text-muted-foreground/60" />
                         <span className="font-medium text-foreground">{date.primary}</span>
-                        <span className="text-muted-foreground/50 hidden sm:inline">· {date.secondary}</span>
+                        <span className="text-muted-foreground/50 hidden sm:inline">. {date.secondary}</span>
                     </div>
-                    <span className="text-muted-foreground/25">·</span>
+                    <span className="text-muted-foreground/25">.</span>
                     <div className="flex items-center gap-1">
                         <HiOutlineCurrencyDollar className="w-3 h-3 text-emerald-500" />
-                        <span className={`font-black tabular-nums ${amountColor(market.amount)}`}>
-                            ₹{Number(market.amount).toLocaleString('en-IN')}
+                        <span className={`font-black tabular-nums ${amtColor}`}>
+                            ₹{formattedAmount}
                         </span>
                     </div>
-                    <span className="text-muted-foreground/25">·</span>
+                    <span className="text-muted-foreground/25">.</span>
                     <div className="flex items-center gap-1 min-w-0">
                         <HiOutlineShoppingCart className="w-3 h-3 text-muted-foreground/60 flex-shrink-0" />
                         <span className="text-foreground/80 truncate max-w-[140px] sm:max-w-[220px]">{market.items}</span>
                     </div>
                     {market.description && (
                         <>
-                            <span className="text-muted-foreground/25 hidden sm:inline">·</span>
+                            <span className="text-muted-foreground/25 hidden sm:inline">.</span>
                             <div className="hidden sm:flex items-center gap-1 min-w-0">
                                 <HiOutlineChatBubbleBottomCenterText className="w-3 h-3 text-muted-foreground/40 flex-shrink-0" />
                                 <span className="text-[11px] italic text-muted-foreground/50 truncate max-w-[160px]">
@@ -184,12 +184,12 @@ const MarketRow = React.forwardRef(({ market, onEdit, onDelete, isAdmin, index }
                 </div>
             </div>
 
-            {/* Amount badge — md+ only */}
+            {/* Amount badge -- md+ only */}
             <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest px-2 py-[3px] rounded-[7px] flex-shrink-0 bg-emerald-50 dark:bg-emerald-400/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-300/60 dark:ring-emerald-400/20">
-                ₹{Number(market.amount).toLocaleString('en-IN')}
+                ₹{formattedAmount}
             </span>
 
-            {/* Actions — hover reveal */}
+            {/* Actions -- hover reveal */}
             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150 flex-shrink-0 pl-1">
                 <Button variant="secondary" size="sm" iconOnly onClick={() => onEdit(market)} title="Edit">
                     <HiOutlinePencilSquare className="w-4 h-4" />
@@ -200,13 +200,11 @@ const MarketRow = React.forwardRef(({ market, onEdit, onDelete, isAdmin, index }
             </div>
         </div>
     );
-});
+}));
 MarketRow.displayName = 'MarketRow';
 
-/* ═══════════════════════════════════════════
-   EMPTY STATE
-═══════════════════════════════════════════ */
-const EmptyState = () => (
+/* EMPTY STATE */
+const EmptyState = React.memo(() => (
     <div className="col-span-full flex flex-col items-center gap-3 py-16 select-none">
         <div className="w-12 h-12 rounded-2xl bg-muted/60 dark:bg-white/[0.04] border border-border/50 flex items-center justify-center">
             <HiOutlineShoppingBag className="w-5 h-5 text-muted-foreground/30" />
@@ -218,12 +216,11 @@ const EmptyState = () => (
             </p>
         </div>
     </div>
-);
+));
+EmptyState.displayName = 'EmptyState';
 
-/* ═══════════════════════════════════════════
-   MAIN EXPORT
-═══════════════════════════════════════════ */
-const MarketList = ({ markets = [], onEdit, onDelete, isAdmin = false, viewMode = 'grid' }) => {
+/* MAIN EXPORT */
+const MarketList = React.memo(({ markets = [], onEdit, onDelete, isAdmin = false, viewMode = 'grid' }) => {
     if (markets.length === 0) {
         return <EmptyState />;
     }
@@ -231,11 +228,10 @@ const MarketList = ({ markets = [], onEdit, onDelete, isAdmin = false, viewMode 
     if (viewMode === 'list') {
         return (
             <div className="flex flex-col gap-1.5">
-                {markets.map((market, i) => (
+                {markets.map((market) => (
                     <MarketRow
                         key={market._id}
                         market={market}
-                        index={i}
                         onEdit={onEdit}
                         onDelete={onDelete}
                         isAdmin={isAdmin}
@@ -250,11 +246,10 @@ const MarketList = ({ markets = [], onEdit, onDelete, isAdmin = false, viewMode 
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
             style={{ contentVisibility: 'auto', containIntrinsicSize: '0 500px' }}
         >
-            {markets.map((market, i) => (
+            {markets.map((market) => (
                 <MarketCard
                     key={market._id}
                     market={market}
-                    index={i}
                     onEdit={onEdit}
                     onDelete={onDelete}
                     isAdmin={isAdmin}
@@ -262,6 +257,7 @@ const MarketList = ({ markets = [], onEdit, onDelete, isAdmin = false, viewMode 
             ))}
         </div>
     );
-};
+});
+MarketList.displayName = 'MarketList';
 
 export default MarketList;
