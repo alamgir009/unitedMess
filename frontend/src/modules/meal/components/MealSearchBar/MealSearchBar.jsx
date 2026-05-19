@@ -2,15 +2,24 @@ import React from 'react';
 import { HiOutlineCalendarDays } from 'react-icons/hi2';
 import { SearchBar } from '@/shared/components/ui';
 
-/**
- * MarketSearchBar
- * Search input + collapsible date-range filter panel.
- * Keeps NO state of its own — everything is lifted to the parent (MarketPage).
- */
-const MarketSearchBar = ({
+const TypePill = ({ label, active, onClick }) => (
+    <button
+        onClick={onClick}
+        type="button"
+        className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all duration-150 active:scale-95 ${active
+            ? 'bg-primary text-primary-foreground shadow-md shadow-primary/30'
+            : 'bg-muted/40 text-muted-foreground border border-border/40 hover:bg-muted/70 hover:text-foreground'}`}
+    >
+        {label}
+    </button>
+);
+
+const MealSearchBar = ({
     isAdmin,
     searchQuery,
     onSearchChange,
+    typeFilter,
+    onTypeChange,
     dateFrom,
     onDateFromChange,
     dateTo,
@@ -25,7 +34,7 @@ const MarketSearchBar = ({
     <SearchBar
         searchQuery={searchQuery}
         onSearchChange={onSearchChange}
-        placeholder={isAdmin ? 'Search by name, email, items, description…' : 'Search by items or description…'}
+        placeholder={isAdmin ? 'Search by name, email, date, remarks…' : 'Search by date or remarks…'}
         filteredCount={filteredCount}
         totalCount={totalCount}
         showFilters={showFilters}
@@ -34,7 +43,20 @@ const MarketSearchBar = ({
         onClearFilters={onClearFilters}
     >
         <div className="flex flex-wrap gap-5 items-start">
-            {/* Date From */}
+            <div className="space-y-2 flex-shrink-0">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Meal Type</p>
+                <div className="flex gap-1.5 flex-wrap">
+                    {['all', 'both', 'day', 'night', 'off'].map(t => (
+                        <TypePill
+                            key={t}
+                            label={t.charAt(0).toUpperCase() + t.slice(1)}
+                            active={typeFilter === t}
+                            onClick={() => onTypeChange(t)}
+                        />
+                    ))}
+                </div>
+            </div>
+            
             <div className="space-y-2 flex-shrink-0">
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Date From</p>
                 <div className="relative">
@@ -47,8 +69,7 @@ const MarketSearchBar = ({
                     />
                 </div>
             </div>
-
-            {/* Date To */}
+            
             <div className="space-y-2 flex-shrink-0">
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Date To</p>
                 <div className="relative">
@@ -65,4 +86,4 @@ const MarketSearchBar = ({
     </SearchBar>
 );
 
-export default MarketSearchBar;
+export default MealSearchBar;

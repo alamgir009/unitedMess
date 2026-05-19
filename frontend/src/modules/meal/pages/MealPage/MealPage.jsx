@@ -22,6 +22,7 @@ import MealPolling from '../../components/MealPolling/MealPolling';
 import Pagination from '@/shared/components/ui/Pagination/Pagination';
 import { fetchMeals, createMeal, bulkCreateMeals, updateMeal, deleteMeal, reset, adminCreateMeal } from '../../store/meal.slice';
 import DeleteMealDialog from '../../components/DeleteMealDialog/DeleteMealDialog';
+import MealSearchBar from '../../components/MealSearchBar/MealSearchBar';
 
 /* ── Skeleton ── */
 const SkeletonCard = () => (
@@ -59,18 +60,6 @@ const StatPill = ({ icon: Icon, label, value, color, delay = 0, fullWidth = fals
         <div className="absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-white/60 dark:via-white/20 to-transparent pointer-events-none" />
     </motion.div>
 );
-
-const TypePill = ({ label, active, onClick }) => (
-    <button
-        onClick={onClick}
-        className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all duration-150 active:scale-95 ${active
-            ? 'bg-primary text-primary-foreground shadow-md shadow-primary/30'
-            : 'bg-muted/40 text-muted-foreground border border-white/10 dark:border-white/5 hover:bg-muted/70 hover:text-foreground'}`}
-    >
-        {label}
-    </button>
-);
-
 
 
 
@@ -338,79 +327,23 @@ const MealPage = () => {
                     </motion.div>
 
                     {/* Search + Filter Bar */}
-                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
-                        className="group relative flex flex-col rounded-[18px] bg-white/95 dark:bg-slate-900/95 md:bg-white/60 md:dark:bg-slate-900/40 md:backdrop-blur-md border border-black/5 dark:border-white/10 overflow-hidden shadow-sm md:shadow-lg hover:shadow-xl dark:shadow-black/40 transition-all duration-300">
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-4">
-                            <div className="relative flex-1">
-                                <HiOutlineMagnifyingGlass className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                                <input type="text"
-                                    placeholder={isAdmin ? 'Search by name, email, date, remarks…' : 'Search by date or remarks…'}
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full h-10 pl-10 pr-10 rounded-2xl border border-white/10 dark:border-white/5 bg-muted/30 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all" />
-                                {searchQuery && (
-                                    <button onClick={() => setSearchQuery('')}
-                                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                                        <HiOutlineXMark className="w-4 h-4" />
-                                    </button>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                                <span className="text-xs text-muted-foreground font-medium hidden sm:block">
-                                    {filtered?.length || 0} of {meals?.length || 0} record{(meals?.length || 0) !== 1 ? 's' : ''}
-                                </span>
-                                <button onClick={() => setShowFilters(p => !p)}
-                                    className={`relative h-10 px-4 rounded-2xl border text-sm font-semibold flex items-center gap-2 transition-all ${showFilters || hasActive
-                                        ? 'border-primary/40 bg-primary/10 text-primary'
-                                        : 'border-white/10 dark:border-white/5 bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}>
-                                    <HiOutlineAdjustmentsHorizontal className="w-4 h-4" />
-                                    <span>Filters</span>
-                                    {hasActive && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-primary border-2 border-card" />}
-                                </button>
-                                {hasActive && (
-                                    <button onClick={clearFilters}
-                                        className="h-10 px-3 rounded-2xl border border-destructive/20 bg-destructive/10 text-destructive text-xs font-bold hover:bg-destructive/20 transition-all active:scale-95 flex items-center gap-1">
-                                        <HiOutlineXMark className="w-3.5 h-3.5" /> Clear
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-
-                        <AnimatePresence>
-                            {showFilters && (
-                                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }}
-                                    className="overflow-hidden border-t border-white/10 dark:border-white/5">
-                                    <div className="p-4 flex flex-wrap gap-5 items-start">
-                                        <div className="space-y-2 flex-shrink-0">
-                                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Meal Type</p>
-                                            <div className="flex gap-1.5 flex-wrap">
-                                                {['all', 'both', 'day', 'night', 'off'].map(t => (
-                                                    <TypePill key={t} label={t.charAt(0).toUpperCase() + t.slice(1)} active={typeFilter === t} onClick={() => setTypeFilter(t)} />
-                                                ))}
-                                            </div>
-                                        </div>
-                                        <div className="space-y-2 flex-shrink-0">
-                                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Date From</p>
-                                            <div className="relative">
-                                                <HiOutlineCalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                                                <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                                                    className="h-9 pl-9 pr-3 rounded-xl border border-white/10 dark:border-white/5 bg-muted/30 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all" />
-                                            </div>
-                                        </div>
-                                        <div className="space-y-2 flex-shrink-0">
-                                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Date To</p>
-                                            <div className="relative">
-                                                <HiOutlineCalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                                                <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-                                                    className="h-9 pl-9 pr-3 rounded-xl border border-white/10 dark:border-white/5 bg-muted/30 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </motion.div>
+                    <MealSearchBar
+                        isAdmin={isAdmin}
+                        searchQuery={searchQuery}
+                        onSearchChange={setSearchQuery}
+                        typeFilter={typeFilter}
+                        onTypeChange={setTypeFilter}
+                        dateFrom={dateFrom}
+                        onDateFromChange={setDateFrom}
+                        dateTo={dateTo}
+                        onDateToChange={setDateTo}
+                        showFilters={showFilters}
+                        onToggleFilters={() => setShowFilters(p => !p)}
+                        filteredCount={filtered?.length || 0}
+                        totalCount={meals?.length || 0}
+                        hasActive={hasActive}
+                        onClearFilters={clearFilters}
+                    />
 
                     {/* Partial-search info banner */}
                     <AnimatePresence>

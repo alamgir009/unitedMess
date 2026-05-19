@@ -14,3 +14,4 @@ export { default as Tabs, TabsList, TabsTrigger, TabsContent } from './Tabs/inde
 export { default as Dropdown } from './Dropdown/index.js';
 export { default as MemberSelect } from './MemberSelect/index.js';
 export { ToastContainer, useToast } from './Toast/index.js';
+export { default as SearchBar } from './SearchBar/SearchBar.jsx';

@@ -212,23 +212,6 @@ const MarketPage = () => {
                         isAdmin={isAdmin}
                     />
 
-                    {/* ── Search + date filter bar ── */}
-                    <MarketSearchBar
-                        isAdmin={isAdmin}
-                        searchQuery={searchQuery}
-                        onSearchChange={setSearchQuery}
-                        dateFrom={dateFrom}
-                        onDateFromChange={setDateFrom}
-                        dateTo={dateTo}
-                        onDateToChange={setDateTo}
-                        showFilters={showFilters}
-                        onToggleFilters={() => setShowFilters((p) => !p)}
-                        filteredCount={filtered?.length || 0}
-                        totalCount={markets?.length || 0}
-                        hasActive={hasActive}
-                        onClearFilters={clearFilters}
-                    />
-
                     {/* ── Error banner ── */}
                     <AnimatePresence>
                         {(isError || errorMsg) && (
@@ -260,6 +243,23 @@ const MarketPage = () => {
                         isLoading={isScheduleLoading}
                         isCollapsed={!isSchedulerOpen}
                         onToggle={() => setIsSchedulerOpen((p) => !p)}
+                    />
+
+                    {/* ── Search + date filter bar ── */}
+                    <MarketSearchBar
+                        isAdmin={isAdmin}
+                        searchQuery={searchQuery}
+                        onSearchChange={setSearchQuery}
+                        dateFrom={dateFrom}
+                        onDateFromChange={setDateFrom}
+                        dateTo={dateTo}
+                        onDateToChange={setDateTo}
+                        showFilters={showFilters}
+                        onToggleFilters={() => setShowFilters((p) => !p)}
+                        filteredCount={filtered?.length || 0}
+                        totalCount={markets?.length || 0}
+                        hasActive={hasActive}
+                        onClearFilters={clearFilters}
                     />
 
                     {isLoading && (!markets || markets.length === 0) ? (
