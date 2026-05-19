@@ -109,57 +109,53 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
 
                     {/* Collapsed member strip */}
                     {isCollapsed && upcomingMembers.length > 0 && (
-                        <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0 mr-2">
-                            <div className="relative">
-                                <div className="flex items-center gap-1.5 pr-2">
-                                    {displayedMembers.map((day, i) => {
-                                        const dateObj = new Date(day.date);
-                                        const isToday = dateObj.toDateString() === todayStr;
-                                        return (
-                                            <div
-                                                key={i}
-                                                className={`
-                                                    flex items-center gap-1.5 px-2 py-1 rounded-full
-                                                    border transition-all duration-200
-                                                    ${isToday
-                                                        ? 'bg-emerald-500/10 border-emerald-400/30'
-                                                        : 'bg-muted/30 border-white/10 group-hover:border-white/20'
-                                                    }
-                                                `}
-                                            >
-                                                <div
-                                                    className={`
-                                                        w-6 h-6 rounded-full overflow-hidden border flex items-center justify-center text-[10px] font-semibold flex-shrink-0
-                                                        ${isToday
-                                                            ? 'border-emerald-400/50 bg-emerald-500/20 text-emerald-300'
-                                                            : 'border-white/20 bg-white/5 text-muted-foreground'
-                                                        }
-                                                    `}
-                                                >
-                                                    {day.user.image ? (
-                                                        <img
-                                                            src={day.user.image}
-                                                            alt={day.user.name}
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        day.user.name.charAt(0).toUpperCase()
-                                                    )}
-                                                </div>
-                                                <span className="text-[11px] font-medium text-muted-foreground truncate max-w-[50px]">
-                                                    {day.user.name.split(' ')[0]}
+                        <div className="flex items-center flex-shrink-0 mr-2">
+                            <div className="flex items-center -space-x-3">
+                                {displayedMembers.map((day, i) => {
+                                    const dateObj = new Date(day.date);
+                                    const isToday = dateObj.toDateString() === todayStr;
+                                    return (
+                                        <div
+                                            key={i}
+                                            className={`
+                                                relative w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden 
+                                                flex items-center justify-center flex-shrink-0
+                                                ring-2 ring-card dark:ring-card
+                                                transition-transform duration-300 hover:-translate-y-1 hover:z-10
+                                                ${isToday
+                                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-400/30'
+                                                    : 'bg-muted/80 text-muted-foreground border border-white/10'
+                                                }
+                                            `}
+                                            title={`${day.user.name.split(' ')[0]} - ${dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`}
+                                        >
+                                            {day.user.image ? (
+                                                <img
+                                                    src={day.user.image}
+                                                    alt={day.user.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <span className="text-xs sm:text-sm font-bold uppercase">
+                                                    {day.user.name.charAt(0)}
                                                 </span>
-                                            </div>
-                                        );
-                                    })}
-                                    {remainingCount > 0 && (
-                                        <div className="px-2 py-1 rounded-full bg-muted/30 border border-white/10 text-[11px] font-medium text-muted-foreground">
-                                            +{remainingCount}
+                                            )}
                                         </div>
-                                    )}
-                                </div>
-                                {/* Right edge fade */}
-                                <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-card dark:from-card to-transparent pointer-events-none rounded-r-full" />
+                                    );
+                                })}
+                                {remainingCount > 0 && (
+                                    <div 
+                                        className="
+                                            relative w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden 
+                                            flex items-center justify-center flex-shrink-0
+                                            ring-2 ring-card dark:ring-card
+                                            bg-muted/50 dark:bg-muted/30 backdrop-blur-sm border border-white/10
+                                            text-xs sm:text-sm font-bold text-foreground
+                                        "
+                                    >
+                                        +{remainingCount}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
