@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo, useCallback } from 'react';
+import { useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { motion } from 'framer-motion';
 import { HiOutlineChevronDown, HiOutlineShoppingCart } from 'react-icons/hi2';
 
@@ -7,7 +7,7 @@ const AVATAR_DISPLAY = 4;
 const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => {
     const scrollRef = useRef(null);
 
-    const todayStr = new Date().toDateString();
+    const todayStr = useMemo(() => new Date().toDateString(), []);
 
     const scrollToToday = useCallback(() => {
         if (!schedule?.length || !scrollRef.current) return;
@@ -38,8 +38,12 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
         return schedule.filter((d) => d.user && new Date(d.date) >= new Date(todayStr));
     }, [schedule, todayStr]);
 
-    const displayedMembers = upcomingMembers.slice(0, AVATAR_DISPLAY);
-    const remainingCount = Math.max(0, upcomingMembers.length - AVATAR_DISPLAY);
+    const { displayedMembers, remainingCount } = useMemo(() => {
+        return {
+            displayedMembers: upcomingMembers.slice(0, AVATAR_DISPLAY),
+            remainingCount: Math.max(0, upcomingMembers.length - AVATAR_DISPLAY)
+        };
+    }, [upcomingMembers]);
 
     if (isLoading) {
         return (
@@ -322,4 +326,4 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
     );
 };
 
-export default MarketScheduleChart;
+export default memo(MarketScheduleChart);

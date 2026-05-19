@@ -158,6 +158,10 @@ const MarketPage = () => {
 
     const clearFilters = useCallback(() => { setSearchQuery(''); setDateFrom(''); setDateTo(''); }, []);
 
+    const toggleScheduler = useCallback(() => {
+        setIsSchedulerOpen((p) => !p);
+    }, []);
+
     /* ── Derived stats ── */
     const totalAmount  = useMemo(() => markets?.reduce((s, m) => s + (m.amount || 0), 0) || 0, [markets]);
     const uniqueUsers  = useMemo(() =>
@@ -242,7 +246,7 @@ const MarketPage = () => {
                         schedule={schedule}
                         isLoading={isScheduleLoading}
                         isCollapsed={!isSchedulerOpen}
-                        onToggle={() => setIsSchedulerOpen((p) => !p)}
+                        onToggle={toggleScheduler}
                     />
 
                     {/* ── Search + date filter bar ── */}
