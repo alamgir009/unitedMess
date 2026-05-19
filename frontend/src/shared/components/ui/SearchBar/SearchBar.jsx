@@ -1,5 +1,4 @@
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
     HiOutlineMagnifyingGlass,
     HiOutlineXMark,
@@ -8,7 +7,8 @@ import {
 
 /**
  * Reusable, compact SearchBar component for Market, Payment, and Meal modules.
- * Features a clean border, no heavy shadows/gradients, and a mobile-optimized side-by-side layout.
+ * Uses CSS grid collapse (zero JS animation) for ultra-smooth toggle on low-end devices.
+ * Clean border style matching Market Scheduler premium aesthetic.
  */
 const SearchBar = ({
     searchQuery,
@@ -20,17 +20,22 @@ const SearchBar = ({
     onToggleFilters,
     hasActive,
     onClearFilters,
-    children, // Rendered inside the collapsible filter section
+    children,
 }) => (
     <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.18, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className="group relative flex flex-col rounded-2xl bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl border border-border/40 shadow-sm transition-all duration-300"
+        className="group relative flex flex-col rounded-2xl sm:rounded-[18px]
+            border border-border/60 dark:border-white/10
+            bg-card dark:bg-card
+            shadow-sm md:shadow-lg
+            overflow-hidden
+            transition-shadow duration-300"
     >
-        {/* ── Top bar (Compact Horizontal Layout) ── */}
+        {/* ── Top bar ── */}
         <div className="flex flex-row items-center gap-2 p-3">
-            
+
             {/* Search input */}
             <div className="relative flex-1">
                 <HiOutlineMagnifyingGlass className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
@@ -54,20 +59,18 @@ const SearchBar = ({
 
             {/* Right controls */}
             <div className="flex flex-row items-center gap-2 flex-shrink-0">
-                {/* Record count (hidden on small screens to save space) */}
                 {(totalCount > 0 || filteredCount > 0) && (
                     <span className="text-xs text-muted-foreground font-medium hidden sm:block tabular-nums">
                         {filteredCount} / {totalCount}
                     </span>
                 )}
 
-                {/* Filter toggle button */}
                 <button
                     onClick={onToggleFilters}
                     aria-label="Toggle filters"
                     className={`relative h-10 px-3.5 rounded-xl border text-sm font-semibold flex items-center gap-1.5 transition-all duration-200 ${
                         showFilters || hasActive
-                            ? 'border-primary/40 bg-primary/10 text-primary dark:text-primary'
+                            ? 'border-primary/40 bg-primary/10 text-primary'
                             : 'border-border/40 bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50'
                     }`}
                 >
@@ -78,7 +81,6 @@ const SearchBar = ({
                     )}
                 </button>
 
-                {/* Clear all active filters */}
                 {hasActive && (
                     <button
                         onClick={onClearFilters}
@@ -92,23 +94,28 @@ const SearchBar = ({
             </div>
         </div>
 
-        {/* ── Collapsible filter panel (children) ── */}
-        <AnimatePresence>
-            {showFilters && children && (
-                <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                    className="overflow-hidden border-t border-border/40"
+        {/* ── Collapsible filter panel — CSS grid collapse (zero JS, GPU-friendly) ── */}
+        <div
+            className="grid transition-all duration-300 ease-out will-change-[grid-template-rows]"
+            style={{
+                gridTemplateRows: showFilters ? '1fr' : '0fr',
+                transitionTimingFunction: 'cubic-bezier(0.33, 1, 0.68, 1)',
+            }}
+        >
+            <div className="overflow-hidden">
+                <div
+                    className={`p-4 border-t border-border/60 dark:border-white/10 transition-all duration-300 ease-out ${
+                        showFilters
+                            ? 'opacity-100 translate-y-0'
+                            : 'opacity-0 -translate-y-1'
+                    }`}
                 >
-                    <div className="p-4">
-                        {children}
-                    </div>
-                </motion.div>
-            )}
-        </AnimatePresence>
+                    {children}
+                </div>
+            </div>
+        </div>
     </motion.div>
 );
 
 export default SearchBar;
+
