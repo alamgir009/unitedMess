@@ -359,7 +359,7 @@ const ProfilePage = () => {
                                                 Admin
                                             </span>
                                         ) : (
-                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold tracking-widest uppercase bg-teal-50 dark:bg-teal-900/25 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-700/50">
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-gray-500 ">
                                                 <Users className="w-2.5 h-2.5" />
                                                 Member
                                             </span>
