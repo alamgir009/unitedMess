@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
+import clsx from 'clsx';
 import {
     HiOutlineSun,
     HiOutlineMoon,
@@ -94,7 +95,6 @@ const getUserId = (user) => user?._id || user?.id || null;
 
 /* ────────────────────────── sub-components ─────────────────────── */
 
-/** Tiny stat badge — no rerender unless props change */
 const VoteMetric = React.memo(function VoteMetric({ label, value, icon: Icon }) {
     return (
         <div className="flex items-center gap-2.5 rounded-xl border border-black/[0.06] bg-white/80 px-3 py-2 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-white/[0.06]">
@@ -111,7 +111,6 @@ const VoteMetric = React.memo(function VoteMetric({ label, value, icon: Icon }) 
     );
 });
 
-/** Voter pill — avatar + name */
 const VotePill = React.memo(function VotePill({ vote }) {
     const initial = vote?.user?.name?.charAt(0)?.toUpperCase() ?? '?';
     return (
@@ -138,43 +137,26 @@ const VotePill = React.memo(function VotePill({ vote }) {
 
 /* ─────────────────────── animation variants ─────────────────────── */
 
-/**
- * Use will-change only on the progress bar (translated div) so the GPU
- * layer is composited rather than repainted — keeps 60 fps on low-end mobile.
- */
 const barVariants = {
     hidden: { scaleX: 0, originX: 0 },
     visible: (pct) => ({
         scaleX: pct / 100,
         originX: 0,
-        transition: { type: 'spring', stiffness: 160, damping: 28, mass: 0.6 },
+        transition: { duration: 0.5, ease: 'easeOut' },
     }),
-};
-
-const overlayVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { duration: 0.18 } },
-    exit: { opacity: 0, transition: { duration: 0.14 } },
-};
-
-const checkVariants = {
-    hidden: { scale: 0.6, opacity: 0 },
-    visible: { scale: 1, opacity: 1, transition: { type: 'spring', stiffness: 300, damping: 20 } },
 };
 
 /* ─────────────────────────── main component ─────────────────────── */
 
 const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
     const dispatch = useDispatch();
-    // NOTE: Do NOT use the global meal.isLoading here — it blocks vote buttons
-    // during fetchMeals (page-level fetch). Use a dedicated local flag instead.
     const { pollStatus } = useSelector((s) => s.meal);
     const { user }       = useSelector((s) => s.auth);
 
     const [isVoting, setIsVoting]         = useState(false);
     const [isPollLoading, setIsPollLoading] = useState(false);
+    const isVotingRef = useRef(false);
 
-    /* Stable ISO date string — recalculated only when selectedDate changes */
     const dateStr = useMemo(() => {
         const parsed = selectedDate instanceof Date ? selectedDate : new Date(selectedDate);
         return isValid(parsed)
@@ -187,33 +169,46 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
         dispatch(fetchPollStatus(dateStr)).finally(() => setIsPollLoading(false));
     }, [dispatch, dateStr]);
 
-    const votes = pollStatus?.votes ?? [];
-    const stats = pollStatus?.stats ?? {};
+    const votes = useMemo(() => pollStatus?.votes ?? [], [pollStatus]);
+    const stats = useMemo(() => pollStatus?.stats ?? {}, [pollStatus]);
+
+    /* Single-pass grouping: eliminates 8+ .filter() calls per render */
+    const groupedVotes = useMemo(() => {
+        const g = { both: [], day: [], night: [], off: [] };
+        for (let i = 0; i < votes.length; i++) {
+            const v = votes[i];
+            if (g[v.type]) g[v.type].push(v);
+        }
+        return g;
+    }, [votes]);
 
     const totals = useMemo(() => {
         const t = { ...BASE_TOTALS };
         for (const { id } of POLL_OPTIONS) {
             const fromStats = Number(stats?.[id]);
-            const fromVotes = votes.filter((v) => v.type === id).length;
+            const fromVotes = groupedVotes[id].length;
             const count = Number.isFinite(fromStats) && fromStats >= 0 ? fromStats : fromVotes;
             t[id] = count;
             t.total += count;
         }
         return t;
-    }, [stats, votes]);
+    }, [stats, groupedVotes]);
 
     const myVote = useMemo(() => {
         const uid = getUserId(user);
-        return votes.find((v) => getUserId(v.user) === uid)?.type ?? null;
+        for (let i = 0; i < votes.length; i++) {
+            if (getUserId(votes[i].user) === uid) return votes[i].type;
+        }
+        return null;
     }, [user, votes]);
 
+    /* Stable callback — ref guard prevents recreation on isVoting toggle */
     const handleVote = useCallback(
         async (type) => {
-            if (isVoting) return;
+            if (isVotingRef.current) return;
+            isVotingRef.current = true;
             setIsVoting(true);
             try {
-                // voteMealPoll thunk internally dispatches fetchPollStatus — no
-                // need to dispatch it again here (would cause a double fetch).
                 await dispatch(voteMealPoll({ type, date: dateStr })).unwrap();
                 toast.success(`Voted · ${type.charAt(0).toUpperCase()}${type.slice(1)}`);
             } catch (err) {
@@ -221,10 +216,11 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                     typeof err === 'string' ? err : err?.message ?? 'Failed to vote. Try again.'
                 );
             } finally {
+                isVotingRef.current = false;
                 setIsVoting(false);
             }
         },
-        [dispatch, dateStr, isVoting]
+        [dispatch, dateStr]
     );
 
     const displayDate = useMemo(() => formatDisplayDate(selectedDate), [selectedDate]);
@@ -232,11 +228,9 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
 
     /* ── render ── */
 
-    // Loading skeleton — shown only on the initial poll fetch
     if (isPollLoading && !pollStatus) {
         return (
             <section className="w-full animate-pulse">
-                {/* skeleton: edge-to-edge on mobile, card on md+ */}
                 <div className="space-y-4 py-4 md:rounded-[2rem] md:border md:border-white/10 md:bg-muted/20 md:p-6">
                     <div className="flex items-center gap-3">
                         <div className="h-5 w-5 rounded-full bg-muted/60" />
@@ -256,32 +250,21 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
 
     return (
         <section className="w-full">
-            {/*
-              Mobile / sm  → edge-to-edge, no radius, no padding-x, transparent bg.
-              md+          → self-contained glass card: rounded corners, border,
-                             backdrop-blur, shadow — full fintech card treatment.
-            */}
             <div
-                className={[
-                    /* ── layout & clipping ── */
-                    'relative w-full overflow-hidden',
-                    /* ── mobile: flat, edge-to-edge, zero chrome ── */
-                    'py-2',
-                    /* ── md+: glass morphism card ── */
+                className={clsx(
+                    'relative w-full overflow-hidden py-2',
                     'md:rounded-[2rem]',
                     'md:border md:border-black/[0.06] dark:md:border-white/10',
                     'md:bg-white/80 dark:md:bg-slate-900/70',
                     'md:backdrop-blur-xl md:backdrop-saturate-150',
                     'md:shadow-[0_8px_32px_-8px_rgba(15,23,42,0.10),0_2px_8px_-2px_rgba(15,23,42,0.04)]',
                     'dark:md:shadow-[0_8px_40px_-10px_rgba(0,0,0,0.45)]',
-                    'md:px-6 md:py-6',
-                ].join(' ')}
+                    'md:px-6 md:py-6'
+                )}
             >
                     {/* ── HEADER ── */}
                     <header className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
-                        {/* title block */}
                         <div className="space-y-2">
-                            {/* live badge */}
                             <div className="inline-flex items-center gap-1.5 rounded-full border border-black/[0.06] bg-white/70 px-2.5 py-1 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-black/40">
                                 <span className="relative flex h-1.5 w-1.5">
                                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
@@ -303,7 +286,6 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                             </div>
                         </div>
 
-                        {/* metrics row — scrollable on very narrow screens */}
                         <div className="flex gap-2 overflow-x-auto pb-0.5 sm:overflow-visible sm:pb-0">
                             <VoteMetric label="Total Cast" value={totals.total} icon={HiOutlineChartBarSquare} />
                             <VoteMetric
@@ -315,11 +297,6 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                     </header>
 
                     {/* ── POLL CARDS ── */}
-                    {/*
-            2-column grid on mobile (cards are compact),
-            4-column on xl (each card side-by-side).
-            This prevents a single-column stacked layout that feels cramped on mobile.
-          */}
                     <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
                         {POLL_OPTIONS.map((option) => {
                             const count = totals[option.id] || 0;
@@ -333,52 +310,45 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                                     type="button"
                                     onClick={() => handleVote(option.id)}
                                     disabled={disabled}
-                                    /* GPU-composited transform only — no layout thrash */
                                     whileHover={!disabled ? { y: -2 } : undefined}
                                     whileTap={!disabled ? { scale: 0.97 } : undefined}
                                     aria-pressed={isActive}
-                                    style={{ willChange: 'transform' }}
-                                    className={[
+                                    className={clsx(
                                         'group relative overflow-hidden rounded-2xl border p-3.5 text-left',
                                         'transition-colors duration-200',
                                         'min-h-[130px] sm:min-h-[140px] sm:p-4',
-                                        'backdrop-blur-md',
                                         isActive
                                             ? `border-transparent bg-white/95 ${option.accent.glow} ring-1 ${option.accent.ring} dark:bg-slate-900/90`
                                             : 'border-black/[0.06] bg-white/65 hover:bg-white/90 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.07]',
-                                        disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
-                                    ].join(' ')}
+                                        disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                                    )}
                                 >
-                                    {/* gradient overlay (active only) */}
-                                    <AnimatePresence>
-                                        {isActive && (
-                                            <motion.div
-                                                variants={overlayVariants}
-                                                initial="hidden"
-                                                animate="visible"
-                                                exit="exit"
-                                                className={`pointer-events-none absolute inset-0 ${option.gradientClass}`}
-                                            />
+                                    {/* gradient overlay — CSS transition replaces AnimatePresence */}
+                                    <div
+                                        className={clsx(
+                                            'pointer-events-none absolute inset-0 transition-opacity duration-200',
+                                            option.gradientClass,
+                                            isActive ? 'opacity-100' : 'opacity-0'
                                         )}
-                                    </AnimatePresence>
+                                    />
 
                                     <div className="relative z-10 flex h-full flex-col justify-between gap-3">
                                         {/* top row: icon + label + check */}
                                         <div className="flex items-start justify-between gap-2">
                                             <div className="flex items-center gap-2.5">
                                                 <div
-                                                    className={[
+                                                    className={clsx(
                                                         'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl',
                                                         'transition-colors duration-200',
                                                         'sm:h-10 sm:w-10',
-                                                        isActive ? option.accent.bg : 'bg-black/[0.05] dark:bg-white/10',
-                                                    ].join(' ')}
+                                                        isActive ? option.accent.bg : 'bg-black/[0.05] dark:bg-white/10'
+                                                    )}
                                                 >
                                                     <Icon
-                                                        className={[
+                                                        className={clsx(
                                                             'h-4 w-4 sm:h-5 sm:w-5',
-                                                            isActive ? option.accent.text : 'text-foreground/65',
-                                                        ].join(' ')}
+                                                            isActive ? option.accent.text : 'text-foreground/65'
+                                                        )}
                                                     />
                                                 </div>
 
@@ -392,20 +362,19 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                                                 </div>
                                             </div>
 
-                                            {/* animated check badge */}
-                                            <AnimatePresence>
-                                                {isActive && (
-                                                    <motion.div
-                                                        variants={checkVariants}
-                                                        initial="hidden"
-                                                        animate="visible"
-                                                        exit="hidden"
-                                                        className={`rounded-full p-1 ${option.accent.bg} ${option.accent.text}`}
-                                                    >
-                                                        <HiOutlineCheckCircle className="h-4 w-4" />
-                                                    </motion.div>
+                                            {/* check badge — CSS transition replaces AnimatePresence */}
+                                            <div
+                                                className={clsx(
+                                                    'rounded-full p-1 transition-all duration-200',
+                                                    option.accent.bg,
+                                                    option.accent.text,
+                                                    isActive
+                                                        ? 'scale-100 opacity-100'
+                                                        : 'scale-60 opacity-0'
                                                 )}
-                                            </AnimatePresence>
+                                            >
+                                                <HiOutlineCheckCircle className="h-4 w-4" />
+                                            </div>
                                         </div>
 
                                         {/* bottom: progress bar */}
@@ -422,7 +391,10 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                                                     initial="hidden"
                                                     animate="visible"
                                                     style={{ willChange: 'transform' }}
-                                                    className={`h-full rounded-full ${isActive ? option.accent.fill : 'bg-foreground/30'}`}
+                                                    className={clsx(
+                                                        'h-full rounded-full',
+                                                        isActive ? option.accent.fill : 'bg-foreground/30'
+                                                    )}
                                                 />
                                             </div>
                                         </div>
@@ -434,7 +406,7 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
 
                     {/* ── STANDINGS SECTION ── */}
                     <div className="relative mt-5 overflow-hidden rounded-2xl border border-black/[0.05] bg-white/90 p-0.5 shadow-sm dark:border-white/10 dark:bg-slate-950/85 sm:mt-6">
-                        <div className="overflow-hidden rounded-[0.85rem] bg-white/70 p-3.5 sm:p-4 dark:bg-slate-900/50">
+                        <div className="overflow-hidden rounded-[0.85rem] bg-transparent p-3.5 sm:p-4">
                             {/* section header */}
                             <div className="mb-3 flex items-center justify-between border-b border-black/[0.05] pb-2.5 dark:border-white/10">
                                 <div className="flex items-center gap-2">
@@ -449,10 +421,10 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                                 </span>
                             </div>
 
-                            {/* standings rows */}
+                            {/* standings rows — uses pre-grouped votes, no filter */}
                             <div className="space-y-2">
                                 {POLL_OPTIONS.map((option) => {
-                                    const votersForType = votes.filter((v) => v.type === option.id);
+                                    const votersForType = groupedVotes[option.id];
                                     if (votersForType.length === 0) return null;
                                     const Icon = option.icon;
 
@@ -464,11 +436,11 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                                             {/* option label */}
                                             <div className="flex items-center gap-2.5">
                                                 <div
-                                                    className={[
+                                                    className={clsx(
                                                         'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
                                                         option.accent.bg,
-                                                        option.accent.text,
-                                                    ].join(' ')}
+                                                        option.accent.text
+                                                    )}
                                                 >
                                                     <Icon className="h-4 w-4" />
                                                 </div>
@@ -482,10 +454,11 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                                                 </div>
                                             </div>
 
-                                            {/* voter pills — wrap nicely on any screen */}
+                                            {/* voter pills */}
                                             <div className="flex flex-wrap gap-1.5 sm:justify-end">
                                                 {votersForType.map((vote) => {
                                                     const key =
+                                                        vote._id ??
                                                         getUserId(vote.user) ??
                                                         `${vote.type}-${vote.user?.name ?? 'member'}`;
                                                     return <VotePill key={key} vote={vote} />;
@@ -511,4 +484,4 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
     );
 };
 
-export default MealPolling;
+export default React.memo(MealPolling);
