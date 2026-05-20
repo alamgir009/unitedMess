@@ -90,7 +90,10 @@ const Sidebar = ({ isOpen, onClose }) => {
                                     : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white"
                             )}
                         >
-                            <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
+                            <item.icon
+                            size={20}
+                            className="mr-3 flex-shrink-0"
+                        />
                             {item.name}
                         </NavLink>
                     ))}
