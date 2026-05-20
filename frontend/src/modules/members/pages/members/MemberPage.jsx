@@ -6,8 +6,9 @@ import AdminUnpaidPanel from '../../components/AdminUnpaidPanel';
 import { fetchUsers, fetchBillingMonthStats } from '../../store/members.slice';
 import {
     FileText, RefreshCw, Users, TrendingUp,
-    Utensils, Receipt, AlertCircle, ArrowUpRight, CalendarDays
+    Utensils, Receipt, AlertCircle, ArrowUpRight, CalendarDays, ReceiptIndianRupee
 } from 'lucide-react';
+import { IoFastFoodOutline } from "react-icons/io5";
 
 /* ─────────────────────────────────────────────
    Stat Card — memoized, CSS-only animation for speed
@@ -209,7 +210,7 @@ const MemberPage = React.memo(() => {
                                     </span>
                                 </div>
                                 <p className="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-md leading-relaxed">
-                                    Manage registered members, review financial statuses, and
+                                    Review financial statuses, &
                                     expand rows for a comprehensive invoice breakdown.
                                 </p>
 
@@ -237,14 +238,14 @@ const MemberPage = React.memo(() => {
                                 delay={0}
                             />
                             <StatCard
-                                icon={Receipt}
+                                icon={ReceiptIndianRupee}
                                 label="Market Exp."
                                 value={formattedMarketExp}
                                 loading={billingStatsLoading}
                                 delay={0.1}
                             />
                             <StatCard
-                                icon={Utensils}
+                                icon={IoFastFoodOutline}
                                 label="Total Meals"
                                 value={formattedTotalMeals}
                                 loading={billingStatsLoading}

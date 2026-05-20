@@ -12,6 +12,7 @@ import {
     LogOut,
     X
 } from 'lucide-react';
+import { IoFastFoodOutline } from "react-icons/io5";
 import { cn } from '@/core/utils/helpers/string.helper';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '@/modules/auth/store/auth.slice';
@@ -23,7 +24,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
     const navigation = [
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-        { name: 'Meals', href: '/meals', icon: Utensils },
+        { name: 'Meals', href: '/meals', icon: IoFastFoodOutline },
         { name: 'Markets', href: '/markets', icon: ShoppingBag },
         { name: 'Payments', href: '/payments', icon: CreditCard },
         { name: 'Members', href: '/members', icon: Users },
