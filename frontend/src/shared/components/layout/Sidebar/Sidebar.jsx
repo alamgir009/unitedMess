@@ -1,7 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
-    Utensils,
     ShoppingBag,
     CreditCard,
     Users,
@@ -91,8 +90,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                             )}
                         >
                             <item.icon
-                            size={20}
-                            className="mr-3 flex-shrink-0"
+                            className="mr-3 h-5 w-5 flex-shrink-0"
                         />
                             {item.name}
                         </NavLink>

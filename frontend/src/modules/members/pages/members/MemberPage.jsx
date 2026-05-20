@@ -6,10 +6,10 @@ import AdminUnpaidPanel from '../../components/AdminUnpaidPanel';
 import { fetchUsers, fetchBillingMonthStats } from '../../store/members.slice';
 import {
     FileText, RefreshCw, Users, TrendingUp,
-    Utensils, Receipt, AlertCircle, ArrowUpRight, CalendarDays,
+    AlertCircle, ArrowUpRight, CalendarDays,
+    ReceiptIndianRupee,
 } from 'lucide-react';
 import { IoFastFoodOutline } from "react-icons/io5";
-import { LuReceiptIndianRupee } from "react-icons/lu";
 
 /* ─────────────────────────────────────────────
    Stat Card — memoized, CSS-only animation for speed
@@ -45,11 +45,11 @@ const StatCard = React.memo(({ icon: Icon, label, value, subvalue, accent = fals
                     >
                         <Icon
                         size={20}
-                        className={
+                        className={`flex-shrink-0 ${
                             accent
                                 ? 'text-amber-600 dark:text-amber-400'
                                 : 'text-foreground/65'
-                        }
+                        }`}
                     />
                     </div>
                     <div className="min-w-0 mt-0.5">
@@ -241,7 +241,7 @@ const MemberPage = React.memo(() => {
                                 delay={0}
                             />
                             <StatCard
-                                icon={LuReceiptIndianRupee}
+                                icon={ReceiptIndianRupee}
                                 label="Market Exp."
                                 value={formattedMarketExp}
                                 loading={billingStatsLoading}
