@@ -298,11 +298,12 @@ const SettingsPage = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                    {cards.map(({ title, icon: Icon, currentValue }) => (
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                    {cards.map(({ title, icon: Icon, currentValue }, index) => (
                         <div
                             key={title}
-                            className="flex items-center gap-3 p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm"
+                            className={`flex items-center gap-3 p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm
+                ${cards.length % 2 !== 0 && index === cards.length - 1 ? 'col-span-2 lg:col-span-1' : ''}`}
                         >
                             <div className="shrink-0 flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
                                 <Icon className="w-4 h-4 text-slate-600 dark:text-slate-400" strokeWidth={2} />
