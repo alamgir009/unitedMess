@@ -13,7 +13,7 @@
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { HiOutlineXMark, HiOutlineCheckBadge } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 
@@ -42,24 +42,27 @@ import { fetchPayableAmount, fetchPayableGasBill } from '../../../auth/store/aut
 
 import { usePayment } from '../../hooks/usePayment';
 
-/* ─── Skeleton loaders ───────────────────────────────────────── */
-const SkeletonCard = () => (
-    <div className="rounded-3xl border border-white/10 dark:border-white/5 bg-card/50 p-6 animate-pulse">
+const SkeletonCard = React.memo(() => (
+    <div className="rounded-xl border border-border/50 bg-card p-5 animate-pulse">
         <div className="flex justify-between mb-4">
-            <div className="h-7 w-20 bg-muted/60 rounded-xl" />
-            <div className="h-5 w-16 bg-muted/40 rounded-full" />
+            <div className="space-y-2">
+                <div className="h-7 w-14 bg-muted/60 rounded-md" />
+                <div className="h-3 w-28 bg-muted/40 rounded" />
+            </div>
+            <div className="h-6 w-14 bg-muted/40 rounded-full" />
         </div>
         <div className="h-3 w-full bg-muted/30 rounded mb-1.5" />
-        <div className="h-3 w-2/3  bg-muted/20 rounded mb-6"   />
-        <div className="h-9 w-full bg-muted/30 rounded-2xl"    />
+        <div className="h-3 w-2/3 bg-muted/20 rounded mb-5" />
+        <div className="h-8 w-full bg-muted/30 rounded-xl" />
     </div>
-);
+));
+SkeletonCard.displayName = 'SkeletonCard';
 
-const InvoiceSkeleton = () => (
-    <div className="rounded-3xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-slate-900/50 p-6 animate-pulse space-y-4">
+const InvoiceSkeleton = React.memo(() => (
+    <div className="rounded-xl border border-border/50 bg-card p-5 animate-pulse space-y-4">
         <div className="flex justify-between">
-            <div className="h-10 w-44 bg-muted/40 rounded-2xl" />
-            <div className="h-10 w-28 bg-muted/30 rounded-2xl" />
+            <div className="h-7 w-44 bg-muted/40 rounded-md" />
+            <div className="h-7 w-28 bg-muted/30 rounded-md" />
         </div>
         <div className="space-y-3 pt-2">
             {[1, 2, 3, 4, 5].map(n => (
@@ -69,9 +72,10 @@ const InvoiceSkeleton = () => (
                 </div>
             ))}
         </div>
-        <div className="h-12 w-full bg-muted/30 rounded-2xl mt-2" />
+        <div className="h-8 w-full bg-muted/30 rounded-xl mt-2" />
     </div>
-);
+));
+InvoiceSkeleton.displayName = 'InvoiceSkeleton';
 
 /* ══════════════════════════════════════════════════════════════
    PAYMENT PAGE
@@ -103,6 +107,7 @@ const PaymentPage = () => {
     const [limit,          setLimit]          = useState(20);
     const [deletingPayment, setDeletingPayment] = useState(null);
     const [isDeleting, setIsDeleting]           = useState(false);
+    const [invoiceFetchDone, setInvoiceFetchDone] = useState(false);
 
     /* ── payment hook ── */
     const refreshData = useCallback(() => {
@@ -119,18 +124,11 @@ const PaymentPage = () => {
         },
     });
 
-    /**
-     * Wrapper so the UI can track the paying spinner.
-     * usePayment manages the actual async flow; this wrapper
-     * just gates the loading state for the button.
-     */
     const handleRazorpayCheckout = useCallback(async (amount, paymentType) => {
         setIsPaying(true);
         try {
             await handleCheckout(amount, paymentType);
         } finally {
-            // onSuccess already calls setIsPaying(false) on the happy path.
-            // This catches the dismiss / error paths.
             setIsPaying(false);
         }
     }, [handleCheckout]);
@@ -204,14 +202,12 @@ const PaymentPage = () => {
     const handleViewInvoice = useCallback((payment) => {
         if (!payment) return;
 
-        // Prefer a direct invoice month string: "April 2024", "May 2026", etc.
         const monthStr = (payment.month || '').trim();
         if (!monthStr) {
             toast.error('Unable to open invoice: payment has no month information.');
             return;
         }
 
-        // Strategy 1: "Month YYYY" format (most common in this app)
         const parts = monthStr.split(/\s+/);
         if (parts.length >= 2) {
             const date = new Date(`${parts[0]} 1, ${parts[parts.length - 1]}`);
@@ -226,7 +222,6 @@ const PaymentPage = () => {
             }
         }
 
-        // Strategy 2: "YYYY-MM" format
         const isoMatch = monthStr.match(/^(\d{4})-(\d{1,2})$/);
         if (isoMatch) {
             setInvoiceModal({
@@ -238,7 +233,6 @@ const PaymentPage = () => {
             return;
         }
 
-        // Fallback: try native Date parsing
         const fallback = new Date(monthStr);
         if (!isNaN(fallback.getTime())) {
             setInvoiceModal({
@@ -351,20 +345,13 @@ const PaymentPage = () => {
     const gasBillStatus   = payableGasBill?.status           || 'pending';
     const bothPaid        = messBillStatus === 'success' && gasBillStatus === 'success';
     const hasInvoiceData  = !!payableAmountData && 'payableAmount' in payableAmountData;
-    const [invoiceFetchDone, setInvoiceFetchDone] = useState(false);
     const isInvoiceLoading = !invoiceFetchDone && !hasInvoiceData && !!(user?._id || user?.id);
 
     /* ── render ── */
     return (
         <MainLayout>
-            <div className="relative min-h-[80vh]" style={{ touchAction: 'pan-y' }}>
-
-                {/* Ambient background orbs */}
-                <div className="pointer-events-none absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-[120px] -z-10" />
-                <div className="pointer-events-none absolute bottom-10 left-0 w-[400px] h-[400px] rounded-full bg-violet-400/8 blur-[100px] -z-10" />
-                <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full bg-purple-500/5 blur-[80px] -z-10" />
-
-                <div className="relative z-10 space-y-5 md:space-y-6">
+            <div className="relative min-h-[80vh] max-w-7xl mx-auto">
+                <div className="relative z-10 space-y-6">
 
                     {/* Header */}
                     <PaymentHeader
@@ -384,48 +371,37 @@ const PaymentPage = () => {
                     {/* Invoice panel */}
                     <AnimatePresence>
                         {isInvoiceLoading && (
-                            <motion.div key="inv-skeleton" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                                <InvoiceSkeleton />
-                            </motion.div>
+                            <InvoiceSkeleton />
                         )}
 
                         {bothPaid && hasInvoiceData && (
-                            <motion.div
-                                key="fully-paid"
-                                initial={{ opacity: 0, y: 8 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 8 }}
-                                className="flex items-center gap-4 p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-700 dark:text-emerald-300"
-                            >
-                                <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                                    <HiOutlineCheckBadge className="w-6 h-6 text-emerald-500" />
+                            <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300">
+                                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                                    <HiOutlineCheckBadge className="w-5 h-5 text-emerald-500" />
                                 </div>
                                 <div className="flex-1">
-                                    <p className="font-bold text-base">All Bills Fully Paid 🎉</p>
-                                    <p className="text-sm opacity-75 mt-0.5">
+                                    <p className="font-semibold text-sm">All Bills Fully Paid</p>
+                                    <p className="text-xs opacity-75 mt-0.5">
                                         Both your Mess Bill and Gas Bill are paid for this month.
                                         Your invoice and payment history are shown below.
                                     </p>
                                 </div>
-                            </motion.div>
+                            </div>
                         )}
 
                         {hasInvoiceData && (
-                            <motion.div key="inv-panel" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                                <MessBillInvoice
-                                    data={payableAmountData}
-                                    isAdmin={isAdmin}
-                                    user={user}
-                                    platformFee={payableAmountData?.userStats?.platformFee || user?.platformFee || 0}
-                                    onPayNow={handleRazorpayCheckout}
-                                    isPaying={isPaying}
-                                    paymentStatus={messBillStatus}
-                                    paymentRecord={latestMessBillPayment}
-                                />
-                            </motion.div>
+                            <MessBillInvoice
+                                data={payableAmountData}
+                                isAdmin={isAdmin}
+                                user={user}
+                                platformFee={payableAmountData?.userStats?.platformFee || user?.platformFee || 0}
+                                onPayNow={handleRazorpayCheckout}
+                                isPaying={isPaying}
+                                paymentStatus={messBillStatus}
+                                paymentRecord={latestMessBillPayment}
+                            />
                         )}
                     </AnimatePresence>
-
 
                     {/* Search + filter bar */}
                     <PaymentSearchBar
@@ -443,34 +419,29 @@ const PaymentPage = () => {
                         onClearFilters={clearFilters}
                     />
 
-                    {/* Error banner — Redux errors only (toasts handle local ones) */}
+                    {/* Error banner */}
                     <AnimatePresence>
-                        {isError && message && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -8 }}
-                                animate={{ opacity: 1, y: 0  }}
-                                exit={{ opacity: 0, y: -8 }}
-                                transition={{ duration: 0.2 }}
-                                className="flex items-start gap-3 p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-500 dark:text-red-400"
-                            >
-                                <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping mt-0.5 flex-shrink-0" />
-                                <p className="flex-1 text-sm font-semibold">
+                        {(isError || message) && (
+                            <div className="flex items-start gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400">
+                                <span className="w-2 h-2 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
+                                <p className="flex-1 text-sm font-medium">
                                     {message || 'Something went wrong. Please try again.'}
                                 </p>
                                 <button
                                     onClick={() => dispatch(reset())}
-                                    className="flex-shrink-0 p-1 rounded-lg hover:bg-red-500/10 transition-colors"
+                                    className="flex-shrink-0 p-1 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/10 transition-colors"
+                                    title="Dismiss"
                                     aria-label="Dismiss error"
                                 >
                                     <HiOutlineXMark className="w-5 h-5" />
                                 </button>
-                            </motion.div>
+                            </div>
                         )}
                     </AnimatePresence>
 
                     {/* Payment list */}
                     {isLoading && (!payments || payments.length === 0) ? (
-                        <div className={`grid gap-5 ${
+                        <div className={`grid gap-3 ${
                             viewMode === 'grid'
                                 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
                                 : 'grid-cols-1'
