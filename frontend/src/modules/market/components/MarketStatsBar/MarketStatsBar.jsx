@@ -4,64 +4,56 @@ import {
     HiOutlineCurrencyRupee,
     HiOutlineUserGroup,
 } from 'react-icons/hi2';
+import StatPill from '@/shared/components/ui/StatPill/StatPill';
 
-const PILL_STYLES = {
-    primary: 'bg-primary-500/10 border-primary-500/20 text-primary-600 dark:text-primary-400',
+const COLORS = {
+    primary: 'bg-primary/10 border-primary/20 text-primary',
     secondary: 'bg-secondary-500/10 border-secondary-500/20 text-secondary-600 dark:text-secondary-400',
-    amber: 'bg-amber-400/10 border-amber-400/20 text-amber-500 dark:text-amber-400',
+    amber: 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400',
 };
 
-const StatPill = React.memo(({ icon: Icon, label, value, colorKey, fullWidth = false }) => (
-    <div
-        className={[
-            'flex items-center gap-3 px-4 py-3 rounded-xl border',
-            'shadow-sm',
-            fullWidth ? 'col-span-2' : '',
-            PILL_STYLES[colorKey],
-        ].join(' ')}
-    >
-        <div className="p-2 rounded-lg bg-white/10 flex-shrink-0">
-            <Icon className="w-4 h-4" aria-hidden="true" />
-        </div>
-        <div className="min-w-0">
-            <p className="text-xs font-medium opacity-60 leading-none truncate">{label}</p>
-            <p className="text-lg font-semibold leading-tight tabular-nums">{value}</p>
-        </div>
-    </div>
-));
-StatPill.displayName = 'StatPill';
-
 const MarketStatsBar = React.memo(({ totalRecords, totalAmount, uniqueUsers, isAdmin }) => {
-    const pills = useMemo(() => [
-        {
-            icon: HiOutlineShoppingBag,
-            label: 'Total Records',
-            value: totalRecords,
-            colorKey: 'primary',
-        },
-        {
-            icon: HiOutlineCurrencyRupee,
-            label: 'Total Spent',
-            value: `₹${totalAmount.toLocaleString('en-IN')}`,
-            colorKey: 'secondary',
-        },
-        ...(isAdmin
-            ? [{ icon: HiOutlineUserGroup, label: 'Members', value: uniqueUsers, colorKey: 'amber' }]
-            : []),
-    ], [totalRecords, totalAmount, uniqueUsers, isAdmin]);
+    const pills = useMemo(() => {
+        const items = [
+            {
+                icon: HiOutlineShoppingBag,
+                label: 'Total Records',
+                value: totalRecords,
+                color: COLORS.primary,
+            },
+            {
+                icon: HiOutlineCurrencyRupee,
+                label: 'Total Spent',
+                value: `\u20B9${totalAmount.toLocaleString('en-IN')}`,
+                color: COLORS.secondary,
+            },
+        ];
+
+        if (isAdmin) {
+            items.push({
+                icon: HiOutlineUserGroup,
+                label: 'Members',
+                value: uniqueUsers,
+                color: COLORS.amber,
+            });
+        }
+
+        return items;
+    }, [totalRecords, totalAmount, uniqueUsers, isAdmin]);
 
     return (
-        <div className={`grid grid-cols-2 gap-3 ${isAdmin ? 'md:grid-cols-3 lg:grid-cols-4' : 'md:grid-cols-3'}`}>
-            {pills.map((p, i) => (
-                <StatPill
-                    key={p.label}
-                    {...p}
-                    fullWidth={isAdmin && i === pills.length - 1 && pills.length % 2 !== 0}
-                />
+        <div
+            role="status"
+            aria-label="Market statistics"
+            className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 xl:grid-cols-4"
+        >
+            {pills.map((p) => (
+                <StatPill key={p.label} {...p} />
             ))}
         </div>
     );
 });
+
 MarketStatsBar.displayName = 'MarketStatsBar';
 
 export default MarketStatsBar;

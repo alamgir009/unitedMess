@@ -1,58 +1,54 @@
 import React, { useMemo } from 'react';
 import {
-    HiOutlineCurrencyRupee,
-    HiOutlineCheckCircle,
-    HiOutlineClock,
+    HiOutlineSparkles,
     HiOutlineUserGroup,
 } from 'react-icons/hi2';
+import { IoFastFoodOutline } from 'react-icons/io5';
 import StatPill from '@/shared/components/ui/StatPill/StatPill';
 
 const COLORS = {
     primary: 'bg-primary/10 border-primary/20 text-primary',
-    emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400',
+    accent: 'bg-accent/10 border-accent/20 text-accent',
     amber: 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400',
     secondary: 'bg-secondary-500/10 border-secondary-500/20 text-secondary-600 dark:text-secondary-400',
 };
 
-const PaymentStatsBar = React.memo(({ payments = [], isAdmin }) => {
+const MealStatsBar = React.memo(({ meals = [], isAdmin }) => {
     const stats = useMemo(() => {
-        let totalPaid = 0;
-        let pendingCount = 0;
+        let totalMeals = 0;
+        let guestMeals = 0;
         const userIds = new Set();
 
-        for (let i = 0; i < payments.length; i++) {
-            const p = payments[i];
-            if (p.status === 'completed') {
-                totalPaid += p.amount || 0;
-            } else if (p.status === 'pending') {
-                pendingCount += 1;
-            }
+        for (let i = 0; i < meals.length; i++) {
+            const m = meals[i];
+            totalMeals += m.mealCount || 0;
+            guestMeals += m.guestCount || 0;
             if (isAdmin) {
-                const uid = typeof p.user === 'object' ? p.user?._id : p.user;
+                const uid = typeof m.user === 'object' ? m.user?._id : m.user;
                 if (uid) userIds.add(uid);
             }
         }
 
         const items = [
             {
-                icon: HiOutlineCurrencyRupee,
+                icon: HiOutlineSparkles,
                 label: 'Total Records',
-                value: payments.length,
+                value: meals.length,
                 color: COLORS.primary,
             },
             {
-                icon: HiOutlineCheckCircle,
-                label: 'Total Paid',
-                value: `\u20B9${totalPaid.toLocaleString('en-IN')}`,
-                color: COLORS.emerald,
+                icon: IoFastFoodOutline,
+                label: 'Total Meals',
+                value: totalMeals,
+                color: COLORS.accent,
             },
         ];
 
-        if (pendingCount > 0) {
+        if (guestMeals > 0) {
             items.push({
-                icon: HiOutlineClock,
-                label: 'Pending',
-                value: pendingCount,
+                icon: HiOutlineUserGroup,
+                label: 'Guest Meals',
+                value: guestMeals,
                 color: COLORS.amber,
             });
         }
@@ -67,12 +63,12 @@ const PaymentStatsBar = React.memo(({ payments = [], isAdmin }) => {
         }
 
         return items;
-    }, [payments, isAdmin]);
+    }, [meals, isAdmin]);
 
     return (
         <div
             role="status"
-            aria-label="Payment statistics"
+            aria-label="Meal statistics"
             className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 xl:grid-cols-4"
         >
             {stats.map((s) => (
@@ -82,6 +78,6 @@ const PaymentStatsBar = React.memo(({ payments = [], isAdmin }) => {
     );
 });
 
-PaymentStatsBar.displayName = 'PaymentStatsBar';
+MealStatsBar.displayName = 'MealStatsBar';
 
-export default PaymentStatsBar;
+export default MealStatsBar;

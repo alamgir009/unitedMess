@@ -3,11 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { AnimatePresence } from 'framer-motion';
 import {
     HiOutlinePlus, HiOutlineSquares2X2, HiOutlineListBullet,
-    HiOutlineSparkles, HiOutlineShieldCheck, HiOutlineUserGroup,
-    HiOutlineFire, HiOutlineMagnifyingGlass, HiOutlineXMark,
-    HiOutlineAdjustmentsHorizontal, HiOutlineCalendarDays,
-    HiOutlineExclamationTriangle, HiOutlineInformationCircle,
-    HiOutlineChevronDown,
+    HiOutlineShieldCheck, HiOutlineSparkles,
+    HiOutlineXMark, HiOutlineChevronDown, HiOutlineInformationCircle,
 } from 'react-icons/hi2';
 import { IoFastFoodOutline } from "react-icons/io5";
 import { format } from 'date-fns';
@@ -19,9 +16,10 @@ import MealForm from '../../components/MealForm/MealForm';
 import MealModal from '../../components/MealModal/MealModal';
 import MealPolling from '../../components/MealPolling/MealPolling';
 import Pagination from '@/shared/components/ui/Pagination/Pagination';
-import { fetchMeals, createMeal, bulkCreateMeals, updateMeal, deleteMeal, reset, adminCreateMeal } from '../../store/meal.slice';
+import { fetchMeals, createMeal, bulkCreateMeals, updateMeal, deleteMeal, reset } from '../../store/meal.slice';
 import DeleteMealDialog from '../../components/DeleteMealDialog/DeleteMealDialog';
 import MealSearchBar from '../../components/MealSearchBar/MealSearchBar';
+import MealStatsBar from '../../components/MealStatsBar/MealStatsBar';
 
 const SkeletonCard = React.memo(() => (
     <div className="rounded-xl border border-border/50 bg-card p-5 animate-pulse">
@@ -38,19 +36,6 @@ const SkeletonCard = React.memo(() => (
     </div>
 ));
 SkeletonCard.displayName = 'SkeletonCard';
-
-const StatPill = React.memo(({ icon: Icon, label, value, color }) => (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-sm overflow-hidden ${color}`}>
-        <div className="p-2 rounded-lg bg-white/10 flex-shrink-0">
-            <Icon className="w-4 h-4" />
-        </div>
-        <div className="min-w-0">
-            <p className="text-xs font-medium opacity-70 leading-none truncate">{label}</p>
-            <p className="text-lg font-semibold leading-tight tabular-nums">{value}</p>
-        </div>
-    </div>
-));
-StatPill.displayName = 'StatPill';
 
 const MealPage = () => {
     const dispatch = useDispatch();
@@ -150,12 +135,6 @@ const MealPage = () => {
         }
     }, [dispatch, deletingMeal, isDeleting]);
 
-    const totalMeals = useMemo(() => meals?.reduce((s, m) => s + (m.mealCount || 0), 0) || 0, [meals]);
-    const guestMeals = useMemo(() => meals?.reduce((s, m) => s + (m.guestCount || 0), 0) || 0, [meals]);
-    const uniqueUsers = useMemo(() =>
-        isAdmin ? new Set(meals?.map(m => (typeof m.user === 'object' ? m.user?._id : m.user)) || []).size : 0,
-        [meals, isAdmin]);
-
     const filtered = useMemo(() => (meals || []).filter((meal) => {
         if (typeFilter !== 'all' && meal.type !== typeFilter) return false;
         if (dateFrom && new Date(meal.date) < new Date(dateFrom)) return false;
@@ -236,19 +215,7 @@ const MealPage = () => {
                     </div>
 
                     {/* Stats */}
-                    <div className={`grid grid-cols-2 gap-3 ${isAdmin ? 'md:grid-cols-3 lg:grid-cols-4' : 'md:grid-cols-3'}`}>
-                        {(() => {
-                            const pills = [
-                                { icon: HiOutlineSparkles, label: 'Total Records', value: meals?.length || 0, color: 'bg-primary/10 border-primary/20 text-primary' },
-                                { icon: IoFastFoodOutline, label: 'Total Meals', value: totalMeals, color: 'bg-accent/10 border-accent/20 text-accent' },
-                                ...(guestMeals > 0 ? [{ icon: HiOutlineUserGroup, label: 'Guest Meals', value: guestMeals, color: 'bg-amber-500/10 border-amber-500/20 text-amber-500' }] : []),
-                                ...(isAdmin ? [{ icon: HiOutlineUserGroup, label: 'Members', value: uniqueUsers, color: 'bg-secondary-400/10 border-secondary-400/20 text-secondary-400' }] : []),
-                            ];
-                            return pills.map((p) => (
-                                <StatPill key={p.label} {...p} />
-                            ));
-                        })()}
-                    </div>
+                    <MealStatsBar meals={meals || []} isAdmin={isAdmin} />
 
                     {/* Dining Roster */}
                     <div
