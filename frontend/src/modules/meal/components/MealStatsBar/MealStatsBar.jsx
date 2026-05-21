@@ -5,6 +5,7 @@ import {
 } from 'react-icons/hi2';
 import { IoFastFoodOutline } from 'react-icons/io5';
 import StatPill from '@/shared/components/ui/StatPill/StatPill';
+import { cn } from '@/core/utils/helpers/string.helper';
 
 const COLORS = {
     primary: 'bg-primary/10 border-primary/20 text-primary',
@@ -65,15 +66,30 @@ const MealStatsBar = React.memo(({ meals = [], isAdmin }) => {
         return items;
     }, [meals, isAdmin]);
 
+    const gridLayoutClass = cn(
+        'grid gap-3 sm:gap-4',
+        stats.length === 2 && 'grid-cols-2 max-w-2xl',
+        stats.length === 3 && 'grid-cols-2 md:grid-cols-3',
+        stats.length === 4 && 'grid-cols-2 lg:grid-cols-4'
+    );
+
     return (
         <div
             role="status"
             aria-label="Meal statistics"
-            className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 xl:grid-cols-4"
+            className={gridLayoutClass}
         >
-            {stats.map((s) => (
-                <StatPill key={s.label} {...s} />
-            ))}
+            {stats.map((s, idx) => {
+                const isLastAndOdd = stats.length === 3 && idx === 2;
+                return (
+                    <div
+                        key={s.label}
+                        className={isLastAndOdd ? 'col-span-2 md:col-span-1' : 'col-span-1'}
+                    >
+                        <StatPill {...s} />
+                    </div>
+                );
+            })}
         </div>
     );
 });

@@ -5,6 +5,7 @@ import {
     HiOutlineUserGroup,
 } from 'react-icons/hi2';
 import StatPill from '@/shared/components/ui/StatPill/StatPill';
+import { cn } from '@/core/utils/helpers/string.helper';
 
 const COLORS = {
     primary: 'bg-primary/10 border-primary/20 text-primary',
@@ -41,15 +42,29 @@ const MarketStatsBar = React.memo(({ totalRecords, totalAmount, uniqueUsers, isA
         return items;
     }, [totalRecords, totalAmount, uniqueUsers, isAdmin]);
 
+    const gridLayoutClass = cn(
+        'grid gap-3 sm:gap-4',
+        pills.length === 2 && 'grid-cols-2 max-w-2xl',
+        pills.length === 3 && 'grid-cols-2 md:grid-cols-3'
+    );
+
     return (
         <div
             role="status"
             aria-label="Market statistics"
-            className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 xl:grid-cols-4"
+            className={gridLayoutClass}
         >
-            {pills.map((p) => (
-                <StatPill key={p.label} {...p} />
-            ))}
+            {pills.map((p, idx) => {
+                const isLastAndOdd = pills.length === 3 && idx === 2;
+                return (
+                    <div
+                        key={p.label}
+                        className={isLastAndOdd ? 'col-span-2 md:col-span-1' : 'col-span-1'}
+                    >
+                        <StatPill {...p} />
+                    </div>
+                );
+            })}
         </div>
     );
 });
