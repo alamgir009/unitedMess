@@ -1,131 +1,27 @@
 import React, { useEffect, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { AnimatePresence, motion } from 'framer-motion';
+import { RefreshCw } from 'lucide-react';
+import {
+    HiOutlineUserGroup,
+    HiOutlineCurrencyRupee,
+    HiOutlineArrowTrendingUp,
+    HiOutlineCalendarDays,
+    HiOutlineShieldCheck,
+    HiOutlineXMark,
+} from 'react-icons/hi2';
+import { IoFastFoodOutline } from 'react-icons/io5';
+
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import MemberTable from '../../components/MemberTable';
 import AdminUnpaidPanel from '../../components/AdminUnpaidPanel';
-import { fetchUsers, fetchBillingMonthStats } from '../../store/members.slice';
-import {
-    FileText, RefreshCw, Users, TrendingUp,
-    AlertCircle, ArrowUpRight, CalendarDays,
-    ReceiptIndianRupee,
-} from 'lucide-react';
-import { IoFastFoodOutline } from "react-icons/io5";
-
-/* ─────────────────────────────────────────────
-   Stat Card — memoized, CSS-only animation for speed
-───────────────────────────────────────────── */
-const StatCard = React.memo(({ icon: Icon, label, value, subvalue, accent = false, loading = false, delay = 0 }) => {
-    return (
-        <div
-            style={{ animationDelay: `${delay}s` }}
-            className={[
-                'group relative overflow-hidden rounded-2xl border p-3.5 text-left',
-                'transition-colors duration-200',
-                'min-h-[110px] sm:min-h-[120px] sm:p-4',
-                'backdrop-blur-md',
-                'animate-[fadeSlideUp_0.35s_cubic-bezier(0.22,1,0.36,1)_both]',
-                accent 
-                    ? 'border-transparent bg-white/95 shadow-[0_12px_32px_-8px_rgba(245,158,11,0.40)] ring-1 ring-amber-500/30 dark:bg-slate-900/90'
-                    : 'border-black/[0.06] bg-white/65 hover:bg-white/90 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.07]'
-            ].join(' ')}
-        >
-            {accent && (
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-400/20 via-orange-500/20 to-rose-500/20" />
-            )}
-
-            <div className="relative z-10 flex h-full flex-col justify-between gap-3">
-                {/* top row: icon + label */}
-                <div className="flex items-start gap-2.5">
-                    <div
-                        className={[
-                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl',
-                            'transition-colors duration-200 sm:h-10 sm:w-10',
-                            accent ? 'bg-amber-500/10' : 'bg-black/[0.05] dark:bg-white/10',
-                        ].join(' ')}
-                    >
-                        <Icon
-                        size={20}
-                        className={`flex-shrink-0 ${
-                            accent
-                                ? 'text-amber-600 dark:text-amber-400'
-                                : 'text-foreground/65'
-                        }`}
-                    />
-                    </div>
-                    <div className="min-w-0 mt-0.5">
-                        <h4 className="truncate text-[13px] font-semibold tracking-tight text-foreground sm:text-sm">
-                            {label}
-                        </h4>
-                    </div>
-                </div>
-
-                {/* bottom row: value */}
-                <div>
-                    {loading ? (
-                        <div className={`h-6 w-20 rounded-full animate-pulse ${accent ? 'bg-amber-500/30' : 'bg-black/[0.06] dark:bg-white/10'}`} />
-                    ) : (
-                        <div className="flex items-baseline gap-1">
-                            <span className="text-2xl sm:text-3xl font-black tabular-nums text-foreground tracking-tight">
-                                {value}
-                            </span>
-                            {subvalue && (
-                                <span className="text-xs font-semibold text-muted-foreground tabular-nums">
-                                    {subvalue}
-                                </span>
-                            )}
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-});
-StatCard.displayName = 'StatCard';
-
-/* ─────────────────────────────────────────────
-   Error Banner
-───────────────────────────────────────────── */
-const ErrorBanner = React.memo(({ message, onRetry }) => (
-    <div
-        role="alert"
-        className="mb-6 flex items-center justify-between gap-4 px-5 py-4
-                   bg-rose-50 dark:bg-rose-500/10
-                   border border-rose-200 dark:border-rose-500/25
-                   rounded-2xl shadow-sm"
-    >
-        <div className="flex items-start gap-3">
-            <AlertCircle
-                size={18}
-                strokeWidth={2}
-                className="shrink-0 mt-0.5 text-rose-500 dark:text-rose-400"
-            />
-            <div>
-                <p className="text-sm font-bold text-rose-700 dark:text-rose-400 leading-tight">
-                    Failed to load members
-                </p>
-                <p className="text-xs font-medium text-rose-500 dark:text-rose-500 mt-0.5">
-                    {message || 'Please check your network connection and try again.'}
-                </p>
-            </div>
-        </div>
-        <button
-            onClick={onRetry}
-            aria-label="retry loading members"
-            className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold
-                       bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400
-                       hover:bg-rose-200 dark:hover:bg-rose-500/30
-                       active:scale-95 transition-all duration-150"
-        >
-            <RefreshCw size={14} strokeWidth={2.5} />
-            Retry
-        </button>
-    </div>
-));
-ErrorBanner.displayName = 'ErrorBanner';
+import StatPill from '@/shared/components/ui/StatPill/StatPill';
+import { fetchUsers, fetchBillingMonthStats, reset } from '../../store/members.slice';
+import { cn } from '@/core/utils/helpers/string.helper';
 
 /* ─────────────────────────────────────────────
    MemberPage — Main
-───────────────────────────────────────────── */
+ ───────────────────────────────────────────── */
 const MemberPage = React.memo(() => {
     const dispatch = useDispatch();
     const { users, isLoading, isError, message, billingStats, billingStatsLoading } = useSelector((state) => state.members);
@@ -148,7 +44,7 @@ const MemberPage = React.memo(() => {
         return list.filter(u => u.isActive && u.userStatus === 'approved');
     }, [users]);
 
-    /* Stat count — now simply safeUsers.length since it's already filtered */
+    /* Stat count — safeUsers.length since it's already filtered */
     const activeCount = safeUsers.length;
 
     useEffect(() => {
@@ -172,119 +68,145 @@ const MemberPage = React.memo(() => {
         dispatch(fetchBillingMonthStats());
     }, [dispatch]);
 
-    const formattedMarketExp = useMemo(() => `₹\u202F${(billingStats.grandTotalMarket ?? 0).toLocaleString('en-IN')}`, [billingStats.grandTotalMarket]);
+    const dismissError = useCallback(() => {
+        dispatch(reset());
+    }, [dispatch]);
+
+    const formattedMarketExp = useMemo(() => `₹${(billingStats.grandTotalMarket ?? 0).toLocaleString('en-IN')}`, [billingStats.grandTotalMarket]);
     const formattedTotalMeals = useMemo(() => (billingStats.grandTotalMeal ?? 0).toLocaleString('en-IN'), [billingStats.grandTotalMeal]);
-    const formattedMealRate = useMemo(() => `₹\u202F${(billingStats.mealCharge ?? 0).toFixed(2)}`, [billingStats.mealCharge]);
+    const formattedMealRate = useMemo(() => `₹${(billingStats.mealCharge ?? 0).toFixed(2)}`, [billingStats.mealCharge]);
+
+    const stats = useMemo(() => {
+        return [
+            {
+                icon: HiOutlineUserGroup,
+                label: 'Active Members',
+                value: activeCount,
+                color: 'bg-secondary-500/10 border-secondary-500/20 text-secondary-600 dark:text-secondary-400',
+            },
+            {
+                icon: HiOutlineCurrencyRupee,
+                label: 'Market Exp.',
+                value: billingStatsLoading ? '...' : formattedMarketExp,
+                color: 'bg-primary/10 border-primary/20 text-primary',
+            },
+            {
+                icon: IoFastFoodOutline,
+                label: 'Total Meals',
+                value: billingStatsLoading ? '...' : formattedTotalMeals,
+                color: 'bg-accent/10 border-accent/20 text-accent',
+            },
+            {
+                icon: HiOutlineArrowTrendingUp,
+                label: 'Meal Rate',
+                value: billingStatsLoading ? '...' : formattedMealRate,
+                color: 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400',
+            },
+        ];
+    }, [activeCount, billingStatsLoading, formattedMarketExp, formattedTotalMeals, formattedMealRate]);
 
     return (
         <MainLayout>
-            <div className="relative flex flex-col min-h-[calc(100vh-4rem)] w-full bg-slate-50 dark:bg-[#020617] py-6 lg:py-8 overflow-x-hidden">
-
-                {/* ── Ambient background blobs ── */}
-                <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-                    <div className="absolute -top-32 -right-32 w-[480px] h-[480px] rounded-full bg-blue-500/[0.06] dark:bg-blue-500/[0.04] blur-3xl" />
-                    <div className="absolute top-1/2 -left-24 w-[320px] h-[320px] rounded-full bg-indigo-500/[0.05] dark:bg-indigo-500/[0.03] blur-3xl" />
-                </div>
+            <div className="relative min-h-[80vh] max-w-7xl mx-auto space-y-6">
 
                 {/* ════════════════════════════════
                     Header
                 ════════════════════════════════ */}
-                <header className="relative z-10 mb-8 px-4 sm:px-6 lg:px-8">
-                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                <header className="relative z-10 animate-fade-in">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        
+                        {/* Title block */}
+                        <div className="space-y-1">
+                            {isAdmin ? (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 mb-1 rounded-full text-xs font-semibold bg-secondary-400/10 text-secondary-400 border border-secondary-400/20">
+                                    <HiOutlineShieldCheck className="w-3.5 h-3.5" /> Admin View
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 mb-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+                                    <HiOutlineUserGroup className="w-3.5 h-3.5" /> Directory
+                                </span>
+                            )}
+                            <h2 className="text-xl sm:text-2xl tracking-tight text-foreground font-semibold leading-tight">
+                                {isAdmin ? 'Members & Finalized Bills' : 'Members Directory'}
+                            </h2>
+                            <p className="text-sm text-muted-foreground">
+                                Review financial statuses, expand rows for a comprehensive invoice breakdown.
+                            </p>
+                        </div>
 
-                        {/* ── Title block ── */}
-                        <div className="flex items-start gap-4">
-                            <div className="shrink-0 p-3 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/25 dark:shadow-blue-700/25">
-                                <FileText size={24} strokeWidth={1.75} className="text-white" />
-                            </div>
-
-                            <div>
-                                <div className="flex items-center gap-2 mb-1">
-                                    <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-slate-900 dark:text-white leading-none">
-                                        Directory &amp; Invoices
-                                    </h1>
-                                    <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5
-                                                       rounded-md text-[10px] font-bold uppercase tracking-widest
-                                                       bg-blue-50 dark:bg-blue-500/15
-                                                       text-blue-600 dark:text-blue-400
-                                                       border border-blue-200 dark:border-blue-500/30">
-                                        <ArrowUpRight size={10} strokeWidth={2.5} />
-                                        Live
-                                    </span>
+                        {/* Billing month badge */}
+                        {billingStats.billingMonth && (
+                            <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-700 dark:text-indigo-400 shadow-sm self-start">
+                                <HiOutlineCalendarDays className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+                                <div className="leading-none text-left">
+                                    <p className="text-[9px] uppercase font-bold tracking-widest opacity-70">Billing Period</p>
+                                    <p className="text-sm font-bold mt-0.5">{billingStats.billingMonth}</p>
                                 </div>
-                                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-md leading-relaxed">
-                                    Review financial statuses, &
-                                    expand rows for a comprehensive invoice breakdown.
-                                </p>
-
-                                {/* ── Billing month badge ── */}
-                                {billingStats.billingMonth && (
-                                    <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5
-                                                    rounded-xl bg-indigo-50 dark:bg-indigo-500/10
-                                                    border border-indigo-200 dark:border-indigo-500/25">
-                                        <CalendarDays size={12} className="text-indigo-500 dark:text-indigo-400" />
-                                        <span className="text-[11.5px] font-bold text-indigo-600 dark:text-indigo-400">
-                                            Billing Period: {billingStats.billingMonth}
-                                        </span>
-                                    </div>
-                                )}
                             </div>
-                        </div>
-
-                        {/* ── Stat cards strip ── */}
-                        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4 w-full lg:w-auto mt-4 lg:mt-0 flex-shrink-0">
-                            <StatCard
-                                icon={Users}
-                                label="Active Members"
-                                value={activeCount}
-                                subvalue="Approved"
-                                delay={0}
-                            />
-                            <StatCard
-                                icon={ReceiptIndianRupee}
-                                label="Market Exp."
-                                value={formattedMarketExp}
-                                loading={billingStatsLoading}
-                                delay={0.1}
-                            />
-                            <StatCard
-                                icon={IoFastFoodOutline}
-                                label="Total Meals"
-                                value={formattedTotalMeals}
-                                loading={billingStatsLoading}
-                                delay={0.2}
-                            />
-                            <StatCard
-                                icon={TrendingUp}
-                                label="Meal Rate"
-                                value={formattedMealRate}
-                                loading={billingStatsLoading}
-                                accent
-                                delay={0.3}
-                            />
-                        </div>
+                        )}
                     </div>
-
-                    {/* ── Subtle divider ── */}
-                    <div className="mt-6 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-800 to-transparent" />
                 </header>
+
+                {/* ════════════════════════════════
+                    Stat pills grid
+                ════════════════════════════════ */}
+                <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 animate-fade-in-up">
+                    {stats.map((s) => (
+                        <div key={s.label} className="col-span-1">
+                            <StatPill {...s} />
+                        </div>
+                    ))}
+                </div>
 
                 {/* ════════════════════════════════
                     Error banner
                 ════════════════════════════════ */}
-                {isError && (
-                    <div className="relative z-10 px-4 sm:px-6 lg:px-8">
-                        <ErrorBanner message={message} onRetry={handleRetry} />
-                    </div>
-                )}
+                <AnimatePresence>
+                    {isError && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.15 }}
+                            className="relative z-10 flex items-start gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400"
+                        >
+                            <span className="w-2 h-2 rounded-full bg-red-500 mt-1.5 flex-shrink-0 animate-pulse" />
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold leading-tight text-red-700 dark:text-red-400">
+                                    Failed to load members
+                                </p>
+                                <p className="text-xs font-medium mt-0.5 opacity-80 truncate text-red-500 dark:text-red-500">
+                                    {message || 'Please check your network connection and try again.'}
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                                <button
+                                    onClick={handleRetry}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold
+                                               bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300
+                                               hover:bg-red-200 dark:hover:bg-red-500/30 active:scale-95 transition-all duration-150"
+                                    aria-label="Retry loading members"
+                                >
+                                    <RefreshCw className="w-3.5 h-3.5" />
+                                    Retry
+                                </button>
+                                <button
+                                    onClick={dismissError}
+                                    className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/10 transition-colors"
+                                    title="Dismiss"
+                                    aria-label="Dismiss error"
+                                >
+                                    <HiOutlineXMark className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* ════════════════════════════════
                     Member table
                 ════════════════════════════════ */}
-                <main
-                    className="relative z-10 flex-1 animate-[fadeSlideUp_0.45s_cubic-bezier(0.22,1,0.36,1)_both]"
-                    style={{ '--animation-delay': '80ms' }}
-                >
+                <main className="relative z-10 flex-1 animate-fade-in-up">
                     <MemberTable
                         users={safeUsers}
                         isLoading={isLoading && safeUsers.length === 0}
@@ -293,29 +215,17 @@ const MemberPage = React.memo(() => {
 
                 {/* ════════════════════════════════
                     Admin — Unresolved Bills Panel
-                    Visible ONLY to admins.
-                    Shows previous months' finalized invoices
-                    that are still unpaid or partially paid.
                 ════════════════════════════════ */}
                 {isAdmin && (
-                    <div className="relative z-10 px-4 sm:px-6 lg:px-8">
+                    <div className="relative z-10 animate-fade-in-up">
                         <AdminUnpaidPanel />
                     </div>
                 )}
             </div>
-
-            {/* ── Global keyframe ── */}
-            <style>{`
-                @keyframes fadeSlideUp {
-                    from { opacity: 0; transform: translateY(12px); }
-                    to   { opacity: 1; transform: translateY(0);  }
-                }
-                .scrollbar-none::-webkit-scrollbar { display: none; }
-                .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
-            `}</style>
         </MainLayout>
     );
 });
+
 MemberPage.displayName = 'MemberPage';
 
 export default MemberPage;
