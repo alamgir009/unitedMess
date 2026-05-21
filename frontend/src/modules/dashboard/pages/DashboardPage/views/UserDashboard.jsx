@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchUserDashboardStats, fetchUserRecentActivity } from '../../../store/dashboard.slice';
 import PayableWidget from '../../../components/PayableWidget/PayableWidget';
 import RecentActivityWidget from '../../../components/RecentActivityWidget/RecentActivityWidget';
+import { cn } from '@/core/utils/helpers/string.helper';
 import {
     Sunrise,
     Sun,
@@ -17,6 +18,7 @@ import {
 
 /* ─────────────────────────────────────────────────────────────
    IST-aware greeting  (UTC + 5:30)
+   Returns Tailwind classes for hardware-friendly rendering.
 ───────────────────────────────────────────────────────────── */
 const getISTGreeting = () => {
     const nowIST = new Date(
@@ -28,48 +30,40 @@ const getISTGreeting = () => {
         label: 'Good Morning',
         sub: 'Rise & shine — your finances await.',
         Icon: Sunrise,
-        iconColor: '#D97706',
-        pillBg: 'rgba(251,191,36,0.12)',
-        pillBorder: '1px solid rgba(251,191,36,0.32)',
-        pillColor: '#B45309',
-        gradOverlay: 'linear-gradient(135deg, rgba(251,191,36,0.13) 0%, transparent 60%)',
-        cardBorder: '1px solid rgba(251,191,36,0.26)',
+        iconColorClass: 'text-amber-600 dark:text-amber-400',
+        pillClass: 'bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-400',
+        cardBorderClass: 'border-amber-500/20 dark:border-amber-500/30',
+        bgGradient: 'bg-gradient-to-br from-amber-500/[0.04] to-transparent',
     };
 
     if (h >= 12 && h < 17) return {
         label: 'Good Afternoon',
         sub: 'Keep tracking — every rupee counts.',
         Icon: Sun,
-        iconColor: '#EA580C',
-        pillBg: 'rgba(249,115,22,0.12)',
-        pillBorder: '1px solid rgba(249,115,22,0.32)',
-        pillColor: '#C2410C',
-        gradOverlay: 'linear-gradient(135deg, rgba(249,115,22,0.13) 0%, transparent 60%)',
-        cardBorder: '1px solid rgba(249,115,22,0.26)',
+        iconColorClass: 'text-orange-600 dark:text-orange-400',
+        pillClass: 'bg-orange-500/10 border-orange-500/20 text-orange-700 dark:text-orange-400',
+        cardBorderClass: 'border-orange-500/20 dark:border-orange-500/30',
+        bgGradient: 'bg-gradient-to-br from-orange-500/[0.04] to-transparent',
     };
 
     if (h >= 17 && h < 21) return {
         label: 'Good Evening',
         sub: "Wind down — review today's activity.",
         Icon: Sunset,
-        iconColor: '#7C3AED',
-        pillBg: 'rgba(167,139,250,0.12)',
-        pillBorder: '1px solid rgba(167,139,250,0.32)',
-        pillColor: '#6D28D9',
-        gradOverlay: 'linear-gradient(135deg, rgba(167,139,250,0.13) 0%, transparent 60%)',
-        cardBorder: '1px solid rgba(167,139,250,0.26)',
+        iconColorClass: 'text-purple-600 dark:text-purple-400',
+        pillClass: 'bg-purple-500/10 border-purple-500/20 text-purple-700 dark:text-purple-400',
+        cardBorderClass: 'border-purple-500/20 dark:border-purple-500/30',
+        bgGradient: 'bg-gradient-to-br from-purple-500/[0.04] to-transparent',
     };
 
     return {
         label: 'Good Night',
         sub: 'Rest well — accounts are secure.',
         Icon: Moon,
-        iconColor: '#2563EB',
-        pillBg: 'rgba(96,165,250,0.12)',
-        pillBorder: '1px solid rgba(96,165,250,0.32)',
-        pillColor: '#1D4ED8',
-        gradOverlay: 'linear-gradient(135deg, rgba(96,165,250,0.13) 0%, transparent 60%)',
-        cardBorder: '1px solid rgba(96,165,250,0.26)',
+        iconColorClass: 'text-blue-600 dark:text-blue-400',
+        pillClass: 'bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-400',
+        cardBorderClass: 'border-blue-500/20 dark:border-blue-500/30',
+        bgGradient: 'bg-gradient-to-br from-blue-500/[0.04] to-transparent',
     };
 };
 
@@ -100,17 +94,21 @@ const UserDashboard = () => {
     }, [dispatch]);
 
     return (
-        <div className="relative space-y-6">
+        <div className="relative space-y-6 animate-fade-in-up">
 
             {/* ── Greeting Header Card ── */}
             <div
-                className="relative overflow-hidden rounded-2xl p-5 sm:p-7 backdrop-blur-xl bg-white/55 dark:bg-white/5 shadow-sm"
-                style={{ border: g.cardBorder }}
+                className={cn(
+                    "relative overflow-hidden rounded-2xl p-5 sm:p-7 bg-card border shadow-sm",
+                    g.cardBorderClass
+                )}
             >
                 {/* inner tint overlay */}
                 <div
-                    className="pointer-events-none absolute inset-0 rounded-2xl"
-                    style={{ background: g.gradOverlay }}
+                    className={cn(
+                        "pointer-events-none absolute inset-0 rounded-2xl",
+                        g.bgGradient
+                    )}
                 />
 
                 <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
@@ -120,21 +118,23 @@ const UserDashboard = () => {
 
                         {/* Greeting pill */}
                         <div
-                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-widest mb-3"
-                            style={{ background: g.pillBg, border: g.pillBorder, color: g.pillColor }}
+                            className={cn(
+                                "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-3 border",
+                                g.pillClass
+                            )}
                         >
-                            <GreetIcon size={14} color={g.iconColor} strokeWidth={2.2} />
+                            <GreetIcon className={cn("w-3.5 h-3.5", g.iconColorClass)} strokeWidth={2.5} />
                             {g.label}
                         </div>
 
                         {/* Name */}
-                        <h2 className="flex items-center gap-2 flex-wrap text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-tight">
+                        <h2 className="flex items-center gap-2 flex-wrap text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground leading-tight">
                             {user?.name ?? 'Member'}
-                            <Sparkles size={20} color={g.iconColor} strokeWidth={1.8} />
+                            <Sparkles className={cn("w-5 h-5", g.iconColorClass)} strokeWidth={2} />
                         </h2>
 
                         {/* Sub */}
-                        <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
+                        <p className="mt-1.5 text-sm text-muted-foreground">
                             {g.sub}
                         </p>
                     </div>

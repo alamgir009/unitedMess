@@ -25,16 +25,16 @@ const getAvatarColor = (name = '') => {
 // Reusable badge – now more compact
 const InfoBadge = ({ label, value, color = 'gray' }) => {
   const colorMap = {
-    green: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800/50',
-    red: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/20 dark:text-rose-400 dark:border-rose-800/50',
-    blue: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/50',
-    amber: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50',
-    gray: 'bg-gray-50 text-gray-600 border-gray-200 dark:bg-slate-800 dark:text-gray-400 dark:border-slate-700',
+    green: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/10',
+    red: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/10',
+    blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/10',
+    amber: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/10',
+    gray: 'bg-muted text-muted-foreground border-border/50',
   };
 
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
         {label}
       </span>
       <span
@@ -145,21 +145,20 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      {/* Backdrop with liquid glass */}
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md dark:bg-slate-950/60" />
+      {/* Backdrop with soft tint */}
+      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
 
-      {/* Modal container – fully responsive, no scroll on mobile */}
+      {/* Modal container – fully responsive */}
       <div
         className={cn(
-          'relative w-full max-w-3xl rounded-2xl sm:rounded-3xl border shadow-2xl',
-          'bg-white/70 backdrop-blur-md dark:bg-slate-900/70',
-          'border-white/30 dark:border-slate-700/50',
-          'max-h-[95vh] overflow-y-auto sm:max-h-[90vh]', // overflow only if needed, but content now fits
+          'relative w-full max-w-3xl rounded-2xl sm:rounded-3xl border border-border/50 shadow-2xl',
+          'bg-card text-card-foreground',
+          'max-h-[95vh] overflow-y-auto sm:max-h-[90vh]',
           'animate-in fade-in zoom-in-95 duration-200'
         )}
       >
         {/* Header – compact on mobile */}
-        <div className="flex items-center justify-between border-b border-white/30 px-4 py-3 dark:border-slate-700/50 sm:px-6 sm:py-4">
+        <div className="flex items-center justify-between border-b border-border/50 px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-2 sm:gap-3">
             <div
               className={cn(
@@ -170,15 +169,15 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
               {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white sm:text-lg">Edit Member</h3>
-              <p className="font-mono text-xs text-slate-500 dark:text-slate-400">
+              <h3 className="text-base font-bold text-foreground sm:text-lg">Edit Member</h3>
+              <p className="font-mono text-xs text-muted-foreground">
                 {user._id?.slice(-8).toUpperCase()}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="rounded-full p-1.5 text-slate-400 transition-colors hover:bg-white/30 hover:text-slate-600 dark:hover:bg-slate-800/60 dark:hover:text-slate-300 sm:p-2"
+            className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:p-2"
           >
             <FiX size={18} />
           </button>
@@ -187,8 +186,8 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
         {/* Two‑column layout on desktop, stacks on mobile */}
         <div className="flex flex-col md:flex-row">
           {/* Left panel – read‑only info */}
-          <div className="border-b border-white/30 p-4 dark:border-slate-700/50 md:w-64 md:border-b-0 md:border-r md:p-5">
-            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          <div className="border-b border-border/50 p-4 md:w-64 md:border-b-0 md:border-r md:border-border/50 md:p-5">
+            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Account Info
             </p>
             {/* Badges in a 2‑column grid on mobile, vertical on larger screens */}
@@ -212,12 +211,12 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
             </div>
 
             {/* Member Since – moved to bottom, compact */}
-            <div className="mt-4 border-t border-white/30 pt-3 dark:border-slate-700/50 md:mt-5 md:pt-4">
-              <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <div className="mt-4 border-t border-border/50 pt-3 md:mt-5 md:pt-4">
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                 Member Since
               </p>
-              <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 sm:text-sm">
-                <FiCalendar size={12} className="text-slate-400" />
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-foreground sm:text-sm">
+                <FiCalendar size={12} className="text-muted-foreground" />
                 {joinedDate}
               </p>
             </div>
@@ -225,20 +224,20 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
 
           {/* Right panel – editable form */}
           <form onSubmit={handleSubmit} className="flex-1 p-4 sm:p-5">
-            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 sm:mb-4">
+            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground sm:mb-4">
               Edit Details
             </p>
             <div className="space-y-3 sm:space-y-4">
               {/* Full name */}
               <div className="space-y-1">
-                <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+                <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   <FiUser size={11} /> Full Name
                 </label>
                 <input
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  className="w-full rounded-xl border border-white/30 bg-white/50 px-3 py-2 text-sm text-slate-900 outline-none transition-all focus:ring-2 focus:ring-blue-500/50 dark:border-slate-700/50 dark:bg-slate-800/50 dark:text-white sm:px-4 sm:py-2.5"
+                  className="w-full rounded-xl border border-border/45 bg-muted/20 px-3 py-2 text-sm text-foreground outline-none transition-all focus:border-primary/50 focus:ring-2 focus:ring-primary/20 sm:px-4 sm:py-2.5"
                   required
                 />
               </div>
@@ -246,7 +245,7 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
               {/* Email & Phone */}
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
                 <div className="space-y-1">
-                  <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     <FiMail size={11} /> Email
                   </label>
                   <input
@@ -254,28 +253,28 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
                     type="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full rounded-xl border border-white/30 bg-white/50 px-3 py-2 text-sm text-slate-900 outline-none transition-all focus:ring-2 focus:ring-blue-500/50 dark:border-slate-700/50 dark:bg-slate-800/50 dark:text-white sm:px-4 sm:py-2.5"
+                    className="w-full rounded-xl border border-border/45 bg-muted/20 px-3 py-2 text-sm text-foreground outline-none transition-all focus:border-primary/50 focus:ring-2 focus:ring-primary/20 sm:px-4 sm:py-2.5"
                     required
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     <FiPhone size={11} /> Phone
                   </label>
                   <input
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
-                    className="w-full rounded-xl border border-white/30 bg-white/50 px-3 py-2 text-sm text-slate-900 outline-none transition-all focus:ring-2 focus:ring-blue-500/50 dark:border-slate-700/50 dark:bg-slate-800/50 dark:text-white sm:px-4 sm:py-2.5"
+                    className="w-full rounded-xl border border-border/45 bg-muted/20 px-3 py-2 text-sm text-foreground outline-none transition-all focus:border-primary/50 focus:ring-2 focus:ring-primary/20 sm:px-4 sm:py-2.5"
                   />
                 </div>
               </div>
 
               {/* Role */}
               <div className="space-y-1">
-                <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+                <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   <FiShield size={11} /> Role
-                  <span className="ml-1 rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-normal text-orange-600 dark:bg-orange-900/30 dark:text-orange-400">
+                  <span className="ml-1 rounded-full bg-orange-500/10 px-1.5 py-0.5 text-[10px] font-normal text-orange-600 dark:text-orange-400">
                     Admin Action
                   </span>
                 </label>
@@ -283,43 +282,42 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
                   name="role"
                   value={formData.role}
                   onChange={handleChange}
-                  className="w-full rounded-xl border border-white/30 bg-white/50 px-3 py-2 text-sm font-medium text-slate-900 outline-none transition-all focus:ring-2 focus:ring-orange-500/50 dark:border-slate-700/50 dark:bg-slate-800/50 dark:text-white sm:px-4 sm:py-2.5"
+                  className="w-full rounded-xl border border-border/45 bg-muted/20 px-3 py-2 text-sm font-medium text-foreground outline-none transition-all focus:border-primary/50 focus:ring-2 focus:ring-primary/20 sm:px-4 sm:py-2.5"
                 >
-                  <option value="user">Regular User</option>
-                  <option value="admin">Administrator</option>
+                  <option value="user" className="bg-card text-foreground">Regular User</option>
+                  <option value="admin" className="bg-card text-foreground">Administrator</option>
                 </select>
               </div>
 
               {/* Approval Status & Active State */}
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
                 <div className="space-y-1">
-                  <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Approval Status
                   </label>
                   <select
                     name="userStatus"
                     value={formData.userStatus}
                     onChange={handleChange}
-                    className="w-full rounded-xl border border-white/30 bg-white/50 px-3 py-2 text-sm font-medium text-slate-900 outline-none transition-all focus:ring-2 focus:ring-orange-500/50 dark:border-slate-700/50 dark:bg-slate-800/50 dark:text-white sm:px-4 sm:py-2.5"
+                    className="w-full rounded-xl border border-border/45 bg-muted/20 px-3 py-2 text-sm font-medium text-foreground outline-none transition-all focus:border-primary/50 focus:ring-2 focus:ring-primary/20 sm:px-4 sm:py-2.5"
                   >
-                    <option value="approved">Approved</option>
-                    <option value="pending">Pending</option>
-                    <option value="denied">Denied</option>
+                    <option value="approved" className="bg-card text-foreground">Approved</option>
+                    <option value="pending" className="bg-card text-foreground">Pending</option>
+                    <option value="denied" className="bg-card text-foreground">Denied</option>
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Active State
                   </label>
-                  {/* Use handleBooleanChange so isActive stays a real boolean, not a string */}
                   <select
                     name="isActive"
                     value={formData.isActive.toString()}
                     onChange={handleBooleanChange}
-                    className="w-full rounded-xl border border-white/30 bg-white/50 px-3 py-2 text-sm font-medium text-slate-900 outline-none transition-all focus:ring-2 focus:ring-orange-500/50 dark:border-slate-700/50 dark:bg-slate-800/50 dark:text-white sm:px-4 sm:py-2.5"
+                    className="w-full rounded-xl border border-border/45 bg-muted/20 px-3 py-2 text-sm font-medium text-foreground outline-none transition-all focus:border-primary/50 focus:ring-2 focus:ring-primary/20 sm:px-4 sm:py-2.5"
                   >
-                    <option value="true">Active</option>
-                    <option value="false">Inactive</option>
+                    <option value="true" className="bg-card text-foreground">Active</option>
+                    <option value="false" className="bg-card text-foreground">Inactive</option>
                   </select>
                 </div>
               </div>
@@ -335,7 +333,7 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
                     value={formData.denialReason}
                     onChange={handleChange}
                     placeholder="Brief reason for account denial..."
-                    className="w-full rounded-xl border border-rose-200 bg-rose-50/50 px-3 py-2 text-sm text-slate-900 outline-none transition-all focus:ring-2 focus:ring-rose-500/50 dark:border-rose-900/50 dark:bg-rose-900/10 dark:text-white sm:px-4 sm:py-2.5"
+                    className="w-full rounded-xl border border-rose-500/30 bg-rose-500/5 px-3 py-2 text-sm text-foreground placeholder:text-rose-500/40 outline-none transition-all focus:border-rose-500/50 focus:ring-2 focus:ring-rose-500/20 sm:px-4 sm:py-2.5"
                     required
                   />
                 </div>
@@ -343,18 +341,18 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
             </div>
 
             {/* Action buttons */}
-            <div className="mt-4 flex justify-end gap-2 border-t border-white/30 pt-3 dark:border-slate-700/50 sm:mt-6 sm:gap-3 sm:pt-4">
+            <div className="mt-4 flex justify-end gap-2 border-t border-border/50 pt-3 sm:mt-6 sm:gap-3 sm:pt-4">
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-xl px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-white/30 dark:text-slate-300 dark:hover:bg-slate-800/60 sm:px-5 sm:py-2.5"
+                className="rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted sm:px-5 sm:py-2.5"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-all hover:from-blue-700 hover:to-indigo-700 active:scale-95 disabled:opacity-50 sm:px-6 sm:py-2.5"
+                className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-all duration-150 transform-gpu hover:-translate-y-0.5 disabled:opacity-50 sm:px-6 sm:py-2.5"
               >
                 <FiSave size={14} />
                 {isLoading ? 'Saving...' : 'Save Changes'}

@@ -17,13 +17,13 @@ import {
 const AlertPill = ({ count, label, color, icon: Icon }) => {
     if (!count || count === 0) return null;
     const colors = {
-        amber: 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/40 text-amber-700 dark:text-amber-400',
-        red:   'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800/40 text-red-700 dark:text-red-400',
-        green: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800/40 text-green-700 dark:text-green-400',
+        amber: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/10',
+        red:   'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/10',
+        green: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/10',
     };
     return (
-        <div className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-xs font-semibold ${colors[color] || colors.amber}`}>
-            <Icon size={14} />
+        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] font-bold uppercase tracking-wider ${colors[color] || colors.amber}`}>
+            <Icon size={12} strokeWidth={2.5} />
             <span><strong>{count}</strong> {label}</span>
         </div>
     );
@@ -66,8 +66,6 @@ const AdminDashboard = () => {
     };
 
     // ── Alert counts from visible user list ──────────────────────────────────
-    // NOTE: counts reflect the paginated list (max 100); with very large tenancies
-    // a dedicated count endpoint would be more accurate.
     const pendingCount    = users.filter(u => u.userStatus === 'pending').length;
     const deniedCount     = users.filter(u => u.userStatus === 'denied').length;
     const inactiveCount   = users.filter(u => !u.isActive && u.userStatus !== 'pending' && u.userStatus !== 'denied').length;
@@ -86,62 +84,54 @@ const AdminDashboard = () => {
             change: `${users.length} total`,
             changeType: 'increase',
             icon: FiUsers,
-            colorClass: 'bg-gradient-to-br from-blue-500 to-indigo-600',
-            gradientClass: 'bg-blue-500',
         },
         {
             title: 'Market Expenses',
             value: `₹${marketGrandTotal?.grandTotal ?? 0}`,
             icon: FiShoppingBag,
-            colorClass: 'bg-gradient-to-br from-rose-500 to-pink-600',
-            gradientClass: 'bg-rose-500',
         },
         {
             title: 'Total Meals',
             value: mealGrandTotal?.overallMeal ?? 0,
             icon: FiCoffee,
-            colorClass: 'bg-gradient-to-br from-emerald-500 to-teal-600',
-            gradientClass: 'bg-emerald-500',
         },
         {
             title: 'Meal Rate',
             value: `₹${mealCharge?.mealCharge ?? 0}`,
             icon: FiTrendingUp,
-            colorClass: 'bg-gradient-to-br from-amber-500 to-orange-600',
-            gradientClass: 'bg-amber-500',
         },
     ];
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="space-y-6">
 
             {/* Header */}
-            <div className="flex items-start justify-between flex-wrap gap-4">
-                <div>
-                    <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white flex items-center gap-3">
-                        <div className="p-2.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl">
-                            <FiCommand size={22} />
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                <div className="space-y-1">
+                    <h2 className="text-xl sm:text-2xl tracking-tight text-foreground flex items-center gap-3">
+                        <div className="p-2.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/10 rounded-xl">
+                            <FiCommand size={18} />
                         </div>
                         Command Center
                     </h2>
-                    <p className="text-gray-500 dark:text-gray-400 font-medium mt-1">
+                    <p className="text-sm text-muted-foreground">
                         Global admin overview and controls
                     </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                         onClick={() => setShowNotificationModal(true)}
-                        className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-950/50 transition-colors"
+                        className="flex items-center gap-1.5 px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-xl border border-primary/20 text-primary bg-primary/10 hover:bg-primary/20 transition-all duration-150 transform-gpu hover:-translate-y-0.5"
                     >
-                        <FiSend size={14} />
+                        <FiSend size={13} />
                         Send Notification
                     </button>
                     <button
                         onClick={handleRefresh}
                         disabled={isDashboardLoading || isMembersLoading}
-                        className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-150 transform-gpu hover:-translate-y-0.5 disabled:opacity-50"
                     >
-                        <FiRefreshCw size={14} className={isDashboardLoading || isMembersLoading ? 'animate-spin' : ''} />
+                        <FiRefreshCw size={13} className={isDashboardLoading || isMembersLoading ? 'animate-spin' : ''} />
                         Refresh
                     </button>
                 </div>
@@ -160,9 +150,9 @@ const AdminDashboard = () => {
             {/* Alert Banners — only when there ARE alerts ──────────────────── */}
             {hasAlerts && (
                 <div className="flex flex-wrap gap-2 items-center">
-                    <span className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mr-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mr-1">
                         Alerts:
-                    </span>
+                      </span>
                     <AlertPill count={pendingCount}    label="pending approval"  color="amber" icon={FiAlertCircle} />
                     <AlertPill count={inactiveCount}   label="inactive members"  color="amber" icon={FiAlertCircle} />
                     <AlertPill count={deniedCount}     label="denied members"    color="red"   icon={FiAlertCircle} />
@@ -174,11 +164,11 @@ const AdminDashboard = () => {
             {/* All-settled pill — only when all is clear and users are loaded ── */}
             {allSettled && (
                 <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mr-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mr-1">
                         Status:
                     </span>
-                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-xs font-semibold bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800/40 text-green-700 dark:text-green-400">
-                        <FiCheckSquare size={14} />
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] font-bold uppercase tracking-wider bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                        <FiCheckSquare size={12} strokeWidth={2.5} />
                         <span><strong>{activeCount}</strong> all settled</span>
                     </div>
                 </div>

@@ -1,40 +1,58 @@
+import React from 'react';
 import { FiTrendingUp, FiTrendingDown } from 'react-icons/fi';
 import { cn } from '@/core/utils/helpers/string.helper';
 
-const StatsCard = ({ title, value, change, changeType, icon: Icon, colorClass, gradientClass }) => {
+const StatsCard = React.memo(({ title, value, change, changeType, icon: Icon }) => {
+    // Dynamic mapping for clean, flat HSL badges
+    const getBadgeStyle = (title) => {
+        const t = String(title || '').toLowerCase();
+        if (t.includes('member') || t.includes('user')) {
+            return 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 border border-blue-500/10';
+        }
+        if (t.includes('market') || t.includes('expense')) {
+            return 'bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 border border-rose-500/10';
+        }
+        if (t.includes('meal') && !t.includes('rate')) {
+            return 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/10';
+        }
+        if (t.includes('rate')) {
+            return 'bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 border border-amber-500/10';
+        }
+        return 'bg-primary/10 text-primary border border-primary/10';
+    };
+
+    const badgeCls = getBadgeStyle(title);
+
     return (
-        <div className="relative overflow-hidden rounded-2xl border border-white/40 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group">
-            {/* Subtle background glow effect */}
-            <div className={cn("absolute -top-10 -right-10 w-32 h-32 rounded-full blur-3xl opacity-20 dark:opacity-10 pointer-events-none transition-all duration-500 group-hover:scale-110", gradientClass)} />
-            
-            <div className="relative z-10 flex items-start justify-between">
-                <div>
-                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{title}</p>
-                    <div className="flex items-baseline gap-x-2">
-                        <h3 className="text-3xl font-extrabold text-gray-900 dark:text-gray-50 tracking-tight">{value}</h3>
-                    </div>
+        <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card p-5 sm:p-6 shadow-sm transform-gpu hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-md transition-all duration-200 ease-out motion-reduce:hover:translate-y-0 contain-layout group">
+            <div className="relative z-10 flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-[13px] font-semibold uppercase tracking-wider text-muted-foreground truncate mb-1.5">{title}</p>
+                    <h3 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight leading-none tabular-nums truncate mb-2">{value}</h3>
+                    
                     {change && (
-                        <div className="mt-2 flex items-center text-sm font-medium">
+                        <div className="flex items-center text-xs font-semibold mt-1">
                             <span className={cn(
-                                "flex items-center px-2 py-0.5 rounded-full text-xs font-semibold mr-2 transition-colors",
+                                "flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-colors",
                                 changeType === 'increase' 
-                                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" 
-                                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/25" 
+                                    : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/25"
                             )}>
                                 {changeType === 'increase' ? <FiTrendingUp className="mr-1" /> : <FiTrendingDown className="mr-1" />}
                                 {change}
                             </span>
-                            <span className="text-gray-400 dark:text-gray-500 text-xs">vs last month</span>
                         </div>
                     )}
                 </div>
                 
-                <div className={cn("p-4 rounded-xl shadow-inner transition-colors", colorClass)}>
-                    <Icon className="h-6 w-6 text-white" />
+                <div className={cn("p-3 rounded-xl shrink-0 transition-all duration-200 group-hover:scale-105", badgeCls)}>
+                    <Icon className="h-5.5 w-5.5" />
                 </div>
             </div>
         </div>
     );
-};
+});
+
+StatsCard.displayName = 'StatsCard';
 
 export default StatsCard;

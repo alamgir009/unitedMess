@@ -7,7 +7,7 @@ const MemberRowActions = ({ user, onEdit }) => {
             {/* Universal edit button — always visible */}
             <button
                 onClick={() => onEdit && onEdit(user)}
-                className="p-1.5 rounded-lg text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-400 dark:hover:bg-indigo-900/40 transition-colors shadow-sm"
+                className="p-1.5 rounded-lg border border-primary/10 text-primary bg-primary/10 hover:bg-primary/20 transition-all duration-150 transform-gpu hover:-translate-y-0.5 shadow-sm"
                 title="Edit Member"
             >
                 <FiEdit2 size={16} />

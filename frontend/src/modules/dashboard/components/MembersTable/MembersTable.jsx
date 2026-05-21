@@ -44,10 +44,10 @@ const getDisplayStatus = ({ userStatus, isActive }) => {
    StatusBadge
 ───────────────────────────────────────────────────────────── */
 const STATUS_CONFIG = {
-    active:   { icon: ShieldCheck,  cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/25' },
-    inactive: { icon: BiBlock,    cls: 'bg-slate-50   text-slate-500   border-slate-200   dark:bg-slate-700/30   dark:text-slate-400   dark:border-slate-600/40'   },
-    pending:  { icon: Clock,        cls: 'bg-amber-50   text-amber-700   border-amber-200   dark:bg-amber-500/10   dark:text-amber-400   dark:border-amber-500/25'   },
-    denied:   { icon: XCircle,      cls: 'bg-rose-50    text-rose-700    border-rose-200    dark:bg-rose-500/10    dark:text-rose-400    dark:border-rose-500/25'    },
+    active:   { icon: ShieldCheck,  cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/10' },
+    inactive: { icon: BiBlock,      cls: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/10' },
+    pending:  { icon: Clock,        cls: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/10' },
+    denied:   { icon: XCircle,      cls: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/10' },
 };
 
 const StatusBadge = ({ status }) => {
@@ -65,10 +65,10 @@ const StatusBadge = ({ status }) => {
 ───────────────────────────────────────────────────────────── */
 const resolvePayment = (raw) => {
     const s = String(raw || '').toLowerCase();
-    if (s === 'paid' || s === 'success')  return { label: 'Paid',     icon: CheckCircle2, cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/25' };
-    if (s === 'pending')                  return { label: 'Pending',  icon: Clock,        cls: 'bg-amber-50   text-amber-700   border-amber-200   dark:bg-amber-500/10   dark:text-amber-400   dark:border-amber-500/25'   };
-    if (s === 'refunded')                 return { label: 'Refunded', icon: CircleDot,    cls: 'bg-sky-50     text-sky-700     border-sky-200     dark:bg-sky-500/10     dark:text-sky-400     dark:border-sky-500/25'     };
-    return                                       { label: 'Unpaid',   icon: XCircle,      cls: 'bg-rose-50    text-rose-700    border-rose-200    dark:bg-rose-500/10    dark:text-rose-400    dark:border-rose-500/25'    };
+    if (s === 'paid' || s === 'success')  return { label: 'Paid',     icon: CheckCircle2, cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/10' };
+    if (s === 'pending')                  return { label: 'Pending',  icon: Clock,        cls: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/10' };
+    if (s === 'refunded')                 return { label: 'Refunded', icon: CircleDot,    cls: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/10' };
+    return                                       { label: 'Unpaid',   icon: XCircle,      cls: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/10' };
 };
 
 const PaymentBadge = ({ status }) => {
@@ -99,24 +99,24 @@ const SkeletonRow = () => (
     <tr className="animate-pulse">
         <td className="px-5 py-4">
             <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-full bg-slate-200/70 dark:bg-slate-700/50" />
+                <div className="h-9 w-9 rounded-full bg-muted" />
                 <div className="space-y-2">
-                    <div className="h-3 w-28 rounded-full bg-slate-200/70 dark:bg-slate-700/50" />
-                    <div className="h-2.5 w-20 rounded-full bg-slate-100/70 dark:bg-slate-800/50" />
+                    <div className="h-3 w-28 rounded bg-muted" />
+                    <div className="h-2.5 w-20 rounded bg-muted" />
                 </div>
             </div>
         </td>
         <td className="px-5 py-4">
-            <div className="h-6 w-20 rounded-full bg-slate-200/70 dark:bg-slate-700/50" />
+            <div className="h-6 w-20 rounded-full bg-muted" />
         </td>
         <td className="px-5 py-4">
-            <div className="h-6 w-16 rounded-full bg-slate-200/70 dark:bg-slate-700/50" />
+            <div className="h-6 w-16 rounded-full bg-muted" />
         </td>
         <td className="px-5 py-4">
-            <div className="h-6 w-16 rounded-full bg-slate-200/70 dark:bg-slate-700/50" />
+            <div className="h-6 w-16 rounded-full bg-muted" />
         </td>
         <td className="px-5 py-4 text-right">
-            <div className="ml-auto h-8 w-20 rounded-xl bg-slate-200/70 dark:bg-slate-700/50" />
+            <div className="ml-auto h-8 w-20 rounded-xl bg-muted" />
         </td>
     </tr>
 );
@@ -174,21 +174,21 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
 
     return (
         <>
-            <div className="flex flex-col overflow-hidden rounded-2xl border border-white/30 bg-white/70 shadow-sm backdrop-blur-xl dark:border-slate-700/50 dark:bg-slate-900/70">
+            <div className="flex flex-col overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm">
 
                 {/* ── Header ── */}
-                <div className="flex flex-col gap-3 border-b border-white/30 px-5 py-4 dark:border-slate-700/50 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-3 border-b border-border/50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
 
                     {/* Title block */}
                     <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20">
-                            <Users size={18} strokeWidth={2} className="text-indigo-600 dark:text-indigo-400" />
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/10">
+                            <Users size={18} strokeWidth={2} className="text-primary" />
                         </div>
                         <div>
-                            <h3 className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
+                            <h3 className="text-base font-bold tracking-tight text-foreground">
                                 Members Matrix
                             </h3>
-                            <p className="text-xs text-slate-400 dark:text-slate-500">
+                            <p className="text-xs text-muted-foreground">
                                 {filteredUsers.length} of {users.length} members
                             </p>
                         </div>
@@ -199,26 +199,20 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
                         <Search
                             size={15}
                             strokeWidth={2}
-                            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
                         />
                         <input
                             type="text"
                             value={localSearch}
                             placeholder="Search members..."
                             onChange={handleSearchChange}
-                            className={cn(
-                                'w-full rounded-xl border py-2 pl-9 pr-4 text-sm outline-none transition-all',
-                                'border-slate-200 bg-white/60 text-slate-900 placeholder:text-slate-400',
-                                'focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20',
-                                'dark:border-slate-700/50 dark:bg-slate-800/50 dark:text-white',
-                                'dark:placeholder:text-slate-500 dark:focus:border-indigo-500/50 dark:focus:ring-indigo-400/20'
-                            )}
+                            className="w-full rounded-xl border border-border/45 bg-muted/30 py-2 pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40"
                         />
                     </div>
                 </div>
 
                 {/* ── Filter tabs ── */}
-                <div className="flex items-center gap-0.5 overflow-x-auto border-b border-white/30 px-4 dark:border-slate-700/50">
+                <div className="flex items-center gap-0.5 overflow-x-auto border-b border-border/50 px-4">
                     {FILTER_TABS.map((tab) => (
                         <button
                             key={tab.id}
@@ -226,18 +220,18 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
                             className={cn(
                                 'inline-flex shrink-0 items-center gap-1.5 border-b-2 px-4 py-3 text-xs font-semibold transition-all',
                                 activeFilter === tab.id
-                                    ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
-                                    : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+                                    ? 'border-primary text-primary'
+                                    : 'border-transparent text-muted-foreground hover:text-foreground'
                             )}
                         >
                             {tab.label}
                             {counts[tab.id] > 0 && (
                                 <span
                                     className={cn(
-                                        'rounded-full px-1.5 py-0.5 text-[10px] font-bold',
+                                        'rounded-full px-1.5 py-0.5 text-[10px] font-bold transition-colors',
                                         activeFilter === tab.id
-                                            ? 'bg-indigo-600 text-white dark:bg-indigo-500'
-                                            : 'bg-slate-100 text-slate-500 dark:bg-slate-700/60 dark:text-slate-400'
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'bg-muted text-muted-foreground'
                                     )}
                                 >
                                     {counts[tab.id]}
@@ -252,7 +246,7 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
                     <table className="w-full min-w-[720px] table-auto text-left text-sm">
 
                         {/* Head */}
-                        <thead className="border-b border-white/30 bg-slate-50/60 text-[11px] font-semibold uppercase tracking-widest text-slate-400 backdrop-blur-sm dark:border-slate-700/50 dark:bg-slate-800/30 dark:text-slate-500">
+                        <thead className="border-b border-border/50 bg-muted/30 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                             <tr>
                                 <th className="px-5 py-3">Member</th>
                                 <th className="px-5 py-3">Status</th>
@@ -263,14 +257,14 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
                         </thead>
 
                         {/* Body */}
-                        <tbody className="divide-y divide-slate-100/60 dark:divide-slate-700/40">
+                        <tbody className="divide-y divide-border/20">
                             {isLoading ? (
                                 Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} />)
                             ) : filteredUsers.length > 0 ? (
                                 filteredUsers.map((user) => (
                                     <tr
                                         key={user._id}
-                                        className="group transition-colors hover:bg-white/50 dark:hover:bg-slate-800/30"
+                                        className="group transition-colors hover:bg-muted/40"
                                     >
                                         {/* Member */}
                                         <td className="px-5 py-3.5">
@@ -285,14 +279,14 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
                                                     {user.name?.charAt(0).toUpperCase() ?? 'U'}
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className="truncate text-sm font-semibold leading-snug text-slate-900 dark:text-white">
+                                                    <p className="truncate text-sm font-semibold leading-snug text-foreground">
                                                         {user.name}
                                                     </p>
-                                                    <p className="truncate text-xs text-slate-400 dark:text-slate-500">
+                                                    <p className="truncate text-xs text-muted-foreground">
                                                         {user.email}
                                                     </p>
                                                     {user.phone && (
-                                                        <p className="text-[10px] text-slate-300 dark:text-slate-600">
+                                                        <p className="text-[10px] text-muted-foreground/60">
                                                             {user.phone}
                                                         </p>
                                                     )}
@@ -304,7 +298,7 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
                                         <td className="px-5 py-3.5">
                                             <div className="flex flex-col items-start gap-1.5">
                                                 <StatusBadge status={user._displayStatus} />
-                                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                                                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
                                                     {user.role}
                                                 </span>
                                             </div>
@@ -329,14 +323,14 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
                             ) : (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-16 text-center">
-                                        <div className="flex flex-col items-center gap-2.5 text-slate-400">
-                                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800">
+                                        <div className="flex flex-col items-center gap-2.5 text-muted-foreground">
+                                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
                                                 <SlidersHorizontal size={22} strokeWidth={1.8} className="opacity-50" />
                                             </div>
-                                            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                                            <p className="text-sm font-semibold text-foreground">
                                                 No members found
                                             </p>
-                                            <p className="text-xs text-slate-400 dark:text-slate-500">
+                                            <p className="text-xs text-muted-foreground">
                                                 Try adjusting the filter or search query
                                             </p>
                                         </div>

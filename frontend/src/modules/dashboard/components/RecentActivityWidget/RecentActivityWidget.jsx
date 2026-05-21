@@ -6,26 +6,26 @@ import { formatActivityDate } from '@/core/utils/helpers/date.helper';
 
 const ActivitySkeleton = () => (
     <div className="flex items-center gap-4 p-3 animate-pulse">
-        <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-slate-800 shrink-0" />
+        <div className="w-10 h-10 rounded-xl bg-muted shrink-0" />
         <div className="flex-1 space-y-2">
-            <div className="h-3.5 w-36 bg-gray-100 dark:bg-slate-800 rounded" />
-            <div className="h-2.5 w-24 bg-gray-100 dark:bg-slate-800 rounded" />
+            <div className="h-3.5 w-36 bg-muted rounded" />
+            <div className="h-2.5 w-24 bg-muted rounded" />
         </div>
-        <div className="h-4 w-16 bg-gray-100 dark:bg-slate-800 rounded shrink-0" />
+        <div className="h-4 w-16 bg-muted rounded shrink-0" />
     </div>
 );
 
 const ActivityIcon = memo(function ActivityIcon({ type }) {
     return (
         <div className={cn(
-            'p-2.5 rounded-xl shrink-0 shadow-sm',
+            'p-2 rounded-xl shrink-0 border',
             type === 'meal'
-                ? 'bg-orange-50 text-orange-500 dark:bg-orange-900/20 dark:text-orange-400'
-                : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'
+                ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/10'
+                : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/10'
         )}>
             {type === 'meal'
-                ? <FiCoffee size={16} />
-                : <FiShoppingBag size={16} />
+                ? <FiCoffee size={15} />
+                : <FiShoppingBag size={15} />
             }
         </div>
     );
@@ -33,21 +33,21 @@ const ActivityIcon = memo(function ActivityIcon({ type }) {
 
 const ActivityRow = memo(function ActivityRow({ activity }) {
     return (
-        <div className="group flex items-center justify-between px-5 py-3.5 hover:bg-gray-50/70 dark:hover:bg-slate-800/40 transition-colors cursor-default">
+        <div className="group flex items-center justify-between px-5 py-3.5 hover:bg-muted/40 transition-colors duration-150 cursor-default">
             <div className="flex items-center gap-3.5 min-w-0">
                 <ActivityIcon type={activity.type} />
                 <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                    <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors duration-150">
                         {activity.title}
                     </p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 truncate mt-0.5">
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">
                         {activity.description}
                     </p>
                 </div>
             </div>
             <div className="text-right shrink-0 ml-3">
-                <p className="text-sm font-bold text-gray-800 dark:text-gray-200">{activity.amount}</p>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 whitespace-nowrap">
+                <p className="text-sm font-bold text-foreground tabular-nums">{activity.amount}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5 whitespace-nowrap">
                     {formatActivityDate(activity.datetime)}
                 </p>
             </div>
@@ -60,12 +60,12 @@ const RecentActivityWidget = memo(function RecentActivityWidget({ activities = [
 
     if (isLoading) {
         return (
-            <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-3xl border border-white/20 dark:border-slate-800 shadow-sm p-6 flex flex-col h-full">
+            <div className="bg-card border border-border/50 rounded-2xl shadow-sm p-6 flex flex-col h-full">
                 <div className="flex items-center justify-between mb-5">
-                    <div className="h-5 w-32 bg-gray-100 dark:bg-slate-800 rounded animate-pulse" />
-                    <div className="h-4 w-14 bg-gray-100 dark:bg-slate-800 rounded animate-pulse" />
+                    <div className="h-5 w-32 bg-muted rounded animate-pulse" />
+                    <div className="h-4 w-14 bg-muted rounded animate-pulse" />
                 </div>
-                <div className="space-y-1 divide-y divide-gray-50 dark:divide-slate-800/50">
+                <div className="space-y-1 divide-y divide-border/20">
                     {[1, 2, 3, 4].map(i => <ActivitySkeleton key={i} />)}
                 </div>
             </div>
@@ -73,32 +73,32 @@ const RecentActivityWidget = memo(function RecentActivityWidget({ activities = [
     }
 
     return (
-        <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-3xl border border-white/20 dark:border-slate-800 shadow-sm flex flex-col h-full overflow-hidden">
-            <div className="px-6 pt-6 pb-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
-                <h3 className="text-base font-bold text-gray-900 dark:text-gray-50 flex items-center gap-2">
-                    <FiActivity className="text-indigo-500" size={16} />
+        <div className="bg-card border border-border/50 rounded-2xl shadow-sm flex flex-col h-full overflow-hidden">
+            <div className="px-6 pt-6 pb-4 border-b border-border/50 flex items-center justify-between">
+                <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                    <FiActivity className="text-primary" size={16} />
                     Recent Activity
                 </h3>
                 <button
                     onClick={() => navigate('/meals')}
-                    className="flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors group"
+                    className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors group"
                 >
                     View All
                     <FiArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
                 </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto divide-y divide-gray-50 dark:divide-slate-800/40 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto divide-y divide-border/20 custom-scrollbar">
                 {activities.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-14 gap-3 text-gray-400 dark:text-gray-500">
+                    <div className="flex flex-col items-center justify-center py-14 gap-3 text-muted-foreground">
                         <FiInbox size={36} className="opacity-30" />
                         <div className="text-center">
-                            <p className="font-semibold text-sm">No activity yet</p>
+                            <p className="font-semibold text-sm text-foreground">No activity yet</p>
                             <p className="text-xs mt-0.5">Your meals and market entries will appear here</p>
                         </div>
                         <button
                             onClick={() => navigate('/meals')}
-                            className="mt-2 text-xs font-bold text-indigo-500 hover:text-indigo-600 underline underline-offset-2"
+                            className="mt-2 text-xs font-bold text-primary hover:text-primary/80 underline underline-offset-2"
                         >
                             Log your first meal
                         </button>
@@ -111,8 +111,8 @@ const RecentActivityWidget = memo(function RecentActivityWidget({ activities = [
             </div>
 
             {activities.length > 0 && (
-                <div className="px-6 py-3 border-t border-gray-50 dark:border-slate-800/50 bg-gray-50/50 dark:bg-slate-800/20">
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                <div className="px-6 py-3 border-t border-border/40 bg-muted/20">
+                    <p className="text-[10px] text-muted-foreground">
                         Showing last {activities.length} activities · Meals & Market entries
                     </p>
                 </div>
