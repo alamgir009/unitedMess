@@ -13,7 +13,7 @@ const MainLayout = ({ children }) => {
                 <div className="flex flex-1 flex-col overflow-hidden">
                     <Header onMenuClick={() => setSidebarOpen(true)} />
 
-                    <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 lg:p-8 transition-colors duration-200">
+                    <main className="flex-1 overflow-y-auto bg-background p-2 sm:p-6 lg:p-8 transition-colors duration-200">
                         {children}
                     </main>
                 </div>

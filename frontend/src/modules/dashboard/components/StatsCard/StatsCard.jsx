@@ -24,29 +24,29 @@ const StatsCard = React.memo(({ title, value, change, changeType, icon: Icon }) 
     const badgeCls = getBadgeStyle(title);
 
     return (
-        <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card p-5 sm:p-6 shadow-sm transform-gpu hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-md transition-all duration-200 ease-out motion-reduce:hover:translate-y-0 contain-layout group">
-            <div className="relative z-10 flex items-start justify-between gap-4">
+        <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card p-3 sm:p-6 shadow-sm transform-gpu hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-md transition-all duration-200 ease-out motion-reduce:hover:translate-y-0 contain-layout group">
+            <div className="relative z-10 flex items-start justify-between gap-2 sm:gap-4">
                 <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-[13px] font-semibold uppercase tracking-wider text-muted-foreground truncate mb-1.5">{title}</p>
-                    <h3 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight leading-none tabular-nums truncate mb-2">{value}</h3>
+                    <p className="text-[10px] sm:text-[13px] font-semibold uppercase tracking-wider text-muted-foreground truncate mb-1">{title}</p>
+                    <h3 className="text-base sm:text-2xl lg:text-3xl font-extrabold text-foreground tracking-tight leading-none tabular-nums truncate mb-1.5">{value}</h3>
                     
                     {change && (
                         <div className="flex items-center text-xs font-semibold mt-1">
                             <span className={cn(
-                                "flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-colors",
+                                "flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border transition-colors",
                                 changeType === 'increase' 
                                     ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/25" 
                                     : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/25"
                             )}>
-                                {changeType === 'increase' ? <FiTrendingUp className="mr-1" /> : <FiTrendingDown className="mr-1" />}
+                                {changeType === 'increase' ? <FiTrendingUp className="mr-0.5" /> : <FiTrendingDown className="mr-0.5" />}
                                 {change}
                             </span>
                         </div>
                     )}
                 </div>
                 
-                <div className={cn("p-3 rounded-xl shrink-0 transition-all duration-200 group-hover:scale-105", badgeCls)}>
-                    <Icon className="h-5.5 w-5.5" />
+                <div className={cn("p-1.5 sm:p-3 rounded-lg sm:rounded-xl shrink-0 transition-all duration-200 group-hover:scale-105", badgeCls)}>
+                    <Icon className="h-4 w-4 sm:h-5.5 sm:w-5.5" />
                 </div>
             </div>
         </div>
