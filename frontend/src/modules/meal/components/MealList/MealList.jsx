@@ -51,7 +51,7 @@ const MealCard = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin 
     return (
         <article
             ref={ref}
-            className="group relative flex flex-col rounded-2xl bg-card border border-border/50 overflow-hidden shadow-sm transition-shadow duration-200"
+            className="group relative flex flex-col rounded-xl bg-card border border-border/50 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200"
         >
             <div className="flex items-start justify-between px-4 pt-3.5">
                 <span className={`inline-flex items-center gap-1 px-2 py-[3px] rounded-md text-[10px] font-bold uppercase tracking-widest ${cfg.pill}`}>
@@ -141,7 +141,7 @@ const MealRow = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin }
     return (
         <div
             ref={ref}
-            className="group relative flex items-center gap-3 px-3 py-2.5 rounded-xl bg-card border border-border/50 transition-colors duration-200 shadow-sm overflow-hidden"
+            className="group relative flex items-center gap-3 px-3 py-2.5 rounded-xl bg-card border border-border/50 hover:bg-muted/20 transition-colors duration-200 shadow-sm overflow-hidden"
         >
             <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${cfg.pill}`}>
                 <Icon className="w-3.5 h-3.5" />
@@ -252,7 +252,7 @@ const MealList = ({ meals = [], onEdit, onDelete, isAdmin = false, viewMode = 'g
 
     if (viewMode === 'list') {
         return (
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-2">
                 {meals.map((meal) => (
                     <MealRow
                         key={meal._id}
@@ -268,8 +268,7 @@ const MealList = ({ meals = [], onEdit, onDelete, isAdmin = false, viewMode = 'g
 
     return (
         <div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-            style={{ contentVisibility: 'auto', containIntrinsicSize: '0 500px' }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
         >
             {meals.map((meal) => (
                 <MealCard

@@ -1,6 +1,5 @@
 import React from 'react';
 import { HiOutlineChevronLeft, HiOutlineChevronRight } from 'react-icons/hi2';
-import { motion } from 'framer-motion';
 
 const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
     if (!pagination) return null;
@@ -13,18 +12,14 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
     const limitOptions = [10, 20, 50, 'all'];
 
     return (
-        <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-6 mt-6 rounded-2xl border border-white/10 dark:border-white/5 bg-card/40 backdrop-blur-md"
-        >
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-6 mt-6 rounded-xl border border-border/50 bg-card">
             <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-muted-foreground">Rows per page:</span>
                 <div className="relative">
                     <select
                         value={isAll ? 'all' : limit}
                         onChange={(e) => onLimitChange(e.target.value)}
-                        className="appearance-none bg-muted/40 hover:bg-muted/60 text-foreground text-sm font-bold py-1.5 pl-3 pr-8 rounded-lg border border-white/10 focus:ring-2 focus:ring-primary/40 focus:outline-none transition-colors cursor-pointer"
+                        className="appearance-none bg-muted/40 hover:bg-muted/60 text-foreground text-sm font-semibold py-1.5 pl-3 pr-8 rounded-lg border border-border/40 focus:ring-2 focus:ring-primary/40 focus:outline-none transition-colors cursor-pointer"
                     >
                         {limitOptions.map((opt) => (
                             <option key={opt} value={opt}>
@@ -53,7 +48,7 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
                             className={`p-1.5 rounded-lg border transition-all ${
                                 !hasPrev
                                     ? 'border-transparent text-muted-foreground/30 cursor-not-allowed'
-                                    : 'border-white/10 hover:bg-muted/40 text-foreground active:scale-95'
+                                    : 'border-border/40 hover:bg-muted/40 text-foreground'
                             }`}
                         >
                             <HiOutlineChevronLeft className="w-5 h-5" />
@@ -71,7 +66,7 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
                             className={`p-1.5 rounded-lg border transition-all ${
                                 !hasNext
                                     ? 'border-transparent text-muted-foreground/30 cursor-not-allowed'
-                                    : 'border-white/10 hover:bg-muted/40 text-foreground active:scale-95'
+                                    : 'border-border/40 hover:bg-muted/40 text-foreground'
                             }`}
                         >
                             <HiOutlineChevronRight className="w-5 h-5" />
@@ -79,7 +74,7 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
                     </div>
                 )}
             </div>
-        </motion.div>
+        </div>
     );
 };
 

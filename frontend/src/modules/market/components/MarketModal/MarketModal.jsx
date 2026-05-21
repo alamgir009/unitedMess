@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { HiOutlineXMark } from 'react-icons/hi2';
-import { Button } from '@/shared/components/ui';
 
 const useMediaQuery = (query) => {
     const getMatches = () =>
@@ -86,7 +85,7 @@ const MarketModal = ({ isOpen, onClose, title, children }) => {
                             aria-modal="true"
                             style={{ willChange: 'transform, opacity' }}
                             className="
-                                relative w-full max-w-lg overflow-hidden rounded-3xl
+                                relative w-full max-w-lg overflow-hidden rounded-xl
                                 border border-black/10 dark:border-white/10
                                 bg-white dark:bg-slate-900 text-slate-900 dark:text-white
                                 shadow-2xl
@@ -106,9 +105,13 @@ const MarketModal = ({ isOpen, onClose, title, children }) => {
                                     </h2>
                                 </div>
 
-                                <Button variant="danger" iconOnly onClick={onClose}>
+                                <button
+                                    onClick={onClose}
+                                    aria-label="Close dialog"
+                                    className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                                >
                                     <HiOutlineXMark className="w-5 h-5" />
-                                </Button>
+                                </button>
                             </div>
 
                             {/* Body */}

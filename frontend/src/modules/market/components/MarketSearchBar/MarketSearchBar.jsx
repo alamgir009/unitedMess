@@ -43,7 +43,7 @@ const MarketSearchBar = React.memo(({
                         type="date"
                         value={dateFrom}
                         onChange={(e) => onDateFromChange(e.target.value)}
-                        className="h-9 pl-9 pr-3 rounded-xl border border-border/40 bg-muted/30 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+                        className="h-9 pl-9 pr-3 rounded-lg border border-border/40 bg-muted/30 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
                     />
                 </div>
             </div>
@@ -57,7 +57,7 @@ const MarketSearchBar = React.memo(({
                         type="date"
                         value={dateTo}
                         onChange={(e) => onDateToChange(e.target.value)}
-                        className="h-9 pl-9 pr-3 rounded-xl border border-border/40 bg-muted/30 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+                        className="h-9 pl-9 pr-3 rounded-lg border border-border/40 bg-muted/30 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
                     />
                 </div>
             </div>

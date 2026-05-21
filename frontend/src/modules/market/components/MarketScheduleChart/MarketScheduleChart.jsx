@@ -1,5 +1,4 @@
 import { useEffect, useRef, useMemo, useCallback, memo } from 'react';
-import { motion } from 'framer-motion';
 import { HiOutlineChevronDown, HiOutlineShoppingCart } from 'react-icons/hi2';
 
 const AVATAR_DISPLAY = 4;
@@ -47,18 +46,17 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
 
     if (isLoading) {
         return (
-            <div className="mb-8">
+            <div className="mb-6">
                 <div
-                    className="rounded-2xl sm:rounded-[20px] border border-border/60 dark:border-white/10
-                    bg-card dark:bg-card shadow-sm md:shadow-lg overflow-hidden"
+                    className="rounded-xl border border-border/50 bg-card shadow-sm overflow-hidden"
                 >
-                    <div className="px-4 py-4 sm:px-5 sm:py-5 flex items-center justify-between gap-3">
+                    <div className="px-4 py-3.5 sm:px-5 sm:py-4 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 sm:p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 animate-pulse">
+                            <div className="p-2 sm:p-2.5 rounded-xl bg-emerald-500/10 text-emerald-500 animate-pulse">
                                 <HiOutlineShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
                             </div>
                             <div>
-                                <div className="h-4 w-28 bg-muted/60 rounded-lg animate-pulse" />
+                                <div className="h-4 w-28 bg-muted/60 rounded animate-pulse" />
                                 <div className="h-3 w-20 bg-muted/40 rounded mt-1.5 animate-pulse" />
                             </div>
                         </div>
@@ -72,29 +70,25 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
     if (!schedule?.length) return null;
 
     return (
-        <div className="mb-8">
-            <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
+        <div className="mb-6">
+            <div
                 className={`
-                    rounded-2xl sm:rounded-[20px]
-                    border border-border/60 dark:border-white/10
-                    bg-card dark:bg-card
-                    shadow-sm md:shadow-lg
+                    rounded-xl
+                    border border-border/50
+                    bg-card
+                    shadow-sm
                     overflow-hidden
-                    transition-shadow duration-300
-                    ${!isCollapsed ? 'ring-1 ring-emerald-500/20 shadow-emerald-500/5' : ''}
+                    transition-shadow duration-200
+                    ${!isCollapsed ? 'ring-1 ring-emerald-500/15' : ''}
                 `}
             >
-                {/* ── Header Toggle ── */}
                 <button
                     onClick={onToggle}
-                    className="w-full px-4 py-4 sm:px-5 sm:py-5 flex items-center justify-between gap-3 text-left group"
+                    className="w-full px-4 py-3.5 sm:px-5 sm:py-4 flex items-center justify-between gap-3 text-left group"
                     aria-expanded={!isCollapsed}
                 >
                     <div className="flex items-center gap-3 min-w-0">
-                        <div className="p-2 sm:p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 flex-shrink-0">
+                        <div className="p-2 sm:p-2.5 rounded-xl bg-emerald-500/10 text-emerald-500 flex-shrink-0">
                             <HiOutlineShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
                         <div className="min-w-0">
@@ -111,12 +105,10 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
                         </div>
                     </div>
 
-                    {/* ── Right Section ── */}
                     <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 ml-auto">
-                        {/* Collapsed member strip */}
                         {isCollapsed && upcomingMembers.length > 0 && (
                             <div className="flex items-center">
-                                <div className="flex items-center -space-x-3">
+                                <div className="flex items-center -space-x-2.5">
                                     {displayedMembers.map((day) => {
                                         const dateObj = new Date(day.date);
                                         const isToday = dateObj.toDateString() === todayStr;
@@ -124,13 +116,12 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
                                             <div
                                                 key={day._id || day.date}
                                                 className={`
-                                                    relative w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden 
+                                                    relative w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden 
                                                     flex items-center justify-center flex-shrink-0
-                                                    ring-2 ring-card dark:ring-card
-                                                    transition-transform duration-300 hover:-translate-y-1 hover:z-10
+                                                    ring-2 ring-card
                                                     ${isToday
-                                                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-400/30 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
-                                                        : 'bg-muted/80 text-muted-foreground border border-white/10'
+                                                        ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-400/30'
+                                                        : 'bg-muted/60 text-muted-foreground border border-border/30'
                                                     }
                                                 `}
                                                 title={`${day.user.name.split(' ')[0]} - ${dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`}
@@ -140,9 +131,10 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
                                                         src={day.user.image}
                                                         alt={day.user.name}
                                                         className="w-full h-full object-cover"
+                                                        loading="lazy"
                                                     />
                                                 ) : (
-                                                    <span className="text-xs sm:text-sm font-bold uppercase">
+                                                    <span className="text-[10px] sm:text-xs font-bold uppercase">
                                                         {day.user.name.charAt(0)}
                                                     </span>
                                                 )}
@@ -152,11 +144,11 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
                                     {remainingCount > 0 && (
                                         <div 
                                             className="
-                                                relative w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden 
+                                                relative w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden 
                                                 flex items-center justify-center flex-shrink-0
-                                                ring-2 ring-card dark:ring-card
-                                                bg-muted/50 dark:bg-muted/30 backdrop-blur-sm border border-white/10
-                                                text-xs sm:text-sm font-bold text-foreground
+                                                ring-2 ring-card
+                                                bg-muted/40 border border-border/30
+                                                text-[10px] sm:text-xs font-bold text-foreground
                                             "
                                         >
                                             +{remainingCount}
@@ -166,7 +158,6 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
                             </div>
                         )}
 
-                        {/* Expanded: Today chip */}
                         {!isCollapsed && (
                             <button
                                 onClick={(e) => {
@@ -176,31 +167,27 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
                                 className="
                                     flex-shrink-0
                                     px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-xs font-medium
-                                    bg-emerald-500/10 text-emerald-400
-                                    border border-emerald-400/30
-                                    backdrop-blur-md
-                                    hover:bg-emerald-500/20
-                                    transition-all shadow-sm
+                                    bg-emerald-500/10 text-emerald-500
+                                    border border-emerald-400/25
+                                    hover:bg-emerald-500/15
+                                    transition-colors
                                 "
                             >
                                 Today
                             </button>
                         )}
 
-                        {/* Chevron */}
-                        <motion.div
-                            animate={{ rotate: isCollapsed ? 0 : 180 }}
-                            transition={{ duration: 0.2, ease: 'easeInOut' }}
-                            className="text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0 ml-1"
+                        <div
+                            className="text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0 ml-1 transition-transform duration-200"
+                            style={{ transform: isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)' }}
                         >
                             <HiOutlineChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />
-                        </motion.div>
+                        </div>
                     </div>
                 </button>
 
-                {/* ── Collapsible Body ── */}
                 <div
-                    className="grid transition-all duration-400 ease-out will-change-[grid-template-rows]"
+                    className="grid transition-all duration-300 ease-out"
                     style={{
                         gridTemplateRows: isCollapsed ? '0fr' : '1fr',
                         transitionTimingFunction: 'cubic-bezier(0.33, 1, 0.68, 1)',
@@ -210,29 +197,20 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
                         <div
                             className={`
                                 px-4 pb-4 sm:px-5 sm:pb-5
-                                transition-all duration-400 ease-out
-                                ${isCollapsed ? 'opacity-0 -translate-y-1.5' : 'opacity-100 translate-y-0 delay-100'}
+                                transition-all duration-200
+                                ${isCollapsed ? 'opacity-0 -translate-y-1' : 'opacity-100 translate-y-0'}
                             `}
                         >
                             <div className="relative">
-                                {/* Horizontal scroll container */}
                                 <div
                                     ref={scrollRef}
                                     className="
-                                        flex gap-5 overflow-x-auto pb-4
-                                        cursor-grab active:cursor-grabbing
+                                        flex gap-4 overflow-x-auto pb-3
                                         scroll-smooth
                                         [-webkit-overflow-scrolling:touch]
-                                        scrollbar-thin scrollbar-track-gray-200/50 scrollbar-thumb-gray-400/70
-                                        dark:scrollbar-track-gray-800/50 dark:scrollbar-thumb-gray-600/70
-                                        hover:scrollbar-thumb-gray-500/80
                                         [scrollbar-width:thin]
                                     "
-                                    style={{
-                                        maskImage: 'linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)',
-                                        WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)',
-                                        scrollSnapType: 'x mandatory',
-                                    }}
+                                    style={{ scrollSnapType: 'x mandatory' }}
                                 >
                                     {schedule.map((day) => {
                                         const dateObj = new Date(day.date);
@@ -242,73 +220,48 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
                                             <div
                                                 key={day._id || day.date}
                                                 className={`
-                                                    relative group min-w-[150px] flex-shrink-0
-                                                    rounded-3xl p-5 flex flex-col items-center
-                                                    border transition-all duration-200
+                                                    relative group min-w-[140px] flex-shrink-0
+                                                    rounded-xl p-4 flex flex-col items-center
+                                                    border transition-all duration-150
                                                     scroll-snap-align-start
                                                     ${isToday
-                                                        ? `
-                                                            bg-gradient-to-b from-emerald-500/20 to-emerald-900/10
-                                                            border-emerald-400/40
-                                                            shadow-[0_0_40px_rgba(16,185,129,0.25)]
-                                                            scale-[1.05]
-                                                        `
-                                                        : `
-                                                            bg-white/40 dark:bg-white/5
-                                                            border-white/10
-                                                            hover:bg-white/80 dark:hover:bg-white/10
-                                                            hover:border-white/40
-                                                            hover:shadow-md
-                                                            hover:scale-[1.02]
-                                                        `
+                                                        ? 'bg-emerald-500/8 dark:bg-emerald-500/10 border-emerald-400/30'
+                                                        : 'bg-muted/20 dark:bg-white/[0.03] border-border/30 hover:bg-muted/40 dark:hover:bg-white/[0.06] hover:border-border/50'
                                                     }
                                                 `}
                                             >
-                                                <p className={`text-[11px] uppercase tracking-widest 
-                                                    ${isToday ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+                                                <p className={`text-[10px] uppercase tracking-wider 
+                                                    ${isToday ? 'text-emerald-500' : 'text-muted-foreground'}`}>
                                                     {dateObj.toLocaleDateString(undefined, { weekday: 'short' })}
                                                 </p>
 
-                                                <p className={`text-lg font-semibold mt-1 
-                                                    ${isToday ? 'text-emerald-300' : 'text-foreground'}`}>
+                                                <p className={`text-base font-semibold mt-0.5
+                                                    ${isToday ? 'text-emerald-500' : 'text-foreground'}`}>
                                                     {dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                                                 </p>
 
                                                 {day.user ? (
                                                     <>
-                                                        <div className="mt-4 w-14 h-14 rounded-full overflow-hidden border flex items-center justify-center text-lg font-semibold">
+                                                        <div className={`mt-3 w-12 h-12 rounded-full overflow-hidden border flex items-center justify-center text-base font-semibold
+                                                            ${isToday ? 'border-emerald-400/30' : 'border-border/30'}`}>
                                                             {day.user.image ? (
                                                                 <img
                                                                     src={day.user.image}
                                                                     alt={day.user.name}
                                                                     className="w-full h-full object-cover"
+                                                                    loading="lazy"
                                                                 />
                                                             ) : (
                                                                 day.user.name.charAt(0).toUpperCase()
                                                             )}
                                                         </div>
 
-                                                        <span className="text-xs mt-2 truncate max-w-[100px]">
+                                                        <span className="text-xs mt-1.5 truncate max-w-[90px]">
                                                             {day.user.name.split(' ')[0]}
                                                         </span>
-
-                                                        <div className="
-                                                            absolute bottom-full mb-3
-                                                            px-3 py-2 rounded-lg text-xs
-                                                            bg-black/80 text-white
-                                                            opacity-0 group-hover:opacity-100
-                                                            translate-y-2 group-hover:translate-y-0
-                                                            transition-all pointer-events-none
-                                                            whitespace-nowrap
-                                                        ">
-                                                            <div className="font-medium">{day.user.name}</div>
-                                                            <div className="text-[10px] opacity-70">
-                                                                {dateObj.toDateString()}
-                                                            </div>
-                                                        </div>
                                                     </>
                                                 ) : (
-                                                    <div className="mt-6 text-xs opacity-50">Off</div>
+                                                    <div className="mt-4 text-xs text-muted-foreground/50">Off</div>
                                                 )}
                                             </div>
                                         );
@@ -318,7 +271,7 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
                         </div>
                     </div>
                 </div>
-            </motion.div>
+            </div>
         </div>
     );
 };

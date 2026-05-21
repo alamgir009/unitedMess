@@ -61,13 +61,9 @@ const MealModal = ({ isOpen, onClose, title, children }) => {
         <AnimatePresence>
             {isOpen && (
                 <div className="fixed inset-0 z-[1000] contain-[layout_style_paint]">
-                    <motion.div
+                    <div
                         aria-label="Close modal"
                         onClick={onClose}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={transition.backdrop}
                         className="absolute inset-0 w-full h-full bg-black/60 md:bg-black/50"
                     />
 
@@ -80,7 +76,7 @@ const MealModal = ({ isOpen, onClose, title, children }) => {
                             role="dialog"
                             aria-modal="true"
                             className="
-                                relative w-full max-w-lg overflow-hidden rounded-2xl
+                                relative w-full max-w-lg overflow-hidden rounded-xl
                                 border border-black/10 dark:border-white/10
                                 bg-white dark:bg-slate-900 text-slate-900 dark:text-white
                                 shadow-xl
@@ -92,7 +88,7 @@ const MealModal = ({ isOpen, onClose, title, children }) => {
                                 border-b border-black/10 dark:border-white/10
                             ">
                                 <div className="flex items-center gap-3 min-w-0">
-                                    <div className="w-1 h-5 rounded-full bg-gradient-to-b from-sky-500 to-violet-600" />
+                                    <div className="w-1 h-5 rounded-full bg-gradient-to-b from-primary to-secondary-500" />
                                     <h2 className="truncate text-base font-semibold sm:text-lg">
                                         {title}
                                     </h2>

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
     HiOutlineCalendarDays,
     HiOutlineCurrencyDollar,
@@ -22,18 +22,18 @@ const amountColor = (amount) => {
 
 /* MARKET CARD -- grid view */
 const MarketCard = React.memo(React.forwardRef(({ market, onEdit, onDelete, isAdmin }, ref) => {
-    const date = useMemo(() => formatSmartDate(market.date), [market.date]);
-    const formattedAmount = useMemo(() => Number(market.amount).toLocaleString('en-IN'), [market.amount]);
-    const amtColor = useMemo(() => amountColor(market.amount), [market.amount]);
+    const date = formatSmartDate(market.date);
+    const formattedAmount = Number(market.amount).toLocaleString('en-IN');
+    const amtColor = amountColor(market.amount);
 
     return (
         <article
             ref={ref}
-            className="group relative flex flex-col rounded-[18px] bg-card/95 dark:bg-slate-900/95 border border-black/5 dark:border-white/10 shadow-sm hover:shadow-md dark:shadow-black/40 transition-shadow duration-200 overflow-hidden"
+            className="group relative flex flex-col rounded-xl bg-card dark:bg-card border border-border/50 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden"
         >
             {/* Header */}
             <div className="flex items-start justify-between px-4 pt-3.5">
-                <span className="inline-flex items-center gap-1 px-2 py-[3px] rounded-[7px] text-[10px] font-bold uppercase tracking-widest bg-emerald-50 dark:bg-emerald-400/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-300/60 dark:ring-emerald-400/20">
+                <span className="inline-flex items-center gap-1 px-2 py-[3px] rounded-md text-[10px] font-bold uppercase tracking-widest bg-emerald-50 dark:bg-emerald-400/10 text-emerald-600 dark:text-emerald-400">
                     <HiOutlineShoppingBag className="w-2.5 h-2.5" />
                     Market
                 </span>
@@ -61,7 +61,7 @@ const MarketCard = React.memo(React.forwardRef(({ market, onEdit, onDelete, isAd
 
             {/* Amount chip */}
             <div className="flex items-center gap-1.5 px-4 mt-3 flex-wrap">
-                <div className="flex items-baseline gap-0.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-emerald-200 dark:ring-emerald-500/20">
+                <div className="flex items-baseline gap-0.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10">
                     <span className="text-xs font-bold text-emerald-500">₹</span>
                     <span className={`text-sm font-black tabular-nums leading-none ${amtColor}`}>
                         {formattedAmount}
@@ -121,17 +121,17 @@ MarketCard.displayName = 'MarketCard';
 
 /* MARKET ROW -- list view */
 const MarketRow = React.memo(React.forwardRef(({ market, onEdit, onDelete, isAdmin }, ref) => {
-    const date = useMemo(() => formatSmartDate(market.date), [market.date]);
-    const formattedAmount = useMemo(() => Number(market.amount).toLocaleString('en-IN'), [market.amount]);
-    const amtColor = useMemo(() => amountColor(market.amount), [market.amount]);
+    const date = formatSmartDate(market.date);
+    const formattedAmount = Number(market.amount).toLocaleString('en-IN');
+    const amtColor = amountColor(market.amount);
 
     return (
         <div
             ref={ref}
-            className="group relative flex items-center gap-3 px-3 py-2.5 rounded-[14px] bg-card/95 dark:bg-slate-900/95 border border-black/5 dark:border-white/10 hover:bg-card/80 dark:hover:bg-slate-800/50 hover:border-black/10 dark:hover:border-white/20 transition-colors duration-200 shadow-sm hover:shadow-md overflow-hidden"
+            className="group relative flex items-center gap-3 px-3 py-2.5 rounded-xl bg-card dark:bg-card border border-border/50 dark:border-white/10 hover:bg-muted/20 dark:hover:bg-white/[0.03] hover:border-border/70 dark:hover:border-white/15 transition-colors duration-200 shadow-sm overflow-hidden"
         >
             {/* Icon pill */}
-            <div className="flex-shrink-0 w-8 h-8 rounded-[10px] flex items-center justify-center bg-emerald-50 dark:bg-emerald-400/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-300/60 dark:ring-emerald-400/20">
+            <div className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-50 dark:bg-emerald-400/10 text-emerald-600 dark:text-emerald-400">
                 <HiOutlineShoppingBag className="w-3.5 h-3.5" />
             </div>
 
@@ -185,7 +185,7 @@ const MarketRow = React.memo(React.forwardRef(({ market, onEdit, onDelete, isAdm
             </div>
 
             {/* Amount badge -- md+ only */}
-            <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest px-2 py-[3px] rounded-[7px] flex-shrink-0 bg-emerald-50 dark:bg-emerald-400/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-300/60 dark:ring-emerald-400/20">
+            <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest px-2 py-[3px] rounded-md flex-shrink-0 bg-emerald-50 dark:bg-emerald-400/10 text-emerald-600 dark:text-emerald-400">
                 ₹{formattedAmount}
             </span>
 
@@ -206,7 +206,7 @@ MarketRow.displayName = 'MarketRow';
 /* EMPTY STATE */
 const EmptyState = React.memo(() => (
     <div className="col-span-full flex flex-col items-center gap-3 py-16 select-none">
-        <div className="w-12 h-12 rounded-2xl bg-muted/60 dark:bg-white/[0.04] border border-border/50 flex items-center justify-center">
+        <div className="w-12 h-12 rounded-xl bg-muted/60 dark:bg-white/[0.04] border border-border/50 flex items-center justify-center">
             <HiOutlineShoppingBag className="w-5 h-5 text-muted-foreground/30" />
         </div>
         <div className="text-center">
@@ -227,7 +227,7 @@ const MarketList = React.memo(({ markets = [], onEdit, onDelete, isAdmin = false
 
     if (viewMode === 'list') {
         return (
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-2">
                 {markets.map((market) => (
                     <MarketRow
                         key={market._id}
@@ -244,7 +244,6 @@ const MarketList = React.memo(({ markets = [], onEdit, onDelete, isAdmin = false
     return (
         <div
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
-            style={{ contentVisibility: 'auto', containIntrinsicSize: '0 500px' }}
         >
             {markets.map((market) => (
                 <MarketCard

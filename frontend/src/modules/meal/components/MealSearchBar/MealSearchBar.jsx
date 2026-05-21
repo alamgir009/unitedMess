@@ -7,7 +7,7 @@ const TypePill = React.memo(({ label, active, onClick }) => (
         onClick={onClick}
         type="button"
         aria-pressed={active}
-        className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all duration-150 min-h-[36px] ${active
+        className={`px-3.5 py-2 rounded-lg text-xs font-semibold transition-all duration-150 min-h-[40px] ${active
             ? 'bg-primary text-primary-foreground shadow-sm'
             : 'bg-muted/40 text-muted-foreground border border-border/40 hover:bg-muted/70 hover:text-foreground'}`}
     >
@@ -68,7 +68,7 @@ const MealSearchBar = ({
                             type="date"
                             value={dateFrom}
                             onChange={(e) => onDateFromChange(e.target.value)}
-                            className="h-9 pl-9 pr-3 rounded-xl border border-border/40 bg-muted/30 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all w-full"
+                            className="h-9 pl-9 pr-3 rounded-lg border border-border/40 bg-muted/30 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all w-full"
                         />
                     </div>
                 </div>
@@ -81,7 +81,7 @@ const MealSearchBar = ({
                             type="date"
                             value={dateTo}
                             onChange={(e) => onDateToChange(e.target.value)}
-                            className="h-9 pl-9 pr-3 rounded-xl border border-border/40 bg-muted/30 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all w-full"
+                            className="h-9 pl-9 pr-3 rounded-lg border border-border/40 bg-muted/30 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all w-full"
                         />
                     </div>
                 </div>

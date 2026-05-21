@@ -24,7 +24,7 @@ import DeleteMealDialog from '../../components/DeleteMealDialog/DeleteMealDialog
 import MealSearchBar from '../../components/MealSearchBar/MealSearchBar';
 
 const SkeletonCard = React.memo(() => (
-    <div className="rounded-2xl border border-border/50 bg-card p-5 animate-pulse">
+    <div className="rounded-xl border border-border/50 bg-card p-5 animate-pulse">
         <div className="flex justify-between mb-4">
             <div className="space-y-2">
                 <div className="h-7 w-14 bg-muted/60 rounded-md" />
@@ -40,7 +40,7 @@ const SkeletonCard = React.memo(() => (
 SkeletonCard.displayName = 'SkeletonCard';
 
 const StatPill = React.memo(({ icon: Icon, label, value, color }) => (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border overflow-hidden ${color}`}>
+    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-sm overflow-hidden ${color}`}>
         <div className="p-2 rounded-lg bg-white/10 flex-shrink-0">
             <Icon className="w-4 h-4" />
         </div>
@@ -185,21 +185,21 @@ const MealPage = () => {
                 <div className="relative z-10 space-y-6">
 
                     {/* Header */}
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 animate-fade-in-up">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                         <div className="space-y-1">
                             {isAdmin ? (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 mb-1 rounded-full text-xs font-bold bg-secondary-400/10 text-secondary-400 border border-secondary-400/20">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 mb-1 rounded-full text-xs font-semibold bg-secondary-400/10 text-secondary-400 border border-secondary-400/20">
                                     <HiOutlineShieldCheck className="w-3.5 h-3.5" /> Admin View
                                 </span>
                             ) : (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 mb-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 mb-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
                                     <HiOutlineSparkles className="w-3.5 h-3.5" /> My Meals
                                 </span>
                             )}
-                            <h2 className="text-2xl sm:text-3xl tracking-tight text-foreground">
+                            <h2 className="text-xl sm:text-2xl tracking-tight text-foreground">
                                 {isAdmin ? 'Meals Overview' : 'Meals Hub'}
                             </h2>
-                            <p className="text-sm text-muted-foreground font-medium">
+                            <p className="text-sm text-muted-foreground">
                                 {isAdmin ? 'Monitor and manage all meal records across all members.' : 'Track and manage your daily meal selections and history.'}
                             </p>
                         </div>
@@ -225,10 +225,10 @@ const MealPage = () => {
                             </div>
                             <button
                                 onClick={openCreate}
-                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md transition-all duration-150"
+                                className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md transition-all duration-150"
                                 style={{ background: 'linear-gradient(135deg, hsl(210,92%,52%) 0%, hsl(268,76%,56%) 100%)' }}
                             >
-                                <HiOutlinePlus className="w-4 h-4" />
+                                <HiOutlinePlus className="w-4 h-4 flex-shrink-0" />
                                 <span>Add Meal</span>
                             </button>
                         </div>
@@ -251,7 +251,7 @@ const MealPage = () => {
 
                     {/* Dining Roster */}
                     <div
-                        className="rounded-2xl border border-border/60 dark:border-white/10 bg-card overflow-hidden transition-shadow duration-200"
+                        className="rounded-xl border border-border/50 bg-card overflow-hidden transition-shadow duration-200"
                     >
                         <button
                             onClick={() => setIsRosterOpen(p => !p)}
@@ -318,10 +318,9 @@ const MealPage = () => {
                         onClearFilters={clearFilters}
                     />
 
-                    {/* Partial-search info banner */}
                     <AnimatePresence>
                         {isFiltered && meals?.length > 0 && (
-                            <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-primary/5 border border-primary/20 text-primary text-xs font-medium animate-fade-in">
+                            <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-primary/5 border border-primary/15 text-primary text-xs font-medium">
                                 <HiOutlineInformationCircle className="w-4 h-4 flex-shrink-0" />
                                 Filtering within the current page ({meals.length} records). Clear filters to browse all pages.
                             </div>
@@ -331,7 +330,7 @@ const MealPage = () => {
                     {/* Error Banner */}
                     <AnimatePresence>
                         {(isError || errorMsg) && (
-                            <div className="flex items-start gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 animate-fade-in">
+                            <div className="flex items-start gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400">
                                 <span className="w-2 h-2 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
                                 <p className="flex-1 text-sm font-medium">{errorMsg || message || 'Something went wrong. Please try again.'}</p>
                                 <button
@@ -348,7 +347,7 @@ const MealPage = () => {
 
                     {/* Content */}
                     {isLoading && (!meals || meals.length === 0) ? (
-                        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                             {[1, 2, 3, 4, 5, 6].map(n => <SkeletonCard key={n} />)}
                         </div>
                     ) : (

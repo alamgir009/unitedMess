@@ -14,18 +14,18 @@ const PILL_STYLES = {
 const StatPill = React.memo(({ icon: Icon, label, value, colorKey, fullWidth = false }) => (
     <div
         className={[
-            'flex items-center gap-3 px-4 py-3 rounded-2xl border',
-            'shadow-sm hover:shadow-md',
+            'flex items-center gap-3 px-4 py-3 rounded-xl border',
+            'shadow-sm',
             fullWidth ? 'col-span-2' : '',
             PILL_STYLES[colorKey],
         ].join(' ')}
     >
-        <div className="p-2 rounded-xl bg-white/10 flex-shrink-0">
+        <div className="p-2 rounded-lg bg-white/10 flex-shrink-0">
             <Icon className="w-4 h-4" aria-hidden="true" />
         </div>
         <div className="min-w-0">
             <p className="text-xs font-medium opacity-60 leading-none truncate">{label}</p>
-            <p className="text-xl font-black leading-tight tabular-nums">{value}</p>
+            <p className="text-lg font-semibold leading-tight tabular-nums">{value}</p>
         </div>
     </div>
 ));

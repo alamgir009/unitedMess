@@ -15,11 +15,11 @@ import { Button, Avatar, MemberSelect } from '@/shared/components/ui';
 
 const inputBase =
     'w-full px-3 py-2 rounded-xl border border-border/60 ' +
-    'bg-background/70 backdrop-blur-md ' +
+    'bg-background ' +
     'focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/60 ' +
-    'outline-none transition-all duration-200 ' +
+    'outline-none transition-all duration-150 ' +
     'text-sm text-foreground placeholder:text-muted-foreground/50 ' +
-    'shadow-sm hover:border-border';
+    'hover:border-border';
 
 const inputDisabled = 'opacity-60 cursor-not-allowed pointer-events-none select-none';
 
@@ -137,7 +137,7 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
             {readOnly && <ReadOnlyBanner />}
 
             {/* ── Amount preview banner ── */}
-            <div className="relative flex items-center justify-center py-3 rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/5 via-teal-500/5 to-cyan-500/5 overflow-hidden shrink-0">
+            <div className="relative flex items-center justify-center py-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 overflow-hidden shrink-0">
                 <div className="flex items-baseline gap-2">
                     <span className="text-[28px] font-black text-foreground leading-none tracking-tight">
                         ₹{formData.amount === '' ? '0' : Number(formData.amount).toLocaleString('en-IN')}
@@ -154,7 +154,7 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
                     <Field label="Member" icon={HiOutlineUser}>
                         {initialData ? (
                             /* Edit mode — show single member as read-only tag */
-                            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-border/60 bg-background/70 backdrop-blur-md text-sm">
+                            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-border/60 bg-background text-sm">
                                 <Avatar
                                     name={typeof initialData.user === 'object' ? initialData.user?.name : ''}
                                     size="xs"

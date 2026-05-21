@@ -86,7 +86,7 @@ const getUserId = (user) => user?._id || user?.id || null;
 
 const VoteMetric = React.memo(function VoteMetric({ label, value, icon: Icon }) {
     return (
-        <div className="flex items-center gap-2.5 rounded-xl border border-border/50 bg-muted/30 px-3 py-2 shadow-sm">
+        <div className="flex items-center gap-2.5 rounded-xl border border-border/50 bg-muted/30 px-3 py-2">
             <Icon className="h-4 w-4 shrink-0 text-muted-foreground/70" />
             <div className="flex flex-col leading-none">
                 <span className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
@@ -103,7 +103,7 @@ const VoteMetric = React.memo(function VoteMetric({ label, value, icon: Icon }) 
 const VotePill = React.memo(function VotePill({ vote }) {
     const initial = vote?.user?.name?.charAt(0)?.toUpperCase() ?? '?';
     return (
-        <div className="flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/30 py-0.5 pl-0.5 pr-2.5 shadow-sm">
+        <div className="flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/30 py-0.5 pl-0.5 pr-2.5">
             {vote?.user?.image ? (
                 <img
                     src={vote.user.image}
@@ -225,19 +225,19 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
             <div
                 className={clsx(
                     'relative w-full overflow-hidden py-2',
-                    'md:rounded-2xl',
+                    'md:rounded-xl',
                     'md:border md:border-border/50',
-                    'md:bg-white/90 dark:md:bg-slate-900/80',
+                    'md:bg-card',
                     'md:shadow-sm',
-                    'md:px-6 md:py-6'
+                    'md:px-5 md:py-5'
                 )}
             >
                 {/* HEADER */}
                 <header className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
                     <div className="space-y-2">
-                        <div className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/30 px-2.5 py-1 shadow-sm">
+                        <div className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/30 px-2.5 py-1">
                             <span className="relative flex h-1.5 w-1.5">
-                                <span className="absolute inline-flex h-full w-full animate-pulse rounded-full bg-emerald-400 opacity-75" />
+                                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
                             </span>
                             <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-foreground/75">
@@ -375,8 +375,8 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                 </div>
 
                 {/* STANDINGS SECTION */}
-                <div className="relative mt-5 overflow-hidden rounded-xl border border-border/40 bg-muted/20 p-0.5 shadow-sm dark:border-white/10 dark:bg-slate-950/80 sm:mt-6">
-                    <div className="overflow-hidden rounded-[0.75rem] bg-transparent p-3.5 sm:p-4">
+                <div className="relative mt-5 overflow-hidden rounded-xl border border-border/40 bg-muted/20 p-0.5 dark:border-white/10 dark:bg-slate-950/80 sm:mt-6">
+                    <div className="overflow-hidden rounded-lg bg-transparent p-3.5 sm:p-4">
                         <div className="mb-3 flex items-center justify-between border-b border-border/40 pb-2.5 dark:border-white/10">
                             <div className="flex items-center gap-2">
                                 <HiOutlineUserGroup className="h-3.5 w-3.5 text-muted-foreground" />
@@ -385,7 +385,7 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                                 </h4>
                             </div>
                             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-400">
-                                <span className="h-1 w-1 animate-pulse rounded-full bg-emerald-500" />
+                                <span className="h-1 w-1 rounded-full bg-emerald-500" />
                                 Live
                             </span>
                         </div>

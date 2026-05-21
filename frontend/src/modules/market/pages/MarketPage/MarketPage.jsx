@@ -31,17 +31,17 @@ const MarketForm = lazy(() => import('../../components/MarketForm/MarketForm'));
 
 /* ── Skeleton loader card ── */
 const SkeletonCard = React.memo(() => (
-    <div className="rounded-3xl border border-white/10 dark:border-white/5 bg-card/50 p-6 animate-pulse">
+    <div className="rounded-xl border border-border/50 bg-card p-5 animate-pulse">
         <div className="flex justify-between mb-4">
             <div className="space-y-2">
-                <div className="h-8 w-16 bg-muted/60 rounded-xl" />
-                <div className="h-3.5 w-32 bg-muted/40 rounded-lg" />
+                <div className="h-7 w-14 bg-muted/60 rounded-md" />
+                <div className="h-3 w-28 bg-muted/40 rounded" />
             </div>
-            <div className="h-7 w-16 bg-muted/40 rounded-full" />
+            <div className="h-6 w-14 bg-muted/40 rounded-full" />
         </div>
         <div className="h-3 w-full bg-muted/30 rounded mb-1.5" />
-        <div className="h-3 w-2/3 bg-muted/20 rounded mb-6" />
-        <div className="h-9 w-full bg-muted/30 rounded-2xl" />
+        <div className="h-3 w-2/3 bg-muted/20 rounded mb-5" />
+        <div className="h-8 w-full bg-muted/30 rounded-lg" />
     </div>
 ));
 SkeletonCard.displayName = 'SkeletonCard';
@@ -200,14 +200,8 @@ const MarketPage = () => {
     /* ── Render ── */
     return (
         <MainLayout>
-            <div className="relative min-h-[80vh]">
-
-                {/* Ambient background orbs */}
-                <div className="hidden md:block pointer-events-none absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-500/15 via-emerald-500/5 to-transparent -z-10" />
-                <div className="hidden md:block pointer-events-none absolute bottom-10 left-0 w-[400px] h-[400px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-teal-400/10 via-teal-400/5 to-transparent -z-10" />
-                <div className="hidden md:block pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-cyan-500/10 via-cyan-500/5 to-transparent -z-10" />
-
-                <div className="relative z-10 space-y-8">
+            <div className="relative min-h-[80vh] max-w-7xl mx-auto">
+                <div className="relative z-10 space-y-6">
 
                     {/* ── Header (title + view toggle + add button) ── */}
                     <MarketHeader
@@ -232,17 +226,18 @@ const MarketPage = () => {
                                 initial={{ opacity: 0, y: -8 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -8 }}
-                                transition={{ duration: 0.2 }}
-                                className="flex items-start gap-3 p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-500"
+                                transition={{ duration: 0.15 }}
+                                className="flex items-start gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400"
                             >
-                                <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping mt-0.5 flex-shrink-0" />
-                                <p className="flex-1 text-sm font-semibold">
+                                <span className="w-2 h-2 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
+                                <p className="flex-1 text-sm font-medium">
                                     {errorMsg || message || 'Something went wrong. Please try again.'}
                                 </p>
                                 <button
                                     onClick={dismissError}
-                                    className="flex-shrink-0 p-1 rounded-lg hover:bg-red-500/10 transition-colors text-red-400 hover:text-red-600"
+                                    className="flex-shrink-0 p-1 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/10 transition-colors"
                                     title="Dismiss"
+                                    aria-label="Dismiss error"
                                 >
                                     <HiOutlineXMark className="w-5 h-5" />
                                 </button>
@@ -276,7 +271,7 @@ const MarketPage = () => {
                     />
 
                     {isLoading && (!markets || markets.length === 0) ? (
-                        <div className={`grid gap-5 ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
+                        <div className={`grid gap-3 ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
                             {[1, 2, 3, 4, 5, 6].map((n) => <SkeletonCard key={n} />)}
                         </div>
                     ) : (

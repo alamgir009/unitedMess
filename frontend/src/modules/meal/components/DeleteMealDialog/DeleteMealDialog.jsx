@@ -18,26 +18,10 @@ const MEAL_TYPE_META = {
     off: { label: 'No Meal (Off)', Icon: HiOutlineNoSymbol, color: 'text-muted-foreground bg-muted/40' },
 };
 
-const backdropVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1 },
-    exit: { opacity: 0 },
-};
-
-const panelVariants = {
-    hidden: { opacity: 0, y: 48 },
-    visible: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: 48 },
-};
-
-const panelTransition = {
-    type: 'spring',
-    stiffness: 420,
-    damping: 36,
-    mass: 1,
-};
-
-const fastFade = { duration: 0.18 };
+const backdropVariants = { hidden: { opacity: 0 }, visible: { opacity: 1 }, exit: { opacity: 0 } };
+const panelVariants = { hidden: { opacity: 0, y: 48 }, visible: { opacity: 1, y: 0 }, exit: { opacity: 0, y: 48 } };
+const panelTransition = { type: 'spring', stiffness: 420, damping: 36, mass: 1 };
+const fastFade = { duration: 0.15 };
 
 let lockCount = 0;
 
@@ -46,8 +30,7 @@ function lockBodyScroll() {
     if (lockCount === 0) {
         const scrollY = window.scrollY;
         document.body.style.overflow = 'hidden';
-        document.body.style.paddingRight =
-            `${window.innerWidth - document.documentElement.clientWidth}px`;
+        document.body.style.paddingRight = `${window.innerWidth - document.documentElement.clientWidth}px`;
         document.body.dataset.scrollY = String(scrollY);
     }
     lockCount++;
@@ -87,17 +70,12 @@ const DeleteMealDialog = memo(({ meal, onConfirm, onCancel, isDeleting }) => {
 
     const meta = MEAL_TYPE_META[meal?.type] ?? MEAL_TYPE_META.both;
     const { Icon } = meta;
-    const dateLabel = meal?.date
-        ? format(new Date(meal.date), 'EEEE, MMMM d, yyyy')
-        : '—';
+    const dateLabel = meal?.date ? format(new Date(meal.date), 'EEEE, MMMM d, yyyy') : '—';
 
     return createPortal(
         <AnimatePresence mode="wait">
             {isOpen && (
-                <div
-                    className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center"
-                    style={{ isolation: 'isolate' }}
-                >
+                <div className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center" style={{ isolation: 'isolate' }}>
                     <motion.div
                         key="del-backdrop"
                         variants={backdropVariants}
@@ -121,15 +99,8 @@ const DeleteMealDialog = memo(({ meal, onConfirm, onCancel, isDeleting }) => {
                         animate="visible"
                         exit="exit"
                         transition={panelTransition}
-                        style={{ willChange: 'transform, opacity' }}
-                        className={[
-                            'relative z-10 w-full sm:max-w-[380px] mx-auto',
-                            'rounded-t-2xl sm:rounded-2xl',
-                            'bg-white dark:bg-slate-900',
-                            'border-t border-x sm:border border-black/[0.08] dark:border-white/10',
-                            'shadow-xl',
-                            'overflow-hidden',
-                        ].join(' ')}
+                        style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
+                        className="relative z-10 w-full sm:max-w-[380px] mx-auto rounded-t-2xl sm:rounded-2xl bg-white dark:bg-slate-900 border-t border-x sm:border border-black/[0.08] dark:border-white/10 shadow-xl overflow-hidden"
                     >
                         <div className="h-[3px] w-full bg-gradient-to-r from-rose-500 via-red-400 to-orange-400" />
 
@@ -138,7 +109,6 @@ const DeleteMealDialog = memo(({ meal, onConfirm, onCancel, isDeleting }) => {
                         </div>
 
                         <div className="px-6 pt-4 pb-7 sm:px-8 sm:pt-6 sm:pb-8 space-y-5">
-
                             <div className="flex justify-center">
                                 <div className="w-[56px] h-[56px] rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 flex items-center justify-center">
                                     <HiOutlineExclamationTriangle className="w-6 h-6 text-rose-500" />
@@ -146,16 +116,10 @@ const DeleteMealDialog = memo(({ meal, onConfirm, onCancel, isDeleting }) => {
                             </div>
 
                             <div className="text-center space-y-1">
-                                <h3
-                                    id="del-dialog-title"
-                                    className="text-base font-bold tracking-tight text-foreground"
-                                >
+                                <h3 id="del-dialog-title" className="text-base font-bold tracking-tight text-foreground">
                                     Delete Meal Record?
                                 </h3>
-                                <p
-                                    id="del-dialog-desc"
-                                    className="text-xs text-muted-foreground leading-relaxed"
-                                >
+                                <p id="del-dialog-desc" className="text-xs text-muted-foreground leading-relaxed">
                                     This is permanent and cannot be undone.
                                 </p>
                             </div>
@@ -175,20 +139,10 @@ const DeleteMealDialog = memo(({ meal, onConfirm, onCancel, isDeleting }) => {
                             </div>
 
                             <div className="flex flex-col-reverse sm:flex-row gap-2.5 mt-2">
-                                <Button
-                                    variant="secondary"
-                                    onClick={onCancel}
-                                    disabled={isDeleting}
-                                    className="w-full sm:flex-1"
-                                >
+                                <Button variant="secondary" onClick={onCancel} disabled={isDeleting} className="w-full sm:flex-1">
                                     Cancel
                                 </Button>
-                                <Button
-                                    variant="danger"
-                                    onClick={onConfirm}
-                                    isLoading={isDeleting}
-                                    className="w-full sm:flex-1"
-                                >
+                                <Button variant="danger" onClick={onConfirm} isLoading={isDeleting} className="w-full sm:flex-1">
                                     {isDeleting ? 'Deleting…' : 'Yes, Delete'}
                                 </Button>
                             </div>

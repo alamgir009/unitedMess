@@ -16,15 +16,15 @@ const SearchBar = ({
     onClearFilters,
     children,
 }) => (
-    <div className="group relative flex flex-col rounded-2xl
-        border border-border/60 dark:border-white/10
-        bg-card dark:bg-card
+    <div className="group relative flex flex-col rounded-xl
+        border border-border/50
+        bg-card
         shadow-sm
         overflow-hidden
         transition-shadow duration-200"
     >
         {/* Top bar */}
-        <div className="flex flex-row items-center gap-2 p-3">
+        <div className="flex flex-row items-center gap-2 p-2.5">
 
             <div className="relative flex-1">
                 <HiOutlineMagnifyingGlass className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
@@ -33,7 +33,7 @@ const SearchBar = ({
                     placeholder={placeholder}
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
-                    className="w-full h-10 pl-10 pr-10 rounded-xl border border-border/40 bg-muted/30 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all"
+                    className="w-full h-10 pl-10 pr-10 rounded-lg border border-border/40 bg-muted/30 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all"
                 />
                 {searchQuery && (
                     <button
@@ -57,7 +57,7 @@ const SearchBar = ({
                     onClick={onToggleFilters}
                     aria-label="Toggle filters"
                     aria-expanded={showFilters}
-                    className={`relative h-10 px-3.5 rounded-xl border text-sm font-semibold flex items-center gap-1.5 transition-all duration-150 ${
+                    className={`relative h-10 px-3.5 rounded-lg border text-sm font-semibold flex items-center gap-1.5 transition-all duration-150 ${
                         showFilters || hasActive
                             ? 'border-primary/40 bg-primary/10 text-primary'
                             : 'border-border/40 bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -74,7 +74,7 @@ const SearchBar = ({
                     <button
                         onClick={onClearFilters}
                         aria-label="Clear all filters"
-                        className="h-10 px-3 rounded-xl border border-destructive/20 bg-destructive/10 text-destructive text-xs font-bold hover:bg-destructive/20 transition-all flex items-center gap-1"
+                        className="h-10 px-3 rounded-lg border border-destructive/20 bg-destructive/10 text-destructive text-xs font-bold hover:bg-destructive/20 transition-all flex items-center gap-1"
                     >
                         <HiOutlineXMark className="w-3.5 h-3.5" />
                         <span className="hidden sm:inline">Clear</span>
@@ -92,7 +92,7 @@ const SearchBar = ({
             }}
         >
             <div className="overflow-hidden">
-                <div className="p-4 border-t border-border/60 dark:border-white/10">
+                <div className="p-3 border-t border-border/40">
                     {children}
                 </div>
             </div>

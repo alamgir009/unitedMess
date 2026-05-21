@@ -29,7 +29,7 @@ const panelTransition = {
     mass: 1,
 };
 
-const fastFade = { duration: 0.18 };
+const fastFade = { duration: 0.15 };
 
 /* ─── body-scroll lock (ref-counted, SSR-safe) ──────────────────────────── */
 
@@ -147,14 +147,10 @@ const DeleteMarketDialog = memo(({ market, onConfirm, onCancel, isDeleting }) =>
                         }}
                         className={[
                             'relative z-10 w-full sm:max-w-[380px] mx-auto',
-                            'rounded-t-[28px] sm:rounded-[28px]',
+                            'rounded-t-2xl sm:rounded-2xl',
                             'bg-white dark:bg-slate-900',
                             'border-t border-x sm:border border-black/[0.08] dark:border-white/10',
-                            /*
-                             * Single box-shadow token instead of arbitrary value —
-                             * avoids per-frame re-parse by Tailwind's JIT runtime.
-                             */
-                            'shadow-2xl',
+                            'shadow-xl',
                             'overflow-hidden',
                         ].join(' ')}
                     >
@@ -170,8 +166,8 @@ const DeleteMarketDialog = memo(({ market, onConfirm, onCancel, isDeleting }) =>
 
                             {/* Warning icon */}
                             <div className="flex justify-center">
-                                <div className="w-[60px] h-[60px] rounded-[18px] bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 flex items-center justify-center">
-                                    <HiOutlineExclamationTriangle className="w-7 h-7 text-rose-500" />
+                                <div className="w-[56px] h-[56px] rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 flex items-center justify-center">
+                                    <HiOutlineExclamationTriangle className="w-6 h-6 text-rose-500" />
                                 </div>
                             </div>
 
@@ -179,21 +175,21 @@ const DeleteMarketDialog = memo(({ market, onConfirm, onCancel, isDeleting }) =>
                             <div className="text-center space-y-1">
                                 <h3
                                     id="del-dialog-title"
-                                    className="text-[17px] font-bold tracking-tight text-foreground"
+                                    className="text-base font-bold tracking-tight text-foreground"
                                 >
                                     Delete Market Record?
                                 </h3>
                                 <p
                                     id="del-dialog-desc"
-                                    className="text-[13px] text-muted-foreground leading-relaxed"
+                                    className="text-xs text-muted-foreground leading-relaxed"
                                 >
                                     This is permanent and cannot be undone.
                                 </p>
                             </div>
 
                             {/* Market preview chip */}
-                            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-muted/30 border border-border/50">
-                                <div className="p-2 rounded-xl flex-shrink-0 text-emerald-600 bg-emerald-50 dark:bg-emerald-400/10 dark:text-emerald-400 ring-1 ring-emerald-300/60 dark:ring-emerald-400/20">
+                            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/30 border border-border/50">
+                                <div className="p-2 rounded-lg flex-shrink-0 text-emerald-600 bg-emerald-50 dark:bg-emerald-400/10 dark:text-emerald-400">
                                     <HiOutlineShoppingBag className="w-4 h-4" />
                                 </div>
                                 <div className="min-w-0 flex-1">
@@ -225,7 +221,7 @@ const DeleteMarketDialog = memo(({ market, onConfirm, onCancel, isDeleting }) =>
                                     variant="danger"
                                     onClick={onConfirm}
                                     isLoading={isDeleting}
-                                    className="w-full sm:flex-1 shadow-lg shadow-rose-500/25"
+                                    className="w-full sm:flex-1"
                                 >
                                     {isDeleting ? 'Deleting…' : 'Yes, Delete'}
                                 </Button>
