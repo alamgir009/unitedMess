@@ -205,6 +205,15 @@ const MealPage = () => {
                         </div>
 
                         <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+                            <button
+                                onClick={openCreate}
+                                className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md transition-all duration-150"
+                                style={{ background: 'linear-gradient(135deg, hsl(210,92%,52%) 0%, hsl(268,76%,56%) 100%)' }}
+                            >
+                                <HiOutlinePlus className="w-4 h-4 flex-shrink-0" />
+                                <span>Add Meal</span>
+                            </button>
+
                             <div className="flex items-center p-1 rounded-xl bg-muted/30 border border-border/40">
                                 <button
                                     onClick={() => setViewMode('grid')}
@@ -223,14 +232,6 @@ const MealPage = () => {
                                     <HiOutlineListBullet className="w-4 h-4" />
                                 </button>
                             </div>
-                            <button
-                                onClick={openCreate}
-                                className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md transition-all duration-150"
-                                style={{ background: 'linear-gradient(135deg, hsl(210,92%,52%) 0%, hsl(268,76%,56%) 100%)' }}
-                            >
-                                <HiOutlinePlus className="w-4 h-4 flex-shrink-0" />
-                                <span>Add Meal</span>
-                            </button>
                         </div>
                     </div>
 
