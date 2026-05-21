@@ -204,13 +204,13 @@ const MealPage = () => {
                             </p>
                         </div>
 
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                            <div className="hidden sm:flex items-center p-1 rounded-xl bg-muted/30 border border-border/40">
+                        <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+                            <div className="flex items-center p-1 rounded-xl bg-muted/30 border border-border/40">
                                 <button
                                     onClick={() => setViewMode('grid')}
                                     title="Grid view"
                                     aria-label="Grid view"
-                                    className={`p-2.5 rounded-lg transition-all duration-150 ${viewMode === 'grid' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                    className={`p-2 rounded-lg transition-all duration-150 ${viewMode === 'grid' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                                 >
                                     <HiOutlineSquares2X2 className="w-4 h-4" />
                                 </button>
@@ -218,7 +218,7 @@ const MealPage = () => {
                                     onClick={() => setViewMode('list')}
                                     title="List view"
                                     aria-label="List view"
-                                    className={`p-2.5 rounded-lg transition-all duration-150 ${viewMode === 'list' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                    className={`p-2 rounded-lg transition-all duration-150 ${viewMode === 'list' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                                 >
                                     <HiOutlineListBullet className="w-4 h-4" />
                                 </button>
