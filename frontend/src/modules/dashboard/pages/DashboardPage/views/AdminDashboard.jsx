@@ -23,7 +23,7 @@ const AlertPill = ({ count, label, color, icon: Icon }) => {
         green: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/10 dark:border-emerald-500/20',
     };
     return (
-        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] font-bold uppercase tracking-wider ${colors[color] || colors.amber}`}>
+        <div className={`flex items-center justify-center lg:justify-start gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] font-bold uppercase tracking-wider w-full lg:w-auto ${colors[color] || colors.amber}`}>
             <Icon size={12} strokeWidth={2.5} className="shrink-0" />
             <span><strong>{count}</strong> {label}</span>
         </div>
@@ -121,10 +121,10 @@ const AdminDashboard = () => {
                         </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-auto">
+                <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
                     <button
                         onClick={() => setShowNotificationModal(true)}
-                        className="flex items-center gap-1.5 px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 shadow-sm"
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 shadow-sm"
                     >
                         <FiSend size={13} />
                         Send Notification
@@ -132,7 +132,7 @@ const AdminDashboard = () => {
                     <button
                         onClick={handleRefresh}
                         disabled={isDashboardLoading || isMembersLoading}
-                        className="flex items-center gap-1.5 px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-xl border border-border bg-card text-foreground hover:bg-muted/40 transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-xl border border-border bg-card text-foreground hover:bg-muted/40 transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <FiRefreshCw size={13} className={isDashboardLoading || isMembersLoading ? 'animate-spin' : ''} />
                         Refresh
@@ -158,7 +158,7 @@ const AdminDashboard = () => {
                             Action Items Required
                         </span>
                     </div>
-                    <div className="flex flex-wrap gap-2.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-2.5 w-full">
                         <AlertPill count={pendingCount}    label="pending approval"  color="amber" icon={FiAlertCircle} />
                         <AlertPill count={inactiveCount}   label="inactive members"  color="amber" icon={FiAlertCircle} />
                         <AlertPill count={deniedCount}     label="denied members"    color="red"   icon={FiAlertCircle} />
@@ -173,20 +173,20 @@ const AdminDashboard = () => {
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-card border border-emerald-500/10 dark:border-emerald-500/20 rounded-2xl p-4 sm:p-5 shadow-sm flex items-center justify-between gap-4"
+                    className="bg-card border border-emerald-500/10 dark:border-emerald-500/20 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                 >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-start sm:items-center gap-3">
                         <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/10 rounded-xl shrink-0">
                             <FiCheckSquare size={18} strokeWidth={2.5} />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                             <h4 className="text-sm font-bold text-foreground">All Systems Settled</h4>
-                            <p className="text-xs text-muted-foreground mt-0.5">
+                            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
                                 No pending approvals or unpaid dues for the {activeCount} active members.
                             </p>
                         </div>
                     </div>
-                    <div className="hidden sm:block px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/10 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                    <div className="self-stretch sm:self-auto flex items-center justify-center px-3 py-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/10 rounded-xl text-[10px] font-bold uppercase tracking-wider">
                         Clear ✓
                     </div>
                 </motion.div>

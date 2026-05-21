@@ -136,13 +136,15 @@ const UserDashboard = () => {
                     </div>
 
                     {/* Right Side: Account Summary Badge */}
-                    <div className="flex flex-wrap items-center gap-3 shrink-0">
-                        <div className="flex flex-col text-left md:text-right">
+                    <div className="flex flex-wrap items-center justify-between md:justify-start gap-4 shrink-0 pt-4 border-t border-border/10 md:border-t-0 md:pt-0">
+                        <div className="flex flex-col text-left md:text-right min-w-0 flex-1 md:flex-initial">
                             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Account Status</span>
-                            <span className="text-xs text-foreground font-semibold mt-0.5">{user?.email}</span>
+                            <span className="text-xs text-foreground font-semibold mt-0.5 truncate max-w-[180px] sm:max-w-none" title={user?.email}>
+                                {user?.email}
+                            </span>
                         </div>
                         <div className="h-8 w-px bg-border/60 hidden md:block" />
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400 rounded-xl text-[11px] font-bold uppercase tracking-wider shadow-sm select-none">
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400 rounded-xl text-[11px] font-bold uppercase tracking-wider shadow-sm select-none shrink-0">
                             <ShieldCheck size={14} strokeWidth={2.5} />
                             <span>Active</span>
                         </div>
