@@ -61,8 +61,7 @@ const MealModal = ({ isOpen, onClose, title, children }) => {
         <AnimatePresence>
             {isOpen && (
                 <div className="fixed inset-0 z-[1000] contain-[layout_style_paint]">
-                    {/* Backdrop — solid overlay, no blur on mobile */}
-                    <motion.button
+                    <motion.div
                         aria-label="Close modal"
                         onClick={onClose}
                         initial={{ opacity: 0 }}
@@ -72,7 +71,6 @@ const MealModal = ({ isOpen, onClose, title, children }) => {
                         className="absolute inset-0 w-full h-full bg-black/60 md:bg-black/50"
                     />
 
-                    {/* Modal */}
                     <div className="flex min-h-full items-center justify-center p-3 sm:p-4">
                         <motion.div
                             initial={initialState}
@@ -81,34 +79,34 @@ const MealModal = ({ isOpen, onClose, title, children }) => {
                             transition={transition.modal}
                             role="dialog"
                             aria-modal="true"
-                            style={{ willChange: 'transform, opacity' }}
                             className="
-                                relative w-full max-w-lg overflow-hidden rounded-3xl
+                                relative w-full max-w-lg overflow-hidden rounded-2xl
                                 border border-black/10 dark:border-white/10
                                 bg-white dark:bg-slate-900 text-slate-900 dark:text-white
-                                shadow-2xl
-                                md:bg-white/95 md:dark:bg-slate-900/95
+                                shadow-xl
                             "
                         >
-                            {/* Header */}
                             <div className="
                                 relative z-10 flex items-center justify-between
                                 px-4 py-4 sm:px-6 sm:py-5
                                 border-b border-black/10 dark:border-white/10
                             ">
                                 <div className="flex items-center gap-3 min-w-0">
-                                    <div className="w-1 h-6 rounded-full bg-gradient-to-b from-sky-500 to-violet-600" />
-                                    <h2 className="truncate text-lg font-semibold">
+                                    <div className="w-1 h-5 rounded-full bg-gradient-to-b from-sky-500 to-violet-600" />
+                                    <h2 className="truncate text-base font-semibold sm:text-lg">
                                         {title}
                                     </h2>
                                 </div>
 
-                                <Button variant="danger" iconOnly onClick={onClose}>
+                                <button
+                                    onClick={onClose}
+                                    aria-label="Close dialog"
+                                    className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                                >
                                     <HiOutlineXMark className="w-5 h-5" />
-                                </Button>
+                                </button>
                             </div>
 
-                            {/* Body */}
                             <div className="
                                 relative z-10 px-4 py-4 sm:px-6 sm:py-5
                                 max-h-[82dvh] overflow-y-auto

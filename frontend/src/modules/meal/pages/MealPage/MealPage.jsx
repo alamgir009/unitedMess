@@ -1,14 +1,13 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { createPortal } from 'react-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import {
     HiOutlinePlus, HiOutlineSquares2X2, HiOutlineListBullet,
     HiOutlineSparkles, HiOutlineShieldCheck, HiOutlineUserGroup,
     HiOutlineFire, HiOutlineMagnifyingGlass, HiOutlineXMark,
     HiOutlineAdjustmentsHorizontal, HiOutlineCalendarDays,
     HiOutlineExclamationTriangle, HiOutlineInformationCircle,
-    HiOutlineSun, HiOutlineMoon, HiOutlineNoSymbol, HiOutlineChevronDown,
+    HiOutlineChevronDown,
 } from 'react-icons/hi2';
 import { IoFastFoodOutline } from "react-icons/io5";
 import { format } from 'date-fns';
@@ -24,46 +23,35 @@ import { fetchMeals, createMeal, bulkCreateMeals, updateMeal, deleteMeal, reset,
 import DeleteMealDialog from '../../components/DeleteMealDialog/DeleteMealDialog';
 import MealSearchBar from '../../components/MealSearchBar/MealSearchBar';
 
-/* ── Skeleton ── */
-const SkeletonCard = () => (
-    <div className="rounded-3xl border border-white/10 dark:border-white/5 bg-card/50 p-6 animate-pulse">
+const SkeletonCard = React.memo(() => (
+    <div className="rounded-2xl border border-border/50 bg-card p-5 animate-pulse">
         <div className="flex justify-between mb-4">
             <div className="space-y-2">
-                <div className="h-8 w-16 bg-muted/60 rounded-xl" />
-                <div className="h-3.5 w-32 bg-muted/40 rounded-lg" />
+                <div className="h-7 w-14 bg-muted/60 rounded-md" />
+                <div className="h-3 w-28 bg-muted/40 rounded" />
             </div>
-            <div className="h-7 w-16 bg-muted/40 rounded-full" />
+            <div className="h-6 w-14 bg-muted/40 rounded-full" />
         </div>
         <div className="h-3 w-full bg-muted/30 rounded mb-1.5" />
-        <div className="h-3 w-2/3 bg-muted/20 rounded mb-6" />
-        <div className="h-9 w-full bg-muted/30 rounded-2xl" />
+        <div className="h-3 w-2/3 bg-muted/20 rounded mb-5" />
+        <div className="h-8 w-full bg-muted/30 rounded-xl" />
     </div>
-);
+));
+SkeletonCard.displayName = 'SkeletonCard';
 
-const StatPill = ({ icon: Icon, label, value, color, delay = 0, fullWidth = false }) => (
-    <motion.div
-        initial={{ opacity: 0, y: 8, scale: 0.96 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ delay, duration: 0.35 }}
-        className={`relative flex items-center gap-3 px-4 py-3 rounded-2xl border backdrop-blur-md overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${color}
-            ${fullWidth ? 'col-span-2' : ''}`}
-    >
-        <div className="relative z-10 flex items-center gap-3 w-full">
-            <div className="p-2 rounded-xl bg-white/10 flex-shrink-0">
-                <Icon className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-                <p className="text-xs font-medium opacity-70 leading-none truncate">{label}</p>
-                <p className="text-xl font-black leading-tight tabular-nums">{value}</p>
-            </div>
+const StatPill = React.memo(({ icon: Icon, label, value, color }) => (
+    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border overflow-hidden ${color}`}>
+        <div className="p-2 rounded-lg bg-white/10 flex-shrink-0">
+            <Icon className="w-4 h-4" />
         </div>
-        <div className="absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-white/60 dark:via-white/20 to-transparent pointer-events-none" />
-    </motion.div>
-);
+        <div className="min-w-0">
+            <p className="text-xs font-medium opacity-70 leading-none truncate">{label}</p>
+            <p className="text-lg font-semibold leading-tight tabular-nums">{value}</p>
+        </div>
+    </div>
+));
+StatPill.displayName = 'StatPill';
 
-
-
-/* ── Main Page ── */
 const MealPage = () => {
     const dispatch = useDispatch();
     const { meals, pagination, isLoading, isError, message } = useSelector((s) => s.meal);
@@ -82,11 +70,9 @@ const MealPage = () => {
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(20);
     const [errorMsg, setErrorMsg] = useState('');
-    const [deletingMeal, setDeletingMeal] = useState(null);  // full meal object shown in dialog
-    const [isDeleting, setIsDeleting] = useState(false); // spinner on confirm button
+    const [deletingMeal, setDeletingMeal] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
-    /* Fetch on mount and page/limit changes — no reset() in cleanup so
-       data survives tab switches and avoids flicker on strict-mode double-invoke */
     useEffect(() => {
         dispatch(fetchMeals({ page, limit }))
             .unwrap()
@@ -145,7 +131,6 @@ const MealPage = () => {
         }
     }, [editingMeal, dispatch, closeModal, isAdmin, page, limit]);
 
-    /* Delete handlers — MealList now passes the full meal object, not just the ID */
     const handleDeleteRequest = useCallback((meal) => setDeletingMeal(meal), []);
     const handleDeleteCancel = useCallback(() => { if (!isDeleting) setDeletingMeal(null); }, [isDeleting]);
     const handleDeleteConfirm = useCallback(async () => {
@@ -165,7 +150,6 @@ const MealPage = () => {
         }
     }, [dispatch, deletingMeal, isDeleting]);
 
-    /* Derived stats */
     const totalMeals = useMemo(() => meals?.reduce((s, m) => s + (m.mealCount || 0), 0) || 0, [meals]);
     const guestMeals = useMemo(() => meals?.reduce((s, m) => s + (m.guestCount || 0), 0) || 0, [meals]);
     const uniqueUsers = useMemo(() =>
@@ -191,17 +175,17 @@ const MealPage = () => {
     const hasActive = typeFilter !== 'all' || dateFrom || dateTo || searchQuery.trim();
     const isFiltered = hasActive;
 
+    const handlePageChange = useCallback((p) => setPage(p), []);
+    const handleLimitChange = useCallback((l) => { setLimit(l); setPage(1); }, []);
+    const handleToggleFilters = useCallback(() => setShowFilters(p => !p), []);
+
     return (
         <MainLayout>
-            <div className="relative min-h-[80vh]">
-                <div className="hidden md:block pointer-events-none absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/20 via-primary/5 to-transparent -z-10" />
-                <div className="hidden md:block pointer-events-none absolute bottom-10 left-0 w-[400px] h-[400px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-secondary-400/10 via-secondary-400/5 to-transparent -z-10" />
-
-                <div className="relative z-10 space-y-8">
+            <div className="relative min-h-[80vh] max-w-7xl mx-auto">
+                <div className="relative z-10 space-y-6">
 
                     {/* Header */}
-                    <motion.div initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
-                        className="flex flex-col sm:flex-row sm:items-start justify-between gap-5">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 animate-fade-in-up">
                         <div className="space-y-1">
                             {isAdmin ? (
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1 mb-1 rounded-full text-xs font-bold bg-secondary-400/10 text-secondary-400 border border-secondary-400/20">
@@ -212,7 +196,7 @@ const MealPage = () => {
                                     <HiOutlineSparkles className="w-3.5 h-3.5" /> My Meals
                                 </span>
                             )}
-                            <h2 className="text-3xl sm:text-4xl tracking-tight text-foreground">
+                            <h2 className="text-2xl sm:text-3xl tracking-tight text-foreground">
                                 {isAdmin ? 'Meals Overview' : 'Meals Hub'}
                             </h2>
                             <p className="text-sm text-muted-foreground font-medium">
@@ -220,50 +204,48 @@ const MealPage = () => {
                             </p>
                         </div>
 
-                        <div className="flex items-center gap-2.5 flex-shrink-0">
-                            <div className="hidden sm:flex items-center p-1 rounded-xl bg-muted/30 border border-white/10 dark:border-white/5">
-                                <button onClick={() => setViewMode('grid')} title="Grid view"
-                                    className={`p-2 rounded-lg transition-all duration-200 ${viewMode === 'grid' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                            <div className="hidden sm:flex items-center p-1 rounded-xl bg-muted/30 border border-border/40">
+                                <button
+                                    onClick={() => setViewMode('grid')}
+                                    title="Grid view"
+                                    aria-label="Grid view"
+                                    className={`p-2.5 rounded-lg transition-all duration-150 ${viewMode === 'grid' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                >
                                     <HiOutlineSquares2X2 className="w-4 h-4" />
                                 </button>
-                                <button onClick={() => setViewMode('list')} title="List view"
-                                    className={`p-2 rounded-lg transition-all duration-200 ${viewMode === 'list' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
+                                <button
+                                    onClick={() => setViewMode('list')}
+                                    title="List view"
+                                    aria-label="List view"
+                                    className={`p-2.5 rounded-lg transition-all duration-150 ${viewMode === 'list' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                >
                                     <HiOutlineListBullet className="w-4 h-4" />
                                 </button>
                             </div>
-                            <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} onClick={openCreate}
-                                className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold text-white relative overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/40 before:via-white/10 before:to-transparent"
-                                style={{ background: 'linear-gradient(135deg, hsl(210,92%,52%) 0%, hsl(268,76%,56%) 100%)' }}>
-                                <HiOutlinePlus className="w-4 h-4 relative" />
-                                <span className="relative">Add Meal</span>
-                            </motion.button>
+                            <button
+                                onClick={openCreate}
+                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md transition-all duration-150"
+                                style={{ background: 'linear-gradient(135deg, hsl(210,92%,52%) 0%, hsl(268,76%,56%) 100%)' }}
+                            >
+                                <HiOutlinePlus className="w-4 h-4" />
+                                <span>Add Meal</span>
+                            </button>
                         </div>
-                    </motion.div>
+                    </div>
 
-                    {/* ── Collapsible Dining Roster – Mobile‑First Fintech Design ── */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
-                        className={`
-                            rounded-2xl sm:rounded-[20px] 
-                            border border-border/60 dark:border-white/10
-                            bg-card dark:bg-card             
-                            shadow-sm md:shadow-lg
-                            overflow-hidden                    
-                            transition-shadow duration-300
-                            ${isRosterOpen ? 'ring-1 ring-primary/20 shadow-primary/5' : ''}
-                        `}
+                    {/* Dining Roster */}
+                    <div
+                        className="rounded-2xl border border-border/60 dark:border-white/10 bg-card overflow-hidden transition-shadow duration-200"
                     >
-                        {/* ── Header Toggle – full width, perfect corner match ── */}
                         <button
                             onClick={() => setIsRosterOpen(p => !p)}
-                            className="w-full px-4 py-4 sm:px-5 sm:py-5 flex items-center justify-between gap-3 text-left group"
+                            className="w-full px-4 py-3.5 sm:px-5 sm:py-4 flex items-center justify-between gap-3 text-left group"
                             aria-expanded={isRosterOpen}
+                            aria-label="Toggle dining roster"
                         >
                             <div className="flex items-center gap-3 min-w-0">
-                                {/* icon badge – slightly smaller on mobile */}
-                                <div className="p-2 sm:p-2.5 rounded-xl bg-primary/10 dark:bg-primary/10 text-primary">
+                                <div className="p-2 sm:p-2.5 rounded-xl bg-primary/10 text-primary">
                                     <IoFastFoodOutline className="w-4 h-4 sm:w-5 sm:h-5" />
                                 </div>
                                 <div>
@@ -271,26 +253,21 @@ const MealPage = () => {
                                         Dining Roster
                                     </h3>
                                     <p className="text-xs text-muted-foreground truncate">
-                                        {isRosterOpen
-                                            ? 'Viewing meal preferences'
-                                            : 'Tap to view meal preferences'}
+                                        {isRosterOpen ? 'Viewing meal preferences' : 'Tap to view meal preferences'}
                                     </p>
                                 </div>
                             </div>
 
-                            {/* Chevron – GPU‑friendly, no layout thrash */}
-                            <motion.div
-                                animate={{ rotate: isRosterOpen ? 180 : 0 }}
-                                transition={{ duration: 0.2, ease: 'easeInOut' }}
-                                className="text-muted-foreground group-hover:text-foreground transition-colors"
+                            <div
+                                className="text-muted-foreground group-hover:text-foreground transition-transform duration-200"
+                                style={{ transform: isRosterOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
                             >
                                 <HiOutlineChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />
-                            </motion.div>
+                            </div>
                         </button>
 
-                        {/* ── Collapsible Body – pure CSS grid trick, no JS height calc ── */}
                         <div
-                            className="grid transition-all duration-400 ease-out will-change-[grid-template-rows]"
+                            className="grid transition-all duration-300 ease-out"
                             style={{
                                 gridTemplateRows: isRosterOpen ? '1fr' : '0fr',
                                 transitionTimingFunction: 'cubic-bezier(0.33, 1, 0.68, 1)',
@@ -298,33 +275,28 @@ const MealPage = () => {
                         >
                             <div className="overflow-hidden">
                                 <div
-                                    className={`
-                                    px-4 pb-4 sm:px-5 sm:pb-5 
-                                    transition-all duration-400 ease-out
-                                    ${isRosterOpen ? 'opacity-100 translate-y-0 delay-100' : 'opacity-0 -translate-y-1.5'}
-                                    `}
+                                    className={`px-4 pb-4 sm:px-5 sm:pb-5 transition-all duration-300 ease-out ${isRosterOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'}`}
                                 >
                                     <MealPolling selectedDate={new Date().toISOString()} />
                                 </div>
                             </div>
                         </div>
-                    </motion.div>
+                    </div>
 
                     {/* Stats */}
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
-                        className={`grid grid-cols-2 gap-3 ${isAdmin ? 'md:grid-cols-3 lg:grid-cols-4' : 'md:grid-cols-3'}`}>
+                    <div className={`grid grid-cols-2 gap-3 ${isAdmin ? 'md:grid-cols-3 lg:grid-cols-4' : 'md:grid-cols-3'}`}>
                         {(() => {
                             const pills = [
-                                { delay: 0.10, icon: HiOutlineSparkles, label: 'Total Records', value: meals?.length || 0, color: 'bg-primary/10 border-primary/20 text-primary' },
-                                { delay: 0.15, icon: IoFastFoodOutline, label: 'Total Meals', value: totalMeals, color: 'bg-accent/10 border-accent/20 text-accent' },
-                                ...(guestMeals > 0 ? [{ delay: 0.20, icon: HiOutlineUserGroup, label: 'Guest Meals', value: guestMeals, color: 'bg-amber-500/10 border-amber-500/20 text-amber-500' }] : []),
-                                ...(isAdmin ? [{ delay: 0.25, icon: HiOutlineUserGroup, label: 'Members', value: uniqueUsers, color: 'bg-secondary-400/10 border-secondary-400/20 text-secondary-400' }] : []),
+                                { icon: HiOutlineSparkles, label: 'Total Records', value: meals?.length || 0, color: 'bg-primary/10 border-primary/20 text-primary' },
+                                { icon: IoFastFoodOutline, label: 'Total Meals', value: totalMeals, color: 'bg-accent/10 border-accent/20 text-accent' },
+                                ...(guestMeals > 0 ? [{ icon: HiOutlineUserGroup, label: 'Guest Meals', value: guestMeals, color: 'bg-amber-500/10 border-amber-500/20 text-amber-500' }] : []),
+                                ...(isAdmin ? [{ icon: HiOutlineUserGroup, label: 'Members', value: uniqueUsers, color: 'bg-secondary-400/10 border-secondary-400/20 text-secondary-400' }] : []),
                             ];
-                            return pills.map((p, i) => (
-                                <StatPill key={p.label} {...p} fullWidth={isAdmin && i === pills.length - 1 && pills.length % 2 !== 0} />
+                            return pills.map((p) => (
+                                <StatPill key={p.label} {...p} />
                             ));
                         })()}
-                    </motion.div>
+                    </div>
 
                     {/* Search + Filter Bar */}
                     <MealSearchBar
@@ -338,7 +310,7 @@ const MealPage = () => {
                         dateTo={dateTo}
                         onDateToChange={setDateTo}
                         showFilters={showFilters}
-                        onToggleFilters={() => setShowFilters(p => !p)}
+                        onToggleFilters={handleToggleFilters}
                         filteredCount={filtered?.length || 0}
                         totalCount={meals?.length || 0}
                         hasActive={hasActive}
@@ -348,44 +320,41 @@ const MealPage = () => {
                     {/* Partial-search info banner */}
                     <AnimatePresence>
                         {isFiltered && meals?.length > 0 && (
-                            <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                                className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-primary/5 border border-primary/20 text-primary text-xs font-medium">
+                            <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-primary/5 border border-primary/20 text-primary text-xs font-medium animate-fade-in">
                                 <HiOutlineInformationCircle className="w-4 h-4 flex-shrink-0" />
                                 Filtering within the current page ({meals.length} records). Clear filters to browse all pages.
-                            </motion.div>
+                            </div>
                         )}
                     </AnimatePresence>
 
                     {/* Error Banner */}
                     <AnimatePresence>
                         {(isError || errorMsg) && (
-                            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-                                <div className="flex items-start gap-3 p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-500">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping mt-0.5 flex-shrink-0" />
-                                    <p className="flex-1 text-sm font-semibold">{errorMsg || message || 'Something went wrong. Please try again.'}</p>
-                                    <button onClick={() => { setErrorMsg(''); dispatch(reset()); }}
-                                        className="flex-shrink-0 p-1 rounded-lg hover:bg-red-500/10 transition-colors text-red-400 hover:text-red-600" title="Dismiss">
-                                        <HiOutlineXMark className="w-5 h-5" />
-                                    </button>
-                                </div>
-                            </motion.div>
+                            <div className="flex items-start gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 animate-fade-in">
+                                <span className="w-2 h-2 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
+                                <p className="flex-1 text-sm font-medium">{errorMsg || message || 'Something went wrong. Please try again.'}</p>
+                                <button
+                                    onClick={() => { setErrorMsg(''); dispatch(reset()); }}
+                                    className="flex-shrink-0 p-1 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/10 transition-colors"
+                                    title="Dismiss"
+                                    aria-label="Dismiss error"
+                                >
+                                    <HiOutlineXMark className="w-5 h-5" />
+                                </button>
+                            </div>
                         )}
                     </AnimatePresence>
 
-
                     {/* Content */}
                     {isLoading && (!meals || meals.length === 0) ? (
-                        <div className={`grid gap-5 ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
+                        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                             {[1, 2, 3, 4, 5, 6].map(n => <SkeletonCard key={n} />)}
                         </div>
                     ) : (
                         <>
                             <MealList meals={filtered} viewMode={viewMode} onEdit={openEdit} onDelete={handleDeleteRequest} isAdmin={isAdmin} />
                             {!isFiltered && (
-                                <Pagination pagination={pagination}
-                                    onPageChange={p => setPage(p)}
-                                    onLimitChange={l => { setLimit(l); setPage(1); }} />
+                                <Pagination pagination={pagination} onPageChange={handlePageChange} onLimitChange={handleLimitChange} />
                             )}
                         </>
                     )}
@@ -404,7 +373,7 @@ const MealPage = () => {
                     />
                 </MealModal>
 
-                {/* Delete confirm dialog — portal, sits above everything */}
+                {/* Delete confirm dialog */}
                 {deletingMeal && (
                     <DeleteMealDialog
                         meal={deletingMeal}

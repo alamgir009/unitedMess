@@ -11,29 +11,25 @@ import {
 import { format } from 'date-fns';
 import { Button } from '@/shared/components/ui';
 
-/* ─── constants (stable references, never recreated) ────────────────────── */
-
 const MEAL_TYPE_META = {
-    both:  { label: 'Both Meals',    Icon: HiOutlineSparkles, color: 'text-primary bg-primary/10'        },
-    day:   { label: 'Day Meal',      Icon: HiOutlineSun,      color: 'text-amber-500 bg-amber-500/10'    },
-    night: { label: 'Night Meal',    Icon: HiOutlineMoon,     color: 'text-indigo-400 bg-indigo-400/10'  },
-    off:   { label: 'No Meal (Off)', Icon: HiOutlineNoSymbol, color: 'text-muted-foreground bg-muted/40' },
+    both: { label: 'Both Meals', Icon: HiOutlineSparkles, color: 'text-primary bg-primary/10' },
+    day: { label: 'Day Meal', Icon: HiOutlineSun, color: 'text-amber-500 bg-amber-500/10' },
+    night: { label: 'Night Meal', Icon: HiOutlineMoon, color: 'text-indigo-400 bg-indigo-400/10' },
+    off: { label: 'No Meal (Off)', Icon: HiOutlineNoSymbol, color: 'text-muted-foreground bg-muted/40' },
 };
 
-/* Framer variants defined outside component → stable object refs */
 const backdropVariants = {
-    hidden:  { opacity: 0 },
+    hidden: { opacity: 0 },
     visible: { opacity: 1 },
-    exit:    { opacity: 0 },
+    exit: { opacity: 0 },
 };
 
 const panelVariants = {
-    hidden:  { opacity: 0, y: 48 },
-    visible: { opacity: 1, y: 0  },
-    exit:    { opacity: 0, y: 48 },
+    hidden: { opacity: 0, y: 48 },
+    visible: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: 48 },
 };
 
-/* Spring tuned for composite-only path: no sub-1 mass, no low stiffness */
 const panelTransition = {
     type: 'spring',
     stiffness: 420,
@@ -43,8 +39,6 @@ const panelTransition = {
 
 const fastFade = { duration: 0.18 };
 
-/* ─── body-scroll lock (ref-counted, SSR-safe) ──────────────────────────── */
-
 let lockCount = 0;
 
 function lockBodyScroll() {
@@ -52,7 +46,6 @@ function lockBodyScroll() {
     if (lockCount === 0) {
         const scrollY = window.scrollY;
         document.body.style.overflow = 'hidden';
-        /* Prevent layout shift caused by scrollbar disappearing */
         document.body.style.paddingRight =
             `${window.innerWidth - document.documentElement.clientWidth}px`;
         document.body.dataset.scrollY = String(scrollY);
@@ -70,12 +63,9 @@ function unlockBodyScroll() {
     }
 }
 
-/* ─── component ─────────────────────────────────────────────────────────── */
-
 const DeleteMealDialog = memo(({ meal, onConfirm, onCancel, isDeleting }) => {
     const isOpen = Boolean(meal);
 
-    /* Stable escape handler — won't re-register on every render */
     const handleKeyDown = useCallback(
         (e) => { if (e.key === 'Escape' && !isDeleting) onCancel(); },
         [isDeleting, onCancel],
@@ -87,7 +77,6 @@ const DeleteMealDialog = memo(({ meal, onConfirm, onCancel, isDeleting }) => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, handleKeyDown]);
 
-    /* Body-scroll lock */
     useEffect(() => {
         if (!isOpen) return;
         lockBodyScroll();
@@ -96,26 +85,19 @@ const DeleteMealDialog = memo(({ meal, onConfirm, onCancel, isDeleting }) => {
 
     if (typeof document === 'undefined') return null;
 
-    const meta      = MEAL_TYPE_META[meal?.type] ?? MEAL_TYPE_META.both;
-    const { Icon }  = meta;
+    const meta = MEAL_TYPE_META[meal?.type] ?? MEAL_TYPE_META.both;
+    const { Icon } = meta;
     const dateLabel = meal?.date
         ? format(new Date(meal.date), 'EEEE, MMMM d, yyyy')
         : '—';
 
     return createPortal(
-        /*
-         * AnimatePresence lives HERE (outside the portal content),
-         * so Framer tracks mount/unmount at the React tree level,
-         * not inside the portal callback — eliminates double-mount jitter.
-         */
         <AnimatePresence mode="wait">
             {isOpen && (
                 <div
                     className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center"
-                    /* Promote entire dialog subtree to its own compositor layer */
                     style={{ isolation: 'isolate' }}
                 >
-                    {/* ── Backdrop ── */}
                     <motion.div
                         key="del-backdrop"
                         variants={backdropVariants}
@@ -123,17 +105,11 @@ const DeleteMealDialog = memo(({ meal, onConfirm, onCancel, isDeleting }) => {
                         animate="visible"
                         exit="exit"
                         transition={fastFade}
-                        /*
-                         * backdrop-blur removed — it forces a full composite
-                         * reorder on every animation frame on mobile GPUs.
-                         * Visual parity kept via the semi-opaque bg.
-                         */
                         className="absolute inset-0 bg-black/60"
                         onClick={() => !isDeleting && onCancel()}
                         aria-hidden="true"
                     />
 
-                    {/* ── Panel ── */}
                     <motion.div
                         key="del-panel"
                         role="alertdialog"
@@ -145,66 +121,47 @@ const DeleteMealDialog = memo(({ meal, onConfirm, onCancel, isDeleting }) => {
                         animate="visible"
                         exit="exit"
                         transition={panelTransition}
-                        style={{
-                            /*
-                             * Force GPU layer promotion BEFORE animation starts.
-                             * translateZ(0) moves the element to its own layer;
-                             * will-change tells the browser to allocate it ahead of time.
-                             * Result: spring runs entirely on the compositor thread —
-                             * zero layout/paint cost per frame.
-                             */
-                            willChange: 'transform, opacity',
-                            transform: 'translateZ(0)',
-                        }}
+                        style={{ willChange: 'transform, opacity' }}
                         className={[
                             'relative z-10 w-full sm:max-w-[380px] mx-auto',
-                            'rounded-t-[28px] sm:rounded-[28px]',
+                            'rounded-t-2xl sm:rounded-2xl',
                             'bg-white dark:bg-slate-900',
                             'border-t border-x sm:border border-black/[0.08] dark:border-white/10',
-                            /*
-                             * Single box-shadow token instead of arbitrary value —
-                             * avoids per-frame re-parse by Tailwind's JIT runtime.
-                             */
-                            'shadow-2xl',
+                            'shadow-xl',
                             'overflow-hidden',
                         ].join(' ')}
                     >
-                        {/* Top accent gradient bar */}
                         <div className="h-[3px] w-full bg-gradient-to-r from-rose-500 via-red-400 to-orange-400" />
 
-                        {/* Drag indicator — mobile only */}
                         <div className="flex justify-center pt-3 pb-1 sm:hidden" aria-hidden="true">
                             <div className="w-10 h-1 rounded-full bg-black/10 dark:bg-white/20" />
                         </div>
 
                         <div className="px-6 pt-4 pb-7 sm:px-8 sm:pt-6 sm:pb-8 space-y-5">
 
-                            {/* Warning icon */}
                             <div className="flex justify-center">
-                                <div className="w-[60px] h-[60px] rounded-[18px] bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 flex items-center justify-center">
-                                    <HiOutlineExclamationTriangle className="w-7 h-7 text-rose-500" />
+                                <div className="w-[56px] h-[56px] rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 flex items-center justify-center">
+                                    <HiOutlineExclamationTriangle className="w-6 h-6 text-rose-500" />
                                 </div>
                             </div>
 
-                            {/* Heading */}
                             <div className="text-center space-y-1">
                                 <h3
                                     id="del-dialog-title"
-                                    className="text-[17px] font-bold tracking-tight text-foreground"
+                                    className="text-base font-bold tracking-tight text-foreground"
                                 >
                                     Delete Meal Record?
                                 </h3>
                                 <p
                                     id="del-dialog-desc"
-                                    className="text-[13px] text-muted-foreground leading-relaxed"
+                                    className="text-xs text-muted-foreground leading-relaxed"
                                 >
                                     This is permanent and cannot be undone.
                                 </p>
                             </div>
 
-                            {/* Meal preview chip */}
-                            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-muted/30 border border-border/50">
-                                <div className={`p-2 rounded-xl flex-shrink-0 ${meta.color}`}>
+                            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/30 border border-border/50">
+                                <div className={`p-2 rounded-lg flex-shrink-0 ${meta.color}`}>
                                     <Icon className="w-4 h-4" />
                                 </div>
                                 <div className="min-w-0">
@@ -217,7 +174,6 @@ const DeleteMealDialog = memo(({ meal, onConfirm, onCancel, isDeleting }) => {
                                 </div>
                             </div>
 
-                            {/* Action buttons */}
                             <div className="flex flex-col-reverse sm:flex-row gap-2.5 mt-2">
                                 <Button
                                     variant="secondary"
@@ -231,7 +187,7 @@ const DeleteMealDialog = memo(({ meal, onConfirm, onCancel, isDeleting }) => {
                                     variant="danger"
                                     onClick={onConfirm}
                                     isLoading={isDeleting}
-                                    className="w-full sm:flex-1 shadow-lg shadow-rose-500/25"
+                                    className="w-full sm:flex-1"
                                 >
                                     {isDeleting ? 'Deleting…' : 'Yes, Delete'}
                                 </Button>
