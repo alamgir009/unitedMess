@@ -378,6 +378,9 @@ const PaymentPage = () => {
                         isPaying={isPaying}
                     />
 
+                    {/* Stats bar */}
+                    <PaymentStatsBar payments={payments || []} isAdmin={isAdmin} />
+
                     {/* Invoice panel */}
                     <AnimatePresence>
                         {isInvoiceLoading && (
@@ -423,8 +426,6 @@ const PaymentPage = () => {
                         )}
                     </AnimatePresence>
 
-                    {/* Stats bar */}
-                    <PaymentStatsBar payments={payments || []} isAdmin={isAdmin} />
 
                     {/* Search + filter bar */}
                     <PaymentSearchBar

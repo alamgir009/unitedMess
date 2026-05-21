@@ -234,6 +234,21 @@ const MealPage = () => {
                         </div>
                     </div>
 
+                    {/* Stats */}
+                    <div className={`grid grid-cols-2 gap-3 ${isAdmin ? 'md:grid-cols-3 lg:grid-cols-4' : 'md:grid-cols-3'}`}>
+                        {(() => {
+                            const pills = [
+                                { icon: HiOutlineSparkles, label: 'Total Records', value: meals?.length || 0, color: 'bg-primary/10 border-primary/20 text-primary' },
+                                { icon: IoFastFoodOutline, label: 'Total Meals', value: totalMeals, color: 'bg-accent/10 border-accent/20 text-accent' },
+                                ...(guestMeals > 0 ? [{ icon: HiOutlineUserGroup, label: 'Guest Meals', value: guestMeals, color: 'bg-amber-500/10 border-amber-500/20 text-amber-500' }] : []),
+                                ...(isAdmin ? [{ icon: HiOutlineUserGroup, label: 'Members', value: uniqueUsers, color: 'bg-secondary-400/10 border-secondary-400/20 text-secondary-400' }] : []),
+                            ];
+                            return pills.map((p) => (
+                                <StatPill key={p.label} {...p} />
+                            ));
+                        })()}
+                    </div>
+
                     {/* Dining Roster */}
                     <div
                         className="rounded-2xl border border-border/60 dark:border-white/10 bg-card overflow-hidden transition-shadow duration-200"
@@ -283,20 +298,6 @@ const MealPage = () => {
                         </div>
                     </div>
 
-                    {/* Stats */}
-                    <div className={`grid grid-cols-2 gap-3 ${isAdmin ? 'md:grid-cols-3 lg:grid-cols-4' : 'md:grid-cols-3'}`}>
-                        {(() => {
-                            const pills = [
-                                { icon: HiOutlineSparkles, label: 'Total Records', value: meals?.length || 0, color: 'bg-primary/10 border-primary/20 text-primary' },
-                                { icon: IoFastFoodOutline, label: 'Total Meals', value: totalMeals, color: 'bg-accent/10 border-accent/20 text-accent' },
-                                ...(guestMeals > 0 ? [{ icon: HiOutlineUserGroup, label: 'Guest Meals', value: guestMeals, color: 'bg-amber-500/10 border-amber-500/20 text-amber-500' }] : []),
-                                ...(isAdmin ? [{ icon: HiOutlineUserGroup, label: 'Members', value: uniqueUsers, color: 'bg-secondary-400/10 border-secondary-400/20 text-secondary-400' }] : []),
-                            ];
-                            return pills.map((p) => (
-                                <StatPill key={p.label} {...p} />
-                            ));
-                        })()}
-                    </div>
 
                     {/* Search + Filter Bar */}
                     <MealSearchBar
