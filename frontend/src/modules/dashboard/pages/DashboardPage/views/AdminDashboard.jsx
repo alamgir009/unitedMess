@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { fetchAdminDashboardStats } from '../../../store/dashboard.slice';
 import { fetchUsers, searchUsers } from '../../../../members/store/members.slice';
 import StatOverview from '../../../components/StatOverview/StatOverview';
@@ -13,17 +14,17 @@ import {
 } from 'react-icons/fi';
 
 
-// Summary alert pill
+// Summary alert pill - styled cleanly with HSL border and text values
 const AlertPill = ({ count, label, color, icon: Icon }) => {
     if (!count || count === 0) return null;
     const colors = {
-        amber: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/10',
-        red:   'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/10',
-        green: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/10',
+        amber: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/10 dark:border-amber-500/20',
+        red:   'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/10 dark:border-rose-500/20',
+        green: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/10 dark:border-emerald-500/20',
     };
     return (
         <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] font-bold uppercase tracking-wider ${colors[color] || colors.amber}`}>
-            <Icon size={12} strokeWidth={2.5} />
+            <Icon size={12} strokeWidth={2.5} className="shrink-0" />
             <span><strong>{count}</strong> {label}</span>
         </div>
     );
@@ -52,18 +53,19 @@ const AdminDashboard = () => {
         dispatch(fetchUsers({ page: 1, limit: 100 }));
     }, [dispatch]);
 
-    const handleSearch = (query) => {
+    const handleSearch = useCallback((query) => {
         if (query.trim()) {
             dispatch(searchUsers({ search: query }));
         } else {
             dispatch(fetchUsers({ page: 1, limit: 100 }));
         }
-    };
+    }, [dispatch]);
 
-    const handleRefresh = () => {
+    const handleRefresh = useCallback(() => {
+        if (isDashboardLoading || isMembersLoading) return;
         dispatch(fetchAdminDashboardStats());
         dispatch(fetchUsers({ page: 1, limit: 100 }));
-    };
+    }, [dispatch, isDashboardLoading, isMembersLoading]);
 
     // ── Alert counts from visible user list ──────────────────────────────────
     const pendingCount    = users.filter(u => u.userStatus === 'pending').length;
@@ -76,7 +78,7 @@ const AdminDashboard = () => {
     const hasAlerts = pendingCount > 0 || unpaidMealCount > 0 || unpaidGasCount > 0 || inactiveCount > 0 || deniedCount > 0;
     const allSettled = !hasAlerts && users.length > 0;
 
-    // Stats cards
+    // Stats cards configuration
     const statsData = [
         {
             title: 'Active Members',
@@ -104,24 +106,25 @@ const AdminDashboard = () => {
 
     return (
         <div className="space-y-6">
-
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                <div className="space-y-1">
-                    <h2 className="text-xl sm:text-2xl tracking-tight text-foreground flex items-center gap-3">
-                        <div className="p-2.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/10 rounded-xl">
-                            <FiCommand size={18} />
-                        </div>
-                        Command Center
-                    </h2>
-                    <p className="text-sm text-muted-foreground">
-                        Global admin overview and controls
-                    </p>
+            {/* Header / Actions Row */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="p-3 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/10 rounded-2xl shrink-0 shadow-sm">
+                        <FiCommand size={20} />
+                    </div>
+                    <div className="min-w-0">
+                        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground leading-tight">
+                            Command Center
+                        </h2>
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 truncate">
+                            Global admin overview and system controls
+                        </p>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-auto">
                     <button
                         onClick={() => setShowNotificationModal(true)}
-                        className="flex items-center gap-1.5 px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-xl border border-primary/20 text-primary bg-primary/10 hover:bg-primary/20 transition-all duration-150 transform-gpu hover:-translate-y-0.5"
+                        className="flex items-center gap-1.5 px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 shadow-sm"
                     >
                         <FiSend size={13} />
                         Send Notification
@@ -129,59 +132,80 @@ const AdminDashboard = () => {
                     <button
                         onClick={handleRefresh}
                         disabled={isDashboardLoading || isMembersLoading}
-                        className="flex items-center gap-1.5 px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-150 transform-gpu hover:-translate-y-0.5 disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-xl border border-border bg-card text-foreground hover:bg-muted/40 transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <FiRefreshCw size={13} className={isDashboardLoading || isMembersLoading ? 'animate-spin' : ''} />
                         Refresh
                     </button>
                 </div>
-
-                <SendNotificationModal
-                    isOpen={showNotificationModal}
-                    onClose={() => setShowNotificationModal(false)}
-                />
             </div>
 
-            {/* Stats Cards */}
-            <div className={isDashboardLoading ? 'opacity-60 pointer-events-none transition-opacity' : 'transition-opacity'}>
+            {/* Stats Cards Section */}
+            <div className={isDashboardLoading ? 'opacity-60 pointer-events-none transition-opacity duration-200' : 'transition-opacity duration-200'}>
                 <StatOverview stats={statsData} />
             </div>
 
-            {/* Alert Banners — only when there ARE alerts ──────────────────── */}
+            {/* Action Items Panel (alerts present) */}
             {hasAlerts && (
-                <div className="flex flex-wrap gap-2 items-center">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mr-1">
-                        Alerts:
-                      </span>
-                    <AlertPill count={pendingCount}    label="pending approval"  color="amber" icon={FiAlertCircle} />
-                    <AlertPill count={inactiveCount}   label="inactive members"  color="amber" icon={FiAlertCircle} />
-                    <AlertPill count={deniedCount}     label="denied members"    color="red"   icon={FiAlertCircle} />
-                    <AlertPill count={unpaidMealCount} label="unpaid meal bills" color="red"   icon={FiDollarSign}  />
-                    <AlertPill count={unpaidGasCount}  label="unpaid gas bills"  color="red"   icon={FiPieChart}    />
-                </div>
-            )}
-
-            {/* All-settled pill — only when all is clear and users are loaded ── */}
-            {allSettled && (
-                <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mr-1">
-                        Status:
-                    </span>
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] font-bold uppercase tracking-wider bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-                        <FiCheckSquare size={12} strokeWidth={2.5} />
-                        <span><strong>{activeCount}</strong> all settled</span>
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-card border border-border/50 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3"
+                >
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <FiAlertCircle size={14} className="text-amber-500" />
+                        <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+                            Action Items Required
+                        </span>
                     </div>
-                </div>
+                    <div className="flex flex-wrap gap-2.5">
+                        <AlertPill count={pendingCount}    label="pending approval"  color="amber" icon={FiAlertCircle} />
+                        <AlertPill count={inactiveCount}   label="inactive members"  color="amber" icon={FiAlertCircle} />
+                        <AlertPill count={deniedCount}     label="denied members"    color="red"   icon={FiAlertCircle} />
+                        <AlertPill count={unpaidMealCount} label="unpaid meal bills" color="red"   icon={FiDollarSign}  />
+                        <AlertPill count={unpaidGasCount}  label="unpaid gas bills"  color="red"   icon={FiPieChart}    />
+                    </div>
+                </motion.div>
             )}
 
-            {/* Members Table */}
-            <div>
+            {/* All-Settled Status Panel (no alerts) */}
+            {allSettled && (
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-card border border-emerald-500/10 dark:border-emerald-500/20 rounded-2xl p-4 sm:p-5 shadow-sm flex items-center justify-between gap-4"
+                >
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/10 rounded-xl shrink-0">
+                            <FiCheckSquare size={18} strokeWidth={2.5} />
+                        </div>
+                        <div>
+                            <h4 className="text-sm font-bold text-foreground">All Systems Settled</h4>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                                No pending approvals or unpaid dues for the {activeCount} active members.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="hidden sm:block px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/10 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                        Clear ✓
+                    </div>
+                </motion.div>
+            )}
+
+            {/* Members List Table Container */}
+            <div className="rounded-2xl border border-border/50 bg-card overflow-hidden shadow-sm">
                 <MembersTable
                     users={users}
                     isLoading={isMembersLoading}
                     onSearch={handleSearch}
                 />
             </div>
+
+            {/* Send Notification Modal Dialog */}
+            <SendNotificationModal
+                isOpen={showNotificationModal}
+                onClose={() => setShowNotificationModal(false)}
+            />
         </div>
     );
 };

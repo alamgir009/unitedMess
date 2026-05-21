@@ -10,16 +10,14 @@ import {
     Sunset,
     Moon,
     ShieldCheck,
-    ShieldOff,
-    BadgeCheck,
     Sparkles,
-    Building2,
 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────────────────────
    IST-aware greeting  (UTC + 5:30)
    Returns Tailwind classes for hardware-friendly rendering.
-───────────────────────────────────────────────────────────── */
+   No raw dynamic inline strings.
+   ───────────────────────────────────────────────────────────── */
 const getISTGreeting = () => {
     const nowIST = new Date(
         new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
@@ -30,46 +28,46 @@ const getISTGreeting = () => {
         label: 'Good Morning',
         sub: 'Rise & shine — your finances await.',
         Icon: Sunrise,
-        iconColorClass: 'text-amber-600 dark:text-amber-400',
+        iconColorClass: 'text-amber-500 dark:text-amber-400',
         pillClass: 'bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-400',
         cardBorderClass: 'border-amber-500/20 dark:border-amber-500/30',
-        bgGradient: 'bg-gradient-to-br from-amber-500/[0.04] to-transparent',
+        bgGradient: 'bg-gradient-to-br from-amber-500/[0.03] to-transparent',
     };
 
     if (h >= 12 && h < 17) return {
         label: 'Good Afternoon',
         sub: 'Keep tracking — every rupee counts.',
         Icon: Sun,
-        iconColorClass: 'text-orange-600 dark:text-orange-400',
+        iconColorClass: 'text-orange-500 dark:text-orange-400',
         pillClass: 'bg-orange-500/10 border-orange-500/20 text-orange-700 dark:text-orange-400',
         cardBorderClass: 'border-orange-500/20 dark:border-orange-500/30',
-        bgGradient: 'bg-gradient-to-br from-orange-500/[0.04] to-transparent',
+        bgGradient: 'bg-gradient-to-br from-orange-500/[0.03] to-transparent',
     };
 
     if (h >= 17 && h < 21) return {
         label: 'Good Evening',
         sub: "Wind down — review today's activity.",
         Icon: Sunset,
-        iconColorClass: 'text-purple-600 dark:text-purple-400',
+        iconColorClass: 'text-purple-500 dark:text-purple-400',
         pillClass: 'bg-purple-500/10 border-purple-500/20 text-purple-700 dark:text-purple-400',
         cardBorderClass: 'border-purple-500/20 dark:border-purple-500/30',
-        bgGradient: 'bg-gradient-to-br from-purple-500/[0.04] to-transparent',
+        bgGradient: 'bg-gradient-to-br from-purple-500/[0.03] to-transparent',
     };
 
     return {
         label: 'Good Night',
         sub: 'Rest well — accounts are secure.',
         Icon: Moon,
-        iconColorClass: 'text-blue-600 dark:text-blue-400',
+        iconColorClass: 'text-blue-500 dark:text-blue-400',
         pillClass: 'bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-400',
         cardBorderClass: 'border-blue-500/20 dark:border-blue-500/30',
-        bgGradient: 'bg-gradient-to-br from-blue-500/[0.04] to-transparent',
+        bgGradient: 'bg-gradient-to-br from-blue-500/[0.03] to-transparent',
     };
 };
 
 /* ─────────────────────────────────────────────────────────────
    Component
-───────────────────────────────────────────────────────────── */
+   ───────────────────────────────────────────────────────────── */
 const UserDashboard = () => {
     const dispatch = useDispatch();
     const g = useMemo(() => getISTGreeting(), []);
@@ -81,7 +79,6 @@ const UserDashboard = () => {
         recentActivities,
         isLoading,
         isActivitiesLoading,
-        // Per-section flags added to dashboard.slice
         userStatsLoaded,
         isUserStatsError,
     } = useSelector((state) => state.dashboard);
@@ -94,12 +91,12 @@ const UserDashboard = () => {
     }, [dispatch]);
 
     return (
-        <div className="relative space-y-6 animate-fade-in-up">
+        <div className="space-y-6">
 
             {/* ── Greeting Header Card ── */}
             <div
                 className={cn(
-                    "relative overflow-hidden rounded-2xl p-5 sm:p-7 bg-card border shadow-sm",
+                    "relative overflow-hidden rounded-2xl p-6 sm:p-8 bg-card border shadow-sm transition-all duration-200",
                     g.cardBorderClass
                 )}
             >
@@ -111,15 +108,14 @@ const UserDashboard = () => {
                     )}
                 />
 
-                <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
-
-                    {/* Left */}
-                    <div className="min-w-0">
-
+                <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    
+                    {/* Left Side: Dynamic Greeting */}
+                    <div className="min-w-0 flex-1">
                         {/* Greeting pill */}
                         <div
                             className={cn(
-                                "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-3 border",
+                                "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-4 border",
                                 g.pillClass
                             )}
                         >
@@ -127,16 +123,29 @@ const UserDashboard = () => {
                             {g.label}
                         </div>
 
-                        {/* Name */}
-                        <h2 className="flex items-center gap-2 flex-wrap text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground leading-tight">
-                            {user?.name ?? 'Member'}
-                            <Sparkles className={cn("w-5 h-5", g.iconColorClass)} strokeWidth={2} />
+                        {/* User Name */}
+                        <h2 className="flex items-center gap-2.5 flex-wrap text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground leading-tight">
+                            <span>Welcome, {user?.name ?? 'Member'}</span>
+                            <Sparkles className={cn("w-5 h-5 animate-pulse", g.iconColorClass)} strokeWidth={2} />
                         </h2>
 
-                        {/* Sub */}
-                        <p className="mt-1.5 text-sm text-muted-foreground">
+                        {/* Greeting Subtext */}
+                        <p className="mt-2 text-sm sm:text-base text-muted-foreground font-medium leading-relaxed">
                             {g.sub}
                         </p>
+                    </div>
+
+                    {/* Right Side: Account Summary Badge */}
+                    <div className="flex flex-wrap items-center gap-3 shrink-0">
+                        <div className="flex flex-col text-left md:text-right">
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Account Status</span>
+                            <span className="text-xs text-foreground font-semibold mt-0.5">{user?.email}</span>
+                        </div>
+                        <div className="h-8 w-px bg-border/60 hidden md:block" />
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400 rounded-xl text-[11px] font-bold uppercase tracking-wider shadow-sm select-none">
+                            <ShieldCheck size={14} strokeWidth={2.5} />
+                            <span>Active</span>
+                        </div>
                     </div>
 
                 </div>
@@ -144,11 +153,9 @@ const UserDashboard = () => {
 
             {/* ── Widget Grid ── */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
-
                 <PayableWidget
                     mealPayable={userMealPayable?.payableAmount}
                     gasBillPayable={userGasBillPayable?.payableAmount}
-                    // Pass authoritative backend status fields
                     mealPaymentStatus={userMealPayable?.paymentStatus ?? null}
                     gasBillStatus={userGasBillPayable?.status ?? null}
                     isLoading={isLoading}
@@ -160,7 +167,6 @@ const UserDashboard = () => {
                     activities={recentActivities}
                     isLoading={isActivitiesLoading}
                 />
-
             </div>
         </div>
     );
