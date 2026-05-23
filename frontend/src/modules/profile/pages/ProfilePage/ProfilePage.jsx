@@ -26,7 +26,7 @@ import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import { Card, CardContent } from '@/shared/ui/Card/Card';
 import { logout, deactivateAccount } from '@/modules/auth/store/auth.slice';
 import { useNavigate } from 'react-router-dom';
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useState, useMemo, Component } from 'react';
 import { EditModal } from '../../components/EditModal/EditModal';
 import { EditForm } from '../../components/EditForm/EditForm';
 import { AvatarUpload } from '../../components/AvatarUpload';
@@ -166,6 +166,112 @@ const NotificationToggle = ({ icon: Icon, iconBg, iconColor, title, description,
 );
 
 // ---------------------------------------------------------------------------- //
+// Premium Profile Skeleton Shimmer
+// ---------------------------------------------------------------------------- //
+const ProfileSkeleton = () => (
+    <div className="max-w-5xl mx-auto sm:px-6 lg:px-8 animate-pulse">
+        {/* Page Header Skeleton */}
+        <div className="px-4 sm:px-0 pt-2 pb-6 sm:pt-4 sm:pb-8">
+            <div className="flex items-center gap-3 mb-2">
+                <div className="h-8 w-1 rounded-full bg-slate-300 dark:bg-slate-700" />
+                <div className="h-8 w-36 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+            </div>
+            <div className="h-4 w-72 bg-slate-100 dark:bg-slate-900 rounded-md ml-4" />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 sm:gap-6 lg:gap-8 pb-8">
+            {/* Left Column: Avatar & Quick Info */}
+            <div className="lg:col-span-4 xl:col-span-3 space-y-4 mb-3 sm:mb-0">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-gray-200/70 dark:border-slate-700/70 shadow-sm flex flex-col items-center space-y-4">
+                    <div className="w-24 h-24 rounded-full bg-slate-200 dark:bg-slate-850" />
+                    <div className="h-4 w-28 bg-slate-200 dark:bg-slate-800 rounded" />
+                    <div className="h-3 w-16 bg-slate-150 dark:bg-slate-850 rounded" />
+                </div>
+
+                <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-gray-200/70 dark:border-slate-700/70 shadow-sm space-y-3">
+                    <div className="h-10 bg-slate-100 dark:bg-slate-800 rounded-xl" />
+                    <div className="h-10 bg-slate-100 dark:bg-slate-800 rounded-xl" />
+                </div>
+            </div>
+
+            {/* Right Column: Details & Notifications */}
+            <div className="lg:col-span-8 xl:col-span-9 space-y-4 mt-3 sm:mt-0">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200/70 dark:border-slate-700/70 shadow-sm p-6 space-y-6">
+                    <div className="flex justify-between items-center pb-4 border-b border-gray-100 dark:border-slate-800">
+                        <div className="h-5 w-32 bg-slate-200 dark:bg-slate-800 rounded" />
+                        <div className="h-8 w-16 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                    </div>
+                    <div className="space-y-6">
+                        {[1, 2, 3, 4, 5].map((i) => (
+                            <div key={i} className="flex justify-between items-center py-2">
+                                <div className="h-4 w-24 bg-slate-150 dark:bg-slate-850 rounded" />
+                                <div className="h-4 w-40 bg-slate-200 dark:bg-slate-800 rounded" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+);
+
+// ---------------------------------------------------------------------------- //
+// Profile Card Error Boundary
+// ---------------------------------------------------------------------------- //
+class ProfileCardErrorBoundary extends Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+
+    static getDerivedStateFromError(error) {
+        return { hasError: true, error };
+    }
+
+    componentDidCatch(error, errorInfo) {
+        console.error("ProfileCardErrorBoundary caught an error:", error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="p-6 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 rounded-2xl text-center space-y-3">
+                    <div className="inline-flex p-2.5 rounded-xl bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400">
+                        <AlertTriangle className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-50">Card Load Failed</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                        An error occurred while loading this section of your profile: {this.state.error?.message || "Unknown error"}
+                    </p>
+                    <button
+                        onClick={() => this.setState({ hasError: false, error: null })}
+                        className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-red-600 hover:bg-red-750 text-white shadow-sm transition-colors active:scale-95"
+                    >
+                        Try Again
+                    </button>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
+// ---------------------------------------------------------------------------- //
+// Safe Date Parser for Browser Compatibility (Safari YYYY-MM-DD space issues)
+// ---------------------------------------------------------------------------- //
+const parseSafeDate = (dateValue) => {
+    if (!dateValue) return null;
+    let date = new Date(dateValue);
+    
+    if (isNaN(date.getTime()) && typeof dateValue === 'string') {
+        const normalized = dateValue.replace(/\s+/, 'T');
+        date = new Date(normalized);
+    }
+    
+    return isNaN(date.getTime()) ? null : date;
+};
+
+// ---------------------------------------------------------------------------- //
 // Profile Page
 // ---------------------------------------------------------------------------- //
 const ProfilePage = () => {
@@ -262,28 +368,22 @@ const ProfilePage = () => {
     };
 
     const memberSinceText = useMemo(() => {
-        const dateValue = user?.createdAt;
-        if (!dateValue) return 'Not available';
-        const date = new Date(dateValue);
-        return isNaN(date.getTime())
-            ? 'Invalid Date'
-            : date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        const date = parseSafeDate(user?.createdAt);
+        if (!date) return 'Not available';
+        return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     }, [user?.createdAt]);
 
     const lastUpdatedText = useMemo(() => {
-        const dateValue = user?.lastLogin || user?.createdAt;
-        if (!dateValue) return 'Not available';
-        const date = new Date(dateValue);
-        return isNaN(date.getTime())
-            ? 'Invalid Date'
-            : date.toLocaleString('en-US', {
-                  day: '2-digit',
-                  month: 'long',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  hour12: true
-              });
+        const date = parseSafeDate(user?.lastLogin || user?.createdAt);
+        if (!date) return 'Not available';
+        return date.toLocaleString('en-US', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
     }, [user?.lastLogin, user?.createdAt]);
 
     const containerVariants = {
@@ -299,6 +399,14 @@ const ProfilePage = () => {
         hidden: { opacity: 0, y: 15 },
         visible: { opacity: 1, y: 0 }
     };
+
+    if (!user) {
+        return (
+            <MainLayout>
+                <ProfileSkeleton />
+            </MainLayout>
+        );
+    }
 
     return (
         <MainLayout>
@@ -420,162 +528,166 @@ const ProfilePage = () => {
                     {/* Right Column: Details & Notifications */}
                     <motion.div variants={itemVariants} className="lg:col-span-8 xl:col-span-9 space-y-0 sm:space-y-5 mt-3 sm:mt-0">
                         {/* Personal Details Card */}
-                        <Card className="rounded-2xl border border-gray-200/70 dark:border-slate-700/70 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-shadow">
-                            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
-                                <div className="flex items-center gap-2.5">
-                                    <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-                                        <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        <ProfileCardErrorBoundary>
+                            <Card className="rounded-2xl border border-gray-200/70 dark:border-slate-700/70 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-shadow">
+                                <div className="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                                            <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                        </div>
+                                        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50">
+                                            Personal Details
+                                        </h3>
                                     </div>
-                                    <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50">
-                                        Personal Details
-                                    </h3>
+                                    <button
+                                        onClick={() => setIsModalOpen(true)}
+                                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg border border-indigo-300 dark:border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors active:scale-95"
+                                        aria-label="Edit personal details"
+                                    >
+                                        <Edit3 className="w-3.5 h-3.5" />
+                                        Edit
+                                    </button>
                                 </div>
-                                <button
-                                    onClick={() => setIsModalOpen(true)}
-                                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg border border-indigo-300 dark:border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors active:scale-95"
-                                    aria-label="Edit personal details"
-                                >
-                                    <Edit3 className="w-3.5 h-3.5" />
-                                    Edit
-                                </button>
-                            </div>
-                            <CardContent className="px-4 sm:px-6 py-2">
-                                <div className="divide-y-0">
-                                    <ProfileRow icon={User} label="Full Name" value={user?.name || '—'} />
-                                    <ProfileRow icon={Mail} label="Email" value={user?.email || '—'} />
-                                    <ProfileRow icon={Phone} label="Phone" value={user?.phone || '+91 XXX XXX XXXX'} />
-                                    <ProfileRow icon={CalendarClock} label="Member Since" value={memberSinceText} />
-                                    <ProfileRow icon={RotateCcw} label="Last Login" value={lastUpdatedText} isLast />
-                                </div>
-                            </CardContent>
-                        </Card>
+                                <CardContent className="px-4 sm:px-6 py-2">
+                                    <div className="divide-y-0">
+                                        <ProfileRow icon={User} label="Full Name" value={user?.name || '—'} />
+                                        <ProfileRow icon={Mail} label="Email" value={user?.email || '—'} />
+                                        <ProfileRow icon={Phone} label="Phone" value={user?.phone || '+91 XXX XXX XXXX'} />
+                                        <ProfileRow icon={CalendarClock} label="Member Since" value={memberSinceText} />
+                                        <ProfileRow icon={RotateCcw} label="Last Login" value={lastUpdatedText} isLast />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </ProfileCardErrorBoundary>
 
                         {/* Notification Preferences */}
-                        <Card className="rounded-2xl border border-gray-200/70 dark:border-slate-700/70 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-shadow mt-3 sm:mt-0">
-                            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
-                                <div className="flex items-center gap-2.5">
-                                    <div className="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-900/20">
-                                        <Bell className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                        <ProfileCardErrorBoundary>
+                            <Card className="rounded-2xl border border-gray-200/70 dark:border-slate-700/70 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-shadow mt-3 sm:mt-0">
+                                <div className="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-900/20">
+                                            <Bell className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                                        </div>
+                                        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50">
+                                            Notifications
+                                        </h3>
                                     </div>
-                                    <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50">
-                                        Notifications
-                                    </h3>
-                                </div>
-                                <button
-                                    onClick={() => setPrefsOpen(!prefsOpen)}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-                                    aria-expanded={prefsOpen}
-                                >
-                                    {prefsOpen ? 'Hide' : 'Manage'}
-                                    {prefsOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                                </button>
-                            </div>
-                            <AnimatePresence>
-                                {prefsOpen && (
-                                    <motion.div
-                                        initial={{ height: 0, opacity: 0 }}
-                                        animate={{ height: 'auto', opacity: 1 }}
-                                        exit={{ height: 0, opacity: 0 }}
-                                        transition={{ duration: 0.25, ease: 'easeInOut' }}
-                                        className="overflow-hidden"
+                                    <button
+                                        onClick={() => setPrefsOpen(!prefsOpen)}
+                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                                        aria-expanded={prefsOpen}
                                     >
-                                        <CardContent className="px-4 sm:px-6 pt-2 pb-4 space-y-0">
-                                            {prefsLoading ? (
-                                                <div className="flex items-center gap-2.5 justify-center py-8">
-                                                    <Spinner size="sm" color="current" className="text-indigo-500" />
-                                                    <span className="text-xs text-gray-400 dark:text-gray-500">Loading preferences…</span>
-                                                </div>
-                                            ) : prefsError ? (
-                                                <div className="flex flex-col items-center gap-2 py-8 text-center">
-                                                    <div className="p-2 rounded-xl bg-red-50 dark:bg-red-900/20">
-                                                        <WifiOff className="w-5 h-5 text-red-500 dark:text-red-400" />
+                                        {prefsOpen ? 'Hide' : 'Manage'}
+                                        {prefsOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                    </button>
+                                </div>
+                                <AnimatePresence>
+                                    {prefsOpen && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.25, ease: 'easeInOut' }}
+                                            className="overflow-hidden"
+                                        >
+                                            <CardContent className="px-4 sm:px-6 pt-2 pb-4 space-y-0">
+                                                {prefsLoading ? (
+                                                    <div className="flex items-center gap-2.5 justify-center py-8">
+                                                        <Spinner size="sm" color="current" className="text-indigo-500" />
+                                                        <span className="text-xs text-gray-400 dark:text-gray-500">Loading preferences…</span>
                                                     </div>
-                                                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Could not load preferences</p>
-                                                    <p className="text-xs text-gray-400 dark:text-gray-500">Check your connection and try again.</p>
-                                                    <button
-                                                        onClick={() => {
-                                                            setPrefsLoading(true);
-                                                            setPrefsError(false);
-                                                            NotificationService.getPreferences()
-                                                                .then((res) => {
-                                                                    const data = res?.data ?? null;
-                                                                    setNotifPrefs(data);
-                                                                    if (!data) setPrefsError(true);
-                                                                })
-                                                                .catch(() => setPrefsError(true))
-                                                                .finally(() => setPrefsLoading(false));
-                                                        }}
-                                                        className="mt-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
-                                                    >
-                                                        Retry
-                                                    </button>
-                                                </div>
-                                            ) : notifPrefs ? (
-                                                <div className="divide-y divide-gray-100 dark:divide-slate-800">
-                                                    <NotificationToggle
-                                                        icon={Smartphone}
-                                                        iconBg="bg-blue-50 dark:bg-blue-900/20"
-                                                        iconColor="text-blue-600 dark:text-blue-400"
-                                                        title="FCM Push"
-                                                        description={fcmSupported ? (fcmEnabled ? 'Subscribed' : 'Not subscribed') : 'Not supported on this device'}
-                                                        enabled={fcmEnabled}
-                                                        loading={fcmLoading}
-                                                        onToggle={toggleFcm}
-                                                        error={fcmError}
-                                                    />
-                                                    <NotificationToggle
-                                                        icon={Smartphone}
-                                                        iconBg="bg-green-50 dark:bg-green-900/20"
-                                                        iconColor="text-green-600 dark:text-green-400"
-                                                        title="VAPID Push"
-                                                        description={vapidSupported ? (vapidEnabled ? 'Subscribed' : 'Not subscribed') : 'Not supported on this device'}
-                                                        enabled={vapidEnabled}
-                                                        loading={vapidLoading}
-                                                        onToggle={toggleVapid}
-                                                        error={vapidError}
-                                                    />
-                                                    <NotificationToggle
-                                                        icon={MailIcon}
-                                                        iconBg="bg-purple-50 dark:bg-purple-900/20"
-                                                        iconColor="text-purple-600 dark:text-purple-400"
-                                                        title="Email Notifications"
-                                                        description={notifPrefs.email ? 'Enabled' : 'Disabled'}
-                                                        enabled={notifPrefs.email}
-                                                        loading={false}
-                                                        onToggle={() => handlePrefsUpdate({ email: !notifPrefs.email })}
-                                                    />
-                                                    <NotificationToggle
-                                                        icon={Moon}
-                                                        iconBg="bg-indigo-50 dark:bg-indigo-900/20"
-                                                        iconColor="text-indigo-600 dark:text-indigo-400"
-                                                        title="Quiet Hours"
-                                                        description={notifPrefs.quietHours?.enabled
-                                                            ? `${notifPrefs.quietHours.start || '22:00'} – ${notifPrefs.quietHours.end || '08:00'}`
-                                                            : 'Off'}
-                                                        enabled={notifPrefs.quietHours?.enabled || false}
-                                                        loading={false}
-                                                        onToggle={() => handlePrefsUpdate({
-                                                            quietHours: {
-                                                                ...notifPrefs.quietHours,
-                                                                enabled: !notifPrefs.quietHours?.enabled,
-                                                            }
-                                                        })}
-                                                    />
-                                                </div>
-                                            ) : (
-                                                <div className="flex flex-col items-center gap-2 py-8 text-center">
-                                                    <div className="p-2 rounded-xl bg-gray-100 dark:bg-slate-800">
-                                                        <Bell className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                                                ) : prefsError ? (
+                                                    <div className="flex flex-col items-center gap-2 py-8 text-center">
+                                                        <div className="p-2 rounded-xl bg-red-50 dark:bg-red-900/20">
+                                                            <WifiOff className="w-5 h-5 text-red-500 dark:text-red-400" />
+                                                        </div>
+                                                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Could not load preferences</p>
+                                                        <p className="text-xs text-gray-400 dark:text-gray-500">Check your connection and try again.</p>
+                                                        <button
+                                                            onClick={() => {
+                                                                setPrefsLoading(true);
+                                                                setPrefsError(false);
+                                                                NotificationService.getPreferences()
+                                                                    .then((res) => {
+                                                                        const data = res?.data ?? null;
+                                                                        setNotifPrefs(data);
+                                                                        if (!data) setPrefsError(true);
+                                                                    })
+                                                                    .catch(() => setPrefsError(true))
+                                                                    .finally(() => setPrefsLoading(false));
+                                                            }}
+                                                            className="mt-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                                                        >
+                                                            Retry
+                                                        </button>
                                                     </div>
-                                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">No preferences available</p>
-                                                    <p className="text-xs text-gray-400 dark:text-gray-500">Notification settings have not been configured yet.</p>
-                                                </div>
-                                            )}
-                                        </CardContent>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </Card>
+                                                ) : notifPrefs ? (
+                                                    <div className="divide-y divide-gray-100 dark:divide-slate-800">
+                                                        <NotificationToggle
+                                                            icon={Smartphone}
+                                                            iconBg="bg-blue-50 dark:bg-blue-900/20"
+                                                            iconColor="text-blue-600 dark:text-blue-400"
+                                                            title="FCM Push"
+                                                            description={fcmSupported ? (fcmEnabled ? 'Subscribed' : 'Not subscribed') : 'Not supported on this device'}
+                                                            enabled={fcmEnabled}
+                                                            loading={fcmLoading}
+                                                            onToggle={toggleFcm}
+                                                            error={fcmError}
+                                                        />
+                                                        <NotificationToggle
+                                                            icon={Smartphone}
+                                                            iconBg="bg-green-50 dark:bg-green-900/20"
+                                                            iconColor="text-green-600 dark:text-green-400"
+                                                            title="VAPID Push"
+                                                            description={vapidSupported ? (vapidEnabled ? 'Subscribed' : 'Not subscribed') : 'Not supported on this device'}
+                                                            enabled={vapidEnabled}
+                                                            loading={vapidLoading}
+                                                            onToggle={toggleVapid}
+                                                            error={vapidError}
+                                                        />
+                                                        <NotificationToggle
+                                                            icon={MailIcon}
+                                                            iconBg="bg-purple-50 dark:bg-purple-900/20"
+                                                            iconColor="text-purple-600 dark:text-purple-400"
+                                                            title="Email Notifications"
+                                                            description={notifPrefs.email ? 'Enabled' : 'Disabled'}
+                                                            enabled={notifPrefs.email}
+                                                            loading={false}
+                                                            onToggle={() => handlePrefsUpdate({ email: !notifPrefs.email })}
+                                                        />
+                                                        <NotificationToggle
+                                                            icon={Moon}
+                                                            iconBg="bg-indigo-50 dark:bg-indigo-900/20"
+                                                            iconColor="text-indigo-600 dark:text-indigo-400"
+                                                            title="Quiet Hours"
+                                                            description={notifPrefs.quietHours?.enabled
+                                                                ? `${notifPrefs.quietHours.start || '22:00'} – ${notifPrefs.quietHours.end || '08:00'}`
+                                                                : 'Off'}
+                                                            enabled={notifPrefs.quietHours?.enabled || false}
+                                                            loading={false}
+                                                            onToggle={() => handlePrefsUpdate({
+                                                                quietHours: {
+                                                                    ...notifPrefs.quietHours,
+                                                                    enabled: !notifPrefs.quietHours?.enabled,
+                                                                }
+                                                            })}
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex flex-col items-center gap-2 py-8 text-center">
+                                                        <div className="p-2 rounded-xl bg-gray-100 dark:bg-slate-800">
+                                                            <Bell className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                                                        </div>
+                                                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">No preferences available</p>
+                                                        <p className="text-xs text-gray-400 dark:text-gray-500">Notification settings have not been configured yet.</p>
+                                                    </div>
+                                                )}
+                                            </CardContent>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </Card>
+                        </ProfileCardErrorBoundary>
                     </motion.div>
                 </motion.div>
 

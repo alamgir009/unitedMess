@@ -17,6 +17,9 @@ const FCM_VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 
 const requestFcmToken = async () => {
     try {
+        if (typeof Notification === 'undefined') {
+            throw new Error('Notifications are not supported in this browser');
+        }
         const permission = await Notification.requestPermission();
         if (permission !== 'granted') {
             throw new Error('Notification permission denied');

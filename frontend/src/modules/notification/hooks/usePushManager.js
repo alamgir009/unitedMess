@@ -6,7 +6,9 @@ const STORAGE_KEY = 'um_vapid_subscribed';
 
 const usePushManager = () => {
     const { user } = useSelector((state) => state.auth);
-    const [permissionState, setPermissionState] = useState(Notification.permission);
+    const [permissionState, setPermissionState] = useState(() => 
+        typeof Notification !== 'undefined' ? Notification.permission : 'default'
+    );
     const [isSubscribed, setIsSubscribed] = useState(() => localStorage.getItem(STORAGE_KEY) === 'true');
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -15,7 +17,11 @@ const usePushManager = () => {
     const subscribedEndpoint = useRef(null);
 
     useEffect(() => {
-        setSupported('serviceWorker' in navigator && 'PushManager' in window);
+        setSupported(
+            'serviceWorker' in navigator &&
+            'PushManager' in window &&
+            typeof Notification !== 'undefined'
+        );
     }, []);
 
     useEffect(() => {
@@ -53,6 +59,10 @@ const usePushManager = () => {
 
         try {
             if (!supported) {
+                throw new Error('Push notifications are not supported in this browser');
+            }
+
+            if (typeof Notification === 'undefined') {
                 throw new Error('Push notifications are not supported in this browser');
             }
 

@@ -12,12 +12,19 @@ const useFcmPush = () => {
     const [isSubscribed, setIsSubscribed] = useState(!!localStorage.getItem(STORAGE_KEY));
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [permissionState, setPermissionState] = useState(Notification.permission);
+    const [permissionState, setPermissionState] = useState(() => 
+        typeof Notification !== 'undefined' ? Notification.permission : 'default'
+    );
     const [supported, setSupported] = useState(false);
     const unsubscribeFromMessages = useRef(null);
 
     useEffect(() => {
-        setSupported('serviceWorker' in navigator && 'PushManager' in window && !!import.meta.env.VITE_FIREBASE_VAPID_KEY);
+        setSupported(
+            'serviceWorker' in navigator &&
+            'PushManager' in window &&
+            typeof Notification !== 'undefined' &&
+            !!import.meta.env.VITE_FIREBASE_VAPID_KEY
+        );
     }, []);
 
     // Listen for foreground messages
@@ -76,6 +83,10 @@ const useFcmPush = () => {
         try {
             if (!supported) {
                 throw new Error('FCM is not supported in this browser or VAPID key is missing');
+            }
+
+            if (typeof Notification === 'undefined') {
+                throw new Error('Notifications are not supported in this browser');
             }
 
             if (Notification.permission === 'denied') {

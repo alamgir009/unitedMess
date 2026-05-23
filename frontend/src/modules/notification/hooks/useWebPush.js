@@ -4,7 +4,9 @@ import NotificationService from '../services/notification.service';
 
 const useWebPush = () => {
     const { user } = useSelector((state) => state.auth);
-    const [permissionState, setPermissionState] = useState(Notification.permission);
+    const [permissionState, setPermissionState] = useState(() => 
+        typeof Notification !== 'undefined' ? Notification.permission : 'default'
+    );
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [error, setError] = useState(null);
     const [vapidPublicKey, setVapidPublicKey] = useState(null);
@@ -41,6 +43,11 @@ const useWebPush = () => {
         setError(null);
 
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            setError('Push notifications are not supported in this browser');
+            return;
+        }
+
+        if (typeof Notification === 'undefined') {
             setError('Push notifications are not supported in this browser');
             return;
         }
@@ -106,7 +113,7 @@ const useWebPush = () => {
         subscribe,
         unsubscribe,
         error,
-        supported: 'serviceWorker' in navigator && 'PushManager' in window,
+        supported: 'serviceWorker' in navigator && 'PushManager' in window && typeof Notification !== 'undefined',
     };
 };
 
