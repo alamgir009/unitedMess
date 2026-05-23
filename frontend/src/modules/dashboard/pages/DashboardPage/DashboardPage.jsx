@@ -24,7 +24,7 @@ const DashboardPage = () => {
 
     return (
         <MainLayout>
-            <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-4 sm:py-6 w-full relative">
+            <div className="w-full max-w-none py-4 sm:py-6 relative">
                 {/* Accessible Single H1 for SEO */}
                 <h1 className="sr-only">
                     {isAdmin ? 'UnitedMess Command Center' : 'UnitedMess Member Dashboard'}
