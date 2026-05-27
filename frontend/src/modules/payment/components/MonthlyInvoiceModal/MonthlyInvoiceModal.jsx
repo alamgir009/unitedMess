@@ -79,7 +79,7 @@ const InvoiceSkeleton = () => (
 /* ─────────────────────────────────────────────────────────
    Partial Payment Reminder Banner
 ───────────────────────────────────────────────────────── */
-const PartialPaymentBanner = ({ remainingAmount, paidAmount, totalPayable, onPayNow, isPaying }) => {
+const PartialPaymentBanner = ({ remainingAmount, paidAmount, totalPayable, onPayNow, isPaying, monthName }) => {
     const paidPercent = totalPayable > 0
         ? Math.min(100, Math.round((paidAmount / totalPayable) * 100))
         : 0;
@@ -126,7 +126,7 @@ const PartialPaymentBanner = ({ remainingAmount, paidAmount, totalPayable, onPay
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         disabled={!!isPaying}
-                        onClick={() => onPayNow(remainingAmount, 'mess_bill')}
+                        onClick={() => onPayNow(monthName)}
                         className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg
                             bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold
                             shadow-[0_4px_14px_rgba(245,158,11,0.4)]
@@ -323,6 +323,7 @@ const MonthlyInvoiceModal = ({
                                         totalPayable={totalPayable}
                                         onPayNow={onPayNow}
                                         isPaying={isPaying}
+                                        monthName={monthlyInvoice?.monthName || monthName}
                                     />
                                 )}
 

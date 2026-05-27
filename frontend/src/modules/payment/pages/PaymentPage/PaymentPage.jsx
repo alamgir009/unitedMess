@@ -29,6 +29,7 @@ import PaymentModal     from '../../components/PaymentModal/PaymentModal';
 import MessBillInvoice  from '../../components/MessBillInvoice/MessBillInvoice';
 import MonthlyInvoiceModal from '../../components/MonthlyInvoiceModal/MonthlyInvoiceModal';
 import PaymentDeleteDialog from '../../components/PaymentDeleteDialog/PaymentDeleteDialog';
+import PaymentFlowModal from '../../components/PaymentFlowModal/PaymentFlowModal';
 
 import {
     fetchPayments,
@@ -108,6 +109,8 @@ const PaymentPage = () => {
     const [deletingPayment, setDeletingPayment] = useState(null);
     const [isDeleting, setIsDeleting]           = useState(false);
     const [invoiceFetchDone, setInvoiceFetchDone] = useState(false);
+    const [isPaymentFlowOpen, setIsPaymentFlowOpen] = useState(false);
+    const [activePaymentMonth, setActivePaymentMonth] = useState('');
 
     /* ── payment hook ── */
     const refreshData = useCallback(() => {
@@ -132,6 +135,12 @@ const PaymentPage = () => {
             setIsPaying(false);
         }
     }, [handleCheckout]);
+
+    const handlePayBillClick = useCallback((monthName) => {
+        setInvoiceModal(prev => ({ ...prev, open: false }));
+        setActivePaymentMonth(monthName || payableAmountData?.monthName || '');
+        setIsPaymentFlowOpen(true);
+    }, [payableAmountData]);
 
     const latestMessBillPayment = useMemo(() => {
         if (lastPaymentId && payments) {
@@ -395,7 +404,7 @@ const PaymentPage = () => {
                                 isAdmin={isAdmin}
                                 user={user}
                                 platformFee={payableAmountData?.userStats?.platformFee || user?.platformFee || 0}
-                                onPayNow={handleRazorpayCheckout}
+                                onPayNow={handlePayBillClick}
                                 isPaying={isPaying}
                                 paymentStatus={messBillStatus}
                                 paymentRecord={latestMessBillPayment}
@@ -489,8 +498,18 @@ const PaymentPage = () => {
                     year={invoiceModal.year}
                     month={invoiceModal.month}
                     monthName={invoiceModal.monthName}
-                    onPayNow={handleRazorpayCheckout}
+                    onPayNow={handlePayBillClick}
                     isPaying={isPaying}
+                />
+
+                <PaymentFlowModal
+                    isOpen={isPaymentFlowOpen}
+                    onClose={() => setIsPaymentFlowOpen(false)}
+                    user={user}
+                    isAdmin={isAdmin}
+                    activeInvoiceMonth={activePaymentMonth}
+                    onRazorpayPay={handleRazorpayCheckout}
+                    onSuccess={refreshData}
                 />
 
                 {deletingPayment && (
