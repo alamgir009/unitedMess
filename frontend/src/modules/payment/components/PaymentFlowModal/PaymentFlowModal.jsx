@@ -458,10 +458,10 @@ const PaymentFlowModal = ({
                                         <button
                                             onClick={() => setPayStep(2)}
                                             disabled={selectedMonths.length === 0}
-                                            className="flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 shadow-md shadow-indigo-600/15 hover:shadow-lg disabled:opacity-50 transition-all duration-200"
+                                            className="group flex items-center gap-2 rounded-full border border-indigo-200/50 dark:border-indigo-700/50 bg-indigo-50/50 dark:bg-indigo-950/30 px-4 py-2 text-sm font-semibold text-indigo-700 dark:text-indigo-300 backdrop-blur-md transition-all hover:bg-indigo-100/80 dark:hover:bg-indigo-950/50 hover:text-indigo-800 dark:hover:text-indigo-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             <span>Next</span>
-                                            <HiOutlineArrowRight className="w-3.5 h-3.5" />
+                                            <HiOutlineArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
                                         </button>
                                     </div>
                                 </div>
