@@ -26,12 +26,12 @@ const paymentSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ['pending', 'completed', 'failed', 'refunded'],
+            enum: ['pending', 'pending_verification', 'completed', 'failed', 'refunded'],
             default: 'pending',
         },
         paymentMethod: {
             type: String,
-            enum: ['cash', 'online', 'razorpay'],
+            enum: ['cash', 'online', 'razorpay', 'upi_manual'],
             default: 'cash',
         },
         transactionId: {

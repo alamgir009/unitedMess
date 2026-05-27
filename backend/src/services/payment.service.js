@@ -1,5 +1,6 @@
 const Payment = require('../models/Payment.model');
 const User = require('../models/User.model');
+const Invoice = require('../models/Invoice.model');
 const AppError = require('../utils/errors/AppError');
 const razorpayService = require('./razorpay.service');
 const emailService = require('./email.service');
@@ -88,6 +89,64 @@ const sendPaymentEmail = async (user, payment, status) => {
     } catch (error) {
         // Wrap in its own try/catch — if email fails, log and continue (non-blocking)
         console.error(`[Email Error] Failed to send payment email:`, error.message);
+    }
+};
+
+/**
+ * Parse month string like "May 2026" to { month: 5, year: 2026 }
+ */
+const parseMonthString = (monthStr) => {
+    if (!monthStr) return null;
+    const parts = monthStr.split(' ');
+    if (parts.length === 2) {
+        const monthNames = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+        const monthIndex = monthNames.indexOf(parts[0]);
+        if (monthIndex !== -1) {
+            return {
+                month: monthIndex + 1,
+                year: parseInt(parts[1], 10)
+            };
+        }
+    }
+    return null;
+};
+
+/**
+ * Immediately sync Invoice collection paidAmount and status based on completed payments
+ */
+const syncInvoiceAfterPayment = async (userId, monthStr) => {
+    try {
+        const parsed = parseMonthString(monthStr);
+        if (!parsed) return;
+
+        // Calculate total completed payments for this user & month
+        const payments = await Payment.find({
+            user: userId,
+            month: monthStr,
+            status: 'completed',
+            type: 'mess_bill'
+        });
+        const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+
+        // Find and update invoice
+        const invoice = await Invoice.findOne({ user: userId, month: parsed.month, year: parsed.year });
+        if (invoice) {
+            invoice.paidAmount = totalPaid;
+            if (invoice.paidAmount >= invoice.totalPayable && invoice.totalPayable > 0) {
+                invoice.status = 'paid';
+            } else if (invoice.paidAmount > 0) {
+                invoice.status = 'partially_paid';
+            } else {
+                invoice.status = 'unpaid';
+            }
+            await invoice.save();
+            console.info(`[Sync] Synced invoice status for user ${userId}, month ${monthStr} to ${invoice.status}`);
+        }
+    } catch (err) {
+        console.error('[Sync Error] Failed to sync invoice after payment:', err.message);
     }
 };
 
@@ -205,6 +264,82 @@ const createOnlinePaymentOrder = async (userId, amount, type) => {
     return { order, payment };
 };
 
+/**
+ * Create Razorpay order + pending payment records for multiple months
+ */
+const createOnlinePaymentOrderForMonths = async (userId, months, type) => {
+    await verifyUserExists(userId);
+
+    if (!months || !Array.isArray(months) || months.length === 0) {
+        throw new AppError('At least one month must be selected', 400);
+    }
+
+    let totalAmount = 0;
+    const monthDetails = [];
+
+    // Parse each month, check if it's already paid, and sum remainingAmount
+    for (const monthStr of months) {
+        const parsed = parseMonthString(monthStr);
+        if (!parsed) {
+            throw new AppError(`Invalid month format: ${monthStr}`, 400);
+        }
+
+        const invoiceService = require('./invoice.service');
+        const invoice = await invoiceService.getInvoice(userId, parsed.month, parsed.year);
+        
+        const remaining = Math.max(0, invoice.totalPayable - invoice.paidAmount);
+        if (remaining <= 0) {
+            throw new AppError(`Invoice for ${monthStr} is already fully paid`, 400);
+        }
+
+        // Check if duplicate completed payment exists
+        const duplicate = await Payment.exists({
+            user: userId,
+            type,
+            month: monthStr,
+            status: 'completed'
+        });
+        if (duplicate) {
+            throw new AppError(`${monthStr} mess bill is already paid.`, 409);
+        }
+
+        totalAmount += remaining;
+        monthDetails.push({ monthStr, amount: remaining });
+    }
+
+    if (totalAmount <= 0) {
+        throw new AppError('Total payable amount must be greater than zero', 400);
+    }
+
+    const amountInPaise = Math.round(totalAmount * 100);
+
+    // Create Razorpay order first — if it fails, no DB record is created
+    const order = await razorpayService.createOrder(amountInPaise);
+
+    // Create pending payment record for each month, linking them to the order.id as transactionId
+    const createdPayments = [];
+    for (const item of monthDetails) {
+        const payment = await Payment.create({
+            user: userId,
+            amount: item.amount,
+            paymentDate: new Date(),
+            month: item.monthStr,
+            type,
+            status: 'pending',
+            paymentMethod: 'razorpay',
+            transactionId: order.id,
+            createdBy: userId,
+        });
+        createdPayments.push(payment);
+    }
+
+    return {
+        order,
+        payments: createdPayments,
+        keyId: config.razorpay.keyId
+    };
+};
+
 // ─────────────────────────────────────────────────────────────
 // Verify (Atomic + Idempotent + Race-condition safe)
 // ─────────────────────────────────────────────────────────────
@@ -218,40 +353,46 @@ const verifyOnlinePayment = async ({ orderId, paymentId, signature }) => {
     const isValid = razorpayService.verifyPaymentSignature(orderId, paymentId, signature);
     if (!isValid) throw new AppError('Invalid payment signature', 400);
 
-    // Atomic — only succeeds if status is still 'pending'
-    const payment = await Payment.findOneAndUpdate(
+    // Find all pending payments for this order
+    const pendingPayments = await Payment.find({ transactionId: orderId, status: 'pending' });
+    if (pendingPayments.length === 0) {
+        // Check if already completed
+        const completedCount = await Payment.countDocuments({ transactionId: paymentId, status: 'completed' });
+        if (completedCount > 0) {
+            throw new AppError('Payment already verified', 409);
+        }
+        throw new AppError('Payment record not found for this order', 404);
+    }
+
+    // Atomically update all of them
+    await Payment.updateMany(
         { transactionId: orderId, status: 'pending' },
         {
             status: 'completed',
             transactionId: paymentId,  // replace orderId with actual Razorpay paymentId
             paymentDate: new Date(),
-        },
-        { new: true }
+        }
     );
 
-    // Atomic update returned null — determine why
-    if (!payment) {
-        const existing = await Payment.findOne(
-            { transactionId: orderId },
-            { status: 1 }              // select only status — minimal fetch
-        ).lean();
-
-        if (!existing) throw new AppError('Payment record not found for this order', 404);
-        if (existing.status === 'completed') throw new AppError('Payment already verified', 409);
-        throw new AppError('Unable to verify payment at this time', 500);
-    }
+    // Fetch the updated payments
+    const updatedPayments = await Payment.find({ transactionId: paymentId, status: 'completed' });
 
     // Fetch user once — shared by sync and email
-    const user = await User.findById(payment.user)
+    const user = await User.findById(updatedPayments[0].user)
         .select('name email')
         .lean();
 
-    await Promise.all([
-        syncUserPaymentStatus(payment.user, payment.type, payment.status),
-        user ? sendPaymentEmail(user, payment, 'completed') : Promise.resolve()
-    ]);
+    for (const p of updatedPayments) {
+        await syncUserPaymentStatus(p.user, p.type, p.status);
+        await syncInvoiceAfterPayment(p.user, p.month);
+        if (user) {
+            sendPaymentEmail(user, p, 'completed').catch(err => {
+                console.error(`[Email Error] Failed to send payment confirmation to ${user.email}:`, err.message);
+            });
+        }
+    }
 
-    return payment;
+    return updatedPayments[0];
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -374,6 +515,9 @@ const updatePaymentById = async (paymentId, updateBody) => {
         ]);
     }
 
+    // Always sync invoice after payment updates
+    await syncInvoiceAfterPayment(payment.user, payment.month);
+
     return payment;
 };
 
@@ -397,6 +541,8 @@ const deletePaymentById = async (paymentId) => {
         payment.deleteOne(),
         syncUserPaymentStatus(payment.user, payment.type, 'pending'),
     ]);
+
+    await syncInvoiceAfterPayment(payment.user, payment.month);
 
     return payment;
 };
@@ -490,10 +636,13 @@ module.exports = {
     createPayment,
     createBulkPayments,
     createOnlinePaymentOrder,
+    createOnlinePaymentOrderForMonths,
     verifyOnlinePayment,
     queryPayments,
     getPaymentById,
     updatePaymentById,
     deletePaymentById,
     verifyUserExists,
+    syncInvoiceAfterPayment,
+    parseMonthString,
 };

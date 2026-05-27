@@ -124,10 +124,10 @@ const PaymentPage = () => {
         },
     });
 
-    const handleRazorpayCheckout = useCallback(async (amount, paymentType) => {
+    const handleRazorpayCheckout = useCallback(async (amount, paymentType, months = null) => {
         setIsPaying(true);
         try {
-            await handleCheckout(amount, paymentType);
+            await handleCheckout(amount, paymentType, months);
         } finally {
             setIsPaying(false);
         }

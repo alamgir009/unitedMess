@@ -2,9 +2,20 @@ const express = require('express');
 const router = express.Router();
 const paymentController = require('../controllers/payment.controller');
 const { protect, authorize } = require('../middlewares/auth.middleware');
+const { uploadQrCode } = require('../middlewares/upload.middleware');
 
 const authenticated = [protect];
 const adminOnly    = [protect, authorize('admin')];
+
+// UPI & Month endpoints (Specific routes first)
+router.get('/payable-months', ...authenticated, paymentController.getPayableMonths);
+router.route('/upi-config')
+    .get(...authenticated, paymentController.getUpiConfig)
+    .put(...adminOnly,     paymentController.updateUpiConfig);
+router.post('/upi-config/qrcode', ...adminOnly, uploadQrCode.single('qrcode'), paymentController.uploadQrCode);
+
+router.post('/upi-manual', ...authenticated, paymentController.submitUpiManualPayment);
+router.patch('/upi-manual/:paymentId/verify', ...adminOnly, paymentController.verifyUpiManualPayment);
 
 // All routes require authentication
 router.route('/')

@@ -50,6 +50,7 @@ export function usePayment({ user, onSuccess }) {
     const handleCheckout = useCallback(async (
         amount,
         paymentType = PAYMENT_TYPES.MESS_BILL,
+        months = null
     ) => {
         if (!amount || amount <= 0) {
             toast.error('Invalid payable amount');
@@ -64,8 +65,8 @@ export function usePayment({ user, onSuccess }) {
             await loadSDK();
 
             // Step 2: Create order on server
-            const orderRes = await paymentService.createOnlineOrder({ amount, type: paymentType });
-            const { order, payment, keyId } = orderRes?.data ?? {};
+            const orderRes = await paymentService.createOnlineOrder({ amount, type: paymentType, months });
+            const { order, payment, payments, keyId } = orderRes?.data ?? {};
             if (!order?.id) throw new Error('Invalid order response from server');
 
             const rzpKey = keyId || RAZORPAY.KEY_ID;

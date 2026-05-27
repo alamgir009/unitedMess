@@ -32,6 +32,11 @@ app.use(compression());
 // API routes
 app.use('/api/v1', apiV1Routes);
 
+const path = require('path');
+
+// Serve uploaded files statically
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // Health check
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', message: 'Server is running' });

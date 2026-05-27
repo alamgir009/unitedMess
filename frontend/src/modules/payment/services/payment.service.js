@@ -21,9 +21,9 @@ const createPayment = async (paymentData) => {
     return response.data;
 };
 
-// Create Razorpay order (returns { order, payment })
-const createOnlineOrder = async ({ amount, type }) => {
-    const response = await apiClient.post(`${API_URL}/order`, { amount, type });
+// Create Razorpay order (returns { order, payments/payment })
+const createOnlineOrder = async ({ amount, type, months }) => {
+    const response = await apiClient.post(`${API_URL}/order`, { amount, type, months });
     return response.data;
 };
 
@@ -51,6 +51,46 @@ const createBulkPayments = async (bulkData) => {
     return response.data;
 };
 
+// Get payable months for current user
+const getPayableMonths = async () => {
+    const response = await apiClient.get(`${API_URL}/payable-months`);
+    return response.data;
+};
+
+// Get active UPI config
+const getUpiConfig = async () => {
+    const response = await apiClient.get(`${API_URL}/upi-config`);
+    return response.data;
+};
+
+// Update UPI config (admin only)
+const updateUpiConfig = async (upiData) => {
+    const response = await apiClient.put(`${API_URL}/upi-config`, upiData);
+    return response.data;
+};
+
+// Upload QR code image (admin only)
+const uploadQrCode = async (formData) => {
+    const response = await apiClient.post(`${API_URL}/upi-config/qrcode`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+    return response.data;
+};
+
+// Submit manual UPI payment reference
+const submitUpiManual = async (data) => {
+    const response = await apiClient.post(`${API_URL}/upi-manual`, data);
+    return response.data;
+};
+
+// Verify manual UPI payment reference (admin only)
+const verifyUpiManual = async (paymentId, data) => {
+    const response = await apiClient.patch(`${API_URL}/upi-manual/${paymentId}/verify`, data);
+    return response.data;
+};
+
 const paymentService = {
     getPayments,
     getPaymentById,
@@ -60,6 +100,12 @@ const paymentService = {
     updatePayment,
     deletePayment,
     createBulkPayments,
+    getPayableMonths,
+    getUpiConfig,
+    updateUpiConfig,
+    uploadQrCode,
+    submitUpiManual,
+    verifyUpiManual,
 };
 
 export default paymentService;

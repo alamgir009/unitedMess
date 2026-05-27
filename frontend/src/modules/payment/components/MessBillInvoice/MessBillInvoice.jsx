@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import PrintInvoice from './PrintInvoice';
 import { useDownloadInvoice } from './useDownloadInvoice';
 import invoiceService from '../../services/invoice.service';
+import paymentService from '../../services/payment.service';
 import {
     HiOutlineCurrencyRupee,
     HiOutlineShoppingCart,
@@ -27,14 +28,20 @@ import {
     HiOutlineShieldCheck,
     HiOutlineDevicePhoneMobile,
     HiOutlineChevronDown,
+    HiOutlineClipboard,
+    HiOutlineCheck,
+    HiOutlinePencil,
+    HiOutlineArrowRight,
+    HiOutlineArrowLeft,
+    HiOutlinePhoto,
 } from 'react-icons/hi2';
-import { SiGooglepay, SiPhonepe } from 'react-icons/si';
+import { SiGooglepay } from 'react-icons/si';
 import { BsCreditCard2Front } from 'react-icons/bs';
 import { Spinner } from '@/shared/components/ui';
 
 /* ────────────────────────────────────────
    UTILITIES
-──────────────────────────────────────── */
+   ──────────────────────────────────────── */
 const fmt = (n) =>
     Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
@@ -44,35 +51,8 @@ const INV_DATE = nowDate.toLocaleDateString('en-IN', { day: '2-digit', month: 's
 const INV_NO = `UM-${nowDate.getFullYear()}${String(nowDate.getMonth() + 1).padStart(2, '0')}-${Math.floor(Math.random() * 9000 + 1000)}`;
 
 /* ────────────────────────────────────────
-   PAYMENT METHOD DEFINITIONS
-──────────────────────────────────────── */
-const PAYMENT_METHODS = [
-    {
-        id: 'upi',
-        label: 'UPI',
-        icon: SiGooglepay,
-        description: 'Google Pay, PhonePe, Paytm',
-        color: 'indigo',
-    },
-    {
-        id: 'card',
-        label: 'Card',
-        icon: BsCreditCard2Front,
-        description: 'Credit / Debit',
-        color: 'purple',
-    },
-    {
-        id: 'netbanking',
-        label: 'Net Banking',
-        icon: HiOutlineBuildingOffice2,
-        description: 'All major banks',
-        color: 'blue',
-    },
-];
-
-/* ────────────────────────────────────────
    SUB-COMPONENTS (memoized)
-──────────────────────────────────────── */
+   ──────────────────────────────────────── */
 
 /** Premium card for summary statistics */
 const StatCard = memo(({ icon: Icon, label, value, subLabel, accent = false }) => (
@@ -146,43 +126,14 @@ const SectionDivider = memo(({ label }) => (
     </div>
 ));
 
-/** Horizontal pill method selector */
-const PaymentMethodSelector = memo(({ methods, selected, onSelect }) => (
-    <div className="space-y-2">
-        <p className="text-[10px] uppercase font-bold tracking-widest text-gray-500 dark:text-gray-400">Payment Method</p>
-        <div className="flex items-center gap-2 p-1 rounded-2xl bg-gray-100/80 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/40">
-            {methods.map((m) => {
-                const active = selected === m.id;
-                return (
-                    <motion.button
-                        key={m.id}
-                        type="button"
-                        whileTap={{ scale: 0.96 }}
-                        onClick={() => onSelect(m.id)}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold transition-all duration-200 ${
-                            active
-                                ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-300 shadow-sm ring-1 ring-black/5 dark:ring-white/10'
-                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                        }`}
-                    >
-                        <m.icon className={`w-3.5 h-3.5 flex-shrink-0 ${active ? 'text-indigo-500' : ''}`} />
-                        <span>{m.label}</span>
-                    </motion.button>
-                );
-            })}
-        </div>
-    </div>
-));
-
 /* ────────────────────────────────────────
    MAIN INVOICE COMPONENT
-──────────────────────────────────────── */
+   ──────────────────────────────────────── */
 const MessBillInvoice = ({
     data,
     isAdmin,
     user,
     platformFee = 0,
-    onPlatformFeeChange,
     onPayNow,
     isPaying,
     isSendingEmail,
@@ -235,16 +186,191 @@ const MessBillInvoice = ({
     const remainingAmount = paymentRecord?.remainingAmount ?? Math.max(0, totalPayable - paidAmount);
     const paidPercent = totalPayable > 0 ? Math.min(100, Math.round((paidAmount / totalPayable) * 100)) : 0;
 
-    // ── Invoice expand/collapse (collapsed by default) ──
+    // Expand/collapse state
     const [isExpanded, setIsExpanded] = useState(false);
 
-    // ── Payment method state ──
-    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('upi');
-
+    // PDF / Email handling
     const invoiceRef = useRef(null);
     const printRef = useRef(null);
     const { isDownloading, downloadPDF, generatePDFBase64 } = useDownloadInvoice();
     const [sendingEmail, setSendingEmail] = useState(false);
+
+    // ── Payment Modal States ──
+    const [isPayModalOpen, setIsPayModalOpen] = useState(false);
+    const [payStep, setPayStep] = useState(1);
+    const [payableMonths, setPayableMonths] = useState([]);
+    const [selectedMonths, setSelectedMonths] = useState([]);
+    const [loadingMonths, setLoadingMonths] = useState(false);
+    const [selectedMethod, setSelectedMethod] = useState('upi'); // 'upi' = manual upi, 'razorpay' = online
+    const [upiConfig, setUpiConfig] = useState(null);
+    const [loadingUpi, setLoadingUpi] = useState(false);
+    const [utr, setUtr] = useState('');
+    const [submittingUpi, setSubmittingUpi] = useState(false);
+    const [qrCodeError, setQrCodeError] = useState(false);
+
+    // Admin configuration editing states
+    const [isAdminUpiEdit, setIsAdminUpiEdit] = useState(false);
+    const [editUpiId, setEditUpiId] = useState('');
+    const [editMerchantName, setEditMerchantName] = useState('');
+    const [qrFile, setQrFile] = useState(null);
+    const [savingUpiConfig, setSavingUpiConfig] = useState(false);
+
+    // Load payable months
+    const fetchMonths = async () => {
+        setLoadingMonths(true);
+        try {
+            const res = await paymentService.getPayableMonths();
+            if (res?.success && Array.isArray(res?.data)) {
+                // Keep only unpaid, partially paid, or pending verification months
+                setPayableMonths(res.data);
+                
+                // Pre-select current month if it is unpaid
+                const activeMonthName = data?.monthName || displayMonth;
+                const activeMonthData = res.data.find(m => m.monthName === activeMonthName);
+                if (activeMonthData && (activeMonthData.status === 'UNPAID' || activeMonthData.status === 'PARTIALLY_PAID')) {
+                    setSelectedMonths([activeMonthName]);
+                } else {
+                    // Otherwise select the first available unpaid month
+                    const firstUnpaid = res.data.find(m => m.status === 'UNPAID' || m.status === 'PARTIALLY_PAID');
+                    if (firstUnpaid) {
+                        setSelectedMonths([firstUnpaid.monthName]);
+                    }
+                }
+            }
+        } catch (err) {
+            toast.error('Failed to load payable months');
+        } finally {
+            setLoadingMonths(false);
+        }
+    };
+
+    // Load UPI configuration
+    const fetchUpiDetails = async () => {
+        setLoadingUpi(true);
+        setQrCodeError(false);
+        try {
+            const res = await paymentService.getUpiConfig();
+            if (res?.success) {
+                setUpiConfig(res.data);
+                setEditUpiId(res.data.upiId || '');
+                setEditMerchantName(res.data.merchantName || '');
+            }
+        } catch (err) {
+            toast.error('Failed to load UPI configuration');
+        } finally {
+            setLoadingUpi(false);
+        }
+    };
+
+    // Open checkout modal flow
+    const handleOpenPaymentFlow = () => {
+        setIsPayModalOpen(true);
+        setPayStep(1);
+        setUtr('');
+        setSelectedMonths([]);
+        fetchMonths();
+        fetchUpiDetails();
+    };
+
+    // Close checkout modal flow
+    const handleClosePaymentFlow = () => {
+        setIsPayModalOpen(false);
+        setPayStep(1);
+        setUtr('');
+        setSelectedMonths([]);
+        setIsAdminUpiEdit(false);
+        setQrFile(null);
+    };
+
+    // Toggle month selection
+    const handleToggleMonth = (monthName) => {
+        if (selectedMonths.includes(monthName)) {
+            setSelectedMonths(selectedMonths.filter(m => m !== monthName));
+        } else {
+            setSelectedMonths([...selectedMonths, monthName]);
+        }
+    };
+
+    // calculated total sum
+    const selectedTotalPayable = useMemo(() => {
+        return payableMonths
+            .filter(m => selectedMonths.includes(m.monthName))
+            .reduce((sum, m) => sum + m.remainingAmount, 0);
+    }, [payableMonths, selectedMonths]);
+
+    // Handle submit UTR manual reference
+    const handleSubmitUtr = async () => {
+        if (!utr.trim()) {
+            toast.error('Please enter the Transaction ID (UTR)');
+            return;
+        }
+        if (!/^[a-zA-Z0-9]{8,20}$/.test(utr.trim())) {
+            toast.error('Invalid Transaction ID format. Must be 8-20 alphanumeric characters.');
+            return;
+        }
+        setSubmittingUpi(true);
+        try {
+            const res = await paymentService.submitUpiManual({
+                months: selectedMonths,
+                transactionId: utr.trim(),
+                remarks: `Manual UPI payment reference submission`
+            });
+            if (res?.success) {
+                toast.success('Payment submitted successfully! Pending verification.');
+                setPayStep(4); // Success screen
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            }
+        } catch (err) {
+            toast.error(err?.response?.data?.message ?? 'Failed to submit payment reference');
+        } finally {
+            setSubmittingUpi(false);
+        }
+    };
+
+    // Handle save UPI configuration (Admin only)
+    const handleUpdateUpiConfig = async (e) => {
+        e.preventDefault();
+        if (!editUpiId) {
+            toast.error('UPI ID is required');
+            return;
+        }
+        if (!/^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/.test(editUpiId)) {
+            toast.error('Invalid UPI ID format. Expected format: user@bank');
+            return;
+        }
+        setSavingUpiConfig(true);
+        try {
+            const configRes = await paymentService.updateUpiConfig({
+                upiId: editUpiId,
+                merchantName: editMerchantName
+            });
+
+            if (qrFile && configRes?.success) {
+                const formData = new FormData();
+                formData.append('qrcode', qrFile);
+                await paymentService.uploadQrCode(formData);
+            }
+
+            toast.success('UPI configuration updated successfully!');
+            setIsAdminUpiEdit(false);
+            setQrFile(null);
+            fetchUpiDetails();
+        } catch (err) {
+            toast.error(err?.response?.data?.message ?? 'Failed to save UPI config');
+        } finally {
+            setSavingUpiConfig(false);
+        }
+    };
+
+    // Proceed with Razorpay payment
+    const handleRazorpayProceed = async () => {
+        if (typeof onPayNow === 'function') {
+            setIsPayModalOpen(false); // Close before launching SDK checkout
+            onPayNow(selectedTotalPayable, 'mess_bill', selectedMonths);
+        }
+    };
 
     const handleDownloadPDF = () => {
         downloadPDF({
@@ -253,19 +379,6 @@ const MessBillInvoice = ({
             title: `Invoice ${INV_NO}`,
             subject: `Mess Bill - ${displayMonth}`,
         });
-    };
-
-    const handlePayNow = () => {
-        if (typeof onPayNow === 'function') {
-            // Pass amount, type, and optionally payment method
-            onPayNow(finalPayable, 'mess_bill', selectedPaymentMethod);
-        }
-    };
-
-    const handlePayRemaining = () => {
-        if (typeof onPayNow === 'function') {
-            onPayNow(remainingAmount, 'mess_bill', selectedPaymentMethod);
-        }
     };
 
     const handleSendEmail = async () => {
@@ -297,7 +410,6 @@ const MessBillInvoice = ({
         }
     };
 
-    // Status label helpers
     const statusLabel = isPaid ? 'Paid' : isPartiallyPaid ? 'Partial' : isRefund ? 'Refund' : 'Due';
     const statusCls   = isPaid
         ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-emerald-400/30'
@@ -471,17 +583,6 @@ const MessBillInvoice = ({
                     </div>
                 </div>
 
-                {/* ── Payment Method Selector (replaces dropdown) ── */}
-                {!isPaid && !isRefund && (
-                    <div className="mb-6">
-                        <PaymentMethodSelector
-                            methods={PAYMENT_METHODS}
-                            selected={selectedPaymentMethod}
-                            onSelect={setSelectedPaymentMethod}
-                        />
-                    </div>
-                )}
-
                 {/* ── Action Buttons ── */}
                 <div className="space-y-4">
                     {isPaid ? (
@@ -515,18 +616,15 @@ const MessBillInvoice = ({
                                     <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-1">Complete your payment to settle the mess bill.</p>
                                 </div>
                             </div>
-                            {typeof onPayNow === 'function' && (
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    disabled={!!isPaying}
-                                    onClick={handlePayRemaining}
-                                    className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-amber-500 to-amber-600 shadow-lg shadow-amber-500/20 hover:shadow-xl hover:shadow-amber-500/30 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300"
-                                >
-                                    {isPaying ? <Spinner size="sm" color="white" /> : <HiOutlineCurrencyRupee className="w-5 h-5" />}
-                                    <span>{isPaying ? 'Processing…' : `Pay Remaining ₹${fmt(remainingAmount)}`}</span>
-                                </motion.button>
-                            )}
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={handleOpenPaymentFlow}
+                                className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-amber-500 to-amber-600 shadow-lg shadow-amber-500/20 hover:shadow-xl hover:shadow-amber-500/30 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300"
+                            >
+                                <HiOutlineCurrencyRupee className="w-5 h-5" />
+                                <span>Pay Remaining Balance</span>
+                            </motion.button>
                         </>
                     ) : isRefund ? (
                         <div className="flex items-start gap-4 p-5 rounded-2xl bg-emerald-50/80 dark:bg-emerald-900/25 border border-emerald-200 dark:border-emerald-800 backdrop-blur-sm">
@@ -540,14 +638,10 @@ const MessBillInvoice = ({
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            disabled={!!isPaying}
-                            onClick={handlePayNow}
+                            onClick={handleOpenPaymentFlow}
                             className="w-full flex items-center justify-center gap-3 py-3.5 px-6 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-indigo-500 shadow-lg shadow-indigo-500/20 hover:shadow-xl hover:shadow-indigo-500/30 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300"
                         >
-                            {isPaying ? (
-                                <Spinner size="sm" color="white" />
-                            ) : null}
-                            <span>{isPaying ? 'Processing…' : `Pay ₹${fmt(finalPayable)}`}</span>
+                            <span>Pay Bill</span>
                             <HiOutlineShieldCheck className="w-4 h-4 opacity-80" />
                         </motion.button>
                     )}
@@ -601,6 +695,454 @@ const MessBillInvoice = ({
                     />
                 </div>
             </div>
+
+            {/* ── STEP-BASED PREMIUM CHECKOUT FLOW MODAL ── */}
+            <AnimatePresence>
+                {isPayModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+                        {/* Backdrop */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={handleClosePaymentFlow}
+                            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
+                        />
+
+                        {/* Modal Container */}
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 15 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 15 }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                            className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-3xl overflow-hidden z-10 max-h-[92vh] flex flex-col"
+                        >
+                            {/* Modal Header */}
+                            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800 shrink-0">
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                                        {isAdminUpiEdit ? 'Configure UPI Details' : 'Secure Mess Bill Checkout'}
+                                    </h3>
+                                    {!isAdminUpiEdit && (
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                            Step {payStep} of 3 · Fintech-Grade Billing
+                                        </p>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={handleClosePaymentFlow}
+                                    className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                >
+                                    <HiOutlineXMark className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            {/* Modal Body */}
+                            <div className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar space-y-6">
+                                {isAdminUpiEdit ? (
+                                    /* Admin UPI Configuration Form */
+                                    <form onSubmit={handleUpdateUpiConfig} className="space-y-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">UPI ID</label>
+                                            <input
+                                                type="text"
+                                                value={editUpiId}
+                                                onChange={(e) => setEditUpiId(e.target.value)}
+                                                placeholder="e.g. name@upi"
+                                                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:text-white"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Merchant/Admin Name</label>
+                                            <input
+                                                type="text"
+                                                value={editMerchantName}
+                                                onChange={(e) => setEditMerchantName(e.target.value)}
+                                                placeholder="e.g. United Mess Account"
+                                                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:text-white"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">QR Code Image</label>
+                                            <div className="flex items-center justify-center w-full">
+                                                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-indigo-500 rounded-2xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-all">
+                                                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                        <HiOutlinePhoto className="w-8 h-8 text-slate-400 mb-2" />
+                                                        <p className="text-xs text-slate-500 font-semibold">
+                                                            {qrFile ? qrFile.name : 'Click to upload QR code'}
+                                                        </p>
+                                                        <p className="text-[10px] text-slate-400 mt-1">PNG, JPG or WEBP (Max 2MB)</p>
+                                                    </div>
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={(e) => setQrFile(e.target.files[0])}
+                                                        className="hidden"
+                                                    />
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-3 pt-4">
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsAdminUpiEdit(false)}
+                                                className="flex-1 py-3 px-4 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                disabled={savingUpiConfig}
+                                                className="flex-1 py-3 px-4 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 shadow-md shadow-indigo-500/10 hover:shadow-lg hover:shadow-indigo-500/20 disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
+                                            >
+                                                {savingUpiConfig ? <Spinner size="sm" color="white" /> : 'Save Details'}
+                                            </button>
+                                        </div>
+                                    </form>
+                                ) : (
+                                    /* Main Step Flow */
+                                    <>
+                                        {/* Stepper Indicators */}
+                                        {payStep <= 3 && (
+                                            <div className="flex items-center justify-between mb-8 max-w-xs mx-auto">
+                                                <div className="flex flex-col items-center">
+                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${payStep >= 1 ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>1</div>
+                                                    <span className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-wider">Months</span>
+                                                </div>
+                                                <div className={`flex-1 h-0.5 mx-2 transition-colors ${payStep >= 2 ? 'bg-indigo-600' : 'bg-slate-100 dark:bg-slate-800'}`} />
+                                                <div className="flex flex-col items-center">
+                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${payStep >= 2 ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>2</div>
+                                                    <span className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-wider">Method</span>
+                                                </div>
+                                                <div className={`flex-1 h-0.5 mx-2 transition-colors ${payStep >= 3 ? 'bg-indigo-600' : 'bg-slate-100 dark:bg-slate-800'}`} />
+                                                <div className="flex flex-col items-center">
+                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${payStep >= 3 ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>3</div>
+                                                    <span className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-wider">Pay</span>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* STEP 1: MONTH SELECTION */}
+                                        {payStep === 1 && (
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1">Select billing month(s) to settle</h4>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400">Select one or more months. Outstanding Carry-overs must be cleared.</p>
+                                                </div>
+
+                                                {loadingMonths ? (
+                                                    <div className="flex justify-center py-10">
+                                                        <Spinner size="lg" />
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                                                        {payableMonths.length === 0 ? (
+                                                            <div className="text-center py-6 text-xs text-slate-500">No payable months loaded from server.</div>
+                                                        ) : (
+                                                            payableMonths.map((m) => {
+                                                                const isAlreadyPaid = m.status === 'PAID';
+                                                                const isPendingVer = m.status === 'PENDING_VERIFICATION';
+                                                                const isSelected = selectedMonths.includes(m.monthName);
+                                                                const isSelectable = !isAlreadyPaid && !isPendingVer;
+
+                                                                return (
+                                                                    <div
+                                                                        key={m.monthName}
+                                                                        onClick={() => isSelectable && handleToggleMonth(m.monthName)}
+                                                                        className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
+                                                                            isSelected
+                                                                                ? 'border-indigo-500 bg-indigo-50/30 dark:bg-indigo-950/20'
+                                                                                : 'border-slate-100 dark:border-slate-850 hover:border-slate-200 dark:hover:border-slate-800'
+                                                                        } ${isSelectable ? 'cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
+                                                                    >
+                                                                        <div className="flex items-center gap-3">
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                checked={isSelected}
+                                                                                disabled={!isSelectable}
+                                                                                onChange={() => {}} // Controlled by parent div click
+                                                                                className="w-4 h-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500 cursor-pointer disabled:cursor-not-allowed"
+                                                                            />
+                                                                            <div>
+                                                                                <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{m.monthName}</p>
+                                                                                <p className="text-xs text-slate-400 mt-0.5">₹{fmt(m.remainingAmount)} remaining</p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div>
+                                                                            <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border ${
+                                                                                isAlreadyPaid ? 'bg-emerald-50 text-emerald-700 border-emerald-250 dark:bg-emerald-950/20' :
+                                                                                isPendingVer ? 'bg-amber-50 text-amber-700 border-amber-250 dark:bg-amber-950/20' :
+                                                                                m.status === 'PARTIALLY_PAID' ? 'bg-blue-50 text-blue-700 border-blue-250 dark:bg-blue-950/20' :
+                                                                                'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800'
+                                                                            }`}>
+                                                                                {isAlreadyPaid ? 'Paid' : isPendingVer ? 'Verification Pending' : m.status === 'PARTIALLY_PAID' ? 'Partial' : 'Unpaid'}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-850 flex items-center justify-between border border-slate-100 dark:border-slate-800 mt-4">
+                                                    <div>
+                                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Selected Total</p>
+                                                        <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">₹{fmt(selectedTotalPayable)}</p>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => setPayStep(2)}
+                                                        disabled={selectedMonths.length === 0}
+                                                        className="flex items-center gap-1.5 px-5 py-3 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 shadow-md shadow-indigo-500/10 hover:shadow-lg disabled:opacity-50 transition-all duration-200"
+                                                    >
+                                                        <span>Next</span>
+                                                        <HiOutlineArrowRight className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* STEP 2: PAYMENT METHOD SELECTION */}
+                                        {payStep === 2 && (
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1">Select Payment Gateway</h4>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400">Choose online secure gateway or manual direct bank transfer.</p>
+                                                </div>
+
+                                                <div className="space-y-3">
+                                                    {/* Razorpay Option */}
+                                                    <div
+                                                        onClick={() => setSelectedMethod('razorpay')}
+                                                        className={`flex items-start gap-4 p-4 rounded-2xl border cursor-pointer transition-all ${
+                                                            selectedMethod === 'razorpay'
+                                                                ? 'border-indigo-500 bg-indigo-50/30 dark:bg-indigo-950/20'
+                                                                : 'border-slate-100 dark:border-slate-850 hover:border-slate-200 dark:hover:border-slate-800'
+                                                        }`}
+                                                    >
+                                                        <div className={`p-3 rounded-xl ${selectedMethod === 'razorpay' ? 'bg-indigo-150 text-indigo-700' : 'bg-slate-100 text-slate-500'} dark:bg-slate-800`}>
+                                                            <BsCreditCard2Front className="w-5 h-5" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                <p className="text-sm font-bold text-slate-800 dark:text-slate-250">Razorpay Secure Online</p>
+                                                                <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100 uppercase dark:bg-indigo-950/25">Instant</span>
+                                                            </div>
+                                                            <p className="text-xs text-slate-500 mt-1">Cards, Netbanking, GooglePay, PhonePe with automated instant updates.</p>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Manual UPI Option */}
+                                                    <div
+                                                        onClick={() => setSelectedMethod('upi')}
+                                                        className={`flex items-start gap-4 p-4 rounded-2xl border cursor-pointer transition-all ${
+                                                            selectedMethod === 'upi'
+                                                                ? 'border-indigo-500 bg-indigo-50/30 dark:bg-indigo-950/20'
+                                                                : 'border-slate-100 dark:border-slate-850 hover:border-slate-200 dark:hover:border-slate-800'
+                                                        }`}
+                                                    >
+                                                        <div className={`p-3 rounded-xl ${selectedMethod === 'upi' ? 'bg-indigo-150 text-indigo-700' : 'bg-slate-100 text-slate-500'} dark:bg-slate-800`}>
+                                                            <SiGooglepay className="w-5 h-5" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-sm font-bold text-slate-800 dark:text-slate-250">Manual UPI Transfer</p>
+                                                            <p className="text-xs text-slate-500 mt-1">Transfer directly to Mess Admin's UPI ID/QR and submit UTR reference.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex gap-3 pt-4">
+                                                    <button
+                                                        onClick={() => setPayStep(1)}
+                                                        className="flex-1 flex items-center justify-center gap-1.5 py-3.5 px-5 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-850 text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-all"
+                                                    >
+                                                        <HiOutlineArrowLeft className="w-4 h-4" />
+                                                        <span>Back</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setPayStep(3)}
+                                                        className="flex-1 flex items-center justify-center gap-1.5 py-3.5 px-5 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 shadow-md shadow-indigo-500/10 hover:shadow-lg transition-all"
+                                                    >
+                                                        <span>Continue</span>
+                                                        <HiOutlineArrowRight className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* STEP 3: PAY & CHECKOUT */}
+                                        {payStep === 3 && (
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1">Confirm checkout details</h4>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400">Total settlement for: {selectedMonths.join(', ')}</p>
+                                                </div>
+
+                                                {selectedMethod === 'razorpay' ? (
+                                                    /* Razorpay Checkout Proceed */
+                                                    <div className="p-5 rounded-2xl bg-indigo-50/20 dark:bg-slate-850 border border-slate-100 dark:border-slate-800 text-center space-y-4">
+                                                        <div className="space-y-1">
+                                                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Payable Online Amount</p>
+                                                            <p className="text-3xl font-black text-slate-900 dark:text-white">₹{fmt(selectedTotalPayable)}</p>
+                                                        </div>
+                                                        <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
+                                                            You will be redirected to the secure Razorpay Payment Gateway to complete your online card, netbanking, or UPI transaction.
+                                                        </p>
+
+                                                        <button
+                                                            onClick={handleRazorpayProceed}
+                                                            className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-500/20 hover:shadow-xl transition-all duration-200"
+                                                        >
+                                                            <HiOutlineShieldCheck className="w-5 h-5 text-indigo-200" />
+                                                            <span>Pay Online ₹{fmt(selectedTotalPayable)}</span>
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    /* Manual UPI Transfer Checkout */
+                                                    <div className="space-y-4">
+                                                        {loadingUpi ? (
+                                                            <div className="flex justify-center py-10">
+                                                                <Spinner size="lg" />
+                                                            </div>
+                                                        ) : (
+                                                            <div className="space-y-4">
+                                                                {/* QR Code and details */}
+                                                                <div className="p-4 rounded-2xl border border-slate-100 dark:border-slate-850 bg-slate-50/40 dark:bg-slate-850/20 space-y-4">
+                                                                    <div className="flex flex-col items-center text-center space-y-2">
+                                                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Payable Direct UPI Amount</p>
+                                                                        <p className="text-3xl font-black text-slate-900 dark:text-white">₹{fmt(selectedTotalPayable)}</p>
+                                                                    </div>
+
+                                                                    {upiConfig ? (
+                                                                        <>
+                                                                            {/* QR Image display */}
+                                                                            {upiConfig.qrCodeUrl && !qrCodeError ? (
+                                                                                <div className="flex flex-col items-center">
+                                                                                    <img
+                                                                                        src={upiConfig.qrCodeUrl}
+                                                                                        alt="Direct UPI QR Code"
+                                                                                        onError={() => setQrCodeError(true)}
+                                                                                        className="w-48 h-48 rounded-xl object-contain border border-slate-100 dark:border-slate-800 bg-white p-1"
+                                                                                    />
+                                                                                    <span className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-wide">Scan QR Code</span>
+                                                                                </div>
+                                                                            ) : (
+                                                                                <div className="p-3 text-center text-xs text-slate-400 border border-slate-150 dark:border-slate-800 rounded-xl bg-slate-50/20">
+                                                                                    QR Code image not available. Please use UPI ID below.
+                                                                                </div>
+                                                                            )}
+
+                                                                            {/* UPI ID block */}
+                                                                            <div className="flex items-center justify-between p-3.5 bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-xl">
+                                                                                <div className="min-w-0 pr-2">
+                                                                                    <p className="text-[9px] font-bold text-slate-400 uppercase">UPI ID</p>
+                                                                                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200 select-all truncate">{upiConfig.upiId}</p>
+                                                                                    <p className="text-[10px] text-slate-500 mt-0.5 truncate">{upiConfig.merchantName}</p>
+                                                                                </div>
+                                                                                <button
+                                                                                    onClick={() => copyToClipboard(upiConfig.upiId)}
+                                                                                    className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-850 hover:text-slate-700 dark:hover:text-white transition-colors"
+                                                                                >
+                                                                                    <HiOutlineClipboard className="w-4.5 h-4.5" />
+                                                                                </button>
+                                                                            </div>
+                                                                        </>
+                                                                    ) : (
+                                                                        <div className="text-center py-4 text-xs text-slate-400 border rounded-xl">
+                                                                            UPI ID details not configured by administrator.
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Admin configuration portal button */}
+                                                                    {isAdmin && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => setIsAdminUpiEdit(true)}
+                                                                            className="w-full flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-semibold border border-indigo-200 dark:border-indigo-900 text-indigo-600 dark:text-indigo-400 bg-indigo-50/20 hover:bg-indigo-50/50 transition-colors"
+                                                                        >
+                                                                            <HiOutlinePencil className="w-3.5 h-3.5" />
+                                                                            <span>Configure UPI ID & QR (Admin)</span>
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Verification manual instructions & UTR input */}
+                                                                <div className="space-y-3">
+                                                                    <div>
+                                                                        <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Transaction ID (UTR / Ref No.)</label>
+                                                                        <p className="text-[10px] text-slate-400 mt-0.5 leading-normal">
+                                                                            Paste the 12-digit transaction ID from your GooglePay/PhonePe/Paytm payment details window.
+                                                                        </p>
+                                                                    </div>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={utr}
+                                                                        onChange={(e) => setUtr(e.target.value)}
+                                                                        placeholder="e.g. 123456789012"
+                                                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:text-white"
+                                                                        required
+                                                                    />
+
+                                                                    <button
+                                                                        onClick={handleSubmitUtr}
+                                                                        disabled={submittingUpi || !utr.trim()}
+                                                                        className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 shadow-md shadow-indigo-500/10 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                                                    >
+                                                                        {submittingUpi ? <Spinner size="sm" color="white" /> : <HiOutlineCheck className="w-4 h-4" />}
+                                                                        <span>Submit UTR Reference</span>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {/* Back button */}
+                                                <div className="pt-2">
+                                                    <button
+                                                        onClick={() => setPayStep(2)}
+                                                        className="w-full flex items-center justify-center gap-1.5 py-3 px-5 rounded-xl text-sm font-semibold border border-slate-250 dark:border-slate-850 text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-all"
+                                                    >
+                                                        <HiOutlineArrowLeft className="w-4 h-4" />
+                                                        <span>Back</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* STEP 4: SUCCESS CONFIRMATION */}
+                                        {payStep === 4 && (
+                                            <motion.div
+                                                initial={{ scale: 0.95, opacity: 0 }}
+                                                animate={{ scale: 1, opacity: 1 }}
+                                                className="text-center py-8 space-y-4"
+                                            >
+                                                <div className="w-16 h-16 rounded-full bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-inner">
+                                                    <HiOutlineCheckCircle className="w-10 h-10 animate-bounce" />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <h4 className="text-lg font-bold text-slate-900 dark:text-white">Transaction Reference Submitted!</h4>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400 px-6 leading-relaxed">
+                                                        Your transaction reference UTR has been logged. The administrator will review and verify your payment shortly.
+                                                    </p>
+                                                </div>
+                                                <div className="pt-6">
+                                                    <div className="inline-flex items-center gap-2 text-xs text-slate-400 bg-slate-50 dark:bg-slate-850 px-4 py-2.5 rounded-full border border-slate-100 dark:border-slate-800">
+                                                        <Spinner size="xs" />
+                                                        <span>Reloading billing dashboard…</span>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 };
