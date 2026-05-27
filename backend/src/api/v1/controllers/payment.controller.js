@@ -7,6 +7,7 @@ const pick = require('../../../utils/helpers/pick');
 const config = require('../../../config');
 const UpiConfig = require('../../../models/UpiConfig.model');
 const Invoice = require('../../../models/Invoice.model');
+const Payment = require('../../../models/Payment.model');
 const { getBillingPeriod } = require('../../../utils/helpers/date.helper');
 
 /**
