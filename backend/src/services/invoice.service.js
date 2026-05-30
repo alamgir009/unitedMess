@@ -161,9 +161,9 @@ const getInvoice = async (userId, month, year) => {
             gasBillCharge: Number(user.gasBillCharge || 0),
             platformFee: Number(user.platformFee || 0),
         },
-        totalBill: Number(totalBill.toFixed(2)),
-        dueCarryOver: Number(dueCarryOver.toFixed(2)),
-        totalPayable: Number(totalBill.toFixed(2)),
+        totalBill: Math.round(totalBill),
+        dueCarryOver: Math.round(dueCarryOver),
+        totalPayable: Math.round(totalBill),
         paidAmount: livePaidAmount,
         isFinalized: false
     };
