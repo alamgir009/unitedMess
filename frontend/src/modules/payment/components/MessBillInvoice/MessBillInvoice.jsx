@@ -255,7 +255,7 @@ const MessBillInvoice = ({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, ease: 'easeOut' }}
-            className="relative mx-auto w-full max-w-none rounded-3xl bg-white/70 dark:bg-slate-900/50 backdrop-blur-2xl border border-black/5 dark:border-white/10 overflow-hidden shadow-lg dark:shadow-black/20 ring-1 ring-black/5 dark:ring-white/5 transition-all duration-300"
+            className="relative mx-auto w-full max-w-none rounded-2xl bg-card border border-border/80 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.25)] transition-all duration-200"
         >
             {/* ── Collapsed summary bar ── */}
             <button
@@ -380,7 +380,7 @@ const MessBillInvoice = ({
             </div>
 
             {/* ── Total & Payment Area ── */}
-            <div className={`px-4 md:px-6 py-6 mt-2 rounded-b-3xl ${isRefund ? 'bg-emerald-50/70 dark:bg-emerald-900/15' : 'bg-gray-50 dark:bg-gray-800/40'} border-t border-gray-200 dark:border-gray-800`}>
+            <div className={`px-4 md:px-6 py-6 mt-2 rounded-b-2xl ${isRefund ? 'bg-emerald-50/70 dark:bg-emerald-900/15' : 'bg-gray-50 dark:bg-gray-800/40'} border-t border-gray-200 dark:border-gray-800`}>
                 <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5 mb-8">
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
@@ -446,15 +446,14 @@ const MessBillInvoice = ({
                                     <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-1">Complete your payment to settle the mess bill.</p>
                                 </div>
                             </div>
-                            <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
+                            <button
+                                disabled={isPaying}
                                 onClick={handleOpenPaymentFlow}
-                                className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-amber-500 to-amber-600 shadow-lg shadow-amber-500/20 hover:shadow-xl hover:shadow-amber-500/30 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300"
+                                className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 active:bg-amber-700 active:scale-[0.99] shadow-[0_4px_12px_rgba(245,158,11,0.2)] hover:shadow-[0_6px_20px_rgba(245,158,11,0.3)] disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 disabled:shadow-none transition-all duration-150"
                             >
                                 <HiOutlineCurrencyRupee className="w-5 h-5" />
                                 <span>Pay Remaining Balance</span>
-                            </motion.button>
+                            </button>
                         </>
                     ) : isRefund ? (
                         <div className="flex items-start gap-4 p-5 rounded-2xl bg-emerald-50/80 dark:bg-emerald-900/25 border border-emerald-200 dark:border-emerald-800 backdrop-blur-sm">
@@ -465,38 +464,33 @@ const MessBillInvoice = ({
                             </div>
                         </div>
                     ) : (
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
+                        <button
+                            disabled={isPaying}
                             onClick={handleOpenPaymentFlow}
-                            className="w-full flex items-center justify-center gap-3 py-3.5 px-6 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-indigo-500 shadow-lg shadow-indigo-500/20 hover:shadow-xl hover:shadow-indigo-500/30 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300"
+                            className="w-full flex items-center justify-center gap-3 py-3.5 px-6 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 active:scale-[0.99] shadow-[0_4px_12px_rgba(79,70,229,0.2)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.3)] disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 disabled:shadow-none transition-all duration-150"
                         >
                             <span>Pay Bill</span>
                             <HiOutlineShieldCheck className="w-4 h-4 opacity-80" />
-                        </motion.button>
+                        </button>
                     )}
 
                     <div className="flex gap-3">
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
+                        <button
                             disabled={isDownloading}
                             onClick={handleDownloadPDF}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 px-5 rounded-xl text-sm font-medium border border-gray-300 dark:border-gray-600 bg-white/80 dark:bg-gray-800/60 backdrop-blur-md text-gray-700 dark:text-gray-200 shadow-sm hover:shadow-md transition-all duration-300"
+                            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-5 rounded-xl text-sm font-medium border border-border bg-card hover:bg-muted active:bg-muted/80 text-foreground shadow-sm hover:shadow active:scale-[0.99] disabled:opacity-60 disabled:scale-100 transition-all duration-150"
                         >
                             {isDownloading ? <Spinner size="sm" color="current" /> : <HiOutlineArrowDownTray className="w-4 h-4" />}
                             <span className="hidden sm:inline">Download</span>
-                        </motion.button>
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
+                        </button>
+                        <button
                             disabled={!!(isSendingEmail || sendingEmail)}
                             onClick={handleSendEmail}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 px-5 rounded-xl text-sm font-medium border border-gray-300 dark:border-gray-600 bg-white/80 dark:bg-gray-800/60 backdrop-blur-md text-gray-700 dark:text-gray-200 shadow-sm hover:shadow-md transition-all duration-300"
+                            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-5 rounded-xl text-sm font-medium border border-border bg-card hover:bg-muted active:bg-muted/80 text-foreground shadow-sm hover:shadow active:scale-[0.99] disabled:opacity-60 disabled:scale-100 transition-all duration-150"
                         >
                             {(isSendingEmail || sendingEmail) ? <Spinner size="sm" color="current" /> : <HiOutlineEnvelope className="w-4 h-4" />}
                             <span className="hidden sm:inline">Email</span>
-                        </motion.button>
+                        </button>
                     </div>
                 </div>
 
