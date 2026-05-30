@@ -292,7 +292,14 @@ async function getAllUsers(filters = {}, pagination = {}) {
                 payment: 1,
                 gasBill: 1,
                 createdAt: 1,
-                // Add any other specific fields needed for the directory
+                // ── Invoice / billing fields ──
+                guestMeal: 1,
+                cookingCharge: 1,
+                gasBillCharge: 1,
+                waterBill: 1,
+                platformFee: 1,
+                chargePerGuestMeal: 1,
+                paybleAmountforMeal: 1,
             }
         },
         { $sort: { name: 1 } }, // Alphabetical sort for member directory
