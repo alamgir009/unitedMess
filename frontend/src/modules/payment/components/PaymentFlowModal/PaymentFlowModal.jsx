@@ -284,14 +284,12 @@ const UpiDisplay = memo(({ upiConfig, qrCodeError, onCopy, onQrError }) => {
               className="w-40 h-40 sm:w-44 sm:h-44 object-contain"
             />
           </div>
-          {/* Brand trust badge row – aligned perfectly */}
-          <div className="flex items-center justify-center gap-2.5 mt-4 select-none">
-            <UpiLogo className="h-5 w-auto text-[#1C1C1C] dark:text-white" aria-hidden="true" />
-            <NpciLogo className="h-5 w-auto text-[#1C1C1C] dark:text-white" aria-hidden="true" />
-            <HiOutlineDevicePhoneMobile className="w-5 h-5 shrink-0 text-muted-foreground" aria-hidden="true" />
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Scan with any UPI app
-            </span>
+          {/* Centered, clean payment helper pill */}
+          <div className="flex flex-col items-center mt-3.5">
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-muted/40 rounded-full border border-border/30 text-[10px] font-bold text-muted-foreground uppercase tracking-wider select-none">
+              <HiOutlineDevicePhoneMobile className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden="true" />
+              <span>Scan with any UPI app</span>
+            </div>
           </div>
         </div>
       ) : (
@@ -304,6 +302,7 @@ const UpiDisplay = memo(({ upiConfig, qrCodeError, onCopy, onQrError }) => {
         </div>
       )}
 
+      {/* Copyable UPI Credentials */}
       <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border">
         <div className="min-w-0 pr-2">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">UPI ID</p>
@@ -316,12 +315,20 @@ const UpiDisplay = memo(({ upiConfig, qrCodeError, onCopy, onQrError }) => {
         </div>
         <button
           onClick={() => onCopy(upiConfig.upiId)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 active:scale-95 transition-all duration-150"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 active:scale-95 transition-all duration-150 shrink-0"
           aria-label="Copy UPI ID"
         >
           <HiOutlineDocumentDuplicate className="w-4 h-4 shrink-0" />
           Copy
         </button>
+      </div>
+
+      {/* Fintech-grade Trust Footer (UPI & NPCI official compliance logos) */}
+      <div className="flex items-center justify-center gap-3 pt-3.5 border-t border-border/40 select-none">
+        <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/40">Secured by</span>
+        <UpiLogo className="h-3.5 w-auto text-[#1C1C1C] dark:text-white opacity-40 dark:opacity-60 hover:opacity-90 transition-opacity duration-200" aria-hidden="true" />
+        <span className="h-2.5 w-[1px] bg-border/40" />
+        <NpciLogo className="h-4 w-auto text-[#1C1C1C] dark:text-white opacity-40 dark:opacity-60 hover:opacity-90 transition-opacity duration-200" aria-hidden="true" />
       </div>
     </div>
   );
