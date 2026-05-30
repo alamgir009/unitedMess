@@ -590,7 +590,11 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
   const handleRazorpayProceed = useCallback(() => {
     if (typeof onRazorpayPay === 'function') {
       onClose();
-      onRazorpayPay(selectedTotalPayable, 'mess_bill', selectedMonths);
+      const baseAmount = selectedTotalPayable;
+      const gatewayFee = Math.round(baseAmount * 0.02 * 100) / 100;
+      const gstOnFee = Math.round(gatewayFee * 0.18 * 100) / 100;
+      const totalAmountWithFee = baseAmount + gatewayFee + gstOnFee;
+      onRazorpayPay(totalAmountWithFee, 'mess_bill', selectedMonths);
     }
   }, [onRazorpayPay, onClose, selectedTotalPayable, selectedMonths]);
 
@@ -775,112 +779,185 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
               )}
 
               {/* Step 3: Complete Payment */}
-              {payStep === 3 && (
-                <div className="space-y-5">
-                  <PaymentSummary total={selectedTotalPayable} months={selectedMonths} />
+              {payStep === 3 && (() => {
+                const baseAmount = selectedTotalPayable;
+                const gatewayFee = Math.round(baseAmount * 0.02 * 100) / 100;
+                const gstOnFee = Math.round(gatewayFee * 0.18 * 100) / 100;
+                const totalAmountWithFee = baseAmount + gatewayFee + gstOnFee;
 
-                  {selectedMethod === 'razorpay' ? (
-                    <div className="bg-muted/30 border border-border rounded-xl p-6 text-center space-y-5">
-                      <div className="p-4 rounded-2xl bg-primary/5 inline-flex mx-auto">
-                        <HiOutlineShieldCheck className="w-10 h-10 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-3xl font-bold text-foreground font-mono tabular-nums">
-                          ₹{fmt(selectedTotalPayable)}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-2 leading-relaxed max-w-xs mx-auto">
-                          You will be redirected to Razorpay&apos;s secure checkout.
-                        </p>
-                      </div>
-                      <Button
-                        variant="primary"
-                        size="lg"
-                        fullWidth
-                        onClick={handleRazorpayProceed}
-                        className="h-12 text-base"
-                      >
-                        <HiOutlineLockClosed className="w-4 h-4 mr-1.5" />
-                        Pay ₹{fmt(selectedTotalPayable)} Securely
-                      </Button>
-                      <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1"><HiOutlineCreditCard className="w-3.5 h-3.5" /> Cards</span>
-                        <span className="flex items-center gap-1"><HiOutlineDevicePhoneMobile className="w-3.5 h-3.5" /> UPI</span>
-                        <span className="flex items-center gap-1"><HiOutlineBanknotes className="w-3.5 h-3.5" /> Netbanking</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-5">
-                      {loadingUpi ? (
-                        <div className="flex justify-center py-10">
-                          <Spinner size="md" />
-                        </div>
-                      ) : (
-                        <>
-                          <div className="bg-muted/30 border border-border rounded-xl p-4 space-y-5">
-                            <UpiDisplay
-                              upiConfig={upiConfig}
-                              qrCodeError={qrCodeError}
-                              onCopy={copyToClipboard}
-                              onQrError={() => setQrCodeError(true)}
-                            />
-                            {isAdmin && (
-                              <Button
-                                variant="outline"
-                                size="md"
-                                fullWidth
-                                onClick={() => setIsAdminUpiEdit(true)}
-                              >
-                                <HiOutlinePencil className="w-4 h-4 mr-1.5" />
-                                Setup UPI ID & QR (Admin)
-                              </Button>
-                            )}
-                          </div>
-
-                          <div className="space-y-3">
-                            <div>
-                              <label className="text-xs font-semibold text-foreground">Transaction UTR</label>
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                Enter the reference ID (UTR) from your UPI app.
-                              </p>
+                return (
+                  <div className="space-y-5">
+                    {selectedMethod === 'razorpay' ? (
+                      <div className="space-y-5">
+                        {/* Premium Fintech Breakdown Card */}
+                        <div className="bg-card border border-border rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden">
+                          <div className="flex items-center gap-3 pb-3 border-b border-border">
+                            <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                              <HiOutlineCreditCard className="w-5 h-5" />
                             </div>
-                            <Input
-                              type="text"
-                              value={utr}
-                              onChange={(e) => setUtr(e.target.value)}
-                              placeholder="e.g. HDFC12345678"
-                              variant="glass"
-                              size="lg"
-                              required
-                            />
-                            <Button
-                              variant="primary"
-                              size="lg"
-                              fullWidth
-                              onClick={handleSubmitUtr}
-                              disabled={submittingUpi || !utr.trim()}
-                              isLoading={submittingUpi}
-                            >
-                              {!submittingUpi && <HiOutlineCheck className="w-4 h-4 mr-1.5" />}
-                              Submit Reference
-                            </Button>
+                            <div>
+                              <p className="text-sm font-bold text-foreground">Razorpay Secure Gate</p>
+                              <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Gateway charges apply</p>
+                            </div>
                           </div>
-                        </>
-                      )}
-                    </div>
-                  )}
 
-                  <Button
-                    variant="ghost"
-                    size="md"
-                    fullWidth
-                    onClick={handleBackFromPay}
-                    className="mt-1"
-                  >
-                    <HiOutlineArrowLeft className="w-4 h-4 mr-1" />
-                    Back to methods
-                  </Button>
-                </div>
-              )}
+                          <div className="space-y-2.5 pt-1">
+                            <div className="flex justify-between items-center text-xs">
+                              <span className="text-muted-foreground font-medium">Bill Amount</span>
+                              <span className="font-semibold text-foreground font-mono tabular-nums">₹{fmt(baseAmount)}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs">
+                              <span className="text-muted-foreground font-medium">Gateway Charge (2%)</span>
+                              <span className="font-semibold text-foreground font-mono tabular-nums">₹{fmt(gatewayFee)}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs">
+                              <span className="text-muted-foreground font-medium">GST on Charges (18%)</span>
+                              <span className="font-semibold text-foreground font-mono tabular-nums">₹{fmt(gstOnFee)}</span>
+                            </div>
+                            
+                            <div className="h-px bg-border my-2" />
+                            
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-bold text-foreground">Total Payable</span>
+                              <span className="text-xl font-black text-primary font-mono tabular-nums">
+                                ₹{fmt(totalAmountWithFee)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="bg-muted/30 border border-border rounded-xl p-5 text-center space-y-4">
+                          <p className="text-xs text-muted-foreground leading-relaxed max-w-xs mx-auto">
+                            You will be redirected to Razorpay&apos;s secure checkout environment to complete the payment.
+                          </p>
+                          
+                          <Button
+                            variant="primary"
+                            size="lg"
+                            fullWidth
+                            onClick={handleRazorpayProceed}
+                            className="h-12 text-base font-bold shadow-md hover:shadow-lg transition-all"
+                          >
+                            <HiOutlineLockClosed className="w-4 h-4 mr-2" />
+                            Pay ₹{fmt(totalAmountWithFee)} Securely
+                          </Button>
+
+                          <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground opacity-80 pt-1">
+                            <span className="flex items-center gap-1.5"><HiOutlineCreditCard className="w-3.5 h-3.5" /> Cards</span>
+                            <span className="flex items-center gap-1.5"><HiOutlineDevicePhoneMobile className="w-3.5 h-3.5" /> UPI</span>
+                            <span className="flex items-center gap-1.5"><HiOutlineBanknotes className="w-3.5 h-3.5" /> Netbanking</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-5">
+                        {/* Premium UPI Breakdown Card */}
+                        <div className="bg-card border border-border rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden">
+                          <div className="flex items-center gap-3 pb-3 border-b border-border">
+                            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                              <SiGooglepay className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-foreground">Direct UPI Transfer</p>
+                              <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider">100% Free · Zero Gateway Fees</p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2.5 pt-1">
+                            <div className="flex justify-between items-center text-xs">
+                              <span className="text-muted-foreground font-medium">Bill Amount</span>
+                              <span className="font-semibold text-foreground font-mono tabular-nums">₹{fmt(baseAmount)}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs">
+                              <span className="text-muted-foreground font-medium">Gateway Surcharge</span>
+                              <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">₹0.00</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs">
+                              <span className="text-muted-foreground font-medium">GST on Charges</span>
+                              <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">₹0.00</span>
+                            </div>
+                            
+                            <div className="h-px bg-border my-2" />
+                            
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-bold text-foreground">Total Payable</span>
+                              <span className="text-xl font-black text-foreground font-mono tabular-nums">₹{fmt(baseAmount)}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {loadingUpi ? (
+                          <div className="flex justify-center py-10">
+                            <Spinner size="md" />
+                          </div>
+                        ) : (
+                          <>
+                            <div className="bg-muted/30 border border-border rounded-xl p-4 space-y-5">
+                              <UpiDisplay
+                                upiConfig={upiConfig}
+                                qrCodeError={qrCodeError}
+                                onCopy={copyToClipboard}
+                                onQrError={() => setQrCodeError(true)}
+                              />
+                              {isAdmin && (
+                                <Button
+                                  variant="outline"
+                                  size="md"
+                                  fullWidth
+                                  onClick={() => setIsAdminUpiEdit(true)}
+                                >
+                                  <HiOutlinePencil className="w-4 h-4 mr-1.5" />
+                                  Setup UPI ID & QR (Admin)
+                                </Button>
+                              )}
+                            </div>
+
+                            <div className="space-y-3">
+                              <div>
+                                <label className="text-xs font-semibold text-foreground">Transaction UTR</label>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  Enter the reference ID (UTR) from your UPI app.
+                                </p>
+                              </div>
+                              <Input
+                                type="text"
+                                value={utr}
+                                onChange={(e) => setUtr(e.target.value)}
+                                placeholder="e.g. HDFC12345678"
+                                variant="glass"
+                                size="lg"
+                                required
+                              />
+                              <Button
+                                variant="primary"
+                                size="lg"
+                                fullWidth
+                                onClick={handleSubmitUtr}
+                                disabled={submittingUpi || !utr.trim()}
+                                isLoading={submittingUpi}
+                              >
+                                {!submittingUpi && <HiOutlineCheck className="w-4 h-4 mr-1.5" />}
+                                Submit Reference
+                              </Button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={handleBackFromPay}
+                      className="mt-2 w-full flex items-center justify-center gap-1.5 h-11 rounded-xl text-xs font-bold uppercase tracking-wider
+                                 text-muted-foreground hover:text-foreground bg-muted/30 hover:bg-muted/60 dark:bg-slate-800/30 dark:hover:bg-slate-800/60
+                                 border border-border/40 hover:border-border/80 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                    >
+                      <HiOutlineArrowLeft className="w-3.5 h-3.5" />
+                      Back to methods
+                    </button>
+                  </div>
+                );
+              })()}
 
               {payStep === 4 && <SuccessView onClose={onClose} />}
             </>

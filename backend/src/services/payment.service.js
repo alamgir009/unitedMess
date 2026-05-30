@@ -218,11 +218,13 @@ const createPayment = async (paymentBody) => {
 const createOnlinePaymentOrder = async (userId, amount, type) => {
     await verifyUserExists(userId);
 
-    if (!amount || amount <= 0) {
-        throw new AppError('Invalid payment amount', 400);
-    }
+    // Dynamic fee calculation: 2% platform fee + 18% GST on that fee (total 2.36%)
+    const baseAmount = amount;
+    const gatewayFee = Math.round(baseAmount * 0.02 * 100) / 100;
+    const gstOnFee = Math.round(gatewayFee * 0.18 * 100) / 100;
+    const totalPayableWithFee = baseAmount + gatewayFee + gstOnFee;
 
-    const amountInPaise = Math.round(amount * 100);
+    const amountInPaise = Math.round(totalPayableWithFee * 100);
 
     // ──────────────────────────────────────────────────────────────
     // CRITICAL: Use getBillingPeriod() — NOT new Date() — so the
@@ -254,6 +256,7 @@ const createOnlinePaymentOrder = async (userId, amount, type) => {
     const payment = await Payment.create({
         user: userId,
         amount,
+        gatewayFee,
         paymentDate: new Date(),
         month: billingMonthName,   // ← billing period month, not today's month
         type,
@@ -308,11 +311,12 @@ const createOnlinePaymentOrderForMonths = async (userId, months, type) => {
         monthDetails.push({ monthStr, amount: remaining });
     }
 
-    if (totalAmount <= 0) {
-        throw new AppError('Total payable amount must be greater than zero', 400);
-    }
+    const baseAmount = totalAmount;
+    const gatewayFee = Math.round(baseAmount * 0.02 * 100) / 100;
+    const gstOnFee = Math.round(gatewayFee * 0.18 * 100) / 100;
+    const totalPayableWithFee = baseAmount + gatewayFee + gstOnFee;
 
-    const amountInPaise = Math.round(totalAmount * 100);
+    const amountInPaise = Math.round(totalPayableWithFee * 100);
 
     // Create Razorpay order first — if it fails, no DB record is created
     const order = await razorpayService.createOrder(amountInPaise);
@@ -320,9 +324,11 @@ const createOnlinePaymentOrderForMonths = async (userId, months, type) => {
     // Create pending payment record for each month, linking them to the order.id as transactionId
     const createdPayments = [];
     for (const item of monthDetails) {
+        const itemGatewayFee = Math.round(item.amount * 0.0236 * 100) / 100;
         const payment = await Payment.create({
             user: userId,
             amount: item.amount,
+            gatewayFee: itemGatewayFee,
             paymentDate: new Date(),
             month: item.monthStr,
             type,
