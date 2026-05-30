@@ -328,7 +328,7 @@ const UpiDisplay = memo(({ upiConfig, qrCodeError, onCopy, onQrError }) => {
         <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/40">Secured by</span>
         <UpiLogo className="h-3.5 w-auto text-[#1C1C1C] dark:text-white opacity-40 dark:opacity-60 hover:opacity-90 transition-opacity duration-200" aria-hidden="true" />
         <span className="h-2.5 w-[1px] bg-border/40" />
-        <NpciLogo className="h-4 w-auto text-[#1C1C1C] dark:text-white opacity-40 dark:opacity-60 hover:opacity-90 transition-opacity duration-200" aria-hidden="true" />
+        <NpciLogo className="h-3.5 w-auto text-[#1C1C1C] dark:text-white opacity-40 dark:opacity-60 hover:opacity-90 transition-opacity duration-200" aria-hidden="true" />
       </div>
     </div>
   );
