@@ -17,7 +17,6 @@ import {
     Mail as MailIcon,
     Moon,
     ChevronDown,
-    ChevronUp,
     Crown,
     WifiOff,
     Copy,
@@ -57,7 +56,7 @@ const CopyButton = ({ text, label }) => {
         <button
             onClick={handleCopy}
             type="button"
-            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95 shadow-sm"
+            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-blue-650 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all active:scale-95 shadow-sm"
             title={`Copy ${label}`}
         >
             {copied ? (
@@ -70,7 +69,7 @@ const CopyButton = ({ text, label }) => {
 };
 
 // ---------------------------------------------------------------------------- //
-// Reusable Confirm Dialog (Fixed AnimatePresence exit bug)
+// Reusable Confirm Dialog
 // ---------------------------------------------------------------------------- //
 const ConfirmDialog = ({ isOpen, onClose, onConfirm, title, message, confirmLabel = 'Confirm', variant = 'danger' }) => {
     return (
@@ -94,18 +93,18 @@ const ConfirmDialog = ({ isOpen, onClose, onConfirm, title, message, confirmLabe
                         <div className="flex items-start gap-4">
                             <div className={`p-2.5 rounded-xl shrink-0 border ${
                                 variant === 'danger'
-                                    ? 'bg-red-50 dark:bg-red-950/20 text-red-650 dark:text-red-455 border-red-100 dark:border-red-900/30'
+                                    ? 'bg-red-50 dark:bg-red-950/20 text-red-650 dark:text-red-450 border-red-100 dark:border-red-900/30'
                                     : 'bg-indigo-50 dark:bg-indigo-950/20 text-indigo-650 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/30'
                             }`}>
                                 <AlertTriangle className="w-5 h-5" />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h3 className="text-base font-bold text-slate-900 dark:text-slate-50">{title}</h3>
+                                <h3 className="text-base font-bold text-slate-900 dark:text-slate-555">{title}</h3>
                                 <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{message}</p>
                             </div>
                             <button
                                 onClick={onClose}
-                                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 -mt-1 -mr-1"
+                                className="text-slate-400 hover:text-slate-650 dark:hover:text-slate-200 transition-colors p-1 -mt-1 -mr-1"
                                 aria-label="Close"
                             >
                                 <X className="w-4 h-4" />
@@ -135,20 +134,20 @@ const ConfirmDialog = ({ isOpen, onClose, onConfirm, title, message, confirmLabe
 };
 
 // ---------------------------------------------------------------------------- //
-// Profile Detail Card (Premium Grid design)
+// Profile Detail Card (Hover matched to Sidebar styling)
 // ---------------------------------------------------------------------------- //
 const ProfileDetailCard = ({ icon: Icon, label, value, isCopyable, copyLabel }) => {
     return (
-        <div className="group relative flex items-center justify-between p-4 rounded-xl border border-slate-200/60 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200 shadow-sm">
+        <div className="group relative flex items-center justify-between p-4 rounded-xl border border-slate-200/60 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 hover:bg-gray-100 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200 shadow-sm">
             <div className="flex items-center gap-3.5 min-w-0">
-                <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-950/40 group-hover:text-indigo-650 dark:group-hover:text-indigo-400 transition-colors shrink-0 border border-transparent dark:border-slate-700/30">
+                <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-blue-50 dark:group-hover:bg-blue-600/10 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors shrink-0 border border-transparent dark:border-slate-700/30">
                     <Icon className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
                     <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                         {label}
                     </span>
-                    <span className="block text-sm font-semibold text-slate-850 dark:text-slate-100 truncate mt-0.5">
+                    <span className="block text-sm font-semibold text-slate-805 dark:text-slate-100 truncate mt-0.5">
                         {value}
                     </span>
                 </div>
@@ -163,10 +162,10 @@ const ProfileDetailCard = ({ icon: Icon, label, value, isCopyable, copyLabel }) 
 };
 
 // ---------------------------------------------------------------------------- //
-// Notification Toggle Row
+// Notification Toggle Row (Hover matched to Sidebar styling)
 // ---------------------------------------------------------------------------- //
 const NotificationToggle = ({ icon: Icon, iconBg, iconColor, title, description, enabled, loading, onToggle, error }) => (
-    <div className="py-4 px-4 rounded-xl border border-slate-200/40 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/20 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+    <div className="py-4 px-4 rounded-xl border border-slate-200/40 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/20 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
         <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0 flex-1">
                 <div className={`p-2.5 rounded-xl shrink-0 ${iconBg} border border-slate-200/50 dark:border-slate-800`}>
@@ -318,7 +317,6 @@ const ProfilePage = () => {
     const [notifPrefs, setNotifPrefs] = useState(null);
     const [prefsLoading, setPrefsLoading] = useState(true);
     const [prefsError, setPrefsError] = useState(false);
-    const [prefsOpen, setPrefsOpen] = useState(false);
 
     useEffect(() => {
         if (!user) return;
@@ -417,15 +415,11 @@ const ProfilePage = () => {
                     
                     <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
-                            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-300">
-                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                                Secured Portal
-                            </div>
-                            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mt-1.5">
-                                Welcome back, {user?.name?.split(' ')[0] || 'User'}
+                            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                                {user?.name || 'User Profile'}
                             </h2>
-                            <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-xl leading-relaxed">
-                                Manage your credentials, security preferences, and keep your communication channels up to date.
+                            <p className="text-xs sm:text-sm text-slate-400 mt-2 max-w-xl leading-relaxed">
+                                View your account details, manage notification channels, and update personal settings.
                             </p>
                         </div>
                         <div className="flex items-center gap-3 shrink-0 self-start sm:self-center">
@@ -488,14 +482,14 @@ const ProfilePage = () => {
                                     {isAdmin && (
                                         <>
                                             <button
-                                                className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors text-slate-700 dark:text-slate-350 group font-medium"
+                                                className="w-full flex items-center justify-between p-3 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white transition-colors group font-medium"
                                                 onClick={() => navigate('/settings')}
                                             >
                                                 <span className="flex items-center gap-3 text-sm">
-                                                    <Settings className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-indigo-650 dark:group-hover:text-indigo-400 transition-colors" />
+                                                    <Settings className="w-4.5 h-4.5 text-gray-400 dark:text-gray-550 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
                                                     Account Settings
                                                 </span>
-                                                <ChevronDown className="w-4 h-4 -rotate-90 text-slate-300 dark:text-slate-700" />
+                                                <ChevronDown className="w-4 h-4 -rotate-90 text-slate-350 dark:text-slate-650" />
                                             </button>
                                             <div className="h-px bg-slate-100 dark:bg-slate-800 mx-2" />
                                         </>
@@ -503,12 +497,13 @@ const ProfilePage = () => {
 
                                     <button
                                         onClick={handleLogout}
-                                        className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors text-slate-700 dark:text-slate-350 hover:text-red-650 dark:hover:text-red-400 group font-medium"
+                                        className="w-full flex items-center justify-between p-3 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white transition-colors group font-medium"
                                     >
                                         <span className="flex items-center gap-3 text-sm">
-                                            <LogOut className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-red-500 dark:group-hover:text-red-450 transition-colors" />
+                                            <LogOut className="w-4.5 h-4.5 text-gray-400 dark:text-gray-550 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
                                             Sign Out
                                         </span>
+                                        <ChevronDown className="w-4 h-4 -rotate-90 text-slate-350 dark:text-slate-650" />
                                     </button>
 
                                     <div className="h-px bg-slate-100 dark:bg-slate-800 mx-2" />
@@ -516,16 +511,16 @@ const ProfilePage = () => {
                                     <button
                                         onClick={() => setShowDeactivateConfirm(true)}
                                         disabled={deactivationLoading}
-                                        className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors text-slate-700 dark:text-slate-350 hover:text-red-650 dark:hover:text-red-455 disabled:opacity-50 disabled:cursor-not-allowed group font-medium"
+                                        className="w-full flex items-center justify-between p-3 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-400/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group font-medium"
                                     >
                                         <span className="flex items-center gap-3 text-sm">
-                                            <UserX className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-red-500 dark:group-hover:text-red-455 transition-colors" />
+                                            <UserX className="w-4.5 h-4.5 text-red-400 dark:text-red-500 group-hover:text-red-650 dark:group-hover:text-red-400 transition-colors" />
                                             Deactivate Account
                                         </span>
                                         {deactivationLoading ? (
-                                            <Spinner size="sm" color="current" className="text-red-600 dark:text-red-400" />
+                                            <Spinner size="sm" color="current" className="text-red-650 dark:text-red-450" />
                                         ) : (
-                                            <ChevronDown className="w-4 h-4 -rotate-90 text-slate-300 dark:text-slate-700" />
+                                            <ChevronDown className="w-4 h-4 -rotate-90 text-red-300 dark:text-red-700" />
                                         )}
                                     </button>
                                 </div>
@@ -573,7 +568,7 @@ const ProfilePage = () => {
                             </Card>
                         </ProfileCardErrorBoundary>
 
-                        {/* Notification Preferences */}
+                        {/* Notification Preferences (Exposed directly for standard production UX) */}
                         <ProfileCardErrorBoundary>
                             <Card variant="default" padding="none" className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm">
                                 <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
@@ -588,120 +583,100 @@ const ProfilePage = () => {
                                             <p className="text-[11px] text-slate-400 dark:text-slate-500">Configure alert channels and push tokens</p>
                                         </div>
                                     </div>
-                                    <button
-                                        onClick={() => setPrefsOpen(!prefsOpen)}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                                        aria-expanded={prefsOpen}
-                                    >
-                                        {prefsOpen ? 'Hide System Settings' : 'Manage Preferences'}
-                                        {prefsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                    </button>
                                 </div>
-                                <AnimatePresence initial={false}>
-                                    {prefsOpen && (
-                                        <motion.div
-                                            initial={{ height: 0, opacity: 0 }}
-                                            animate={{ height: 'auto', opacity: 1 }}
-                                            exit={{ height: 0, opacity: 0 }}
-                                            transition={{ duration: 0.2, ease: 'easeOut' }}
-                                            className="overflow-hidden"
-                                        >
-                                            <CardContent className="px-6 pb-6 pt-2 space-y-4">
-                                                {prefsLoading ? (
-                                                    <div className="flex items-center gap-2.5 justify-center py-8">
-                                                        <Spinner size="sm" color="current" className="text-indigo-500" />
-                                                        <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">Synchronizing configurations…</span>
-                                                    </div>
-                                                ) : prefsError ? (
-                                                    <div className="flex flex-col items-center gap-2 py-8 text-center">
-                                                        <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30">
-                                                            <WifiOff className="w-5 h-5 text-red-500 dark:text-red-400" />
-                                                        </div>
-                                                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Failed to load channels</p>
-                                                        <p className="text-xs text-slate-400 dark:text-slate-550 max-w-xs leading-normal">Verify security certificates and device connection settings.</p>
-                                                        <button
-                                                            onClick={() => {
-                                                                setPrefsLoading(true);
-                                                                setPrefsError(false);
-                                                                NotificationService.getPreferences()
-                                                                    .then((res) => {
-                                                                        const data = res?.data ?? null;
-                                                                        setNotifPrefs(data);
-                                                                        if (!data) setPrefsError(true);
-                                                                    })
-                                                                    .catch(() => setPrefsError(true))
-                                                                    .finally(() => setPrefsLoading(false));
-                                                            }}
-                                                            className="mt-3 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors active:scale-95 shadow-sm"
-                                                        >
-                                                            Retry Handshake
-                                                        </button>
-                                                    </div>
-                                                ) : notifPrefs ? (
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                                                        <NotificationToggle
-                                                            icon={Smartphone}
-                                                            iconBg="bg-blue-50 dark:bg-blue-950/30"
-                                                            iconColor="text-blue-600 dark:text-blue-400"
-                                                            title="FCM Push Notifications"
-                                                            description={fcmSupported ? (fcmEnabled ? 'Subscribed' : 'Inactive') : 'Not supported on this device'}
-                                                            enabled={fcmEnabled}
-                                                            loading={fcmLoading}
-                                                            onToggle={toggleFcm}
-                                                            error={fcmError}
-                                                        />
-                                                        <NotificationToggle
-                                                            icon={Smartphone}
-                                                            iconBg="bg-green-50 dark:bg-emerald-950/20"
-                                                            iconColor="text-green-600 dark:text-emerald-450"
-                                                            title="VAPID Web Push"
-                                                            description={vapidSupported ? (vapidEnabled ? 'Subscribed' : 'Inactive') : 'Not supported on this device'}
-                                                            enabled={vapidEnabled}
-                                                            loading={vapidLoading}
-                                                            onToggle={toggleVapid}
-                                                            error={vapidError}
-                                                        />
-                                                        <NotificationToggle
-                                                            icon={MailIcon}
-                                                            iconBg="bg-purple-50 dark:bg-purple-950/30"
-                                                            iconColor="text-purple-600 dark:text-purple-400"
-                                                            title="Email Notifications"
-                                                            description={notifPrefs.email ? 'Alerts enabled' : 'Alerts disabled'}
-                                                            enabled={notifPrefs.email}
-                                                            loading={false}
-                                                            onToggle={() => handlePrefsUpdate({ email: !notifPrefs.email })}
-                                                        />
-                                                        <NotificationToggle
-                                                            icon={Moon}
-                                                            iconBg="bg-indigo-50 dark:bg-indigo-950/30"
-                                                            iconColor="text-indigo-600 dark:text-indigo-400"
-                                                            title="Quiet Hours (DND)"
-                                                            description={notifPrefs.quietHours?.enabled
-                                                                ? `${notifPrefs.quietHours.start || '22:00'} – ${notifPrefs.quietHours.end || '08:00'}`
-                                                                : 'Inactive'}
-                                                            enabled={notifPrefs.quietHours?.enabled || false}
-                                                            loading={false}
-                                                            onToggle={() => handlePrefsUpdate({
-                                                                quietHours: {
-                                                                    ...notifPrefs.quietHours,
-                                                                    enabled: !notifPrefs.quietHours?.enabled,
-                                                                }
-                                                            })}
-                                                        />
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex flex-col items-center gap-2 py-8 text-center">
-                                                        <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
-                                                            <Bell className="w-5 h-5 text-slate-400 dark:text-slate-500" />
-                                                        </div>
-                                                        <p className="text-sm font-semibold text-slate-550 dark:text-slate-400">No preference schema</p>
-                                                        <p className="text-xs text-slate-400 dark:text-slate-500">Contact admin to provision notification parameters.</p>
-                                                    </div>
-                                                )}
-                                            </CardContent>
-                                        </motion.div>
+                                <CardContent className="px-6 pb-6 pt-6">
+                                    {prefsLoading ? (
+                                        <div className="flex items-center gap-2.5 justify-center py-8">
+                                            <Spinner size="sm" color="current" className="text-indigo-500" />
+                                            <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">Synchronizing configurations…</span>
+                                        </div>
+                                    ) : prefsError ? (
+                                        <div className="flex flex-col items-center gap-2 py-8 text-center">
+                                            <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30">
+                                                <WifiOff className="w-5 h-5 text-red-500 dark:text-red-400" />
+                                            </div>
+                                            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Failed to load channels</p>
+                                            <p className="text-xs text-slate-400 dark:text-slate-550 max-w-xs leading-normal">Verify security certificates and device connection settings.</p>
+                                            <button
+                                                onClick={() => {
+                                                    setPrefsLoading(true);
+                                                    setPrefsError(false);
+                                                    NotificationService.getPreferences()
+                                                        .then((res) => {
+                                                            const data = res?.data ?? null;
+                                                            setNotifPrefs(data);
+                                                            if (!data) setPrefsError(true);
+                                                        })
+                                                        .catch(() => setPrefsError(true))
+                                                        .finally(() => setPrefsLoading(false));
+                                                }}
+                                                className="mt-3 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors active:scale-95 shadow-sm"
+                                            >
+                                                Retry Handshake
+                                            </button>
+                                        </div>
+                                    ) : notifPrefs ? (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <NotificationToggle
+                                                icon={Smartphone}
+                                                iconBg="bg-blue-50 dark:bg-blue-950/30"
+                                                iconColor="text-blue-600 dark:text-blue-400"
+                                                title="FCM Push Notifications"
+                                                description={fcmSupported ? (fcmEnabled ? 'Subscribed' : 'Inactive') : 'Not supported on this device'}
+                                                enabled={fcmEnabled}
+                                                loading={fcmLoading}
+                                                onToggle={toggleFcm}
+                                                error={fcmError}
+                                            />
+                                            <NotificationToggle
+                                                icon={Smartphone}
+                                                iconBg="bg-green-50 dark:bg-emerald-950/20"
+                                                iconColor="text-green-600 dark:text-emerald-450"
+                                                title="VAPID Web Push"
+                                                description={vapidSupported ? (vapidEnabled ? 'Subscribed' : 'Inactive') : 'Not supported on this device'}
+                                                enabled={vapidEnabled}
+                                                loading={vapidLoading}
+                                                onToggle={toggleVapid}
+                                                error={vapidError}
+                                            />
+                                            <NotificationToggle
+                                                icon={MailIcon}
+                                                iconBg="bg-purple-50 dark:bg-purple-950/30"
+                                                iconColor="text-purple-600 dark:text-purple-400"
+                                                title="Email Notifications"
+                                                description={notifPrefs.email ? 'Alerts enabled' : 'Alerts disabled'}
+                                                enabled={notifPrefs.email}
+                                                loading={false}
+                                                onToggle={() => handlePrefsUpdate({ email: !notifPrefs.email })}
+                                            />
+                                            <NotificationToggle
+                                                icon={Moon}
+                                                iconBg="bg-indigo-50 dark:bg-indigo-950/30"
+                                                iconColor="text-indigo-600 dark:text-indigo-400"
+                                                title="Quiet Hours (DND)"
+                                                description={notifPrefs.quietHours?.enabled
+                                                    ? `${notifPrefs.quietHours.start || '22:00'} – ${notifPrefs.quietHours.end || '08:00'}`
+                                                    : 'Inactive'}
+                                                enabled={notifPrefs.quietHours?.enabled || false}
+                                                loading={false}
+                                                onToggle={() => handlePrefsUpdate({
+                                                    quietHours: {
+                                                        ...notifPrefs.quietHours,
+                                                        enabled: !notifPrefs.quietHours?.enabled,
+                                                    }
+                                                })}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center gap-2 py-8 text-center">
+                                            <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+                                                <Bell className="w-5 h-5 text-slate-400 dark:text-slate-500" />
+                                            </div>
+                                            <p className="text-sm font-semibold text-slate-550 dark:text-slate-400">No preference schema</p>
+                                            <p className="text-xs text-slate-400 dark:text-slate-500">Contact admin to provision notification parameters.</p>
+                                        </div>
                                     )}
-                                </AnimatePresence>
+                                </CardContent>
                             </Card>
                         </ProfileCardErrorBoundary>
                     </div>
