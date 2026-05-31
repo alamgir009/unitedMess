@@ -17,6 +17,7 @@ import {
     Mail as MailIcon,
     Moon,
     ChevronDown,
+    ChevronUp,
     Crown,
     WifiOff,
     Copy,
@@ -69,42 +70,43 @@ const CopyButton = ({ text, label }) => {
 };
 
 // ---------------------------------------------------------------------------- //
-// Reusable Confirm Dialog
+// Reusable Confirm Dialog (Low GPU, matches MealModal performance parameters)
 // ---------------------------------------------------------------------------- //
 const ConfirmDialog = ({ isOpen, onClose, onConfirm, title, message, confirmLabel = 'Confirm', variant = 'danger' }) => {
     return (
         <AnimatePresence>
             {isOpen && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-                    onClick={onClose}
-                >
+                <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4 contain-[layout_style_paint]">
+                    {/* Static backdrop overlay, zero GPU paint cost */}
+                    <div
+                        onClick={onClose}
+                        className="absolute inset-0 w-full h-full bg-black/60 md:bg-black/50"
+                    />
+                    
+                    {/* GPU hardware accelerated card transition */}
                     <motion.div
-                        initial={{ scale: 0.96, opacity: 0, y: 12 }}
+                        initial={{ scale: 0.985, opacity: 0, y: 12 }}
                         animate={{ scale: 1, opacity: 1, y: 0 }}
-                        exit={{ scale: 0.96, opacity: 0, y: 12 }}
-                        transition={{ duration: 0.2, ease: 'easeOut' }}
+                        exit={{ scale: 0.985, opacity: 0, y: 12 }}
+                        transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
                         onClick={(e) => e.stopPropagation()}
-                        className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-800"
+                        className="relative z-10 bg-white dark:bg-slate-900 rounded-xl shadow-xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-800"
                     >
                         <div className="flex items-start gap-4">
                             <div className={`p-2.5 rounded-xl shrink-0 border ${
                                 variant === 'danger'
-                                    ? 'bg-red-50 dark:bg-red-950/20 text-red-650 dark:text-red-450 border-red-100 dark:border-red-900/30'
-                                    : 'bg-indigo-50 dark:bg-indigo-950/20 text-indigo-650 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/30'
+                                    ? 'bg-red-50 dark:bg-red-950/20 text-red-655 dark:text-red-400 border-red-100 dark:border-red-900/30'
+                                    : 'bg-indigo-50 dark:bg-indigo-950/20 text-indigo-655 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/30'
                             }`}>
                                 <AlertTriangle className="w-5 h-5" />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h3 className="text-base font-bold text-slate-900 dark:text-slate-555">{title}</h3>
-                                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{message}</p>
+                                <h3 className="text-base font-bold text-slate-900 dark:text-slate-50">{title}</h3>
+                                <p className="mt-2 text-xs text-slate-550 dark:text-slate-400 leading-relaxed">{message}</p>
                             </div>
                             <button
                                 onClick={onClose}
-                                className="text-slate-400 hover:text-slate-650 dark:hover:text-slate-200 transition-colors p-1 -mt-1 -mr-1"
+                                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 -mt-1 -mr-1"
                                 aria-label="Close"
                             >
                                 <X className="w-4 h-4" />
@@ -127,7 +129,7 @@ const ConfirmDialog = ({ isOpen, onClose, onConfirm, title, message, confirmLabe
                             </Button>
                         </div>
                     </motion.div>
-                </motion.div>
+                </div>
             )}
         </AnimatePresence>
     );
@@ -147,7 +149,7 @@ const ProfileDetailCard = ({ icon: Icon, label, value, isCopyable, copyLabel }) 
                     <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                         {label}
                     </span>
-                    <span className="block text-sm font-semibold text-slate-805 dark:text-slate-100 truncate mt-0.5">
+                    <span className="block text-sm font-semibold text-slate-800 dark:text-slate-100 truncate mt-0.5">
                         {value}
                     </span>
                 </div>
@@ -247,8 +249,8 @@ class ProfileCardErrorBoundary extends Component {
     render() {
         if (this.state.hasError) {
             return (
-                <div className="p-6 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 rounded-2xl text-center space-y-3">
-                    <div className="inline-flex p-2.5 rounded-xl bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400">
+                <div className="p-6 bg-red-50 dark:bg-red-955/20 border border-red-200 dark:border-red-900/50 rounded-2xl text-center space-y-3">
+                    <div className="inline-flex p-2.5 rounded-xl bg-red-100 dark:bg-red-900/40 text-red-650 dark:text-red-450 border-red-250 dark:border-red-900/40">
                         <AlertTriangle className="w-5 h-5" />
                     </div>
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-50">Card Load Failed</h3>
@@ -317,6 +319,7 @@ const ProfilePage = () => {
     const [notifPrefs, setNotifPrefs] = useState(null);
     const [prefsLoading, setPrefsLoading] = useState(true);
     const [prefsError, setPrefsError] = useState(false);
+    const [prefsOpen, setPrefsOpen] = useState(false);
 
     useEffect(() => {
         if (!user) return;
@@ -449,7 +452,7 @@ const ProfilePage = () => {
                                         </h3>
                                         <div className="flex items-center justify-center pt-1.5">
                                             {isAdmin ? (
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold tracking-wider uppercase bg-violet-50 dark:bg-violet-950/40 text-violet-650 dark:text-violet-400 border border-violet-100 dark:border-violet-900/30 shadow-sm">
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold tracking-wider uppercase bg-violet-50 dark:bg-violet-950/40 text-violet-655 dark:text-violet-400 border border-violet-100 dark:border-violet-900/30 shadow-sm">
                                                     <Crown className="w-2.5 h-2.5" />
                                                     Admin
                                                 </span>
@@ -462,11 +465,11 @@ const ProfilePage = () => {
                                     </div>
                                     
                                     <div className="h-px bg-slate-100 dark:bg-slate-800 w-full" />
-                                    <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                                    <p className="text-[10px] text-slate-400 dark:text-slate-555">
                                         JPG, PNG or GIF. Max 5 MB.
                                     </p>
                                     {avatarError && (
-                                        <div className="flex items-center gap-1.5 text-xs font-semibold text-red-500">
+                                        <div className="flex items-center gap-1.5 text-xs font-semibold text-red-505">
                                             <AlertTriangle className="w-3.5 h-3.5" />
                                             {avatarError}
                                         </div>
@@ -500,10 +503,10 @@ const ProfilePage = () => {
                                         className="w-full flex items-center justify-between p-3 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white transition-colors group font-medium"
                                     >
                                         <span className="flex items-center gap-3 text-sm">
-                                            <LogOut className="w-4.5 h-4.5 text-gray-400 dark:text-gray-550 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+                                            <LogOut className="w-4.5 h-4.5 text-gray-400 dark:text-gray-555 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
                                             Sign Out
                                         </span>
-                                        <ChevronDown className="w-4 h-4 -rotate-90 text-slate-350 dark:text-slate-650" />
+                                        <ChevronDown className="w-4 h-4 -rotate-90 text-slate-355 dark:text-slate-650" />
                                     </button>
 
                                     <div className="h-px bg-slate-100 dark:bg-slate-800 mx-2" />
@@ -514,7 +517,7 @@ const ProfilePage = () => {
                                         className="w-full flex items-center justify-between p-3 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-400/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group font-medium"
                                     >
                                         <span className="flex items-center gap-3 text-sm">
-                                            <UserX className="w-4.5 h-4.5 text-red-400 dark:text-red-500 group-hover:text-red-650 dark:group-hover:text-red-400 transition-colors" />
+                                            <UserX className="w-4.5 h-4.5 text-red-400 dark:text-red-555 group-hover:text-red-650 dark:group-hover:text-red-400 transition-colors" />
                                             Deactivate Account
                                         </span>
                                         {deactivationLoading ? (
@@ -568,7 +571,7 @@ const ProfilePage = () => {
                             </Card>
                         </ProfileCardErrorBoundary>
 
-                        {/* Notification Preferences (Exposed directly for standard production UX) */}
+                        {/* Notification Preferences */}
                         <ProfileCardErrorBoundary>
                             <Card variant="default" padding="none" className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm">
                                 <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
@@ -577,106 +580,126 @@ const ProfilePage = () => {
                                             <Bell className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                                         </div>
                                         <div>
-                                            <h3 className="text-base font-bold text-slate-900 dark:text-slate-50">
+                                            <h3 className="text-base font-bold text-slate-900 dark:text-slate-555">
                                                 Communication Channels
                                             </h3>
                                             <p className="text-[11px] text-slate-400 dark:text-slate-500">Configure alert channels and push tokens</p>
                                         </div>
                                     </div>
+                                    <button
+                                        onClick={() => setPrefsOpen(!prefsOpen)}
+                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                        aria-expanded={prefsOpen}
+                                    >
+                                        {prefsOpen ? 'Hide Preferences' : 'Manage Preferences'}
+                                        {prefsOpen ? <ChevronUp className="w-4 h-4 ml-1.5" /> : <ChevronDown className="w-4 h-4 ml-1.5" />}
+                                    </button>
                                 </div>
-                                <CardContent className="px-6 pb-6 pt-6">
-                                    {prefsLoading ? (
-                                        <div className="flex items-center gap-2.5 justify-center py-8">
-                                            <Spinner size="sm" color="current" className="text-indigo-500" />
-                                            <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">Synchronizing configurations…</span>
-                                        </div>
-                                    ) : prefsError ? (
-                                        <div className="flex flex-col items-center gap-2 py-8 text-center">
-                                            <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30">
-                                                <WifiOff className="w-5 h-5 text-red-500 dark:text-red-400" />
-                                            </div>
-                                            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Failed to load channels</p>
-                                            <p className="text-xs text-slate-400 dark:text-slate-550 max-w-xs leading-normal">Verify security certificates and device connection settings.</p>
-                                            <button
-                                                onClick={() => {
-                                                    setPrefsLoading(true);
-                                                    setPrefsError(false);
-                                                    NotificationService.getPreferences()
-                                                        .then((res) => {
-                                                            const data = res?.data ?? null;
-                                                            setNotifPrefs(data);
-                                                            if (!data) setPrefsError(true);
-                                                        })
-                                                        .catch(() => setPrefsError(true))
-                                                        .finally(() => setPrefsLoading(false));
-                                                }}
-                                                className="mt-3 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors active:scale-95 shadow-sm"
-                                            >
-                                                Retry Handshake
-                                            </button>
-                                        </div>
-                                    ) : notifPrefs ? (
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            <NotificationToggle
-                                                icon={Smartphone}
-                                                iconBg="bg-blue-50 dark:bg-blue-950/30"
-                                                iconColor="text-blue-600 dark:text-blue-400"
-                                                title="FCM Push Notifications"
-                                                description={fcmSupported ? (fcmEnabled ? 'Subscribed' : 'Inactive') : 'Not supported on this device'}
-                                                enabled={fcmEnabled}
-                                                loading={fcmLoading}
-                                                onToggle={toggleFcm}
-                                                error={fcmError}
-                                            />
-                                            <NotificationToggle
-                                                icon={Smartphone}
-                                                iconBg="bg-green-50 dark:bg-emerald-950/20"
-                                                iconColor="text-green-600 dark:text-emerald-450"
-                                                title="VAPID Web Push"
-                                                description={vapidSupported ? (vapidEnabled ? 'Subscribed' : 'Inactive') : 'Not supported on this device'}
-                                                enabled={vapidEnabled}
-                                                loading={vapidLoading}
-                                                onToggle={toggleVapid}
-                                                error={vapidError}
-                                            />
-                                            <NotificationToggle
-                                                icon={MailIcon}
-                                                iconBg="bg-purple-50 dark:bg-purple-950/30"
-                                                iconColor="text-purple-600 dark:text-purple-400"
-                                                title="Email Notifications"
-                                                description={notifPrefs.email ? 'Alerts enabled' : 'Alerts disabled'}
-                                                enabled={notifPrefs.email}
-                                                loading={false}
-                                                onToggle={() => handlePrefsUpdate({ email: !notifPrefs.email })}
-                                            />
-                                            <NotificationToggle
-                                                icon={Moon}
-                                                iconBg="bg-indigo-50 dark:bg-indigo-950/30"
-                                                iconColor="text-indigo-600 dark:text-indigo-400"
-                                                title="Quiet Hours (DND)"
-                                                description={notifPrefs.quietHours?.enabled
-                                                    ? `${notifPrefs.quietHours.start || '22:00'} – ${notifPrefs.quietHours.end || '08:00'}`
-                                                    : 'Inactive'}
-                                                enabled={notifPrefs.quietHours?.enabled || false}
-                                                loading={false}
-                                                onToggle={() => handlePrefsUpdate({
-                                                    quietHours: {
-                                                        ...notifPrefs.quietHours,
-                                                        enabled: !notifPrefs.quietHours?.enabled,
-                                                    }
-                                                })}
-                                            />
-                                        </div>
-                                    ) : (
-                                        <div className="flex flex-col items-center gap-2 py-8 text-center">
-                                            <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
-                                                <Bell className="w-5 h-5 text-slate-400 dark:text-slate-500" />
-                                            </div>
-                                            <p className="text-sm font-semibold text-slate-550 dark:text-slate-400">No preference schema</p>
-                                            <p className="text-xs text-slate-400 dark:text-slate-500">Contact admin to provision notification parameters.</p>
-                                        </div>
+                                <AnimatePresence initial={false}>
+                                    {prefsOpen && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.15, ease: 'easeOut' }}
+                                            className="overflow-hidden"
+                                        >
+                                            <CardContent className="px-6 pb-6 pt-6">
+                                                {prefsLoading ? (
+                                                    <div className="flex items-center gap-2.5 justify-center py-8">
+                                                        <Spinner size="sm" color="current" className="text-indigo-505" />
+                                                        <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">Synchronizing configurations…</span>
+                                                    </div>
+                                                ) : prefsError ? (
+                                                    <div className="flex flex-col items-center gap-2 py-8 text-center">
+                                                        <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-955/20 border border-red-100 dark:border-red-900/30">
+                                                            <WifiOff className="w-5 h-5 text-red-555 dark:text-red-400" />
+                                                        </div>
+                                                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Failed to load channels</p>
+                                                        <p className="text-xs text-slate-400 dark:text-slate-550 max-w-xs leading-normal">Verify security certificates and device connection settings.</p>
+                                                        <button
+                                                            onClick={() => {
+                                                                setPrefsLoading(true);
+                                                                setPrefsError(false);
+                                                                NotificationService.getPreferences()
+                                                                    .then((res) => {
+                                                                        const data = res?.data ?? null;
+                                                                        setNotifPrefs(data);
+                                                                        if (!data) setPrefsError(true);
+                                                                    })
+                                                                    .catch(() => setPrefsError(true))
+                                                                    .finally(() => setPrefsLoading(false));
+                                                            }}
+                                                            className="mt-3 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-800 text-slate-650 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors active:scale-95 shadow-sm"
+                                                        >
+                                                            Retry Handshake
+                                                        </button>
+                                                    </div>
+                                                ) : notifPrefs ? (
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                        <NotificationToggle
+                                                            icon={Smartphone}
+                                                            iconBg="bg-blue-50 dark:bg-blue-955/30"
+                                                            iconColor="text-blue-600 dark:text-blue-400"
+                                                            title="FCM Push Notifications"
+                                                            description={fcmSupported ? (fcmEnabled ? 'Subscribed' : 'Inactive') : 'Not supported on this device'}
+                                                            enabled={fcmEnabled}
+                                                            loading={fcmLoading}
+                                                            onToggle={toggleFcm}
+                                                            error={fcmError}
+                                                        />
+                                                        <NotificationToggle
+                                                            icon={Smartphone}
+                                                            iconBg="bg-green-50 dark:bg-emerald-955/20"
+                                                            iconColor="text-green-650 dark:text-emerald-450"
+                                                            title="VAPID Web Push"
+                                                            description={vapidSupported ? (vapidEnabled ? 'Subscribed' : 'Inactive') : 'Not supported on this device'}
+                                                            enabled={vapidEnabled}
+                                                            loading={vapidLoading}
+                                                            onToggle={toggleVapid}
+                                                            error={vapidError}
+                                                        />
+                                                        <NotificationToggle
+                                                            icon={MailIcon}
+                                                            iconBg="bg-purple-50 dark:bg-purple-955/30"
+                                                            iconColor="text-purple-600 dark:text-purple-400"
+                                                            title="Email Notifications"
+                                                            description={notifPrefs.email ? 'Alerts enabled' : 'Alerts disabled'}
+                                                            enabled={notifPrefs.email}
+                                                            loading={false}
+                                                            onToggle={() => handlePrefsUpdate({ email: !notifPrefs.email })}
+                                                        />
+                                                        <NotificationToggle
+                                                            icon={Moon}
+                                                            iconBg="bg-indigo-50 dark:bg-indigo-955/30"
+                                                            iconColor="text-indigo-600 dark:text-indigo-400"
+                                                            title="Quiet Hours (DND)"
+                                                            description={notifPrefs.quietHours?.enabled
+                                                                ? `${notifPrefs.quietHours.start || '22:00'} – ${notifPrefs.quietHours.end || '08:00'}`
+                                                                : 'Inactive'}
+                                                            enabled={notifPrefs.quietHours?.enabled || false}
+                                                            loading={false}
+                                                            onToggle={() => handlePrefsUpdate({
+                                                                quietHours: {
+                                                                    ...notifPrefs.quietHours,
+                                                                    enabled: !notifPrefs.quietHours?.enabled,
+                                                                }
+                                                            })}
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex flex-col items-center gap-2 py-8 text-center">
+                                                        <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+                                                            <Bell className="w-5 h-5 text-slate-400 dark:text-slate-500" />
+                                                        </div>
+                                                        <p className="text-sm font-semibold text-slate-550 dark:text-slate-450">No preference schema</p>
+                                                        <p className="text-xs text-slate-400 dark:text-slate-500">Contact admin to provision notification parameters.</p>
+                                                    </div>
+                                                )}
+                                            </CardContent>
+                                        </motion.div>
                                     )}
-                                </CardContent>
+                                </AnimatePresence>
                             </Card>
                         </ProfileCardErrorBoundary>
                     </div>
