@@ -23,7 +23,7 @@ import {
     WifiOff,
 } from 'lucide-react';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
-import { Card, CardContent } from '@/shared/ui/Card/Card';
+import { Card, CardContent } from '@/shared/components/ui';
 import { logout, deactivateAccount } from '@/modules/auth/store/auth.slice';
 import { useNavigate } from 'react-router-dom';
 import React, { useCallback, useEffect, useState, useMemo, Component } from 'react';

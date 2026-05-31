@@ -4,7 +4,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { resetPassword, reset as resetAuth } from '../../store/auth.slice';
-import Button from '@/shared/ui/Button/Button';
+import { Button } from '@/shared/components/ui';
 import Input from '@/shared/ui/Input/Input';
 
 const ResetPasswordPage = () => {

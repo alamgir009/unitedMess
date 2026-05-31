@@ -1,5 +1,6 @@
 import { Loader2 } from 'lucide-react';
-import { cn } from '@/core/utils/helpers/string.helper';
+
+const STYLE_ID = 'fk-btn-styles';
 
 const BUTTON_STYLES = `
   :root {
@@ -7,9 +8,10 @@ const BUTTON_STYLES = `
     --brand-indigo:   248  90% 62%;
     --brand-emerald:  158  72% 42%;
     --brand-rose:     350  88% 58%;
+    --brand-amber:     38  96% 52%;
   }
 
-  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes fk-spin { to { transform: rotate(360deg); } }
 
   .fk-btn {
     position: relative;
@@ -39,29 +41,24 @@ const BUTTON_STYLES = `
     gap: 6px;
     line-height: 1;
   }
-  .fk-btn .fk-spinner { animation: spin 0.75s linear infinite; flex-shrink: 0; }
+  .fk-btn .fk-spinner { animation: fk-spin 0.75s linear infinite; flex-shrink: 0; }
 
-  /* Primary */
   .fk-btn--primary {
     background: linear-gradient(135deg, hsl(var(--brand-cobalt)) 0%, hsl(var(--brand-indigo)) 100%);
     color: #fff;
     box-shadow: 0 2px 8px hsl(var(--brand-cobalt) / 0.25);
+    border: 1px solid rgba(255,255,255,0.12);
   }
   .fk-btn--primary:hover:not(:disabled) { box-shadow: 0 4px 16px hsl(var(--brand-cobalt) / 0.35); }
 
-  /* Secondary */
   .fk-btn--secondary {
     background: hsl(220 18% 14%);
     color: hsl(220 20% 88%);
     border: 1px solid rgba(255,255,255,0.10);
     box-shadow: 0 1px 4px rgba(0,0,0,0.15);
   }
-  .fk-btn--secondary:hover:not(:disabled) {
-    background: hsl(220 18% 17%);
-    color: #fff;
-  }
+  .fk-btn--secondary:hover:not(:disabled) { background: hsl(220 18% 17%); color: #fff; }
 
-  /* Outline */
   .fk-btn--outline {
     background: transparent;
     color: hsl(var(--brand-cobalt));
@@ -69,7 +66,6 @@ const BUTTON_STYLES = `
   }
   .fk-btn--outline:hover:not(:disabled) { background: hsl(var(--brand-cobalt) / 0.08); }
 
-  /* Ghost */
   .fk-btn--ghost {
     background: transparent;
     color: hsl(220 20% 70%);
@@ -78,23 +74,30 @@ const BUTTON_STYLES = `
   }
   .fk-btn--ghost:hover:not(:disabled) { background: rgba(255,255,255,0.06); color: #fff; }
 
-  /* Danger */
   .fk-btn--danger {
     background: linear-gradient(135deg, hsl(var(--brand-rose)) 0%, hsl(350 88% 45%) 100%);
     color: #fff;
     box-shadow: 0 2px 8px hsl(var(--brand-rose) / 0.25);
+    border: 1px solid rgba(255,255,255,0.12);
   }
   .fk-btn--danger:hover:not(:disabled) { box-shadow: 0 4px 16px hsl(var(--brand-rose) / 0.35); }
 
-  /* Success */
   .fk-btn--success {
     background: linear-gradient(135deg, hsl(var(--brand-emerald)) 0%, hsl(158 72% 30%) 100%);
     color: #fff;
     box-shadow: 0 2px 8px hsl(var(--brand-emerald) / 0.20);
+    border: 1px solid rgba(255,255,255,0.12);
   }
   .fk-btn--success:hover:not(:disabled) { box-shadow: 0 4px 16px hsl(var(--brand-emerald) / 0.30); }
 
-  /* Sizes */
+  .fk-btn--amber {
+    background: linear-gradient(135deg, hsl(var(--brand-amber)) 0%, hsl(38 96% 40%) 100%);
+    color: #fff;
+    box-shadow: 0 2px 8px hsl(var(--brand-amber) / 0.25);
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  .fk-btn--amber:hover:not(:disabled) { box-shadow: 0 4px 16px hsl(var(--brand-amber) / 0.35); }
+
   .fk-btn--sm  { height: 32px; padding: 0 14px; font-size: 12px; border-radius: 8px;  }
   .fk-btn--md  { height: 42px; padding: 0 20px; font-size: 14px; border-radius: 12px; }
   .fk-btn--lg  { height: 52px; padding: 0 32px; font-size: 15px; border-radius: 14px; }
@@ -107,12 +110,14 @@ const BUTTON_STYLES = `
   .fk-btn--full { width: 100%; }
 `;
 
-if (typeof document !== 'undefined' && !document.getElementById('fk-btn-styles')) {
+if (typeof document !== 'undefined' && !document.getElementById(STYLE_ID)) {
   const tag = document.createElement('style');
-  tag.id = 'fk-btn-styles';
+  tag.id = STYLE_ID;
   tag.textContent = BUTTON_STYLES;
   document.head.appendChild(tag);
 }
+
+const VARIANTS = new Set(['primary', 'secondary', 'outline', 'ghost', 'danger', 'success', 'amber']);
 
 const Button = ({
   children,
@@ -127,7 +132,6 @@ const Button = ({
   onClick,
   ...props
 }) => {
-  const VARIANTS = new Set(['primary', 'secondary', 'outline', 'ghost', 'danger', 'success']);
   const resolvedVariant = (type && VARIANTS.has(type)) ? type : variant;
   const handleClick = (e) => {
     if (!disabled && !isLoading) onClick?.(e);

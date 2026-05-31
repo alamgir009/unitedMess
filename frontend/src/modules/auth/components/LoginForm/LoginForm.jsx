@@ -2,18 +2,18 @@ import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { login } from '@/modules/auth/store/auth.slice';
-import Button from '@/shared/ui/Button/Button';
-import Input from '@/shared/ui/Input/Input';
-import PasswordInput from '@/shared/ui/PasswordInput/PasswordInput';
+import { Button, Input } from '@/shared/components/ui';
+import PasswordInput from '@/shared/components/ui/PasswordInput/PasswordInput';
 import { toast } from 'react-hot-toast';
 
 const LoginForm = () => {
     const [formData, setFormData] = useState({
         email: '',
         password: '',
+        rememberMe: false,
     });
 
-    const { email, password } = formData;
+    const { email, password, rememberMe } = formData;
     const dispatch = useDispatch();
     const { isLoading, isError, message } = useSelector((state) => state.auth);
 
@@ -32,7 +32,7 @@ const LoginForm = () => {
             return;
         }
 
-        dispatch(login({ email, password }));
+        dispatch(login({ email, password, rememberMe }));
     };
 
     return (
@@ -72,8 +72,10 @@ const LoginForm = () => {
                 <div className="flex items-center">
                     <input
                         id="remember-me"
-                        name="remember-me"
+                        name="rememberMe"
                         type="checkbox"
+                        checked={rememberMe}
+                        onChange={onChange}
                         className="h-4 w-4 text-primary focus:ring-primary border-border rounded accent-primary"
                     />
                     <label htmlFor="remember-me" className="ml-2 block text-sm text-foreground">

@@ -21,7 +21,16 @@ export const store = configureStore({
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({
-            serializableCheck: false,
+            serializableCheck: {
+                ignoredActions: [
+                    'auth/updateAvatar/fulfilled',
+                    'auth/updateAvatar/pending',
+                    'profile/updateAvatar/fulfilled',
+                ],
+                ignoredPaths: [
+                    'profile.avatarFile',
+                ],
+            },
         }),
 
 })

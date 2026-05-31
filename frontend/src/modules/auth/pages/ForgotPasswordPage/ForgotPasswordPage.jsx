@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, ArrowLeft, KeyRound, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
 import { forgotPassword, reset as resetAuth } from '../../store/auth.slice';
-import Button from '@/shared/ui/Button/Button';
+import { Button } from '@/shared/components/ui';
 import Input from '@/shared/ui/Input/Input';
 
 const ForgotPasswordPage = () => {

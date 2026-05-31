@@ -472,6 +472,9 @@ export const authSlice = createSlice({
                 state.user = null;
                 state.payableAmount = null;
                 state.payableAmountData = null;
+                state.payableGasBill = null;
+                state.isError = false;
+                state.message = '';
             })
             .addCase(deactivateAccount.rejected, (state, action) => {
                 state.isLoading = false;

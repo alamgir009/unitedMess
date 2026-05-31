@@ -4,7 +4,6 @@ import {
     ShoppingBag,
     CreditCard,
     Users,
-    MessageSquare,
     Bell,
     Settings,
     UserCircle,
@@ -27,7 +26,6 @@ const Sidebar = ({ isOpen, onClose }) => {
         { name: 'Markets', href: '/markets', icon: ShoppingBag },
         { name: 'Payments', href: '/payments', icon: CreditCard },
         { name: 'Members', href: '/members', icon: Users },
-        { name: 'Messages', href: '/messages', icon: MessageSquare },
         { name: 'Notifications', href: '/notifications', icon: Bell },
     ];
 

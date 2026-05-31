@@ -1,9 +1,8 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { register } from '@/modules/auth/store/auth.slice';
-import Button from '@/shared/ui/Button/Button';
-import Input from '@/shared/ui/Input/Input';
-import PasswordInput from '@/shared/ui/PasswordInput/PasswordInput';
+import { Button, Input } from '@/shared/components/ui';
+import PasswordInput from '@/shared/components/ui/PasswordInput/PasswordInput';
 import { toast } from 'react-hot-toast';
 
 // ==================== CONSTANTS ====================

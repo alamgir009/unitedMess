@@ -105,7 +105,10 @@ const useSocket = () => {
                 const token = getAccessToken();
                 if (token && socketRef.current) {
                     socketRef.current.auth.token = token;
-                    socketRef.current.disconnect().connect(); // Force reconnect with new token
+                    if (socketRef.current.connected) {
+                        socketRef.current.disconnect();
+                    }
+                    socketRef.current.connect();
                 }
             }
         }, 2000);

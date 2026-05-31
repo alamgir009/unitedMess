@@ -1,144 +1,167 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
-
-import LoginPage from '@/modules/auth/pages/LoginPage/LoginPage';
-import RegisterPage from '@/modules/auth/pages/RegisterPage/RegisterPage';
-import DashboardPage from '@/modules/dashboard/pages/DashboardPage/DashboardPage';
-import ProfilePage from '@/modules/profile/pages/ProfilePage/ProfilePage';
-import VerifyEmailPage from '@/modules/auth/pages/VerifyEmailPage/VerifyEmailPage';
-import ForgotPasswordPage from '@/modules/auth/pages/ForgotPasswordPage/ForgotPasswordPage';
-import ResetPasswordPage from '@/modules/auth/pages/ResetPasswordPage/ResetPasswordPage';
-import PendingApprovalPage from '@/modules/auth/pages/PendingApprovalPage/PendingApprovalPage';
-
-import HomePage from '@/modules/public/pages/HomePage/HomePage';
-import AboutPage from '@/modules/public/pages/AboutPage/AboutPage';
-import PrivacyPage from '@/modules/public/pages/PrivacyPage/PrivacyPage';
-import TermsPage from '@/modules/public/pages/TermsPage/TermsPage';
-import ContactPage from '@/modules/public/pages/ContactPage/ContactPage';
-import FoodGalleryPage from '@/modules/public/pages/FoodGalleryPage/FoodGalleryPage';
-import NotFoundPage from '@/modules/public/pages/NotFoundPage/NotFoundPage';
-
-import PublicLayout from '@/shared/components/layout/PublicLayout/PublicLayout';
+import { Spinner } from '@/shared/components/ui';
 
 import ProtectedRoute from '@/shared/components/routes/ProtectedRoute';
 import GuestRoute from '@/shared/components/routes/GuestRoute';
 import AdminRoute from '@/shared/components/routes/AdminRoute';
-import MealPage from '@/modules/meal/pages/MealPage/MealPage';
-import MarketPage from '@/modules/market/pages/MarketPage/MarketPage';
-import PaymentPage from '@/modules/payment/pages/PaymentPage/PaymentPage';
-import MessagePage from '@/modules/message/pages/MessagePage/MessagePage';
-import NotificationsPage from '@/modules/notification/pages/NotificationsPage/NotificationsPage';
-import MemberPage from '@/modules/members/pages/members/MemberPage';
-import SettingsPage from '@/modules/settings/pages/SettingsPage/SettingsPage';
+import PublicLayout from '@/shared/components/layout/PublicLayout/PublicLayout';
+
+const LoginPage = lazy(() => import('@/modules/auth/pages/LoginPage/LoginPage'));
+const RegisterPage = lazy(() => import('@/modules/auth/pages/RegisterPage/RegisterPage'));
+const DashboardPage = lazy(() => import('@/modules/dashboard/pages/DashboardPage/DashboardPage'));
+const ProfilePage = lazy(() => import('@/modules/profile/pages/ProfilePage/ProfilePage'));
+const VerifyEmailPage = lazy(() => import('@/modules/auth/pages/VerifyEmailPage/VerifyEmailPage'));
+const ForgotPasswordPage = lazy(() => import('@/modules/auth/pages/ForgotPasswordPage/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('@/modules/auth/pages/ResetPasswordPage/ResetPasswordPage'));
+const PendingApprovalPage = lazy(() => import('@/modules/auth/pages/PendingApprovalPage/PendingApprovalPage'));
+
+const HomePage = lazy(() => import('@/modules/public/pages/HomePage/HomePage'));
+const AboutPage = lazy(() => import('@/modules/public/pages/AboutPage/AboutPage'));
+const PrivacyPage = lazy(() => import('@/modules/public/pages/PrivacyPage/PrivacyPage'));
+const TermsPage = lazy(() => import('@/modules/public/pages/TermsPage/TermsPage'));
+const ContactPage = lazy(() => import('@/modules/public/pages/ContactPage/ContactPage'));
+const FoodGalleryPage = lazy(() => import('@/modules/public/pages/FoodGalleryPage/FoodGalleryPage'));
+const NotFoundPage = lazy(() => import('@/modules/public/pages/NotFoundPage/NotFoundPage'));
+
+const MealPage = lazy(() => import('@/modules/meal/pages/MealPage/MealPage'));
+const MarketPage = lazy(() => import('@/modules/market/pages/MarketPage/MarketPage'));
+const PaymentPage = lazy(() => import('@/modules/payment/pages/PaymentPage/PaymentPage'));
+const NotificationsPage = lazy(() => import('@/modules/notification/pages/NotificationsPage/NotificationsPage'));
+const MemberPage = lazy(() => import('@/modules/members/pages/members/MemberPage'));
+const SettingsPage = lazy(() => import('@/modules/settings/pages/SettingsPage/SettingsPage'));
+
+const PageLoader = () => (
+    <div className="flex items-center justify-center min-h-[60vh]">
+        <Spinner size="xl" />
+    </div>
+);
+
+const SuspenseWrapper = ({ children }) => (
+    <Suspense fallback={<PageLoader />}>
+        {children}
+    </Suspense>
+);
 
 const AppRoutes = () => {
     return (
         <Routes>
-            {/* ── Public Routes (with Navbar) ── */}
             <Route element={<PublicLayout />}>
                 <Route path="/" element={
-                    <GuestRoute>
-                        <HomePage />
-                    </GuestRoute>
+                    <SuspenseWrapper>
+                        <GuestRoute>
+                            <HomePage />
+                        </GuestRoute>
+                    </SuspenseWrapper>
                 } />
-                <Route path="/about" element={<AboutPage />} />
-                <Route path="/privacy" element={<PrivacyPage />} />
-                <Route path="/terms" element={<TermsPage />} />
-                <Route path="/contact" element={<ContactPage />} />
-                <Route path="/food-gallery" element={<FoodGalleryPage />} />
+                <Route path="/about" element={<SuspenseWrapper><AboutPage /></SuspenseWrapper>} />
+                <Route path="/privacy" element={<SuspenseWrapper><PrivacyPage /></SuspenseWrapper>} />
+                <Route path="/terms" element={<SuspenseWrapper><TermsPage /></SuspenseWrapper>} />
+                <Route path="/contact" element={<SuspenseWrapper><ContactPage /></SuspenseWrapper>} />
+                <Route path="/food-gallery" element={<SuspenseWrapper><FoodGalleryPage /></SuspenseWrapper>} />
             </Route>
 
-            {/* ── Auth Routes (no Navbar) ── */}
             <Route path="/login" element={
-                <GuestRoute>
-                    <LoginPage />
-                </GuestRoute>
+                <SuspenseWrapper>
+                    <GuestRoute>
+                        <LoginPage />
+                    </GuestRoute>
+                </SuspenseWrapper>
             } />
             <Route path="/register" element={
-                <GuestRoute>
-                    <RegisterPage />
-                </GuestRoute>
+                <SuspenseWrapper>
+                    <GuestRoute>
+                        <RegisterPage />
+                    </GuestRoute>
+                </SuspenseWrapper>
             } />
-            <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-            <Route path="/auth/pending-approval" element={<PendingApprovalPage />} />
+            <Route path="/auth/verify-email" element={<SuspenseWrapper><VerifyEmailPage /></SuspenseWrapper>} />
+            <Route path="/forgot-password" element={<SuspenseWrapper><ForgotPasswordPage /></SuspenseWrapper>} />
+            <Route path="/reset-password/:token" element={<SuspenseWrapper><ResetPasswordPage /></SuspenseWrapper>} />
+            <Route path="/auth/pending-approval" element={<SuspenseWrapper><PendingApprovalPage /></SuspenseWrapper>} />
 
-            {/* ── Private Routes (no Navbar) ── */}
             <Route
                 path="/dashboard"
                 element={
-                    <ProtectedRoute>
-                        <DashboardPage />
-                    </ProtectedRoute>
+                    <SuspenseWrapper>
+                        <ProtectedRoute>
+                            <DashboardPage />
+                        </ProtectedRoute>
+                    </SuspenseWrapper>
                 }
             />
             <Route
                 path="/profile"
                 element={
-                    <ProtectedRoute>
-                        <ProfilePage />
-                    </ProtectedRoute>
+                    <SuspenseWrapper>
+                        <ProtectedRoute>
+                            <ProfilePage />
+                        </ProtectedRoute>
+                    </SuspenseWrapper>
                 }
             />
             <Route
                 path="/meals"
                 element={
-                    <ProtectedRoute>
-                        <MealPage/>
-                    </ProtectedRoute>
+                    <SuspenseWrapper>
+                        <ProtectedRoute>
+                            <MealPage/>
+                        </ProtectedRoute>
+                    </SuspenseWrapper>
                 }
             />
             <Route
                 path="/markets"
                 element={
-                    <ProtectedRoute>
-                        <MarketPage/>
-                    </ProtectedRoute>
+                    <SuspenseWrapper>
+                        <ProtectedRoute>
+                            <MarketPage/>
+                        </ProtectedRoute>
+                    </SuspenseWrapper>
                 }
             />
             <Route
                 path="/payments"
                 element={
-                    <ProtectedRoute>
-                        <PaymentPage/>
-                    </ProtectedRoute>
+                    <SuspenseWrapper>
+                        <ProtectedRoute>
+                            <PaymentPage/>
+                        </ProtectedRoute>
+                    </SuspenseWrapper>
                 }
             />
             <Route
                 path="/members"
                 element={
-                    <ProtectedRoute>
-                        <MemberPage/>
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/messages"
-                element={
-                    <ProtectedRoute>
-                        <MessagePage/>
-                    </ProtectedRoute>
+                    <SuspenseWrapper>
+                        <ProtectedRoute>
+                            <MemberPage/>
+                        </ProtectedRoute>
+                    </SuspenseWrapper>
                 }
             />
             <Route
                 path="/notifications"
                 element={
-                    <ProtectedRoute>
-                        <NotificationsPage/>
-                    </ProtectedRoute>
+                    <SuspenseWrapper>
+                        <ProtectedRoute>
+                            <NotificationsPage/>
+                        </ProtectedRoute>
+                    </SuspenseWrapper>
                 }
             />
             <Route
                 path="/settings"
                 element={
-                    <AdminRoute>
-                        <SettingsPage/>
-                    </AdminRoute>
+                    <SuspenseWrapper>
+                        <AdminRoute>
+                            <SettingsPage/>
+                        </AdminRoute>
+                    </SuspenseWrapper>
                 }
             />
 
-            {/* ── Catch-all (must be last) ── */}
-            <Route path="*" element={<NotFoundPage />} />
+            <Route path="*" element={<SuspenseWrapper><NotFoundPage /></SuspenseWrapper>} />
         </Routes>
     );
 };

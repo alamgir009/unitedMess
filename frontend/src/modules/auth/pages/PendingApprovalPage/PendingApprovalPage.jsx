@@ -3,7 +3,7 @@ import { Clock, ShieldAlert, LogOut, RefreshCcw } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '../../store/auth.slice';
-import Button from '@/shared/ui/Button/Button';
+import { Button } from '@/shared/components/ui';
 
 const PendingApprovalPage = () => {
     const dispatch = useDispatch();

@@ -1,7 +1,21 @@
 /* eslint-env serviceworker */
-/* global clients */
+/* global clients importScripts firebase */
 
 const CACHE_NAME = 'unitedmess-v1';
+
+importScripts('https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/11.6.0/firebase-messaging-compat.js');
+
+firebase.initializeApp({
+    apiKey: 'AIzaSyDQyeJFDz27tAqBcHxJ24ZRIAaG3OWVfD0',
+    authDomain: 'unitedmess-c2323.firebaseapp.com',
+    projectId: 'unitedmess-c2323',
+    storageBucket: 'unitedmess-c2323.firebasestorage.app',
+    messagingSenderId: '397604518750',
+    appId: '1:397604518750:web:65e19fdf6b51ecd1f3adcf',
+});
+
+const messaging = firebase.messaging();
 
 self.addEventListener('install', () => {
     self.skipWaiting();
@@ -19,6 +33,31 @@ self.addEventListener('activate', (event) => {
     );
 });
 
+const showPushNotification = (event, data) => {
+    const title = data.title || 'UnitedMess';
+    const options = {
+        body: data.body || '',
+        icon: data.icon || '/assets/icons/unitedmess-icon-1024.png',
+        badge: '/assets/icons/unitedmess-icon-1024.png',
+        vibrate: [200, 100, 200],
+        silent: false,
+        data: {
+            url: data.data?.url || '/notifications',
+            notificationId: data.data?.notificationId || null,
+            type: data.type || data.data?.type || 'SYSTEM',
+            priority: data.priority || data.data?.priority || 'NORMAL',
+        },
+        tag: data.tag || data.data?.tag || data.data?.notificationId || data.data?.type || 'default',
+        requireInteraction: data.requireInteraction === true || data.data?.priority === 'CRITICAL' || data.data?.priority === 'HIGH',
+        actions: [
+            { action: 'mark-read', title: 'Mark Read' },
+            { action: 'dismiss', title: 'Dismiss' },
+        ],
+    };
+
+    event.waitUntil(self.registration.showNotification(title, options));
+};
+
 self.addEventListener('push', (event) => {
     let data = { title: 'UnitedMess', body: '', icon: '/assets/icons/unitedmess-icon-1024.png' };
 
@@ -30,25 +69,35 @@ self.addEventListener('push', (event) => {
         console.error('Push notification parse error:', e);
     }
 
+    showPushNotification(event, data);
+});
+
+messaging.onBackgroundMessage((payload) => {
+    const data = payload.data || {};
+    const notification = payload.notification || {};
+
+    const title = notification.title || data.title || 'UnitedMess';
     const options = {
-        body: data.body || '',
+        body: notification.body || data.body || '',
         icon: data.icon || '/assets/icons/unitedmess-icon-1024.png',
-        badge: data.badge || '/assets/icons/unitedmess-icon-1024.png',
+        badge: '/assets/icons/unitedmess-icon-1024.png',
         vibrate: [200, 100, 200],
         silent: false,
         data: {
-            url: data.data?.url || '/notifications',
-            notificationId: data.data?.notificationId || null,
+            url: data.url || '/notifications',
+            notificationId: data.notificationId || null,
+            type: data.type || 'SYSTEM',
+            priority: data.priority || 'NORMAL',
         },
-        tag: data.tag || data.data?.notificationId || 'default',
-        requireInteraction: data.requireInteraction === true,
+        tag: data.tag || data.type || 'default',
+        requireInteraction: data.priority === 'CRITICAL' || data.priority === 'HIGH',
         actions: [
             { action: 'mark-read', title: 'Mark Read' },
             { action: 'dismiss', title: 'Dismiss' },
         ],
     };
 
-    event.waitUntil(self.registration.showNotification(data.title || 'UnitedMess', options));
+    self.registration.showNotification(title, options);
 });
 
 self.addEventListener('notificationclick', (event) => {

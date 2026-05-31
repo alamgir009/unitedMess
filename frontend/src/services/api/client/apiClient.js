@@ -171,8 +171,6 @@ authChannel.addEventListener?.('message', async (event) => {
     }
 
     if (event.data?.type === 'TOKEN_REFRESHED' && !inMemoryAccessToken && _store) {
-        // Another tab refreshed the httpOnly cookie. Our in-memory token is empty
-        // (page just loaded). Proactively refresh so the next API call succeeds.
         try {
             const refreshRes = await apiClient.post('auth/refresh-tokens');
             const newAccessToken = refreshRes.data?.data?.tokens?.accessToken;
@@ -182,7 +180,10 @@ authChannel.addEventListener?.('message', async (event) => {
                 _store.dispatch(setUser(refreshRes.data?.data?.user || null));
             }
         } catch {
-            // Refresh failed — let the normal flow handle it (redirect to login)
+            clearAccessToken();
+            const { setUser, setSessionReady } = await import('@/modules/auth/store/auth.slice');
+            _store.dispatch(setUser(null));
+            _store.dispatch(setSessionReady());
         }
     }
 });

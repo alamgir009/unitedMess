@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, CheckCircle2, ArrowRight, RefreshCw, AlertCircle } from 'lucide-react';
 import { reset, resendVerification, clearRegisteredEmail } from '../../store/auth.slice';
 import RegisterForm from '../../components/RegisterForm/RegisterForm';
-import Button from '@/shared/ui/Button/Button';
+import { Button } from '@/shared/components/ui';
 import { HiArrowLeft } from 'react-icons/hi2';
 
 const RegisterPage = () => {
