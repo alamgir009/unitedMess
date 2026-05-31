@@ -17,7 +17,7 @@ const Field = ({ label, icon: Icon, children, className = '' }) => (
 );
 
 const inputBase =
-    'w-full px-3 py-2 sm:px-4 sm:py-3 rounded-xl border border-white/20 dark:border-white/10 bg-background/60 backdrop-blur-md focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/50 outline-none transition-all duration-200 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground/60 shadow-inner';
+    'w-full px-3 py-2 sm:px-4 sm:py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50 outline-none transition-all duration-200 text-xs sm:text-sm text-slate-800 dark:text-slate-105 placeholder:text-slate-400 dark:placeholder:text-slate-600 shadow-sm';
 
 export const EditForm = ({ handleClose, initialData }) => {
   const dispatch = useDispatch();
