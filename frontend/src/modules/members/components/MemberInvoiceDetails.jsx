@@ -307,6 +307,7 @@ const PAYMENT_CONFIG = {
         container: 'bg-emerald-50/70 dark:bg-emerald-500/8  border-emerald-200 dark:border-emerald-500/25',
         text:      'text-emerald-700 dark:text-emerald-400',
         badge:     'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30',
+        iconBox:   'bg-emerald-50 dark:bg-emerald-500/15 border-emerald-200 dark:border-emerald-500/25 text-emerald-600 dark:text-emerald-400',
         icon:      CheckCircle2,
         label:     'Paid',
         message:   (a) => `Payment of ₹\u202F${a} completed successfully`,
@@ -315,6 +316,7 @@ const PAYMENT_CONFIG = {
         container: 'bg-amber-50/70  dark:bg-amber-500/8   border-amber-200  dark:border-amber-500/25',
         text:      'text-amber-700  dark:text-amber-400',
         badge:     'bg-amber-100  dark:bg-amber-500/20  text-amber-700  dark:text-amber-400  border-amber-300  dark:border-amber-500/30',
+        iconBox:   'bg-amber-50 dark:bg-amber-500/15 border-amber-200 dark:border-amber-500/25 text-amber-600 dark:text-amber-400',
         icon:      Clock,
         label:     'Due',
         message:   (a) => `You have to pay ₹\u202F${a}`,
@@ -323,6 +325,7 @@ const PAYMENT_CONFIG = {
         container: 'bg-rose-50/70   dark:bg-rose-500/8    border-rose-200   dark:border-rose-500/25',
         text:      'text-rose-700   dark:text-rose-400',
         badge:     'bg-rose-100   dark:bg-rose-500/20   text-rose-700   dark:text-rose-400   border-rose-300   dark:border-rose-500/30',
+        iconBox:   'bg-rose-50 dark:bg-rose-500/15 border-rose-200 dark:border-rose-500/25 text-rose-600 dark:text-rose-400',
         icon:      XCircle,
         label:     'Failed',
         message:   (a) => `Payment failed — ₹\u202F${a} is due immediately`,
@@ -331,6 +334,7 @@ const PAYMENT_CONFIG = {
         container: 'bg-slate-50     dark:bg-slate-800/40  border-slate-200  dark:border-slate-700',
         text:      'text-slate-600  dark:text-slate-300',
         badge:     'bg-slate-100  dark:bg-slate-700     text-slate-600  dark:text-slate-300  border-slate-300  dark:border-slate-600',
+        iconBox:   'bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400',
         icon:      CheckCircle2,
         label:     'Settled',
         message:   () => 'Already settled — no balance outstanding',
@@ -339,6 +343,7 @@ const PAYMENT_CONFIG = {
         container: 'bg-emerald-50/70 dark:bg-emerald-500/8  border-emerald-200 dark:border-emerald-500/25',
         text:      'text-emerald-700 dark:text-emerald-400',
         badge:     'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30',
+        iconBox:   'bg-emerald-50 dark:bg-emerald-500/15 border-emerald-200 dark:border-emerald-500/25 text-emerald-600 dark:text-emerald-400',
         icon:      ArrowDownToLine,
         label:     'Credit',
         message:   (a) => `You will get a refund of ₹\u202F${a}`,
@@ -378,8 +383,7 @@ const PaymentStatusBanner = React.memo(({ user }) => {
             <div className="flex items-center gap-3.5 min-w-0">
                 <div
                     className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center
-                                bg-white/90 dark:bg-slate-900/90 shadow-sm
-                                border ${cfg.container.split(' ').slice(1, 3).join(' ')}`}
+                                shadow-sm border ${cfg.iconBox}`}
                 >
                     <Icon size={18} strokeWidth={2.5} className={cfg.text} />
                 </div>
