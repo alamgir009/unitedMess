@@ -34,6 +34,7 @@ import {
     HiOutlineArrowRight,
     HiOutlineArrowLeft,
     HiOutlinePhoto,
+    HiOutlineIdentification,
 } from 'react-icons/hi2';
 import { SiGooglepay } from 'react-icons/si';
 import { BsCreditCard2Front } from 'react-icons/bs';
@@ -412,6 +413,29 @@ const MessBillInvoice = ({
                         <span>{isPaid ? 'Paid' : isPartiallyPaid ? 'Partially Paid' : isRefund ? 'Refund' : 'Due'}</span>
                     </div>
                 </div>
+
+                {/* ── UPI Manual Payment Info ── */}
+                {paymentRecord?.paymentMethod === 'upi_manual' && paymentRecord?.transactionId && (
+                    <div className="flex items-start gap-4 p-4 rounded-2xl bg-blue-50/80 dark:bg-blue-900/25 border border-blue-200 dark:border-blue-800 backdrop-blur-sm">
+                        <HiOutlineIdentification className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                        <div className="min-w-0">
+                            <p className="text-sm font-bold text-blue-800 dark:text-blue-200">UPI Manual Payment</p>
+                            <p className="text-xs text-blue-600/80 dark:text-blue-400/80 mt-1 break-all">
+                                UTR: <span className="font-mono font-semibold select-all">{paymentRecord.transactionId}</span>
+                            </p>
+                            {paymentRecord.status === 'pending_verification' && (
+                                <span className="inline-flex items-center mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700/50">
+                                    Pending Verification
+                                </span>
+                            )}
+                            {paymentRecord.status === 'completed' && (
+                                <span className="inline-flex items-center mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50">
+                                    Verified & Completed
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                )}
 
                 {/* ── Action Buttons ── */}
                 <div className="space-y-4">

@@ -19,7 +19,7 @@ const PAYMENT_TO_USER_STATUS = {
 };
 
 // Fields admin is allowed to update — prevents accidental corruption
-const UPDATABLE_FIELDS = ['status', 'remarks', 'receiptUrl', 'month', 'amount'];
+const UPDATABLE_FIELDS = ['status', 'remarks', 'receiptUrl', 'month', 'amount', 'adminRemarks', 'changedBy'];
 
 const getUserFieldByType = (paymentType) => {
     switch (paymentType) {
@@ -504,6 +504,17 @@ const updatePaymentById = async (paymentId, updateBody) => {
     }
 
     Object.assign(payment, safeUpdate);
+
+    // Track status change in audit history
+    if (safeUpdate.status && safeUpdate.status !== oldStatus) {
+        payment.statusHistory.push({
+            status: safeUpdate.status,
+            changedBy: safeUpdate.changedBy || payment.verifiedBy || (payment.user?.toString ? payment.user : payment.user?.toString()),
+            changedAt: new Date(),
+            remarks: safeUpdate.adminRemarks || '',
+        });
+    }
+
     await payment.save();
 
     const statusChanged = safeUpdate.status && safeUpdate.status !== oldStatus;
@@ -639,12 +650,81 @@ const createBulkPayments = async (body) => {
 // Exports
 // ─────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────
+// Manual UPI Verification (admin only)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Verify (approve/reject) a manual UPI payment.
+ * Uses atomic findOneAndUpdate with a status filter to prevent race conditions.
+ * Sets verifiedBy, verifiedAt, and tracks statusHistory.
+ */
+const verifyUpiManualPaymentService = async (paymentId, { status, adminRemarks, verifiedBy }) => {
+    if (!['completed', 'failed'].includes(status)) {
+        throw new AppError('Status must be completed or failed', 400);
+    }
+
+    const historyEntry = {
+        status,
+        changedBy: verifiedBy,
+        changedAt: new Date(),
+        remarks: adminRemarks || `Admin ${status === 'completed' ? 'approved' : 'rejected'} payment`,
+    };
+
+    // Atomic update: only succeed if the payment is still in pending_verification
+    const payment = await Payment.findOneAndUpdate(
+        {
+            _id: paymentId,
+            paymentMethod: 'upi_manual',
+            status: 'pending_verification',
+        },
+        {
+            $set: {
+                status,
+                verifiedBy,
+                verifiedAt: new Date(),
+                adminRemarks: adminRemarks || '',
+            },
+            $push: { statusHistory: historyEntry },
+        },
+        { new: true }
+    );
+
+    if (!payment) {
+        // Check if payment exists at all to give a precise error
+        const exists = await Payment.exists({ _id: paymentId });
+        if (!exists) throw new AppError('Payment record not found', 404);
+
+        const existing = await Payment.findById(paymentId).select('paymentMethod status').lean();
+        if (existing?.paymentMethod !== 'upi_manual') {
+            throw new AppError('This endpoint is only for manual UPI verification', 400);
+        }
+        throw new AppError(`Payment is already verified or in status: ${existing?.status}`, 400);
+    }
+
+    // Sync user status and invoice (non-blocking failures logged internally)
+    const user = await User.findById(payment.user).select('name email').lean();
+
+    await Promise.all([
+        syncUserPaymentStatus(payment.user, payment.type, status),
+        syncInvoiceAfterPayment(payment.user, payment.month),
+    ]);
+
+    // Send email (non-blocking)
+    if (user) {
+        sendPaymentEmail(user, payment, status).catch(() => {});
+    }
+
+    return payment;
+};
+
 module.exports = {
     createPayment,
     createBulkPayments,
     createOnlinePaymentOrder,
     createOnlinePaymentOrderForMonths,
     verifyOnlinePayment,
+    verifyUpiManualPaymentService,
     queryPayments,
     getPaymentById,
     updatePaymentById,

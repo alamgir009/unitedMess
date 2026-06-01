@@ -16,6 +16,7 @@ import { MdPendingActions, MdCheckCircleOutline, MdErrorOutline, MdRefresh } fro
 import apiClient from '@/services/api/client/apiClient';
 import { Button, Avatar, MemberSelect } from '@/shared/components/ui';
 import { SiRazorpay } from "react-icons/si";
+import { HiOutlineIdentification } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 
 /* ─── Constants ─────────────────────────────────────────────── */
@@ -43,9 +44,10 @@ const PAYMENT_TYPES = [
 ];
 
 const PAYMENT_METHODS = [
-    { value: 'cash',     label: 'Cash',     Icon: BsCashCoin,  iconClass: 'text-emerald-500' },
-    { value: 'online',   label: 'Online',   Icon: BsGlobe2,    iconClass: 'text-sky-500'     },
-    { value: 'razorpay', label: 'Razorpay', Icon: SiRazorpay,  iconClass: 'text-violet-500'  },
+    { value: 'cash',       label: 'Cash',       Icon: BsCashCoin,           iconClass: 'text-emerald-500' },
+    { value: 'online',     label: 'Online',     Icon: BsGlobe2,             iconClass: 'text-sky-500'     },
+    { value: 'razorpay',   label: 'Razorpay',   Icon: SiRazorpay,           iconClass: 'text-violet-500'  },
+    { value: 'upi_manual', label: 'Manual UPI', Icon: HiOutlineIdentification, iconClass: 'text-blue-500' },
 ];
 
 const STATUS_OPTIONS = [
@@ -290,7 +292,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
 
     // Status dropdown: admin only (never shown to regular users)
     const showStatus = isAdmin;
-    const showTxn    = formData.paymentMethod === 'online' || formData.paymentMethod === 'razorpay';
+    const showTxn    = formData.paymentMethod === 'online' || formData.paymentMethod === 'razorpay' || formData.paymentMethod === 'upi_manual';
 
     return (
         <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full">
@@ -427,12 +429,13 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                     )}
                 </div>
 
-                {/* Transaction ID — online / razorpay only */}
+                {/* Transaction ID / UTR — online / razorpay / upi_manual */}
                 {showTxn && (
-                    <Field label="Transaction ID" icon={HiOutlineCreditCard}>
+                    <Field label={formData.paymentMethod === 'upi_manual' ? 'UTR / Reference' : 'Transaction ID'} icon={HiOutlineCreditCard}>
                         <input
                             type="text" name="transactionId" value={formData.transactionId}
-                            onChange={handleChange} placeholder="e.g. pay_XXXXXXXXXX"
+                            onChange={handleChange}
+                            placeholder={formData.paymentMethod === 'upi_manual' ? 'e.g. HDFC12345678' : 'e.g. pay_XXXXXXXXXX'}
                             disabled={readOnly || isSubmitting}
                             className={`${inputBase} ${readOnly || isSubmitting ? inputDisabled : ''}`}
                         />

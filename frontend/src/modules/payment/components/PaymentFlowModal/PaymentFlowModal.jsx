@@ -26,7 +26,7 @@ import paymentService from '../../services/payment.service';
 const fmt = (n) =>
   Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
-const UTR_PATTERN = /^[a-zA-Z0-9]{6,30}$/;
+const UTR_PATTERN = /^[a-zA-Z0-9]{8,20}$/;
 
 const STEP_LABELS = ['Months', 'Method', 'Pay'];
 
@@ -1006,20 +1006,31 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
 
                             <div className="space-y-3">
                               <div>
-                                <label className="text-xs font-semibold text-foreground">Transaction UTR</label>
+                                <label className="text-xs font-semibold text-foreground">Transaction UTR / Reference</label>
                                 <p className="text-xs text-muted-foreground mt-0.5">
-                                  Enter the reference ID (UTR) from your UPI app.
+                                  Enter the 8–20 character UTR number shown in your UPI app after payment.
                                 </p>
                               </div>
                               <Input
                                 type="text"
                                 value={utr}
-                                onChange={(e) => setUtr(e.target.value)}
+                                onChange={(e) => setUtr(e.target.value.replace(/\s/g, ''))}
                                 placeholder="e.g. HDFC12345678"
                                 variant="glass"
                                 size="lg"
+                                maxLength={20}
                                 required
+                                autoComplete="off"
                               />
+                              <div className="flex items-center gap-2 text-[11px] text-muted-foreground/60">
+                                <HiOutlineShieldCheck className="w-3.5 h-3.5" />
+                                <span>UTR must be 8–20 alphanumeric characters (letters and numbers only)</span>
+                              </div>
+                              {utr.length > 0 && !UTR_PATTERN.test(utr) && (
+                                <p className="text-xs text-red-500 dark:text-red-400">
+                                  Invalid format. Use only letters A–Z, a–z and numbers 0–9 (8–20 chars).
+                                </p>
+                              )}
                               <Button
                                 variant="primary"
                                 size="lg"

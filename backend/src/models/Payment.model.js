@@ -53,6 +53,43 @@ const paymentSchema = new mongoose.Schema(
             ref: 'User',
             required: true,
         },
+        verifiedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            default: null,
+        },
+        verifiedAt: {
+            type: Date,
+            default: null,
+        },
+        adminRemarks: {
+            type: String,
+            trim: true,
+            default: '',
+        },
+        statusHistory: [
+            {
+                status: {
+                    type: String,
+                    enum: ['pending', 'pending_verification', 'completed', 'failed', 'refunded'],
+                    required: true,
+                },
+                changedBy: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'User',
+                    required: true,
+                },
+                changedAt: {
+                    type: Date,
+                    default: Date.now,
+                },
+                remarks: {
+                    type: String,
+                    trim: true,
+                    default: '',
+                },
+            },
+        ],
     },
     {
         timestamps: true,
@@ -61,6 +98,7 @@ const paymentSchema = new mongoose.Schema(
 
 paymentSchema.index({ user: 1, month: 1 });
 paymentSchema.index({ status: 1 });
+paymentSchema.index({ transactionId: 1 });
 
 const Payment = mongoose.model('Payment', paymentSchema);
 

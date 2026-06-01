@@ -30,6 +30,7 @@ import MessBillInvoice  from '../../components/MessBillInvoice/MessBillInvoice';
 import MonthlyInvoiceModal from '../../components/MonthlyInvoiceModal/MonthlyInvoiceModal';
 import PaymentDeleteDialog from '../../components/PaymentDeleteDialog/PaymentDeleteDialog';
 import PaymentFlowModal from '../../components/PaymentFlowModal/PaymentFlowModal';
+import UpiVerificationModal from '../../components/UpiVerificationModal/UpiVerificationModal';
 
 import {
     fetchPayments,
@@ -93,7 +94,7 @@ const PaymentPage = () => {
     /* ── state ── */
     const [isPaying,       setIsPaying]       = useState(false);
     const [isModalOpen,    setIsModalOpen]    = useState(false);
-    const [invoiceModal,   setInvoiceModal]   = useState({ open: false, year: null, month: null, monthName: '' });
+    const [invoiceModal,   setInvoiceModal]   = useState({ open: false, year: null, month: null, monthName: '', paymentRecord: null });
     const [editingPayment, setEditingPayment] = useState(null);
     const [isReadOnly,     setIsReadOnly]     = useState(false);
     const [viewMode,       setViewMode]       = useState('grid');
@@ -111,6 +112,8 @@ const PaymentPage = () => {
     const [invoiceFetchDone, setInvoiceFetchDone] = useState(false);
     const [isPaymentFlowOpen, setIsPaymentFlowOpen] = useState(false);
     const [activePaymentMonth, setActivePaymentMonth] = useState('');
+    const [verifyPayment, setVerifyPayment] = useState(null);
+    const [isUpiVerifyOpen, setIsUpiVerifyOpen] = useState(false);
 
     /* ── payment hook ── */
     const refreshData = useCallback(() => {
@@ -217,6 +220,12 @@ const PaymentPage = () => {
             return;
         }
 
+        const paymentRecord = payment.paymentMethod === 'upi_manual' ? {
+            paymentMethod: payment.paymentMethod,
+            transactionId: payment.transactionId,
+            status: payment.status,
+        } : null;
+
         const parts = monthStr.split(/\s+/);
         if (parts.length >= 2) {
             const date = new Date(`${parts[0]} 1, ${parts[parts.length - 1]}`);
@@ -226,6 +235,7 @@ const PaymentPage = () => {
                     year: date.getFullYear(),
                     month: date.getMonth() + 1,
                     monthName: monthStr,
+                    paymentRecord,
                 });
                 return;
             }
@@ -238,6 +248,7 @@ const PaymentPage = () => {
                 year: parseInt(isoMatch[1], 10),
                 month: parseInt(isoMatch[2], 10),
                 monthName: monthStr,
+                paymentRecord,
             });
             return;
         }
@@ -249,6 +260,7 @@ const PaymentPage = () => {
                 year: fallback.getFullYear(),
                 month: fallback.getMonth() + 1,
                 monthName: monthStr,
+                paymentRecord,
             });
             return;
         }
@@ -314,6 +326,21 @@ const PaymentPage = () => {
             setIsDeleting(false);
         }
     }, [deletingPayment, isDeleting, dispatch, page, limit]);
+
+    const handleVerifyClick = useCallback((payment) => {
+        setVerifyPayment(payment);
+        setIsUpiVerifyOpen(true);
+    }, []);
+
+    const handleVerificationDone = useCallback(() => {
+        setVerifyPayment(null);
+        refreshData();
+    }, [refreshData]);
+
+    const closeVerifyModal = useCallback(() => {
+        setIsUpiVerifyOpen(false);
+        setVerifyPayment(null);
+    }, []);
 
     const clearFilters = useCallback(() => {
         setSearchQuery(''); setDateFrom(''); setDateTo('');
@@ -465,6 +492,7 @@ const PaymentPage = () => {
                                 onEdit={openEdit}
                                 onDelete={handleDelete}
                                 onViewInvoice={handleViewInvoice}
+                                onVerify={handleVerifyClick}
                                 isAdmin={isAdmin}
                             />
                             {!hasActive && (
@@ -500,6 +528,7 @@ const PaymentPage = () => {
                     monthName={invoiceModal.monthName}
                     onPayNow={handlePayBillClick}
                     isPaying={isPaying}
+                    paymentRecord={invoiceModal.paymentRecord}
                 />
 
                 <PaymentFlowModal
@@ -510,6 +539,13 @@ const PaymentPage = () => {
                     activeInvoiceMonth={activePaymentMonth}
                     onRazorpayPay={handleRazorpayCheckout}
                     onSuccess={refreshData}
+                />
+
+                <UpiVerificationModal
+                    isOpen={isUpiVerifyOpen}
+                    onClose={closeVerifyModal}
+                    payment={verifyPayment}
+                    onVerified={handleVerificationDone}
                 />
 
                 {deletingPayment && (

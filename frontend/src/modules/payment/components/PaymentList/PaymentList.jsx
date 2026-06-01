@@ -10,15 +10,19 @@ import {
     HiOutlineCreditCard,
     HiOutlineChatBubbleBottomCenterText,
     HiOutlineDocumentText,
+    HiOutlineCheckBadge,
+    HiOutlineShieldCheck,
+    HiOutlineIdentification,
 } from 'react-icons/hi2';
 import { Button } from '@/shared/components/ui';
 import { formatSmartDate } from '@/core/utils/helpers/date.helper';
 
 const STATUS = {
-    completed: { label: 'Paid',      cls: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-300/60 dark:ring-emerald-400/20' },
-    pending:   { label: 'Pending',   cls: 'bg-amber-50 dark:bg-amber-500/10  text-amber-700  dark:text-amber-400  ring-1 ring-amber-300/60 dark:ring-amber-400/20'  },
-    failed:    { label: 'Failed',    cls: 'bg-red-50 dark:bg-red-500/10    text-red-700    dark:text-red-400    ring-1 ring-red-300/60 dark:ring-red-400/20'    },
-    refunded:  { label: 'Refunded',  cls: 'bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 ring-1 ring-violet-300/60 dark:ring-violet-400/20' },
+    completed:            { label: 'Paid',      cls: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-300/60 dark:ring-emerald-400/20' },
+    pending:              { label: 'Pending',   cls: 'bg-amber-50 dark:bg-amber-500/10  text-amber-700  dark:text-amber-400  ring-1 ring-amber-300/60 dark:ring-amber-400/20'  },
+    pending_verification: { label: 'Review',    cls: 'bg-blue-50 dark:bg-blue-500/10    text-blue-700   dark:text-blue-400   ring-1 ring-blue-300/60 dark:ring-blue-400/20'    },
+    failed:               { label: 'Failed',    cls: 'bg-red-50 dark:bg-red-500/10      text-red-700    dark:text-red-400    ring-1 ring-red-300/60 dark:ring-red-400/20'    },
+    refunded:             { label: 'Refunded',  cls: 'bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 ring-1 ring-violet-300/60 dark:ring-violet-400/20' },
 };
 
 const TYPE = {
@@ -27,9 +31,9 @@ const TYPE = {
     other:     { label: 'Other',     cls: 'bg-muted/60 text-muted-foreground ring-border/40' },
 };
 
-const methodLabel = (m) => ({ cash: 'Cash', online: 'Online', razorpay: 'Razorpay' }[m] || m);
+const methodLabel = (m) => ({ cash: 'Cash', online: 'Online', razorpay: 'Razorpay', upi_manual: 'Manual UPI' }[m] || m);
 
-const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInvoice, isAdmin, canEdit }, ref) => {
+const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInvoice, onVerify, isAdmin, canEdit }, ref) => {
     const date   = formatSmartDate(payment.paymentDate);
     const stat   = STATUS[payment.status] || STATUS.pending;
     const typeC  = TYPE[payment.type]     || TYPE.other;
@@ -86,6 +90,12 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewIn
                     <HiOutlineCreditCard className="w-3.5 h-3.5 text-muted-foreground/50" />
                     <span className="text-xs text-muted-foreground">{methodLabel(payment.paymentMethod)}</span>
                 </div>
+                {payment.paymentMethod === 'upi_manual' && payment.transactionId && (
+                    <div className="flex items-center gap-1">
+                        <HiOutlineIdentification className="w-3.5 h-3.5 text-muted-foreground/50" />
+                        <span className="text-xs font-mono font-medium text-foreground/80">{payment.transactionId}</span>
+                    </div>
+                )}
             </div>
 
             {payment.remarks && (
@@ -102,6 +112,14 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewIn
             <div className="flex items-center gap-2 px-4 py-3">
                 {canEdit ? (
                     <>
+                        {payment.paymentMethod === 'upi_manual' && payment.status === 'pending_verification' && (
+                            <Button variant="primary" size="sm"
+                                onClick={() => onVerify?.(payment)}
+                                className="text-xs flex-1">
+                                <HiOutlineShieldCheck className="w-3.5 h-3.5 mr-1" />
+                                Verify
+                            </Button>
+                        )}
                         {payment.type === 'mess_bill' && (
                             <Button variant="secondary" size="sm"
                                 onClick={() => onViewInvoice?.(payment)}
@@ -137,7 +155,7 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewIn
 }));
 PaymentCard.displayName = 'PaymentCard';
 
-const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInvoice, isAdmin, canEdit }, ref) => {
+const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInvoice, onVerify, isAdmin, canEdit }, ref) => {
     const date   = formatSmartDate(payment.paymentDate);
     const stat   = STATUS[payment.status] || STATUS.pending;
     const typeC  = TYPE[payment.type]     || TYPE.other;
@@ -181,6 +199,15 @@ const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInv
                     </div>
                     <span className="text-muted-foreground/25">·</span>
                     <span className={`text-[10px] font-bold px-2 py-[3px] rounded-full ring-1 ${typeC.cls}`}>{typeC.label}</span>
+                    {payment.paymentMethod === 'upi_manual' && payment.transactionId && (
+                        <>
+                            <span className="text-muted-foreground/25">·</span>
+                            <span className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground">
+                                <HiOutlineIdentification className="w-3 h-3" />
+                                {payment.transactionId}
+                            </span>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -189,6 +216,15 @@ const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInv
             </span>
 
             <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150 flex-shrink-0 pl-1">
+                {canEdit && payment.paymentMethod === 'upi_manual' && payment.status === 'pending_verification' && (
+                    <Button variant="primary" size="sm"
+                        onClick={() => onVerify?.(payment)}
+                        aria-label="Verify UPI payment"
+                        className="text-xs">
+                        <HiOutlineShieldCheck className="w-3.5 h-3.5 mr-1" />
+                        Verify
+                    </Button>
+                )}
                 {payment.type === 'mess_bill' && (
                     <Button variant="secondary" size="sm" iconOnly
                         onClick={() => onViewInvoice?.(payment)}
@@ -225,7 +261,7 @@ const EmptyState = () => (
     </div>
 );
 
-const PaymentList = ({ payments = [], onEdit, onDelete, onViewInvoice, isAdmin = false, viewMode = 'grid' }) => {
+const PaymentList = ({ payments = [], onEdit, onDelete, onViewInvoice, onVerify, isAdmin = false, viewMode = 'grid' }) => {
     if (payments.length === 0) return <EmptyState />;
 
     return (
@@ -234,7 +270,7 @@ const PaymentList = ({ payments = [], onEdit, onDelete, onViewInvoice, isAdmin =
                 <div className="flex flex-col gap-2">
                     {payments.map((p) => (
                         <PaymentRow key={p._id} payment={p}
-                            onEdit={onEdit} onDelete={onDelete} onViewInvoice={onViewInvoice}
+                            onEdit={onEdit} onDelete={onDelete} onViewInvoice={onViewInvoice} onVerify={onVerify}
                             isAdmin={isAdmin} canEdit={isAdmin} />
                     ))}
                 </div>
@@ -242,7 +278,7 @@ const PaymentList = ({ payments = [], onEdit, onDelete, onViewInvoice, isAdmin =
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                     {payments.map((p) => (
                         <PaymentCard key={p._id} payment={p}
-                            onEdit={onEdit} onDelete={onDelete} onViewInvoice={onViewInvoice}
+                            onEdit={onEdit} onDelete={onDelete} onViewInvoice={onViewInvoice} onVerify={onVerify}
                             isAdmin={isAdmin} canEdit={isAdmin} />
                     ))}
                 </div>

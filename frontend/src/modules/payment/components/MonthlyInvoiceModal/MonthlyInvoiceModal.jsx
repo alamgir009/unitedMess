@@ -157,6 +157,7 @@ const MonthlyInvoiceModal = ({
     monthName,
     onPayNow,    // optional: if provided, show "Pay Remaining" in the partial-payment banner
     isPaying,    // optional: loading state for onPayNow
+    paymentRecord: externalPaymentRecord, // optional: UPI manual payment info from payment card
 }) => {
     const dispatch = useDispatch();
     const { monthlyInvoice, isLoadingMonthly, error } = useSelector((state) => state.invoice);
@@ -189,13 +190,23 @@ const MonthlyInvoiceModal = ({
     /* ── Derived values ────────────────────────── */
     const displayData      = toInvoiceDisplayData(monthlyInvoice);
     const invoiceStatus    = monthlyInvoice?.status ?? 'unpaid';
-    const paymentStatus    = toPaymentStatus(invoiceStatus);      // ← THE FIX
+    const paymentStatus    = toPaymentStatus(invoiceStatus);
     const isFinalized      = monthlyInvoice?.isFinalized ?? false;
     const isPartiallyPaid  = invoiceStatus === 'partially_paid';
     const paidAmount       = monthlyInvoice?.paidAmount    ?? 0;
     const totalPayable     = monthlyInvoice?.totalPayable  ?? 0;
     const remainingAmount  = monthlyInvoice?.remainingAmount
         ?? Math.max(0, totalPayable - paidAmount);
+
+    // Merge external payment record (e.g. from UPI manual payment) into the invoice payment record
+    const invoicePaymentRecord = {
+        month:       monthlyInvoice?.monthName,
+        paymentDate: monthlyInvoice?.createdAt,
+        paidAmount,
+        totalPayable,
+        remainingAmount,
+        ...(externalPaymentRecord || {}),
+    };
 
     /* ── Render ────────────────────────────────── */
     return (
@@ -332,14 +343,8 @@ const MonthlyInvoiceModal = ({
                                     data={displayData}
                                     user={user}
                                     platformFee={displayData.platformFee}
-                                    paymentStatus={paymentStatus}     /* ← translated status */
-                                    paymentRecord={{
-                                        month:       monthlyInvoice.monthName,
-                                        paymentDate: monthlyInvoice.createdAt,
-                                        paidAmount,
-                                        totalPayable,
-                                        remainingAmount,
-                                    }}
+                                    paymentStatus={paymentStatus}
+                                    paymentRecord={invoicePaymentRecord}
                                     onPayNow={!isPartiallyPaid && paymentStatus !== 'success' ? onPayNow : undefined}
                                     isPaying={isPaying}
                                 />

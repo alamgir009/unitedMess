@@ -8,6 +8,8 @@ const config = require('../../../config');
 const UpiConfig = require('../../../models/UpiConfig.model');
 const Invoice = require('../../../models/Invoice.model');
 const Payment = require('../../../models/Payment.model');
+const User = require('../../../models/User.model');
+const notificationService = require('../../../services/notification.service');
 const { getBillingPeriod } = require('../../../utils/helpers/date.helper');
 
 /**
@@ -346,12 +348,36 @@ const submitUpiManualPayment = asyncHandler(async (req, res) => {
         createdPayments.push(payment);
     }
 
+    // Notify all admins about the new UTR submission
+    const user = await User.findById(userId).select('name email').lean();
+    const totalAmount = createdPayments.reduce((s, p) => s + p.amount, 0);
+    const monthsList = createdPayments.map(p => p.month).join(', ');
+
+    notificationService.sendToAdmins(
+        'PAYMENT',
+        'New UPI Payment Pending Verification',
+        `${user?.name || 'A member'} submitted a UTR of ₹${totalAmount.toLocaleString('en-IN')} for ${monthsList}. Tap to review.`,
+        {
+            priority: 'HIGH',
+            actionRequired: true,
+            actionUrl: '/payments',
+            metadata: {
+                paymentIds: createdPayments.map(p => p._id.toString()),
+                utr: cleanUtr,
+                userName: user?.name || 'Unknown',
+                amount: totalAmount,
+                months: createdPayments.map(p => p.month),
+            },
+        }
+    );
+
     sendSuccessResponse(res, 201, 'Payment details submitted successfully. Pending admin verification.', createdPayments);
 });
 
 /**
  * PATCH /payments/upi-manual/:paymentId/verify  [admin only]
- * Confirm or reject a manual UPI transaction
+ * Confirm or reject a manual UPI transaction.
+ * Notifies the member of the verification result.
  */
 const verifyUpiManualPayment = asyncHandler(async (req, res) => {
     const { paymentId } = req.params;
@@ -361,20 +387,38 @@ const verifyUpiManualPayment = asyncHandler(async (req, res) => {
         throw new AppError('Status must be completed or failed', 400);
     }
 
-    const payment = await Payment.findById(paymentId);
-    if (!payment) {
-        throw new AppError('Payment record not found', 404);
-    }
+    // Use the dedicated service function that handles audit + sync
+    const updatedPayment = await paymentService.verifyUpiManualPaymentService(paymentId, {
+        status,
+        adminRemarks: remarks || '',
+        verifiedBy: req.user.id,
+    });
 
-    if (payment.paymentMethod !== 'upi_manual') {
-        throw new AppError('This endpoint is only for manual UPI verification', 400);
-    }
+    // Notify the member of the verification result
+    const title = status === 'completed'
+        ? 'UPI Payment Approved ✓'
+        : 'UPI Payment Declined ✗';
+    const message = status === 'completed'
+        ? `Your UPI payment of ₹${Number(updatedPayment.amount).toLocaleString('en-IN')} for ${updatedPayment.month} has been verified and approved.`
+        : `Your UPI payment of ₹${Number(updatedPayment.amount).toLocaleString('en-IN')} for ${updatedPayment.month} was not approved.${remarks ? ` Reason: ${remarks}` : ' Please contact admin.'}`;
 
-    if (payment.status !== 'pending_verification') {
-        throw new AppError(`Payment is already verified or in status: ${payment.status}`, 400);
-    }
-
-    const updatedPayment = await paymentService.updatePaymentById(paymentId, { status, remarks });
+    notificationService.createAndSend(
+        updatedPayment.user.toString(),
+        'PAYMENT',
+        title,
+        message,
+        {
+            priority: 'HIGH',
+            actionRequired: false,
+            actionUrl: '/payments',
+            metadata: {
+                paymentId: updatedPayment._id.toString(),
+                status,
+                utr: updatedPayment.transactionId,
+                adminRemarks: remarks || '',
+            },
+        }
+    );
 
     sendSuccessResponse(res, 200, `Payment verification completed: ${status}`, updatedPayment);
 });

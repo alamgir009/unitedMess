@@ -275,6 +275,8 @@ const sendToAdmins = async (type, title, message, options = {}) => {
             message,
             priority: options.priority || 'NORMAL',
             actionRequired: options.actionRequired || false,
+            actionUrl: options.actionUrl || null,
+            metadata: options.metadata || null,
             deliveryStatus: 'SENT',
         }));
 
