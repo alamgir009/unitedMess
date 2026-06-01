@@ -8,6 +8,8 @@ import {
     HiOutlineExclamationTriangle,
 } from 'react-icons/hi2';
 import { Button } from '@/shared/components/ui';
+import { fmt } from '@/core/utils/helpers/currency.helper';
+import useBodyScrollLock from '@/shared/hooks/useBodyScrollLock';
 
 const PAYMENT_TYPE_META = {
     mess_bill: { label: 'Mess Bill', Icon: HiOutlineDocumentText, color: 'text-indigo-500 bg-indigo-500/10' },
@@ -43,34 +45,9 @@ const panelTransition = {
 
 const fastFade = { duration: 0.18 };
 
-let lockCount = 0;
-
-function lockBodyScroll() {
-    if (typeof document === 'undefined') return;
-    if (lockCount === 0) {
-        const scrollY = window.scrollY;
-        document.body.style.overflow = 'hidden';
-        document.body.style.paddingRight =
-            `${window.innerWidth - document.documentElement.clientWidth}px`;
-        document.body.dataset.scrollY = String(scrollY);
-    }
-    lockCount++;
-}
-
-function unlockBodyScroll() {
-    if (typeof document === 'undefined') return;
-    lockCount = Math.max(0, lockCount - 1);
-    if (lockCount === 0) {
-        document.body.style.overflow = '';
-        document.body.style.paddingRight = '';
-        delete document.body.dataset.scrollY;
-    }
-}
-
-const fmt = (n) => Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-
 const PaymentDeleteDialog = memo(({ payment, onConfirm, onCancel, isDeleting }) => {
     const isOpen = Boolean(payment);
+    useBodyScrollLock(isOpen);
 
     const handleKeyDown = useCallback(
         (e) => { if (e.key === 'Escape' && !isDeleting) onCancel(); },
@@ -82,12 +59,6 @@ const PaymentDeleteDialog = memo(({ payment, onConfirm, onCancel, isDeleting }) 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, handleKeyDown]);
-
-    useEffect(() => {
-        if (!isOpen) return;
-        lockBodyScroll();
-        return unlockBodyScroll;
-    }, [isOpen]);
 
     if (typeof document === 'undefined') return null;
 

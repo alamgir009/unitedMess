@@ -4,11 +4,12 @@ import { SearchBar } from '@/shared/components/ui';
 
 /* ─── Filter data ─────────────────────────────────────── */
 const STATUS_OPTS = [
-    { value: '',           label: 'All' },
-    { value: 'pending',    label: 'Pending' },
-    { value: 'completed',  label: 'Completed' },
-    { value: 'failed',     label: 'Failed' },
-    { value: 'refunded',   label: 'Refunded' },
+    { value: '',                    label: 'All' },
+    { value: 'pending',             label: 'Pending' },
+    { value: 'pending_verification',label: 'Pending Verification' },
+    { value: 'completed',           label: 'Completed' },
+    { value: 'failed',              label: 'Failed' },
+    { value: 'refunded',            label: 'Refunded' },
 ];
 
 const TYPE_OPTS = [
@@ -23,6 +24,7 @@ const METHOD_OPTS = [
     { value: 'cash',      label: 'Cash' },
     { value: 'online',    label: 'Online' },
     { value: 'razorpay',  label: 'Razorpay' },
+    { value: 'upi_manual',label: 'Manual UPI' },
 ];
 
 /* ─── Pill toggle group ────────────────────────────────── */

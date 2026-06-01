@@ -84,7 +84,7 @@ InvoiceSkeleton.displayName = 'InvoiceSkeleton';
 ══════════════════════════════════════════════════════════════ */
 const PaymentPage = () => {
     const dispatch = useDispatch();
-    const { payments, pagination, isLoading, isError, message } =
+    const { payments, pagination, isListLoading, isError, message } =
         useSelector(s => s.payment);
     const { user, payableAmountData, payableGasBill } =
         useSelector(s => s.auth);
@@ -373,6 +373,12 @@ const PaymentPage = () => {
 
     /* ── derived ── */
     const hasActive       = !!(statusFilter || typeFilter || methodFilter || dateFrom || dateTo || searchQuery.trim());
+    // Auto-dismiss error banner after 7s
+    useEffect(() => {
+        if (!isError && !message) return;
+        const timer = setTimeout(() => dispatch(reset()), 7000);
+        return () => clearTimeout(timer);
+    }, [isError, message, dispatch]);
     const modalTitle      = isReadOnly ? 'View Payment Details' : editingPayment ? 'Edit Payment' : 'Record Payment';
     const gasBillVal      = payableGasBill && typeof payableGasBill === 'object'
         ? (payableGasBill.payableAmount ?? 0)
@@ -402,7 +408,7 @@ const PaymentPage = () => {
                     />
 
                     {/* Stats bar */}
-                    <PaymentStatsBar payments={payments || []} isAdmin={isAdmin} />
+                    <PaymentStatsBar payments={payments || []} isAdmin={isAdmin} totalCount={pagination?.total || 0} />
 
                     {/* Invoice panel */}
                     <AnimatePresence>
@@ -450,7 +456,7 @@ const PaymentPage = () => {
                         methodFilter={methodFilter} onMethodChange={setMethodFilter}
                         showFilters={showFilters}   onToggleFilters={() => setShowFilters(p => !p)}
                         filteredCount={filtered.length}
-                        totalCount={payments?.length || 0}
+                        totalCount={pagination?.total || 0}
                         hasActive={hasActive}
                         onClearFilters={clearFilters}
                     />
@@ -476,7 +482,7 @@ const PaymentPage = () => {
                     </AnimatePresence>
 
                     {/* Payment list */}
-                    {isLoading && (!payments || payments.length === 0) ? (
+                    {isListLoading && (!payments || payments.length === 0) ? (
                         <div className={`grid gap-3 ${
                             viewMode === 'grid'
                                 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
@@ -494,6 +500,7 @@ const PaymentPage = () => {
                                 onViewInvoice={handleViewInvoice}
                                 onVerify={handleVerifyClick}
                                 isAdmin={isAdmin}
+                                hasActiveFilters={hasActive}
                             />
                             {!hasActive && (
                                 <Pagination

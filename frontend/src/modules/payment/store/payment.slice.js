@@ -4,7 +4,8 @@ import paymentService from '../services/payment.service';
 const initialState = {
     payments: [],
     pagination: { page: 1, limit: 20, total: 0, pages: 0, hasNext: false, hasPrev: false },
-    isLoading: false,
+    isListLoading: false,
+    isActionLoading: false,
     isSuccess: false,
     isError: false,
     message: '',
@@ -68,7 +69,8 @@ export const paymentSlice = createSlice({
     initialState,
     reducers: {
         reset: (state) => {
-            state.isLoading = false;
+            state.isListLoading = false;
+            state.isActionLoading = false;
             state.isSuccess = false;
             state.isError = false;
             state.message = '';
@@ -77,9 +79,9 @@ export const paymentSlice = createSlice({
     extraReducers: (builder) => {
         builder
             // fetchPayments
-            .addCase(fetchPayments.pending, (state) => { state.isLoading = true; })
+            .addCase(fetchPayments.pending, (state) => { state.isListLoading = true; })
             .addCase(fetchPayments.fulfilled, (state, action) => {
-                state.isLoading = false;
+                state.isListLoading = false;
                 state.isSuccess = true;
                 // Backend queryPayments returns: { results, totalResults, totalPages, page, limit }
                 if (action.payload?.results) {
@@ -96,48 +98,48 @@ export const paymentSlice = createSlice({
                     state.payments = Array.isArray(action.payload) ? action.payload : [];
                 }
             })
-            .addCase(fetchPayments.rejected, (state, action) => { state.isLoading = false; state.isError = true; state.message = action.payload; })
+            .addCase(fetchPayments.rejected, (state, action) => { state.isListLoading = false; state.isError = true; state.message = action.payload; })
 
             // createPayment — action.payload = the created payment doc
-            .addCase(createPayment.pending, (state) => { state.isLoading = true; })
+            .addCase(createPayment.pending, (state) => { state.isActionLoading = true; })
             .addCase(createPayment.fulfilled, (state, action) => {
-                state.isLoading = false;
+                state.isActionLoading = false;
                 state.isSuccess = true;
                 // Unwrap if still wrapped in envelope (defensive)
                 const payment = action.payload?._id ? action.payload : action.payload?.data ?? action.payload;
                 if (payment?._id) state.payments.unshift(payment);
             })
-            .addCase(createPayment.rejected, (state, action) => { state.isLoading = false; state.isError = true; state.message = action.payload; })
+            .addCase(createPayment.rejected, (state, action) => { state.isActionLoading = false; state.isError = true; state.message = action.payload; })
 
             // createBulkPayments — action.payload = array of created payment docs
-            .addCase(createBulkPayments.pending, (state) => { state.isLoading = true; })
+            .addCase(createBulkPayments.pending, (state) => { state.isActionLoading = true; })
             .addCase(createBulkPayments.fulfilled, (state, action) => {
-                state.isLoading = false;
+                state.isActionLoading = false;
                 state.isSuccess = true;
                 const payments = action.payload?.data ?? action.payload;
                 if (Array.isArray(payments)) state.payments.unshift(...payments);
             })
-            .addCase(createBulkPayments.rejected, (state, action) => { state.isLoading = false; state.isError = true; state.message = action.payload; })
+            .addCase(createBulkPayments.rejected, (state, action) => { state.isActionLoading = false; state.isError = true; state.message = action.payload; })
 
             // updatePayment (admin only) — action.payload = updated payment doc
-            .addCase(updatePayment.pending, (state) => { state.isLoading = true; })
+            .addCase(updatePayment.pending, (state) => { state.isActionLoading = true; })
             .addCase(updatePayment.fulfilled, (state, action) => {
-                state.isLoading = false;
+                state.isActionLoading = false;
                 state.isSuccess = true;
                 const payment = action.payload?._id ? action.payload : action.payload?.data ?? action.payload;
                 const idx = state.payments.findIndex(p => p._id === payment?._id);
                 if (idx !== -1) state.payments[idx] = payment;
             })
-            .addCase(updatePayment.rejected, (state, action) => { state.isLoading = false; state.isError = true; state.message = action.payload; })
+            .addCase(updatePayment.rejected, (state, action) => { state.isActionLoading = false; state.isError = true; state.message = action.payload; })
 
             // deletePayment (admin only)
-            .addCase(deletePayment.pending, (state) => { state.isLoading = true; })
+            .addCase(deletePayment.pending, (state) => { state.isActionLoading = true; })
             .addCase(deletePayment.fulfilled, (state, action) => {
-                state.isLoading = false;
+                state.isActionLoading = false;
                 state.isSuccess = true;
                 state.payments = state.payments.filter(p => p._id !== action.payload);
             })
-            .addCase(deletePayment.rejected, (state, action) => { state.isLoading = false; state.isError = true; state.message = action.payload; });
+            .addCase(deletePayment.rejected, (state, action) => { state.isActionLoading = false; state.isError = true; state.message = action.payload; });
     },
 });
 

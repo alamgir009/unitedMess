@@ -5,30 +5,7 @@ import { Bell } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import useNotifications from '../../hooks/useNotifications';
 import NotificationList from '../NotificationList/NotificationList';
-
-/* ─── Body Scroll Lock (SSR safe) ───────────────────────────────────────── */
-let lockCount = 0;
-
-function lockBodyScroll() {
-    if (typeof document === 'undefined') return;
-    if (lockCount === 0) {
-        const scrollY = window.scrollY;
-        document.body.style.overflow = 'hidden';
-        document.body.style.paddingRight = `${window.innerWidth - document.documentElement.clientWidth}px`;
-        document.body.dataset.scrollY = String(scrollY);
-    }
-    lockCount++;
-}
-
-function unlockBodyScroll() {
-    if (typeof document === 'undefined') return;
-    lockCount = Math.max(0, lockCount - 1);
-    if (lockCount === 0) {
-        document.body.style.overflow = '';
-        document.body.style.paddingRight = '';
-        delete document.body.dataset.scrollY;
-    }
-}
+import useBodyScrollLock from '@/shared/hooks/useBodyScrollLock';
 
 /* ─── Framer Variants ───────────────────────────────────────────────────── */
 const BACKDROP_VARIANTS = {
@@ -73,17 +50,15 @@ const NotificationBell = () => {
         prevCount.current = unreadCount;
     }, [unreadCount, lastRealtimeUpdate]);
 
-    // Keyboard accessibility & Scroll locking
+    // Keyboard accessibility
     useEffect(() => {
         if (!open) return;
         const handler = (e) => { if (e.key === 'Escape') setOpen(false); };
         window.addEventListener('keydown', handler);
-        lockBodyScroll();
-        return () => {
-            window.removeEventListener('keydown', handler);
-            unlockBodyScroll();
-        };
+        return () => window.removeEventListener('keydown', handler);
     }, [open]);
+
+    useBodyScrollLock(open);
 
     const badgeLabel = unreadCount > 99 ? '99+' : unreadCount;
 
@@ -140,7 +115,7 @@ const NotificationBell = () => {
                             key="ring"
                             initial={{ scale: 0.8, opacity: 0.6 }}
                             animate={{ scale: 1.8, opacity: 0 }}
-                            exit={{}}
+
                             transition={{ duration: 0.6 }}
                             className="absolute inset-0 rounded-full bg-blue-400 dark:bg-blue-500 pointer-events-none"
                         />

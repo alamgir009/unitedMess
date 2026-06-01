@@ -6,7 +6,6 @@ import {
     HiOutlineUserGroup,
 } from 'react-icons/hi2';
 import StatPill from '@/shared/components/ui/StatPill/StatPill';
-import { cn } from '@/core/utils/helpers/string.helper';
 
 const COLORS = {
     primary: 'bg-primary/10 border-primary/20 text-primary',
@@ -15,7 +14,7 @@ const COLORS = {
     secondary: 'bg-secondary-500/10 border-secondary-500/20 text-secondary-600 dark:text-secondary-400',
 };
 
-const PaymentStatsBar = React.memo(({ payments = [], isAdmin }) => {
+const PaymentStatsBar = React.memo(({ payments = [], isAdmin, totalCount = 0 }) => {
     const stats = useMemo(() => {
         let totalPaid = 0;
         let pendingCount = 0;
@@ -25,7 +24,7 @@ const PaymentStatsBar = React.memo(({ payments = [], isAdmin }) => {
             const p = payments[i];
             if (p.status === 'completed') {
                 totalPaid += p.amount || 0;
-            } else if (p.status === 'pending') {
+            } else if (p.status === 'pending' || p.status === 'pending_verification') {
                 pendingCount += 1;
             }
             if (isAdmin) {
@@ -38,7 +37,7 @@ const PaymentStatsBar = React.memo(({ payments = [], isAdmin }) => {
             {
                 icon: HiOutlineCurrencyRupee,
                 label: 'Total Records',
-                value: payments.length,
+                value: totalCount || payments.length,
                 color: COLORS.primary,
             },
             {
@@ -68,32 +67,17 @@ const PaymentStatsBar = React.memo(({ payments = [], isAdmin }) => {
         }
 
         return items;
-    }, [payments, isAdmin]);
-
-    const gridLayoutClass = cn(
-        'grid gap-3 sm:gap-4',
-        stats.length === 2 && 'grid-cols-2 max-w-2xl',
-        stats.length === 3 && 'grid-cols-2 md:grid-cols-3',
-        stats.length === 4 && 'grid-cols-2 lg:grid-cols-4'
-    );
+    }, [payments, isAdmin, totalCount]);
 
     return (
         <div
             role="status"
             aria-label="Payment statistics"
-            className={gridLayoutClass}
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
         >
-            {stats.map((s, idx) => {
-                const isLastAndOdd = stats.length === 3 && idx === 2;
-                return (
-                    <div
-                        key={s.label}
-                        className={isLastAndOdd ? 'col-span-2 md:col-span-1' : 'col-span-1'}
-                    >
-                        <StatPill {...s} />
-                    </div>
-                );
-            })}
+            {stats.map((s) => (
+                <StatPill key={s.label} {...s} />
+            ))}
         </div>
     );
 });

@@ -215,7 +215,7 @@ const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInv
                 {stat.label}
             </span>
 
-            <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150 flex-shrink-0 pl-1">
+            <div className="flex items-center gap-1.5 md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100 transition-opacity duration-150 flex-shrink-0 pl-1">
                 {canEdit && payment.paymentMethod === 'upi_manual' && payment.status === 'pending_verification' && (
                     <Button variant="primary" size="sm"
                         onClick={() => onVerify?.(payment)}
@@ -247,22 +247,26 @@ const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInv
 }));
 PaymentRow.displayName = 'PaymentRow';
 
-const EmptyState = () => (
+const EmptyState = ({ hasFilters = false }) => (
     <div className="col-span-full flex flex-col items-center gap-3 py-16 select-none">
         <div className="w-12 h-12 rounded-xl bg-muted/60 dark:bg-white/[0.04] border border-border/50 flex items-center justify-center">
             <HiOutlineCurrencyRupee className="w-5 h-5 text-muted-foreground/30" />
         </div>
         <div className="text-center">
-            <p className="text-sm font-semibold text-foreground">No payment records found</p>
+            <p className="text-sm font-semibold text-foreground">
+                {hasFilters ? 'No matching payment records' : 'No payment records found'}
+            </p>
             <p className="text-xs text-muted-foreground mt-0.5 max-w-[200px] mx-auto leading-relaxed">
-                Adjust your filters or record a new payment.
+                {hasFilters
+                    ? 'Try adjusting your search or filter criteria.'
+                    : 'Record your first payment to get started.'}
             </p>
         </div>
     </div>
 );
 
-const PaymentList = ({ payments = [], onEdit, onDelete, onViewInvoice, onVerify, isAdmin = false, viewMode = 'grid' }) => {
-    if (payments.length === 0) return <EmptyState />;
+const PaymentList = ({ payments = [], onEdit, onDelete, onViewInvoice, onVerify, isAdmin = false, viewMode = 'grid', hasActiveFilters = false }) => {
+    if (payments.length === 0) return <EmptyState hasFilters={hasActiveFilters} />;
 
     return (
         <>

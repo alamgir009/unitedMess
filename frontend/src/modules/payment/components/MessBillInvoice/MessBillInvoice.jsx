@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useMemo, memo, useRef } from 'react';
+import { useState, useMemo, memo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import PrintInvoice from './PrintInvoice';
 import { useDownloadInvoice } from './useDownloadInvoice';
 import invoiceService from '../../services/invoice.service';
-import paymentService from '../../services/payment.service';
 import {
     HiOutlineCurrencyRupee,
     HiOutlineShoppingCart,
@@ -13,10 +12,7 @@ import {
     HiOutlineBeaker,
     HiOutlineUsers,
     HiOutlineStar,
-    HiOutlinePencilSquare,
-    HiOutlineLockClosed,
     HiOutlineCheckCircle,
-    HiOutlineXMark,
     HiOutlineArrowTrendingDown,
     HiOutlineReceiptPercent,
     HiOutlineDocumentText,
@@ -26,30 +22,11 @@ import {
     HiOutlineClock,
     HiOutlineArrowDownTray,
     HiOutlineShieldCheck,
-    HiOutlineDevicePhoneMobile,
     HiOutlineChevronDown,
-    HiOutlineClipboard,
-    HiOutlineCheck,
-    HiOutlinePencil,
-    HiOutlineArrowRight,
-    HiOutlineArrowLeft,
-    HiOutlinePhoto,
     HiOutlineIdentification,
 } from 'react-icons/hi2';
-import { SiGooglepay } from 'react-icons/si';
-import { BsCreditCard2Front } from 'react-icons/bs';
 import { Spinner } from '@/shared/components/ui';
-
-/* ────────────────────────────────────────
-   UTILITIES
-   ──────────────────────────────────────── */
-const fmt = (n) =>
-    Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-
-const nowDate = new Date();
-const INV_MONTH = nowDate.toLocaleString('en-IN', { month: 'long', year: 'numeric' });
-const INV_DATE = nowDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-const INV_NO = `UM-${nowDate.getFullYear()}${String(nowDate.getMonth() + 1).padStart(2, '0')}-${Math.floor(Math.random() * 9000 + 1000)}`;
+import { fmt } from '@/core/utils/helpers/currency.helper';
 
 /* ────────────────────────────────────────
    SUB-COMPONENTS (memoized)
@@ -58,7 +35,7 @@ const INV_NO = `UM-${nowDate.getFullYear()}${String(nowDate.getMonth() + 1).padS
 /** Premium card for summary statistics */
 const StatCard = memo(({ icon: Icon, label, value, subLabel, accent = false }) => (
     <div
-        className={`flex-1 min-w-[150px] p-5 rounded-2xl border backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${
+        className={`flex-1 min-w-[150px] p-5 rounded-2xl border backdrop-blur-sm transition-all duration-300 hover:shadow-lg ${
             accent
                 ? 'bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 border-indigo-200 dark:border-indigo-800 shadow-indigo-500/5'
                 : 'bg-white/80 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 shadow-gray-500/5'
@@ -137,23 +114,41 @@ const MessBillInvoice = ({
     platformFee = 0,
     onPayNow,
     isPaying,
-    isSendingEmail,
-    onSendEmail,
     paymentStatus = 'pending',
     paymentRecord,
 }) => {
-    if (!data) return null;
+    const invMeta = useMemo(() => {
+        const d = new Date();
+        return {
+            month: d.toLocaleString('en-IN', { month: 'long', year: 'numeric' }),
+            date: d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+            no: `UM-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}-${Date.now().toString(36).slice(-4).toUpperCase()}`,
+        };
+    }, []);
 
     const displayMonth = useMemo(() => {
-        return paymentRecord?.month || data?.monthName || INV_MONTH;
-    }, [paymentRecord, data]);
+        return paymentRecord?.month || data?.monthName || invMeta.month;
+    }, [paymentRecord, data, invMeta.month]);
 
     const displayDate = useMemo(() => {
         if (paymentRecord?.paymentDate) {
             return new Date(paymentRecord.paymentDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
         }
-        return INV_DATE;
-    }, [paymentRecord]);
+        return invMeta.date;
+    }, [paymentRecord, invMeta.date]);
+
+    const basePayable = data?.payableAmount ?? 0;
+    const finalPayable = basePayable;
+    const isRefund = useMemo(() => finalPayable < 0, [finalPayable]);
+    const displayAmt = useMemo(() => Math.abs(finalPayable), [finalPayable]);
+
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [sendingEmail, setSendingEmail] = useState(false);
+    const invoiceRef = useRef(null);
+    const printRef = useRef(null);
+    const { isDownloading, downloadPDF, generatePDFBase64 } = useDownloadInvoice();
+
+    if (!data) return null;
 
     const {
         grandTotalMarketAmount = 0,
@@ -175,10 +170,6 @@ const MessBillInvoice = ({
         guestMealAmount = 0,
     } = userStats;
 
-    const basePayable = data.payableAmount ?? 0;
-    const finalPayable = basePayable;
-    const isRefund = useMemo(() => finalPayable < 0, [finalPayable]);
-    const displayAmt = useMemo(() => Math.abs(finalPayable), [finalPayable]);
     const isPaid = paymentStatus === 'success';
     const isPartiallyPaid = paymentStatus === 'partially_paid';
 
@@ -187,16 +178,6 @@ const MessBillInvoice = ({
     const remainingAmount = paymentRecord?.remainingAmount ?? Math.max(0, totalPayable - paidAmount);
     const paidPercent = totalPayable > 0 ? Math.min(100, Math.round((paidAmount / totalPayable) * 100)) : 0;
 
-    // Expand/collapse state
-    const [isExpanded, setIsExpanded] = useState(false);
-
-    // PDF / Email handling
-    const invoiceRef = useRef(null);
-    const printRef = useRef(null);
-    const { isDownloading, downloadPDF, generatePDFBase64 } = useDownloadInvoice();
-    const [sendingEmail, setSendingEmail] = useState(false);
-
-    // Open checkout modal flow (delegated to parent page container)
     const handleOpenPaymentFlow = () => {
         if (typeof onPayNow === 'function') {
             onPayNow(displayMonth);
@@ -206,22 +187,18 @@ const MessBillInvoice = ({
     const handleDownloadPDF = () => {
         downloadPDF({
             printRef,
-            fileName: INV_NO,
-            title: `Invoice ${INV_NO}`,
+            fileName: invMeta.no,
+            title: `Invoice ${invMeta.no}`,
             subject: `Mess Bill - ${displayMonth}`,
         });
     };
 
     const handleSendEmail = async () => {
-        if (typeof onSendEmail === 'function' && !onSendEmail.toString().includes('generatePDFBase64')) {
-            onSendEmail();
-            return;
-        }
         setSendingEmail(true);
         try {
             const base64 = await generatePDFBase64({
                 printRef,
-                title: `Invoice ${INV_NO}`,
+                title: `Invoice ${invMeta.no}`,
                 subject: `Mess Bill - ${displayMonth}`,
             });
             if (!base64) {
@@ -230,10 +207,10 @@ const MessBillInvoice = ({
             }
             await invoiceService.sendInvoicePdf({
                 pdfBase64: base64,
-                fileName: `${INV_NO}.pdf`,
+                fileName: `${invMeta.no}.pdf`,
                 monthName: displayMonth,
             });
-            toast.success('📧 Invoice sent to your email!');
+            toast.success('Invoice sent to your email!');
         } catch (err) {
             toast.error(err?.response?.data?.message ?? 'Failed to send invoice email');
         } finally {
@@ -332,7 +309,7 @@ const MessBillInvoice = ({
                 </div>
                 <div className="flex flex-col items-start sm:items-end gap-0.5">
                     <p className="text-xs font-mono text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-md">
-                        {INV_NO}
+                        {invMeta.no}
                     </p>
                     {user?.name && <p className="text-sm font-semibold text-gray-900 dark:text-white">{user.name}</p>}
                     {user?.email && <p className="text-xs text-gray-400 dark:text-gray-500 max-w-[200px] truncate">{user.email}</p>}
@@ -508,11 +485,11 @@ const MessBillInvoice = ({
                             <span className="hidden sm:inline">Download</span>
                         </button>
                         <button
-                            disabled={!!(isSendingEmail || sendingEmail)}
+                            disabled={sendingEmail}
                             onClick={handleSendEmail}
                             className="flex-1 flex items-center justify-center gap-2 py-2.5 px-5 rounded-xl text-sm font-medium border border-border bg-card hover:bg-muted active:bg-muted/80 text-foreground shadow-sm hover:shadow active:scale-[0.99] disabled:opacity-60 disabled:scale-100 transition-all duration-150"
                         >
-                            {(isSendingEmail || sendingEmail) ? <Spinner size="sm" color="current" /> : <HiOutlineEnvelope className="w-4 h-4" />}
+                            {sendingEmail ? <Spinner size="sm" color="current" /> : <HiOutlineEnvelope className="w-4 h-4" />}
                             <span className="hidden sm:inline">Email</span>
                         </button>
                     </div>
@@ -539,7 +516,7 @@ const MessBillInvoice = ({
                         displayDate={displayDate}
                         isRefund={isRefund}
                         dueCarryOver={dueCarryOver}
-                        invoiceNo={INV_NO}
+                        invoiceNo={invMeta.no}
                     />
                 </div>
             </div>

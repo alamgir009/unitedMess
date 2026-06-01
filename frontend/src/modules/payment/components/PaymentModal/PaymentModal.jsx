@@ -74,7 +74,6 @@ const PaymentModal = ({ isOpen, onClose, title, children }) => {
                             transition={transition.modal}
                             role="dialog"
                             aria-modal="true"
-                            style={{ willChange: 'transform, opacity' }}
                             className="
                                 relative w-full max-w-lg overflow-hidden rounded-3xl
                                 border border-black/10 dark:border-white/10
@@ -95,9 +94,13 @@ const PaymentModal = ({ isOpen, onClose, title, children }) => {
                                         {title}
                                     </h2>
                                 </div>
-                                <Button variant="danger" iconOnly onClick={onClose}>
+                                <button
+                                    onClick={onClose}
+                                    className="flex items-center justify-center w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                    aria-label="Close modal"
+                                >
                                     <HiOutlineXMark className="w-5 h-5" />
-                                </Button>
+                                </button>
                             </div>
 
                             {/* Body */}

@@ -206,7 +206,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
     useEffect(() => {
         if (!isAdmin) return;
         setUsersLoad(true);
-        apiClient.get('users?limit=100&userStatus=approved&isActive=true')
+        apiClient.get('/users?limit=100&userStatus=approved&isActive=true')
             .then(r => setUsers(r.data?.data?.users || r.data?.users || []))
             .catch(console.error)
             .finally(() => setUsersLoad(false));
@@ -359,7 +359,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                             type="number" name="amount" value={formData.amount}
                             onChange={handleChange} min="0" step="0.01"
                             required={!readOnly}
-                            placeholder="0.00"
+                            placeholder="Enter amount"
                             disabled={readOnly || isSubmitting}
                             className={`${inputBase} pl-7 ${readOnly || isSubmitting ? inputDisabled : ''}`}
                         />

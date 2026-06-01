@@ -19,12 +19,9 @@ import {
 import { SiGooglepay } from 'react-icons/si';
 import { BsCreditCard2Front } from 'react-icons/bs';
 import { cn } from '@/core/utils/helpers/string.helper';
+import { fmt } from '@/core/utils/helpers/currency.helper';
 import { Button, Input, Badge, Spinner } from '@/shared/components/ui';
 import paymentService from '../../services/payment.service';
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
-const fmt = (n) =>
-  Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
 const UTR_PATTERN = /^[a-zA-Z0-9]{8,20}$/;
 
@@ -622,7 +619,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
       return;
     }
     if (!UTR_PATTERN.test(trimmed)) {
-      toast.error('UTR must be 6-30 alphanumeric characters.');
+      toast.error('UTR must be 8–20 alphanumeric characters (letters & numbers only).');
       return;
     }
     setSubmittingUpi(true);

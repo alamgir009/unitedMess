@@ -1,7 +1,5 @@
 import React, { memo } from 'react';
-
-const fmt = (n) =>
-    Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+import { fmt } from '@/core/utils/helpers/currency.helper';
 
 const PrintInvoice = ({
     data,

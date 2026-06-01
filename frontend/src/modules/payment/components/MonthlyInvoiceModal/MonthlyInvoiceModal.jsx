@@ -12,12 +12,7 @@ import {
 
 import MessBillInvoice from '../MessBillInvoice/MessBillInvoice';
 import { fetchMonthlyInvoice, clearMonthlyInvoice } from '../../store/invoice.slice';
-
-/* ─────────────────────────────────────────────────────────
-   Currency formatter
-───────────────────────────────────────────────────────── */
-const fmt = (n) =>
-    Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+import { fmt } from '@/core/utils/helpers/currency.helper';
 
 /* ─────────────────────────────────────────────────────────
    Status translator:

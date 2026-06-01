@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import {
   HiOutlineXMark,
@@ -15,17 +14,17 @@ import {
 } from 'react-icons/hi2';
 import { Button } from '@/shared/components/ui';
 import { cn } from '@/core/utils/helpers/string.helper';
+import { fmt } from '@/core/utils/helpers/currency.helper';
 import { formatSmartDate } from '@/core/utils/helpers/date.helper';
+import useBodyScrollLock from '@/shared/hooks/useBodyScrollLock';
 import paymentService from '../../services/payment.service';
-
-const fmt = (n) =>
-  Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
 const UpiVerificationModal = ({ isOpen, onClose, payment, onVerified }) => {
   const [exiting, setExiting] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
+  const focusableRef = useRef([]);
   const [adminRemarks, setAdminRemarks] = useState('');
   const [verifying, setVerifying] = useState(false);
 
@@ -52,31 +51,42 @@ const UpiVerificationModal = ({ isOpen, onClose, payment, onVerified }) => {
     }
   }, [isOpen, resetState]);
 
-  useEffect(() => {
-    if (!shouldRender || exiting) return;
-    const scrollY = window.scrollY;
-    const html = document.documentElement;
-    html.style.overflow = 'hidden';
-    html.style.position = 'fixed';
-    html.style.width = '100%';
-    html.style.top = `-${scrollY}px`;
-    return () => {
-      html.style.overflow = '';
-      html.style.position = '';
-      html.style.width = '';
-      html.style.top = '';
-      window.scrollTo(0, scrollY);
-    };
-  }, [shouldRender, exiting]);
+  useBodyScrollLock(shouldRender && !exiting);
+
+  const rebuildFocusable = useCallback(() => {
+    if (dialogRef.current) {
+      const sel = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+      focusableRef.current = Array.from(dialogRef.current.querySelectorAll(sel));
+    }
+  }, []);
 
   useEffect(() => {
     if (!shouldRender || exiting) return;
+    rebuildFocusable();
+    const timer = setTimeout(() => {
+      const first = focusableRef.current[0];
+      if (first && document.activeElement !== first) first.focus();
+    }, 50);
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key === 'Tab') {
+        const focusable = focusableRef.current;
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+        } else {
+          if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+      }
     };
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [shouldRender, exiting, onClose]);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [shouldRender, exiting, onClose, rebuildFocusable]);
 
   const handleVerify = useCallback(async (status) => {
     if (!payment?._id) return;
