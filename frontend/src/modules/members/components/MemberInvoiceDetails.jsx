@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import {
     Mail, Phone, ShieldCheck, Flame, Droplets,
-    Utensils, Receipt, Users, Banknote, Hash, Fuel
+    Utensils, Receipt, Users, Banknote, Hash, Fuel,
+    CheckCircle2, Clock, XCircle, ArrowDownToLine
 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────
@@ -281,7 +282,7 @@ const MemberInvoiceDetails = React.memo(({ user }) => {
                     </div>
 
                     {/* ── Net position summary bar ── */}
-                    <NetPositionBar user={user} />
+                    <PaymentStatusBanner user={user} />
                 </div>
             </div>
 
@@ -297,68 +298,112 @@ const MemberInvoiceDetails = React.memo(({ user }) => {
 MemberInvoiceDetails.displayName = 'MemberInvoiceDetails';
 
 /* ─────────────────────────────────────────────
-   NetPositionBar
-     === 0  → Settled  (slate)
-      < 0  → Credit   (emerald) — show abs value, refund message
-      > 0  → Due      (rose)   — show value, payment message
+   PaymentStatusBanner — fintech-grade payable summary
+     Driven by payment status first, then amount.
+     Overpayments / negative balances → credit.
 ───────────────────────────────────────────── */
-const NetPositionBar = React.memo(({ user }) => {
-    const payable = user?.paybleAmountforMeal ?? 0;
-    const isZero = payable === 0;
-    const isDue = payable > 0;
-    const isCredit = payable < 0;
+const PAYMENT_CONFIG = {
+    paid: {
+        container: 'bg-emerald-50/70 dark:bg-emerald-500/8  border-emerald-200 dark:border-emerald-500/25',
+        text:      'text-emerald-700 dark:text-emerald-400',
+        badge:     'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30',
+        icon:      CheckCircle2,
+        label:     'Paid',
+        message:   (a) => `Payment of ₹\u202F${a} completed successfully`,
+    },
+    due: {
+        container: 'bg-amber-50/70  dark:bg-amber-500/8   border-amber-200  dark:border-amber-500/25',
+        text:      'text-amber-700  dark:text-amber-400',
+        badge:     'bg-amber-100  dark:bg-amber-500/20  text-amber-700  dark:text-amber-400  border-amber-300  dark:border-amber-500/30',
+        icon:      Clock,
+        label:     'Due',
+        message:   (a) => `You have to pay ₹\u202F${a}`,
+    },
+    failed: {
+        container: 'bg-rose-50/70   dark:bg-rose-500/8    border-rose-200   dark:border-rose-500/25',
+        text:      'text-rose-700   dark:text-rose-400',
+        badge:     'bg-rose-100   dark:bg-rose-500/20   text-rose-700   dark:text-rose-400   border-rose-300   dark:border-rose-500/30',
+        icon:      XCircle,
+        label:     'Failed',
+        message:   (a) => `Payment failed — ₹\u202F${a} is due immediately`,
+    },
+    settled: {
+        container: 'bg-slate-50     dark:bg-slate-800/40  border-slate-200  dark:border-slate-700',
+        text:      'text-slate-600  dark:text-slate-300',
+        badge:     'bg-slate-100  dark:bg-slate-700     text-slate-600  dark:text-slate-300  border-slate-300  dark:border-slate-600',
+        icon:      CheckCircle2,
+        label:     'Settled',
+        message:   () => 'Already settled — no balance outstanding',
+    },
+    credit: {
+        container: 'bg-emerald-50/70 dark:bg-emerald-500/8  border-emerald-200 dark:border-emerald-500/25',
+        text:      'text-emerald-700 dark:text-emerald-400',
+        badge:     'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30',
+        icon:      ArrowDownToLine,
+        label:     'Credit',
+        message:   (a) => `You will get a refund of ₹\u202F${a}`,
+    },
+};
 
-    const containerCls = isZero
-        ? 'bg-slate-50      dark:bg-slate-800/40   border-slate-200   dark:border-slate-700'
-        : isDue
-            ? 'bg-rose-50/60    dark:bg-rose-500/10    border-rose-200    dark:border-rose-500/25'
-            : 'bg-emerald-50/60 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/25';
+const PaymentStatusBanner = React.memo(({ user }) => {
+    const paymentStatus = (user?.payment || 'pending').toLowerCase();
+    const payable      = user?.paybleAmountforMeal ?? 0;
+    const absPayable   = useMemo(() => Math.abs(payable), [payable]);
+    const fmtPayable   = useMemo(() => fmt(absPayable), [absPayable]);
 
-    const amountCls = isZero
-        ? 'text-slate-600   dark:text-slate-300'
-        : isDue
-            ? 'text-rose-700    dark:text-rose-400'
-            : 'text-emerald-700 dark:text-emerald-400';
+    /* ── Resolve state ── */
+    let state;
+    if (payable < 0) {
+        state = 'credit';
+    } else if (['success', 'paid', 'approved'].includes(paymentStatus)) {
+        state = 'paid';
+    } else if (['failed', 'denied'].includes(paymentStatus)) {
+        state = 'failed';
+    } else if (payable === 0) {
+        state = 'settled';
+    } else {
+        state = 'due';
+    }
 
-    const badgeCls = isZero
-        ? 'bg-slate-100   dark:bg-slate-700       text-slate-600   dark:text-slate-300   border-slate-300   dark:border-slate-600'
-        : isDue
-            ? 'bg-rose-100    dark:bg-rose-500/20    text-rose-700    dark:text-rose-400    border-rose-300    dark:border-rose-500/30'
-            : 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30';
-
-    const badge = isZero ? 'Settled' : isDue ? 'Due' : 'Credit';
-    const label = isZero
-        ? 'Already settled'
-        : isDue
-            ? 'You have to pay'
-            : 'You will get a refund of';
-
-    const absPayable = useMemo(() => Math.abs(payable), [payable]);
+    const cfg = PAYMENT_CONFIG[state];
+    const Icon = cfg.icon;
 
     return (
-        <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 rounded-2xl border ${containerCls}`}>
-            <div className="flex flex-col gap-0.5">
-                <span className="text-[10.5px] font-bold uppercase tracking-[0.07em] text-slate-400 dark:text-slate-500">
-                    Payable Amount
-                </span>
-
-                {isZero ? (
-                    <span className="text-base font-bold text-slate-500 dark:text-slate-400">
-                        Already settled — no balance outstanding
+        <div
+            className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 rounded-2xl border transition-colors duration-300 ${cfg.container}`}
+            role="status"
+            aria-label={`Payment status: ${cfg.label}`}
+        >
+            {/* ── Left: Icon + message ── */}
+            <div className="flex items-center gap-3.5 min-w-0">
+                <div
+                    className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center
+                                bg-white/90 dark:bg-slate-900/90 shadow-sm
+                                border ${cfg.container.split(' ').slice(1, 3).join(' ')}`}
+                >
+                    <Icon size={18} strokeWidth={2.5} className={cfg.text} />
+                </div>
+                <div className="flex flex-col gap-0.5 min-w-0">
+                    <span className="text-[10.5px] font-bold uppercase tracking-[0.07em] text-slate-400 dark:text-slate-500">
+                        Payable Amount
                     </span>
-                ) : (
-                    <span className={`text-xl font-black tabular-nums ${amountCls}`}>
-                        {label}&nbsp;₹&nbsp;{fmt(absPayable)}
+                    <span className={`text-[15px] md:text-[17px] font-black tabular-nums leading-tight ${cfg.text}`}>
+                        {cfg.message(fmtPayable)}
                     </span>
-                )}
+                </div>
             </div>
 
-            <span className={`self-start sm:self-center px-3 py-1 rounded-full text-[10.5px] font-bold uppercase tracking-widest border ${badgeCls}`}>
-                {badge}
+            {/* ── Right: Pill badge ── */}
+            <span
+                className={`self-start sm:self-center inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full
+                            text-[11px] font-black uppercase tracking-[0.08em] border shadow-sm ${cfg.badge}`}
+            >
+                <Icon size={13} strokeWidth={3} />
+                {cfg.label}
             </span>
         </div>
     );
 });
-NetPositionBar.displayName = 'NetPositionBar';
+PaymentStatusBanner.displayName = 'PaymentStatusBanner';
 
 export default MemberInvoiceDetails;
