@@ -406,10 +406,6 @@ const SuccessView = ({ onClose }) => (
         Your UTR reference has been received. The admin will verify and update your bill shortly.
       </p>
     </div>
-    <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground bg-muted/30 px-4 py-2.5 rounded-full border border-border w-fit mx-auto">
-      <Spinner size="xs" color="current" />
-      <span>Syncing with ledger dashboard...</span>
-    </div>
     <Button variant="outline" size="md" onClick={onClose}>
       Close
     </Button>
