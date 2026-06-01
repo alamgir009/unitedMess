@@ -358,144 +358,176 @@ const MessBillInvoice = ({
             </div>
 
             {/* ── Total & Payment Area ── */}
-            <div className={`px-4 md:px-6 py-6 mt-2 rounded-b-2xl ${isRefund ? 'bg-emerald-50/70 dark:bg-emerald-900/15' : 'bg-gray-50 dark:bg-gray-800/40'} border-t border-gray-200 dark:border-gray-800`}>
-                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5 mb-8">
-                    <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
-                            {isRefund ? 'Refund amount' : 'Total payable'}
+            <div className={`px-4 md:px-6 pt-6 pb-8 mt-0 rounded-b-2xl border-t border-gray-200 dark:border-gray-800 ${isRefund ? 'bg-gradient-to-b from-emerald-50/60 to-white dark:from-emerald-900/10 dark:to-gray-900/20' : 'bg-gradient-to-b from-gray-50 to-white dark:from-gray-800/40 dark:to-gray-900/20'}`}>
+
+                {/* ── Amount + Status unified card ── */}
+                <div className={`flex items-center justify-between gap-4 p-4 md:p-5 rounded-2xl mb-5 border shadow-sm ${
+                    isPaid    ? 'bg-white dark:bg-gray-800/70 border-emerald-200/70 dark:border-emerald-800/60' :
+                    isRefund  ? 'bg-white dark:bg-gray-800/70 border-emerald-200/70 dark:border-emerald-800/60' :
+                    isPartiallyPaid ? 'bg-white dark:bg-gray-800/70 border-amber-200/70 dark:border-amber-800/60' :
+                    'bg-white dark:bg-gray-800/70 border-gray-200 dark:border-gray-700'
+                }`}>
+                    <div className="min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500 mb-1">
+                            {isRefund ? 'Refund Amount' : 'Total Payable'}
                         </p>
-                        <div className="flex items-baseline gap-3">
-                            <span className={`text-3xl md:text-4xl font-bold tabular-nums ${isRefund ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-white'}`}>
-                                ₹{fmt(displayAmt)}
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                            <span className={`text-3xl md:text-4xl font-black tabular-nums leading-none ${
+                                isRefund ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-white'
+                            }`}>
+                                {isRefund ? '−' : ''}₹{fmt(displayAmt)}
                             </span>
-                            {isRefund && (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-xs font-semibold border border-emerald-200 dark:border-emerald-700/50">
-                                    <HiOutlineArrowTrendingDown className="w-4 h-4" /> Refund
+                            {isPartiallyPaid && totalPayable > 0 && (
+                                <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
+                                    of ₹{fmt(totalPayable)}
                                 </span>
                             )}
                         </div>
                     </div>
-
-                    {/* Status badge */}
-                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border self-start sm:self-auto ${
-                        isPaid ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-700 dark:text-emerald-300' :
-                        isPartiallyPaid ? 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-300' :
-                        isRefund ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-700 dark:text-emerald-300' :
-                        'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-300'
+                    <div className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm border ${
+                        isPaid
+                            ? 'bg-emerald-500 text-white border-emerald-600 shadow-emerald-500/25'
+                            : isPartiallyPaid
+                            ? 'bg-amber-500 text-white border-amber-600 shadow-amber-500/25'
+                            : isRefund
+                            ? 'bg-emerald-500 text-white border-emerald-600 shadow-emerald-500/25'
+                            : 'bg-amber-500 text-white border-amber-600 shadow-amber-500/25'
                     }`}>
-                        {isPaid ? <HiOutlineCheckCircle className="w-4 h-4" /> :
-                         isPartiallyPaid ? <HiOutlineCurrencyRupee className="w-4 h-4" /> :
-                         isRefund ? <HiOutlineArrowTrendingDown className="w-4 h-4" /> :
-                         <HiOutlineCurrencyRupee className="w-4 h-4" />}
-                        <span>{isPaid ? 'Paid' : isPartiallyPaid ? 'Partially Paid' : isRefund ? 'Refund' : 'Due'}</span>
+                        {isPaid        ? <HiOutlineCheckCircle className="w-3.5 h-3.5" />       :
+                         isPartiallyPaid ? <HiOutlineCurrencyRupee className="w-3.5 h-3.5" />  :
+                         isRefund      ? <HiOutlineArrowTrendingDown className="w-3.5 h-3.5" /> :
+                         <HiOutlineCurrencyRupee className="w-3.5 h-3.5" />}
+                        <span>{isPaid ? 'Paid' : isPartiallyPaid ? 'Partial' : isRefund ? 'Refund' : 'Due'}</span>
                     </div>
                 </div>
 
-                {/* ── UPI Manual Payment Info ── */}
-                {paymentRecord?.paymentMethod === 'upi_manual' && paymentRecord?.transactionId && (
-                    <div className="flex items-start gap-4 p-4 rounded-2xl bg-blue-50/80 dark:bg-blue-900/25 border border-blue-200 dark:border-blue-800 backdrop-blur-sm">
-                        <HiOutlineIdentification className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                        <div className="min-w-0">
-                            <p className="text-sm font-bold text-blue-800 dark:text-blue-200">UPI Manual Payment</p>
-                            <p className="text-xs text-blue-600/80 dark:text-blue-400/80 mt-1 break-all">
-                                UTR: <span className="font-mono font-semibold select-all">{paymentRecord.transactionId}</span>
-                            </p>
-                            {paymentRecord.status === 'pending_verification' && (
-                                <span className="inline-flex items-center mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700/50">
-                                    Pending Verification
-                                </span>
-                            )}
-                            {paymentRecord.status === 'completed' && (
-                                <span className="inline-flex items-center mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50">
-                                    Verified & Completed
-                                </span>
-                            )}
+                {/* ── Payment Confirmation Block ── */}
+                {(paymentRecord?.paymentMethod === 'upi_manual' && paymentRecord?.transactionId) || isPaid || isRefund ? (
+                    <div className="rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 mb-5 shadow-sm">
+                        {/* UPI details row */}
+                        {paymentRecord?.paymentMethod === 'upi_manual' && paymentRecord?.transactionId && (
+                            <div className="flex items-start gap-3 px-4 py-3.5 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200/60 dark:border-blue-800/50">
+                                <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <HiOutlineIdentification className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                                        <p className="text-xs font-bold text-blue-800 dark:text-blue-200 uppercase tracking-wide">UPI Manual Payment</p>
+                                        {paymentRecord.status === 'pending_verification' && (
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50">
+                                                Pending Review
+                                            </span>
+                                        )}
+                                        {paymentRecord.status === 'completed' && (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50">
+                                                <HiOutlineCheckCircle className="w-3 h-3" /> Verified
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-1.5 mt-1.5">
+                                        <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-500 dark:text-blue-400/70">UTR</span>
+                                        <span className="text-sm font-mono font-bold text-blue-900 dark:text-blue-100 select-all tracking-tight break-all">
+                                            {paymentRecord.transactionId}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Status row */}
+                        {isPaid && (
+                            <div className="flex items-center gap-3 px-4 py-3.5 bg-emerald-50 dark:bg-emerald-900/20">
+                                <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center flex-shrink-0">
+                                    <HiOutlineCheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-xs font-bold text-emerald-800 dark:text-emerald-200">Payment Successful</p>
+                                    <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/70 mt-0.5">
+                                        ₹{fmt(displayAmt)} received · Invoice is final
+                                    </p>
+                                </div>
+                                <div className="flex-shrink-0 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/50 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-700/50">
+                                    SETTLED
+                                </div>
+                            </div>
+                        )}
+                        {isRefund && !isPaid && (
+                            <div className="flex items-center gap-3 px-4 py-3.5 bg-emerald-50 dark:bg-emerald-900/20">
+                                <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center flex-shrink-0">
+                                    <HiOutlineArrowTrendingDown className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-xs font-bold text-emerald-800 dark:text-emerald-200">Refund Applicable</p>
+                                    <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/70 mt-0.5">
+                                        ₹{fmt(displayAmt)} will be credited · Contact your mess admin
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ) : null}
+
+                {/* ── Partial Payment Progress ── */}
+                {isPartiallyPaid && (
+                    <div className="mb-5 p-4 rounded-2xl bg-amber-50/80 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                        <div className="flex items-center justify-between mb-2.5">
+                            <span className="text-xs font-bold text-amber-800 dark:text-amber-200">Payment Progress</span>
+                            <span className="text-xs font-bold text-amber-700 dark:text-amber-300 tabular-nums">{paidPercent}%</span>
+                        </div>
+                        <div className="h-2 w-full rounded-full bg-amber-200/60 dark:bg-amber-900/40 overflow-hidden mb-3">
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${paidPercent}%` }}
+                                transition={{ duration: 1, ease: 'easeOut' }}
+                                className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500 shadow-inner"
+                            />
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] text-amber-700/70 dark:text-amber-400/60 font-semibold">
+                            <span>Paid: ₹{fmt(paidAmount)}</span>
+                            <span>Remaining: ₹{fmt(remainingAmount)}</span>
                         </div>
                     </div>
                 )}
 
-                {/* ── Action Buttons ── */}
-                <div className="space-y-4">
-                    {isPaid ? (
-                        <div className="flex items-start gap-4 p-5 rounded-2xl bg-emerald-50/80 dark:bg-emerald-900/25 border border-emerald-200 dark:border-emerald-800 backdrop-blur-sm">
-                            <HiOutlineCheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
-                            <div>
-                                <p className="text-sm font-bold text-emerald-800 dark:text-emerald-200">Payment Successful!</p>
-                                <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80 mt-1">₹{fmt(displayAmt)} received. Invoice is final.</p>
-                            </div>
-                        </div>
-                    ) : isPartiallyPaid ? (
-                        <>
-                            <div className="w-full">
-                                <div className="flex justify-between text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">
-                                    <span>Paid: ₹{fmt(paidAmount)}</span>
-                                    <span>{paidPercent}%</span>
-                                </div>
-                                <div className="h-2.5 w-full rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                                    <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${paidPercent}%` }}
-                                        transition={{ duration: 1, ease: 'easeOut' }}
-                                        className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500 shadow-inner"
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-4 p-5 rounded-2xl bg-amber-50/80 dark:bg-amber-900/25 border border-amber-200 dark:border-amber-700 backdrop-blur-sm">
-                                <HiOutlineCurrencyRupee className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                                <div>
-                                    <p className="text-sm font-bold text-amber-800 dark:text-amber-200">₹{fmt(remainingAmount)} remaining</p>
-                                    <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-1">Complete your payment to settle the mess bill.</p>
-                                </div>
-                            </div>
-                            <button
-                                disabled={isPaying}
-                                onClick={handleOpenPaymentFlow}
-                                className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 active:bg-amber-700 active:scale-[0.99] shadow-[0_4px_12px_rgba(245,158,11,0.2)] hover:shadow-[0_6px_20px_rgba(245,158,11,0.3)] disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 disabled:shadow-none transition-all duration-150"
-                            >
-                                <HiOutlineCurrencyRupee className="w-5 h-5" />
-                                <span>Pay Remaining Balance</span>
-                            </button>
-                        </>
-                    ) : isRefund ? (
-                        <div className="flex items-start gap-4 p-5 rounded-2xl bg-emerald-50/80 dark:bg-emerald-900/25 border border-emerald-200 dark:border-emerald-800 backdrop-blur-sm">
-                            <HiOutlineArrowTrendingDown className="w-6 h-6 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
-                            <div>
-                                <p className="text-sm font-bold text-emerald-800 dark:text-emerald-200">You have a refund!</p>
-                                <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80 mt-1">₹{fmt(displayAmt)} will be credited. Contact admin.</p>
-                            </div>
-                        </div>
-                    ) : (
-                        <button
-                            disabled={isPaying}
-                            onClick={handleOpenPaymentFlow}
-                            className="w-full flex items-center justify-center gap-3 py-3.5 px-6 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 active:scale-[0.99] shadow-[0_4px_12px_rgba(79,70,229,0.2)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.3)] disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 disabled:shadow-none transition-all duration-150"
-                        >
-                            <span>Pay Bill</span>
-                            <HiOutlineShieldCheck className="w-4 h-4 opacity-80" />
-                        </button>
-                    )}
+                {/* ── CTA: Pay Now (due / partial) ── */}
+                {!isPaid && !isRefund && (
+                    <button
+                        disabled={isPaying}
+                        onClick={handleOpenPaymentFlow}
+                        className={`w-full flex items-center justify-center gap-2.5 py-3.5 px-6 rounded-xl text-sm font-bold text-white mb-3 transition-all duration-150 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 disabled:shadow-none ${
+                            isPartiallyPaid
+                                ? 'bg-amber-500 hover:bg-amber-600 active:bg-amber-700 shadow-[0_4px_14px_rgba(245,158,11,0.22)] hover:shadow-[0_6px_20px_rgba(245,158,11,0.32)]'
+                                : 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 shadow-[0_4px_14px_rgba(79,70,229,0.22)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.32)]'
+                        }`}
+                    >
+                        <HiOutlineCurrencyRupee className="w-5 h-5" />
+                        <span>{isPartiallyPaid ? 'Pay Remaining Balance' : 'Pay Bill'}</span>
+                        {!isPartiallyPaid && <HiOutlineShieldCheck className="w-4 h-4 opacity-80" />}
+                    </button>
+                )}
 
-                    <div className="flex gap-3">
-                        <button
-                            disabled={isDownloading}
-                            onClick={handleDownloadPDF}
-                            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-5 rounded-xl text-sm font-medium border border-border bg-card hover:bg-muted active:bg-muted/80 text-foreground shadow-sm hover:shadow active:scale-[0.99] disabled:opacity-60 disabled:scale-100 transition-all duration-150"
-                        >
-                            {isDownloading ? <Spinner size="sm" color="current" /> : <HiOutlineArrowDownTray className="w-4 h-4" />}
-                            <span className="hidden sm:inline">Download</span>
-                        </button>
-                        <button
-                            disabled={sendingEmail}
-                            onClick={handleSendEmail}
-                            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-5 rounded-xl text-sm font-medium border border-border bg-card hover:bg-muted active:bg-muted/80 text-foreground shadow-sm hover:shadow active:scale-[0.99] disabled:opacity-60 disabled:scale-100 transition-all duration-150"
-                        >
-                            {sendingEmail ? <Spinner size="sm" color="current" /> : <HiOutlineEnvelope className="w-4 h-4" />}
-                            <span className="hidden sm:inline">Email</span>
-                        </button>
-                    </div>
+                {/* ── Download / Email actions ── */}
+                <div className="grid grid-cols-2 gap-3">
+                    <button
+                        disabled={isDownloading}
+                        onClick={handleDownloadPDF}
+                        className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold border border-border bg-card hover:bg-muted active:bg-muted/80 text-foreground shadow-sm hover:shadow active:scale-[0.99] disabled:opacity-60 disabled:scale-100 transition-all duration-150"
+                    >
+                        {isDownloading ? <Spinner size="sm" color="current" /> : <HiOutlineArrowDownTray className="w-4 h-4 flex-shrink-0" />}
+                        <span>Download</span>
+                    </button>
+                    <button
+                        disabled={sendingEmail}
+                        onClick={handleSendEmail}
+                        className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold border border-border bg-card hover:bg-muted active:bg-muted/80 text-foreground shadow-sm hover:shadow active:scale-[0.99] disabled:opacity-60 disabled:scale-100 transition-all duration-150"
+                    >
+                        {sendingEmail ? <Spinner size="sm" color="current" /> : <HiOutlineEnvelope className="w-4 h-4 flex-shrink-0" />}
+                        <span>Email</span>
+                    </button>
                 </div>
 
-                <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-5 text-center">
+                {/* ── Footer disclaimer ── */}
+                <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-5 text-center leading-relaxed">
                     System‑generated invoice for {displayMonth}. For disputes, contact your mess admin.
                 </p>
             </div>
