@@ -10,7 +10,11 @@ const PrintInvoice = ({
     displayDate,
     isRefund,
     dueCarryOver,
-    invoiceNo
+    invoiceNo,
+    paymentStatus = 'pending',
+    paymentMethod,
+    transactionId,
+    paymentDate,
 }) => {
     const {
         grandTotalMarketAmount = 0,
@@ -30,6 +34,10 @@ const PrintInvoice = ({
         guestMealAmount = 0,
     } = userStats;
 
+    const isPaid = paymentStatus === 'success';
+    const isPartiallyPaid = paymentStatus === 'partially_paid';
+    const statusLabel = isPaid ? 'Paid' : isPartiallyPaid ? 'Partial' : isRefund ? 'Refund Due' : 'Due';
+
     const s = {
         wrap: {
             width: '680px', fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff',
@@ -40,8 +48,6 @@ const PrintInvoice = ({
             borderBottom: '2px solid #4f46e5', paddingBottom: '20px', marginBottom: '24px',
         },
         brandBlock: { display: 'flex', flexDirection: 'column', gap: '4px' },
-        // logoRow: { display: 'flex', alignItems: 'center', gap: '8px' },
-        // logoImg: { width: '36px', height: '36px', objectFit: 'contain' },
         logoRow: {
             display: 'flex',
             alignItems: 'center',
@@ -99,17 +105,37 @@ const PrintInvoice = ({
 
         totalBox: {
             marginTop: '24px', padding: '20px 24px', borderRadius: '10px',
-            backgroundColor: isRefund ? '#f0fdf4' : '#eef2ff',
-            border: `1px solid ${isRefund ? '#86efac' : '#c7d2fe'}`,
+            backgroundColor: isPaid ? '#f0fdf4' : isPartiallyPaid ? '#fffbeb' : isRefund ? '#f0fdf4' : '#eef2ff',
+            border: `1px solid ${isPaid ? '#86efac' : isPartiallyPaid ? '#fde68a' : isRefund ? '#86efac' : '#c7d2fe'}`,
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         },
         totalLabel: { fontSize: '12px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px 0' },
         totalAmount: { fontSize: '32px', fontWeight: '900', color: isRefund ? '#16a34a' : '#4f46e5', margin: 0 },
         statusBadge: {
             padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: '700',
-            backgroundColor: isRefund ? '#dcfce7' : '#e0e7ff',
-            color: isRefund ? '#15803d' : '#4338ca',
+            backgroundColor: isPaid ? '#d1fae5' : isPartiallyPaid ? '#fef3c7' : isRefund ? '#dcfce7' : '#e0e7ff',
+            color: isPaid ? '#065f46' : isPartiallyPaid ? '#92400e' : isRefund ? '#15803d' : '#4338ca',
         },
+
+        paymentBlock: {
+            marginTop: '16px', padding: '16px 20px', borderRadius: '10px',
+            backgroundColor: '#f8fafc', border: '1px solid #e2e8f0',
+        },
+        paymentRow: {
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        },
+        paymentLabel: { fontSize: '10px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 2px 0' },
+        paymentValue: { fontSize: '13px', fontWeight: '700', color: '#0f172a', margin: 0 },
+        paymentSettled: {
+            padding: '4px 12px', borderRadius: '12px', fontSize: '10px', fontWeight: '700',
+            backgroundColor: '#d1fae5', color: '#065f46',
+        },
+        utrBlock: {
+            display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px',
+            padding: '6px 10px', backgroundColor: '#eff6ff', borderRadius: '6px',
+        },
+        utrLabel: { fontSize: '10px', fontWeight: '700', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 },
+        utrValue: { fontSize: '12px', fontFamily: 'monospace', fontWeight: '700', color: '#1e3a5f', margin: 0 },
 
         footer: {
             marginTop: '28px', paddingTop: '16px', borderTop: '1px solid #e2e8f0',
@@ -160,7 +186,7 @@ const PrintInvoice = ({
                         </svg>
                     </div>
                     <p style={s.brandSub}>Mess Management Platform</p>
-                    <p style={{ ...s.brandSub, marginTop: '8px' }}>{user?.name || '—'}</p>
+                    <p style={{ ...s.brandSub, marginTop: '8px' }}>{user?.name || '\u2014'}</p>
                     <p style={s.brandSub}>{user?.email || ''}</p>
                 </div>
                 <div style={s.metaBlock}>
@@ -175,7 +201,7 @@ const PrintInvoice = ({
             <div style={s.statRow}>
                 <div style={s.statBox}>
                     <p style={s.statLabel}>Market Total (All)</p>
-                    <p style={s.statValue}>₹{fmt(grandTotalMarketAmount)}</p>
+                    <p style={s.statValue}>{'\u20b9'}{fmt(grandTotalMarketAmount)}</p>
                 </div>
                 <div style={s.statBox}>
                     <p style={s.statLabel}>Total Meals (All)</p>
@@ -183,7 +209,7 @@ const PrintInvoice = ({
                 </div>
                 <div style={s.statBoxAccent}>
                     <p style={s.statLabel}>{isRefund ? 'Refund Due' : 'Your Payable'}</p>
-                    <p style={s.statValueAccent}>₹{fmt(Math.abs(finalPayable))}</p>
+                    <p style={s.statValueAccent}>{'\u20b9'}{fmt(Math.abs(finalPayable))}</p>
                 </div>
             </div>
 
@@ -198,26 +224,26 @@ const PrintInvoice = ({
                     <p style={s.rowLabel}>Your Market Spend</p>
                     <p style={s.rowSubLabel}>What you spent</p>
                 </div>
-                <p style={s.rowValue}>₹{fmt(totalMarketAmount)}</p>
+                <p style={s.rowValue}>{'\u20b9'}{fmt(totalMarketAmount)}</p>
             </div>
 
             {/* Monthly Charges */}
             <p style={s.sectionLabel}>Monthly Charges</p>
             <div style={s.row}>
                 <p style={s.rowLabel}>Water Bill</p>
-                <p style={s.rowValue}>₹{fmt(waterBill)}</p>
+                <p style={s.rowValue}>{'\u20b9'}{fmt(waterBill)}</p>
             </div>
             <div style={s.row}>
                 <p style={s.rowLabel}>Cooking Charge</p>
-                <p style={s.rowValue}>₹{fmt(cookingCharge)}</p>
+                <p style={s.rowValue}>{'\u20b9'}{fmt(cookingCharge)}</p>
             </div>
             {guestMeal > 0 && (
                 <div style={s.row}>
                     <div>
                         <p style={s.rowLabel}>Guest Meals</p>
-                        <p style={s.rowSubLabel}>{guestMeal} meal(s) × ₹{fmt(chargePerGuestMeal)}</p>
+                        <p style={s.rowSubLabel}>{guestMeal} meal(s) {'\u00d7'} {'\u20b9'}{fmt(chargePerGuestMeal)}</p>
                     </div>
-                    <p style={s.rowValue}>₹{fmt(guestMealAmount)}</p>
+                    <p style={s.rowValue}>{'\u20b9'}{fmt(guestMealAmount)}</p>
                 </div>
             )}
 
@@ -228,18 +254,18 @@ const PrintInvoice = ({
                     <p style={s.rowLabel}>Cost of Your Meals</p>
                     <p style={s.rowSubLabel}>Proportional share</p>
                 </div>
-                <p style={s.rowValueAccent}>₹{fmt(costOfMeals)}</p>
+                <p style={s.rowValueAccent}>{'\u20b9'}{fmt(costOfMeals)}</p>
             </div>
             <div style={s.row}>
                 <div>
                     <p style={s.rowLabel}>Adjusted Meal Charge</p>
                     <p style={s.rowSubLabel}>After guest deduction</p>
                 </div>
-                <p style={s.rowValueAccent}>₹{fmt(adjustedMealCharge)}</p>
+                <p style={s.rowValueAccent}>{'\u20b9'}{fmt(adjustedMealCharge)}</p>
             </div>
             <div style={s.row}>
                 <p style={s.rowLabel}>Platform Fee</p>
-                <p style={s.rowValue}>₹{fmt(platformFee || 0)}</p>
+                <p style={s.rowValue}>{'\u20b9'}{fmt(platformFee || 0)}</p>
             </div>
 
             {/* Carry Over */}
@@ -251,7 +277,7 @@ const PrintInvoice = ({
                             <p style={s.rowLabel}>Carry-over Amount</p>
                             <p style={s.rowSubLabel}>Unpaid balance from past months</p>
                         </div>
-                        <p style={s.rowValueAccent}>₹{fmt(dueCarryOver)}</p>
+                        <p style={s.rowValueAccent}>{'\u20b9'}{fmt(dueCarryOver)}</p>
                     </div>
                 </>
             )}
@@ -260,15 +286,42 @@ const PrintInvoice = ({
             <div style={s.totalBox}>
                 <div>
                     <p style={s.totalLabel}>{isRefund ? 'Refund Amount' : 'Total Payable'}</p>
-                    <p style={s.totalAmount}>₹{fmt(Math.abs(finalPayable))}</p>
+                    <p style={s.totalAmount}>{'\u20b9'}{fmt(Math.abs(finalPayable))}</p>
                 </div>
-                <span style={s.statusBadge}>{isRefund ? 'Refund Due' : 'Due'}</span>
+                <span style={s.statusBadge}>{statusLabel}</span>
             </div>
+
+            {/* Payment Confirmation (only shown when paid or partially paid) */}
+            {(isPaid || isPartiallyPaid) && (
+                <div style={s.paymentBlock}>
+                    <div style={s.paymentRow}>
+                        <div>
+                            <p style={s.paymentLabel}>Payment Status</p>
+                            <p style={s.paymentValue}>
+                                {isPaid ? 'Payment Successful' : 'Partially Paid'}
+                                {paymentDate && ` \u00b7 ${new Date(paymentDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`}
+                            </p>
+                            {paymentMethod && (
+                                <p style={{ ...s.paymentValue, fontSize: '11px', fontWeight: '600', color: '#64748b', marginTop: '2px' }}>
+                                    {paymentMethod === 'upi_manual' ? 'Manual UPI' : paymentMethod === 'razorpay' ? 'Online (Razorpay)' : paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1)}
+                                </p>
+                            )}
+                        </div>
+                        <div style={s.paymentSettled}>SETTLED</div>
+                    </div>
+                    {paymentMethod === 'upi_manual' && transactionId && (
+                        <div style={s.utrBlock}>
+                            <p style={s.utrLabel}>UTR</p>
+                            <p style={s.utrValue}>{transactionId}</p>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Footer */}
             <div style={s.footer}>
                 <p style={{ margin: 0 }}>System-generated invoice for {displayMonth}. For disputes, contact your mess admin.</p>
-                <p style={s.poweredBy}>Powered by United Mess · {invoiceNo}</p>
+                <p style={s.poweredBy}>Powered by United Mess {'\u00b7'} {invoiceNo}</p>
             </div>
         </div>
     );

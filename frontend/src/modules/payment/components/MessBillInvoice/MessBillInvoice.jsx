@@ -549,6 +549,10 @@ const MessBillInvoice = ({
                         isRefund={isRefund}
                         dueCarryOver={dueCarryOver}
                         invoiceNo={invMeta.no}
+                        paymentStatus={paymentStatus}
+                        paymentMethod={paymentRecord?.paymentMethod}
+                        transactionId={paymentRecord?.transactionId}
+                        paymentDate={paymentRecord?.paymentDate}
                     />
                 </div>
             </div>
