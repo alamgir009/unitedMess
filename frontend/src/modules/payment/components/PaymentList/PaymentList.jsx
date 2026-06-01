@@ -10,7 +10,6 @@ import {
     HiOutlineCreditCard,
     HiOutlineChatBubbleBottomCenterText,
     HiOutlineDocumentText,
-    HiOutlineCheckBadge,
     HiOutlineShieldCheck,
     HiOutlineIdentification,
 } from 'react-icons/hi2';
@@ -101,7 +100,7 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewIn
             {payment.remarks && (
                 <div className="flex items-start gap-1.5 mx-4 mt-2 min-w-0">
                     <HiOutlineChatBubbleBottomCenterText className="w-3.5 h-3.5 mt-[1px] text-muted-foreground/50 flex-shrink-0" />
-                    <p className="text-[11px] italic text-muted-foreground/60 leading-relaxed line-clamp-2">"{payment.remarks}"</p>
+                    <p className="text-[11px] italic text-muted-foreground/60 leading-relaxed line-clamp-2">&ldquo;{payment.remarks}&rdquo;</p>
                 </div>
             )}
 
@@ -112,25 +111,28 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewIn
             <div className="flex items-center gap-2 px-4 py-3">
                 {canEdit ? (
                     <>
-                        {payment.paymentMethod === 'upi_manual' && payment.status === 'pending_verification' && (
+                        {payment.paymentMethod === 'upi_manual' && payment.status === 'pending_verification' ? (
                             <Button variant="primary" size="sm"
                                 onClick={() => onVerify?.(payment)}
                                 className="text-xs flex-1">
                                 <HiOutlineShieldCheck className="w-3.5 h-3.5 mr-1" />
                                 Verify
                             </Button>
+                        ) : (
+                            <>
+                                {payment.type === 'mess_bill' && (
+                                    <Button variant="secondary" size="sm"
+                                        onClick={() => onViewInvoice?.(payment)}
+                                        className="text-xs text-indigo-600 dark:text-indigo-400">
+                                        <HiOutlineDocumentText className="w-3.5 h-3.5 mr-1" />
+                                        Invoice
+                                    </Button>
+                                )}
+                                <Button variant="secondary" size="sm" onClick={() => onEdit(payment)} className="flex-1 text-xs">
+                                    <HiOutlinePencilSquare className="w-4 h-4 mr-1" /> Edit
+                                </Button>
+                            </>
                         )}
-                        {payment.type === 'mess_bill' && (
-                            <Button variant="secondary" size="sm"
-                                onClick={() => onViewInvoice?.(payment)}
-                                className="text-xs text-indigo-600 dark:text-indigo-400">
-                                <HiOutlineDocumentText className="w-3.5 h-3.5 mr-1" />
-                                Invoice
-                            </Button>
-                        )}
-                        <Button variant="secondary" size="sm" onClick={() => onEdit(payment)} className="flex-1 text-xs">
-                            <HiOutlinePencilSquare className="w-4 h-4 mr-1" /> Edit
-                        </Button>
                         <Button variant="danger" size="sm" iconOnly onClick={() => onDelete(payment)} aria-label="Delete">
                             <HiOutlineTrash className="w-4 h-4" />
                         </Button>
@@ -216,7 +218,7 @@ const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInv
             </span>
 
             <div className="flex items-center gap-1.5 md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100 transition-opacity duration-150 flex-shrink-0 pl-1">
-                {canEdit && payment.paymentMethod === 'upi_manual' && payment.status === 'pending_verification' && (
+                {canEdit && payment.paymentMethod === 'upi_manual' && payment.status === 'pending_verification' ? (
                     <Button variant="primary" size="sm"
                         onClick={() => onVerify?.(payment)}
                         aria-label="Verify UPI payment"
@@ -224,18 +226,21 @@ const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInv
                         <HiOutlineShieldCheck className="w-3.5 h-3.5 mr-1" />
                         Verify
                     </Button>
+                ) : (
+                    <>
+                        {payment.type === 'mess_bill' && (
+                            <Button variant="secondary" size="sm" iconOnly
+                                onClick={() => onViewInvoice?.(payment)}
+                                aria-label="View Invoice"
+                                className="text-indigo-600 dark:text-indigo-400">
+                                <HiOutlineDocumentText className="w-4 h-4" />
+                            </Button>
+                        )}
+                        <Button variant="secondary" size="sm" iconOnly onClick={() => onEdit(payment)} aria-label={canEdit ? 'Edit' : 'View'}>
+                            <HiOutlinePencilSquare className="w-4 h-4" />
+                        </Button>
+                    </>
                 )}
-                {payment.type === 'mess_bill' && (
-                    <Button variant="secondary" size="sm" iconOnly
-                        onClick={() => onViewInvoice?.(payment)}
-                        aria-label="View Invoice"
-                        className="text-indigo-600 dark:text-indigo-400">
-                        <HiOutlineDocumentText className="w-4 h-4" />
-                    </Button>
-                )}
-                <Button variant="secondary" size="sm" iconOnly onClick={() => onEdit(payment)} aria-label={canEdit ? 'Edit' : 'View'}>
-                    <HiOutlinePencilSquare className="w-4 h-4" />
-                </Button>
                 {canEdit && (
                     <Button variant="danger" size="sm" iconOnly onClick={() => onDelete(payment)} aria-label="Delete">
                         <HiOutlineTrash className="w-4 h-4" />
