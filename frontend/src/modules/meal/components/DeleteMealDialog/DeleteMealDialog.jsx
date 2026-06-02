@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, memo } from 'react';
+import { useEffect, useCallback, useMemo, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -7,6 +7,7 @@ import {
     HiOutlineMoon,
     HiOutlineNoSymbol,
     HiOutlineExclamationTriangle,
+    HiOutlineTrash,
 } from 'react-icons/hi2';
 import { format } from 'date-fns';
 import { Button } from '@/shared/components/ui';
@@ -46,8 +47,8 @@ function unlockBodyScroll() {
     }
 }
 
-const DeleteMealDialog = memo(({ meal, onConfirm, onCancel, isDeleting }) => {
-    const isOpen = Boolean(meal);
+const DeleteMealDialog = memo(({ meal, onConfirm, onCancel, isDeleting, isBulk, selectedCount, mealIds }) => {
+    const isOpen = Boolean(isBulk ? mealIds?.length > 0 : meal);
 
     const handleKeyDown = useCallback(
         (e) => { if (e.key === 'Escape' && !isDeleting) onCancel(); },
@@ -66,11 +67,58 @@ const DeleteMealDialog = memo(({ meal, onConfirm, onCancel, isDeleting }) => {
         return unlockBodyScroll;
     }, [isOpen]);
 
-    if (typeof document === 'undefined') return null;
-
-    const meta = MEAL_TYPE_META[meal?.type] ?? MEAL_TYPE_META.both;
-    const { Icon } = meta;
+    const meta = isBulk ? null : (MEAL_TYPE_META[meal?.type] ?? MEAL_TYPE_META.both);
+    const Icon = isBulk ? HiOutlineTrash : meta?.Icon;
     const dateLabel = meal?.date ? format(new Date(meal.date), 'EEEE, MMMM d, yyyy') : '—';
+    const deleteLabel = isBulk
+        ? `Delete ${selectedCount} Meal${selectedCount !== 1 ? 's' : ''}?`
+        : 'Delete Meal Record?';
+    const deleteDesc = isBulk
+        ? `This will permanently delete ${selectedCount} meal record${selectedCount !== 1 ? 's' : ''}. This action cannot be undone.`
+        : 'This is permanent and cannot be undone.';
+
+    const content = useMemo(() => {
+        if (isBulk) {
+            return (
+                <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/30 border border-border/50">
+                    <div className="p-2 rounded-lg flex-shrink-0 bg-rose-50 dark:bg-rose-500/10 text-rose-500">
+                        <HiOutlineTrash className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                            Bulk Delete
+                        </p>
+                        <p className="text-sm font-semibold text-foreground truncate">
+                            {selectedCount} record{selectedCount !== 1 ? 's' : ''}
+                        </p>
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/30 border border-border/50">
+                <div className={`p-2 rounded-lg flex-shrink-0 ${meta.color}`}>
+                    <Icon className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                        {meta.label}
+                    </p>
+                    <p className="text-sm font-semibold text-foreground truncate">
+                        {dateLabel}
+                    </p>
+                </div>
+            </div>
+        );
+    }, [isBulk, meta, selectedCount, dateLabel]);
+
+    const btnLabel = useMemo(() => {
+        if (isDeleting) return 'Deleting\u2026';
+        return isBulk ? `Yes, Delete ${selectedCount}` : 'Yes, Delete';
+    }, [isDeleting, isBulk, selectedCount]);
+
+    if (typeof document === 'undefined') return null;
 
     return createPortal(
         <AnimatePresence mode="wait">
@@ -117,33 +165,21 @@ const DeleteMealDialog = memo(({ meal, onConfirm, onCancel, isDeleting }) => {
 
                             <div className="text-center space-y-1">
                                 <h3 id="del-dialog-title" className="text-base font-bold tracking-tight text-foreground">
-                                    Delete Meal Record?
+                                    {deleteLabel}
                                 </h3>
                                 <p id="del-dialog-desc" className="text-xs text-muted-foreground leading-relaxed">
-                                    This is permanent and cannot be undone.
+                                    {deleteDesc}
                                 </p>
                             </div>
 
-                            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/30 border border-border/50">
-                                <div className={`p-2 rounded-lg flex-shrink-0 ${meta.color}`}>
-                                    <Icon className="w-4 h-4" />
-                                </div>
-                                <div className="min-w-0">
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
-                                        {meta.label}
-                                    </p>
-                                    <p className="text-sm font-semibold text-foreground truncate">
-                                        {dateLabel}
-                                    </p>
-                                </div>
-                            </div>
+                            {content}
 
                             <div className="flex flex-col-reverse sm:flex-row gap-2.5 mt-2">
                                 <Button variant="secondary" onClick={onCancel} disabled={isDeleting} className="w-full sm:flex-1">
                                     Cancel
                                 </Button>
                                 <Button variant="danger" onClick={onConfirm} isLoading={isDeleting} className="w-full sm:flex-1">
-                                    {isDeleting ? 'Deleting…' : 'Yes, Delete'}
+                                    {btnLabel}
                                 </Button>
                             </div>
                         </div>

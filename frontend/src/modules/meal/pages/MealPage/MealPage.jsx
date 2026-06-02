@@ -5,18 +5,20 @@ import {
     HiOutlinePlus, HiOutlineSquares2X2, HiOutlineListBullet,
     HiOutlineShieldCheck, HiOutlineSparkles,
     HiOutlineXMark, HiOutlineChevronDown, HiOutlineInformationCircle,
+    HiOutlineTrash,
 } from 'react-icons/hi2';
 import { IoFastFoodOutline } from "react-icons/io5";
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
+import Button from '@/shared/components/ui/Button/Button';
 import MealList from '../../components/MealList/MealList';
 import MealForm from '../../components/MealForm/MealForm';
 import MealModal from '../../components/MealModal/MealModal';
 import MealPolling from '../../components/MealPolling/MealPolling';
 import Pagination from '@/shared/components/ui/Pagination/Pagination';
-import { fetchMeals, createMeal, bulkCreateMeals, updateMeal, deleteMeal, reset } from '../../store/meal.slice';
+import { fetchMeals, createMeal, bulkCreateMeals, updateMeal, deleteMeal, bulkDeleteMeals, reset } from '../../store/meal.slice';
 import DeleteMealDialog from '../../components/DeleteMealDialog/DeleteMealDialog';
 import MealSearchBar from '../../components/MealSearchBar/MealSearchBar';
 import MealStatsBar from '../../components/MealStatsBar/MealStatsBar';
@@ -57,6 +59,9 @@ const MealPage = () => {
     const [errorMsg, setErrorMsg] = useState('');
     const [deletingMeal, setDeletingMeal] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [selectedIds, setSelectedIds] = useState(new Set());
+    const [bulkDeleteTarget, setBulkDeleteTarget] = useState(null);
+    const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
     useEffect(() => {
         dispatch(fetchMeals({ page, limit }))
@@ -181,6 +186,54 @@ const MealPage = () => {
             setIsDeleting(false);
         }
     }, [dispatch, deletingMeal, isDeleting]);
+
+    // ── Multi-select / Bulk Delete ────────────────────────────────────────
+
+    const handleToggleSelect = useCallback((mealId) => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(mealId)) next.delete(mealId);
+            else next.add(mealId);
+            return next;
+        });
+    }, []);
+
+    const handleSelectAll = useCallback((mealsArray) => {
+        setSelectedIds((prev) => {
+            if (prev.size === mealsArray.length) return new Set();
+            return new Set(mealsArray.map((m) => m._id));
+        });
+    }, []);
+
+    const handleBulkDeleteRequest = useCallback(() => {
+        if (selectedIds.size === 0) return;
+        setBulkDeleteTarget({ mealIds: [...selectedIds], count: selectedIds.size });
+    }, [selectedIds]);
+
+    const handleBulkDeleteConfirm = useCallback(async () => {
+        if (!bulkDeleteTarget || isBulkDeleting) return;
+        setIsBulkDeleting(true);
+        try {
+            setErrorMsg('');
+            await dispatch(bulkDeleteMeals({ mealIds: bulkDeleteTarget.mealIds })).unwrap();
+            toast.success(`${bulkDeleteTarget.count} meal(s) deleted successfully`);
+            setBulkDeleteTarget(null);
+            setSelectedIds(new Set());
+            dispatch(fetchMeals({ page, limit }));
+        } catch (error) {
+            const msg = typeof error === 'string' ? error : (error?.message || 'Failed to delete meals');
+            setErrorMsg(msg);
+            toast.error(msg);
+        } finally {
+            setIsBulkDeleting(false);
+        }
+    }, [dispatch, bulkDeleteTarget, isBulkDeleting, page, limit]);
+
+    const handleBulkDeleteCancel = useCallback(() => {
+        if (!isBulkDeleting) setBulkDeleteTarget(null);
+    }, [isBulkDeleting]);
+
+    const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
 
     const filtered = useMemo(() => (meals || []).filter((meal) => {
         if (typeFilter !== 'all' && meal.type !== typeFilter) return false;
@@ -360,6 +413,33 @@ const MealPage = () => {
                         )}
                     </AnimatePresence>
 
+                    {/* Bulk Action Bar */}
+                    <AnimatePresence>
+                        {selectedIds.size > 0 && (
+                            <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-primary/5 border border-primary/15">
+                                <HiOutlineInformationCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                                <span className="text-sm font-medium text-foreground">
+                                    {selectedIds.size} selected
+                                </span>
+                                <div className="flex-1" />
+                                <button
+                                    onClick={clearSelection}
+                                    className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
+                                >
+                                    Deselect All
+                                </button>
+                                <Button
+                                    variant="danger"
+                                    size="sm"
+                                    onClick={handleBulkDeleteRequest}
+                                >
+                                    <HiOutlineTrash className="w-3.5 h-3.5" />
+                                    Delete Selected
+                                </Button>
+                            </div>
+                        )}
+                    </AnimatePresence>
+
                     {/* Content */}
                     {isLoading && (!meals || meals.length === 0) ? (
                         <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -367,7 +447,16 @@ const MealPage = () => {
                         </div>
                     ) : (
                         <>
-                            <MealList meals={filtered} viewMode={viewMode} onEdit={openEdit} onDelete={handleDeleteRequest} isAdmin={isAdmin} />
+                            <MealList
+                                meals={filtered}
+                                viewMode={viewMode}
+                                onEdit={openEdit}
+                                onDelete={handleDeleteRequest}
+                                isAdmin={isAdmin}
+                                selectedIds={selectedIds}
+                                onToggleSelect={handleToggleSelect}
+                                onSelectAll={handleSelectAll}
+                            />
                             {!isFiltered && (
                                 <Pagination pagination={pagination} onPageChange={handlePageChange} onLimitChange={handleLimitChange} />
                             )}
@@ -387,8 +476,19 @@ const MealPage = () => {
                     />
                 </MealModal>
 
-                {/* Delete confirm dialog */}
-                {deletingMeal && (
+                {/* Bulk delete confirm dialog */}
+                {bulkDeleteTarget && (
+                    <DeleteMealDialog
+                        isBulk
+                        mealIds={bulkDeleteTarget.mealIds}
+                        selectedCount={bulkDeleteTarget.count}
+                        onConfirm={handleBulkDeleteConfirm}
+                        onCancel={handleBulkDeleteCancel}
+                        isDeleting={isBulkDeleting}
+                    />
+                )}
+                {/* Single delete confirm dialog */}
+                {!bulkDeleteTarget && deletingMeal && (
                     <DeleteMealDialog
                         meal={deletingMeal}
                         onConfirm={handleDeleteConfirm}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useRef } from 'react';
 import {
     HiOutlineSun,
     HiOutlineMoon,
@@ -43,21 +43,45 @@ const TYPE = {
     },
 };
 
-const MealCard = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin }, ref) => {
+const CHECKBOX_CLS = 'appearance-none w-4 h-4 rounded border-2 border-border/60 bg-card cursor-pointer transition-all duration-100 checked:border-primary checked:bg-primary checked:shadow-sm shrink-0 hover:border-primary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30';
+
+const MealCard = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin, selectedIds, onToggleSelect }, ref) => {
     const cfg = TYPE[meal.type] || TYPE.both;
     const { Icon } = cfg;
     const date = formatSmartDate(meal.date);
+    const isSelected = selectedIds?.has(meal._id);
+
+    const handleCheckboxChange = useCallback(() => {
+        onToggleSelect(meal._id);
+    }, [onToggleSelect, meal._id]);
+
+    const handleCardClick = useCallback((e) => {
+        // Only toggle when clicking the card body, not buttons/inputs
+        if (e.target.closest('button, input, a')) return;
+        onToggleSelect(meal._id);
+    }, [onToggleSelect, meal._id]);
 
     return (
         <article
             ref={ref}
-            className="group relative flex flex-col rounded-xl bg-card border border-border/50 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200"
+            onClick={handleCardClick}
+            className={`group relative flex flex-col rounded-xl bg-card border overflow-hidden shadow-sm hover:shadow-md transition-all duration-150 cursor-default ${isSelected ? 'ring-2 ring-primary/40 border-primary/30' : 'border-border/50'}`}
         >
             <div className="flex items-start justify-between px-4 pt-3.5">
-                <span className={`inline-flex items-center gap-1 px-2 py-[3px] rounded-md text-[10px] font-bold uppercase tracking-widest ${cfg.pill}`}>
-                    <Icon className="w-2.5 h-2.5" />
-                    {cfg.label}
-                </span>
+                <div className="flex items-center gap-2">
+                    <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={handleCheckboxChange}
+                        onClick={(e) => e.stopPropagation()}
+                        className={CHECKBOX_CLS}
+                        aria-label={`Select meal on ${date.primary}`}
+                    />
+                    <span className={`inline-flex items-center gap-1 px-2 py-[3px] rounded-md text-[10px] font-bold uppercase tracking-widest ${cfg.pill}`}>
+                        <Icon className="w-2.5 h-2.5" />
+                        {cfg.label}
+                    </span>
+                </div>
                 <div className="text-right leading-none">
                     <p className="text-[11px] font-semibold text-foreground">{date.primary}</p>
                     <p className="text-[10px] text-muted-foreground/70 mt-0.5">{date.secondary}</p>
@@ -99,7 +123,7 @@ const MealCard = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin 
                 <div className="flex items-start gap-1.5 mx-4 mt-2 min-w-0">
                     <HiOutlineChatBubbleBottomCenterText className="w-3 h-3 mt-[1px] text-muted-foreground/50 flex-shrink-0" />
                     <p className="text-[11px] italic text-muted-foreground/60 leading-relaxed line-clamp-2">
-                        "{meal.remarks}"
+                        &ldquo;{meal.remarks}&rdquo;
                     </p>
                 </div>
             )}
@@ -112,7 +136,7 @@ const MealCard = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin 
                 <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() => onEdit(meal)}
+                    onClick={(e) => { e.stopPropagation(); onEdit(meal); }}
                     className="flex-1 font-bold text-xs"
                 >
                     <HiOutlinePencilSquare className="w-4 h-4" />
@@ -122,7 +146,7 @@ const MealCard = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin 
                     variant="danger"
                     size="sm"
                     iconOnly
-                    onClick={() => onDelete(meal)}
+                    onClick={(e) => { e.stopPropagation(); onDelete(meal); }}
                     aria-label="Delete meal"
                 >
                     <HiOutlineTrash className="w-4 h-4" />
@@ -133,16 +157,30 @@ const MealCard = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin 
 }));
 MealCard.displayName = 'MealCard';
 
-const MealRow = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin }, ref) => {
+const MealRow = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin, selectedIds, onToggleSelect }, ref) => {
     const cfg = TYPE[meal.type] || TYPE.both;
     const { Icon } = cfg;
     const date = formatSmartDate(meal.date);
+    const isSelected = selectedIds?.has(meal._id);
+
+    const handleCheckboxChange = useCallback(() => {
+        onToggleSelect(meal._id);
+    }, [onToggleSelect, meal._id]);
 
     return (
         <div
             ref={ref}
-            className="group relative flex items-center gap-3 px-3 py-2.5 rounded-xl bg-card border border-border/50 hover:bg-muted/20 transition-colors duration-200 shadow-sm overflow-hidden"
+            className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl bg-card border hover:bg-muted/20 transition-all duration-150 shadow-sm overflow-hidden cursor-default ${isSelected ? 'ring-2 ring-primary/40 border-primary/30' : 'border-border/50'}`}
         >
+            <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={handleCheckboxChange}
+                onClick={(e) => e.stopPropagation()}
+                className={CHECKBOX_CLS}
+                aria-label={`Select meal on ${date.primary}`}
+            />
+
             <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${cfg.pill}`}>
                 <Icon className="w-3.5 h-3.5" />
             </div>
@@ -188,7 +226,7 @@ const MealRow = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin }
                             <div className="hidden sm:flex items-center gap-1 min-w-0">
                                 <HiOutlineChatBubbleBottomCenterText className="w-3 h-3 text-muted-foreground/40 flex-shrink-0" />
                                 <span className="text-[11px] italic text-muted-foreground/50 truncate max-w-[160px]">
-                                    "{meal.remarks}"
+                                    &ldquo;{meal.remarks}&rdquo;
                                 </span>
                             </div>
                         </>
@@ -201,13 +239,12 @@ const MealRow = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin }
                 {cfg.label}
             </span>
 
-            {/* Actions: hover reveal */}
             <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150 flex-shrink-0 pl-1">
                 <Button
                     variant="secondary"
                     size="sm"
                     iconOnly
-                    onClick={() => onEdit(meal)}
+                    onClick={(e) => { e.stopPropagation(); onEdit(meal); }}
                     title="Edit"
                     aria-label="Edit meal"
                 >
@@ -217,7 +254,7 @@ const MealRow = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin }
                     variant="danger"
                     size="sm"
                     iconOnly
-                    onClick={() => onDelete(meal)}
+                    onClick={(e) => { e.stopPropagation(); onDelete(meal); }}
                     title="Delete"
                     aria-label="Delete meal"
                 >
@@ -228,6 +265,30 @@ const MealRow = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin }
     );
 }));
 MealRow.displayName = 'MealRow';
+
+const SelectAllCheckbox = React.memo(({ checked, indeterminate, onChange, count }) => {
+    const ref = useRef(null);
+    React.useEffect(() => {
+        if (ref.current) ref.current.indeterminate = indeterminate;
+    }, [indeterminate]);
+
+    return (
+        <div className="flex items-center gap-3 px-1 py-2">
+            <input
+                ref={ref}
+                type="checkbox"
+                checked={checked}
+                onChange={onChange}
+                className={CHECKBOX_CLS}
+                aria-label={checked ? 'Deselect all meals' : 'Select all meals'}
+            />
+            <span className="text-xs font-medium text-muted-foreground">
+                {checked ? `${count} selected` : 'Select all'}
+            </span>
+        </div>
+    );
+});
+SelectAllCheckbox.displayName = 'SelectAllCheckbox';
 
 const EmptyState = React.memo(() => (
     <div className="col-span-full flex flex-col items-center gap-3 py-16 select-none">
@@ -244,41 +305,72 @@ const EmptyState = React.memo(() => (
 ));
 EmptyState.displayName = 'EmptyState';
 
-const MealList = ({ meals = [], onEdit, onDelete, isAdmin = false, viewMode = 'grid' }) => {
+const MealList = ({ meals = [], onEdit, onDelete, isAdmin = false, viewMode = 'grid', selectedIds = new Set(), onToggleSelect = () => {}, onSelectAll = () => {} }) => {
+    const allSelected = meals.length > 0 && selectedIds.size === meals.length;
+    const someSelected = selectedIds.size > 0 && !allSelected;
+
+    const handleSelectAllClick = useCallback(() => {
+        onSelectAll(meals);
+    }, [onSelectAll, meals]);
 
     if (meals.length === 0) {
         return <EmptyState />;
     }
 
+    const selectionBar = (
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/30 border border-border/40 mb-3">
+            <SelectAllCheckbox
+                checked={allSelected}
+                indeterminate={someSelected}
+                onChange={handleSelectAllClick}
+                count={selectedIds.size}
+            />
+            <div className="flex-1" />
+            {someSelected && (
+                <span className="text-[11px] font-medium text-muted-foreground">
+                    {selectedIds.size} / {meals.length} selected
+                </span>
+            )}
+        </div>
+    );
+
     if (viewMode === 'list') {
         return (
-            <div className="flex flex-col gap-2">
-                {meals.map((meal) => (
-                    <MealRow
-                        key={meal._id}
-                        meal={meal}
-                        onEdit={onEdit}
-                        onDelete={onDelete}
-                        isAdmin={isAdmin}
-                    />
-                ))}
+            <div>
+                {selectionBar}
+                <div className="flex flex-col gap-2">
+                    {meals.map((meal) => (
+                        <MealRow
+                            key={meal._id}
+                            meal={meal}
+                            onEdit={onEdit}
+                            onDelete={onDelete}
+                            isAdmin={isAdmin}
+                            selectedIds={selectedIds}
+                            onToggleSelect={onToggleSelect}
+                        />
+                    ))}
+                </div>
             </div>
         );
     }
 
     return (
-        <div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
-        >
-            {meals.map((meal) => (
-                <MealCard
-                    key={meal._id}
-                    meal={meal}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                    isAdmin={isAdmin}
-                />
-            ))}
+        <div>
+            {selectionBar}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                {meals.map((meal) => (
+                    <MealCard
+                        key={meal._id}
+                        meal={meal}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                        isAdmin={isAdmin}
+                        selectedIds={selectedIds}
+                        onToggleSelect={onToggleSelect}
+                    />
+                ))}
+            </div>
         </div>
     );
 };

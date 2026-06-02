@@ -25,6 +25,12 @@ const bulkCreateMeals = async (bulkData) => {
     return response.data;
 };
 
+// Bulk delete multiple meals by IDs
+const bulkDeleteMeals = async (mealIds) => {
+    const response = await apiClient.post(`${API_URL}/bulk-delete`, { mealIds });
+    return response.data;
+};
+
 // Update a specific meal for the current user
 const updateMeal = async (mealId, mealData) => {
     const response = await apiClient.patch(`${API_URL}/${mealId}`, mealData);
@@ -80,6 +86,7 @@ const mealService = {
     getMeals,
     createMeal,
     bulkCreateMeals,
+    bulkDeleteMeals,
     updateMeal,
     deleteMeal,
     adminGetUserMeals,

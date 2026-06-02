@@ -19,6 +19,9 @@ router.get('/poll/status',  ...authenticated, mealController.getMealPollStatus);
 // ── Bulk meal creation ────────────────────────────────────────────────────────
 router.post('/bulk', ...authenticated, mealController.bulkCreateMeals);
 
+// ── Bulk meal deletion ────────────────────────────────────────────────────────
+router.post('/bulk-delete', ...authenticated, mealController.bulkDeleteMeals);
+
 // ── Admin-only routes: manage any user's meals ────────────────────────────────
 router.route('/admin/users/:userId/meals')
     .get( ...adminOnly, mealController.adminGetUserMeals)

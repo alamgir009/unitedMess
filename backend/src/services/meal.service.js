@@ -428,6 +428,99 @@ const deleteMealById = async (mealId) => {
     return meal;
 };
 
+const MAX_BULK_DELETE = 100;
+
+/**
+ * Bulk delete meals by IDs.
+ *
+ * - Validates IDs are valid ObjectIds (max MAX_BULK_DELETE).
+ * - For non-admin users: only deletes meals owned by that user.
+ * - For admin: deletes any of the requested meals.
+ * - Safely syncs User.totalMeal / User.guestMeal in bulk.
+ * - Idempotent: already-deleted IDs are returned as notFound, no error.
+ */
+const bulkDeleteMeals = async ({ mealIds, user }) => {
+    if (!Array.isArray(mealIds) || mealIds.length === 0) {
+        throw new AppError('mealIds must be a non-empty array', 400);
+    }
+
+    if (mealIds.length > MAX_BULK_DELETE) {
+        throw new AppError(`Maximum ${MAX_BULK_DELETE} meals can be deleted at once`, 400);
+    }
+
+    // Validate each ID is a valid ObjectId
+    for (const id of mealIds) {
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            throw new AppError(`Invalid meal ID: ${id}`, 400);
+        }
+    }
+
+    const objectIds = mealIds.map((id) => new mongoose.Types.ObjectId(id));
+
+    // Fetch existing meals for these IDs
+    const existingMeals = await Meal.find({ _id: { $in: objectIds } })
+        .select('user mealCount guestCount')
+        .lean();
+
+    const foundIds = new Set(existingMeals.map((m) => m._id.toString()));
+    const notFound = mealIds.filter((id) => !foundIds.has(id));
+
+    let authorizedMeals = existingMeals;
+
+    // Non-admin users can only delete their own meals
+    if (user.role !== 'admin') {
+        authorizedMeals = existingMeals.filter(
+            (m) => m.user.toString() === user.id,
+        );
+    }
+
+    if (authorizedMeals.length === 0) {
+        throw new AppError('No authorized meals found to delete', 404);
+    }
+
+    // Accumulate per-user stat deltas
+    const userDeltas = {};
+    const authorizedIds = [];
+
+    for (const meal of authorizedMeals) {
+        authorizedIds.push(meal._id);
+        const uid = meal.user.toString();
+
+        if (!userDeltas[uid]) {
+            userDeltas[uid] = { totalMeal: 0, guestMeal: 0, mealObjectIds: [] };
+        }
+
+        userDeltas[uid].totalMeal -= meal.mealCount || 0;
+        userDeltas[uid].guestMeal -= meal.guestCount || 0;
+        userDeltas[uid].mealObjectIds.push(meal._id);
+    }
+
+    // Execute meal deletion and user stat sync in parallel
+    const userUpdateOps = Object.entries(userDeltas).map(([uid, delta]) => ({
+        updateOne: {
+            filter: { _id: new mongoose.Types.ObjectId(uid) },
+            update: {
+                $pull: { meals: { $in: delta.mealObjectIds } },
+                $inc: {
+                    totalMeal: delta.totalMeal,
+                    guestMeal: delta.guestMeal,
+                },
+            },
+        },
+    }));
+
+    await Promise.all([
+        Meal.deleteMany({ _id: { $in: authorizedIds } }),
+        userUpdateOps.length > 0 ? User.bulkWrite(userUpdateOps) : Promise.resolve(),
+    ]);
+
+    return {
+        deletedCount: authorizedIds.length,
+        notFound,
+        totalRequested: mealIds.length,
+    };
+};
+
 /**
  * Admin: verify a user exists
  */
@@ -505,6 +598,7 @@ module.exports = {
     getMealById,
     updateMealById,
     deleteMealById,
+    bulkDeleteMeals,
     verifyUserExists,
     voteMealPoll,
     getMealPollStatus

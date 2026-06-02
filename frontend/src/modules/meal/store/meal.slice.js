@@ -124,6 +124,21 @@ export const deleteMeal = createAsyncThunk('meal/delete', async (mealId, thunkAP
     }
 });
 
+// Bulk delete meals — returns the array of deleted mealIds for state filter
+export const bulkDeleteMeals = createAsyncThunk('meal/bulkDelete', async ({ mealIds }, thunkAPI) => {
+    try {
+        await mealService.bulkDeleteMeals(mealIds);
+        return mealIds;
+    } catch (error) {
+        const message =
+            error.response?.data?.error ||
+            error.response?.data?.message ||
+            error.message ||
+            'Something went wrong';
+        return thunkAPI.rejectWithValue(message);
+    }
+});
+
 // Vote for meal poll — the thunk internally re-fetches poll status via voteMealPoll service
 export const voteMealPoll = createAsyncThunk('meal/votePoll', async (pollData, thunkAPI) => {
     try {
@@ -287,6 +302,24 @@ export const mealSlice = createSlice({
                 state.meals = state.meals.filter((m) => m._id !== action.payload);
             })
             .addCase(deleteMeal.rejected, (state, action) => {
+                state.isLoading = false;
+                state.isError   = true;
+                state.message   = action.payload;
+            })
+
+            // ── Bulk Delete Meals ──────────────────────────────────────────
+            .addCase(bulkDeleteMeals.pending, (state) => {
+                state.isLoading = true;
+                state.isError   = false;
+            })
+            .addCase(bulkDeleteMeals.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.isSuccess = true;
+                // action.payload is the array of mealIds passed to the thunk
+                const ids = action.payload;
+                state.meals = state.meals.filter((m) => !ids.includes(m._id));
+            })
+            .addCase(bulkDeleteMeals.rejected, (state, action) => {
                 state.isLoading = false;
                 state.isError   = true;
                 state.message   = action.payload;

@@ -167,6 +167,27 @@ const adminDeleteMeal = asyncHandler(async (req, res) => {
     res.status(204).send();
 });
 
+// ─── Bulk Delete ──────────────────────────────────────────────────────────
+
+const bulkDeleteMeals = asyncHandler(async (req, res) => {
+    const { mealIds } = req.body;
+
+    if (!Array.isArray(mealIds) || mealIds.length === 0) {
+        throw new AppError('mealIds must be a non-empty array', 400);
+    }
+
+    if (mealIds.length > 100) {
+        throw new AppError('Maximum 100 meals can be deleted at once', 400);
+    }
+
+    const result = await mealService.bulkDeleteMeals({
+        mealIds,
+        user: req.user,
+    });
+
+    sendSuccessResponse(res, 200, `${result.deletedCount} meal(s) deleted successfully`, result);
+});
+
 module.exports = {
     createMeal,
     bulkCreateMeals,
@@ -174,6 +195,7 @@ module.exports = {
     getMeal,
     updateMeal,
     deleteMeal,
+    bulkDeleteMeals,
     adminGetUserMeals,
     adminCreateMeal,
     adminUpdateMeal,
