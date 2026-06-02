@@ -75,11 +75,54 @@ const MealPage = () => {
     const handleSubmit = useCallback(async (formData) => {
         try {
             setErrorMsg('');
+
+            // ── EDIT mode ──────────────────────────────────────────────
             if (editingMeal) {
                 const res = await dispatch(updateMeal({ mealId: editingMeal._id, mealData: formData })).unwrap();
                 toast.success(res?.message || 'Meal updated successfully');
-            } else if (isAdmin && formData.userIds?.length > 0) {
-                const payload = {
+                closeModal();
+                dispatch(fetchMeals({ page, limit }));
+                return;
+            }
+
+            // ── RANGE mode (has startDate/endDate) ─────────────────────
+            if (formData.startDate && formData.endDate) {
+                const res = await dispatch(bulkCreateMeals({
+                    startDate: formData.startDate,
+                    endDate: formData.endDate,
+                    type: formData.type,
+                    userIds: formData.userIds || [],
+                    isGuestMeal: formData.isGuestMeal,
+                    guestCount: formData.guestCount || 0,
+                    remarks: formData.remarks || '',
+                })).unwrap();
+
+                const result = res?.data || res;
+                const inserted = result?.inserted || 0;
+                const updated = result?.updated || 0;
+                const skipped = result?.skipped || 0;
+
+                if (inserted > 0 || updated > 0) {
+                    const parts = [];
+                    if (inserted > 0) parts.push(`${inserted} added`);
+                    if (updated > 0) parts.push(`${updated} updated`);
+                    if (skipped > 0) parts.push(`${skipped} unchanged`);
+                    toast.success(parts.join(' · '));
+                } else if (skipped > 0) {
+                    toast(`All ${skipped} meals unchanged.`, { icon: 'ℹ️' });
+                } else {
+                    toast.success('Meals saved successfully');
+                }
+
+                closeModal();
+                dispatch(fetchMeals({ page, limit }));
+                return;
+            }
+
+            // ── SINGLE DAY mode ────────────────────────────────────────
+            if (isAdmin && formData.userIds?.length > 0) {
+                // Admin creating for multiple members → use bulk API with same start/end
+                const res = await dispatch(bulkCreateMeals({
                     startDate: formData.date,
                     endDate: formData.date,
                     type: formData.type,
@@ -87,26 +130,30 @@ const MealPage = () => {
                     isGuestMeal: formData.isGuestMeal,
                     guestCount: formData.guestCount || 0,
                     remarks: formData.remarks || '',
-                };
+                })).unwrap();
 
-                const res = await dispatch(bulkCreateMeals(payload)).unwrap();
                 const result = res?.data || res;
                 const inserted = result?.inserted || 0;
+                const updated = result?.updated || 0;
                 const skipped = result?.skipped || 0;
 
-                if (inserted > 0) {
-                    const parts = [`${inserted} added`];
-                    if (skipped > 0) parts.push(`${skipped} already existed`);
+                if (inserted > 0 || updated > 0) {
+                    const parts = [];
+                    if (inserted > 0) parts.push(`${inserted} added`);
+                    if (updated > 0) parts.push(`${updated} updated`);
+                    if (skipped > 0) parts.push(`${skipped} unchanged`);
                     toast.success(parts.join(' · '));
                 } else if (skipped > 0) {
-                    toast(`All ${skipped} meals already existed.`, { icon: 'ℹ️' });
+                    toast(`All ${skipped} meals unchanged.`, { icon: 'ℹ️' });
                 } else {
-                    toast.success('Meals created successfully');
+                    toast.success('Meals saved successfully');
                 }
             } else {
+                // Regular user single-day creation
                 const res = await dispatch(createMeal(formData)).unwrap();
                 toast.success(res?.message || 'Meal created successfully');
             }
+
             closeModal();
             dispatch(fetchMeals({ page, limit }));
         } catch (error) {
@@ -335,7 +382,6 @@ const MealPage = () => {
                         initialData={editingMeal}
                         onSubmit={handleSubmit}
                         onCancel={closeModal}
-                        onBulkComplete={() => dispatch(fetchMeals({ page, limit }))}
                         isAdmin={isAdmin}
                         currentUser={user}
                     />

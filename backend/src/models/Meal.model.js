@@ -41,10 +41,8 @@ const mealSchema = new mongoose.Schema(
     }
 );
 
-// Prevent duplicate meals for same user, date, and type? 
-// Or allow multiple entries? Usually one entry per type per day per user is best.
-// formatting date to YYYY-MM-DD for indexing might be better, but sticking to simple index for now.
-mealSchema.index({ date: 1, user: 1, type: 1 });
+// Enforce one-record-per-date-per-user at database level
+mealSchema.index({ date: 1, user: 1 }, { unique: true });
 
 const Meal = mongoose.model('Meal', mealSchema);
 

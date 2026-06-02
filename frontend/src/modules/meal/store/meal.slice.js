@@ -244,7 +244,7 @@ export const mealSlice = createSlice({
                 state.isLoading = true;
                 state.isError   = false;
             })
-            .addCase(bulkCreateMeals.fulfilled, (state, action) => {
+            .addCase(bulkCreateMeals.fulfilled, (state) => {
                 state.isLoading = false;
                 state.isSuccess = true;
             })

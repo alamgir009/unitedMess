@@ -3,7 +3,7 @@ const Meal = require('../models/Meal.model');
 const MealPoll = require('../models/MealPoll.model');
 const User = require('../models/User.model');
 const AppError = require('../utils/errors/AppError');
-const { parseDate } = require('../utils/helpers/date.helper');
+const { parseDate, normalizeDate } = require('../utils/helpers/date.helper');
 
 const mealTypeCountMap = {
   off: 0,
@@ -16,11 +16,15 @@ const MAX_BULK_DAYS = 31;
 const MAX_USER_MEALS = 200;
 
 /**
- * Bulk create meals for date range and multiple users
+ * Bulk create meals for date range and multiple users.
+ *
+ * Strategy: One record per user per date. Existing records for the same
+ * {user, date} are OVERWRITTEN with the new type/values. This prevents
+ * duplicate/conflicting entries like "01/06/2026 Day + 01/06/2026 Off".
  */
 const bulkCreateMeals = async ({ startDate, endDate, type, userIds, isGuestMeal, guestCount, remarks, createdBy }) => {
-  const start = parseDate(startDate);
-  const end = parseDate(endDate);
+  const start = normalizeDate(parseDate(startDate));
+  const end = normalizeDate(parseDate(endDate));
 
   if (start > end) {
     throw new AppError('Start date must be on or before end date', 400);
@@ -35,94 +39,166 @@ const bulkCreateMeals = async ({ startDate, endDate, type, userIds, isGuestMeal,
     throw new AppError('At least one user must be selected', 400);
   }
 
-  const mealCount = mealTypeCountMap[type] ?? 0;
-  const guestAdd = isGuestMeal ? (guestCount || 0) : 0;
-  const totalMealCount = mealCount + guestAdd;
-
   const users = await User.find({ _id: { $in: userIds } }).select('_id meals').lean();
   if (users.length !== userIds.length) {
     throw new AppError('One or more users not found', 404);
   }
 
-  for (const user of users) {
-    if ((user.meals?.length || 0) + daysDiff > MAX_USER_MEALS) {
-      throw new AppError(`User ${user._id} would exceed maximum meal records (${MAX_USER_MEALS})`, 400);
-    }
-  }
-
+  // Generate normalized (midnight UTC) dates for the range
   const dates = [];
   for (let i = 0; i < daysDiff; i++) {
-    const d = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate() + i));
-    dates.push(d);
+    dates.push(new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate() + i)));
   }
 
+  // ── 1. Fetch ALL existing meals for these users × dates (no type filter) ──
   const existingMeals = await Meal.find({
     user: { $in: userIds },
     date: { $in: dates },
-    type,
-  }).select('user date type').lean();
+  }).select('user date type mealCount isGuestMeal guestCount').lean();
 
-  const existingSet = new Set(
-    existingMeals.map(m => `${m.user.toString()}-${m.date.getTime()}-${m.type}`)
-  );
+  // Index existing meals by `${user}-${date.getTime()}`
+  const existingMap = new Map();
+  for (const m of existingMeals) {
+    const key = `${m.user.toString()}-${m.date.getTime()}`;
+    existingMap.set(key, m);
+  }
 
-  const insertOps = [];
-  const userMealMap = {};
-  const userGuestMap = {};
-  const userMealIds = {};
+  const mealCount = mealTypeCountMap[type] ?? 0;
+  const guestAdd = isGuestMeal ? (guestCount || 0) : 0;
+  const totalMealCount = mealCount + guestAdd;
+
+  // ── 2. Categorize per user-date pair ──────────────────────────────────
+  const updateOps = [];         // overwrite existing records with new type
+  const insertDocs = [];        // new records
+  let skippedCount = 0;
+  let updatedCount = 0;
+  let insertedCount = 0;
+
+  // Track user stat changes: { totalMeal, guestMeal, mealIds }
+  const userDeltas = {};
+  for (const uid of userIds) {
+    userDeltas[uid] = { totalMeal: 0, guestMeal: 0, mealIds: [] };
+  }
 
   for (const uid of userIds) {
-    userMealMap[uid] = 0;
-    userGuestMap[uid] = 0;
-    userMealIds[uid] = [];
+    const delta = userDeltas[uid];
 
     for (const d of dates) {
-      const key = `${uid}-${d.getTime()}-${type}`;
-      if (existingSet.has(key)) continue;
+      const key = `${uid}-${d.getTime()}`;
+      const existing = existingMap.get(key);
 
-      const mealId = new mongoose.Types.ObjectId();
-      insertOps.push({
-        insertOne: {
-          document: {
-            _id: mealId,
-            user: uid,
-            date: d,
-            type,
-            mealCount: totalMealCount,
-            isGuestMeal: isGuestMeal || false,
-            guestCount: guestAdd,
-            remarks: remarks || '',
-          },
-        },
-      });
+      if (existing) {
+        // Same type → skip (no change needed)
+        if (existing.type === type) {
+          // Check if other fields changed (guest count, remarks)
+          const guestChanged = (existing.isGuestMeal ? (existing.guestCount || 0) : 0) !== guestAdd;
+          const remarksChanged = (existing.remarks || '') !== (remarks || '');
+          const mealCountChanged = existing.mealCount !== totalMealCount;
 
-      userMealIds[uid].push(mealId);
-      userMealMap[uid] += mealCount;
-      userGuestMap[uid] += guestAdd;
+          if (!guestChanged && !remarksChanged && !mealCountChanged) {
+            skippedCount++;
+            continue;
+          }
+
+          // Same type but guest/remark/mealCount changed → update in place
+          updateOps.push({
+            updateOne: {
+              filter: { _id: existing._id },
+              update: {
+                $set: {
+                  mealCount: totalMealCount,
+                  isGuestMeal: isGuestMeal || false,
+                  guestCount: guestAdd,
+                  remarks: remarks || '',
+                },
+              },
+            },
+          });
+
+          const oldGuest = existing.isGuestMeal ? (existing.guestCount || 0) : 0;
+          delta.totalMeal += totalMealCount - (existing.mealCount || 0);
+          delta.guestMeal += guestAdd - oldGuest;
+          updatedCount++;
+        } else {
+          // Different type → OVERWRITE existing record
+          const oldGuest = existing.isGuestMeal ? (existing.guestCount || 0) : 0;
+          updateOps.push({
+            updateOne: {
+              filter: { _id: existing._id },
+              update: {
+                $set: {
+                  type,
+                  mealCount: totalMealCount,
+                  isGuestMeal: isGuestMeal || false,
+                  guestCount: guestAdd,
+                  remarks: remarks || '',
+                },
+              },
+            },
+          });
+
+          delta.totalMeal += totalMealCount - (existing.mealCount || 0);
+          delta.guestMeal += guestAdd - oldGuest;
+          updatedCount++;
+        }
+      } else {
+        // No existing record → insert new
+        const mealId = new mongoose.Types.ObjectId();
+        insertDocs.push({
+          _id: mealId,
+          user: uid,
+          date: d,
+          type,
+          mealCount: totalMealCount,
+          isGuestMeal: isGuestMeal || false,
+          guestCount: guestAdd,
+          remarks: remarks || '',
+        });
+
+        delta.mealIds.push(mealId);
+        delta.totalMeal += mealCount;
+        delta.guestMeal += guestAdd;
+      }
     }
   }
 
-  let insertedCount = 0;
-  let skippedCount = existingMeals.length;
+  // ── 3. Execute writes ────────────────────────────────────────────────
+  if (updateOps.length > 0) {
+    await Meal.bulkWrite(updateOps, { ordered: false });
+  }
 
-  if (insertOps.length > 0) {
-    const bulkResult = await Meal.bulkWrite(insertOps, { ordered: false });
+  if (insertDocs.length > 0) {
+    const bulkResult = await Meal.bulkWrite(
+      insertDocs.map(doc => ({ insertOne: { document: doc } })),
+      { ordered: false },
+    );
     insertedCount = bulkResult.insertedCount || 0;
   }
 
+  // ── 4. Sync user stats ────────────────────────────────────────────────
   const userUpdateOps = [];
   for (const uid of userIds) {
-    const mealInc = userMealMap[uid];
-    const guestInc = userGuestMap[uid];
-    const mealIds = userMealIds[uid];
-    if (mealInc > 0 || guestInc > 0) {
+    const delta = userDeltas[uid];
+    const pushIds = delta.mealIds;
+
+    const setFields = {};
+    const unsetFields = {};
+
+    if (pushIds.length > 0) {
+      setFields.$push = { meals: { $each: pushIds } };
+    }
+
+    if (delta.totalMeal !== 0 || delta.guestMeal !== 0) {
+      setFields.$inc = {};
+      if (delta.totalMeal !== 0) setFields.$inc.totalMeal = delta.totalMeal;
+      if (delta.guestMeal !== 0) setFields.$inc.guestMeal = delta.guestMeal;
+    }
+
+    if (Object.keys(setFields).length > 0) {
       userUpdateOps.push({
         updateOne: {
           filter: { _id: uid },
-          update: {
-            $push: { meals: { $each: mealIds } },
-            $inc: { totalMeal: mealInc, guestMeal: guestInc },
-          },
+          update: setFields,
         },
       });
     }
@@ -134,6 +210,7 @@ const bulkCreateMeals = async ({ startDate, endDate, type, userIds, isGuestMeal,
 
   return {
     inserted: insertedCount,
+    updated: updatedCount,
     skipped: skippedCount,
     total: userIds.length * daysDiff,
   };
@@ -144,13 +221,16 @@ const bulkCreateMeals = async ({ startDate, endDate, type, userIds, isGuestMeal,
  */
 const createMeal = async (mealBody) => {
     const { user } = mealBody;
-    const date = parseDate(mealBody.date);
-    mealBody.date = date;
+    const date = normalizeDate(parseDate(mealBody.date));
 
+    // Check if any meal already exists for this user+date (regardless of type)
     if (await Meal.exists({ user, date })) {
-        throw new AppError('Meal already exists for this date', 409);
+        const existing = await Meal.findOne({ user, date }).select('type').lean();
+        const typeHint = existing ? ` (existing type: "${existing.type}")` : '';
+        throw new AppError(`A meal already exists for this date${typeHint}`, 409);
     }
 
+    mealBody.date = date;
     mealBody.mealCount = mealTypeCountMap[mealBody.type] ?? 0;
     mealBody.guestCount = mealBody.isGuestMeal ? (mealBody.guestCount || 1) : 0;
 
@@ -235,65 +315,88 @@ const getMealById = async (id) => {
 
 /**
  * Update meal by id
+ *
+ * When the type is changed, we check whether another meal already exists
+ * for the same user+date with the *target* type. If so, the existing meal
+ * with the old type is deleted (replaced by the one being updated).
+ * This prevents conflicting duplicates from surviving after an update.
  */
 const updateMealById = async (mealId, updateBody) => {
     const meal = await getMealById(mealId);
     if (!meal) throw new AppError('Meal not found', 404);
 
-    // ── 1. Date Validation ───────────────────────────────────────────
-    if (updateBody.date) {
-        const parsedDate = parseDate(updateBody.date);
+    // ── 1. Resolve target date (normalized to midnight UTC) ──────────
+    const targetDate = updateBody.date
+        ? normalizeDate(parseDate(updateBody.date))
+        : normalizeDate(meal.date);
 
-        if (meal.date.getTime() !== parsedDate.getTime()) {
-            const duplicate = await Meal.exists({
-                user: meal.user._id,
-                date: parsedDate,
-                _id: { $ne: mealId }
-            });
+    const dateChanged = targetDate.getTime() !== meal.date.getTime();
 
-            if (duplicate) {
-                throw new AppError('A meal already exists for this date', 409);
-            }
+    // ── 2. Resolve final type & counts ──────────────────────────────
+    const finalType = updateBody.type ?? meal.type;
+    const finalIsGuestMeal = updateBody.isGuestMeal ?? meal.isGuestMeal;
+    let finalGuestCount = updateBody.guestCount ?? meal.guestCount ?? 0;
+    if (!finalIsGuestMeal) finalGuestCount = 0;
+    const finalMealCount = mealTypeCountMap[finalType] ?? 0;
 
-            updateBody.date = parsedDate;
-        } else {
-            delete updateBody.date;
+    // ── 3. Check for conflicting records on the target (user, date) ──
+    // A conflict exists when another meal record occupies the same
+    // {user, date} pair. Overwrite it by deleting the conflicting meal.
+    if (dateChanged || meal.type !== finalType) {
+        const conflictFilter = {
+            user: meal.user._id,
+            date: targetDate,
+            _id: { $ne: mealId },
+        };
+
+        const conflict = await Meal.findOne(conflictFilter).lean();
+
+        if (conflict) {
+            // Delete the conflicting record and adjust user stats
+            const conflictMealCount = conflict.mealCount || 0;
+            const conflictGuestCount = conflict.isGuestMeal ? (conflict.guestCount || 0) : 0;
+
+            await Promise.all([
+                Meal.deleteOne({ _id: conflict._id }),
+                User.findByIdAndUpdate(meal.user._id, {
+                    $pull: { meals: conflict._id },
+                    $inc: {
+                        totalMeal: -conflictMealCount,
+                        guestMeal: -conflictGuestCount,
+                    },
+                }),
+            ]);
         }
     }
 
-    // ── 2. Resolve Final State (safe partial update) ──────────────────
-    const finalType = updateBody.type ?? meal.type;
-    const finalIsGuestMeal = updateBody.isGuestMeal ?? meal.isGuestMeal;
+    // ── 4. Sync date field if changed ───────────────────────────────
+    if (dateChanged) {
+        updateBody.date = targetDate;
+    } else {
+        delete updateBody.date;
+    }
 
-    let finalGuestCount =
-        updateBody.guestCount ?? meal.guestCount ?? 0;
-
-    if (!finalIsGuestMeal) finalGuestCount = 0;
-
-    const finalMealCount = mealTypeCountMap[finalType] ?? 0;
-
-    // ── 3. Preserve old values for diff ───────────────────────────────
+    // ── 5. Apply updates ────────────────────────────────────────────
     const oldMealCount = meal.mealCount || 0;
     const oldGuestCount = meal.guestCount || 0;
 
-    // ── 4. Apply updates ──────────────────────────────────────────────
     Object.assign(meal, updateBody, {
         type: finalType,
         isGuestMeal: finalIsGuestMeal,
         guestCount: finalGuestCount,
-        mealCount: finalMealCount
+        mealCount: finalMealCount,
     });
 
     await meal.save();
 
-    // ── 5. Sync user stats (only if needed) ───────────────────────────
+    // ── 6. Sync user stats ──────────────────────────────────────────
     const mealDiff = finalMealCount - oldMealCount;
     const guestDiff = finalGuestCount - oldGuestCount;
 
     if (mealDiff || guestDiff) {
         await User.findByIdAndUpdate(
             meal.user._id,
-            { $inc: { totalMeal: mealDiff, guestMeal: guestDiff } }
+            { $inc: { totalMeal: mealDiff, guestMeal: guestDiff } },
         );
     }
 
@@ -339,7 +442,7 @@ const verifyUserExists = async (userId) => {
  */
 const voteMealPoll = async (userId, pollData) => {
     const { type, date: dateStr } = pollData;
-    const date = parseDate(dateStr);
+    const date = normalizeDate(parseDate(dateStr));
 
     // Update or create vote for this specific user on this specific date
     const poll = await MealPoll.findOneAndUpdate(
@@ -355,7 +458,7 @@ const voteMealPoll = async (userId, pollData) => {
  * Get meal poll status for a specific date (includes carry-over logic)
  */
 const getMealPollStatus = async (dateStr) => {
-    const targetDate = parseDate(dateStr);
+    const targetDate = normalizeDate(parseDate(dateStr));
 
     // 1. Get all active approved users
     const users = await User.find({ isActive: true, userStatus: 'approved' })

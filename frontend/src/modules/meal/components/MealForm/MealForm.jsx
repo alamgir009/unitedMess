@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import {
     HiOutlineSun,
@@ -12,7 +12,6 @@ import {
     HiOutlineArrowRight,
     HiOutlineLockClosed,
 } from 'react-icons/hi2';
-import toast from 'react-hot-toast';
 import apiClient from '@/services/api/client/apiClient';
 import { Button, Avatar, MemberSelect } from '@/shared/components/ui';
 
@@ -93,7 +92,7 @@ const ModeTab = ({ mode, current, onChange, label }) => (
     </button>
 );
 
-const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = false, currentUser, readOnly = false }) => {
+const MealForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentUser, readOnly = false }) => {
     const [mode, setMode] = useState('single');
 
     const [formData, setFormData] = useState({
@@ -110,10 +109,7 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
     const [rangeTo, setRangeTo] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [rangeError, setRangeError] = useState('');
 
-    const [isRunning, setIsRunning] = useState(false);
-    const [progress, setProgress] = useState({ done: 0, total: 0 });
-
-    const abortRef = useRef(false);
+const [isRunning, setIsRunning] = useState(false);
 
     const [users, setUsers] = useState([]);
     const [isUsersLoading, setIsUsersLoading] = useState(false);
@@ -150,13 +146,10 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
         }
     }, [initialData, currentUser]);
 
-    useEffect(() => {
-        abortRef.current = false;
-        return () => { abortRef.current = true; };
-    }, []);
+
 
     const handleChange = (e) => {
-        if (readOnly) return;
+        if (readOnly || isRunning) return;
         const { name, value, type, checked } = e.target;
         let newVal = value;
         if (type === 'checkbox') newVal = checked;
@@ -168,10 +161,10 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
         });
     };
 
-    const handleTypeChange = (val) => {
+    const handleTypeChange = useCallback((val) => {
         if (isRunning || readOnly) return;
         setFormData(prev => ({ ...prev, type: val }));
-    };
+    }, [isRunning, readOnly]);
 
     const validateRange = useCallback((from, to) => {
         if (!from || !to) return 'Both dates are required.';
@@ -189,9 +182,9 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
         } catch { return 0; }
     })();
 
-    const handleSingleSubmit = (e) => {
+    const handleSingleSubmit = async (e) => {
         e.preventDefault();
-        if (readOnly) return;
+        if (readOnly || isRunning) return;
         const baseCount = typeCountMap[formData.type] ?? 0;
         const guestAdd = formData.isGuestMeal ? (formData.guestCount || 0) : 0;
         const submitDate = new Date(formData.date).toISOString();
@@ -206,7 +199,12 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
             if (isAdmin && (!payload.userIds || payload.userIds.length === 0)) return;
         }
 
-        onSubmit(payload);
+        setIsRunning(true);
+        try {
+            await onSubmit(payload);
+        } finally {
+            setIsRunning(false);
+        }
     };
 
     const handleBulkSubmit = useCallback(async (selectedType) => {
@@ -225,8 +223,6 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
             : [formData.userId || currentUser?._id || currentUser?.id].filter(Boolean);
 
         setIsRunning(true);
-        setProgress({ done: 0, total: 1 });
-        abortRef.current = false;
 
         try {
             const payload = {
@@ -239,41 +235,11 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
                 remarks: formData.remarks || '',
             };
 
-            const response = await apiClient.post('meals/bulk', payload);
-            const result = response.data?.data || response.data;
-
-            const inserted = result?.inserted || 0;
-            const skipped = result?.skipped || 0;
-
-            setProgress({ done: 1, total: 1 });
-
-            if (inserted > 0) {
-                const parts = [];
-                parts.push(`${inserted} added`);
-                if (skipped > 0) parts.push(`${skipped} already existed`);
-                toast.success(parts.join(' · '));
-            } else if (skipped > 0) {
-                toast(`All ${skipped} dates already have meals.`, { icon: 'ℹ️' });
-            } else {
-                toast.error('No meals were created.');
-            }
-
-            onBulkComplete?.();
-            onCancel?.();
-        } catch (err) {
-            const status = err?.response?.status;
-            const message = err?.response?.data?.message || err?.message || 'Failed to create bulk meals';
-
-            if (status === 401) {
-                toast.error('Session expired. Please log in again.');
-                onCancel?.();
-            } else {
-                toast.error(message);
-            }
+            await onSubmit(payload);
         } finally {
             setIsRunning(false);
         }
-    }, [rangeFrom, rangeTo, formData, isAdmin, currentUser, validateRange, onBulkComplete, onCancel]);
+    }, [rangeFrom, rangeTo, formData, isAdmin, currentUser, validateRange, onSubmit]);
 
     const previewCount = typeCountMap[formData.type] + (formData.isGuestMeal ? formData.guestCount : 0);
     const rangeErrMsg = useMemo(
@@ -332,16 +298,10 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
             )}
 
             {isRunning && (
-                <div className="space-y-2">
-                    <div className="flex justify-between text-xs font-semibold text-muted-foreground">
-                        <span>Saving meals…</span>
-                        <span>{progress.done} / {progress.total}</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-muted/40 overflow-hidden">
-                        <div
-                            className="h-full rounded-full bg-gradient-to-r from-sky-500 to-violet-600 transition-all duration-300"
-                            style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%` }}
-                        />
+                <div className="flex items-center gap-2.5 py-2.5 rounded-xl border border-primary/20 bg-primary/5 shrink-0">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-primary">
+                        <span className="inline-block w-4 h-4 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                        Saving meals…
                     </div>
                 </div>
             )}
@@ -513,11 +473,11 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
                         type="button"
                         variant="secondary"
                         size="sm"
-                        onClick={() => { abortRef.current = true; onCancel?.(); }}
+                        onClick={onCancel}
                         className="flex-1"
-                        disabled={false}
+                        disabled={isRunning}
                     >
-                        {isRunning ? 'Cancel & Stop' : 'Cancel'}
+                        {isRunning ? 'Saving…' : 'Cancel'}
                     </Button>
                     {!readOnly && (
                         <Button
@@ -528,7 +488,7 @@ const MealForm = ({ initialData, onSubmit, onCancel, onBulkComplete, isAdmin = f
                             disabled={isRunning || rangeInvalid || daysCount === 0 || (isAdmin && formData.userIds?.length === 0)}
                         >
                             {isRunning
-                                ? `Saving ${progress.done} / ${progress.total}…`
+                                ? 'Saving…'
                                 : `Save ${daysCount > 0 ? daysCount : ''} Meal${daysCount !== 1 ? 's' : ''}`
                             }
                         </Button>

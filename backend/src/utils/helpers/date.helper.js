@@ -58,4 +58,17 @@ const getVisibleBillingStartDate = () => {
     return start;
 };
 
-module.exports = { parseDate, getVisibleBillingStartDate, getBillingPeriod };
+/**
+ * Normalize a Date to midnight UTC (00:00:00.000Z).
+ * This ensures all dates stored in MongoDB are comparable regardless
+ * of how they were constructed.
+ */
+const normalizeDate = (date) => {
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) {
+    throw new AppError('Invalid date', 400);
+  }
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+};
+
+module.exports = { parseDate, normalizeDate, getVisibleBillingStartDate, getBillingPeriod };
