@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import {
     Mail, Phone, ShieldCheck, Flame, Droplets,
     Utensils, Receipt, Users, Banknote, Hash, Fuel,
-    CheckCircle2, Clock, XCircle, ArrowDownToLine
+    CheckCircle2, Clock, XCircle, ArrowDownToLine,ReceiptIndianRupee
 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────
@@ -256,7 +256,7 @@ const MemberInvoiceDetails = React.memo(({ user }) => {
                             subtext="per member share"
                         />
                         <MiniMetric
-                            icon={Receipt}
+                            icon={ReceiptIndianRupee}
                             label="Platform Fee"
                             value={`₹\u202F${formattedPlatform}`}
                             subtext="fixed service fee"
@@ -273,7 +273,7 @@ const MemberInvoiceDetails = React.memo(({ user }) => {
                             subtext="Based on meal count × monthly rate"
                         />
                         <InvoiceCard
-                            icon={Receipt}
+                            icon={ReceiptIndianRupee}
                             label="Total Market Amount"
                             amount={user?.totalMarketAmount ?? 0}
                             accent="blue"
