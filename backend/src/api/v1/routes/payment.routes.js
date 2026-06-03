@@ -17,6 +17,9 @@ router.post('/upi-config/qrcode', ...adminOnly, uploadQrCode.single('qrcode'), p
 router.post('/upi-manual', ...authenticated, paymentController.submitUpiManualPayment);
 router.patch('/upi-manual/:paymentId/verify', ...adminOnly, paymentController.verifyUpiManualPayment);
 
+// Diagnostic endpoint — returns current Razorpay key mode (live/test)
+router.get('/razorpay-status', ...adminOnly, paymentController.getRazorpayStatus);
+
 // All routes require authentication
 router.route('/')
     .get(...authenticated, paymentController.getPayments)

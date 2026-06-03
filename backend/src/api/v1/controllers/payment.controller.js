@@ -423,6 +423,25 @@ const verifyUpiManualPayment = asyncHandler(async (req, res) => {
     sendSuccessResponse(res, 200, `Payment verification completed: ${status}`, updatedPayment);
 });
 
+/**
+ * GET /payments/razorpay-status
+ * Diagnostic endpoint — returns current Razorpay key mode (live/test)
+ * without exposing the full secret. Admin only.
+ */
+const getRazorpayStatus = asyncHandler(async (req, res) => {
+    const keyId = config.razorpay.keyId || '';
+    const isLive   = keyId.startsWith('rzp_live_');
+    const isTest   = keyId.startsWith('rzp_test_');
+    const mode     = isLive ? 'live' : isTest ? 'test' : 'unknown';
+    const safePrefix = keyId.length > 9 ? keyId.substring(0, 9) + '...' : 'not_configured';
+
+    sendSuccessResponse(res, 200, 'Razorpay status retrieved', {
+        mode,
+        keyPrefix: safePrefix,
+        env: config.app.env,
+    });
+});
+
 module.exports = {
     createPayment,
     createBulkPayments,
@@ -438,4 +457,5 @@ module.exports = {
     uploadQrCode,
     submitUpiManualPayment,
     verifyUpiManualPayment,
+    getRazorpayStatus,
 };
