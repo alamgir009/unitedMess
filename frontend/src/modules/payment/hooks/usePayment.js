@@ -18,7 +18,7 @@ import { useCallback, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 
 import { useRazorpaySDK } from './useRazorpaySDK';
-import { RAZORPAY, PAYMENT_TYPES } from '../config/payment.config';
+import { RAZORPAY, PAYMENT_TYPES, isValidRazorpayKey, getRazorpayKeyMode } from '../config/payment.config';
 import paymentService from '../services/payment.service';
 
 /**
@@ -34,9 +34,6 @@ export function usePayment({ user, onSuccess }) {
     const isMountedRef   = useRef(true);
     const [lastPaymentId, setLastPaymentId] = useState(null);
 
-    // Track mount state — set to false on cleanup
-    // Components that use this hook must call the returned `cleanup` if needed,
-    // but useEffect handles it automatically via the returned teardown.
     const safeSetPaying = useCallback((val) => {
         if (isMountedRef.current) isPayingRef.current = val;
     }, []);
@@ -46,6 +43,7 @@ export function usePayment({ user, onSuccess }) {
      *
      * @param {number} amount      - Amount in base currency unit (e.g. paise for INR)
      * @param {string} paymentType - One of PAYMENT_TYPES.*
+     * @param {string[]|null} months - Selected billing months for multi-month payment
      */
     const handleCheckout = useCallback(async (
         amount,
@@ -66,10 +64,11 @@ export function usePayment({ user, onSuccess }) {
 
             // Step 2: Create order on server
             const orderRes = await paymentService.createOnlineOrder({ amount, type: paymentType, months });
-            const { order, payment, payments, keyId } = orderRes?.data ?? {};
+            const { order, payment, payments, keyId: serverKeyId } = orderRes?.data ?? {};
             if (!order?.id) throw new Error('Invalid order response from server');
 
-            const rzpKey = keyId || RAZORPAY.KEY_ID;
+            // Step 3: Resolve Razorpay key — prefer server-provided, fall back to local env
+            const rzpKey = serverKeyId || RAZORPAY.KEY_ID;
             if (!rzpKey) {
                 throw new Error(
                     'Razorpay key is not configured. ' +
@@ -77,7 +76,23 @@ export function usePayment({ user, onSuccess }) {
                 );
             }
 
-            // Step 3: Open modal
+            // Step 4: Validate key format — prevents silent test/live mismatch
+            if (!isValidRazorpayKey(rzpKey)) {
+                throw new Error(
+                    'Invalid Razorpay key format. ' +
+                    'Expected a key starting with "rzp_live_" or "rzp_test_".'
+                );
+            }
+
+            // Step 5: In non-development environments, warn if a test key is used
+            if (import.meta.env.PROD && getRazorpayKeyMode(rzpKey) === 'test') {
+                console.warn(
+                    '[usePayment] Razorpay test key detected in production build. ' +
+                    'Set VITE_RAZORPAY_KEY_ID to a live key in your frontend .env file.'
+                );
+            }
+
+            // Step 6: Open Razorpay checkout modal
             await new Promise((resolve, reject) => {
                 const options = {
                     key:         rzpKey,
@@ -91,18 +106,18 @@ export function usePayment({ user, onSuccess }) {
 
                     handler: async (response) => {
                         try {
-                            // Step 4: Verify payment
+                            // Step 7: Verify payment signature via server
                             await paymentService.verifyPayment({
                                 orderId:   order.id,
                                 paymentId: response.razorpay_payment_id,
                                 signature: response.razorpay_signature,
                             });
 
-                            toast.success('✅ Payment successful!');
+                            toast.success('Payment successful!');
 
                             if (payment?._id) setLastPaymentId(payment._id);
 
-                            // Step 5: Notify parent (refresh data)
+                            // Step 8: Notify parent to refresh data
                             if (isMountedRef.current) onSuccess?.();
 
                             resolve();
@@ -134,16 +149,13 @@ export function usePayment({ user, onSuccess }) {
             const msg = err?.response?.data?.message ?? err?.message ?? 'Payment failed';
             toast.error(msg);
         } finally {
-            // Always reset — whether success, failure, dismiss, or unmount
             safeSetPaying(false);
         }
     }, [loadSDK, user, onSuccess, safeSetPaying]);
 
     return {
-        /** Read-only: current paying state (use useState in your component to track re-renders) */
         lastPaymentId,
         handleCheckout,
-        /** Call this in your component's useEffect cleanup */
         markUnmounted: () => { isMountedRef.current = false; },
     };
 }
