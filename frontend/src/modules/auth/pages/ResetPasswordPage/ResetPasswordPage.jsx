@@ -118,7 +118,7 @@ const ResetPasswordPage = () => {
                                             required
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
-                                            placeholder="Min. 8 characters"
+                                            placeholder="Min 10 characters"
                                             className="pl-10 pr-10 h-12"
                                         />
                                         <button
