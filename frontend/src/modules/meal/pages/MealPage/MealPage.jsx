@@ -14,6 +14,7 @@ import toast from 'react-hot-toast';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import Button from '@/shared/components/ui/Button/Button';
 import MealList from '../../components/MealList/MealList';
+import AdminMealView from '../../components/AdminMealView/AdminMealView';
 import MealForm from '../../components/MealForm/MealForm';
 import MealModal from '../../components/MealModal/MealModal';
 import MealPolling from '../../components/MealPolling/MealPolling';
@@ -63,14 +64,19 @@ const MealPage = () => {
     const [bulkDeleteTarget, setBulkDeleteTarget] = useState(null);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
+    const fetchParams = useMemo(() =>
+        isAdmin ? { page: 1, limit: 'all' } : { page, limit },
+        [isAdmin, page, limit],
+    );
+
     useEffect(() => {
-        dispatch(fetchMeals({ page, limit }))
+        dispatch(fetchMeals(fetchParams))
             .unwrap()
             .catch((err) => {
                 const msg = typeof err === 'string' ? err : (err?.message || 'Failed to load meals');
                 setErrorMsg(msg);
             });
-    }, [dispatch, page, limit]);
+    }, [dispatch, fetchParams]);
 
     const openCreate = useCallback(() => { setEditingMeal(null); setIsModalOpen(true); }, []);
     const openEdit = useCallback((meal) => { setEditingMeal(meal); setIsModalOpen(true); }, []);
@@ -86,7 +92,7 @@ const MealPage = () => {
                 const res = await dispatch(updateMeal({ mealId: editingMeal._id, mealData: formData })).unwrap();
                 toast.success(res?.message || 'Meal updated successfully');
                 closeModal();
-                dispatch(fetchMeals({ page, limit }));
+                dispatch(fetchMeals(fetchParams));
                 return;
             }
 
@@ -120,7 +126,7 @@ const MealPage = () => {
                 }
 
                 closeModal();
-                dispatch(fetchMeals({ page, limit }));
+                dispatch(fetchMeals(fetchParams));
                 return;
             }
 
@@ -160,13 +166,13 @@ const MealPage = () => {
             }
 
             closeModal();
-            dispatch(fetchMeals({ page, limit }));
+            dispatch(fetchMeals(fetchParams));
         } catch (error) {
             const msg = typeof error === 'string' ? error : (error?.message || 'Failed to save meal');
             setErrorMsg(msg);
             toast.error(msg);
         }
-    }, [editingMeal, dispatch, closeModal, isAdmin, page, limit]);
+    }, [editingMeal, dispatch, closeModal, isAdmin, fetchParams]);
 
     const handleDeleteRequest = useCallback((meal) => setDeletingMeal(meal), []);
     const handleDeleteCancel = useCallback(() => { if (!isDeleting) setDeletingMeal(null); }, [isDeleting]);
@@ -219,7 +225,7 @@ const MealPage = () => {
             toast.success(`${bulkDeleteTarget.count} meal(s) deleted successfully`);
             setBulkDeleteTarget(null);
             setSelectedIds(new Set());
-            dispatch(fetchMeals({ page, limit }));
+            dispatch(fetchMeals(fetchParams));
         } catch (error) {
             const msg = typeof error === 'string' ? error : (error?.message || 'Failed to delete meals');
             setErrorMsg(msg);
@@ -227,7 +233,7 @@ const MealPage = () => {
         } finally {
             setIsBulkDeleting(false);
         }
-    }, [dispatch, bulkDeleteTarget, isBulkDeleting, page, limit]);
+    }, [dispatch, bulkDeleteTarget, isBulkDeleting, fetchParams]);
 
     const handleBulkDeleteCancel = useCallback(() => {
         if (!isBulkDeleting) setBulkDeleteTarget(null);
@@ -387,7 +393,7 @@ const MealPage = () => {
                     />
 
                     <AnimatePresence>
-                        {isFiltered && meals?.length > 0 && (
+                        {isFiltered && meals?.length > 0 && !isAdmin && (
                             <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-primary/5 border border-primary/15 text-primary text-xs font-medium">
                                 <HiOutlineInformationCircle className="w-4 h-4 flex-shrink-0" />
                                 Filtering within the current page ({meals.length} records). Clear filters to browse all pages.
@@ -441,10 +447,21 @@ const MealPage = () => {
                     </AnimatePresence>
 
                     {/* Content */}
-                    {isLoading && (!meals || meals.length === 0) ? (
+                    {isLoading && !isAdmin && (!meals || meals.length === 0) ? (
                         <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                             {[1, 2, 3, 4, 5, 6].map(n => <SkeletonCard key={n} />)}
                         </div>
+                    ) : isAdmin ? (
+                        <AdminMealView
+                            meals={filtered}
+                            isLoading={isLoading}
+                            viewMode={viewMode}
+                            onEdit={openEdit}
+                            onDelete={handleDeleteRequest}
+                            selectedIds={selectedIds}
+                            onToggleSelect={handleToggleSelect}
+                            onSelectAll={handleSelectAll}
+                        />
                     ) : (
                         <>
                             <MealList
