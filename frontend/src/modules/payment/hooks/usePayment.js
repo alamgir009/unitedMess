@@ -5,9 +5,6 @@ import { useRazorpaySDK } from './useRazorpaySDK';
 import { RAZORPAY, PAYMENT_TYPES, isValidRazorpayKey, getRazorpayKeyMode } from '../config/payment.config';
 import paymentService from '../services/payment.service';
 
-const RZ_LIVE_PREFIX = 'rzp_live_';
-const RZ_TEST_PREFIX = 'rzp_test_';
-
 export function usePayment({ user, onSuccess }) {
     const loadSDK        = useRazorpaySDK();
     const isPayingRef    = useRef(false);
@@ -34,18 +31,15 @@ export function usePayment({ user, onSuccess }) {
         try {
             await loadSDK();
 
+            // Step 1: Create order on server — this binds the order to the backend's key
             const orderRes = await paymentService.createOnlineOrder({ amount, type: paymentType, months });
             const { order, payment, payments, keyId: serverKeyId } = orderRes?.data ?? {};
             if (!order?.id) throw new Error('Invalid order response from server');
 
-            const serverKey = serverKeyId || '';
-            const envKey    = RAZORPAY.KEY_ID || '';
-            const isProd    = import.meta.env.PROD;
-            const serverMode = getRazorpayKeyMode(serverKey);
-            const envMode    = getRazorpayKeyMode(envKey);
-
-            let rzpKey = serverKey || envKey;
-
+            // Step 2: The checkout MUST use the server's key — the order was created with it.
+            // Never substitute with a frontend env key; doing so would cause a 400 error
+            // because Razorpay validates key_id matches the order's account.
+            const rzpKey = serverKeyId;
             if (!rzpKey) {
                 throw new Error(
                     'Razorpay key is not configured. ' +
@@ -53,6 +47,7 @@ export function usePayment({ user, onSuccess }) {
                 );
             }
 
+            // Step 3: Validate key format
             if (!isValidRazorpayKey(rzpKey)) {
                 throw new Error(
                     'Invalid Razorpay key format. ' +
@@ -60,36 +55,17 @@ export function usePayment({ user, onSuccess }) {
                 );
             }
 
-            // Production hardening: block test keys, prefer live from env if available
-            if (isProd) {
-                const envHasLive  = envMode === 'live';
-                const envHasTest  = envMode === 'test';
-                const srvHasTest  = serverMode === 'test';
-                const srvHasLive  = serverMode === 'live';
-
-                if (srvHasTest && envHasLive) {
-                    rzpKey = envKey;
-                    toast.error(
-                        '⚠️ Razorpay is using test keys on the server. ' +
-                        'Please contact the admin to restart the backend with live credentials. ' +
-                        'Payment will proceed with the frontend live key as a fallback.',
-                        { duration: 6000 }
-                    );
-                } else if (srvHasTest && !envHasLive) {
-                    throw new Error(
-                        'Razorpay test key detected in production. ' +
-                        'Update RAZORPAY_KEY_ID to a live key in the backend .env file and restart the server.'
-                    );
-                } else if (envHasTest && !srvHasLive) {
-                    throw new Error(
-                        'Razorpay test key configured in frontend environment. ' +
-                        'Set VITE_RAZORPAY_KEY_ID to a live key and rebuild the frontend.'
-                    );
-                } else if (srvHasLive || envHasLive) {
-                    rzpKey = srvHasLive ? serverKey : envKey;
-                }
+            // Step 4: In production, hard-block test keys — prevents accidental test-mode transactions
+            const isProd = import.meta.env.PROD;
+            const keyMode = getRazorpayKeyMode(rzpKey);
+            if (isProd && keyMode === 'test') {
+                throw new Error(
+                    'Razorpay test key detected in production. ' +
+                    'Update RAZORPAY_KEY_ID to a live key in the backend .env file and restart the server.'
+                );
             }
 
+            // Step 5: Open Razorpay checkout modal
             await new Promise((resolve, reject) => {
                 const options = {
                     key:         rzpKey,
@@ -134,14 +110,20 @@ export function usePayment({ user, onSuccess }) {
                 const rzp = new window.Razorpay(options);
 
                 rzp.on('payment.failed', (resp) => {
-                    reject(new Error(resp?.error?.description ?? 'Payment failed'));
+                    const desc = resp?.error?.description;
+                    const code = resp?.error?.code;
+                    reject(new Error(desc || code || 'Payment failed'));
                 });
 
                 rzp.open();
             });
 
         } catch (err) {
-            const msg = err?.response?.data?.message ?? err?.message ?? 'Payment failed';
+            let msg = err?.response?.data?.message || err?.message || 'Payment failed';
+            // Surface Razorpay-specific errors with clearer messaging
+            if (msg.includes('400') || msg.includes('Bad Request') || msg.includes('preferences')) {
+                msg = 'Payment gateway rejected the request. Please contact the administrator to verify the Razorpay configuration.';
+            }
             toast.error(msg);
         } finally {
             safeSetPaying(false);

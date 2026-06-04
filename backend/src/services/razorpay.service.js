@@ -33,6 +33,23 @@ const razorpay = new Razorpay({
     key_secret: keySecret,
 });
 
+// ─── Non-blocking startup validation ─────────────────────────────────────────
+// Verifies the credentials are valid by making a lightweight API call.
+// Does NOT block server startup — logs the result instead.
+(async () => {
+    try {
+        await razorpay.orders.all({ count: 1 });
+        console.info('[Razorpay] Credentials validated successfully —', keyId.startsWith(RZ_LIVE_PREFIX) ? 'LIVE' : 'TEST', 'mode');
+    } catch (error) {
+        const status = error.statusCode || error.statusCode || '';
+        const msg    = error.error?.description || error.message || 'Unknown error';
+        console.error(
+            `[Razorpay] Credential validation FAILED (HTTP ${status}): ${msg}. ` +
+            'Update RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET in .env and restart the server.'
+        );
+    }
+})();
+
 /**
  * Create a Razorpay order
  * @param {number} amount   - Amount in paise
@@ -69,4 +86,21 @@ const verifyPaymentSignature = (orderId, paymentId, signature) => {
     );
 };
 
-module.exports = { createOrder, verifyPaymentSignature };
+/**
+ * Validate Razorpay credentials by making a lightweight API call.
+ * Used by the diagnostic endpoint — does NOT throw, returns status object.
+ */
+const validateCredentials = async () => {
+    try {
+        await razorpay.orders.all({ count: 1 });
+        return { valid: true };
+    } catch (error) {
+        return {
+            valid: false,
+            message: error?.error?.description || error.message || 'Unknown error',
+            statusCode: error.statusCode || error.statusCode || 0,
+        };
+    }
+};
+
+module.exports = { createOrder, verifyPaymentSignature, validateCredentials };

@@ -1,5 +1,5 @@
 const asyncHandler = require('../../../utils/helpers/asyncHandler');
-const { paymentService } = require('../../../services');
+const { paymentService, razorpayService } = require('../../../services');
 const invoiceService = require('../../../services/invoice.service');
 const { sendSuccessResponse } = require('../../../utils/helpers/response.helper');
 const AppError = require('../../../utils/errors/AppError');
@@ -426,7 +426,8 @@ const verifyUpiManualPayment = asyncHandler(async (req, res) => {
 /**
  * GET /payments/razorpay-status
  * Diagnostic endpoint — returns current Razorpay key mode (live/test)
- * without exposing the full secret. Admin only.
+ * and validates the credentials by making a lightweight API call.
+ * Never exposes the full secret. Admin only.
  */
 const getRazorpayStatus = asyncHandler(async (req, res) => {
     const keyId = config.razorpay.keyId || '';
@@ -435,10 +436,20 @@ const getRazorpayStatus = asyncHandler(async (req, res) => {
     const mode     = isLive ? 'live' : isTest ? 'test' : 'unknown';
     const safePrefix = keyId.length > 9 ? keyId.substring(0, 9) + '...' : 'not_configured';
 
+    // Attempt a lightweight API call to validate credentials are working
+    const result = await razorpayService.validateCredentials();
+
     sendSuccessResponse(res, 200, 'Razorpay status retrieved', {
         mode,
         keyPrefix: safePrefix,
         env: config.app.env,
+        credentials: result.valid ? 'valid' : 'invalid',
+        credentialDetail: result.valid ? undefined : result.message,
+        recommendation: mode === 'test' && config.app.env === 'production'
+            ? 'Set RAZORPAY_KEY_ID to a live key in backend .env and restart the server.'
+            : !result.valid
+                ? 'The Razorpay credentials are not valid. Check KEY_ID and KEY_SECRET in .env.'
+                : undefined,
     });
 });
 
