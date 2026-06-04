@@ -1,84 +1,173 @@
-/**
- * UnitedMess — CSS Variables
- * Base custom properties. The light.css and dark.css files override these.
- * Defaults to light mode.
- */
-
 :root {
-    /* ─── Primary Palette ─── */
-    --color-primary-50: 210 100% 97%;
-    --color-primary-100: 210 96% 93%;
-    --color-primary-200: 210 90% 84%;
-    --color-primary-300: 210 86% 72%;
-    --color-primary-400: 210 88% 60%;
-    --color-primary-500: 210 92% 48%;
-    --color-primary-600: 214 90% 40%;
-    --color-primary-700: 218 88% 32%;
-    --color-primary-800: 220 84% 26%;
-    --color-primary-900: 222 80% 18%;
+  /* === SPACING SCALE (4px base) === */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
 
-    /* ─── Secondary Palette (violet) ─── */
-    --color-secondary-50: 265 100% 97%;
-    --color-secondary-100: 265 96% 93%;
-    --color-secondary-400: 268 80% 62%;
-    --color-secondary-500: 268 76% 52%;
-    --color-secondary-600: 269 72% 44%;
+  /* === RADIUS SCALE === */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 9999px;
 
-    /* ─── Accent Palette (emerald) ─── */
-    --color-accent-300: 160 72% 62%;
-    --color-accent-400: 160 64% 48%;
-    --color-accent-500: 160 60% 38%;
+  /* === ELEVATION / SHADOW === */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.08), 0 4px 6px rgba(0,0,0,0.05);
+  --shadow-xl: 0 20px 25px rgba(0,0,0,0.08), 0 10px 10px rgba(0,0,0,0.04);
 
-    /* ─── Status Colors ─── */
-    --color-success: 142 72% 45%;
-    --color-warning: 38 96% 56%;
-    --color-error: 0 82% 58%;
-    --color-info: 200 90% 50%;
+  /* === Z-INDEX SCALE === */
+  --z-base: 0;
+  --z-raised: 10;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-overlay: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-tooltip: 600;
 
-    /* ─── Typography ─── */
-    --font-sans: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  /* === MOTION TOKENS === */
+  --duration-fast: 100ms;
+  --duration-base: 180ms;
+  --duration-slow: 300ms;
+  --duration-slower: 500ms;
+  --ease-default: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
 
-    /* ─── Spacing Scale (4pt grid) ─── */
-    --space-1: 0.25rem;
-    --space-2: 0.5rem;
-    --space-3: 0.75rem;
-    --space-4: 1rem;
-    --space-5: 1.25rem;
-    --space-6: 1.5rem;
-    --space-8: 2rem;
-    --space-10: 2.5rem;
-    --space-12: 3rem;
-    --space-16: 4rem;
-    --space-20: 5rem;
-    --space-24: 6rem;
-    --space-32: 8rem;
+  /* === TYPOGRAPHY === */
+  --font-sans: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-numeric: 'Inter', sans-serif;
 
-    /* ─── Border Radius ─── */
-    --radius-sm: 0.25rem;
-    --radius: 0.5rem;
-    --radius-md: 0.75rem;
-    --radius-lg: 1rem;
-    --radius-xl: 1.25rem;
-    --radius-2xl: 1.5rem;
-    --radius-3xl: 2rem;
-    --radius-full: 9999px;
+  /* === FONT SCALE === */
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
 
-    /* ─── Transitions (ultra-fast for low-end devices) ─── */
-    --transition-fast: 50ms ease;
-    --transition-normal: 100ms ease;
-    --transition-slow: 150ms ease;
-    --transition-spring: 100ms ease;
-    --transition-smooth: 100ms ease;
+  /* === FONT WEIGHTS === */
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
 
-    /* ─── Z-Index Scale ─── */
-    --z-0: 0;
-    --z-10: 10;
-    --z-20: 20;
-    --z-30: 30;
-    --z-dropdown: 100;
-    --z-sticky: 200;
-    --z-modal: 300;
-    --z-toast: 400;
-    --z-tooltip: 500;
+  /* === LINE HEIGHTS === */
+  --leading-tight: 1.2;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+
+  /* === LETTER SPACING === */
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.02em;
+  --tracking-wider: 0.05em;
+
+  /* === BRAND (light defaults, overridden by themes) === */
+  --brand: #2563EB;
+  --brand-rgb: 37, 99, 235;
+  --brand-hover: #1D4ED8;
+  --brand-subtle: #EFF6FF;
+  --brand-foreground: #FFFFFF;
+
+  /* === SURFACES (light) === */
+  --bg-base: #FFFFFF;
+  --bg-subtle: #F8FAFC;
+  --bg-muted: #F1F5F9;
+  --bg-overlay: rgba(15, 23, 42, 0.5);
+
+  /* === BORDERS (light) === */
+  --border-default: #E2E8F0;
+  --border-muted: #F1F5F9;
+  --border-strong: #CBD5E1;
+  --border-brand: #2563EB;
+
+  /* === TEXT (light) === */
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #94A3B8;
+  --text-disabled: #CBD5E1;
+  --text-on-brand: #FFFFFF;
+  --text-inverse: #F8FAFC;
+
+  /* === SEMANTIC (light) === */
+  --success: #16A34A;
+  --success-bg: #F0FDF4;
+  --success-border: #BBF7D0;
+  --success-text: #15803D;
+
+  --warning: #D97706;
+  --warning-bg: #FFFBEB;
+  --warning-border: #FDE68A;
+  --warning-text: #B45309;
+
+  --danger: #DC2626;
+  --danger-bg: #FEF2F2;
+  --danger-border: #FECACA;
+  --danger-text: #B91C1C;
+
+  --info: #0284C7;
+  --info-bg: #F0F9FF;
+  --info-border: #BAE6FD;
+  --info-text: #0369A1;
+
+  /* === COMPONENT SIZES === */
+  --input-height-sm: 32px;
+  --input-height-md: 40px;
+  --input-height-lg: 48px;
+  --input-bg: #FFFFFF;
+  --input-bg-disabled: #F8FAFC;
+  --input-border: #CBD5E1;
+  --input-border-hover: #94A3B8;
+  --input-border-focus: #2563EB;
+  --input-border-error: #DC2626;
+
+  --btn-height-sm: 32px;
+  --btn-height-md: 40px;
+  --btn-height-lg: 48px;
+
+  --sidebar-width: 240px;
+  --sidebar-width-collapsed: 64px;
+  --navbar-height: 60px;
+  --content-max-width: 1280px;
+
+  /* === TAILWIND-COMPATIBLE HSL TOKENS (Shadcn-style) === */
+  /* These are dynamically set by light.css / dark.css */
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  --primary: 210 92% 48%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 40% 94%;
+  --secondary-foreground: 222 47% 20%;
+  --muted: 210 40% 94%;
+  --muted-foreground: 215 20% 50%;
+  --accent: 160 60% 38%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 82% 58%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214 32% 90%;
+  --input: 214 32% 90%;
+  --ring: 210 92% 48%;
+  --radius: 0.75rem;
 }

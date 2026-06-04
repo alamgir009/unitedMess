@@ -1,94 +1,110 @@
-/**
- * UnitedMess — Dark Theme
- * Applied when the root element has class="dark".
- */
-
 html.dark {
-    color-scheme: dark;
+  color-scheme: dark;
 
-    /* ─── Tailwind-compatible semantic tokens ─── */
-    --background: 222 47% 6%;
-    --foreground: 210 40% 96%;
-    --card: 222 47% 9%;
-    --card-foreground: 210 40% 96%;
-    --popover: 222 47% 8%;
-    --popover-foreground: 210 40% 96%;
-    --primary: 210 92% 58%;
-    --primary-foreground: 222 47% 6%;
-    --secondary: 217 32% 15%;
-    --secondary-foreground: 210 40% 90%;
-    --muted: 217 32% 14%;
-    --muted-foreground: 215 20% 55%;
-    --accent: 160 60% 45%;
-    --accent-foreground: 222 47% 6%;
-    --destructive: 0 70% 50%;
-    --destructive-foreground: 210 40% 96%;
-    --border: 217 32% 15%;
-    --input: 217 32% 15%;
-    --ring: 210 92% 58%;
-    --radius: 0.75rem;
+  /* Brand */
+  --brand: #3B82F6;
+  --brand-rgb: 59, 130, 246;
+  --brand-hover: #60A5FA;
+  --brand-subtle: #1E3A5F;
+  --brand-foreground: #FFFFFF;
 
-    /* ─── Surface & Background (solid, no transparency) ─── */
-    --surface-base: hsl(222, 47%, 7%);
-    --surface-raised: hsl(222, 44%, 10%);
-    --surface-overlay: hsl(222, 42%, 12%);
-    --surface-glass: hsl(222, 44%, 11%);
-    --surface-glass-border: rgba(255, 255, 255, 0.06);
-    --surface-frost: hsl(222, 44%, 9%);
+  /* Surfaces */
+  --bg-base: #0F172A;
+  --bg-subtle: #1E293B;
+  --bg-muted: #263040;
+  --bg-overlay: rgba(0, 0, 0, 0.6);
 
-    /* ─── Text ─── */
-    --text-primary: hsl(210, 40%, 96%);
-    --text-secondary: hsl(215, 20%, 65%);
-    --text-tertiary: hsl(215, 16%, 48%);
-    --text-inverse: hsl(222, 47%, 8%);
-    --text-on-glass: hsl(210, 40%, 94%);
+  /* Borders */
+  --border-default: #1E293B;
+  --border-muted: #172033;
+  --border-strong: #2D3F55;
+  --border-brand: #3B82F6;
 
-    /* ─── Borders ─── */
-    --border-color: rgba(255, 255, 255, 0.08);
-    --border-glass: rgba(255, 255, 255, 0.06);
-    --border-subtle: rgba(255, 255, 255, 0.04);
-    --divider: rgba(255, 255, 255, 0.06);
+  /* Text */
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted: #475569;
+  --text-disabled: #334155;
+  --text-on-brand: #FFFFFF;
+  --text-inverse: #F8FAFC;
 
-    /* ─── Shadows (simplified, no inset highlights) ─── */
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
-    --shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.45);
-    --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.5);
-    --shadow-2xl: 0 25px 60px rgba(0, 0, 0, 0.65);
-    --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.4);
-    --shadow-glow-primary: 0 0 32px rgba(59, 130, 246, 0.25);
-    --shadow-glow-secondary: 0 0 32px rgba(124, 58, 237, 0.25);
+  /* Semantic */
+  --success: #22C55E;
+  --success-bg: #052E16;
+  --success-border: #166534;
+  --success-text: #4ADE80;
 
-    /* ─── Solid surface replacements (was glass) ─── */
-    --glass-bg: hsl(222, 44%, 11%);
-    --glass-border: rgba(255, 255, 255, 0.06);
-    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    --glass-inset: none;
+  --warning: #F59E0B;
+  --warning-bg: #422006;
+  --warning-border: #713F12;
+  --warning-text: #FBBF24;
 
-    /* ─── Gradients ─── */
-    --gradient-primary: linear-gradient(135deg, hsl(210, 92%, 58%) 0%, hsl(268, 76%, 62%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(224, 78%, 10%) 0%, hsl(272, 60%, 18%) 60%, hsl(160, 56%, 22%) 100%);
-    --gradient-glow: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.18) 0%, transparent 70%);
-    --gradient-text: linear-gradient(135deg, hsl(210, 92%, 68%) 0%, hsl(268, 76%, 72%) 100%);
-    --gradient-aurora: linear-gradient(135deg, hsl(210, 92%, 58%) 0%, hsl(268, 76%, 62%) 50%, hsl(160, 60%, 45%) 100%);
+  --danger: #EF4444;
+  --danger-bg: #450A0A;
+  --danger-border: #7F1D1D;
+  --danger-text: #FCA5A5;
 
-    /* ─── Navbar (solid) ─── */
-    --navbar-bg: hsl(222, 47%, 8%);
-    --navbar-border: rgba(255, 255, 255, 0.06);
+  --info: #0EA5E9;
+  --info-bg: #0C1A2E;
+  --info-border: #1E3A5F;
+  --info-text: #7DD3FC;
 
-    /* ─── Sidebar (solid) ─── */
-    --sidebar-bg: hsl(222, 44%, 9%);
-    --sidebar-border: rgba(255, 255, 255, 0.06);
+  /* Component */
+  --input-bg: #1E293B;
+  --input-bg-disabled: #172033;
+  --input-border: #2D3F55;
+  --input-border-hover: #3D5068;
+  --input-border-focus: #3B82F6;
+  --input-border-error: #EF4444;
 
-    /* ─── Status backgrounds (solid tints) ─── */
-    --success-glass: #052e16;
-    --warning-glass: #422006;
-    --error-glass: #450a0a;
-    --info-glass: #0c1a2e;
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.35), 0 2px 4px rgba(0,0,0,0.3);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.4), 0 4px 6px rgba(0,0,0,0.3);
+  --shadow-xl: 0 20px 25px rgba(0,0,0,0.5), 0 10px 10px rgba(0,0,0,0.4);
 
-    /* ─── Blobs removed for performance ─── */
-    --blob-1: transparent;
-    --blob-2: transparent;
-    --blob-3: transparent;
+  /* Tailwind-compatible HSL tokens */
+  --background: 222 47% 6%;
+  --foreground: 210 40% 96%;
+  --card: 222 47% 9%;
+  --card-foreground: 210 40% 96%;
+  --popover: 222 47% 8%;
+  --popover-foreground: 210 40% 96%;
+  --primary: 210 92% 58%;
+  --primary-foreground: 222 47% 6%;
+  --secondary: 217 32% 15%;
+  --secondary-foreground: 210 40% 90%;
+  --muted: 217 32% 14%;
+  --muted-foreground: 215 20% 55%;
+  --accent: 160 60% 45%;
+  --accent-foreground: 222 47% 6%;
+  --destructive: 0 70% 50%;
+  --destructive-foreground: 210 40% 96%;
+  --border: 217 32% 15%;
+  --input: 217 32% 15%;
+  --ring: 210 92% 58%;
+  --radius: 0.75rem;
+
+  /* Navbar + Sidebar */
+  --navbar-bg: #0F172A;
+  --navbar-border: #1E293B;
+  --sidebar-bg: #0F172A;
+  --sidebar-border: #1E293B;
+
+  /* Status backgrounds */
+  --success-glass: #052E16;
+  --warning-glass: #422006;
+  --error-glass: #450A0A;
+  --info-glass: #0C1A2E;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+  --gradient-hero: linear-gradient(135deg, #0F172A 0%, #1E1B4B 60%, #0C1A2E 100%);
+  --gradient-text: linear-gradient(135deg, #60A5FA 0%, #A78BFA 100%);
+
+  /* Blobs (disabled for perf) */
+  --blob-1: transparent;
+  --blob-2: transparent;
+  --blob-3: transparent;
 }
