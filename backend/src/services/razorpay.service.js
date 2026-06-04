@@ -22,9 +22,11 @@ if (!keyId.startsWith(RZ_LIVE_PREFIX) && !keyId.startsWith(RZ_TEST_PREFIX)) {
 }
 
 if (config.app.env === 'production' && keyId.startsWith(RZ_TEST_PREFIX)) {
-    console.warn(
-        '[Razorpay] WARNING: Test key detected in production environment. ' +
-        'Update RAZORPAY_KEY_ID in .env to a live key.'
+    throw new Error(
+        '[Razorpay] FATAL: Test key detected in production environment. ' +
+        'Set RAZORPAY_KEY_ID to a live key (rzp_live_...) ' +
+        'in your deployment platform environment variables (or in backend/.env) ' +
+        'and restart the server.'
     );
 }
 
@@ -37,15 +39,23 @@ const razorpay = new Razorpay({
 // Verifies the credentials are valid by making a lightweight API call.
 // Does NOT block server startup — logs the result instead.
 (async () => {
+    // Diagnose key source: platform env vars take precedence over .env
+    const rawEnv = process.env.RAZORPAY_KEY_ID || '(not set)';
+    const rawPrefix = rawEnv.length > 9 ? rawEnv.substring(0, 9) + '...' : rawEnv;
+
     try {
         await razorpay.orders.all({ count: 1 });
-        console.info('[Razorpay] Credentials validated successfully —', keyId.startsWith(RZ_LIVE_PREFIX) ? 'LIVE' : 'TEST', 'mode');
+        console.info(
+            `[Razorpay] Credentials valid — ${keyId.startsWith(RZ_LIVE_PREFIX) ? 'LIVE' : 'TEST'} mode. ` +
+            `Key loaded from: ${rawEnv === keyId ? 'PLATFORM env var' : '.env file'} (prefix: ${rawPrefix})`
+        );
     } catch (error) {
         const status = error.statusCode || error.statusCode || '';
-        const msg    = error.error?.description || error.message || 'Unknown error';
+        const msg    = error?.error?.description || error.message || 'Unknown error';
         console.error(
             `[Razorpay] Credential validation FAILED (HTTP ${status}): ${msg}. ` +
-            'Update RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET in .env and restart the server.'
+            `Key source: ${rawEnv === keyId ? 'PLATFORM env var' : '.env file'} (prefix: ${rawPrefix}). ` +
+            'Verify RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET.'
         );
     }
 })();

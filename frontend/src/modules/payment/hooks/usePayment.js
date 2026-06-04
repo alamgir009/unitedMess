@@ -59,9 +59,11 @@ export function usePayment({ user, onSuccess }) {
             const isProd = import.meta.env.PROD;
             const keyMode = getRazorpayKeyMode(rzpKey);
             if (isProd && keyMode === 'test') {
+                const prefix = rzpKey.length > 12 ? rzpKey.substring(0, 12) + '...' : rzpKey;
                 throw new Error(
-                    'Razorpay test key detected in production. ' +
-                    'Update RAZORPAY_KEY_ID to a live key in the backend .env file and restart the server.'
+                    `Razorpay test key "${prefix}" detected in production. ` +
+                    'Update RAZORPAY_KEY_ID in your deployment platform environment variables ' +
+                    '(or backend/.env) to a LIVE key and restart the server.'
                 );
             }
 
