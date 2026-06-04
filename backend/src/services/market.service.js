@@ -50,7 +50,6 @@ const createMarket = async (marketBody) => {
 /**
  * Query markets with optional filter & options
  */
-// market.service.js
 const queryMarkets = async (filter, options = {}, populateUser = false) => {
     let sort = { date: -1 };
 
@@ -59,18 +58,40 @@ const queryMarkets = async (filter, options = {}, populateUser = false) => {
         sort = { [field]: order === 'asc' ? 1 : -1 };
     }
 
-    const limit = parseInt(options.limit) || 10;
+    const getAll = options.limit === 'all';
+    const limit = getAll ? 0 : (parseInt(options.limit) || 10);
     const page  = parseInt(options.page)  || 1;
+    const skip  = getAll ? 0 : (page - 1) * limit;
 
-    const query = Market.find(filter)
-        .sort(sort)
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .lean();
+    let query = Market.find(filter).sort(sort);
 
-    if (populateUser) query.populate('user', 'name email');
+    if (!getAll) {
+        query = query.skip(skip).limit(limit);
+    }
 
-    return query;
+    query = query.lean();
+
+    if (populateUser) query = query.populate('user', 'name email');
+
+    const [markets, total] = await Promise.all([
+        query.exec(),
+        Market.countDocuments(filter),
+    ]);
+
+    const totalPages = getAll ? 1 : Math.ceil(total / limit);
+
+    return {
+        markets,
+        pagination: {
+            page:    getAll ? 1     : page,
+            limit:   getAll ? total : limit,
+            total,
+            pages:   totalPages,
+            hasNext: getAll ? false : skip + markets.length < total,
+            hasPrev: getAll ? false : page > 1,
+            isAll:   getAll,
+        },
+    };
 };
 
 /**

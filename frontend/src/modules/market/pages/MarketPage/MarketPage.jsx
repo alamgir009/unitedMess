@@ -12,6 +12,7 @@ import MarketHeader from '../../components/MarketHeader/MarketHeader';
 import MarketStatsBar from '../../components/MarketStatsBar/MarketStatsBar';
 import MarketSearchBar from '../../components/MarketSearchBar/MarketSearchBar';
 import MarketList from '../../components/MarketList/MarketList';
+import AdminMarketView from '../../components/AdminMarketView/AdminMarketView';
 import MarketModal from '../../components/MarketModal/MarketModal';
 import MarketScheduleChart from '../../components/MarketScheduleChart/MarketScheduleChart';
 import DeleteMarketDialog from '../../components/DeleteMarketDialog/DeleteMarketDialog';
@@ -85,9 +86,14 @@ const MarketPage = () => {
     // ── Error banner
     const [errorMsg, setErrorMsg] = useState('');
 
+    const fetchParams = useMemo(() =>
+        isAdmin ? { page: 1, limit: 'all' } : { page, limit },
+        [isAdmin, page, limit],
+    );
+
     /* ── Data fetch ── */
     useEffect(() => {
-        dispatch(fetchMarkets({ page, limit }))
+        dispatch(fetchMarkets(fetchParams))
             .unwrap()
             .catch((err) => {
                 setErrorMsg(typeof err === 'string' ? err : err?.message || 'Failed to load market entries');
@@ -98,7 +104,7 @@ const MarketPage = () => {
         dispatch(fetchMarketSchedule({ year: now.getFullYear(), month: now.getMonth() + 1 }));
 
         return () => { dispatch(reset()); };
-    }, [dispatch, page, limit]);
+    }, [dispatch, fetchParams]);
 
     /* ── Modal handlers ── */
     const openCreate = useCallback(() => { setEditingMarket(null); setIsModalOpen(true); }, []);
@@ -132,12 +138,12 @@ const MarketPage = () => {
                 toast.success(res?.message || 'Market entry created successfully');
             }
             closeModal();
-            dispatch(fetchMarkets({ page, limit }));
+            dispatch(fetchMarkets(fetchParams));
         } catch (err) {
             setErrorMsg(typeof err === 'string' ? err : err?.message || 'Failed to save market entry');
             closeModal();
         }
-    }, [editingMarket, dispatch, closeModal, isAdmin, page, limit]);
+    }, [editingMarket, dispatch, closeModal, isAdmin, fetchParams]);
 
     const handleDeleteClick = useCallback((market) => {
         setMarketToDelete(market);
@@ -270,10 +276,19 @@ const MarketPage = () => {
                         onClearFilters={clearFilters}
                     />
 
-                    {isLoading && (!markets || markets.length === 0) ? (
+                    {isLoading && !isAdmin && (!markets || markets.length === 0) ? (
                         <div className={`grid gap-3 ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
                             {[1, 2, 3, 4, 5, 6].map((n) => <SkeletonCard key={n} />)}
                         </div>
+                    ) : isAdmin ? (
+                        <AdminMarketView
+                            markets={filtered}
+                            isLoading={isLoading}
+                            viewMode={viewMode}
+                            onEdit={openEdit}
+                            onDelete={handleDeleteClick}
+                            isAdmin={isAdmin}
+                        />
                     ) : (
                         <>
                             <MarketList
