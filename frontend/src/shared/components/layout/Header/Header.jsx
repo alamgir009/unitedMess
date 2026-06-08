@@ -30,7 +30,7 @@ const Header = ({ onMenuClick }) => {
     <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-border bg-card px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 transition-colors duration-200">
       <button
         type="button"
-        className="-m-2.5 p-2.5 text-muted-foreground hover:text-foreground lg:hidden"
+        className="-m-2.5 p-2.5 text-muted-foreground hover:text-foreground lg:hidden touch-target"
         onClick={onMenuClick}
       >
         <span className="sr-only">Open sidebar</span>
@@ -38,20 +38,21 @@ const Header = ({ onMenuClick }) => {
       </button>
 
       <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-        <form className="relative flex flex-1" action="#" method="GET" />
+        <div className="flex flex-1" />
         <div className="flex items-center gap-x-4 lg:gap-x-6">
-          {/* Admin History Toggle */}
           {user?.role === 'admin' && (
             <div className="flex items-center gap-2 mr-2">
               <span className="hidden sm:inline text-sm text-muted-foreground font-medium">All History</span>
               <button
                 onClick={() => dispatch(toggleAdminHistory())}
                 className={cn(
-                  'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background',
+                  'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                   adminShowHistory ? 'bg-primary' : 'bg-muted-foreground/30',
                 )}
+                role="switch"
+                aria-checked={adminShowHistory}
+                aria-label="Toggle historical data"
               >
-                <span className="sr-only">Toggle historical data</span>
                 <span
                   className={cn(
                     'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
@@ -62,11 +63,10 @@ const Header = ({ onMenuClick }) => {
             </div>
           )}
 
-          {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
             aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="touch-target p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <motion.span
               key={theme}
@@ -79,15 +79,12 @@ const Header = ({ onMenuClick }) => {
             </motion.span>
           </button>
 
-          {/* Notifications */}
           <NotificationBell />
 
-          {/* Separator */}
           <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-border" aria-hidden="true" />
 
-          {/* Profile dropdown */}
           <Menu as="div" className="relative">
-            <Menu.Button className="-m-1.5 flex items-center p-1.5 rounded-lg hover:bg-muted transition-all">
+            <Menu.Button className="-m-1.5 flex items-center p-1.5 rounded-lg hover:bg-muted transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <span className="sr-only">Open user menu</span>
 
               <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold ring-1 ring-border overflow-hidden">
@@ -126,7 +123,7 @@ const Header = ({ onMenuClick }) => {
                       to="/profile"
                       className={cn(
                         active ? 'bg-muted' : '',
-                        'block px-3 py-1.5 text-sm leading-6 text-foreground transition-colors',
+                        'block px-3 py-1.5 text-sm leading-6 text-foreground transition-colors focus-visible:outline-none',
                       )}
                     >
                       Your Profile
@@ -144,7 +141,7 @@ const Header = ({ onMenuClick }) => {
                       }}
                       className={cn(
                         active ? 'bg-danger-bg' : '',
-                        'block px-3 py-1.5 text-sm leading-6 text-danger transition-colors',
+                        'block px-3 py-1.5 text-sm leading-6 text-danger transition-colors focus-visible:outline-none',
                       )}
                     >
                       Sign out

@@ -9,6 +9,9 @@ import {
   ShieldCheck,
   ShieldOff,
   CircleDot,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { BiBlock } from 'react-icons/bi';
 import MemberRowActions from './MemberRowActions';
@@ -43,7 +46,7 @@ const STATUS_CONFIG = {
 const StatusBadge = ({ status }) => {
   const { icon: Icon, cls } = STATUS_CONFIG[status] ?? STATUS_CONFIG.inactive;
   return (
-    <span className={cn('inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wider', cls)}>
+    <span className={cn('inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-caption font-bold uppercase tracking-wider', cls)}>
       <Icon size={11} strokeWidth={2.5} />
       {status}
     </span>
@@ -61,7 +64,7 @@ const resolvePayment = (raw) => {
 const PaymentBadge = ({ status }) => {
   const { label, icon: Icon, cls } = resolvePayment(status);
   return (
-    <span className={cn('inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wider', cls)}>
+    <span className={cn('inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-caption font-bold uppercase tracking-wider', cls)}>
       <Icon size={11} strokeWidth={2.5} />
       {label}
     </span>
@@ -76,37 +79,56 @@ const FILTER_TABS = [
   { id: 'denied',  label: 'Denied'  },
 ];
 
+const COLUMNS = [
+  { id: 'name', label: 'Member', sortKey: 'name', align: 'left' },
+  { id: 'status', label: 'Status', sortKey: '_displayStatus', align: 'left' },
+  { id: 'mealBill', label: 'Meal Bill', sortKey: 'paymentStatus', align: 'left' },
+  { id: 'gasBill', label: 'Gas Bill', sortKey: 'gasBillStatus', align: 'left' },
+  { id: 'actions', label: 'Actions', sortKey: null, align: 'right' },
+];
+
+const SortIcon = ({ direction }) => {
+  if (direction === 'asc') return <ArrowUp className="w-3 h-3 ml-1" />;
+  if (direction === 'desc') return <ArrowDown className="w-3 h-3 ml-1" />;
+  return <ArrowUpDown className="w-3 h-3 ml-1 opacity-40" />;
+};
+
 const SkeletonRow = () => (
   <tr className="animate-pulse">
     <td className="px-5 py-4">
       <div className="flex items-center gap-3">
         <div className="h-9 w-9 rounded-full skeleton" />
         <div className="space-y-2">
-          <div className="h-3 w-28 rounded skeleton" />
-          <div className="h-2.5 w-20 rounded skeleton" />
+          <div className="h-3 w-28 skeleton rounded" />
+          <div className="h-2.5 w-20 skeleton rounded" />
         </div>
       </div>
     </td>
-    <td className="px-5 py-4">
-      <div className="h-6 w-20 rounded-full skeleton" />
-    </td>
-    <td className="px-5 py-4">
-      <div className="h-6 w-16 rounded-full skeleton" />
-    </td>
-    <td className="px-5 py-4">
-      <div className="h-6 w-16 rounded-full skeleton" />
-    </td>
-    <td className="px-5 py-4 text-right">
-      <div className="ml-auto h-8 w-20 rounded-lg skeleton" />
-    </td>
+    <td className="px-5 py-4"><div className="h-6 w-20 rounded-full skeleton" /></td>
+    <td className="px-5 py-4"><div className="h-6 w-16 rounded-full skeleton" /></td>
+    <td className="px-5 py-4"><div className="h-6 w-16 rounded-full skeleton" /></td>
+    <td className="px-5 py-4 text-right"><div className="ml-auto h-8 w-20 rounded-lg skeleton" /></td>
   </tr>
 );
 
 const MembersTable = ({ users = [], onSearch, isLoading }) => {
-  const [editingUser,     setEditingUser]     = useState(null);
+  const [editingUser, setEditingUser] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [activeFilter,    setActiveFilter]    = useState('all');
-  const [localSearch,     setLocalSearch]     = useState('');
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [localSearch, setLocalSearch] = useState('');
+  const [sortKey, setSortKey] = useState(null);
+  const [sortDir, setSortDir] = useState(null);
+
+  const handleSort = (key) => {
+    if (sortKey === key) {
+      if (sortDir === 'asc') { setSortDir('desc'); }
+      else if (sortDir === 'desc') { setSortKey(null); setSortDir(null); }
+      else { setSortDir('asc'); }
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  };
 
   const handleEditUser = (user) => {
     setEditingUser(user);
@@ -132,28 +154,35 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
   const counts = useMemo(() => {
     const c = { all: usersWithStatus.length, active: 0, inactive: 0, pending: 0, denied: 0 };
     usersWithStatus.forEach(({ _displayStatus: s }) => {
-      if (s === 'active')        c.active++;
+      if (s === 'active') c.active++;
       else if (s === 'inactive') c.inactive++;
-      else if (s === 'pending')  c.pending++;
-      else if (s === 'denied')   c.denied++;
+      else if (s === 'pending') c.pending++;
+      else if (s === 'denied') c.denied++;
     });
     return c;
   }, [usersWithStatus]);
 
-  const filteredUsers = useMemo(
-    () => activeFilter === 'all'
+  const filteredUsers = useMemo(() => {
+    let list = activeFilter === 'all'
       ? usersWithStatus
-      : usersWithStatus.filter(u => u._displayStatus === activeFilter),
-    [usersWithStatus, activeFilter]
-  );
+      : usersWithStatus.filter(u => u._displayStatus === activeFilter);
+
+    if (sortKey) {
+      list = [...list].sort((a, b) => {
+        const aVal = a[sortKey] ?? '';
+        const bVal = b[sortKey] ?? '';
+        const cmp = String(aVal).localeCompare(String(bVal));
+        return sortDir === 'asc' ? cmp : -cmp;
+      });
+    }
+
+    return list;
+  }, [usersWithStatus, activeFilter, sortKey, sortDir]);
 
   return (
     <>
       <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-
-        {/* Header */}
         <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 border border-primary/10">
               <Users size={18} strokeWidth={2} className="text-primary" />
@@ -168,46 +197,38 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
             </div>
           </div>
 
-          {/* Search */}
           <div className="relative w-full sm:w-64">
-            <Search
-              size={15}
-              strokeWidth={2}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
-            />
+            <Search size={15} strokeWidth={2} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
             <input
               type="text"
               value={localSearch}
               placeholder="Search members..."
               onChange={handleSearchChange}
+              aria-label="Search members"
               className="w-full rounded-lg border border-border bg-muted/30 py-2 pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring"
             />
           </div>
         </div>
 
-        {/* Filter tabs */}
-        <div className="flex items-center gap-0.5 overflow-x-auto border-b border-border px-4">
+        <div className="flex items-center gap-0.5 overflow-x-auto border-b border-border px-4 no-scrollbar">
           {FILTER_TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveFilter(tab.id)}
               className={cn(
-                'inline-flex shrink-0 items-center gap-1.5 border-b-2 px-4 py-3 text-xs font-semibold transition-all',
+                'inline-flex shrink-0 items-center gap-1.5 border-b-2 px-4 py-3 text-xs font-semibold transition-all touch-target',
                 activeFilter === tab.id
                   ? 'border-primary text-primary'
                   : 'border-transparent text-muted-foreground hover:text-foreground',
               )}
+              aria-pressed={activeFilter === tab.id}
             >
               {tab.label}
               {counts[tab.id] > 0 && (
-                <span
-                  className={cn(
-                    'rounded-full px-1.5 py-0.5 text-[10px] font-bold transition-colors',
-                    activeFilter === tab.id
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground',
-                  )}
-                >
+                <span className={cn(
+                  'rounded-full px-1.5 py-0.5 text-[10px] font-bold transition-colors',
+                  activeFilter === tab.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+                )}>
                   {counts[tab.id]}
                 </span>
               )}
@@ -215,17 +236,24 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
           ))}
         </div>
 
-        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] table-auto text-left text-sm">
-
-            <thead className="border-b border-border bg-muted/30 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+            <thead className="border-b border-border bg-muted/30 text-caption font-semibold uppercase tracking-wider text-muted-foreground">
               <tr>
-                <th className="px-5 py-3">Member</th>
-                <th className="px-5 py-3">Status</th>
-                <th className="px-5 py-3">Meal Bill</th>
-                <th className="px-5 py-3">Gas Bill</th>
-                <th className="px-5 py-3 text-right">Actions</th>
+                {COLUMNS.map((col) => (
+                  <th
+                    key={col.id}
+                    className={cn('px-5 py-3', col.align === 'right' && 'text-right', col.sortKey && 'cursor-pointer select-none hover:text-foreground transition-colors')}
+                    onClick={() => col.sortKey && handleSort(col.sortKey)}
+                    aria-sort={sortKey === col.sortKey ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
+                    scope="col"
+                  >
+                    <span className="inline-flex items-center">
+                      {col.label}
+                      {col.sortKey && <SortIcon direction={sortKey === col.sortKey ? sortDir : null} />}
+                    </span>
+                  </th>
+                ))}
               </tr>
             </thead>
 
@@ -237,13 +265,7 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
                   <tr key={user._id} className="group transition-colors hover:bg-muted/40">
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
-                        <div
-                          className={cn(
-                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-full',
-                            'bg-gradient-to-br text-sm font-bold text-white shadow-sm',
-                            avatarGradient(user.name),
-                          )}
-                        >
+                        <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-full', 'bg-gradient-to-br text-sm font-bold text-white shadow-sm', avatarGradient(user.name))}>
                           {user.name?.charAt(0).toUpperCase() ?? 'U'}
                         </div>
                         <div className="min-w-0">
@@ -254,7 +276,7 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
                             {user.email}
                           </p>
                           {user.phone && (
-                            <p className="text-[10px] text-muted-foreground/60">
+                            <p className="text-caption text-muted-foreground/60">
                               {user.phone}
                             </p>
                           )}
@@ -265,7 +287,7 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
                     <td className="px-5 py-3.5">
                       <div className="flex flex-col items-start gap-1.5">
                         <StatusBadge status={user._displayStatus} />
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
+                        <span className="text-caption font-bold uppercase tracking-wider text-muted-foreground/60">
                           {user.role}
                         </span>
                       </div>
@@ -291,9 +313,7 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
                       <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
                         <SlidersHorizontal size={22} strokeWidth={1.8} className="opacity-50" />
                       </div>
-                      <p className="text-sm font-semibold text-foreground">
-                        No members found
-                      </p>
+                      <p className="text-sm font-semibold text-foreground">No members found</p>
                       <p className="text-xs text-muted-foreground">
                         Try adjusting the filter or search query
                       </p>
@@ -306,11 +326,7 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
         </div>
       </div>
 
-      <UserEditModal
-        isOpen={isEditModalOpen}
-        onClose={handleCloseEditModal}
-        user={editingUser}
-      />
+      <UserEditModal isOpen={isEditModalOpen} onClose={handleCloseEditModal} user={editingUser} />
     </>
   );
 };

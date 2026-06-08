@@ -9,7 +9,7 @@ html.light {
   --brand-subtle: #EFF6FF;
   --brand-foreground: #FFFFFF;
 
-  /* Surfaces */
+  /* Surface hierarchy */
   --bg-base: #FFFFFF;
   --bg-subtle: #F8FAFC;
   --bg-muted: #F1F5F9;
@@ -21,7 +21,7 @@ html.light {
   --border-strong: #CBD5E1;
   --border-brand: #2563EB;
 
-  /* Text */
+  /* Text hierarchy */
   --text-primary: #0F172A;
   --text-secondary: #475569;
   --text-muted: #94A3B8;
@@ -29,7 +29,7 @@ html.light {
   --text-on-brand: #FFFFFF;
   --text-inverse: #F8FAFC;
 
-  /* Semantic */
+  /* Semantic tokens */
   --success: #16A34A;
   --success-bg: #F0FDF4;
   --success-border: #BBF7D0;
@@ -49,6 +49,19 @@ html.light {
   --info-bg: #F0F9FF;
   --info-border: #BAE6FD;
   --info-text: #0369A1;
+
+  /* Financial tokens */
+  --profit: #16A34A;
+  --profit-bg: #F0FDF4;
+  --profit-text: #15803D;
+
+  --loss: #DC2626;
+  --loss-bg: #FEF2F2;
+  --loss-text: #B91C1C;
+
+  --neutral: #6B7280;
+  --neutral-bg: #F3F4F6;
+  --neutral-text: #4B5563;
 
   /* Component */
   --input-bg: #FFFFFF;

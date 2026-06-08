@@ -47,17 +47,12 @@ const progressBarColors = {
   info: 'bg-info',
 };
 
-// ─── Single Toast ───
 const ToastItem = ({ id, type = 'info', title, message, duration = 4000, onRemove }) => {
-  const [visible, setVisible] = useState(true);
   const [paused, setPaused] = useState(false);
 
   useEffect(() => {
     if (paused) return;
-    const timer = setTimeout(() => {
-      setVisible(false);
-      setTimeout(() => onRemove(id), 300);
-    }, duration);
+    const timer = setTimeout(() => onRemove(id), duration);
     return () => clearTimeout(timer);
   }, [id, duration, onRemove, paused]);
 
@@ -80,20 +75,17 @@ const ToastItem = ({ id, type = 'info', title, message, duration = 4000, onRemov
         'overflow-hidden',
       )}
     >
-      {/* Icon */}
       <span className={clsx('shrink-0 mt-0.5', toastIconStyles[type])} aria-hidden="true">
         {ICONS[type]}
       </span>
 
-      {/* Content */}
       <div className="flex-1 min-w-0">
         {title && <p className="text-sm font-semibold text-foreground">{title}</p>}
         {message && <p className="text-sm text-muted-foreground mt-0.5 leading-snug">{message}</p>}
       </div>
 
-      {/* Close */}
       <button
-        onClick={() => { setVisible(false); setTimeout(() => onRemove(id), 300); }}
+        onClick={() => onRemove(id)}
         aria-label="Dismiss notification"
         className="shrink-0 p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
       >
@@ -102,7 +94,6 @@ const ToastItem = ({ id, type = 'info', title, message, duration = 4000, onRemov
         </svg>
       </button>
 
-      {/* Progress bar */}
       {!paused && (
         <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-muted overflow-hidden rounded-b-lg">
           <div
@@ -115,7 +106,6 @@ const ToastItem = ({ id, type = 'info', title, message, duration = 4000, onRemov
   );
 };
 
-// ─── Toast Container ───
 export const ToastContainer = ({ toasts = [], onRemove, position = 'bottom-right' }) => {
   const positionStyles = {
     'top-right': 'top-4 right-4',
@@ -142,7 +132,6 @@ export const ToastContainer = ({ toasts = [], onRemove, position = 'bottom-right
   );
 };
 
-// ─── useToast hook ───
 export const useToast = () => {
   const [toasts, setToasts] = useState([]);
 

@@ -1,76 +1,94 @@
 import { clsx } from 'clsx';
 
-// ─── Spinner ───
-export const Spinner = ({ size = 'md', className = '', color = 'primary', ...props }) => {
+export const Spinner = ({ size = 'md', className = '', color = 'primary' }) => {
   const sizes = {
-    xs: 'w-3 h-3 border-[2px]',
+    xs: 'w-3 h-3 border',
     sm: 'w-4 h-4 border-2',
-    md: 'w-6 h-6 border-2',
-    lg: 'w-8 h-8 border-[3px]',
-    xl: 'w-12 h-12 border-4',
+    md: 'w-5 h-5 border-2',
+    lg: 'w-7 h-7 border-2',
+    xl: 'w-9 h-9 border-[3px]',
   };
+
   const colors = {
-    primary: 'border-primary/20 border-t-primary',
-    white: 'border-white/20 border-t-white',
-    current: 'border-current/20 border-t-current',
+    primary: 'border-primary/30 border-t-primary',
+    white: 'border-white/30 border-t-white',
+    current: 'border-current/30 border-t-current',
   };
+
   return (
-    <span
+    <div
       role="status"
       aria-label="Loading"
-      className={clsx('inline-block rounded-full animate-spin', sizes[size], colors[color], className)}
-      {...props}
+      className={clsx(
+        'animate-spin rounded-full',
+        sizes[size],
+        colors[color] || colors.primary,
+        className,
+      )}
     />
   );
 };
 
-// ─── Dots ───
-export const DotsLoader = ({ size = 'md', className = '', ...props }) => {
-  const dotSizes = { sm: 'w-1.5 h-1.5', md: 'w-2 h-2', lg: 'w-3 h-3' };
+export const DotsLoader = ({ size = 'md', className = '' }) => {
+  const dotSizes = {
+    xs: 'w-1 h-1',
+    sm: 'w-1.5 h-1.5',
+    md: 'w-2 h-2',
+    lg: 'w-2.5 h-2.5',
+    xl: 'w-3 h-3',
+  };
+
   return (
-    <span role="status" aria-label="Loading" className={clsx('inline-flex items-center gap-1.5', className)} {...props}>
+    <div className={clsx('flex items-center gap-1', className)} role="status" aria-label="Loading">
       {[0, 1, 2].map((i) => (
-        <span
+        <div
           key={i}
-          style={{ animationDelay: `${i * 150}ms` }}
-          className={clsx('rounded-full bg-primary inline-block animate-bounce', dotSizes[size] ?? dotSizes.md)}
+          className={clsx(
+            dotSizes[size],
+            'rounded-full bg-current animate-bounce',
+          )}
+          style={{ animationDelay: `${i * 0.1}s`, animationDuration: '0.6s' }}
         />
       ))}
-      <span className="sr-only">Loading…</span>
-    </span>
+    </div>
   );
 };
 
-// ─── Pulse ───
-export const PulseLoader = ({ className = '', ...props }) => (
-  <span
+export const PulseLoader = ({ className = '' }) => (
+  <div className={clsx('flex items-center gap-2', className)} role="status" aria-label="Loading">
+    <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+      <div className="h-full bg-primary rounded-full animate-shimmer" style={{ width: '40%' }} />
+    </div>
+  </div>
+);
+
+export const Skeleton = ({ className = '', as: Component = 'div' }) => (
+  <Component className={clsx('skeleton', className)} aria-hidden="true" />
+);
+
+export const FullPageLoader = ({ label = 'Loading…' }) => (
+  <div
+    className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-background"
     role="status"
-    aria-label="Loading"
-    className={clsx('inline-block w-10 h-10 rounded-full bg-primary/40 animate-ping', className)}
-    {...props}
+    aria-label={label}
   >
-    <span className="sr-only">Loading…</span>
-  </span>
+    <div className="relative flex flex-col items-center gap-4 px-10 py-8 rounded-3xl border border-white/10 dark:border-white/5 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl shadow-2xl">
+      <Spinner size="xl" color="primary" />
+      <p className="text-sm font-semibold text-muted-foreground tracking-wide">
+        {label}
+      </p>
+    </div>
+  </div>
 );
 
-// ─── Skeleton (shimmer gradient, not pulse) ───
-export const Skeleton = ({ className = '', as: Tag = 'div', ...props }) => (
-  <Tag
-    aria-hidden="true"
-    className={clsx(
-      'skeleton',
-      className,
-    )}
-    {...props}
-  />
-);
-
-// ─── Default export ───
 const Loader = ({ variant = 'spinner', ...props }) => {
-  if (variant === 'dots') return <DotsLoader {...props} />;
-  if (variant === 'pulse') return <PulseLoader {...props} />;
-  if (variant === 'skeleton') return <Skeleton {...props} />;
-  return <Spinner {...props} />;
+  switch (variant) {
+    case 'dots': return <DotsLoader {...props} />;
+    case 'pulse': return <PulseLoader {...props} />;
+    case 'skeleton': return <Skeleton {...props} />;
+    case 'fullPage': return <FullPageLoader {...props} />;
+    default: return <Spinner {...props} />;
+  }
 };
 
 export default Loader;

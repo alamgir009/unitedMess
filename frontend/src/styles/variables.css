@@ -17,7 +17,6 @@
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
-  --radius-2xl: 20px;
   --radius-full: 9999px;
 
   /* === ELEVATION / SHADOW === */
@@ -41,7 +40,6 @@
   --duration-fast: 100ms;
   --duration-base: 180ms;
   --duration-slow: 300ms;
-  --duration-slower: 500ms;
   --ease-default: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
@@ -53,20 +51,21 @@
   --font-numeric: 'Inter', sans-serif;
 
   /* === FONT SCALE === */
-  --text-xs: 0.75rem;
-  --text-sm: 0.8125rem;
-  --text-base: 0.875rem;
-  --text-md: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.25rem;
-  --text-2xl: 1.5rem;
-  --text-3xl: 1.875rem;
-  --text-4xl: 2.25rem;
+  --text-caption: 0.75rem;
+  --text-label: 0.8125rem;
+  --text-body: 1rem;
+  --text-body-lg: 1.0625rem;
+  --text-h4: 1.125rem;
+  --text-h3: 1.25rem;
+  --text-h2: 1.5rem;
+  --text-h1: 2rem;
+  --text-display: 2.5rem;
 
   /* === FONT WEIGHTS === */
   --weight-normal: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
+  --weight-bold: 700;
 
   /* === LINE HEIGHTS === */
   --leading-tight: 1.2;
@@ -80,76 +79,19 @@
   --tracking-wide: 0.02em;
   --tracking-wider: 0.05em;
 
-  /* === BRAND (light defaults, overridden by themes) === */
-  --brand: #2563EB;
-  --brand-rgb: 37, 99, 235;
-  --brand-hover: #1D4ED8;
-  --brand-subtle: #EFF6FF;
-  --brand-foreground: #FFFFFF;
-
-  /* === SURFACES (light) === */
-  --bg-base: #FFFFFF;
-  --bg-subtle: #F8FAFC;
-  --bg-muted: #F1F5F9;
-  --bg-overlay: rgba(15, 23, 42, 0.5);
-
-  /* === BORDERS (light) === */
-  --border-default: #E2E8F0;
-  --border-muted: #F1F5F9;
-  --border-strong: #CBD5E1;
-  --border-brand: #2563EB;
-
-  /* === TEXT (light) === */
-  --text-primary: #0F172A;
-  --text-secondary: #475569;
-  --text-muted: #94A3B8;
-  --text-disabled: #CBD5E1;
-  --text-on-brand: #FFFFFF;
-  --text-inverse: #F8FAFC;
-
-  /* === SEMANTIC (light) === */
-  --success: #16A34A;
-  --success-bg: #F0FDF4;
-  --success-border: #BBF7D0;
-  --success-text: #15803D;
-
-  --warning: #D97706;
-  --warning-bg: #FFFBEB;
-  --warning-border: #FDE68A;
-  --warning-text: #B45309;
-
-  --danger: #DC2626;
-  --danger-bg: #FEF2F2;
-  --danger-border: #FECACA;
-  --danger-text: #B91C1C;
-
-  --info: #0284C7;
-  --info-bg: #F0F9FF;
-  --info-border: #BAE6FD;
-  --info-text: #0369A1;
-
   /* === COMPONENT SIZES === */
   --input-height-sm: 32px;
   --input-height-md: 40px;
   --input-height-lg: 48px;
-  --input-bg: #FFFFFF;
-  --input-bg-disabled: #F8FAFC;
-  --input-border: #CBD5E1;
-  --input-border-hover: #94A3B8;
-  --input-border-focus: #2563EB;
-  --input-border-error: #DC2626;
-
   --btn-height-sm: 32px;
   --btn-height-md: 40px;
   --btn-height-lg: 48px;
-
   --sidebar-width: 240px;
   --sidebar-width-collapsed: 64px;
   --navbar-height: 60px;
   --content-max-width: 1280px;
 
-  /* === TAILWIND-COMPATIBLE HSL TOKENS (Shadcn-style) === */
-  /* These are dynamically set by light.css / dark.css */
+  /* === TAILWIND-COMPATIBLE HSL TOKENS (set by themes) === */
   --background: 0 0% 100%;
   --foreground: 222 47% 11%;
   --card: 0 0% 100%;

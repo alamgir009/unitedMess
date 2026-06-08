@@ -37,6 +37,7 @@ const Sidebar = ({ isOpen, onClose }) => {
   const linkClass = ({ isActive }) =>
     cn(
       'group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors duration-150',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
       isActive
         ? 'bg-primary/10 text-primary'
         : 'text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -44,23 +45,23 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   return (
     <>
-      {/* Mobile overlay */}
       <div
         className={cn(
           'fixed inset-0 z-40 bg-black/50 transition-opacity lg:hidden',
           isOpen ? 'opacity-100 ease-out duration-300' : 'opacity-0 ease-in duration-200 pointer-events-none',
         )}
         onClick={onClose}
+        aria-hidden="true"
       />
 
-      <div
+      <aside
         className={cn(
           'fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border text-foreground',
           'transition-all duration-300 transform lg:translate-x-0 lg:static lg:inset-auto lg:flex lg:flex-col',
           isOpen ? 'translate-x-0' : '-translate-x-full',
         )}
+        aria-label="Main navigation"
       >
-        {/* Header */}
         <div className="flex h-16 shrink-0 items-center justify-between px-6 bg-muted/30 border-b border-border transition-colors">
           <div className="flex items-center gap-2">
             <div className="relative shrink-0">
@@ -78,42 +79,47 @@ const Sidebar = ({ isOpen, onClose }) => {
             type="button"
             className="lg:hidden text-muted-foreground hover:text-foreground transition-colors"
             onClick={onClose}
+            aria-label="Close sidebar"
           >
             <X className="h-6 w-6" />
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
+        <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1" aria-label="Sidebar">
           {navigation.map((item) => (
-            <NavLink key={item.name} to={item.href} className={linkClass}>
-              <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
+            <NavLink
+              key={item.name}
+              to={item.href}
+              className={linkClass}
+              aria-label={item.name}
+            >
+              <item.icon className="mr-3 h-5 w-5 flex-shrink-0" aria-hidden="true" />
               {item.name}
             </NavLink>
           ))}
         </nav>
 
-        {/* Footer actions */}
         <div className="border-t border-border p-4 space-y-1">
           {user?.role === 'admin' && (
-            <NavLink to="/settings" className={linkClass}>
-              <Settings className="mr-3 h-5 w-5 flex-shrink-0" />
+            <NavLink to="/settings" className={linkClass} aria-label="System Settings">
+              <Settings className="mr-3 h-5 w-5 flex-shrink-0" aria-hidden="true" />
               System Settings
             </NavLink>
           )}
-          <NavLink to="/profile" className={linkClass}>
-            <UserCircle className="mr-3 h-5 w-5 flex-shrink-0" />
+          <NavLink to="/profile" className={linkClass} aria-label="Profile">
+            <UserCircle className="mr-3 h-5 w-5 flex-shrink-0" aria-hidden="true" />
             Profile
           </NavLink>
           <button
             onClick={handleLogout}
-            className="w-full group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-danger hover:bg-danger-bg transition-colors duration-150"
+            className="w-full group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-danger hover:bg-danger-bg transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="Logout"
           >
-            <LogOut className="mr-3 h-5 w-5 flex-shrink-0" />
+            <LogOut className="mr-3 h-5 w-5 flex-shrink-0" aria-hidden="true" />
             Logout
           </button>
         </div>
-      </div>
+      </aside>
     </>
   );
 };

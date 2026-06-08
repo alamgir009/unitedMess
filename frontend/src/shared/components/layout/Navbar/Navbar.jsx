@@ -50,29 +50,23 @@ const Navbar = () => {
           padding: scrolled ? '0 16px' : '0 24px',
         }}
       >
-        <div
+        <nav
           className={`relative flex items-center justify-between px-5 py-3 transition-all duration-500 ${scrolled ? 'rounded-lg' : 'rounded-2xl'}`}
           style={{
             background: scrolled
               ? isDark
-                ? 'rgba(15, 23, 42, 0.6)'
-                : 'rgba(255, 255, 255, 0.6)'
+                ? 'var(--navbar-bg)'
+                : 'var(--navbar-bg)'
               : 'transparent',
             backdropFilter: scrolled ? 'blur(24px) saturate(200%)' : 'none',
             WebkitBackdropFilter: scrolled ? 'blur(24px) saturate(200%)' : 'none',
             border: scrolled
-              ? isDark
-                ? '1px solid rgba(255,255,255,0.1)'
-                : '1px solid rgba(255,255,255,0.8)'
+              ? '1px solid var(--navbar-border)'
               : '1px solid transparent',
-            boxShadow: scrolled
-              ? isDark
-                ? '0 10px 40px -10px rgba(0,0,0,0.5)'
-                : '0 10px 40px -10px rgba(99,102,241,0.2)'
-              : 'none',
+            boxShadow: scrolled ? 'var(--shadow-md)' : 'none',
           }}
+          aria-label="Main navigation"
         >
-          {/* Logo */}
           <Link
             to="/"
             className="flex items-center shrink-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
@@ -81,7 +75,7 @@ const Navbar = () => {
             <div className="relative shrink-0">
               <img
                 src="/assets/icons/unitedmess-icon-1024.png"
-                alt="UnitedMess Logo"
+                alt=""
                 className="w-10 h-10 object-contain"
               />
             </div>
@@ -90,7 +84,6 @@ const Navbar = () => {
             </span>
           </Link>
 
-          {/* Desktop Nav Links */}
           <ul className="hidden md:flex items-center gap-1" role="list">
             {NAV_LINKS.map(({ label, href }) => {
               const isActive = location.pathname === href;
@@ -98,7 +91,7 @@ const Navbar = () => {
                 <li key={href} className="relative">
                   <Link
                     to={href}
-                    className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                    className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                       isActive
                         ? 'text-primary bg-primary/10'
                         : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -112,13 +105,11 @@ const Navbar = () => {
             })}
           </ul>
 
-          {/* Right actions */}
           <div className="flex items-center gap-2">
-            {/* Theme toggle */}
             <button
               onClick={toggleTheme}
               aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/20 dark:hover:bg-white/10 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/20 dark:hover:bg-white/10 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring touch-target"
             >
               <motion.span
                 key={theme}
@@ -130,29 +121,26 @@ const Navbar = () => {
               </motion.span>
             </button>
 
-            {/* Sign In */}
             <Link
               to="/login"
-              className="hidden md:inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-foreground border border-border hover:bg-muted/50 transition-all duration-200 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="hidden md:inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-foreground border border-border hover:bg-muted/50 transition-all duration-150 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring touch-target"
             >
               Sign In
             </Link>
 
-            {/* Get Started */}
             <Link
               to="/register"
-              className="hidden md:inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white shadow-md hover:opacity-90 hover:-translate-y-px transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="hidden md:inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white shadow-md hover:opacity-90 hover:-translate-y-px transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               style={{ background: 'var(--gradient-primary)' }}
             >
               Get Started
             </Link>
 
-            {/* Mobile hamburger */}
             <button
               onClick={() => setMobileOpen((o) => !o)}
               aria-expanded={mobileOpen}
               aria-label="Toggle mobile menu"
-              className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/20 dark:hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/20 dark:hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring touch-target"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 {mobileOpen
@@ -162,9 +150,8 @@ const Navbar = () => {
               </svg>
             </button>
           </div>
-        </div>
+        </nav>
 
-        {/* Mobile Menu */}
         <AnimatePresence>
           {mobileOpen && (
             <motion.div
@@ -175,11 +162,11 @@ const Navbar = () => {
               transition={{ duration: 0.2, ease: 'easeOut' }}
               className="mt-2 rounded-xl overflow-hidden"
               style={{
-                background: isDark ? 'rgba(15,23,42,0.85)' : 'rgba(255,255,255,0.85)',
+                background: isDark ? 'var(--navbar-bg)' : 'var(--navbar-bg)',
                 backdropFilter: 'blur(24px) saturate(180%)',
                 WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-                border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.8)',
-                boxShadow: '0 12px 40px rgba(0,0,0,0.2)',
+                border: '1px solid var(--navbar-border)',
+                boxShadow: 'var(--shadow-lg)',
               }}
             >
               <motion.div
@@ -224,7 +211,7 @@ const Navbar = () => {
                 >
                   <Link
                     to="/login"
-                    className="px-4 py-3 rounded-lg text-sm font-semibold text-center border border-border hover:bg-muted/50 transition-colors text-foreground"
+                    className="px-4 py-3 rounded-lg text-sm font-semibold text-center border border-border hover:bg-muted/50 transition-colors text-foreground touch-target"
                   >
                     Sign In
                   </Link>

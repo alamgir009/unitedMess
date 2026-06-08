@@ -9,6 +9,9 @@ const variants = {
   error: 'bg-danger-bg text-danger-text border border-danger-border',
   info: 'bg-info-bg text-info-text border border-info-border',
   glass: 'bg-card text-foreground border border-border',
+  outline: 'bg-transparent text-foreground border border-border',
+  profit: 'bg-profit-bg text-profit-text border border-success-border',
+  loss: 'bg-loss-bg text-loss-text border border-danger-border',
 };
 
 const dotColors = {
@@ -20,6 +23,9 @@ const dotColors = {
   error: 'bg-danger',
   info: 'bg-info',
   glass: 'bg-foreground',
+  outline: 'bg-foreground',
+  profit: 'bg-profit',
+  loss: 'bg-loss',
 };
 
 const sizes = {
@@ -34,14 +40,22 @@ const Badge = ({
   className = '',
   children,
   dot = false,
+  onClick,
   ...props
 }) => {
+  const isClickable = !!onClick;
+
   return (
     <span
+      role={isClickable ? 'button' : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={isClickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick?.(e); } : undefined}
       className={clsx(
         'inline-flex items-center gap-1.5 font-medium',
-        variants[variant],
+        variants[variant] || variants.default,
         sizes[size],
+        isClickable && 'cursor-pointer hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
         className,
       )}
       {...props}

@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { clsx } from 'clsx';
 
 export const TabsList = ({ children, variant = 'underline', className = '' }) => {
   const wrapperStyles = {
-    underline: 'flex border-b border-border gap-1',
-    pill: 'flex bg-muted p-1 rounded-lg gap-1',
-    glass: 'flex bg-card/60 backdrop-blur-sm p-1 rounded-lg gap-1 border border-border',
+    underline: 'flex border-b border-border gap-1 overflow-x-auto no-scrollbar',
+    pill: 'flex bg-muted p-1 rounded-lg gap-1 overflow-x-auto no-scrollbar',
+    glass: 'flex bg-card/60 backdrop-blur-sm p-1 rounded-lg gap-1 border border-border overflow-x-auto no-scrollbar',
   };
   return (
     <div role="tablist" className={clsx(wrapperStyles[variant], className)}>
@@ -26,8 +26,8 @@ export const TabsTrigger = ({
 }) => {
   const baseStyles = [
     'inline-flex items-center justify-center gap-2 px-4 py-2',
-    'text-sm font-medium',
-    'transition-all duration-200',
+    'text-sm font-medium whitespace-nowrap',
+    'transition-all duration-150',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
     'disabled:pointer-events-none disabled:opacity-50',
     'touch-target',
@@ -75,9 +75,9 @@ export const TabsContent = ({ children, isActive, id, labelledBy, className = ''
     aria-labelledby={labelledBy}
     hidden={!isActive}
     tabIndex={0}
-    className={clsx('focus:outline-none animate-fade-in', className)}
+    className={clsx('focus:outline-none', className)}
   >
-    {isActive && children}
+    {isActive && <div className="animate-fade-in">{children}</div>}
   </div>
 );
 

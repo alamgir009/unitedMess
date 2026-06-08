@@ -6,7 +6,8 @@ const Card = forwardRef(({
   padding = 'md',
   className = '',
   children,
-  hover = false,
+  interactive = false,
+  selected = false,
   ...props
 }, ref) => {
   const variants = {
@@ -25,14 +26,20 @@ const Card = forwardRef(({
     xl: 'p-10',
   };
 
-  const hoverStyles = hover
-    ? 'transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md cursor-pointer'
-    : [];
+  const interactiveStyles = interactive
+    ? 'transition-all duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+    : '';
+
+  const selectedStyle = selected
+    ? 'ring-2 ring-primary border-primary'
+    : '';
 
   return (
     <div
       ref={ref}
-      className={clsx(variants[variant], paddings[padding], hoverStyles, className)}
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      className={clsx(variants[variant], paddings[padding], interactiveStyles, selectedStyle, className)}
       {...props}
     >
       {children}

@@ -8,7 +8,7 @@ html.dark {
   --brand-subtle: #1E3A5F;
   --brand-foreground: #FFFFFF;
 
-  /* Surfaces */
+  /* Surface hierarchy */
   --bg-base: #0F172A;
   --bg-subtle: #1E293B;
   --bg-muted: #263040;
@@ -20,7 +20,7 @@ html.dark {
   --border-strong: #2D3F55;
   --border-brand: #3B82F6;
 
-  /* Text */
+  /* Text hierarchy */
   --text-primary: #F1F5F9;
   --text-secondary: #94A3B8;
   --text-muted: #475569;
@@ -28,7 +28,7 @@ html.dark {
   --text-on-brand: #FFFFFF;
   --text-inverse: #F8FAFC;
 
-  /* Semantic */
+  /* Semantic tokens */
   --success: #22C55E;
   --success-bg: #052E16;
   --success-border: #166534;
@@ -48,6 +48,19 @@ html.dark {
   --info-bg: #0C1A2E;
   --info-border: #1E3A5F;
   --info-text: #7DD3FC;
+
+  /* Financial tokens */
+  --profit: #22C55E;
+  --profit-bg: #052E16;
+  --profit-text: #4ADE80;
+
+  --loss: #EF4444;
+  --loss-bg: #450A0A;
+  --loss-text: #FCA5A5;
+
+  --neutral: #9CA3AF;
+  --neutral-bg: #1F2937;
+  --neutral-text: #D1D5DB;
 
   /* Component */
   --input-bg: #1E293B;

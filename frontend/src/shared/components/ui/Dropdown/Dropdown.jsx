@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { clsx } from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -10,17 +10,23 @@ const Dropdown = ({
   className = '',
 }) => {
   const [open, setOpen] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
   const containerRef = useRef(null);
-  const firstItemRef = useRef(null);
+  const itemRefs = useRef([]);
+
+  const close = useCallback(() => {
+    setOpen(false);
+    setFocusedIndex(-1);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
-        setOpen(false);
+        close();
       }
     };
     const handleEsc = (e) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') close();
     };
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleEsc);
@@ -28,15 +34,50 @@ const Dropdown = ({
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleEsc);
     };
-  }, []);
+  }, [close]);
 
   useEffect(() => {
-    if (open) setTimeout(() => firstItemRef.current?.focus(), 50);
-  }, [open]);
+    if (open) {
+      const firstEnabled = items.findIndex((i) => !i.separator && !i.disabled);
+      setFocusedIndex(firstEnabled);
+      setTimeout(() => itemRefs.current[firstEnabled]?.focus(), 50);
+    }
+  }, [open, items]);
+
+  const handleKeyDown = useCallback((e) => {
+    if (!open) return;
+    const enabledItems = items.reduce((acc, item, i) => {
+      if (!item.separator && !item.disabled) acc.push(i);
+      return acc;
+    }, []);
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        const next = enabledItems[(enabledItems.indexOf(focusedIndex) + 1) % enabledItems.length];
+        setFocusedIndex(next);
+        itemRefs.current[next]?.focus();
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        const prev = enabledItems[(enabledItems.indexOf(focusedIndex) - 1 + enabledItems.length) % enabledItems.length];
+        setFocusedIndex(prev);
+        itemRefs.current[prev]?.focus();
+        break;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        const activeItem = items[focusedIndex];
+        if (activeItem && !activeItem.disabled && !activeItem.separator) {
+          activeItem.onClick?.();
+          close();
+        }
+        break;
+    }
+  }, [open, items, focusedIndex, close]);
 
   return (
-    <div ref={containerRef} className={clsx('relative inline-block', className)}>
-      {/* Trigger */}
+    <div ref={containerRef} className={clsx('relative inline-block', className)} onKeyDown={handleKeyDown}>
       <div
         onClick={() => setOpen((o) => !o)}
         onKeyDown={(e) => {
@@ -51,7 +92,6 @@ const Dropdown = ({
         {trigger}
       </div>
 
-      {/* Menu */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -77,18 +117,20 @@ const Dropdown = ({
               return (
                 <button
                   key={i}
-                  ref={i === 0 ? firstItemRef : undefined}
+                  ref={(el) => (itemRefs.current[i] = el)}
                   role="menuitem"
+                  tabIndex={focusedIndex === i ? 0 : -1}
                   disabled={item.disabled}
                   onClick={() => {
                     item.onClick?.();
-                    setOpen(false);
+                    close();
                   }}
                   className={clsx(
                     'w-full flex items-center gap-3 px-4 py-2.5',
                     'text-left text-sm',
                     'transition-colors duration-100',
                     'focus-visible:outline-none focus-visible:bg-muted',
+                    focusedIndex === i && 'bg-muted',
                     item.destructive
                       ? 'text-danger hover:bg-danger-bg focus-visible:bg-danger-bg'
                       : 'text-foreground hover:bg-muted focus-visible:bg-muted',

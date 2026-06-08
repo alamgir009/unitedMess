@@ -1,5 +1,6 @@
-import { forwardRef } from 'react';
+import { forwardRef, useState } from 'react';
 import { clsx } from 'clsx';
+import { Eye, EyeOff, X } from 'lucide-react';
 
 const Input = forwardRef(({
   variant = 'default',
@@ -12,11 +13,18 @@ const Input = forwardRef(({
   rightIcon,
   className = '',
   disabled = false,
+  readOnly = false,
+  clearable = false,
   id,
   type = 'text',
+  value,
+  onChange,
   ...props
 }, ref) => {
   const inputId = id || `input-${Math.random().toString(36).slice(2, 9)}`;
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === 'password';
+  const resolvedType = isPassword && showPassword ? 'text' : type;
 
   const stateBorder = error
     ? 'border-destructive focus:ring-destructive/30 focus:border-destructive'
@@ -57,9 +65,10 @@ const Input = forwardRef(({
     lg: 'h-12 text-base',
   };
 
+  const hasRightAction = isPassword || (clearable && value);
   const iconPadding = {
     left: leftIcon ? 'pl-10' : 'pl-3',
-    right: rightIcon ? 'pr-10' : 'pr-3',
+    right: hasRightAction ? 'pr-10' : rightIcon ? 'pr-10' : 'pr-3',
   };
 
   return (
@@ -80,8 +89,11 @@ const Input = forwardRef(({
         <input
           ref={ref}
           id={inputId}
-          type={type}
+          type={resolvedType}
           disabled={disabled}
+          readOnly={readOnly}
+          value={value}
+          onChange={onChange}
           aria-invalid={!!error}
           aria-describedby={
             error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined
@@ -93,12 +105,35 @@ const Input = forwardRef(({
             iconPadding.right,
             'w-full',
             disabled && 'opacity-50 cursor-not-allowed',
+            readOnly && 'cursor-default opacity-80',
           )}
           {...props}
         />
 
-        {rightIcon && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword((s) => !s)}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        )}
+
+        {!isPassword && clearable && value && (
+          <button
+            type="button"
+            onClick={() => onChange?.({ target: { value: '' } } )}
+            aria-label="Clear input"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+
+        {!isPassword && !(clearable && value) && rightIcon && (
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
             {rightIcon}
           </span>
         )}

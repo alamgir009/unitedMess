@@ -1,7 +1,6 @@
+import { forwardRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
-
-const VARIANTS = ['primary', 'secondary', 'outline', 'ghost', 'danger', 'success'];
 
 const variantStyles = {
   primary:
@@ -32,10 +31,9 @@ const iconSizeStyles = {
   xl: 'h-14 w-14 rounded-lg',
 };
 
-const Button = ({
+const Button = forwardRef(({
   children,
   variant = 'primary',
-  type,
   size = 'md',
   isLoading = false,
   iconOnly = false,
@@ -44,26 +42,23 @@ const Button = ({
   disabled,
   onClick,
   ...props
-}) => {
-  const resolvedVariant = (type && VARIANTS.includes(type)) ? type : variant;
-  const handleClick = (e) => {
-    if (!disabled && !isLoading) onClick?.(e);
-  };
-
+}, ref) => {
   return (
     <button
-      type={type && !VARIANTS.includes(type) ? type : 'button'}
+      ref={ref}
+      type="button"
+      disabled={disabled || isLoading}
+      aria-busy={isLoading}
       className={clsx(
         'inline-flex items-center justify-center font-medium border transition-all duration-100 ease-out',
         'active:scale-[0.97] disabled:opacity-45 disabled:cursor-not-allowed disabled:pointer-events-none',
         'select-none whitespace-nowrap -webkit-tap-highlight-color-transparent',
-        variantStyles[resolvedVariant] || variantStyles.primary,
+        variantStyles[variant] || variantStyles.primary,
         iconOnly ? iconSizeStyles[size] : sizeStyles[size],
         fullWidth && 'w-full',
         className,
       )}
-      disabled={disabled || isLoading}
-      onClick={handleClick}
+      onClick={onClick}
       {...props}
     >
       {isLoading && (
@@ -75,6 +70,8 @@ const Button = ({
       {children}
     </button>
   );
-};
+});
+
+Button.displayName = 'Button';
 
 export default Button;

@@ -1,1 +1,1 @@
-export { default, Spinner, DotsLoader, PulseLoader, Skeleton } from './Loader.jsx';
+export { default, Spinner, DotsLoader, PulseLoader, Skeleton, FullPageLoader } from './Loader.jsx';
