@@ -24,6 +24,7 @@ import PaymentHeader    from '../../components/PaymentHeader/PaymentHeader';
 import PaymentStatsBar  from '../../components/PaymentStatsBar/PaymentStatsBar';
 import PaymentSearchBar from '../../components/PaymentSearchBar/PaymentSearchBar';
 import PaymentList      from '../../components/PaymentList/PaymentList';
+import AdminPaymentView from '../../components/AdminPaymentView/AdminPaymentView';
 import PaymentForm      from '../../components/PaymentForm/PaymentForm';
 import PaymentModal     from '../../components/PaymentModal/PaymentModal';
 import MessBillInvoice  from '../../components/MessBillInvoice/MessBillInvoice';
@@ -481,7 +482,7 @@ const PaymentPage = () => {
                         )}
                     </AnimatePresence>
 
-                    {/* Payment list */}
+                    {/* Payment list — Admin gets grouped expandable rows, users get paginated list */}
                     {isListLoading && (!payments || payments.length === 0) ? (
                         <div className={`grid gap-3 ${
                             viewMode === 'grid'
@@ -490,6 +491,16 @@ const PaymentPage = () => {
                         }`}>
                             {[1, 2, 3, 4, 5, 6].map(n => <SkeletonCard key={n} />)}
                         </div>
+                    ) : isAdmin ? (
+                        <AdminPaymentView
+                            payments={filtered}
+                            viewMode={viewMode}
+                            onEdit={openEdit}
+                            onDelete={handleDelete}
+                            onViewInvoice={handleViewInvoice}
+                            onVerify={handleVerifyClick}
+                            isLoading={isListLoading}
+                        />
                     ) : (
                         <>
                             <PaymentList
