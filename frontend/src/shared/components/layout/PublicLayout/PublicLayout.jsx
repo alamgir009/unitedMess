@@ -13,7 +13,7 @@ const PublicLayout = () => {
             <Navbar />
 
             {/* Main content expands to push footer down */}
-            <main className="flex-1 w-full">
+            <main className="flex-1 w-full pt-20">
                 <Outlet />
             </main>
 
