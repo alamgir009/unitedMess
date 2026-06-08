@@ -369,7 +369,7 @@ const RegisterForm = () => {
 
       {/* Submit button */}
       <div>
-        <Button type="submit" isLoading={isLoading} className="w-full">
+        <Button type="submit" isLoading={isLoading} size="lg" className="w-full">
           Create Account
         </Button>
       </div>

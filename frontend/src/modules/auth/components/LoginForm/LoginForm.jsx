@@ -101,7 +101,7 @@ const LoginForm = () => {
             )}
 
             <div>
-                <Button type="submit" isLoading={isLoading} className="w-full">
+                <Button type="submit" isLoading={isLoading} size="lg" className="w-full">
                     Sign in
                 </Button>
             </div>
