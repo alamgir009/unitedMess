@@ -11,6 +11,7 @@ const Input = forwardRef(({
   success,
   leftIcon,
   rightIcon,
+  rightAction,
   className = '',
   disabled = false,
   readOnly = false,
@@ -64,7 +65,7 @@ const Input = forwardRef(({
 
   const iconPadding = {
     left: leftIcon ? 'pl-10' : 'pl-3',
-    right: (clearable && value) || rightIcon ? 'pr-10' : 'pr-3',
+    right: (clearable && value) || rightIcon || rightAction ? 'pr-10' : 'pr-3',
   };
 
   return (
@@ -117,9 +118,15 @@ const Input = forwardRef(({
           </button>
         )}
 
-        {rightIcon && !(clearable && value) && (
+        {rightIcon && !(clearable && value) && !rightAction && (
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
             {rightIcon}
+          </span>
+        )}
+
+        {rightAction && !(clearable && value) && (
+          <span className="absolute right-3 top-1/2 -translate-y-1/2">
+            {rightAction}
           </span>
         )}
       </div>
