@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -29,6 +30,15 @@ const Sidebar = ({ isOpen, onClose }) => {
     { name: 'Notifications', href: '/notifications', icon: Bell },
   ];
 
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
+
   const handleLogout = () => {
     dispatch(logout());
     navigate('/');
@@ -36,7 +46,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   const linkClass = ({ isActive }) =>
     cn(
-      'group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors duration-150',
+      'group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors duration-150',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
       isActive
         ? 'bg-primary/10 text-primary'
@@ -62,26 +72,24 @@ const Sidebar = ({ isOpen, onClose }) => {
         )}
         aria-label="Main navigation"
       >
-        <div className="flex h-16 shrink-0 items-center justify-between px-6 bg-muted/30 border-b border-border transition-colors">
-          <div className="flex items-center gap-2">
-            <div className="relative shrink-0">
-              <img
-                src="/assets/icons/unitedmess-icon-1024.png"
-                alt="UnitedMess Logo"
-                className="w-10 h-10 object-contain"
-              />
-            </div>
+        <div className="flex h-16 shrink-0 items-center justify-between px-6 bg-muted/30 border-b border-border">
+          <div className="flex items-center gap-1.5">
+            <img
+              src="/assets/icons/unitedmess-icon-1024.png"
+              alt="UnitedMess"
+              className="w-8 h-8 shrink-0"
+            />
             <span className="font-bold text-base tracking-tight text-foreground leading-none">
               United<span className="text-gradient">Mess</span>
             </span>
           </div>
           <button
             type="button"
-            className="lg:hidden text-muted-foreground hover:text-foreground transition-colors"
+            className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             onClick={onClose}
             aria-label="Close sidebar"
           >
-            <X className="h-6 w-6" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
@@ -93,29 +101,29 @@ const Sidebar = ({ isOpen, onClose }) => {
               className={linkClass}
               aria-label={item.name}
             >
-              <item.icon className="mr-3 h-5 w-5 flex-shrink-0" aria-hidden="true" />
+              <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
               {item.name}
             </NavLink>
           ))}
         </nav>
 
-        <div className="border-t border-border p-4 space-y-1">
+        <div className="border-t border-border px-4 py-4 space-y-1">
           {user?.role === 'admin' && (
             <NavLink to="/settings" className={linkClass} aria-label="System Settings">
-              <Settings className="mr-3 h-5 w-5 flex-shrink-0" aria-hidden="true" />
+              <Settings className="h-5 w-5 shrink-0" aria-hidden="true" />
               System Settings
             </NavLink>
           )}
           <NavLink to="/profile" className={linkClass} aria-label="Profile">
-            <UserCircle className="mr-3 h-5 w-5 flex-shrink-0" aria-hidden="true" />
+            <UserCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
             Profile
           </NavLink>
           <button
             onClick={handleLogout}
-            className="w-full group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-danger hover:bg-danger-bg transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-danger hover:bg-danger-bg transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Logout"
           >
-            <LogOut className="mr-3 h-5 w-5 flex-shrink-0" aria-hidden="true" />
+            <LogOut className="h-5 w-5 shrink-0" aria-hidden="true" />
             Logout
           </button>
         </div>

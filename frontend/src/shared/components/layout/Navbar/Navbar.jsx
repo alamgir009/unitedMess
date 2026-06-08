@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useTheme } from '@/app/providers/ThemeProvider';
+import { cn } from '@/core/utils/helpers/string.helper';
 
 const NAV_LINKS = [
   { label: 'Home', href: '/' },
@@ -107,37 +108,34 @@ const Navbar = () => {
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-sticky"
-      style={{
-        paddingTop: scrolled ? '10px' : '16px',
-        paddingBottom: scrolled ? '10px' : '16px',
-        transition: 'padding 0.2s ease',
-      }}
+      className={cn(
+        'fixed top-0 left-0 right-0 z-sticky transition-[padding] duration-200 ease-out',
+        scrolled ? 'py-[10px]' : 'py-4',
+      )}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <nav
-          className="relative flex items-center justify-between px-5 py-2.5 rounded-2xl"
-          style={{
-            background: scrolled ? 'var(--navbar-bg)' : 'transparent',
-            backdropFilter: scrolled ? 'blur(12px) saturate(180%)' : 'none',
-            WebkitBackdropFilter: scrolled ? 'blur(12px) saturate(180%)' : 'none',
-            border: scrolled ? '1px solid var(--navbar-border)' : '1px solid transparent',
-            boxShadow: scrolled ? 'var(--shadow-sm)' : 'none',
-            transition: 'background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
-          }}
+          className={cn(
+            'relative flex items-center justify-between px-5 py-2.5 rounded-2xl',
+            'transition-all duration-200 ease-out',
+            scrolled
+              ? 'bg-card/80 backdrop-blur-md border-border shadow-sm'
+              : 'bg-transparent border-transparent shadow-none',
+          )}
           aria-label="Main navigation"
         >
           <Link
             to="/"
-            className="flex items-center shrink-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
+            className="flex items-center gap-1.5 shrink-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
             aria-label="UnitedMess home"
           >
             <img
               src="/assets/icons/unitedmess-icon-1024.png"
               alt=""
-              className="w-9 h-9 object-contain"
+              className="w-8 h-8 shrink-0"
+              fetchPriority="high"
             />
-            <span className="font-bold text-base tracking-tight text-foreground leading-none ml-2.5">
+            <span className="font-bold text-base tracking-tight text-foreground leading-none">
               United<span className="text-gradient">Mess</span>
             </span>
           </Link>
@@ -149,11 +147,13 @@ const Navbar = () => {
                 <li key={href}>
                   <Link
                     to={href}
-                    className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                    className={cn(
+                      'relative px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-150',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                       isActive
                         ? 'text-primary'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                    }`}
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+                    )}
                     aria-current={isActive ? 'page' : undefined}
                   >
                     {label}
@@ -215,62 +215,49 @@ const Navbar = () => {
           </div>
         </nav>
 
-        <AnimatePresence>
-          {mobileOpen && (
-            <motion.div
-              id="mobile-menu"
-              ref={menuRef}
-              key="mobile-menu"
-              initial={motionSafe.initial ?? { opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={motionSafe.transition ?? { duration: 0.15 }}
-              className="mt-2 rounded-xl overflow-hidden md:hidden"
-              style={{
-                background: 'var(--navbar-bg)',
-                backdropFilter: 'blur(12px) saturate(180%)',
-                WebkitBackdropFilter: 'blur(12px) saturate(180%)',
-                border: '1px solid var(--navbar-border)',
-                boxShadow: 'var(--shadow-lg)',
-              }}
-              onKeyDown={handleMenuKeyDown}
-            >
-              <div className="px-3 py-3 flex flex-col gap-1">
-                {NAV_LINKS.map(({ label, href }) => {
-                  const isActive = location.pathname === href;
-                  return (
-                    <Link
-                      key={href}
-                      to={href}
-                      className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors block ${
-                        isActive
-                          ? 'text-primary bg-primary/10'
-                          : 'text-muted-foreground hover:bg-muted/50'
-                      }`}
-                    >
-                      {label}
-                    </Link>
-                  );
-                })}
-                <div className="flex flex-col gap-2 mt-2 pt-3 border-t border-border">
+        {mobileOpen && (
+          <div
+            id="mobile-menu"
+            ref={menuRef}
+            className="mt-2 rounded-xl overflow-hidden md:hidden bg-card/80 backdrop-blur-md border border-border shadow-lg animate-fade-in-up"
+            onKeyDown={handleMenuKeyDown}
+          >
+            <div className="px-3 py-3 flex flex-col gap-1">
+              {NAV_LINKS.map(({ label, href }) => {
+                const isActive = location.pathname === href;
+                return (
                   <Link
-                    to="/login"
-                    className="px-4 py-2.5 rounded-lg text-sm font-semibold text-center border border-border hover:bg-muted/50 transition-colors text-foreground"
+                    key={href}
+                    to={href}
+                    className={cn(
+                      'px-4 py-2.5 rounded-lg text-sm font-medium transition-colors block',
+                      isActive
+                        ? 'text-primary bg-primary/10'
+                        : 'text-muted-foreground hover:bg-muted/50',
+                    )}
                   >
-                    Sign In
+                    {label}
                   </Link>
-                  <Link
-                    to="/register"
-                    className="px-4 py-2.5 rounded-lg text-sm font-semibold text-center text-white transition-opacity shadow-sm"
-                    style={{ background: 'var(--gradient-primary)' }}
-                  >
-                    Get Started
-                  </Link>
-                </div>
+                );
+              })}
+              <div className="flex flex-col gap-2 mt-2 pt-3 border-t border-border">
+                <Link
+                  to="/login"
+                  className="px-4 py-2.5 rounded-lg text-sm font-semibold text-center border border-border hover:bg-muted/50 transition-colors text-foreground"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/register"
+                  className="px-4 py-2.5 rounded-lg text-sm font-semibold text-center text-white transition-opacity shadow-sm"
+                  style={{ background: 'var(--gradient-primary)' }}
+                >
+                  Get Started
+                </Link>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );
