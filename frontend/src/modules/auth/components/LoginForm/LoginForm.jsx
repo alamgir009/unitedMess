@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
+import { Mail, AlertCircle } from 'lucide-react';
 import { login } from '@/modules/auth/store/auth.slice';
 import { Button, Input } from '@/shared/components/ui';
 import PasswordInput from '@/shared/components/ui/PasswordInput/PasswordInput';
@@ -38,7 +39,7 @@ const LoginForm = () => {
     return (
         <form className="space-y-6" onSubmit={onSubmit}>
             <div>
-                <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">
+                <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1.5">
                     Email address
                 </label>
                 <Input
@@ -50,11 +51,13 @@ const LoginForm = () => {
                     value={email}
                     onChange={onChange}
                     placeholder="you@example.com"
+                    size="lg"
+                    leftIcon={<Mail className="h-4 w-4 text-muted-foreground" />}
                 />
             </div>
 
             <div>
-                <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">
+                <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1.5">
                     Password
                 </label>
                 <PasswordInput
@@ -64,7 +67,8 @@ const LoginForm = () => {
                     required
                     value={password}
                     onChange={onChange}
-                    placeholder="••••••••"
+                    placeholder="Enter your password"
+                    size="lg"
                 />
             </div>
 
@@ -93,9 +97,7 @@ const LoginForm = () => {
             {/* Inline backend error message */}
             {isError && message && (
                 <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400" role="alert">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mt-0.5 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
+                    <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
                     <span>{message}</span>
                 </div>
             )}

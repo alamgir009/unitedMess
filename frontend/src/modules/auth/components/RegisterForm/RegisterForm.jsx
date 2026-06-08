@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { Mail, AlertCircle } from 'lucide-react';
 import { register } from '@/modules/auth/store/auth.slice';
 import { Button, Input } from '@/shared/components/ui';
 import PasswordInput from '@/shared/components/ui/PasswordInput/PasswordInput';
@@ -82,7 +83,7 @@ const CountryCodeDropdown = ({ value, onChange, className = '' }) => {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary flex items-center justify-between"
+        className="w-full rounded-lg border border-input bg-background px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary flex items-center justify-between h-12"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-label="Select country code"
@@ -243,7 +244,7 @@ const RegisterForm = () => {
     <form className="space-y-6" onSubmit={onSubmit} noValidate>
       {/* Full Name */}
       <div>
-        <label htmlFor="name" className="block text-sm font-medium text-foreground mb-1">
+        <label htmlFor="name" className="block text-sm font-medium text-foreground mb-1.5">
           Full Name
         </label>
         <Input
@@ -255,13 +256,14 @@ const RegisterForm = () => {
           value={name}
           onChange={onChange}
           placeholder="John Doe"
+          size="lg"
           aria-required="true"
         />
       </div>
 
       {/* Email */}
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">
+        <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1.5">
           Email address
         </label>
         <Input
@@ -273,13 +275,15 @@ const RegisterForm = () => {
           value={email}
           onChange={onChange}
           placeholder="you@example.com"
+          size="lg"
+          leftIcon={<Mail className="h-4 w-4 text-muted-foreground" />}
           aria-required="true"
         />
       </div>
 
       {/* Phone with fintech-grade dropdown */}
       <div>
-        <label htmlFor="phoneNumber" className="block text-sm font-medium text-foreground mb-1">
+        <label htmlFor="phoneNumber" className="block text-sm font-medium text-foreground mb-1.5">
           Phone Number
         </label>
         <div className="flex gap-2">
@@ -299,6 +303,7 @@ const RegisterForm = () => {
               value={phoneNumber}
               onChange={onChange}
               placeholder="9876543210"
+              size="lg"
               aria-required="true"
               inputMode="numeric"
             />
@@ -311,7 +316,7 @@ const RegisterForm = () => {
 
       {/* Password */}
       <div>
-        <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">
+        <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1.5">
           Password
         </label>
         <PasswordInput
@@ -322,13 +327,14 @@ const RegisterForm = () => {
           value={password}
           onChange={onChange}
           placeholder="Min 10 characters"
+          size="lg"
           aria-required="true"
         />
       </div>
 
       {/* Confirm Password */}
       <div>
-        <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground mb-1">
+        <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground mb-1.5">
           Confirm Password
         </label>
         <PasswordInput
@@ -339,6 +345,7 @@ const RegisterForm = () => {
           value={confirmPassword}
           onChange={onChange}
           placeholder="Confirm password"
+          size="lg"
           aria-required="true"
         />
       </div>
@@ -350,19 +357,7 @@ const RegisterForm = () => {
           role="alert"
           aria-live="polite"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4 mt-0.5 shrink-0"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              fillRule="evenodd"
-              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-              clipRule="evenodd"
-            />
-          </svg>
+          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
           <span>{message}</span>
         </div>
       )}

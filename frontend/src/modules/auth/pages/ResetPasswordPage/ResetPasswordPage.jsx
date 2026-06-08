@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowLeft, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, AlertCircle, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { resetPassword, reset as resetAuth } from '../../store/auth.slice';
-import { Button, Input } from '@/shared/components/ui';
-import { HiArrowLeft } from 'react-icons/hi2';
+import { Button } from '@/shared/components/ui';
+import PasswordInput from '@/shared/components/ui/PasswordInput/PasswordInput';
 
 const ResetPasswordPage = () => {
     const { token } = useParams();
@@ -15,14 +15,10 @@ const ResetPasswordPage = () => {
 
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (password !== confirmPassword) {
-            return;
-        }
+        if (password !== confirmPassword) return;
         dispatch(resetPassword({ token, password }));
     };
 
@@ -44,19 +40,17 @@ const ResetPasswordPage = () => {
 
     return (
         <div className="min-h-screen bg-background flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-            {/* Background Decorations */}
-            <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden opacity-20">
-                <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/20 blur-[120px] rounded-full" />
-                <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-primary/10 blur-[120px] rounded-full" />
+            <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden opacity-10">
+                <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/20 blur-[60px] rounded-full" />
+                <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-primary/10 blur-[60px] rounded-full" />
             </div>
 
-            {/* Back button */}
             <div className="absolute top-6 left-6 sm:top-8 sm:left-8 z-50">
                 <Link
                     to="/"
                     className="group flex items-center gap-2 rounded-full border border-black/5 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 px-4 py-2 text-sm font-semibold text-foreground/80 backdrop-blur-md transition-all hover:bg-white/80 dark:hover:bg-slate-900/80 hover:text-foreground shadow-sm hover:shadow-md"
                 >
-                    <HiArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                    <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
                     <span className="hidden sm:inline">Back to Home</span>
                 </Link>
             </div>
@@ -71,7 +65,7 @@ const ResetPasswordPage = () => {
                         <img 
                             src="/assets/icons/unitedmess-icon-1024.png" 
                             alt="UnitedMess Logo" 
-                            className="h-20 w-auto border-2 border-primary/20 shadow-xl rounded-2xl bg-card" 
+                            className="h-16 w-auto border-2 border-primary/20 shadow-lg rounded-2xl bg-card" 
                         />
                     </motion.div>
                 </div>
@@ -85,7 +79,7 @@ const ResetPasswordPage = () => {
                         transition={{ duration: 0.4 }}
                         className="mt-8"
                     >
-                        <div className="bg-card/50 backdrop-blur-xl border border-border/50 py-8 px-4 shadow-2xl rounded-2xl sm:px-10">
+                        <div className="bg-card border border-border/60 py-8 px-4 shadow-lg rounded-2xl sm:px-10">
                             {isSuccess ? (
                                 <div className="text-center py-6">
                                     <div className="mx-auto w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mb-6">
@@ -122,56 +116,34 @@ const ResetPasswordPage = () => {
                                             <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1.5">
                                                 New Password
                                             </label>
-                                            <div className="relative">
-                                                <Input
-                                                    id="password"
-                                                    name="password"
-                                                    type={showPassword ? 'text' : 'password'}
-                                                    required
-                                                    value={password}
-                                                    onChange={(e) => setPassword(e.target.value)}
-                                                    placeholder="Min 10 characters"
-                                                    size="lg"
-                                                    leftIcon={<Lock className="h-4 w-4 text-muted-foreground" />}
-                                                />
-                                                <button
-                                                    type="button"
-                                                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                                                    onClick={() => setShowPassword(!showPassword)}
-                                                    tabIndex={-1}
-                                                >
-                                                    {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
-                                                </button>
-                                            </div>
+                                            <PasswordInput
+                                                id="password"
+                                                name="password"
+                                                autoComplete="new-password"
+                                                required
+                                                value={password}
+                                                onChange={(e) => setPassword(e.target.value)}
+                                                placeholder="Min 10 characters"
+                                                size="lg"
+                                            />
                                         </div>
 
                                         <div>
                                             <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground mb-1.5">
                                                 Confirm New Password
                                             </label>
-                                            <div className="relative">
-                                                <Input
-                                                    id="confirmPassword"
-                                                    name="confirmPassword"
-                                                    type={showConfirmPassword ? 'text' : 'password'}
-                                                    required
-                                                    value={confirmPassword}
-                                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                                    placeholder="Confirm your password"
-                                                    size="lg"
-                                                    leftIcon={<Lock className="h-4 w-4 text-muted-foreground" />}
-                                                />
-                                                <button
-                                                    type="button"
-                                                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                                    tabIndex={-1}
-                                                >
-                                                    {showConfirmPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
-                                                </button>
-                                            </div>
+                                            <PasswordInput
+                                                id="confirmPassword"
+                                                name="confirmPassword"
+                                                autoComplete="new-password"
+                                                required
+                                                value={confirmPassword}
+                                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                                placeholder="Confirm your password"
+                                                size="lg"
+                                            />
                                             {password !== confirmPassword && confirmPassword.length > 0 && (
-                                                <p className="mt-1 text-xs text-red-500">Passwords don't match</p>
+                                                <p className="mt-1.5 text-xs text-red-500">Passwords don't match</p>
                                             )}
                                         </div>
 

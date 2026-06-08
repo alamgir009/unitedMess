@@ -7,25 +7,24 @@ const PasswordInput = forwardRef(({ className, ...props }, ref) => {
 
   return (
     <div className="relative">
-      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-        <Lock className="h-4 w-4 text-muted-foreground" />
-      </div>
       <Input
         type={showPassword ? 'text' : 'password'}
-        className={`pl-10 pr-10 ${className || ''}`}
+        leftIcon={<Lock className="h-4 w-4 text-muted-foreground" />}
+        className={`pr-10 ${className || ''}`}
         ref={ref}
         {...props}
       />
       <button
         type="button"
-        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+        className="absolute inset-y-0 right-0 flex items-center pr-3"
         onClick={() => setShowPassword((prev) => !prev)}
+        tabIndex={-1}
         aria-label={showPassword ? 'Hide password' : 'Show password'}
       >
         {showPassword ? (
-          <EyeOff className="h-4 w-4 text-muted-foreground" />
+          <EyeOff className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
         ) : (
-          <Eye className="h-4 w-4 text-muted-foreground" />
+          <Eye className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
         )}
       </button>
     </div>
