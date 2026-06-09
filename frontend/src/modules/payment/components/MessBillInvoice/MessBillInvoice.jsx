@@ -118,13 +118,19 @@ const MessBillInvoice = ({
     paymentRecord,
 }) => {
     const invMeta = useMemo(() => {
-        const d = new Date();
+        const monthStr = data?.monthName || paymentRecord?.month;
+        let d;
+        if (monthStr) {
+            const p = monthStr.split(/\s+/);
+            if (p.length >= 2) d = new Date(`${p[0]} 1, ${p[p.length - 1]}`);
+        }
+        if (!d || isNaN(d.getTime())) d = new Date();
         return {
             month: d.toLocaleString('en-IN', { month: 'long', year: 'numeric' }),
             date: d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
             no: `UM-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}-${Date.now().toString(36).slice(-4).toUpperCase()}`,
         };
-    }, []);
+    }, [data?.monthName, paymentRecord?.month]);
 
     const displayMonth = useMemo(() => {
         return paymentRecord?.month || data?.monthName || invMeta.month;

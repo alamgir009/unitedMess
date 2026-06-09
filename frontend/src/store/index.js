@@ -7,6 +7,7 @@ import invoiceReducer from '@/modules/payment/store/invoice.slice';
 import dashboardReducer from '@/modules/dashboard/store/dashboard.slice';
 import membersReducer from '@/modules/members/store/members.slice';
 import notificationReducer from '@/modules/notification/store/notification.slice';
+import paymentSyncMiddleware from '@/services/api/middleware/paymentSync.middleware';
 
 export const store = configureStore({
     reducer: {
@@ -31,6 +32,6 @@ export const store = configureStore({
                     'profile.avatarFile',
                 ],
             },
-        }),
+        }).concat(paymentSyncMiddleware),
 
 })

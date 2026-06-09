@@ -90,6 +90,22 @@ const UserDashboard = () => {
         dispatch(fetchUserRecentActivity());
     }, [dispatch]);
 
+    /* ── visibility / focus — re-fetch when user returns to this tab ── */
+    useEffect(() => {
+        const onVisible = () => {
+            if (document.visibilityState === 'visible') {
+                dispatch(fetchUserDashboardStats());
+                dispatch(fetchUserRecentActivity());
+            }
+        };
+        document.addEventListener('visibilitychange', onVisible);
+        window.addEventListener('focus', onVisible);
+        return () => {
+            document.removeEventListener('visibilitychange', onVisible);
+            window.removeEventListener('focus', onVisible);
+        };
+    }, [dispatch]);
+
     return (
         <div className="space-y-6">
 

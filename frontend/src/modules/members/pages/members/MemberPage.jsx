@@ -58,6 +58,27 @@ const MemberPage = React.memo(() => {
         dispatch(fetchBillingMonthStats());
     }, [dispatch]);
 
+    /* ── visibility / focus — re-fetch when user returns to this tab ── */
+    useEffect(() => {
+        const onVisible = () => {
+            if (document.visibilityState === 'visible') {
+                dispatch(fetchUsers({ 
+                    page: 1, 
+                    limit: 100, 
+                    isActive: true, 
+                    userStatus: 'approved' 
+                }));
+                dispatch(fetchBillingMonthStats());
+            }
+        };
+        document.addEventListener('visibilitychange', onVisible);
+        window.addEventListener('focus', onVisible);
+        return () => {
+            document.removeEventListener('visibilitychange', onVisible);
+            window.removeEventListener('focus', onVisible);
+        };
+    }, [dispatch]);
+
     const handleRetry = useCallback(() => {
         dispatch(fetchUsers({ 
             page: 1, 
