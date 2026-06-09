@@ -4,6 +4,7 @@ const MealPoll = require('../models/MealPoll.model');
 const User = require('../models/User.model');
 const AppError = require('../utils/errors/AppError');
 const { parseDate, normalizeDate } = require('../utils/helpers/date.helper');
+const { recalculatePayableForUser } = require('./user.service');
 
 const mealTypeCountMap = {
   off: 0,
@@ -208,6 +209,11 @@ const bulkCreateMeals = async ({ startDate, endDate, type, userIds, isGuestMeal,
     await User.bulkWrite(userUpdateOps);
   }
 
+  // Recalculate payable for all affected users
+  for (const uid of userIds) {
+    recalculatePayableForUser(uid);
+  }
+
   return {
     inserted: insertedCount,
     updated: updatedCount,
@@ -248,6 +254,9 @@ const createMeal = async (mealBody) => {
             { new: true, runValidators: true }
         )
     ]);
+
+    // Recalculate payable for the affected user
+    recalculatePayableForUser(user);
 
     return newMeal;
 };
@@ -400,6 +409,9 @@ const updateMealById = async (mealId, updateBody) => {
         );
     }
 
+    // Recalculate payable for the affected user
+    recalculatePayableForUser(meal.user._id);
+
     return meal;
 };
 
@@ -424,6 +436,9 @@ const deleteMealById = async (mealId) => {
         ),
         meal.deleteOne()
     ]);
+
+    // Recalculate payable for the affected user
+    recalculatePayableForUser(meal.user._id);
 
     return meal;
 };
@@ -513,6 +528,11 @@ const bulkDeleteMeals = async ({ mealIds, user }) => {
         Meal.deleteMany({ _id: { $in: authorizedIds } }),
         userUpdateOps.length > 0 ? User.bulkWrite(userUpdateOps) : Promise.resolve(),
     ]);
+
+    // Recalculate payable for all affected users
+    for (const uid of Object.keys(userDeltas)) {
+        recalculatePayableForUser(uid);
+    }
 
     return {
         deletedCount: authorizedIds.length,

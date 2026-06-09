@@ -533,8 +533,25 @@ async function getBillingMonthStats() {
 }
 
 /**
- * Complex payable calculation with caching opportunity
+ * Fire-and-forget: recalculate and persist paybleAmountforMeal for a user.
+ * Called after every meal/market mutation so the User model always has a
+ * fresh value (used by getAllUsers() when returning the user list).
  */
+const recalculatePayableForUser = async (userId) => {
+    try {
+        if (!isValidObjectId(userId)) return;
+        const invoiceService = require('./invoice.service');
+        const invoice = await invoiceService.getActiveInvoice(userId);
+        const finalPayable = Math.round(round2(invoice.totalPayable));
+        await User.findByIdAndUpdate(userId, {
+            paybleAmountforMeal: finalPayable,
+            lastCalculatedAt: new Date()
+        });
+    } catch (err) {
+        console.error(`[recalculatePayableForUser] Failed for user ${userId}:`, err.message);
+    }
+};
+
 const getPaybleAmountforMeal = async (userId) => {
     if (!isValidObjectId(userId)) throw new AppError('Invalid user ID', 400);
 
@@ -693,5 +710,6 @@ module.exports = {
     getMealCharge,
     getBillingMonthStats,
     getPaybleAmountforMeal,
-    getPaybleAmountforGasBill
+    getPaybleAmountforGasBill,
+    recalculatePayableForUser,
 };

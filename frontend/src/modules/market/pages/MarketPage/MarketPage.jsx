@@ -27,6 +27,7 @@ import {
     reset,
     adminCreateMarket,
 } from '../../store/market.slice';
+import { fetchBillingMonthStats } from '../../members/store/members.slice';
 
 const MarketForm = lazy(() => import('../../components/MarketForm/MarketForm'));
 
@@ -139,6 +140,7 @@ const MarketPage = () => {
             }
             closeModal();
             dispatch(fetchMarkets(fetchParams));
+            dispatch(fetchBillingMonthStats());
         } catch (err) {
             setErrorMsg(typeof err === 'string' ? err : err?.message || 'Failed to save market entry');
             closeModal();

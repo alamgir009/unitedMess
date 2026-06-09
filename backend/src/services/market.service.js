@@ -3,6 +3,7 @@ const Market = require('../models/Market.model');
 const User = require('../models/User.model');
 const AppError = require('../utils/errors/AppError');
 const { parseDate } = require('../utils/helpers/date.helper');
+const { recalculatePayableForUser } = require('./user.service');
 
 /**
  * Create a market entry
@@ -43,6 +44,9 @@ const createMarket = async (marketBody) => {
             { new: true, runValidators: true }
         ),
     ]);
+
+    // Recalculate payable for the affected user
+    recalculatePayableForUser(user);
 
     return newMarket;
 };
@@ -149,6 +153,9 @@ const updateMarketById = async (marketId, updateBody) => {
         );
     }
 
+    // Recalculate payable for the affected user
+    recalculatePayableForUser(market.user._id);
+
     return market;
 };
 
@@ -169,6 +176,9 @@ const deleteMarketById = async (marketId) => {
         ),
         Market.findByIdAndDelete(marketId)
     ]);
+
+    // Recalculate payable for the affected user
+    recalculatePayableForUser(market.user._id);
 
     return market;
 };

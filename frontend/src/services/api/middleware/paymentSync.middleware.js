@@ -2,7 +2,11 @@ import {
     fetchPayableAmount,
     fetchPayableGasBill,
 } from '../../../modules/auth/store/auth.slice';
-import { fetchBillingMonthStats } from '../../../modules/members/store/members.slice';
+import { fetchBillingMonthStats, fetchUsers } from '../../../modules/members/store/members.slice';
+import {
+    fetchAdminDashboardStats,
+    fetchUserDashboardStats,
+} from '../../../modules/dashboard/store/dashboard.slice';
 
 const MEAL_MUTATIONS = [
     'meal/createMeal/fulfilled',
@@ -10,7 +14,7 @@ const MEAL_MUTATIONS = [
     'meal/deleteMeal/fulfilled',
     'meal/bulkCreateMeals/fulfilled',
     'meal/bulkDeleteMeals/fulfilled',
-    'meal/adminCreateMeal/fulfilled',
+    'meal/adminCreate/fulfilled',
     'meal/voteMealPoll/fulfilled',
 ];
 
@@ -18,15 +22,22 @@ const MARKET_MUTATIONS = [
     'market/createMarket/fulfilled',
     'market/updateMarket/fulfilled',
     'market/deleteMarket/fulfilled',
-    'market/adminCreateMarket/fulfilled',
+    'market/adminCreate/fulfilled',
 ];
 
 const INVOICE_MUTATIONS = [
     'members/resolveInvoicePayment/fulfilled',
 ];
 
+const DEFAULT_USER_PARAMS = {
+    page: 1,
+    limit: 100,
+    isActive: true,
+    userStatus: 'approved',
+};
+
 let debounceTimer = null;
-const DEBOUNCE_MS = 300;
+const DEBOUNCE_MS = 500;
 
 const paymentSyncMiddleware = (store) => (next) => (action) => {
     const result = next(action);
@@ -46,12 +57,27 @@ const paymentSyncMiddleware = (store) => (next) => (action) => {
     debounceTimer = setTimeout(() => {
         debounceTimer = null;
 
+        // ── 1. Payable amounts always need refresh after meal/market changes ──
         if (isMealMutation || isMarketMutation) {
             store.dispatch(fetchPayableAmount());
             store.dispatch(fetchPayableGasBill());
         }
 
+        // ── 2. Refresh member rows so MemberPage shows fresh paybleAmountforMeal ──
+        if (isMealMutation || isMarketMutation || isInvoiceMutation) {
+            store.dispatch(fetchUsers(DEFAULT_USER_PARAMS));
+        }
+
+        // ── 3. Refresh billing stats for stat pills on MemberPage ──
         store.dispatch(fetchBillingMonthStats());
+
+        // ── 4. Refresh dashboard data ──
+        const state = store.getState();
+        if (state.auth.user?.role === 'admin') {
+            store.dispatch(fetchAdminDashboardStats());
+        } else if (state.auth.user) {
+            store.dispatch(fetchUserDashboardStats());
+        }
     }, DEBOUNCE_MS);
 
     return result;
