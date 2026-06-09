@@ -7,6 +7,7 @@ const emailService = require('./email.service');
 const mongoose = require('mongoose');
 const { getBillingPeriod } = require('../utils/helpers/date.helper');
 const notificationService = require('./notification.service');
+const { emitToAll } = require('../sockets');
 
 // Constants
 const PAYMENT_STATUSES = ['pending', 'success', 'failed'];
@@ -552,6 +553,31 @@ const recalculatePayableForUser = async (userId) => {
     }
 };
 
+/**
+ * Fire-and-forget: recalculate paybleAmountforMeal for ALL active users.
+ * A change to any member's meal count or market amount affects the shared
+ * denominator (Total Meal Count) and cost pool (Total Market Cost), which
+ * cascades to EVERY member's payable amount. This must be called instead
+ * of recalculatePayableForUser after every meal/market mutation.
+ */
+const recalculateAllActiveUsersPayable = async () => {
+    try {
+        const activeUsers = await User.find({
+            isActive: true,
+            userStatus: 'approved',
+        }).select('_id').lean();
+
+        await Promise.allSettled(
+            activeUsers.map((u) => recalculatePayableForUser(u._id))
+        );
+
+        // Notify all connected clients that billing data has been updated
+        emitToAll('billing:updated');
+    } catch (err) {
+        console.error('[recalculateAllActiveUsersPayable] Failed:', err.message);
+    }
+};
+
 const getPaybleAmountforMeal = async (userId) => {
     if (!isValidObjectId(userId)) throw new AppError('Invalid user ID', 400);
 
@@ -712,4 +738,5 @@ module.exports = {
     getPaybleAmountforMeal,
     getPaybleAmountforGasBill,
     recalculatePayableForUser,
+    recalculateAllActiveUsersPayable,
 };

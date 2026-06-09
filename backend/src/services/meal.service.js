@@ -4,7 +4,7 @@ const MealPoll = require('../models/MealPoll.model');
 const User = require('../models/User.model');
 const AppError = require('../utils/errors/AppError');
 const { parseDate, normalizeDate } = require('../utils/helpers/date.helper');
-const { recalculatePayableForUser } = require('./user.service');
+const { recalculateAllActiveUsersPayable } = require('./user.service');
 
 const mealTypeCountMap = {
   off: 0,
@@ -209,10 +209,8 @@ const bulkCreateMeals = async ({ startDate, endDate, type, userIds, isGuestMeal,
     await User.bulkWrite(userUpdateOps);
   }
 
-  // Recalculate payable for all affected users
-  for (const uid of userIds) {
-    recalculatePayableForUser(uid);
-  }
+  // Recalculate payable for all active users
+  recalculateAllActiveUsersPayable();
 
   return {
     inserted: insertedCount,
@@ -255,8 +253,8 @@ const createMeal = async (mealBody) => {
         )
     ]);
 
-    // Recalculate payable for the affected user
-    recalculatePayableForUser(user);
+    // Recalculate payable for all active users
+    recalculateAllActiveUsersPayable();
 
     return newMeal;
 };
@@ -409,8 +407,8 @@ const updateMealById = async (mealId, updateBody) => {
         );
     }
 
-    // Recalculate payable for the affected user
-    recalculatePayableForUser(meal.user._id);
+    // Recalculate payable for all active users
+    recalculateAllActiveUsersPayable();
 
     return meal;
 };
@@ -437,8 +435,8 @@ const deleteMealById = async (mealId) => {
         meal.deleteOne()
     ]);
 
-    // Recalculate payable for the affected user
-    recalculatePayableForUser(meal.user._id);
+    // Recalculate payable for all active users
+    recalculateAllActiveUsersPayable();
 
     return meal;
 };
@@ -529,10 +527,8 @@ const bulkDeleteMeals = async ({ mealIds, user }) => {
         userUpdateOps.length > 0 ? User.bulkWrite(userUpdateOps) : Promise.resolve(),
     ]);
 
-    // Recalculate payable for all affected users
-    for (const uid of Object.keys(userDeltas)) {
-        recalculatePayableForUser(uid);
-    }
+    // Recalculate payable for all active users
+    recalculateAllActiveUsersPayable();
 
     return {
         deletedCount: authorizedIds.length,

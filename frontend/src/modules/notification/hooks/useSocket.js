@@ -1,9 +1,28 @@
 import { useEffect, useRef } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector, useStore } from 'react-redux';
 import { io } from 'socket.io-client';
 import { addRealTimeNotification } from '../store/notification.slice';
 import { getAccessToken } from '@/services/api/client/apiClient';
 import toast from 'react-hot-toast';
+import {
+    fetchPayableAmount,
+    fetchPayableGasBill,
+} from '@/modules/auth/store/auth.slice';
+import {
+    fetchPayments,
+} from '@/modules/payment/store/payment.slice';
+import {
+    fetchActiveInvoice,
+} from '@/modules/payment/store/invoice.slice';
+import {
+    fetchBillingMonthStats,
+    fetchUsers,
+    fetchAdminUnpaidInvoices,
+} from '@/modules/members/store/members.slice';
+import {
+    fetchAdminDashboardStats,
+    fetchUserDashboardStats,
+} from '@/modules/dashboard/store/dashboard.slice';
 
 // Use standard API URL resolution for socket connection
 const getSocketUrl = () => {
@@ -14,6 +33,7 @@ const getSocketUrl = () => {
 
 const useSocket = () => {
     const dispatch = useDispatch();
+    const store = useStore();
     const { user } = useSelector((state) => state.auth);
     const socketRef = useRef(null);
     const processedNotifications = useRef(new Set());
@@ -92,6 +112,30 @@ const useSocket = () => {
                         console.error('Socket connection error:', error);
                     }
                 });
+
+                socketRef.current.on('billing:updated', () => {
+                    dispatch(fetchPayableAmount());
+                    dispatch(fetchPayableGasBill());
+                    dispatch(fetchUsers({ page: 1, limit: 100, isActive: true, userStatus: 'approved' }));
+                    dispatch(fetchBillingMonthStats());
+                    dispatch(fetchPayments({ page: 1, limit: 20 }));
+                    dispatch(fetchActiveInvoice());
+                    const date = new Date();
+                    const day = date.getDate();
+                    let month = date.getMonth() + 1;
+                    let year = date.getFullYear();
+                    if (day <= 10) {
+                        if (month === 1) { month = 12; year--; }
+                        else { month--; }
+                    }
+                    dispatch(fetchAdminUnpaidInvoices({ month, year }));
+                    const state = store.getState();
+                    if (state.auth.user?.role === 'admin') {
+                        dispatch(fetchAdminDashboardStats());
+                    } else if (state.auth.user) {
+                        dispatch(fetchUserDashboardStats());
+                    }
+                });
             } else if (token && !socketRef.current.auth?.token) {
                 socketRef.current.auth.token = token;
             }
@@ -120,7 +164,7 @@ const useSocket = () => {
                 socketRef.current = null;
             }
         };
-    }, [user, dispatch]);
+    }, [user, dispatch, store]);
 
     return socketRef.current;
 };

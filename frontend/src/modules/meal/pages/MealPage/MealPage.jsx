@@ -20,7 +20,8 @@ import MealModal from '../../components/MealModal/MealModal';
 import MealPolling from '../../components/MealPolling/MealPolling';
 import Pagination from '@/shared/components/ui/Pagination/Pagination';
 import { fetchMeals, createMeal, bulkCreateMeals, updateMeal, deleteMeal, bulkDeleteMeals, reset } from '../../store/meal.slice';
-import { fetchBillingMonthStats } from '../../members/store/members.slice';
+
+
 import DeleteMealDialog from '../../components/DeleteMealDialog/DeleteMealDialog';
 import MealSearchBar from '../../components/MealSearchBar/MealSearchBar';
 import MealStatsBar from '../../components/MealStatsBar/MealStatsBar';
@@ -94,7 +95,6 @@ const MealPage = () => {
                 toast.success(res?.message || 'Meal updated successfully');
                 closeModal();
                 dispatch(fetchMeals(fetchParams));
-                dispatch(fetchBillingMonthStats());
                 return;
             }
 
@@ -129,7 +129,6 @@ const MealPage = () => {
 
                 closeModal();
                 dispatch(fetchMeals(fetchParams));
-                dispatch(fetchBillingMonthStats());
                 return;
             }
 
@@ -170,7 +169,6 @@ const MealPage = () => {
 
             closeModal();
             dispatch(fetchMeals(fetchParams));
-            dispatch(fetchBillingMonthStats());
         } catch (error) {
             const msg = typeof error === 'string' ? error : (error?.message || 'Failed to save meal');
             setErrorMsg(msg);
@@ -189,7 +187,6 @@ const MealPage = () => {
             toast.success(res?.message || 'Meal deleted successfully');
             setDeletingMeal(null);
             dispatch(fetchMeals(fetchParams));
-            dispatch(fetchBillingMonthStats());
         } catch (error) {
             const msg = typeof error === 'string' ? error : (error?.message || 'Failed to delete meal');
             setErrorMsg(msg);
@@ -232,7 +229,6 @@ const MealPage = () => {
             setBulkDeleteTarget(null);
             setSelectedIds(new Set());
             dispatch(fetchMeals(fetchParams));
-            dispatch(fetchBillingMonthStats());
         } catch (error) {
             const msg = typeof error === 'string' ? error : (error?.message || 'Failed to delete meals');
             setErrorMsg(msg);
