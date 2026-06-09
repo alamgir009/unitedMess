@@ -24,6 +24,8 @@ import {
     HiOutlineShieldCheck,
     HiOutlineChevronDown,
     HiOutlineIdentification,
+    HiOutlineCalendarDays,
+    HiOutlineXMark,
 } from 'react-icons/hi2';
 import { Spinner } from '@/shared/components/ui';
 import { fmt } from '@/core/utils/helpers/currency.helper';
@@ -143,6 +145,18 @@ const MessBillInvoice = ({
         return invMeta.date;
     }, [paymentRecord, invMeta.date]);
 
+    /* Numeric month (1-12) and year derived from the active billing period */
+    const billingNums = useMemo(() => {
+        const monthStr = data?.monthName || paymentRecord?.month;
+        let d;
+        if (monthStr) {
+            const p = monthStr.split(/\s+/);
+            if (p.length >= 2) d = new Date(`${p[0]} 1, ${p[p.length - 1]}`);
+        }
+        if (!d || isNaN(d.getTime())) d = new Date();
+        return { month: d.getMonth() + 1, year: d.getFullYear() };
+    }, [data?.monthName, paymentRecord?.month]);
+
     const basePayable = data?.payableAmount ?? 0;
     const finalPayable = basePayable;
     const isRefund = useMemo(() => finalPayable < 0, [finalPayable]);
@@ -150,7 +164,10 @@ const MessBillInvoice = ({
 
     const [isExpanded, setIsExpanded] = useState(false);
     const [sendingEmail, setSendingEmail] = useState(false);
-    const [sendingAllEmails, setSendingAllEmails] = useState(false);
+    const [sendingAllEmails,    setSendingAllEmails]    = useState(false);
+    const [isEmailAllModalOpen, setIsEmailAllModalOpen] = useState(false);
+    const [selectedMonth,       setSelectedMonth]       = useState(1);
+    const [selectedYear,        setSelectedYear]        = useState(() => new Date().getFullYear());
     const invoiceRef = useRef(null);
     const printRef = useRef(null);
     const { isDownloading, downloadPDF, generatePDFBase64 } = useDownloadInvoice();
@@ -225,11 +242,19 @@ const MessBillInvoice = ({
         }
     };
 
+    /* Opens the month/year picker modal, pre-filled with the active billing period */
+    const openEmailAllModal = () => {
+        setSelectedMonth(billingNums.month);
+        setSelectedYear(billingNums.year);
+        setIsEmailAllModalOpen(true);
+    };
+
     const handleEmailAll = async () => {
         setSendingAllEmails(true);
         try {
-            const res = await invoiceService.emailAllInvoices();
+            const res = await invoiceService.emailAllInvoices({ month: selectedMonth, year: selectedYear });
             const { sent, failed } = res?.data ?? {};
+            setIsEmailAllModalOpen(false);
             if (failed > 0) {
                 toast.success(
                     `Emailed ${sent} member${sent !== 1 ? 's' : ''}, ${failed} failed. Check server logs for details.`
@@ -561,7 +586,7 @@ const MessBillInvoice = ({
             {isAdmin && (
                 <button
                 disabled={sendingAllEmails}
-                onClick={handleEmailAll}
+                onClick={openEmailAllModal}
                 className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold border bg-indigo-50/80 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 active:scale-[0.98] disabled:opacity-60 disabled:scale-100 transition-all duration-200 text-indigo-700 dark:text-indigo-300 shadow-sm mt-3"
                 >
                 {sendingAllEmails ? <Spinner size="sm" color="current" /> : <HiOutlineUsers className="w-4 h-4 flex-shrink-0" />}
@@ -575,6 +600,134 @@ const MessBillInvoice = ({
             </p>
             </div>
 
+            </motion.div>
+            )}
+            </AnimatePresence>
+
+            {/* ── Email All Modal — admin month/year picker ── */}
+            <AnimatePresence>
+            {isEmailAllModalOpen && (
+            <motion.div
+                key="email-all-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+                style={{ backdropFilter: 'blur(6px)', backgroundColor: 'rgba(0,0,0,0.52)' }}
+                onClick={(e) => { if (e.target === e.currentTarget && !sendingAllEmails) setIsEmailAllModalOpen(false); }}
+            >
+                <motion.div
+                    key="email-all-card"
+                    initial={{ opacity: 0, scale: 0.94, y: 14 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.94, y: 14 }}
+                    transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+                    className="relative w-full max-w-sm bg-card border border-border/60 rounded-2xl shadow-2xl overflow-hidden"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {/* ── Modal Header ── */}
+                    <div className="flex items-start justify-between gap-3 px-6 pt-5 pb-4 border-b border-border/50">
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 flex-shrink-0">
+                                <HiOutlineUsers className="w-4 h-4 text-white" />
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-bold text-gray-900 dark:text-white tracking-tight">Email Invoice to All</h4>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Select the billing month to send</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => !sendingAllEmails && setIsEmailAllModalOpen(false)}
+                            disabled={sendingAllEmails}
+                            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 disabled:opacity-40 flex-shrink-0"
+                            aria-label="Close dialog"
+                        >
+                            <HiOutlineXMark className="w-4 h-4" />
+                        </button>
+                    </div>
+
+                    {/* ── Modal Body ── */}
+                    <div className="px-6 py-5 space-y-4">
+                        {/* Month + Year selects */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                                    Month
+                                </label>
+                                <select
+                                    id="email-all-month"
+                                    value={selectedMonth}
+                                    onChange={e => setSelectedMonth(Number(e.target.value))}
+                                    disabled={sendingAllEmails}
+                                    className="w-full px-3 py-2.5 text-sm font-medium rounded-xl border border-border/60 bg-white/70 dark:bg-gray-800/70 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {['January','February','March','April','May','June','July','August','September','October','November','December'].map((m, i) => (
+                                        <option key={m} value={i + 1}>{m}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                                    Year
+                                </label>
+                                <select
+                                    id="email-all-year"
+                                    value={selectedYear}
+                                    onChange={e => setSelectedYear(Number(e.target.value))}
+                                    disabled={sendingAllEmails}
+                                    className="w-full px-3 py-2.5 text-sm font-medium rounded-xl border border-border/60 bg-white/70 dark:bg-gray-800/70 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => (
+                                        <option key={y} value={y}>{y}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Selected period preview chip */}
+                        <div className="flex items-center gap-2.5 p-3 rounded-xl bg-indigo-50/80 dark:bg-indigo-900/20 border border-indigo-200/60 dark:border-indigo-700/40">
+                            <HiOutlineCalendarDays className="w-4 h-4 text-indigo-500 dark:text-indigo-400 flex-shrink-0" />
+                            <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
+                                Sending invoices for{' '}
+                                <span className="font-bold">
+                                    {['January','February','March','April','May','June','July','August','September','October','November','December'][selectedMonth - 1]}{' '}{selectedYear}
+                                </span>
+                            </p>
+                        </div>
+
+                        {/* Irreversibility warning */}
+                        <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50/80 dark:bg-amber-900/20 border border-amber-200/60 dark:border-amber-700/40">
+                            <HiOutlineEnvelope className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                            <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
+                                This will email a PDF invoice to every active member. Emails cannot be recalled once sent.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* ── Modal Footer ── */}
+                    <div className="flex gap-3 px-6 pb-6">
+                        <button
+                            id="email-all-cancel"
+                            onClick={() => setIsEmailAllModalOpen(false)}
+                            disabled={sendingAllEmails}
+                            className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold border border-border/60 bg-white/70 dark:bg-gray-800/70 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            id="email-all-confirm"
+                            onClick={handleEmailAll}
+                            disabled={sendingAllEmails}
+                            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-bold text-white bg-gradient-to-br from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 shadow-[0_4px_14px_rgba(79,70,229,0.25)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.35)] transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100"
+                        >
+                            {sendingAllEmails
+                                ? <Spinner size="sm" color="current" />
+                                : <HiOutlineEnvelope className="w-4 h-4 flex-shrink-0" />}
+                            <span>{sendingAllEmails ? 'Sending…' : 'Send Invoices'}</span>
+                        </button>
+                    </div>
+                </motion.div>
             </motion.div>
             )}
             </AnimatePresence>

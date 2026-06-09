@@ -7,6 +7,7 @@ const Payment = require('../models/Payment.model');
 const AppError = require('../utils/errors/AppError');
 const { getBillingPeriod } = require('../utils/helpers/date.helper');
 const emailService = require('./email.service');
+const pdfService   = require('./pdf.service');
 
 /**
  * Get date range for a specific month/year
@@ -402,27 +403,83 @@ const getAdminUnpaidInvoices = async (month, year) => {
 };
 
 /**
- * Send invoice summary email to all active approved members.
- * Admin only. For each member, generates their personalized invoice and
- * sends an HTML email with the breakdown.
+ * Send invoice PDF email to all active approved members.
+ * Admin only. Generates a personalised binary PDF for each member
+ * (mirroring PrintInvoice.jsx layout) and sends it as an attachment.
  *
- * @param {number} month  - 1-indexed month
- * @param {number} year   - full year
+ * Performance:
+ *  - Mess-wide aggregation runs ONCE, not per user.
+ *  - Members are processed in parallel batches of 5 to avoid overwhelming
+ *    the SMTP server while still being significantly faster than sequential.
+ *
+ * @param {number} month  - 1-indexed month (1–12)
+ * @param {number} year   - full 4-digit year
  * @returns {Promise<{ sent: number, failed: number, errors: string[] }>}
  */
 const emailAllInvoices = async (month, year) => {
+    const BATCH_SIZE = 5;
+
     const users = await User.find({ isActive: true, userStatus: 'approved' }).lean();
     const results = { sent: 0, failed: 0, errors: [] };
 
-    for (const user of users) {
-        try {
-            const invoice = await getInvoice(user._id, month, year);
-            await emailService.sendInvoiceSummaryEmail(user.email, user.name, invoice);
-            results.sent++;
-        } catch (err) {
-            results.failed++;
-            results.errors.push(`${user.name} (${user.email}): ${err.message}`);
+    /* ── Calculate mess-wide stats once (avoids N redundant DB queries) ── */
+    const messStats = await calculateMessStats(month, year);
+    const grandTotalMarket = messStats.totalMarketAmount;
+    const grandTotalMeal   = messStats.totalMealCount;
+
+    /* ── Process most-recent completed payment for each member (for PDF payment block) ── */
+    const monthName = new Date(year, month - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+
+    /* Helper: process a single user — returns true on success */
+    const processUser = async (user) => {
+        const invoice = await getInvoice(user._id, month, year);
+
+        /* Annotate with mess-wide totals so pdf.service can render stat cards */
+        invoice._messGrandTotalMarket = grandTotalMarket;
+        invoice._messGrandTotalMeal   = grandTotalMeal;
+
+        /* Attach latest completed payment details for the payment block */
+        const latestPayment = await require('../models/Payment.model').findOne({
+            user:   user._id,
+            month:  monthName,
+            status: 'completed',
+            type:   'mess_bill',
+        }).sort({ paymentDate: -1 }).lean();
+
+        if (latestPayment) {
+            invoice._paymentMethod  = latestPayment.paymentMethod;
+            invoice._transactionId  = latestPayment.transactionId || null;
+            invoice._paymentDate    = latestPayment.paymentDate;
         }
+
+        /* Generate per-member PDF */
+        const pdfBuffer = await pdfService.generateInvoicePDF(invoice, user);
+        const fileName  = `UnitedMess_Invoice_${monthName.replace(/\s+/g, '_')}_${(user.name || 'Member').replace(/\s+/g, '_')}.pdf`;
+
+        /* Send email with PDF attachment */
+        await emailService.sendInvoiceEmail(
+            user.email,
+            user.name,
+            monthName,
+            pdfBuffer,
+            fileName
+        );
+    };
+
+    /* ── Batch execution ── */
+    for (let i = 0; i < users.length; i += BATCH_SIZE) {
+        const batch = users.slice(i, i + BATCH_SIZE);
+        const settled = await Promise.allSettled(batch.map(processUser));
+
+        settled.forEach((result, idx) => {
+            const user = batch[idx];
+            if (result.status === 'fulfilled') {
+                results.sent++;
+            } else {
+                results.failed++;
+                results.errors.push(`${user.name} (${user.email}): ${result.reason?.message || String(result.reason)}`);
+            }
+        });
     }
 
     return results;
