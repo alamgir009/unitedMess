@@ -188,6 +188,8 @@ const MealPage = () => {
             const res = await dispatch(deleteMeal(deletingMeal._id)).unwrap();
             toast.success(res?.message || 'Meal deleted successfully');
             setDeletingMeal(null);
+            dispatch(fetchMeals(fetchParams));
+            dispatch(fetchBillingMonthStats());
         } catch (error) {
             const msg = typeof error === 'string' ? error : (error?.message || 'Failed to delete meal');
             setErrorMsg(msg);
@@ -195,7 +197,7 @@ const MealPage = () => {
         } finally {
             setIsDeleting(false);
         }
-    }, [dispatch, deletingMeal, isDeleting]);
+    }, [dispatch, deletingMeal, isDeleting, fetchParams]);
 
     // ── Multi-select / Bulk Delete ────────────────────────────────────────
 
@@ -230,6 +232,7 @@ const MealPage = () => {
             setBulkDeleteTarget(null);
             setSelectedIds(new Set());
             dispatch(fetchMeals(fetchParams));
+            dispatch(fetchBillingMonthStats());
         } catch (error) {
             const msg = typeof error === 'string' ? error : (error?.message || 'Failed to delete meals');
             setErrorMsg(msg);
