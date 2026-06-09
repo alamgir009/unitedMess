@@ -6,6 +6,7 @@ const Market = require('../models/Market.model');
 const Payment = require('../models/Payment.model');
 const AppError = require('../utils/errors/AppError');
 const { getBillingPeriod } = require('../utils/helpers/date.helper');
+const emailService = require('./email.service');
 
 /**
  * Get date range for a specific month/year
@@ -400,6 +401,33 @@ const getAdminUnpaidInvoices = async (month, year) => {
     return invoices;
 };
 
+/**
+ * Send invoice summary email to all active approved members.
+ * Admin only. For each member, generates their personalized invoice and
+ * sends an HTML email with the breakdown.
+ *
+ * @param {number} month  - 1-indexed month
+ * @param {number} year   - full year
+ * @returns {Promise<{ sent: number, failed: number, errors: string[] }>}
+ */
+const emailAllInvoices = async (month, year) => {
+    const users = await User.find({ isActive: true, userStatus: 'approved' }).lean();
+    const results = { sent: 0, failed: 0, errors: [] };
+
+    for (const user of users) {
+        try {
+            const invoice = await getInvoice(user._id, month, year);
+            await emailService.sendInvoiceSummaryEmail(user.email, user.name, invoice);
+            results.sent++;
+        } catch (err) {
+            results.failed++;
+            results.errors.push(`${user.name} (${user.email}): ${err.message}`);
+        }
+    }
+
+    return results;
+};
+
 module.exports = {
     getInvoice,
     getActiveInvoice,
@@ -409,5 +437,6 @@ module.exports = {
     calculateMessStats,
     syncInvoiceStatus,
     resetUserStatsAfterFinalization,
-    getAdminUnpaidInvoices
+    getAdminUnpaidInvoices,
+    emailAllInvoices
 };

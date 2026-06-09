@@ -1,6 +1,7 @@
 const invoiceService = require('../../../services/invoice.service');
 const emailService = require('../../../services/email.service');
 const { sendSuccessResponse } = require('../../../utils/helpers/response.helper');
+const { getBillingPeriod } = require('../../../utils/helpers/date.helper');
 const asyncHandler = require('../../../utils/helpers/asyncHandler');
 const Invoice = require('../../../models/Invoice.model');
 const User = require('../../../models/User.model');
@@ -143,6 +144,26 @@ const sendInvoiceEmailPdf = asyncHandler(async (req, res) => {
     sendSuccessResponse(res, 200, `Invoice sent to ${user.email}`);
 });
 
+/**
+ * Admin: Send invoice summary email to all active approved members.
+ * POST /invoices/admin/email-all
+ * Body: { month, year }  (optional — defaults to current billing period)
+ */
+const emailAllInvoices = asyncHandler(async (req, res) => {
+    const { month: bodyMonth, year: bodyYear } = req.body;
+    let month = bodyMonth ? parseInt(bodyMonth, 10) : undefined;
+    let year  = bodyYear  ? parseInt(bodyYear, 10)  : undefined;
+
+    if (!month || !year) {
+        const period = getBillingPeriod();
+        month = period.month;
+        year  = period.year;
+    }
+
+    const result = await invoiceService.emailAllInvoices(month, year);
+    sendSuccessResponse(res, 200, `Invoices sent: ${result.sent} succeeded, ${result.failed} failed`, result);
+});
+
 module.exports = {
     getActiveInvoice,
     getInvoiceHistory,
@@ -152,4 +173,5 @@ module.exports = {
     getAdminUnpaidInvoices,
     updateInvoicePayment,
     sendInvoiceEmailPdf,
+    emailAllInvoices,
 };

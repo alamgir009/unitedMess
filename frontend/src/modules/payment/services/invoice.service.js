@@ -69,6 +69,15 @@ const sendInvoicePdf = async ({ pdfBase64, fileName, monthName }) => {
     return res.data;
 };
 
+/**
+ * Admin: send invoice summary email to all active approved members.
+ * @param {{ month?: number, year?: number }} [params] — optional, defaults to current billing period
+ */
+const emailAllInvoices = async (params) => {
+    const res = await apiClient.post(`${BASE}/admin/email-all`, params || {});
+    return res.data;
+};
+
 const invoiceService = {
     getActiveInvoice,
     getInvoiceHistory,
@@ -76,6 +85,7 @@ const invoiceService = {
     getInvoiceById,
     finalizeMonth,
     sendInvoicePdf,
+    emailAllInvoices,
 };
 
 export default invoiceService;

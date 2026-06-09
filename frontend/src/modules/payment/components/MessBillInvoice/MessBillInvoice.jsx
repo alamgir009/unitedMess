@@ -150,6 +150,7 @@ const MessBillInvoice = ({
 
     const [isExpanded, setIsExpanded] = useState(false);
     const [sendingEmail, setSendingEmail] = useState(false);
+    const [sendingAllEmails, setSendingAllEmails] = useState(false);
     const invoiceRef = useRef(null);
     const printRef = useRef(null);
     const { isDownloading, downloadPDF, generatePDFBase64 } = useDownloadInvoice();
@@ -221,6 +222,25 @@ const MessBillInvoice = ({
             toast.error(err?.response?.data?.message ?? 'Failed to send invoice email');
         } finally {
             setSendingEmail(false);
+        }
+    };
+
+    const handleEmailAll = async () => {
+        setSendingAllEmails(true);
+        try {
+            const res = await invoiceService.emailAllInvoices();
+            const { sent, failed } = res?.data ?? {};
+            if (failed > 0) {
+                toast.success(
+                    `Emailed ${sent} member${sent !== 1 ? 's' : ''}, ${failed} failed. Check server logs for details.`
+                );
+            } else {
+                toast.success(`Invoice emailed to all ${sent} members successfully!`);
+            }
+        } catch (err) {
+            toast.error(err?.response?.data?.message ?? 'Failed to send invoices to all members');
+        } finally {
+            setSendingAllEmails(false);
         }
     };
 
@@ -536,6 +556,18 @@ const MessBillInvoice = ({
                 <span>Email</span>
                 </button>
             </div>
+
+            {/* ── Admin: Email to all members ── */}
+            {isAdmin && (
+                <button
+                disabled={sendingAllEmails}
+                onClick={handleEmailAll}
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold border bg-indigo-50/80 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 active:scale-[0.98] disabled:opacity-60 disabled:scale-100 transition-all duration-200 text-indigo-700 dark:text-indigo-300 shadow-sm mt-3"
+                >
+                {sendingAllEmails ? <Spinner size="sm" color="current" /> : <HiOutlineUsers className="w-4 h-4 flex-shrink-0" />}
+                <span>{sendingAllEmails ? 'Sending to all members…' : 'Email to all'}</span>
+                </button>
+            )}
 
             {/* ── Footer disclaimer ── */}
             <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-5 text-center leading-relaxed">

@@ -33,4 +33,7 @@ router.get('/admin/unpaid', authorize('admin'), invoiceController.getAdminUnpaid
 // Admin: update a specific invoice's payment (mark paid / partial)
 router.patch('/:id/payment', authorize('admin'), invoiceController.updateInvoicePayment);
 
+// Admin: email invoice summary to all active members
+router.post('/admin/email-all', authorize('admin'), invoiceController.emailAllInvoices);
+
 module.exports = router;

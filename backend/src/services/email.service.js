@@ -1056,6 +1056,51 @@ const sendInvoiceEmail = async (to, name, monthName, pdfBuffer, fileName = 'invo
     });
 };
 
+/**
+ * Send invoice summary email (HTML inline, no PDF attachment)
+ * @param {string} to - recipient email
+ * @param {string} name - recipient name
+ * @param {Object} invoice - invoice data object from invoice service
+ * @returns {Promise}
+ */
+const sendInvoiceSummaryEmail = async (to, name, invoice) => {
+    const monthName = invoice.monthName || `${invoice.month}/${invoice.year}`;
+    const totalPayable = (invoice.totalPayable ?? 0).toLocaleString('en-IN');
+    const paidAmount = (invoice.paidAmount ?? 0).toLocaleString('en-IN');
+    const statusLabel = invoice.status === 'paid' ? 'Paid'
+        : invoice.status === 'partially_paid' ? 'Partially Paid'
+        : 'Unpaid';
+
+    const content = `
+        <p>Dear ${name},</p>
+        <p>Your mess bill summary for <strong>${monthName}</strong> is ready.</p>
+        <table style="border-collapse: collapse; width: 100%; margin: 20px 0; font-family: Arial, sans-serif;">
+            <tr><td style="padding: 10px; border: 1px solid #ddd;"><strong>Billing Period:</strong></td><td style="padding: 10px; border: 1px solid #ddd;">${monthName}</td></tr>
+            <tr><td style="padding: 10px; border: 1px solid #ddd;"><strong>Total Payable:</strong></td><td style="padding: 10px; border: 1px solid #ddd;">₹${totalPayable}</td></tr>
+            <tr><td style="padding: 10px; border: 1px solid #ddd;"><strong>Amount Paid:</strong></td><td style="padding: 10px; border: 1px solid #ddd;">₹${paidAmount}</td></tr>
+            <tr><td style="padding: 10px; border: 1px solid #ddd;"><strong>Status:</strong></td><td style="padding: 10px; border: 1px solid #ddd;">${statusLabel}</td></tr>
+            <tr><td style="padding: 10px; border: 1px solid #ddd;"><strong>Meals:</strong></td><td style="padding: 10px; border: 1px solid #ddd;">${invoice.mealCount ?? 0}</td></tr>
+            <tr><td style="padding: 10px; border: 1px solid #ddd;"><strong>Market Spend:</strong></td><td style="padding: 10px; border: 1px solid #ddd;">₹${(invoice.marketAmountSpent ?? 0).toLocaleString('en-IN')}</td></tr>
+        </table>
+        <p>If you have any questions regarding your bill, please contact your mess admin.</p>
+    `;
+
+    const { html, text } = generateEmailTemplate({
+        title: `Mess Bill — ${monthName}`,
+        previewText: `Your invoice for ${monthName} from United Mess`,
+        content,
+        showButton: false,
+        footerText: 'This is a system-generated invoice summary. Please keep it for your records.'
+    });
+
+    return sendEmail({
+        to,
+        subject: `Your Mess Bill Summary — ${monthName} | United Mess`,
+        text,
+        html
+    });
+};
+
 module.exports = {
     transport,
     sendEmail,
@@ -1068,5 +1113,6 @@ module.exports = {
     sendPasswordResetConfirmation,
     sendAccountLockedEmail,
     sendPaymentStatusEmail,
-    sendInvoiceEmail
+    sendInvoiceEmail,
+    sendInvoiceSummaryEmail
 };
