@@ -43,7 +43,7 @@ const useFcmPush = () => {
                     detail: {
                         title: notification.title || data.title || 'UnitedMess',
                         body: notification.body || data.body || '',
-                        icon: data.icon || '/assets/icons/unitedmess-icon-1024.png',
+                        icon: data.icon || '/assets/icons/resize_logo.png',
                         data: {
                             url: data.url || '/notifications',
                             notificationId: data.notificationId || null,

@@ -37,8 +37,8 @@ const showPushNotification = (event, data) => {
     const title = data.title || 'UnitedMess';
     const options = {
         body: data.body || '',
-        icon: data.icon || '/assets/icons/unitedmess-icon-1024.png',
-        badge: '/assets/icons/unitedmess-icon-1024.png',
+        icon: data.icon || '/assets/icons/resize_logo.png',
+        badge: '/assets/icons/resize_logo.png',
         vibrate: [200, 100, 200],
         silent: false,
         data: {
@@ -59,7 +59,7 @@ const showPushNotification = (event, data) => {
 };
 
 self.addEventListener('push', (event) => {
-    let data = { title: 'UnitedMess', body: '', icon: '/assets/icons/unitedmess-icon-1024.png' };
+    let data = { title: 'UnitedMess', body: '', icon: '/assets/icons/resize_logo.png' };
 
     try {
         if (event.data) {
@@ -79,8 +79,8 @@ messaging.onBackgroundMessage((payload) => {
     const title = notification.title || data.title || 'UnitedMess';
     const options = {
         body: notification.body || data.body || '',
-        icon: data.icon || '/assets/icons/unitedmess-icon-1024.png',
-        badge: '/assets/icons/unitedmess-icon-1024.png',
+        icon: data.icon || '/assets/icons/resize_logo.png',
+        badge: '/assets/icons/resize_logo.png',
         vibrate: [200, 100, 200],
         silent: false,
         data: {

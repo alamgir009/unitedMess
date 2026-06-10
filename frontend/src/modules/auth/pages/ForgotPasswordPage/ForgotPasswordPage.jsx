@@ -53,7 +53,7 @@ const ForgotPasswordPage = () => {
                         transition={{ duration: 0.5, ease: "easeOut" }}
                     >
                         <img 
-                            src="/assets/icons/unitedmess-icon-1024.png" 
+                            src="/assets/icons/resize_logo.png" 
                             alt="UnitedMess Logo" 
                             className="h-16 w-auto border-2 border-primary/20 shadow-lg rounded-2xl bg-card" 
                         />

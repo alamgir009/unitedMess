@@ -126,11 +126,11 @@ const Navbar = () => {
         >
           <Link
             to="/"
-            className="inline-flex items-center gap-2.5 shrink-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
+            className="inline-flex items-center gap-1.5 shrink-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
             aria-label="UnitedMess home"
           >
             <img
-              src="/assets/icons/unitedmess-icon-1024.png"
+              src="/assets/icons/resize_logo.png"
               alt=""
               className="w-8 h-8 object-contain shrink-0"
               fetchPriority="high"

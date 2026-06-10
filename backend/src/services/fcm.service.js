@@ -40,8 +40,8 @@ const sendToUser = async (userId, payload) => {
             data: {
                 title: payload.title || '',
                 body: payload.message || '',
-                icon: payload.icon || '/assets/icons/unitedmess-icon-1024.png',
-                badge: payload.badge || '/assets/icons/unitedmess-icon-1024.png',
+                icon: payload.icon || '/assets/icons/resize_logo.png',
+                badge: payload.badge || '/assets/icons/resize_logo.png',
                 url: payload.actionUrl || '/notifications',
                 notificationId: payload.notificationId ? payload.notificationId.toString() : '',
                 type: payload.type || 'SYSTEM',

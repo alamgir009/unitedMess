@@ -75,8 +75,8 @@ const sendWebPush = async (userId, notification) => {
             const payload = JSON.stringify({
                 title: notification.title,
                 body: notification.message,
-                icon: '/assets/icons/unitedmess-icon-1024.png',
-                badge: '/assets/icons/unitedmess-icon-1024.png',
+                icon: '/assets/icons/resize_logo.png',
+                badge: '/assets/icons/resize_logo.png',
                 data: {
                     url: notification.actionUrl || '/notifications',
                     notificationId: notification._id.toString(),

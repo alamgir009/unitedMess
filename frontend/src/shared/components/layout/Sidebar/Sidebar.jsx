@@ -73,9 +73,9 @@ const Sidebar = ({ isOpen, onClose }) => {
         aria-label="Main navigation"
       >
           <div className="flex h-16 shrink-0 items-center justify-between px-6 bg-muted/30 border-b border-border">
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-1.5">
               <img
-                src="/assets/icons/unitedmess-icon-1024.png"
+                src="/assets/icons/resize_logo.png"
                 alt="UnitedMess"
                 className="w-8 h-8 object-contain shrink-0"
               />
