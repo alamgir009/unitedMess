@@ -42,15 +42,15 @@ const Footer = () => {
             <div className="flex flex-col gap-4">
               <Link
                 to="/"
-                className="flex items-center shrink-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg w-fit"
+                className="inline-flex items-center gap-2.5 shrink-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg w-fit"
                 aria-label="UnitedMess home"
               >
                 <img
                   src="/assets/icons/unitedmess-icon-1024.png"
                   alt=""
-                  className="w-9 h-9 object-contain"
+                  className="w-8 h-8 object-contain shrink-0"
                 />
-                <span className="font-bold text-base tracking-tight text-foreground leading-none ml-2.5">
+                <span className="font-bold text-base tracking-tight text-foreground">
                   United<span className="text-gradient">Mess</span>
                 </span>
               </Link>

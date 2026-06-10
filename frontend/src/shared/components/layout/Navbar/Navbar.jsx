@@ -126,16 +126,16 @@ const Navbar = () => {
         >
           <Link
             to="/"
-            className="flex items-center gap-1.5 shrink-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
+            className="inline-flex items-center gap-2.5 shrink-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
             aria-label="UnitedMess home"
           >
             <img
               src="/assets/icons/unitedmess-icon-1024.png"
               alt=""
-              className="w-8 h-8 shrink-0"
+              className="w-8 h-8 object-contain shrink-0"
               fetchPriority="high"
             />
-            <span className="font-bold text-base tracking-tight text-foreground leading-none">
+            <span className="font-bold text-base tracking-tight text-foreground">
               United<span className="text-gradient">Mess</span>
             </span>
           </Link>
@@ -219,7 +219,7 @@ const Navbar = () => {
           <div
             id="mobile-menu"
             ref={menuRef}
-            className="mt-2 rounded-xl overflow-hidden md:hidden bg-card/80 backdrop-blur-md border border-border shadow-lg animate-fade-in-up"
+            className="mt-2 rounded-xl overflow-hidden md:hidden bg-card border border-border shadow-lg animate-fade-in-up"
             onKeyDown={handleMenuKeyDown}
           >
             <div className="px-3 py-3 flex flex-col gap-1">

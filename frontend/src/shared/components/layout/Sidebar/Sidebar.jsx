@@ -72,17 +72,17 @@ const Sidebar = ({ isOpen, onClose }) => {
         )}
         aria-label="Main navigation"
       >
-        <div className="flex h-16 shrink-0 items-center justify-between px-6 bg-muted/30 border-b border-border">
-          <div className="flex items-center gap-1.5">
-            <img
-              src="/assets/icons/unitedmess-icon-1024.png"
-              alt="UnitedMess"
-              className="w-8 h-8 shrink-0"
-            />
-            <span className="font-bold text-base tracking-tight text-foreground leading-none">
-              United<span className="text-gradient">Mess</span>
-            </span>
-          </div>
+          <div className="flex h-16 shrink-0 items-center justify-between px-6 bg-muted/30 border-b border-border">
+            <div className="flex items-center gap-2.5">
+              <img
+                src="/assets/icons/unitedmess-icon-1024.png"
+                alt="UnitedMess"
+                className="w-8 h-8 object-contain shrink-0"
+              />
+              <span className="font-bold text-base tracking-tight text-foreground">
+                United<span className="text-gradient">Mess</span>
+              </span>
+            </div>
           <button
             type="button"
             className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
