@@ -19,7 +19,6 @@ import {
     HiOutlineEnvelope,
     HiOutlineSparkles,
     HiOutlineBuildingOffice2,
-    HiOutlineClock,
     HiOutlineArrowDownTray,
     HiOutlineShieldCheck,
     HiOutlineChevronDown,
@@ -179,7 +178,6 @@ const MessBillInvoice = ({
         grandTotalMeal = 0,
         totalGuestRevenue = 0,
         adjustedMealCharge = 0,
-        dueCarryOver = 0,
         userStats = {},
     } = data;
 
@@ -256,8 +254,9 @@ const MessBillInvoice = ({
             const { sent, failed } = res?.data ?? {};
             setIsEmailAllModalOpen(false);
             if (failed > 0) {
-                toast.success(
-                    `Emailed ${sent} member${sent !== 1 ? 's' : ''}, ${failed} failed. Check server logs for details.`
+                toast(
+                    `Emailed ${sent} member${sent !== 1 ? 's' : ''}, ${failed} failed. Check server logs for details.`,
+                    { icon: '\u26A0\uFE0F' }
                 );
             } else {
                 toast.success(`Invoice emailed to all ${sent} members successfully!`);
@@ -400,12 +399,7 @@ const MessBillInvoice = ({
 
                 <LineItem icon={HiOutlineReceiptPercent} label="Platform Fee" value={`₹${fmt(platformFee || 0)}`} subText="Fixed service fee" />
 
-                {dueCarryOver > 0 && (
-                    <>
-                        <SectionDivider label="Previous Balance" />
-                        <LineItem icon={HiOutlineClock} label="Carry-over Amount" value={`₹${fmt(dueCarryOver)}`} subText="Unpaid from past months" accent />
-                    </>
-                )}
+
             </div>
 
             {/* ── Total & Payment Area ── */}
@@ -743,7 +737,6 @@ const MessBillInvoice = ({
                         displayMonth={displayMonth}
                         displayDate={displayDate}
                         isRefund={isRefund}
-                        dueCarryOver={dueCarryOver}
                         invoiceNo={invMeta.no}
                         paymentStatus={paymentStatus}
                         paymentMethod={paymentRecord?.paymentMethod}

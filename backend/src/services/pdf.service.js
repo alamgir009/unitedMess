@@ -83,8 +83,7 @@ const generateInvoicePDF = (invoiceData, user) => {
             const guestRate    = user?.chargePerGuestMeal     ?? 60;
             const guestAmt     = invoiceData.guestMealRevenue ?? 0;
             const costOfMeals  = invoiceData.messCost         ?? 0;
-            const adjMealCharge= invoiceData.mealRate         ?? 0;   // mealRate = adjustedMealCharge per meal
-            const dueCarryOver = invoiceData.dueCarryOver     ?? 0;
+            const adjMealCharge= invoiceData.messCost         ?? 0;
             const paidAmount   = invoiceData.paidAmount       ?? 0;
 
             /* Mess-wide stats (attached by emailAllInvoices before calling pdf service) */
@@ -271,13 +270,6 @@ const generateInvoicePDF = (invoiceData, user) => {
             dataRow('Cost of Your Meals',    `\u20B9${fmt(costOfMeals)}`,   'Proportional share',    true);
             dataRow('Adjusted Meal Charge',  `\u20B9${fmt(adjMealCharge)}`, 'After guest deduction', true);
             dataRow('Platform Fee',          `\u20B9${fmt(platformFee)}`);
-
-            /* ── PREVIOUS BALANCE (conditional) ── */
-            if (dueCarryOver > 0) {
-                moveTo(y + 6);
-                sectionLabel('Previous Balance');
-                dataRow('Carry-over Amount', `\u20B9${fmt(dueCarryOver)}`, 'Unpaid balance from past months', true);
-            }
 
             moveTo(y + 16);
 

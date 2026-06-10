@@ -627,7 +627,6 @@ const getPaybleAmountforMeal = async (userId) => {
             guestMealAmount: round2(invoice.guestMealRevenue),
             platformFee: round2(invoice.fixedCosts?.platformFee || user.platformFee || 0)
         },
-        dueCarryOver: round2(invoice.dueCarryOver || 0),
         payableAmount: finalPayable,
         paymentStatus: user.payment === 'success' || invoice.status === 'paid' ? 'success' : 'pending',
         gasBillStatus: user.gasBill === 'success' || completedGasAuth ? 'success' : 'pending',

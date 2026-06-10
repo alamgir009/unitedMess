@@ -42,7 +42,6 @@ const toInvoiceDisplayData = (invoice) => {
         totalGuestRevenue:      invoice.guestMealRevenue   ?? 0,
         adjustedMealCharge:     invoice.messCost           ?? 0,
         payableAmount:          invoice.totalPayable       ?? 0,
-        dueCarryOver:           invoice.dueCarryOver       ?? 0,
         monthName:              invoice.monthName,
         userStats: {
             totalMeal:           invoice.mealCount          ?? 0,
@@ -307,20 +306,6 @@ const MonthlyInvoiceModal = ({
                         {/* Invoice content */}
                         {!isLoadingMonthly && !error && displayData && (
                             <>
-                                {/* Carry-over notice */}
-                                {(monthlyInvoice?.dueCarryOver ?? 0) > 0 && (
-                                    <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 text-amber-800 dark:text-amber-400">
-                                        <p className="text-sm font-semibold">Carry-over Balance</p>
-                                        <p className="text-xs opacity-90 mt-1">
-                                            This invoice includes a carried-over balance of{' '}
-                                            <span className="font-bold">
-                                                ₹{monthlyInvoice.dueCarryOver.toLocaleString('en-IN')}
-                                            </span>{' '}
-                                            from previous months.
-                                        </p>
-                                    </div>
-                                )}
-
                                 {/* ★ PARTIAL PAYMENT REMINDER BANNER ★ */}
                                 {isPartiallyPaid && (
                                     <PartialPaymentBanner

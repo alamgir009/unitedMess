@@ -9,7 +9,6 @@ const PrintInvoice = ({
     displayMonth,
     displayDate,
     isRefund,
-    dueCarryOver,
     invoiceNo,
     paymentStatus = 'pending',
     paymentMethod,
@@ -267,20 +266,6 @@ const PrintInvoice = ({
                 <p style={s.rowLabel}>Platform Fee</p>
                 <p style={s.rowValue}>{'\u20b9'}{fmt(platformFee || 0)}</p>
             </div>
-
-            {/* Carry Over */}
-            {dueCarryOver > 0 && (
-                <>
-                    <p style={s.sectionLabel}>Previous Balance</p>
-                    <div style={s.row}>
-                        <div>
-                            <p style={s.rowLabel}>Carry-over Amount</p>
-                            <p style={s.rowSubLabel}>Unpaid balance from past months</p>
-                        </div>
-                        <p style={s.rowValueAccent}>{'\u20b9'}{fmt(dueCarryOver)}</p>
-                    </div>
-                </>
-            )}
 
             {/* Total */}
             <div style={s.totalBox}>

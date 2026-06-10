@@ -160,6 +160,9 @@ const emailAllInvoices = asyncHandler(async (req, res) => {
         year  = period.year;
     }
 
+    if (month < 1 || month > 12) throw new AppError('Month must be between 1 and 12', 400);
+    if (!year || year < 2000 || year > 2100) throw new AppError('Invalid year', 400);
+
     const result = await invoiceService.emailAllInvoices(month, year);
     sendSuccessResponse(res, 200, `Invoices sent: ${result.sent} succeeded, ${result.failed} failed`, result);
 });

@@ -134,15 +134,8 @@ const getInvoice = async (userId, month, year) => {
     const messCost = uMealCount * messStats.mealRate;
     const guestRevenue = uGuestCount * (user.chargePerGuestMeal || 60);
 
-    // totalBill = (Your share of food) + fixedCosts - (What you paid for market) + (Your guest costs)
-    // Actually, fixed costs (cooking, water, platformFee) are usually per person.
+    // totalBill = messCost + fixedCosts + guestRevenue - marketAmountSpent
     const totalBill = messCost + (user.cookingCharge || 0) + (user.waterBill || 0) + (user.platformFee || 0) + guestRevenue - uMarketSpent;
-
-    // Carry-over due from the previous month
-    const previousMonth = month === 1 ? 12 : month - 1;
-    const previousYear = month === 1 ? year - 1 : year;
-    const prevInvoice = await Invoice.findOne({ user: userId, month: previousMonth, year: previousYear });
-    const dueCarryOver = prevInvoice ? (prevInvoice.totalPayable - prevInvoice.paidAmount) : 0;
 
     const monthName = new Date(year, month - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
 
@@ -164,7 +157,6 @@ const getInvoice = async (userId, month, year) => {
             platformFee: Number(user.platformFee || 0),
         },
         totalBill: Math.round(totalBill),
-        dueCarryOver: Math.round(dueCarryOver),
         totalPayable: Math.round(totalBill),
         paidAmount: livePaidAmount,
         isFinalized: false
@@ -439,7 +431,7 @@ const emailAllInvoices = async (month, year) => {
         invoice._messGrandTotalMeal   = grandTotalMeal;
 
         /* Attach latest completed payment details for the payment block */
-        const latestPayment = await require('../models/Payment.model').findOne({
+        const latestPayment = await Payment.findOne({
             user:   user._id,
             month:  monthName,
             status: 'completed',

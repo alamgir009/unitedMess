@@ -60,15 +60,10 @@ const invoiceSchema = new mongoose.Schema(
             default: 0,
             comment: "messCost + fixedCosts + guestRevenue - marketAmountSpent",
         },
-        dueCarryOver: {
-            type: Number,
-            default: 0,
-            comment: "Unpaid balance from previous finalized invoice",
-        },
         totalPayable: {
             type: Number,
             default: 0,
-            comment: "totalBill + dueCarryOver",
+            comment: "totalBill (includes fixed costs and guest adjustments)",
         },
         paidAmount: {
             type: Number,
