@@ -117,15 +117,16 @@ const PartialPaymentBanner = ({ remainingAmount, paidAmount, totalPayable, onPay
 
                 {onPayNow && (
                     <motion.button
+                        type="button"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         disabled={!!isPaying}
                         onClick={() => onPayNow(monthName)}
-                        className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg
+                        className="touch-target mt-3 w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg
                             bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold
                             shadow-[0_4px_14px_rgba(245,158,11,0.4)]
                             hover:shadow-[0_6px_20px_rgba(245,158,11,0.5)]
-                            disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200"
+                            disabled:opacity-60 disabled:cursor-not-allowed transition-[transform,opacity,background,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-out)]"
                     >
                         {isPaying ? (
                             <HiOutlineArrowPath className="w-4 h-4 animate-spin" />

@@ -563,9 +563,10 @@ const MessBillInvoice = ({
             {/* ── Premium Pay Now / Remaining Button ── */}
             {!isPaid && !isRefund && (
                 <button
+                type="button"
                 disabled={isPaying}
                 onClick={handleOpenPaymentFlow}
-                className={`w-full flex items-center justify-center gap-2.5 py-3.5 px-6 rounded-xl text-sm font-bold text-white mb-3 transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 ${
+                className={`touch-target w-full flex items-center justify-center gap-2.5 py-3 px-5 rounded-xl text-sm font-bold text-white mb-3 transition-[transform,opacity,background,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-out)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 ${
                     isPartiallyPaid
                     ? 'bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:from-amber-700 active:to-amber-800 shadow-[0_4px_14px_rgba(245,158,11,0.25)] hover:shadow-[0_6px_20px_rgba(245,158,11,0.35)]'
                     : 'bg-gradient-to-br from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 active:from-indigo-800 active:to-indigo-900 shadow-[0_4px_14px_rgba(79,70,229,0.25)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.35)]'
@@ -576,20 +577,22 @@ const MessBillInvoice = ({
                 </button>
             )}
 
-            {/* ── Download / Email actions (polished with subtle glass) ── */}
-            <div className="grid grid-cols-2 gap-3">
+            {/* ── Download / Email actions ── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                 <button
+                type="button"
                 disabled={isDownloading}
                 onClick={handleDownloadPDF}
-                className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold border bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-[0.98] disabled:opacity-60 disabled:scale-100 transition-all duration-200 text-gray-700 dark:text-gray-200 shadow-sm"
+                className="touch-target flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold border bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-[0.98] disabled:opacity-60 disabled:scale-100 transition-[transform,opacity,background,border-color,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-out)] text-gray-700 dark:text-gray-200 shadow-sm"
                 >
                 {isDownloading ? <Spinner size="sm" color="current" /> : <HiOutlineArrowDownTray className="w-4 h-4 flex-shrink-0" />}
                 <span>Download</span>
                 </button>
                 <button
+                type="button"
                 disabled={sendingEmail}
                 onClick={handleSendEmail}
-                className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold border bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-[0.98] disabled:opacity-60 disabled:scale-100 transition-all duration-200 text-gray-700 dark:text-gray-200 shadow-sm"
+                className="touch-target flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold border bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-[0.98] disabled:opacity-60 disabled:scale-100 transition-[transform,opacity,background,border-color,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-out)] text-gray-700 dark:text-gray-200 shadow-sm"
                 >
                 {sendingEmail ? <Spinner size="sm" color="current" /> : <HiOutlineEnvelope className="w-4 h-4 flex-shrink-0" />}
                 <span>Email</span>
@@ -599,9 +602,10 @@ const MessBillInvoice = ({
             {/* ── Admin: Email to all members ── */}
             {isAdmin && (
                 <button
+                type="button"
                 disabled={sendingAllEmails}
                 onClick={openEmailAllModal}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold border bg-indigo-50/80 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 active:scale-[0.98] disabled:opacity-60 disabled:scale-100 transition-all duration-200 text-indigo-700 dark:text-indigo-300 shadow-sm mt-3"
+                className="touch-target w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold border bg-indigo-50/80 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 active:scale-[0.98] disabled:opacity-60 disabled:scale-100 transition-[transform,opacity,background,border-color] duration-[var(--duration-base)] ease-[var(--ease-out)] text-indigo-700 dark:text-indigo-300 shadow-sm mt-3"
                 >
                 {sendingAllEmails ? <Spinner size="sm" color="current" /> : <HiOutlineUsers className="w-4 h-4 flex-shrink-0" />}
                 <span>{sendingAllEmails ? 'Sending to all members…' : 'Email to all'}</span>
@@ -732,18 +736,20 @@ const MessBillInvoice = ({
                             {/* Action buttons */}
                             <div className="flex gap-3 pt-1">
                                 <button
+                                    type="button"
                                     id="email-all-cancel"
                                     onClick={() => setIsEmailAllModalOpen(false)}
                                     disabled={sendingAllEmails}
-                                    className="flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+                                    className="touch-target flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 transition-[transform,opacity,background,border-color] duration-[var(--duration-base)] ease-[var(--ease-out)] disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
                                 >
                                     Cancel
                                 </button>
                                 <button
+                                    type="button"
                                     id="email-all-confirm"
                                     onClick={handleEmailAll}
                                     disabled={sendingAllEmails}
-                                    className="flex-[1.3] flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-bold text-white bg-gradient-to-br from-primary to-secondary-500 hover:from-primary/90 hover:to-secondary-500/90 shadow-[0_4px_14px_rgba(79,70,229,0.25)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.35)] transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100"
+                                    className="touch-target flex-[1.3] flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-bold text-white bg-gradient-to-br from-primary to-secondary-500 hover:from-primary/90 hover:to-secondary-500/90 shadow-[0_4px_14px_rgba(79,70,229,0.25)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.35)] transition-[transform,opacity,background,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-out)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100"
                                 >
                                     {sendingAllEmails
                                         ? <Spinner size="sm" color="current" />
