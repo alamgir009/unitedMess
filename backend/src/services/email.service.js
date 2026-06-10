@@ -1,6 +1,8 @@
 const nodemailer = require('nodemailer');
 const config = require('../config');
 const logger = require('../utils/logger');
+const path = require('path');
+const fs = require('fs');
 
 // Create transport
 const transport = nodemailer.createTransport(config.email?.smtp || {
@@ -18,13 +20,18 @@ const transport = nodemailer.createTransport(config.email?.smtp || {
  * @returns {Promise}
  */
 const sendEmail = async ({ to, subject, text, html, attachments }) => {
+    const brandLogoPath = path.join(__dirname, 'fonts', 'brand-logo.png');
+    const brandLogo = fs.existsSync(brandLogoPath)
+        ? [{ filename: 'brand-logo.png', path: brandLogoPath, cid: 'brand-logo' }]
+        : [];
+
     const msg = {
         from: config.email?.from || 'United Mess <noreply@unitedmess.com>',
         to,
         subject,
         text,
         html,
-        attachments
+        attachments: [...brandLogo, ...(attachments || [])]
     };
 
     try {
@@ -234,33 +241,12 @@ ${companyAddress}
                         <td valign="middle" style="width:auto;">
                           <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                             <tr>
-                              <!-- Glyph mark -->
                               <td valign="middle" style="padding-right:10px;">
-                                <div style="
-                                  width:34px;height:34px;
-                                  border-radius:10px;
-                                  background:linear-gradient(135deg,
-                                    rgba(255,210,100,0.22) 0%,
-                                    rgba(255,160,60,0.12) 50%,
-                                    rgba(200,120,255,0.10) 100%);
-                                  border:1px solid rgba(255,210,100,0.25);
-                                  box-shadow:
-                                    inset 0 1px 0 rgba(255,255,255,0.18),
-                                    0 4px 12px rgba(0,0,0,0.35),
-                                    0 0 16px rgba(255,200,80,0.08);
-                                  display:table-cell;
-                                  text-align:center;vertical-align:middle;
-                                ">
-                                  <span style="
-                                    font-family:'Syne','Arial',sans-serif;
-                                    font-size:13px;font-weight:800;
-                                    color:rgba(255,220,120,0.90);
-                                    letter-spacing:-0.5px;
-                                    line-height:34px;
-                                    display:block;
-                                    text-shadow:0 0 12px rgba(255,200,80,0.40);
-                                  ">UM</span>
-                                </div>
+                                <img src="cid:brand-logo"
+                                     alt="UnitedMess"
+                                     width="32" height="32"
+                                     style="display:block;width:32px;height:32px;border-radius:8px;border:0;outline:none;"
+                                />
                               </td>
                               <td valign="middle">
                                 <h1 class="logo" style="
@@ -268,10 +254,12 @@ ${companyAddress}
                                   font-family:'Syne','Arial',sans-serif;
                                   font-size:22px;font-weight:700;
                                   letter-spacing:-0.6px;
-                                  color:rgba(255,255,255,0.92);
                                   line-height:1;
                                   text-shadow:0 1px 8px rgba(255,200,80,0.12);
-                                ">unitedmess</h1>
+                                ">
+                                  <span style="color:rgba(255,255,255,0.92);">United</span>
+                                  <span style="color:rgba(255,200,100,0.90);">Mess</span>
+                                </h1>
                                 <p style="
                                   margin:3px 0 0 0;padding:0;
                                   font-family:'JetBrains Mono','Courier New',monospace;
