@@ -150,7 +150,7 @@ const PrintInvoice = ({
                 <div style={s.brandBlock}>
                     <div style={s.logoRow}>
                         <img
-                            src={typeof window !== 'undefined' ? `${window.location.origin}/assets/icons/unitedmess-icon-1024.png` : '/assets/icons/unitedmess-icon-1024.png'}
+                            src={typeof window !== 'undefined' ? `${window.location.origin}/assets/icons/resize_logo.png` : '/assets/icons/resize_logo.png'}
                             alt="UnitedMess Logo"
                             style={s.logoImg}
                             crossOrigin="anonymous"

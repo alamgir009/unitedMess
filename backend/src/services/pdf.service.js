@@ -16,6 +16,8 @@
 'use strict';
 
 const PDFDocument = require('pdfkit');
+const path = require('path');
+const fs = require('fs');
 
 /* ── Indian locale number formatter (mirrors frontend fmt()) ── */
 const fmt = (n) => Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -42,7 +44,13 @@ const C = {
     amberBorder:  '#fde68a',
     blue:         '#1e3a5f',
     blueBg:       '#eff6ff',
-    monoFont:     'Courier',
+};
+
+/* ── Font registration (for ₹ glyph support) ── */
+const FONT_DIR = path.join(__dirname, 'fonts');
+const FONTS = {
+    regular: path.join(FONT_DIR, 'NotoSans-Regular.ttf'),
+    semibold: path.join(FONT_DIR, 'NotoSans-SemiBold.ttf'),
 };
 
 /* ── Page geometry ── */
@@ -83,7 +91,7 @@ const generateInvoicePDF = (invoiceData, user) => {
             const guestRate    = user?.chargePerGuestMeal     ?? 60;
             const guestAmt     = invoiceData.guestMealRevenue ?? 0;
             const costOfMeals  = invoiceData.messCost         ?? 0;
-            const adjMealCharge= invoiceData.messCost         ?? 0;
+            const adjMealCharge= invoiceData.mealRate         ?? 0;
             const paidAmount   = invoiceData.paidAmount       ?? 0;
 
             /* Mess-wide stats (attached by emailAllInvoices before calling pdf service) */
@@ -103,6 +111,10 @@ const generateInvoicePDF = (invoiceData, user) => {
                     Creator: 'United Mess Invoice System',
                 },
             });
+
+            /* ── Register custom fonts for ₹ support ── */
+            doc.registerFont('NotoSans',          FONTS.regular);
+            doc.registerFont('NotoSans-SemiBold', FONTS.semibold);
 
             const chunks = [];
             doc.on('data', chunk => chunks.push(chunk));
@@ -152,31 +164,40 @@ const generateInvoicePDF = (invoiceData, user) => {
                HEADER  (mirrors PrintInvoice.jsx <header> block)
                ──────────────────────────────────────────────────── */
 
-            // Brand name
+            // Brand logo + name
+            const LOGO_SIZE = 42;
+            const logoPath  = path.join(FONT_DIR, 'brand-logo.png');
+            if (fs.existsSync(logoPath)) {
+                doc.image(logoPath, MARGIN, y, { width: LOGO_SIZE, height: LOGO_SIZE });
+            }
+
+            const brandTextX = MARGIN + LOGO_SIZE + 10;
+            const brandTextY = y + 2;
             doc.fontSize(22).font('Helvetica-Bold').fillColor(C.gray900);
-            text('United', MARGIN, y);
-            const unitedW = doc.widthOfString('United');
+            text('United', brandTextX, brandTextY);
+            const unitedW2 = doc.widthOfString('United');
             doc.fillColor(C.indigo);
-            text('Mess', MARGIN + unitedW + 2, y);
+            text('Mess', brandTextX + unitedW2 + 2, brandTextY);
 
             // Sub-line
-            doc.fontSize(10).font('Helvetica').fillColor(C.gray500);
-            text('Mess Management Platform', MARGIN, y + 28);
-            text(user?.name  || '—', MARGIN, y + 42);
-            text(user?.email || '',  MARGIN, y + 54);
+            doc.fontSize(10).font('NotoSans').fillColor(C.gray500);
+            const subY = brandTextY + 26;
+            text('Mess Management Platform', brandTextX, subY);
+            text(user?.name  || '—', brandTextX, subY + 14);
+            text(user?.email || '',  brandTextX, subY + 26);
 
             // Invoice meta block (right-aligned)
-            doc.fontSize(9).fillColor(C.gray400);
+            doc.fontSize(9).font('NotoSans').fillColor(C.gray400);
             const metaX = PAGE_W - MARGIN - 160;
             text('INVOICE', metaX, y, { width: 160, align: 'right' });
 
-            doc.fontSize(10).font(C.monoFont).fillColor(C.indigo);
+            doc.fontSize(10).font('NotoSans').fillColor(C.indigo);
             text(invoiceNo, metaX, y + 14, { width: 160, align: 'right' });
 
-            doc.fontSize(11).font('Helvetica-Bold').fillColor(C.gray700);
+            doc.fontSize(11).font('NotoSans-SemiBold').fillColor(C.gray700);
             text(monthName, metaX, y + 30, { width: 160, align: 'right' });
 
-            doc.fontSize(10).font('Helvetica').fillColor(C.gray700);
+            doc.fontSize(10).font('NotoSans').fillColor(C.gray700);
             text(displayDate, metaX, y + 44, { width: 160, align: 'right' });
 
             moveTo(y + 78);
@@ -194,25 +215,25 @@ const generateInvoicePDF = (invoiceData, user) => {
 
             // Card 1 — Market Total
             fillStrokeRect(MARGIN, cardY, cardW, cardH, C.gray50, C.gray200);
-            doc.fontSize(8).font('Helvetica').fillColor(C.gray500);
+            doc.fontSize(8).font('NotoSans-SemiBold').fillColor(C.gray500);
             text('MARKET TOTAL (ALL)', MARGIN + 10, cardY + 8);
-            doc.fontSize(18).font('Helvetica-Bold').fillColor(C.gray900);
+            doc.fontSize(18).font('NotoSans-SemiBold').fillColor(C.gray900);
             text(`\u20B9${fmt(grandTotalMarket)}`, MARGIN + 10, cardY + 22);
 
             // Card 2 — Total Meals
             const card2X = MARGIN + cardW + cardGap;
             fillStrokeRect(card2X, cardY, cardW, cardH, C.gray50, C.gray200);
-            doc.fontSize(8).font('Helvetica').fillColor(C.gray500);
+            doc.fontSize(8).font('NotoSans-SemiBold').fillColor(C.gray500);
             text('TOTAL MEALS (ALL)', card2X + 10, cardY + 8);
-            doc.fontSize(18).font('Helvetica-Bold').fillColor(C.gray900);
+            doc.fontSize(18).font('NotoSans-SemiBold').fillColor(C.gray900);
             text(`${fmt(grandTotalMeal)}`, card2X + 10, cardY + 22);
 
             // Card 3 — Your Payable (accent)
             const card3X = MARGIN + (cardW + cardGap) * 2;
             fillStrokeRect(card3X, cardY, cardW, cardH, C.indigoBg, C.indigoBorder);
-            doc.fontSize(8).font('Helvetica').fillColor(C.gray500);
+            doc.fontSize(8).font('NotoSans-SemiBold').fillColor(C.gray500);
             text(isRefund ? 'REFUND DUE' : 'YOUR PAYABLE', card3X + 10, cardY + 8);
-            doc.fontSize(18).font('Helvetica-Bold').fillColor(C.indigo);
+            doc.fontSize(18).font('NotoSans-SemiBold').fillColor(C.indigo);
             text(`\u20B9${fmt(displayAmt)}`, card3X + 10, cardY + 22);
 
             moveTo(cardY + cardH + 20);
@@ -221,7 +242,7 @@ const generateInvoicePDF = (invoiceData, user) => {
                SECTION HELPER  (label + rule, matching sectionLabel style)
                ──────────────────────────────────────────────────── */
             const sectionLabel = (label) => {
-                doc.fontSize(9).font('Helvetica-Bold').fillColor(C.gray400);
+                doc.fontSize(9).font('NotoSans-SemiBold').fillColor(C.gray400);
                 text(label.toUpperCase(), MARGIN, y);
                 hRule(y + 14, C.gray200, 0.5);
                 moveTo(y + 20);
@@ -234,15 +255,15 @@ const generateInvoicePDF = (invoiceData, user) => {
                 const rowH = subLabel ? 34 : 24;
                 hRule(y + rowH - 1, C.gray100, 0.4);
 
-                doc.fontSize(11).font('Helvetica').fillColor(C.gray700);
+                doc.fontSize(11).font('NotoSans').fillColor(C.gray700);
                 text(label, MARGIN, y + 4);
 
                 if (subLabel) {
-                    doc.fontSize(9).fillColor(C.gray400);
+                    doc.fontSize(9).font('NotoSans').fillColor(C.gray400);
                     text(subLabel, MARGIN, y + 18);
                 }
 
-                doc.fontSize(11).font('Helvetica-Bold').fillColor(accent ? C.indigo : C.gray900);
+                doc.fontSize(11).font('NotoSans-SemiBold').fillColor(accent ? C.indigo : C.gray900);
                 text(value, MARGIN, y + 4, { width: CONTENT_W, align: 'right' });
 
                 moveTo(y + rowH);
@@ -283,12 +304,12 @@ const generateInvoicePDF = (invoiceData, user) => {
             fillStrokeRect(MARGIN, y, CONTENT_W, totalBoxH, totalBg, totalBd, 1, 10);
 
             // Label
-            doc.fontSize(9).font('Helvetica').fillColor(C.gray500);
+            doc.fontSize(9).font('NotoSans').fillColor(C.gray500);
             text(isRefund ? 'REFUND AMOUNT' : 'TOTAL PAYABLE', MARGIN + 16, y + 10);
 
             // Amount
             const amtColor = isRefund ? C.green : C.indigo;
-            doc.fontSize(28).font('Helvetica-Bold').fillColor(amtColor);
+            doc.fontSize(28).font('NotoSans-SemiBold').fillColor(amtColor);
             text(`\u20B9${fmt(displayAmt)}`, MARGIN + 16, y + 24);
 
             // Status badge (right side)
@@ -296,7 +317,7 @@ const generateInvoicePDF = (invoiceData, user) => {
             const badgeText = isPaid ? '#065f46' : isPartiallyPaid ? '#92400e' : isRefund ? '#15803d' : '#4338ca';
             const badgeW = 70, badgeH = 24, badgeX = PAGE_W - MARGIN - badgeW - 12, badgeY = y + 20;
             fillRect(badgeX, badgeY, badgeW, badgeH, badgeBg);
-            doc.fontSize(10).font('Helvetica-Bold').fillColor(badgeText);
+            doc.fontSize(10).font('NotoSans-SemiBold').fillColor(badgeText);
             text(statusLabel, badgeX, badgeY + 6, { width: badgeW, align: 'center' });
 
             moveTo(y + totalBoxH + 12);
@@ -310,9 +331,9 @@ const generateInvoicePDF = (invoiceData, user) => {
                 fillStrokeRect(MARGIN, y, CONTENT_W, pbH, C.gray50, C.gray200, 1, 8);
 
                 // Status row
-                doc.fontSize(9).font('Helvetica').fillColor(C.gray500);
+                doc.fontSize(9).font('NotoSans').fillColor(C.gray500);
                 text('PAYMENT STATUS', MARGIN + 12, y + 10);
-                doc.fontSize(11).font('Helvetica-Bold').fillColor(C.gray900);
+                doc.fontSize(11).font('NotoSans-SemiBold').fillColor(C.gray900);
                 const payLabel = isPaid ? 'Payment Successful' : 'Partially Paid';
                 text(payLabel, MARGIN + 12, y + 22);
 
@@ -322,21 +343,21 @@ const generateInvoicePDF = (invoiceData, user) => {
                         : invoiceData._paymentMethod === 'razorpay'
                             ? 'Online (Razorpay)'
                             : invoiceData._paymentMethod;
-                    doc.fontSize(9).font('Helvetica').fillColor(C.gray500);
+                    doc.fontSize(9).font('NotoSans').fillColor(C.gray500);
                     text(mLabel, MARGIN + 12, y + 36);
                 }
 
                 // SETTLED badge
                 fillRect(PAGE_W - MARGIN - 70, y + 16, 60, 20, '#d1fae5');
-                doc.fontSize(9).font('Helvetica-Bold').fillColor('#065f46');
+                doc.fontSize(9).font('NotoSans-SemiBold').fillColor('#065f46');
                 text('SETTLED', PAGE_W - MARGIN - 70, y + 22, { width: 60, align: 'center' });
 
                 // UTR block (if UPI manual)
                 if (invoiceData._paymentMethod === 'upi_manual' && invoiceData._transactionId) {
                     fillRect(MARGIN + 8, y + pbH - 26, CONTENT_W - 16, 20, C.blueBg);
-                    doc.fontSize(9).font('Helvetica-Bold').fillColor('#3b82f6');
+                    doc.fontSize(9).font('NotoSans-SemiBold').fillColor('#3b82f6');
                     text('UTR', MARGIN + 16, y + pbH - 20);
-                    doc.fontSize(10).font(C.monoFont).fillColor(C.blue);
+                    doc.fontSize(10).font('NotoSans').fillColor(C.blue);
                     text(invoiceData._transactionId, MARGIN + 42, y + pbH - 20);
                 }
 
@@ -350,14 +371,14 @@ const generateInvoicePDF = (invoiceData, user) => {
             hRule(y, C.gray200, 0.5);
             moveTo(y + 10);
 
-            doc.fontSize(9).font('Helvetica').fillColor(C.gray400);
+            doc.fontSize(9).font('NotoSans').fillColor(C.gray400);
             text(
                 `System-generated invoice for ${monthName}. For disputes, contact your mess admin.`,
                 MARGIN, y, { width: CONTENT_W, align: 'center' }
             );
             moveTo(y + 14);
 
-            doc.fontSize(9).font('Helvetica').fillColor('#c4b5fd');
+            doc.fontSize(9).font('NotoSans').fillColor('#c4b5fd');
             text(
                 `Powered by United Mess · ${invoiceNo}`,
                 MARGIN, y, { width: CONTENT_W, align: 'center' }
