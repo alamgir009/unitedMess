@@ -66,13 +66,14 @@ export const fetchInvoiceHistory = createAsyncThunk(
  * Fetches the invoice for a specific month/year.
  * Used by the MonthlyInvoiceModal when user clicks "View Invoice" on a payment.
  *
- * @param {{ year: number, month: number }} params
+ * @param {{ year: number, month: number, userId?: string }} params
+ *   userId — optional, for admin viewing another user's invoice
  */
 export const fetchMonthlyInvoice = createAsyncThunk(
     'invoice/fetchMonthly',
-    async ({ year, month }, thunkAPI) => {
+    async ({ year, month, userId }, thunkAPI) => {
         try {
-            const res = await invoiceService.getInvoiceForMonth(year, month);
+            const res = await invoiceService.getInvoiceForMonth(year, month, userId);
             return res?.data ?? res;
         } catch (err) {
             const msg =

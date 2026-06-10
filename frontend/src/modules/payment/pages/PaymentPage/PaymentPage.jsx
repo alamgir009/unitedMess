@@ -95,7 +95,7 @@ const PaymentPage = () => {
     /* ── state ── */
     const [isPaying,       setIsPaying]       = useState(false);
     const [isModalOpen,    setIsModalOpen]    = useState(false);
-    const [invoiceModal,   setInvoiceModal]   = useState({ open: false, year: null, month: null, monthName: '', paymentRecord: null });
+    const [invoiceModal,   setInvoiceModal]   = useState({ open: false, year: null, month: null, monthName: '', paymentRecord: null, userId: null });
     const [editingPayment, setEditingPayment] = useState(null);
     const [isReadOnly,     setIsReadOnly]     = useState(false);
     const [viewMode,       setViewMode]       = useState('grid');
@@ -222,6 +222,10 @@ const PaymentPage = () => {
         setIsModalOpen(true);
     }, [isAdmin]);
 
+    const closeInvoiceModal = useCallback(() => {
+        setInvoiceModal(prev => ({ ...prev, open: false }));
+    }, []);
+
     const closeModal = useCallback(() => {
         setIsModalOpen(false);
         setEditingPayment(null);
@@ -237,6 +241,10 @@ const PaymentPage = () => {
             toast.error('Unable to open invoice: payment has no month information.');
             return;
         }
+
+        // Extract the user identity from the payment record.
+        // For admin, this is the selected user; for regular users, it's themselves.
+        const userId = payment.user?._id || (typeof payment.user === 'string' ? payment.user : null);
 
         const paymentRecord = payment.paymentMethod === 'upi_manual' ? {
             paymentMethod: payment.paymentMethod,
@@ -254,6 +262,7 @@ const PaymentPage = () => {
                     month: date.getMonth() + 1,
                     monthName: monthStr,
                     paymentRecord,
+                    userId,
                 });
                 return;
             }
@@ -267,6 +276,7 @@ const PaymentPage = () => {
                 month: parseInt(isoMatch[2], 10),
                 monthName: monthStr,
                 paymentRecord,
+                userId,
             });
             return;
         }
@@ -279,6 +289,7 @@ const PaymentPage = () => {
                 month: fallback.getMonth() + 1,
                 monthName: monthStr,
                 paymentRecord,
+                userId,
             });
             return;
         }
@@ -557,13 +568,14 @@ const PaymentPage = () => {
 
                 <MonthlyInvoiceModal
                     isOpen={invoiceModal.open}
-                    onClose={() => setInvoiceModal(prev => ({ ...prev, open: false }))}
+                    onClose={closeInvoiceModal}
                     year={invoiceModal.year}
                     month={invoiceModal.month}
                     monthName={invoiceModal.monthName}
                     onPayNow={handlePayBillClick}
                     isPaying={isPaying}
                     paymentRecord={invoiceModal.paymentRecord}
+                    userId={invoiceModal.userId}
                 />
 
                 <PaymentFlowModal

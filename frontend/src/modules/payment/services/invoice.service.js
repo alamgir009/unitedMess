@@ -32,12 +32,14 @@ const getInvoiceHistory = async () => {
  * Fetch the invoice for a specific year/month.
  * Used when clicking "View Invoice" on a payment history item.
  *
- * @param {number} year  — e.g. 2026
- * @param {number} month — 1-indexed (1 = January, 12 = December)
+ * @param {number} year   — e.g. 2026
+ * @param {number} month  — 1-indexed (1 = January, 12 = December)
+ * @param {string} [userId] — optional userId for admin viewing another user's invoice
  * @returns {{ success, message, data: Invoice }}
  */
-const getInvoiceForMonth = async (year, month) => {
-    const res = await apiClient.get(`${BASE}/me/month/${year}/${month}`);
+const getInvoiceForMonth = async (year, month, userId) => {
+    const query = userId ? `?userId=${encodeURIComponent(userId)}` : '';
+    const res = await apiClient.get(`${BASE}/me/month/${year}/${month}${query}`);
     return res.data;
 };
 

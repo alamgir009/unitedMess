@@ -153,6 +153,7 @@ const MonthlyInvoiceModal = ({
     onPayNow,    // optional: if provided, show "Pay Remaining" in the partial-payment banner
     isPaying,    // optional: loading state for onPayNow
     paymentRecord: externalPaymentRecord, // optional: UPI manual payment info from payment card
+    userId,      // optional: for admin viewing another user's invoice
 }) => {
     const dispatch = useDispatch();
     const { monthlyInvoice, isLoadingMonthly, error } = useSelector((state) => state.invoice);
@@ -167,7 +168,7 @@ const MonthlyInvoiceModal = ({
         document.addEventListener('keydown', handleEsc);
 
         if (year && month) {
-            dispatch(fetchMonthlyInvoice({ year, month }));
+            dispatch(fetchMonthlyInvoice({ year, month, userId }));
         }
 
         return () => {
@@ -175,7 +176,7 @@ const MonthlyInvoiceModal = ({
             document.removeEventListener('keydown', handleEsc);
             dispatch(clearMonthlyInvoice());
         };
-    }, [isOpen, year, month, dispatch, onClose]);
+    }, [isOpen, year, month, userId, dispatch, onClose]);
 
     /* Stable close handler */
     const handleClose = useCallback(() => onClose(), [onClose]);
