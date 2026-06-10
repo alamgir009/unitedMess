@@ -1,4 +1,4 @@
-import { useState, useMemo, memo, useRef } from 'react';
+import { useState, useMemo, memo, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import PrintInvoice from './PrintInvoice';
@@ -17,6 +17,7 @@ import {
     HiOutlineReceiptPercent,
     HiOutlineDocumentText,
     HiOutlineEnvelope,
+    HiOutlineExclamationTriangle,
     HiOutlineSparkles,
     HiOutlineBuildingOffice2,
     HiOutlineArrowDownTray,
@@ -28,6 +29,11 @@ import {
 } from 'react-icons/hi2';
 import { Spinner } from '@/shared/components/ui';
 import { fmt } from '@/core/utils/helpers/currency.helper';
+
+const MONTHS = [
+    'January','February','March','April','May','June',
+    'July','August','September','October','November','December'
+];
 
 /* ────────────────────────────────────────
    SUB-COMPONENTS (memoized)
@@ -171,6 +177,47 @@ const MessBillInvoice = ({
     const printRef = useRef(null);
     const { isDownloading, downloadPDF, generatePDFBase64 } = useDownloadInvoice();
 
+    /* Opens the month/year picker modal, pre-filled with the active billing period */
+    const openEmailAllModal = useCallback(() => {
+        setSelectedMonth(billingNums.month);
+        setSelectedYear(billingNums.year);
+        setIsEmailAllModalOpen(true);
+    }, [billingNums.month, billingNums.year]);
+
+    const handleEmailAll = useCallback(async () => {
+        setSendingAllEmails(true);
+        try {
+            const res = await invoiceService.emailAllInvoices({ month: selectedMonth, year: selectedYear });
+            const { sent, failed } = res?.data ?? {};
+            setIsEmailAllModalOpen(false);
+            if (failed > 0) {
+                toast(
+                    `Emailed ${sent} member${sent !== 1 ? 's' : ''}, ${failed} failed. Check server logs for details.`,
+                    { icon: '\u26A0\uFE0F' }
+                );
+            } else {
+                toast.success(`Invoice emailed to all ${sent} members successfully!`);
+            }
+        } catch (err) {
+            toast.error(err?.response?.data?.message ?? 'Failed to send invoices to all members');
+        } finally {
+            setSendingAllEmails(false);
+        }
+    }, [selectedMonth, selectedYear]);
+
+    useEffect(() => {
+        if (!isEmailAllModalOpen) return;
+        document.body.style.overflow = 'hidden';
+        const handleEsc = (e) => {
+            if (e.key === 'Escape' && !sendingAllEmails) setIsEmailAllModalOpen(false);
+        };
+        document.addEventListener('keydown', handleEsc);
+        return () => {
+            document.body.style.overflow = '';
+            document.removeEventListener('keydown', handleEsc);
+        };
+    }, [isEmailAllModalOpen, sendingAllEmails]);
+
     if (!data) return null;
 
     const {
@@ -237,34 +284,6 @@ const MessBillInvoice = ({
             toast.error(err?.response?.data?.message ?? 'Failed to send invoice email');
         } finally {
             setSendingEmail(false);
-        }
-    };
-
-    /* Opens the month/year picker modal, pre-filled with the active billing period */
-    const openEmailAllModal = () => {
-        setSelectedMonth(billingNums.month);
-        setSelectedYear(billingNums.year);
-        setIsEmailAllModalOpen(true);
-    };
-
-    const handleEmailAll = async () => {
-        setSendingAllEmails(true);
-        try {
-            const res = await invoiceService.emailAllInvoices({ month: selectedMonth, year: selectedYear });
-            const { sent, failed } = res?.data ?? {};
-            setIsEmailAllModalOpen(false);
-            if (failed > 0) {
-                toast(
-                    `Emailed ${sent} member${sent !== 1 ? 's' : ''}, ${failed} failed. Check server logs for details.`,
-                    { icon: '\u26A0\uFE0F' }
-                );
-            } else {
-                toast.success(`Invoice emailed to all ${sent} members successfully!`);
-            }
-        } catch (err) {
-            toast.error(err?.response?.data?.message ?? 'Failed to send invoices to all members');
-        } finally {
-            setSendingAllEmails(false);
         }
     };
 
@@ -607,17 +626,19 @@ const MessBillInvoice = ({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.18 }}
-                className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-                style={{ backdropFilter: 'blur(6px)', backgroundColor: 'rgba(0,0,0,0.52)' }}
+                className="fixed inset-0 z-modal flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm"
                 onClick={(e) => { if (e.target === e.currentTarget && !sendingAllEmails) setIsEmailAllModalOpen(false); }}
             >
                 <motion.div
-                    key="email-all-card"
                     initial={{ opacity: 0, scale: 0.94, y: 14 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.94, y: 14 }}
                     transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
-                    className="relative w-full max-w-sm bg-card border border-border/60 rounded-2xl shadow-2xl overflow-hidden"
+                    className="relative w-full max-w-sm max-h-[85vh] overflow-y-auto bg-card border border-border/60 rounded-2xl shadow-2xl transform-gpu"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Email Invoice to All"
+                    tabIndex={-1}
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* ── Modal Header ── */}
@@ -646,53 +667,61 @@ const MessBillInvoice = ({
                         {/* Month + Year selects */}
                         <div className="grid grid-cols-2 gap-3">
                             <div className="flex flex-col gap-1.5">
-                                <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                                <label htmlFor="email-all-month" className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
                                     Month
                                 </label>
-                                <select
-                                    id="email-all-month"
-                                    value={selectedMonth}
-                                    onChange={e => setSelectedMonth(Number(e.target.value))}
-                                    disabled={sendingAllEmails}
-                                    className="w-full px-3 py-2.5 text-sm font-medium rounded-xl border border-border/60 bg-white/70 dark:bg-gray-800/70 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {['January','February','March','April','May','June','July','August','September','October','November','December'].map((m, i) => (
-                                        <option key={m} value={i + 1}>{m}</option>
-                                    ))}
-                                </select>
+                                <div className="relative">
+                                    <select
+                                        id="email-all-month"
+                                        value={selectedMonth}
+                                        onChange={e => setSelectedMonth(Number(e.target.value))}
+                                        disabled={sendingAllEmails}
+                                        className="w-full appearance-none px-3 py-2.5 pr-9 text-sm font-medium rounded-xl border border-border/60 bg-white/70 dark:bg-gray-800/70 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 focus:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {MONTHS.map((m, i) => (
+                                            <option key={m} value={i + 1}>{m}</option>
+                                        ))}
+                                    </select>
+                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-gray-400 dark:text-gray-500">
+                                        <HiOutlineChevronDown className="w-3.5 h-3.5" />
+                                    </div>
+                                </div>
                             </div>
                             <div className="flex flex-col gap-1.5">
-                                <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                                <label htmlFor="email-all-year" className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
                                     Year
                                 </label>
-                                <select
-                                    id="email-all-year"
-                                    value={selectedYear}
-                                    onChange={e => setSelectedYear(Number(e.target.value))}
-                                    disabled={sendingAllEmails}
-                                    className="w-full px-3 py-2.5 text-sm font-medium rounded-xl border border-border/60 bg-white/70 dark:bg-gray-800/70 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => (
-                                        <option key={y} value={y}>{y}</option>
-                                    ))}
-                                </select>
+                                <div className="relative">
+                                    <select
+                                        id="email-all-year"
+                                        value={selectedYear}
+                                        onChange={e => setSelectedYear(Number(e.target.value))}
+                                        disabled={sendingAllEmails}
+                                        className="w-full appearance-none px-3 py-2.5 pr-9 text-sm font-medium rounded-xl border border-border/60 bg-white/70 dark:bg-gray-800/70 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 focus:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => (
+                                            <option key={y} value={y}>{y}</option>
+                                        ))}
+                                    </select>
+                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-gray-400 dark:text-gray-500">
+                                        <HiOutlineChevronDown className="w-3.5 h-3.5" />
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
                         {/* Selected period preview chip */}
-                        <div className="flex items-center gap-2.5 p-3 rounded-xl bg-indigo-50/80 dark:bg-indigo-900/20 border border-indigo-200/60 dark:border-indigo-700/40">
+                        <div className="flex items-center gap-3 p-3.5 rounded-xl bg-gradient-to-r from-indigo-50/90 to-indigo-50/50 dark:from-indigo-900/20 dark:to-indigo-900/10 border-l-4 border-indigo-400 dark:border-indigo-500 border border-indigo-200/60 dark:border-indigo-700/40 shadow-sm">
                             <HiOutlineCalendarDays className="w-4 h-4 text-indigo-500 dark:text-indigo-400 flex-shrink-0" />
                             <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
                                 Sending invoices for{' '}
-                                <span className="font-bold">
-                                    {['January','February','March','April','May','June','July','August','September','October','November','December'][selectedMonth - 1]}{' '}{selectedYear}
-                                </span>
+                                <span className="font-bold">{MONTHS[selectedMonth - 1]} {selectedYear}</span>
                             </p>
                         </div>
 
                         {/* Irreversibility warning */}
-                        <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50/80 dark:bg-amber-900/20 border border-amber-200/60 dark:border-amber-700/40">
-                            <HiOutlineEnvelope className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                        <div className="flex items-start gap-3 p-3.5 rounded-xl bg-amber-50/90 dark:bg-amber-900/15 border-l-4 border-amber-400 dark:border-amber-500 border border-amber-200/60 dark:border-amber-700/40">
+                            <HiOutlineExclamationTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                             <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
                                 This will email a PDF invoice to every active member. Emails cannot be recalled once sent.
                             </p>
@@ -713,7 +742,7 @@ const MessBillInvoice = ({
                             id="email-all-confirm"
                             onClick={handleEmailAll}
                             disabled={sendingAllEmails}
-                            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-bold text-white bg-gradient-to-br from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 shadow-[0_4px_14px_rgba(79,70,229,0.25)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.35)] transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100"
+                            className="flex-[1.3] flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-bold text-white bg-gradient-to-br from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 shadow-[0_4px_14px_rgba(79,70,229,0.25)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.35)] transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 transform-gpu"
                         >
                             {sendingAllEmails
                                 ? <Spinner size="sm" color="current" />
