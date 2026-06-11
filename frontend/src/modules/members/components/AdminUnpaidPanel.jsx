@@ -190,13 +190,7 @@ const GroupHeader = React.memo(({ user, count }) => (
             {count} unresolved
         </span>
     </div>
-), (prev, next) => {
-    return prev.count === next.count
-        && prev.user?._id === next.user?._id
-        && prev.user?.name === next.user?.name
-        && prev.user?.image === next.user?.image
-        && prev.user?.email === next.user?.email;
-});
+));
 GroupHeader.displayName = 'GroupHeader';
 
 /* ─────────────────────────────────────────────
@@ -223,142 +217,92 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
 
     return (
         <>
-            {/* ── Desktop row ── */}
+            {/* Desktop row */}
             <div className={cn(
                 'hidden md:grid grid-cols-12 gap-3 items-center px-6 py-4',
                 'border-b border-border',
                 'hover:bg-muted/30 hover:shadow-sm',
                 'transition-[background,box-shadow] duration-150'
             )}>
-                {/* Invoice Ref */}
                 <div className="col-span-3 flex items-center gap-2 min-w-0">
                     <span className="text-[10px] font-mono font-semibold text-muted-foreground">{refId}</span>
-                    <button
-                        onClick={handleCopyRef}
-                        className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-muted-foreground transition-colors"
-                        title="Copy full invoice ID"
-                        aria-label="Copy invoice ID"
-                    >
+                    <button onClick={handleCopyRef} className="p-0.5 rounded hover:bg-muted text-muted-foreground transition-colors">
                         <Copy size={10} />
                     </button>
                 </div>
-
-                {/* Month */}
                 <div className="col-span-2">
                     <p className="text-[12px] font-semibold text-muted-foreground">{invoice.monthName}</p>
                 </div>
-
-                {/* Meals */}
                 <div className="col-span-1">
                     <p className="text-[12px] font-bold tabular-nums text-foreground">{fmt(invoice.mealCount)}</p>
                 </div>
-
-                {/* Market */}
                 <div className="col-span-1">
                     <p className="text-[12px] font-bold tabular-nums text-foreground">₹{fmt(invoice.marketAmountSpent)}</p>
                 </div>
-
-                {/* Total Payable */}
                 <div className="col-span-1 text-right">
                     <p className="text-[13px] font-black tabular-nums text-foreground">₹{fmt(invoice.totalPayable)}</p>
                 </div>
-
-                {/* Paid */}
                 <div className="col-span-1 text-right">
                     <p className="text-[12px] font-bold tabular-nums text-success-text">₹{fmt(invoice.paidAmount)}</p>
                 </div>
-
-                {/* Outstanding */}
                 <div className="col-span-1 text-right">
                     <p className="text-[13px] font-black tabular-nums text-danger-text">₹{fmt(outstanding)}</p>
                 </div>
-
-                {/* Status */}
                 <div className="col-span-1 flex justify-center">
                     <StatusPill status={invoice.status} />
                 </div>
-
-                {/* Action */}
                 <div className="col-span-1 flex justify-end">
-                    <button
-                        onClick={() => setShowModal(true)}
-                        disabled={isSaving}
-                        className={cn(
-                            'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11.5px] font-black',
-                            'bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500',
-                            'text-white dark:text-slate-950',
-                            'hover:brightness-105 active:scale-[0.98] transition-[filter,transform,opacity] duration-150',
-                            'disabled:opacity-50 disabled:cursor-not-allowed',
-                            'shadow-sm shadow-emerald-600/10 dark:shadow-emerald-500/5'
-                        )}
-                    >
+                    <button onClick={() => setShowModal(true)} disabled={isSaving}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11.5px] font-black
+                                   bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500
+                                   text-white dark:text-slate-950 hover:brightness-105 active:scale-[0.98]
+                                   disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
                         {isSaving ? <Spinner size="xs" color="white" /> : <ArrowRight size={11} />}
                         {isSaving ? 'Saving' : 'Resolve'}
                     </button>
                 </div>
             </div>
 
-            {/* ── Mobile row (Flat Edge-to-Edge) ── */}
-            <div className={cn(
-                'md:hidden flex flex-col gap-3 p-4 border-b border-border bg-card last:border-b-0'
-            )}>
-                {/* Header: ref + status */}
+            {/* Mobile row */}
+            <div className="md:hidden flex flex-col gap-3 p-4 border-b border-border bg-card last:border-b-0">
                 <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex items-center gap-2">
                         <span className="text-[10px] font-mono font-semibold text-muted-foreground">{refId}</span>
-                        <button
-                            onClick={handleCopyRef}
-                            className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-muted-foreground transition-colors"
-                            aria-label="Copy invoice ID"
-                        >
-                            <Copy size={9} />
-                        </button>
+                        <button onClick={handleCopyRef} className="p-0.5 rounded hover:bg-muted"><Copy size={9} /></button>
                     </div>
                     <StatusPill status={invoice.status} />
                 </div>
-
-                {/* Details grid */}
                 <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="flex flex-col gap-1 bg-muted dark:bg-muted/40 rounded-xl px-3 py-2.5">
-                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Period</span>
+                        <span className="text-[9px] font-bold text-muted-foreground">Period</span>
                         <span className="text-[12.5px] font-bold text-foreground">{invoice.monthName}</span>
                     </div>
                     <div className="flex flex-col gap-1 bg-muted dark:bg-muted/40 rounded-xl px-3 py-2.5">
-                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Meals</span>
+                        <span className="text-[9px] font-bold text-muted-foreground">Meals</span>
                         <span className="text-[12.5px] font-bold tabular-nums text-foreground">{fmt(invoice.mealCount)}</span>
                     </div>
                     <div className="flex flex-col gap-1 bg-muted dark:bg-muted/40 rounded-xl px-3 py-2.5">
-                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Market</span>
+                        <span className="text-[9px] font-bold text-muted-foreground">Market</span>
                         <span className="text-[12.5px] font-bold tabular-nums text-foreground">₹ {fmt(invoice.marketAmountSpent)}</span>
                     </div>
                     <div className="flex flex-col gap-1 bg-muted dark:bg-muted/40 rounded-xl px-3 py-2.5">
-                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Total</span>
+                        <span className="text-[9px] font-bold text-muted-foreground">Total</span>
                         <span className="text-[12.5px] font-bold tabular-nums text-foreground">₹ {fmt(invoice.totalPayable)}</span>
                     </div>
                     <div className="flex flex-col gap-1 bg-success-bg rounded-xl px-3 py-2.5">
-                        <span className="text-[9px] font-bold text-success-text uppercase tracking-widest">Paid</span>
+                        <span className="text-[9px] font-bold text-success-text">Paid</span>
                         <span className="text-[12.5px] font-bold tabular-nums text-success-text">₹ {fmt(invoice.paidAmount)}</span>
                     </div>
                     <div className="flex flex-col gap-1 bg-danger-bg rounded-xl px-3 py-2.5">
-                        <span className="text-[9px] font-bold text-danger-text uppercase tracking-widest">Due</span>
+                        <span className="text-[9px] font-bold text-danger-text">Due</span>
                         <span className="text-[12.5px] font-bold tabular-nums text-danger-text">₹ {fmt(outstanding)}</span>
                     </div>
                 </div>
-
-                {/* Resolve button */}
-                <button
-                    onClick={() => setShowModal(true)}
-                    disabled={isSaving}
-                    className={cn(
-                        'flex items-center justify-center gap-2 py-3 rounded-xl text-[13px] font-black',
-                        'bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500',
-                        'text-white dark:text-slate-950',
-                        'hover:brightness-105 active:scale-[0.98] transition-[filter,transform,opacity] duration-150',
-                        'disabled:opacity-60 disabled:cursor-not-allowed',
-                        'min-h-[44px]',
-                        'shadow-md shadow-emerald-600/20 dark:shadow-emerald-500/10'
-                    )}
-                >
+                <button onClick={() => setShowModal(true)} disabled={isSaving}
+                    className="flex items-center justify-center gap-2 py-3 rounded-xl text-[13px] font-black
+                               bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500
+                               text-white dark:text-slate-950 hover:brightness-105 active:scale-[0.98]
+                               disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px] shadow-md">
                     {isSaving ? <Spinner size="sm" color="white" /> : <BadgeIndianRupee size={16} />}
                     {isSaving ? 'Processing…' : `Resolve — ₹ ${fmt(outstanding)}`}
                 </button>
@@ -374,20 +318,11 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
             )}
         </>
     );
-}, (prevProps, nextProps) => {
-    const a = prevProps.invoice;
-    const b = nextProps.invoice;
-    return a._id === b._id
-        && a.status === b.status
-        && a.totalPayable === b.totalPayable
-        && a.paidAmount === b.paidAmount
-        && prevProps.isSaving === nextProps.isSaving
-        && prevProps.onResolve === nextProps.onResolve;
 });
 InvoiceRow.displayName = 'InvoiceRow';
 
 /* ─────────────────────────────────────────────
-   AdminUnpaidPanel — root export
+   AdminUnpaidPanel
 ───────────────────────────────────────────── */
 const AdminUnpaidPanel = React.memo(() => {
     const dispatch = useDispatch();
@@ -399,16 +334,10 @@ const AdminUnpaidPanel = React.memo(() => {
     const [savingId, setSavingId] = useState(null);
 
     const safeMonthOptions = useMemo(
-        () => monthOptions.length > 0 ? monthOptions : [{
-            label: '—', month: undefined, year: undefined, isLastFinalized: true
-        }],
+        () => monthOptions.length > 0 ? monthOptions : [{ label: '—', month: undefined, year: undefined, isLastFinalized: true }],
         [monthOptions]
     );
-
-    const selected = useMemo(
-        () => safeMonthOptions[selectedIdx] ?? safeMonthOptions[0],
-        [selectedIdx, safeMonthOptions]
-    );
+    const selected = useMemo(() => safeMonthOptions[selectedIdx] ?? safeMonthOptions[0], [selectedIdx, safeMonthOptions]);
 
     const load = useCallback((opt) => {
         if (!opt.month || !opt.year) return;
@@ -420,19 +349,15 @@ const AdminUnpaidPanel = React.memo(() => {
     const lastDateRef = useRef(new Date().getDate());
     useEffect(() => {
         const interval = setInterval(() => {
-            const currentDate = new Date().getDate();
-            if (currentDate !== lastDateRef.current) {
-                lastDateRef.current = currentDate;
+            if (new Date().getDate() !== lastDateRef.current) {
+                lastDateRef.current = new Date().getDate();
                 setBillingRefreshKey(k => k + 1);
             }
         }, 60000);
         return () => clearInterval(interval);
     }, []);
 
-    const handleMonthChange = (e) => {
-        setSelectedIdx(parseInt(e.target.value, 10));
-    };
-
+    const handleMonthChange = (e) => setSelectedIdx(parseInt(e.target.value, 10));
     const handleResolve = useCallback(async (invoiceId, paidAmount) => {
         setSavingId(invoiceId);
         try {
@@ -455,136 +380,76 @@ const AdminUnpaidPanel = React.memo(() => {
         return lp.month === selected.month && lp.year === selected.year;
     }, [selected.month, selected.year]);
 
-    // ✅ FIX: Robust grouping – normalises user IDs and merges user objects
+    // FIXED: robust grouping – each member appears exactly once
     const groupedInvoices = useMemo(() => {
-        const groupMap = new Map(); // key = normalized userId
-
+        const groupMap = new Map();
         for (const inv of unpaidInvoices) {
-            // 1. Normalize user ID
             let userId;
-            let userObj = null;
-
+            let userObj;
             if (typeof inv.user === 'string') {
                 userId = inv.user;
                 userObj = { _id: inv.user, name: 'Unknown', email: '' };
             } else if (inv.user && typeof inv.user === 'object') {
                 userId = inv.user._id ? String(inv.user._id) : 'unknown';
-                userObj = { ...inv.user, _id: userId }; // ensure _id is string
+                userObj = { ...inv.user, _id: userId };
             } else {
                 userId = 'unknown';
                 userObj = { _id: 'unknown', name: 'Unknown Member', email: '' };
             }
-
-            // 2. If group exists, add invoice; otherwise create new group
             if (groupMap.has(userId)) {
                 groupMap.get(userId).invoices.push(inv);
             } else {
-                groupMap.set(userId, {
-                    user: userObj,
-                    invoices: [inv]
-                });
+                groupMap.set(userId, { user: userObj, invoices: [inv] });
             }
         }
-
-        // 3. Convert to array and sort by member name
         return Array.from(groupMap.values()).sort((a, b) =>
             (a.user?.name || '').localeCompare(b.user?.name || '')
         );
     }, [unpaidInvoices]);
 
     return (
-        <section aria-label="Administrator Unpaid Bills Panel" className="w-full">
-
-            {/* ── Section header ── */}
+        <section className="w-full">
+            {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-4 pb-5 md:pt-0 md:pb-5 px-4 md:px-0">
                 <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-2xl bg-warning">
-                        <ShieldAlert size={20} className="text-white" />
-                    </div>
+                    <div className="p-2.5 rounded-2xl bg-warning"><ShieldAlert size={20} className="text-white" /></div>
                     <div>
-                        <h2 className="text-lg font-black text-foreground tracking-tight leading-none">
-                            Unresolved Bills
-                        </h2>
-                            <p className="text-xs font-medium text-muted-foreground mt-0.5">
-                                Admin view — invoices with outstanding payments
-                            </p>
+                        <h2 className="text-lg font-black text-foreground tracking-tight">Unresolved Bills</h2>
+                        <p className="text-xs font-medium text-muted-foreground">Admin view — invoices with outstanding payments</p>
                     </div>
                 </div>
-
                 <div className="flex items-center gap-2.5 shrink-0">
-                    {/* Month picker */}
                     <div className="relative">
-                        <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                        <select
-                            value={selectedIdx}
-                            onChange={handleMonthChange}
-                            className={cn(
-                                'pl-8 pr-8 py-2.5 rounded-xl text-[12.5px] font-bold',
-                                'appearance-none cursor-pointer',
-                                'bg-card',
-                                'border border-input',
-                                'text-foreground',
-                                'focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary',
-                                'transition-[border-color,box-shadow] duration-150'
-                            )}
-                        >
+                        <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                        <select value={selectedIdx} onChange={handleMonthChange}
+                            className="pl-8 pr-8 py-2.5 rounded-xl text-[12.5px] font-bold appearance-none bg-card border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
                             {safeMonthOptions.map((opt, i) => (
-                                <option key={opt.label} value={i}>
-                                    {opt.isLastFinalized ? `★ ${opt.label}` : opt.label}
-                                </option>
+                                <option key={opt.label} value={i}>{opt.isLastFinalized ? `★ ${opt.label}` : opt.label}</option>
                             ))}
                         </select>
-                        <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                        <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     </div>
-
-                    {/* Refresh */}
-                    <button
-                        onClick={() => load(selected)}
-                        disabled={unpaidInvoicesLoading}
-                        className={cn(
-                            'flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-[12.5px] font-bold',
-                            'bg-card',
-                            'border border-input',
-                            'text-muted-foreground',
-                            'hover:bg-muted',
-                            'active:opacity-80 transition-opacity duration-150',
-                            'disabled:opacity-50 disabled:cursor-not-allowed',
-                            'min-h-[44px]'
-                        )}
-                    >
+                    <button onClick={() => load(selected)} disabled={unpaidInvoicesLoading}
+                        className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-[12.5px] font-bold bg-card border border-input text-muted-foreground hover:bg-muted disabled:opacity-50 min-h-[44px]">
                         <RefreshCw size={13} className={unpaidInvoicesLoading ? 'animate-spin' : ''} />
                         Refresh
                     </button>
                 </div>
             </div>
 
-            {/* ── Error banner ── */}
+            {/* Error */}
             {unpaidInvoicesError && (
                 <div className="flex items-start gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive mb-4 mx-4 md:mx-0">
                     <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-destructive">Failed to load unresolved invoices</p>
-                        <p className="text-xs font-medium mt-0.5 opacity-80 text-destructive">{unpaidInvoicesError}</p>
-                    </div>
-                    <button
-                        onClick={() => load(selected)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-destructive/10 text-destructive hover:bg-destructive/20 active:opacity-80 transition-[opacity,background] duration-150 shrink-0"
-                    >
-                        <RefreshCw size={12} />
-                        Retry
-                    </button>
+                    <div><p className="text-sm font-semibold">Failed to load unresolved invoices</p><p className="text-xs mt-0.5 opacity-80">{unpaidInvoicesError}</p></div>
+                    <button onClick={() => load(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-destructive/10 hover:bg-destructive/20">Retry</button>
                 </div>
             )}
 
-            {/* ── Table card ── */}
-            <div className="w-full bg-card md:rounded-3xl border-y md:border border-border md:shadow-sm shadow-none overflow-hidden">
-
-                {/* Desktop table header */}
-                <div className={cn(
-                    'hidden md:grid grid-cols-12 gap-3 items-center px-6 py-3.5',
-                    'bg-muted/80 dark:bg-muted/40',
-                    'border-b border-border'
-                )}>
+            {/* Table */}
+            <div className="w-full bg-card md:rounded-3xl border-y md:border border-border md:shadow-sm overflow-hidden">
+                {/* Desktop header */}
+                <div className="hidden md:grid grid-cols-12 gap-3 items-center px-6 py-3.5 bg-muted/80 dark:bg-muted/40 border-b border-border">
                     <div className="col-span-3 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Invoice</div>
                     <div className="col-span-2 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Period</div>
                     <div className="col-span-1 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Meals</div>
@@ -596,76 +461,42 @@ const AdminUnpaidPanel = React.memo(() => {
                     <div className="col-span-1 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Action</div>
                 </div>
 
-                {/* Loading */}
                 {unpaidInvoicesLoading && (
-                    <div className="flex flex-col items-center justify-center py-16 gap-3">
-                        <Spinner size="md" color="current" className="text-destructive" />
-                        <span className="text-sm font-medium text-muted-foreground">Loading invoices…</span>
-                    </div>
+                    <div className="flex flex-col items-center justify-center py-16"><Spinner size="md" /><span className="text-sm font-medium text-muted-foreground mt-3">Loading invoices…</span></div>
                 )}
 
-                {/* Empty — last finalized period (not yet settled) */}
                 {!unpaidInvoicesLoading && unpaidInvoices.length === 0 && isLastFinalizedPeriod && (
                     <div className="flex flex-col items-center justify-center py-16 gap-3">
-                        <div className="w-14 h-14 rounded-full bg-border dark:bg-muted flex items-center justify-center">
-                            <Calendar size={26} className="text-muted-foreground" />
-                        </div>
-                        <p className="text-sm font-bold text-muted-foreground">
-                            Last finalized period: {selected.label}
-                        </p>
-                        <p className="text-xs font-medium text-muted-foreground max-w-sm text-center">
-                            All invoices for this period are resolved. Switch to another month above.
-                        </p>
+                        <div className="w-14 h-14 rounded-full bg-border dark:bg-muted flex items-center justify-center"><Calendar size={26} className="text-muted-foreground" /></div>
+                        <p className="text-sm font-bold text-muted-foreground">Last finalized period: {selected.label}</p>
+                        <p className="text-xs font-medium text-muted-foreground max-w-sm text-center">All invoices resolved. Switch month above.</p>
                     </div>
                 )}
 
-                {/* Empty — non-finalized or older period, all resolved */}
                 {!unpaidInvoicesLoading && unpaidInvoices.length === 0 && !isLastFinalizedPeriod && (
                     <div className="flex flex-col items-center justify-center py-16 gap-3">
-                        <div className="w-14 h-14 rounded-full bg-success-bg flex items-center justify-center">
-                            <CheckCircle2 size={26} className="text-success-text" />
-                        </div>
+                        <div className="w-14 h-14 rounded-full bg-success-bg flex items-center justify-center"><CheckCircle2 size={26} className="text-success-text" /></div>
                         <p className="text-sm font-bold text-foreground">All clear for {selected.label}!</p>
-                        <p className="text-xs font-medium text-muted-foreground">No pending or partial invoices found.</p>
                     </div>
                 )}
 
-                {/* Invoice rows — grouped by member (fixed) */}
                 {!unpaidInvoicesLoading && groupedInvoices.length > 0 && (
                     <div className="flex flex-col">
                         {groupedInvoices.map((group) => (
                             <div key={group.user?._id || 'unknown'} className="flex flex-col">
                                 <GroupHeader user={group.user} count={group.invoices.length} />
                                 {group.invoices.map(invoice => (
-                                    <InvoiceRow
-                                        key={invoice._id}
-                                        invoice={invoice}
-                                        onResolve={handleResolve}
-                                        isSaving={savingId === invoice._id}
-                                    />
+                                    <InvoiceRow key={invoice._id} invoice={invoice} onResolve={handleResolve} isSaving={savingId === invoice._id} />
                                 ))}
                             </div>
                         ))}
                     </div>
                 )}
 
-                {/* Footer count */}
                 {!unpaidInvoicesLoading && unpaidInvoices.length > 0 && (
-                    <div className={cn(
-                        'flex flex-col md:flex-row gap-3 items-center justify-between px-4 md:px-6 py-3.5',
-                        'bg-muted/60 dark:bg-muted/30',
-                        'border-t border-border text-center md:text-left'
-                    )}>
-                        <div className="flex items-center gap-2">
-                            <AlertTriangle size={13} className="text-warning-text shrink-0" />
-                            <span className="text-[11.5px] font-bold text-warning-text">
-                                {unpaidInvoices.length} unresolved invoice{unpaidInvoices.length !== 1 ? 's' : ''} across {groupedInvoices.length} member{groupedInvoices.length !== 1 ? 's' : ''}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
-                            <DollarSign size={11} />
-                            Total outstanding: ₹ {fmt(totalOutstanding)}
-                        </div>
+                    <div className="flex flex-col md:flex-row gap-3 items-center justify-between px-4 md:px-6 py-3.5 bg-muted/60 dark:bg-muted/30 border-t border-border">
+                        <div className="flex items-center gap-2"><AlertTriangle size={13} className="text-warning-text" /><span className="text-[11.5px] font-bold text-warning-text">{unpaidInvoices.length} unresolved invoice{unpaidInvoices.length !== 1 ? 's' : ''} across {groupedInvoices.length} member{groupedInvoices.length !== 1 ? 's' : ''}</span></div>
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground"><DollarSign size={11} />Total outstanding: ₹ {fmt(totalOutstanding)}</div>
                     </div>
                 )}
             </div>
