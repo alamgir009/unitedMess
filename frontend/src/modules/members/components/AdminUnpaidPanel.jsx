@@ -70,7 +70,7 @@ const StatusPill = React.memo(({ status }) => {
 StatusPill.displayName = 'StatusPill';
 
 /* ─────────────────────────────────────────────
-   ResolveModal — inline quick action
+   ResolveModal
 ───────────────────────────────────────────── */
 const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
     const outstanding = invoice.totalPayable - invoice.paidAmount;
@@ -84,11 +84,8 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-overlay"
-            onClick={onClose}>
-            <div className="w-full max-w-md bg-card rounded-3xl shadow-2xl border border-border overflow-hidden"
-                onClick={e => e.stopPropagation()}>
-
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-overlay" onClick={onClose}>
+            <div className="w-full max-w-md bg-card rounded-3xl shadow-2xl border border-border overflow-hidden" onClick={e => e.stopPropagation()}>
                 <div className="px-6 py-5 border-b border-border bg-muted dark:bg-muted/40">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500 flex items-center justify-center shadow-sm shadow-emerald-600/20">
@@ -102,7 +99,6 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                         </div>
                     </div>
                 </div>
-
                 <div className="px-6 py-5 space-y-4">
                     <div className="grid grid-cols-3 gap-3 text-center">
                         {[
@@ -116,7 +112,6 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                             </div>
                         ))}
                     </div>
-
                     <form onSubmit={handleSubmit} className="space-y-3">
                         <div>
                             <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
@@ -130,34 +125,16 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                                     step="0.01"
                                     value={amount}
                                     onChange={e => setAmount(e.target.value)}
-                                    className="w-full pl-8 pr-4 py-3 rounded-2xl text-base font-bold
-                                               bg-input
-                                               border border-input
-                                               text-foreground
-                                               focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary
-                                               transition-[border-color,box-shadow] duration-150"
+                                    className="w-full pl-8 pr-4 py-3 rounded-2xl text-base font-bold bg-input border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-all"
                                 />
                             </div>
                         </div>
-
                         <div className="flex gap-3 pt-1">
-                            <button type="button" onClick={onClose}
-                                className="flex-1 py-3 rounded-xl text-sm font-bold
-                                           border border-input
-                                           text-muted-foreground
-                                           hover:bg-muted
-                                           active:opacity-80 transition-[opacity,background] duration-150">
+                            <button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl text-sm font-bold border border-input text-muted-foreground hover:bg-muted active:opacity-80">
                                 Cancel
                             </button>
-                            <button type="submit" disabled={isSaving}
-                                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black
-                                           bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500
-                                           text-white dark:text-slate-950
-                                           hover:brightness-105 active:scale-[0.98] transition-[filter,transform,opacity] duration-150
-                                           disabled:opacity-60 disabled:cursor-not-allowed shadow-md shadow-emerald-600/20 dark:shadow-emerald-500/10">
-                                {isSaving
-                                    ? <Spinner size="sm" color="white" />
-                                    : <CheckCircle2 size={16} />}
+                            <button type="submit" disabled={isSaving} className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500 text-white dark:text-slate-950 hover:brightness-105 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed shadow-md">
+                                {isSaving ? <Spinner size="sm" color="white" /> : <CheckCircle2 size={16} />}
                                 {isSaving ? 'Saving…' : 'Mark Payment'}
                             </button>
                         </div>
@@ -170,7 +147,7 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
 ResolveModal.displayName = 'ResolveModal';
 
 /* ─────────────────────────────────────────────
-   GroupHeader — member grouping header row
+   GroupHeader
 ───────────────────────────────────────────── */
 const GroupHeader = React.memo(({ user, count }) => (
     <div className={cn(
@@ -183,9 +160,7 @@ const GroupHeader = React.memo(({ user, count }) => (
             <p className="text-[13px] font-bold text-foreground truncate">{user?.name ?? 'Unknown'}</p>
             <p className="text-[10.5px] font-medium text-muted-foreground truncate">{user?.email ?? '—'}</p>
         </div>
-        <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold
-                        bg-danger-bg text-danger-text
-                        border border-danger-border">
+        <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-danger-bg text-danger-text border border-danger-border">
             <AlertTriangle size={10} />
             {count} unresolved
         </span>
@@ -203,9 +178,7 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
 
     const handleCopyRef = useCallback(() => {
         if (invoice._id) {
-            navigator.clipboard.writeText(invoice._id).then(() => {
-                toast.success('Invoice ID copied');
-            }).catch((err) => console.error('Failed to copy invoice ID:', err));
+            navigator.clipboard.writeText(invoice._id).then(() => toast.success('Invoice ID copied')).catch(console.error);
         }
     }, [invoice._id]);
 
@@ -222,41 +195,22 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
                 'hidden md:grid grid-cols-12 gap-3 items-center px-6 py-4',
                 'border-b border-border',
                 'hover:bg-muted/30 hover:shadow-sm',
-                'transition-[background,box-shadow] duration-150'
+                'transition-all'
             )}>
                 <div className="col-span-3 flex items-center gap-2 min-w-0">
                     <span className="text-[10px] font-mono font-semibold text-muted-foreground">{refId}</span>
-                    <button onClick={handleCopyRef} className="p-0.5 rounded hover:bg-muted text-muted-foreground transition-colors">
-                        <Copy size={10} />
-                    </button>
+                    <button onClick={handleCopyRef} className="p-0.5 rounded hover:bg-muted text-muted-foreground"><Copy size={10} /></button>
                 </div>
-                <div className="col-span-2">
-                    <p className="text-[12px] font-semibold text-muted-foreground">{invoice.monthName}</p>
-                </div>
-                <div className="col-span-1">
-                    <p className="text-[12px] font-bold tabular-nums text-foreground">{fmt(invoice.mealCount)}</p>
-                </div>
-                <div className="col-span-1">
-                    <p className="text-[12px] font-bold tabular-nums text-foreground">₹{fmt(invoice.marketAmountSpent)}</p>
-                </div>
-                <div className="col-span-1 text-right">
-                    <p className="text-[13px] font-black tabular-nums text-foreground">₹{fmt(invoice.totalPayable)}</p>
-                </div>
-                <div className="col-span-1 text-right">
-                    <p className="text-[12px] font-bold tabular-nums text-success-text">₹{fmt(invoice.paidAmount)}</p>
-                </div>
-                <div className="col-span-1 text-right">
-                    <p className="text-[13px] font-black tabular-nums text-danger-text">₹{fmt(outstanding)}</p>
-                </div>
-                <div className="col-span-1 flex justify-center">
-                    <StatusPill status={invoice.status} />
-                </div>
+                <div className="col-span-2"><p className="text-[12px] font-semibold text-muted-foreground">{invoice.monthName}</p></div>
+                <div className="col-span-1"><p className="text-[12px] font-bold tabular-nums text-foreground">{fmt(invoice.mealCount)}</p></div>
+                <div className="col-span-1"><p className="text-[12px] font-bold tabular-nums text-foreground">₹{fmt(invoice.marketAmountSpent)}</p></div>
+                <div className="col-span-1 text-right"><p className="text-[13px] font-black tabular-nums text-foreground">₹{fmt(invoice.totalPayable)}</p></div>
+                <div className="col-span-1 text-right"><p className="text-[12px] font-bold tabular-nums text-success-text">₹{fmt(invoice.paidAmount)}</p></div>
+                <div className="col-span-1 text-right"><p className="text-[13px] font-black tabular-nums text-danger-text">₹{fmt(outstanding)}</p></div>
+                <div className="col-span-1 flex justify-center"><StatusPill status={invoice.status} /></div>
                 <div className="col-span-1 flex justify-end">
                     <button onClick={() => setShowModal(true)} disabled={isSaving}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11.5px] font-black
-                                   bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500
-                                   text-white dark:text-slate-950 hover:brightness-105 active:scale-[0.98]
-                                   disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11.5px] font-black bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500 text-white dark:text-slate-950 hover:brightness-105 active:scale-[0.98] disabled:opacity-50 shadow-sm">
                         {isSaving ? <Spinner size="xs" color="white" /> : <ArrowRight size={11} />}
                         {isSaving ? 'Saving' : 'Resolve'}
                     </button>
@@ -299,23 +253,13 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
                     </div>
                 </div>
                 <button onClick={() => setShowModal(true)} disabled={isSaving}
-                    className="flex items-center justify-center gap-2 py-3 rounded-xl text-[13px] font-black
-                               bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500
-                               text-white dark:text-slate-950 hover:brightness-105 active:scale-[0.98]
-                               disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px] shadow-md">
+                    className="flex items-center justify-center gap-2 py-3 rounded-xl text-[13px] font-black bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500 text-white dark:text-slate-950 hover:brightness-105 active:scale-[0.98] disabled:opacity-60 min-h-[44px] shadow-md">
                     {isSaving ? <Spinner size="sm" color="white" /> : <BadgeIndianRupee size={16} />}
                     {isSaving ? 'Processing…' : `Resolve — ₹ ${fmt(outstanding)}`}
                 </button>
             </div>
 
-            {showModal && (
-                <ResolveModal
-                    invoice={invoice}
-                    isSaving={isSaving}
-                    onClose={handleCloseModal}
-                    onResolve={handleResolveInvoice}
-                />
-            )}
+            {showModal && <ResolveModal invoice={invoice} isSaving={isSaving} onClose={handleCloseModal} onResolve={handleResolveInvoice} />}
         </>
     );
 });
@@ -380,28 +324,58 @@ const AdminUnpaidPanel = React.memo(() => {
         return lp.month === selected.month && lp.year === selected.year;
     }, [selected.month, selected.year]);
 
-    // FIXED: robust grouping – each member appears exactly once
+    // ─────────────────────────────────────────────────────────────────────────
+    // FINAL FIX: Fintech-grade robust grouping – deduplicates members even if
+    // user representations differ (string vs object, different ID fields, etc.)
+    // ─────────────────────────────────────────────────────────────────────────
     const groupedInvoices = useMemo(() => {
-        const groupMap = new Map();
+        const groupMap = new Map(); // key: normalized user identifier
+
         for (const inv of unpaidInvoices) {
-            let userId;
-            let userObj;
-            if (typeof inv.user === 'string') {
-                userId = inv.user;
-                userObj = { _id: inv.user, name: 'Unknown', email: '' };
-            } else if (inv.user && typeof inv.user === 'object') {
-                userId = inv.user._id ? String(inv.user._id) : 'unknown';
-                userObj = { ...inv.user, _id: userId };
-            } else {
+            // 1. Extract a reliable user identifier from the invoice
+            let rawUser = inv.user;
+            let userId = null;
+            let userObj = null;
+
+            if (!rawUser) {
+                // fallback: use a placeholder for missing user
                 userId = 'unknown';
                 userObj = { _id: 'unknown', name: 'Unknown Member', email: '' };
+            } else if (typeof rawUser === 'string') {
+                userId = rawUser.trim();
+                userObj = { _id: userId, name: 'Unknown', email: '' };
+            } else if (typeof rawUser === 'object') {
+                // Try to get a stable ID: _id (most common), id, or generate from email/name
+                const idFromObject = rawUser._id ?? rawUser.id ?? null;
+                if (idFromObject) {
+                    userId = String(idFromObject).trim();
+                } else if (rawUser.email) {
+                    userId = `email:${rawUser.email}`;
+                } else if (rawUser.name) {
+                    userId = `name:${rawUser.name}`;
+                } else {
+                    userId = 'unknown';
+                }
+                userObj = { ...rawUser, _id: userId };
+                // Ensure name and email are at least empty strings
+                userObj.name = userObj.name || 'Unknown';
+                userObj.email = userObj.email || '';
             }
+
+            // 2. If group already exists, push invoice and optionally merge user data
             if (groupMap.has(userId)) {
-                groupMap.get(userId).invoices.push(inv);
+                const existing = groupMap.get(userId);
+                existing.invoices.push(inv);
+                // Merge user info: prefer existing if it has a real name/email
+                if (userObj && (userObj.name !== 'Unknown' || userObj.email) && (existing.user.name === 'Unknown' && !existing.user.email)) {
+                    existing.user = { ...existing.user, ...userObj };
+                }
             } else {
                 groupMap.set(userId, { user: userObj, invoices: [inv] });
             }
         }
+
+        // Convert to array and sort by member name
         return Array.from(groupMap.values()).sort((a, b) =>
             (a.user?.name || '').localeCompare(b.user?.name || '')
         );
@@ -420,14 +394,14 @@ const AdminUnpaidPanel = React.memo(() => {
                 </div>
                 <div className="flex items-center gap-2.5 shrink-0">
                     <div className="relative">
-                        <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                        <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                         <select value={selectedIdx} onChange={handleMonthChange}
                             className="pl-8 pr-8 py-2.5 rounded-xl text-[12.5px] font-bold appearance-none bg-card border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
                             {safeMonthOptions.map((opt, i) => (
                                 <option key={opt.label} value={i}>{opt.isLastFinalized ? `★ ${opt.label}` : opt.label}</option>
                             ))}
                         </select>
-                        <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                        <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                     </div>
                     <button onClick={() => load(selected)} disabled={unpaidInvoicesLoading}
                         className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-[12.5px] font-bold bg-card border border-input text-muted-foreground hover:bg-muted disabled:opacity-50 min-h-[44px]">
@@ -441,14 +415,17 @@ const AdminUnpaidPanel = React.memo(() => {
             {unpaidInvoicesError && (
                 <div className="flex items-start gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive mb-4 mx-4 md:mx-0">
                     <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-                    <div><p className="text-sm font-semibold">Failed to load unresolved invoices</p><p className="text-xs mt-0.5 opacity-80">{unpaidInvoicesError}</p></div>
+                    <div className="flex-1">
+                        <p className="text-sm font-semibold">Failed to load unresolved invoices</p>
+                        <p className="text-xs mt-0.5 opacity-80">{unpaidInvoicesError}</p>
+                    </div>
                     <button onClick={() => load(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-destructive/10 hover:bg-destructive/20">Retry</button>
                 </div>
             )}
 
-            {/* Table */}
+            {/* Table Card */}
             <div className="w-full bg-card md:rounded-3xl border-y md:border border-border md:shadow-sm overflow-hidden">
-                {/* Desktop header */}
+                {/* Desktop Header */}
                 <div className="hidden md:grid grid-cols-12 gap-3 items-center px-6 py-3.5 bg-muted/80 dark:bg-muted/40 border-b border-border">
                     <div className="col-span-3 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Invoice</div>
                     <div className="col-span-2 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Period</div>
@@ -461,10 +438,15 @@ const AdminUnpaidPanel = React.memo(() => {
                     <div className="col-span-1 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Action</div>
                 </div>
 
+                {/* Loading */}
                 {unpaidInvoicesLoading && (
-                    <div className="flex flex-col items-center justify-center py-16"><Spinner size="md" /><span className="text-sm font-medium text-muted-foreground mt-3">Loading invoices…</span></div>
+                    <div className="flex flex-col items-center justify-center py-16">
+                        <Spinner size="md" />
+                        <span className="text-sm font-medium text-muted-foreground mt-3">Loading invoices…</span>
+                    </div>
                 )}
 
+                {/* Empty States */}
                 {!unpaidInvoicesLoading && unpaidInvoices.length === 0 && isLastFinalizedPeriod && (
                     <div className="flex flex-col items-center justify-center py-16 gap-3">
                         <div className="w-14 h-14 rounded-full bg-border dark:bg-muted flex items-center justify-center"><Calendar size={26} className="text-muted-foreground" /></div>
@@ -480,6 +462,7 @@ const AdminUnpaidPanel = React.memo(() => {
                     </div>
                 )}
 
+                {/* Grouped Rows */}
                 {!unpaidInvoicesLoading && groupedInvoices.length > 0 && (
                     <div className="flex flex-col">
                         {groupedInvoices.map((group) => (
@@ -493,10 +476,18 @@ const AdminUnpaidPanel = React.memo(() => {
                     </div>
                 )}
 
+                {/* Footer */}
                 {!unpaidInvoicesLoading && unpaidInvoices.length > 0 && (
                     <div className="flex flex-col md:flex-row gap-3 items-center justify-between px-4 md:px-6 py-3.5 bg-muted/60 dark:bg-muted/30 border-t border-border">
-                        <div className="flex items-center gap-2"><AlertTriangle size={13} className="text-warning-text" /><span className="text-[11.5px] font-bold text-warning-text">{unpaidInvoices.length} unresolved invoice{unpaidInvoices.length !== 1 ? 's' : ''} across {groupedInvoices.length} member{groupedInvoices.length !== 1 ? 's' : ''}</span></div>
-                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground"><DollarSign size={11} />Total outstanding: ₹ {fmt(totalOutstanding)}</div>
+                        <div className="flex items-center gap-2">
+                            <AlertTriangle size={13} className="text-warning-text" />
+                            <span className="text-[11.5px] font-bold text-warning-text">
+                                {unpaidInvoices.length} unresolved invoice{unpaidInvoices.length !== 1 ? 's' : ''} across {groupedInvoices.length} member{groupedInvoices.length !== 1 ? 's' : ''}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
+                            <DollarSign size={11} /> Total outstanding: ₹ {fmt(totalOutstanding)}
+                        </div>
                     </div>
                 )}
             </div>
