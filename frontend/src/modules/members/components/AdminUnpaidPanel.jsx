@@ -455,12 +455,12 @@ const AdminUnpaidPanel = React.memo(() => {
         return lp.month === selected.month && lp.year === selected.year;
     }, [selected.month, selected.year]);
 
-    // ✅ FIXED GROUPING: robust user identification
+    // ✅ FIX: Robust grouping – normalises user IDs and merges user objects
     const groupedInvoices = useMemo(() => {
-        const groups = new Map(); // use Map to preserve insertion order
+        const groupMap = new Map(); // key = normalized userId
 
-        unpaidInvoices.forEach((inv) => {
-            // 1. Extract a stable user ID
+        for (const inv of unpaidInvoices) {
+            // 1. Normalize user ID
             let userId;
             let userObj = null;
 
@@ -469,26 +469,25 @@ const AdminUnpaidPanel = React.memo(() => {
                 userObj = { _id: inv.user, name: 'Unknown', email: '' };
             } else if (inv.user && typeof inv.user === 'object') {
                 userId = inv.user._id ? String(inv.user._id) : 'unknown';
-                userObj = inv.user;
+                userObj = { ...inv.user, _id: userId }; // ensure _id is string
             } else {
                 userId = 'unknown';
                 userObj = { _id: 'unknown', name: 'Unknown Member', email: '' };
             }
 
-            // If userObj already has a proper name, use it; otherwise keep existing data
-            const existing = groups.get(userId);
-            if (!existing) {
-                groups.set(userId, { user: userObj, invoices: [inv] });
+            // 2. If group exists, add invoice; otherwise create new group
+            if (groupMap.has(userId)) {
+                groupMap.get(userId).invoices.push(inv);
             } else {
-                // Merge user data: prefer the one with a real name and image
-                if (userObj?.name && userObj.name !== 'Unknown' && existing.user.name === 'Unknown') {
-                    existing.user = userObj;
-                }
-                existing.invoices.push(inv);
+                groupMap.set(userId, {
+                    user: userObj,
+                    invoices: [inv]
+                });
             }
-        });
+        }
 
-        return Array.from(groups.values()).sort((a, b) =>
+        // 3. Convert to array and sort by member name
+        return Array.from(groupMap.values()).sort((a, b) =>
             (a.user?.name || '').localeCompare(b.user?.name || '')
         );
     }, [unpaidInvoices]);
