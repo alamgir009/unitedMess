@@ -54,7 +54,7 @@ const getBillingMonthStats = async () => {
 };
 
 /**
- * Admin: Fetch all finalized invoices that are unpaid or partially paid.
+ * Admin: Fetch all unpaid or partially paid invoices for a month.
  * @param {number} [month] - 1-indexed month (optional)
  * @param {number} [year]  - full year (optional)
  */

@@ -390,8 +390,10 @@ const resetUserStatsAfterFinalization = async () => {
 
 
 /**
- * Get all finalized invoices that are unpaid or partially paid for a given month.
+ * Get all unpaid or partially paid invoices for a given month.
  * Admin only. Used for the "Resolve Unpaid Bills" panel.
+ * Shows ALL unpaid/partially paid invoices regardless of finalization status,
+ * so the admin always sees outstanding debt without depending on the cron schedule.
  * @param {number} month - 1-indexed month (optional, defaults to previous month)
  * @param {number} year  - full year (optional, defaults to last active billing month)
  */
@@ -408,7 +410,6 @@ const getAdminUnpaidInvoices = async (month, year) => {
     const invoices = await Invoice.find({
         month: Number(month),
         year:  Number(year),
-        isFinalized: true,
         status: { $in: ['unpaid', 'partially_paid'] }
     })
     .populate('user', 'name email image role isActive')

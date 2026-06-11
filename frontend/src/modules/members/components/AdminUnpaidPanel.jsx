@@ -515,9 +515,9 @@ const AdminUnpaidPanel = React.memo(() => {
                         <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">
                             Unresolved Bills
                         </h2>
-                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">
-                            Admin view — finalized invoices with outstanding payments
-                        </p>
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">
+                                Admin view — invoices with outstanding payments
+                            </p>
                     </div>
                 </div>
 

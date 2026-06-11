@@ -131,7 +131,7 @@ export const fetchBillingMonthStats = createAsyncThunk(
     }
 );
 
-// ── Admin: unpaid / partially-paid finalized invoices ────────────────────────
+// ── Admin: unpaid / partially-paid invoices (any finalization status) ────────
 export const fetchAdminUnpaidInvoices = createAsyncThunk(
     'members/fetchAdminUnpaidInvoices',
     async ({ month, year } = {}, thunkAPI) => {
