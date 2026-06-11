@@ -151,16 +151,14 @@ ResolveModal.displayName = 'ResolveModal';
 ───────────────────────────────────────────── */
 const GroupHeader = React.memo(({ user, count }) => (
     <div className={cn(
-        'flex items-center gap-3 px-4 md:px-6 py-3.5',
-        'bg-muted/90 dark:bg-muted/50',
-        'border-b border-border'
+        'flex items-center gap-3 px-4 md:px-6 py-4 bg-transparent'
     )}>
         <Avatar src={user?.image} name={user?.name} size="sm" className="ring-2 ring-card shrink-0" />
         <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-bold text-foreground truncate">{user?.name ?? 'Unknown'}</p>
-            <p className="text-[10.5px] font-medium text-muted-foreground truncate">{user?.email ?? '—'}</p>
+            <p className="text-[13.5px] font-bold text-foreground truncate">{user?.name ?? 'Unknown'}</p>
+            <p className="text-[11px] font-normal text-muted-foreground truncate">{user?.email ?? '—'}</p>
         </div>
-        <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-danger-bg text-danger-text border border-danger-border">
+        <span className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-danger-bg text-danger-text border border-danger-border">
             <AlertTriangle size={10} />
             {count} unresolved
         </span>
@@ -197,21 +195,21 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
                 'hover:bg-muted/30 hover:shadow-sm',
                 'transition-all'
             )}>
-                <div className="col-span-3 flex items-center gap-2 min-w-0">
-                    <span className="text-[10px] font-mono font-semibold text-muted-foreground">{refId}</span>
-                    <button onClick={handleCopyRef} className="p-0.5 rounded hover:bg-muted text-muted-foreground"><Copy size={10} /></button>
+                <div className="col-span-3 flex items-center gap-2 min-w-0 pl-[44px]">
+                    <span className="text-[11px] font-mono font-semibold text-muted-foreground">{refId}</span>
+                    <button onClick={handleCopyRef} className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"><Copy size={11} /></button>
                 </div>
                 <div className="col-span-2"><p className="text-[12px] font-semibold text-muted-foreground">{invoice.monthName}</p></div>
                 <div className="col-span-1"><p className="text-[12px] font-bold tabular-nums text-foreground">{fmt(invoice.mealCount)}</p></div>
                 <div className="col-span-1"><p className="text-[12px] font-bold tabular-nums text-foreground">₹{fmt(invoice.marketAmountSpent)}</p></div>
-                <div className="col-span-1 text-right"><p className="text-[13px] font-black tabular-nums text-foreground">₹{fmt(invoice.totalPayable)}</p></div>
-                <div className="col-span-1 text-right"><p className="text-[12px] font-bold tabular-nums text-success-text">₹{fmt(invoice.paidAmount)}</p></div>
-                <div className="col-span-1 text-right"><p className="text-[13px] font-black tabular-nums text-danger-text">₹{fmt(outstanding)}</p></div>
-                <div className="col-span-1 flex justify-center"><StatusPill status={invoice.status} /></div>
+                <div className="col-span-1"><p className="text-[12.5px] font-bold tabular-nums text-foreground">₹{fmt(invoice.totalPayable)}</p></div>
+                <div className="col-span-1"><p className="text-[12.5px] font-bold tabular-nums text-success-text">₹{fmt(invoice.paidAmount)}</p></div>
+                <div className="col-span-1"><p className="text-[12.5px] font-bold tabular-nums text-danger-text">₹{fmt(outstanding)}</p></div>
+                <div className="col-span-1 flex items-center justify-start"><StatusPill status={invoice.status} /></div>
                 <div className="col-span-1 flex justify-end">
                     <button onClick={() => setShowModal(true)} disabled={isSaving}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11.5px] font-black bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500 text-white dark:text-slate-950 hover:brightness-105 active:scale-[0.98] disabled:opacity-50 shadow-sm">
-                        {isSaving ? <Spinner size="xs" color="white" /> : <ArrowRight size={11} />}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 transition-colors shadow-sm">
+                        {isSaving ? <Spinner size="xs" color="white" /> : <ArrowRight size={13} className="stroke-[2.5]" />}
                         {isSaving ? 'Saving' : 'Resolve'}
                     </button>
                 </div>
@@ -253,7 +251,7 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
                     </div>
                 </div>
                 <button onClick={() => setShowModal(true)} disabled={isSaving}
-                    className="flex items-center justify-center gap-2 py-3 rounded-xl text-[13px] font-black bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500 text-white dark:text-slate-950 hover:brightness-105 active:scale-[0.98] disabled:opacity-60 min-h-[44px] shadow-md">
+                    className="flex items-center justify-center gap-2 py-3 rounded-full text-[13px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-60 min-h-[44px] shadow-md">
                     {isSaving ? <Spinner size="sm" color="white" /> : <BadgeIndianRupee size={16} />}
                     {isSaving ? 'Processing…' : `Resolve — ₹ ${fmt(outstanding)}`}
                 </button>
@@ -273,6 +271,7 @@ const AdminUnpaidPanel = React.memo(() => {
     const { unpaidInvoices, unpaidInvoicesLoading, unpaidInvoicesError } = useSelector(s => s.members);
 
     const [billingRefreshKey, setBillingRefreshKey] = useState(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const monthOptions = useMemo(() => buildMonthOptions(), [billingRefreshKey]);
     const [selectedIdx, setSelectedIdx] = useState(0);
     const [savingId, setSavingId] = useState(null);
@@ -386,25 +385,27 @@ const AdminUnpaidPanel = React.memo(() => {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-4 pb-5 md:pt-0 md:pb-5 px-4 md:px-0">
                 <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-2xl bg-warning"><ShieldAlert size={20} className="text-white" /></div>
+                    <div className="p-2.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/30">
+                        <ShieldAlert size={20} className="text-amber-600 dark:text-amber-500" />
+                    </div>
                     <div>
-                        <h2 className="text-lg font-black text-foreground tracking-tight">Unresolved Bills</h2>
-                        <p className="text-xs font-medium text-muted-foreground">Admin view — invoices with outstanding payments</p>
+                        <h2 className="text-xl font-bold text-foreground tracking-tight">Unresolved Bills</h2>
+                        <p className="text-xs font-normal text-muted-foreground mt-0.5">Admin view — invoices with outstanding payments</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2.5 shrink-0">
-                    <div className="relative">
-                        <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                    <div className="relative flex items-center">
+                        <Calendar size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                         <select value={selectedIdx} onChange={handleMonthChange}
-                            className="pl-8 pr-8 py-2.5 rounded-xl text-[12.5px] font-bold appearance-none bg-card border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+                            className="pl-9 pr-9 py-2 rounded-full text-[13px] font-semibold appearance-none bg-card border border-slate-200 dark:border-slate-800 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
                             {safeMonthOptions.map((opt, i) => (
                                 <option key={opt.label} value={i}>{opt.isLastFinalized ? `★ ${opt.label}` : opt.label}</option>
                             ))}
                         </select>
-                        <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                        <ChevronDown size={12} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                     </div>
                     <button onClick={() => load(selected)} disabled={unpaidInvoicesLoading}
-                        className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-[12.5px] font-bold bg-card border border-input text-muted-foreground hover:bg-muted disabled:opacity-50 min-h-[44px]">
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-semibold bg-card border border-slate-200 dark:border-slate-800 text-foreground hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 transition-all cursor-pointer">
                         <RefreshCw size={13} className={unpaidInvoicesLoading ? 'animate-spin' : ''} />
                         Refresh
                     </button>
@@ -426,16 +427,16 @@ const AdminUnpaidPanel = React.memo(() => {
             {/* Table Card */}
             <div className="w-full bg-card md:rounded-3xl border-y md:border border-border md:shadow-sm overflow-hidden">
                 {/* Desktop Header */}
-                <div className="hidden md:grid grid-cols-12 gap-3 items-center px-6 py-3.5 bg-muted/80 dark:bg-muted/40 border-b border-border">
-                    <div className="col-span-3 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Invoice</div>
-                    <div className="col-span-2 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Period</div>
-                    <div className="col-span-1 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Meals</div>
-                    <div className="col-span-1 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Market</div>
-                    <div className="col-span-1 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Total</div>
-                    <div className="col-span-1 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Paid</div>
-                    <div className="col-span-1 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Due</div>
-                    <div className="col-span-1 text-center text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Status</div>
-                    <div className="col-span-1 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Action</div>
+                <div className="hidden md:grid grid-cols-12 gap-3 items-center px-6 py-3.5 bg-slate-50/75 dark:bg-slate-900/40 border-b border-slate-100 dark:border-slate-800/80">
+                    <div className="col-span-3 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Invoice</div>
+                    <div className="col-span-2 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Period</div>
+                    <div className="col-span-1 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Meals</div>
+                    <div className="col-span-1 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Market</div>
+                    <div className="col-span-1 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total</div>
+                    <div className="col-span-1 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Paid</div>
+                    <div className="col-span-1 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Due</div>
+                    <div className="col-span-1 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Status</div>
+                    <div className="col-span-1 text-right text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Action</div>
                 </div>
 
                 {/* Loading */}
