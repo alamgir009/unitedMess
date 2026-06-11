@@ -87,16 +87,13 @@ const paymentSyncMiddleware = (store) => (next) => (action) => {
     // don't trigger 403 errors that pollute Redux state.
     const state = store.getState();
     if (state.auth.user?.role === 'admin') {
-        // Refresh admin unpaid invoices panel
-        // FIX: Fetch BOTH the last finalized period (what the admin is likely viewing)
-        // and the billing period (for when the admin switches to it).
-        // Previously only fetched the billing period, which after day 11 always returned
-        // empty (current month has no finalized invoices), overwriting the admin's view.
+        // Refresh admin unpaid invoices panel (only the last finalized period).
+        // FIX: Dispatch only ONE fetch — for the last finalized period.
+        // Previously dispatched BOTH lastFinalized and billingPeriod, causing
+        // the billing period (empty, no finalized invoices) to overwrite the
+        // last finalized period's data in Redux via the second dispatch.
         const lastFinalized = getLastFinalizedPeriod();
-        const bp = getBillingPeriod();
         store.dispatch(fetchAdminUnpaidInvoices({ month: lastFinalized.month, year: lastFinalized.year }));
-        // Also refresh billing period data in case admin switches to it
-        store.dispatch(fetchAdminUnpaidInvoices({ month: bp.month, year: bp.year }));
 
         // Refresh member list (admin-only endpoint)
         store.dispatch(fetchUsers(DEFAULT_USER_PARAMS));

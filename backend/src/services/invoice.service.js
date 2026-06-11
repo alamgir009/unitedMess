@@ -262,17 +262,26 @@ const finalizeMonth = async (month, year) => {
     const results = [];
 
     for (const user of users) {
-        const invoice = await getInvoice(user._id, month, year);
+        // Ensure the invoice document exists in the database (getInvoice creates/upserts it)
+        await getInvoice(user._id, month, year);
+
+        // Find the invoice as a Mongoose document so .save() works
+        const invoice = await Invoice.findOne({ user: user._id, month, year });
+        if (!invoice) continue;
+
         invoice.isFinalized = true;
         invoice.finalizedAt = new Date();
-        
-        // Final status check
-        if (invoice.paidAmount >= invoice.totalPayable) invoice.status = 'paid';
-        else if (invoice.paidAmount > 0) invoice.status = 'partially_paid';
-        else invoice.status = 'unpaid';
+
+        if (invoice.paidAmount >= invoice.totalPayable && invoice.totalPayable > 0) {
+            invoice.status = 'paid';
+        } else if (invoice.paidAmount > 0) {
+            invoice.status = 'partially_paid';
+        } else {
+            invoice.status = 'unpaid';
+        }
 
         await invoice.save();
-        results.push(invoice);
+        results.push(invoice.toObject());
     }
 
     return results;
