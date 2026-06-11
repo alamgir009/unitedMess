@@ -9,9 +9,6 @@ import { fetchAdminUnpaidInvoices, resolveInvoicePayment } from '../store/member
 import { toast } from 'react-hot-toast';
 import { Spinner, Avatar } from '@/shared/components/ui';
 import { cn } from '@/core/utils/helpers/string.helper';
-
-// FIX: Import centralized billing period utilities from shared source of truth.
-// Eliminates the duplicated local getBillingPeriod() that drifted from backend logic.
 import { getLastFinalizedPeriod } from '@shared/utils/billingPeriod';
 
 /* ─────────────────────────────────────────────
@@ -27,8 +24,6 @@ const MONTHS = [
     'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
-// FIX: Build month options from the LAST FINALIZED period as the default,
-// so on day 11+ the admin sees the just-finalized month's unpaid bills first.
 function buildMonthOptions() {
     const { month: lpMonth, year: lpYear } = getLastFinalizedPeriod();
     const opts = [];
@@ -398,21 +393,11 @@ const AdminUnpaidPanel = React.memo(() => {
     const dispatch = useDispatch();
     const { unpaidInvoices, unpaidInvoicesLoading, unpaidInvoicesError } = useSelector(s => s.members);
 
-    // FIX: billingRefreshKey forces monthOptions to recompute across month boundaries
-    // even without component remount. Increases on midnight detection.
     const [billingRefreshKey, setBillingRefreshKey] = useState(0);
-
-    // FIX: monthOptions now depends on billingRefreshKey so it re-evaluates
-    // when the date changes across the 10th/11th boundary.
-    const monthOptions = useMemo(() => buildMonthOptions(),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [billingRefreshKey]
-    );
-
+    const monthOptions = useMemo(() => buildMonthOptions(), [billingRefreshKey]);
     const [selectedIdx, setSelectedIdx] = useState(0);
     const [savingId, setSavingId] = useState(null);
 
-    // FIX: guard against monthOptions being empty or missing
     const safeMonthOptions = useMemo(
         () => monthOptions.length > 0 ? monthOptions : [{
             label: '—', month: undefined, year: undefined, isLastFinalized: true
@@ -432,8 +417,6 @@ const AdminUnpaidPanel = React.memo(() => {
 
     useEffect(() => { load(selected); }, [selected, load]);
 
-    // FIX: Check for midnight boundary (±1 day) to refresh month options
-    // when the date crosses the 10th/11th boundary while the component stays mounted.
     const lastDateRef = useRef(new Date().getDate());
     useEffect(() => {
         const interval = setInterval(() => {
@@ -442,7 +425,7 @@ const AdminUnpaidPanel = React.memo(() => {
                 lastDateRef.current = currentDate;
                 setBillingRefreshKey(k => k + 1);
             }
-        }, 60000); // check every 60 seconds
+        }, 60000);
         return () => clearInterval(interval);
     }, []);
 
@@ -467,25 +450,45 @@ const AdminUnpaidPanel = React.memo(() => {
         [unpaidInvoices]
     );
 
-    /* ── Determine if selected month is the most-recently finalized period ── */
     const isLastFinalizedPeriod = useMemo(() => {
         const lp = getLastFinalizedPeriod();
         return lp.month === selected.month && lp.year === selected.year;
     }, [selected.month, selected.year]);
 
-    /* ── Group invoices by member ── */
+    // ✅ FIXED GROUPING: robust user identification
     const groupedInvoices = useMemo(() => {
-        const groups = {};
-        unpaidInvoices.forEach(inv => {
-            // Normalise the user ID to a string to avoid duplicate groups
-            // caused by ObjectId vs string mismatches.
-            const uid = inv.user?._id ? String(inv.user._id) : 'unknown';
-            if (!groups[uid]) {
-                groups[uid] = { user: inv.user, invoices: [] };
+        const groups = new Map(); // use Map to preserve insertion order
+
+        unpaidInvoices.forEach((inv) => {
+            // 1. Extract a stable user ID
+            let userId;
+            let userObj = null;
+
+            if (typeof inv.user === 'string') {
+                userId = inv.user;
+                userObj = { _id: inv.user, name: 'Unknown', email: '' };
+            } else if (inv.user && typeof inv.user === 'object') {
+                userId = inv.user._id ? String(inv.user._id) : 'unknown';
+                userObj = inv.user;
+            } else {
+                userId = 'unknown';
+                userObj = { _id: 'unknown', name: 'Unknown Member', email: '' };
             }
-            groups[uid].invoices.push(inv);
+
+            // If userObj already has a proper name, use it; otherwise keep existing data
+            const existing = groups.get(userId);
+            if (!existing) {
+                groups.set(userId, { user: userObj, invoices: [inv] });
+            } else {
+                // Merge user data: prefer the one with a real name and image
+                if (userObj?.name && userObj.name !== 'Unknown' && existing.user.name === 'Unknown') {
+                    existing.user = userObj;
+                }
+                existing.invoices.push(inv);
+            }
         });
-        return Object.values(groups).sort((a, b) =>
+
+        return Array.from(groups.values()).sort((a, b) =>
             (a.user?.name || '').localeCompare(b.user?.name || '')
         );
     }, [unpaidInvoices]);
@@ -628,7 +631,7 @@ const AdminUnpaidPanel = React.memo(() => {
                     </div>
                 )}
 
-                {/* Invoice rows — grouped by member */}
+                {/* Invoice rows — grouped by member (fixed) */}
                 {!unpaidInvoicesLoading && groupedInvoices.length > 0 && (
                     <div className="flex flex-col">
                         {groupedInvoices.map((group) => (
