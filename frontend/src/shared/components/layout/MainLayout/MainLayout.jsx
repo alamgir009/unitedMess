@@ -17,7 +17,7 @@ const MainLayout = ({ children }) => {
 
                     <main
                         id="main-content"
-                        className="flex-1 overflow-y-auto bg-background p-3 sm:p-6 lg:p-8 transition-colors duration-200"
+                        className="flex-1 overflow-y-auto bg-background p-3 sm:p-6 lg:p-8 transition-colors duration-200 overscroll-contain"
                         tabIndex={-1}
                     >
                         {children}

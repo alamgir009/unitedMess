@@ -10,7 +10,7 @@ import {
   UserCircle,
   LogOut,
   X,
-  Receipt,
+  ReceiptIndianRupee,
 } from 'lucide-react';
 import { IoFastFoodOutline } from 'react-icons/io5';
 import { cn } from '@/core/utils/helpers/string.helper';
@@ -67,8 +67,8 @@ const Sidebar = ({ isOpen, onClose }) => {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border text-foreground',
-          'transition-all duration-300 transform lg:translate-x-0 lg:static lg:inset-auto lg:flex lg:flex-col',
+          'fixed inset-y-0 left-0 w-64 bg-card border-r border-border text-foreground',
+          'z-50 transition-all duration-300 transform lg:translate-x-0 lg:static lg:inset-auto lg:flex lg:flex-col lg:z-auto lg:transition-none',
           isOpen ? 'translate-x-0' : '-translate-x-full',
         )}
         aria-label="Main navigation"
@@ -86,7 +86,7 @@ const Sidebar = ({ isOpen, onClose }) => {
             </div>
           <button
             type="button"
-            className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring touch-target"
             onClick={onClose}
             aria-label="Close sidebar"
           >
@@ -94,7 +94,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1" aria-label="Sidebar">
+        <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1 overscroll-contain" aria-label="Sidebar">
           {navigation.map((item) => (
             <NavLink
               key={item.name}
@@ -112,7 +112,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           {user?.role === 'admin' && (
             <>
               <NavLink to="/unresolved-bills" className={linkClass} aria-label="Unresolved Bills">
-                <Receipt className="h-5 w-5 shrink-0" aria-hidden="true" />
+                <ReceiptIndianRupee className="h-5 w-5 shrink-0" aria-hidden="true" />
                 Unresolved Bills
               </NavLink>
               <NavLink to="/settings" className={linkClass} aria-label="System Settings">

@@ -89,14 +89,14 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
             onClick={onClose}>
             <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
                 onClick={e => e.stopPropagation()}>
 
                 <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/30">
+                        <div className="w-10 h-10 rounded-2xl bg-amber-500 flex items-center justify-center">
                             <BadgeIndianRupee size={20} className="text-white" />
                         </div>
                         <div>
@@ -151,14 +151,13 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                                            border border-slate-200 dark:border-slate-700
                                            text-slate-600 dark:text-slate-400
                                            hover:bg-slate-100 dark:hover:bg-slate-800
-                                           active:scale-95 transition-all duration-150">
+                                           active:opacity-80 transition-all duration-150">
                                 Cancel
                             </button>
                             <button type="submit" disabled={isSaving}
                                 className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold
                                            bg-amber-500 hover:bg-amber-600 text-white
-                                           shadow-lg shadow-amber-500/30
-                                           active:scale-95 transition-all duration-150
+                                           active:opacity-80 transition-all duration-150
                                            disabled:opacity-60 disabled:cursor-not-allowed">
                                 {isSaving
                                     ? <Spinner size="sm" color="white" />
@@ -268,22 +267,22 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
 
                 {/* Market */}
                 <div className="col-span-1">
-                    <p className="text-[12px] font-bold tabular-nums text-slate-700 dark:text-slate-300">₹ {fmt(invoice.marketAmountSpent)}</p>
+                    <p className="text-[12px] font-bold tabular-nums text-slate-700 dark:text-slate-300">₹{fmt(invoice.marketAmountSpent)}</p>
                 </div>
 
                 {/* Total Payable */}
                 <div className="col-span-1 text-right">
-                    <p className="text-[13px] font-black tabular-nums text-slate-800 dark:text-slate-100">₹ {fmt(invoice.totalPayable)}</p>
+                    <p className="text-[13px] font-black tabular-nums text-slate-800 dark:text-slate-100">₹{fmt(invoice.totalPayable)}</p>
                 </div>
 
                 {/* Paid */}
                 <div className="col-span-1 text-right">
-                    <p className="text-[12px] font-bold tabular-nums text-emerald-600 dark:text-emerald-400">₹ {fmt(invoice.paidAmount)}</p>
+                    <p className="text-[12px] font-bold tabular-nums text-emerald-600 dark:text-emerald-400">₹{fmt(invoice.paidAmount)}</p>
                 </div>
 
                 {/* Outstanding */}
                 <div className="col-span-1 text-right">
-                    <p className="text-[13px] font-black tabular-nums text-rose-600 dark:text-rose-400">₹ {fmt(outstanding)}</p>
+                    <p className="text-[13px] font-black tabular-nums text-rose-600 dark:text-rose-400">₹{fmt(outstanding)}</p>
                 </div>
 
                 {/* Status */}
@@ -301,7 +300,7 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
                             'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400',
                             'border border-amber-200 dark:border-amber-500/30',
                             'hover:bg-amber-100 dark:hover:bg-amber-500/25',
-                            'active:scale-95 transition-all duration-150',
+                            'active:opacity-80 transition-all duration-150',
                             'disabled:opacity-50 disabled:cursor-not-allowed'
                         )}
                     >
@@ -313,7 +312,7 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
 
             {/* ── Mobile card ── */}
             <div className={cn(
-                'md:hidden flex flex-col gap-3 p-4 mx-3 mb-3',
+                'md:hidden flex flex-col gap-3 p-4 mb-3',
                 'bg-white dark:bg-slate-900 rounded-2xl',
                 'border border-slate-200 dark:border-slate-800',
                 'shadow-sm'
@@ -381,8 +380,7 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
                     className={cn(
                         'flex items-center justify-center gap-2 py-3 rounded-xl text-[13px] font-bold',
                         'bg-amber-500 hover:bg-amber-600 text-white',
-                        'shadow-lg shadow-amber-500/30',
-                        'active:scale-[0.98] transition-all duration-150',
+                        'active:opacity-80 transition-all duration-150',
                         'disabled:opacity-60 disabled:cursor-not-allowed',
                         'min-h-[44px]'
                     )}
@@ -430,9 +428,12 @@ const AdminUnpaidPanel = React.memo(() => {
     const [savingId, setSavingId] = useState(null);
 
     // FIX: guard against monthOptions being empty or missing
-    const safeMonthOptions = monthOptions.length > 0 ? monthOptions : [{
-        label: '—', month: undefined, year: undefined, isLastFinalized: true
-    }];
+    const safeMonthOptions = useMemo(
+        () => monthOptions.length > 0 ? monthOptions : [{
+            label: '—', month: undefined, year: undefined, isLastFinalized: true
+        }],
+        [monthOptions]
+    );
 
     const selected = useMemo(
         () => safeMonthOptions[selectedIdx] ?? safeMonthOptions[0],
@@ -503,12 +504,12 @@ const AdminUnpaidPanel = React.memo(() => {
     }, [unpaidInvoices]);
 
     return (
-        <section aria-label="Administrator Unpaid Bills Panel" className="mt-10 w-full">
+        <section aria-label="Administrator Unpaid Bills Panel" className="w-full">
 
             {/* ── Section header ── */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
                 <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-2xl bg-rose-500 shadow-lg shadow-rose-500/25">
+                    <div className="p-2.5 rounded-2xl bg-rose-500">
                         <ShieldAlert size={20} className="text-white" />
                     </div>
                     <div>
@@ -557,7 +558,7 @@ const AdminUnpaidPanel = React.memo(() => {
                             'border border-slate-200 dark:border-slate-700',
                             'text-slate-600 dark:text-slate-400',
                             'hover:bg-slate-50 dark:hover:bg-slate-800',
-                            'active:scale-95 transition-all duration-150',
+                            'active:opacity-80 transition-all duration-150',
                             'disabled:opacity-50 disabled:cursor-not-allowed',
                             'min-h-[44px]'
                         )}
@@ -578,7 +579,7 @@ const AdminUnpaidPanel = React.memo(() => {
                     </div>
                     <button
                         onClick={() => load(selected)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-500/30 active:scale-95 transition-all duration-150 shrink-0"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-500/30 active:opacity-80 transition-all duration-150 shrink-0"
                     >
                         <RefreshCw size={12} />
                         Retry
