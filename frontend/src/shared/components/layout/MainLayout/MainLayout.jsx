@@ -2,8 +2,9 @@ import { useState } from 'react';
 import Sidebar from '../Sidebar/Sidebar';
 import Header from '../Header/Header';
 import SkipNav from '../SkipNav/SkipNav';
+import { cn } from '@/core/utils/helpers/string.helper';
 
-const MainLayout = ({ children }) => {
+const MainLayout = ({ children, paddingClass = "p-3 sm:p-6 lg:p-8" }) => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     return (
@@ -17,7 +18,10 @@ const MainLayout = ({ children }) => {
 
                     <main
                         id="main-content"
-                        className="flex-1 overflow-y-auto bg-background p-3 sm:p-6 lg:p-8 transition-colors duration-200 overscroll-contain"
+                        className={cn(
+                            "flex-1 overflow-y-auto bg-background transition-colors duration-200 overscroll-contain",
+                            paddingClass
+                        )}
                         tabIndex={-1}
                     >
                         {children}

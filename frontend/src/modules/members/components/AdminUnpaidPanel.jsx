@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { fetchAdminUnpaidInvoices, resolveInvoicePayment } from '../store/members.slice';
 import { toast } from 'react-hot-toast';
-import { Spinner } from '@/shared/components/ui';
+import { Spinner, Avatar } from '@/shared/components/ui';
 import { cn } from '@/core/utils/helpers/string.helper';
 
 // FIX: Import centralized billing period utilities from shared source of truth.
@@ -155,11 +155,11 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                                 Cancel
                             </button>
                             <button type="submit" disabled={isSaving}
-                                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold
-                                           bg-primary text-primary-foreground
-                                           hover:bg-primary/90
-                                           active:opacity-80 transition-[opacity,background] duration-150
-                                           disabled:opacity-60 disabled:cursor-not-allowed">
+                                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black
+                                           bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500
+                                           text-white dark:text-slate-950
+                                           hover:brightness-105 active:scale-[0.98] transition-[filter,transform,opacity] duration-150
+                                           disabled:opacity-60 disabled:cursor-not-allowed shadow-md shadow-emerald-600/20 dark:shadow-emerald-500/10">
                                 {isSaving
                                     ? <Spinner size="sm" color="white" />
                                     : <CheckCircle2 size={16} />}
@@ -179,18 +179,11 @@ ResolveModal.displayName = 'ResolveModal';
 ───────────────────────────────────────────── */
 const GroupHeader = React.memo(({ user, count }) => (
     <div className={cn(
-        'flex items-center gap-3 px-6 py-3.5',
+        'flex items-center gap-3 px-4 md:px-6 py-3.5',
         'bg-muted/90 dark:bg-muted/50',
         'border-b border-border'
     )}>
-        {user?.image ? (
-            <img src={user.image} alt={user.name} width="32" height="32" loading="lazy"
-                className="w-8 h-8 rounded-full object-cover shrink-0 ring-2 ring-card" />
-        ) : (
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary-400 flex items-center justify-center shrink-0 text-white text-xs font-black">
-                {(user?.name?.charAt(0) ?? 'U').toUpperCase()}
-            </div>
-        )}
+        <Avatar src={user?.image} name={user?.name} size="sm" className="ring-2 ring-card shrink-0" />
         <div className="flex-1 min-w-0">
             <p className="text-[13px] font-bold text-foreground truncate">{user?.name ?? 'Unknown'}</p>
             <p className="text-[10.5px] font-medium text-muted-foreground truncate">{user?.email ?? '—'}</p>
@@ -202,7 +195,13 @@ const GroupHeader = React.memo(({ user, count }) => (
             {count} unresolved
         </span>
     </div>
-));
+), (prev, next) => {
+    return prev.count === next.count
+        && prev.user?._id === next.user?._id
+        && prev.user?.name === next.user?.name
+        && prev.user?.image === next.user?.image
+        && prev.user?.email === next.user?.email;
+});
 GroupHeader.displayName = 'GroupHeader';
 
 /* ─────────────────────────────────────────────
@@ -220,6 +219,12 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
             }).catch((err) => console.error('Failed to copy invoice ID:', err));
         }
     }, [invoice._id]);
+
+    const handleCloseModal = useCallback(() => setShowModal(false), []);
+    const handleResolveInvoice = useCallback((id, amt) => {
+        onResolve(id, amt);
+        setShowModal(false);
+    }, [onResolve]);
 
     return (
         <>
@@ -284,12 +289,12 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
                         onClick={() => setShowModal(true)}
                         disabled={isSaving}
                         className={cn(
-                            'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold',
-                            'bg-primary text-primary-foreground',
-                            'border border-primary/10',
-                            'hover:bg-primary/90',
-                            'active:opacity-80 transition-opacity duration-150',
-                            'disabled:opacity-50 disabled:cursor-not-allowed'
+                            'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11.5px] font-black',
+                            'bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500',
+                            'text-white dark:text-slate-950',
+                            'hover:brightness-105 active:scale-[0.98] transition-[filter,transform,opacity] duration-150',
+                            'disabled:opacity-50 disabled:cursor-not-allowed',
+                            'shadow-sm shadow-emerald-600/10 dark:shadow-emerald-500/5'
                         )}
                     >
                         {isSaving ? <Spinner size="xs" color="white" /> : <ArrowRight size={11} />}
@@ -298,12 +303,9 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
                 </div>
             </div>
 
-            {/* ── Mobile card ── */}
+            {/* ── Mobile row (Flat Edge-to-Edge) ── */}
             <div className={cn(
-                'md:hidden flex flex-col gap-3 p-4 mb-3',
-                'bg-card rounded-2xl',
-                'border border-border',
-                'shadow-sm'
+                'md:hidden flex flex-col gap-3 p-4 border-b border-border bg-card last:border-b-0'
             )}>
                 {/* Header: ref + status */}
                 <div className="flex items-center justify-between gap-3">
@@ -353,12 +355,13 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
                     onClick={() => setShowModal(true)}
                     disabled={isSaving}
                     className={cn(
-                        'flex items-center justify-center gap-2 py-3 rounded-xl text-[13px] font-bold',
-                        'bg-primary text-primary-foreground',
-                        'hover:bg-primary/90',
-                        'active:opacity-80 transition-opacity duration-150',
+                        'flex items-center justify-center gap-2 py-3 rounded-xl text-[13px] font-black',
+                        'bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500',
+                        'text-white dark:text-slate-950',
+                        'hover:brightness-105 active:scale-[0.98] transition-[filter,transform,opacity] duration-150',
                         'disabled:opacity-60 disabled:cursor-not-allowed',
-                        'min-h-[44px]'
+                        'min-h-[44px]',
+                        'shadow-md shadow-emerald-600/20 dark:shadow-emerald-500/10'
                     )}
                 >
                     {isSaving ? <Spinner size="sm" color="white" /> : <BadgeIndianRupee size={16} />}
@@ -370,11 +373,8 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
                 <ResolveModal
                     invoice={invoice}
                     isSaving={isSaving}
-                    onClose={() => setShowModal(false)}
-                    onResolve={(id, amt) => {
-                        onResolve(id, amt);
-                        setShowModal(false);
-                    }}
+                    onClose={handleCloseModal}
+                    onResolve={handleResolveInvoice}
                 />
             )}
         </>
@@ -492,7 +492,7 @@ const AdminUnpaidPanel = React.memo(() => {
         <section aria-label="Administrator Unpaid Bills Panel" className="w-full">
 
             {/* ── Section header ── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 px-4 md:px-0">
                 <div className="flex items-center gap-3">
                     <div className="p-2.5 rounded-2xl bg-warning">
                         <ShieldAlert size={20} className="text-white" />
@@ -556,7 +556,7 @@ const AdminUnpaidPanel = React.memo(() => {
 
             {/* ── Error banner ── */}
             {unpaidInvoicesError && (
-                <div className="flex items-start gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive mb-4">
+                <div className="flex items-start gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive mb-4 mx-4 md:mx-0">
                     <AlertTriangle size={16} className="mt-0.5 shrink-0" />
                     <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-destructive">Failed to load unresolved invoices</p>
@@ -573,7 +573,7 @@ const AdminUnpaidPanel = React.memo(() => {
             )}
 
             {/* ── Table card ── */}
-            <div className="w-full bg-card rounded-3xl border border-border shadow-sm overflow-hidden">
+            <div className="w-full bg-card md:rounded-3xl border-y md:border border-border md:shadow-sm shadow-none overflow-hidden">
 
                 {/* Desktop table header */}
                 <div className={cn(
@@ -648,12 +648,12 @@ const AdminUnpaidPanel = React.memo(() => {
                 {/* Footer count */}
                 {!unpaidInvoicesLoading && unpaidInvoices.length > 0 && (
                     <div className={cn(
-                        'flex items-center justify-between px-6 py-3.5',
+                        'flex flex-col sm:flex-row gap-3 items-center justify-between px-4 md:px-6 py-3.5',
                         'bg-muted/60 dark:bg-muted/30',
-                        'border-t border-border'
+                        'border-t border-border text-center sm:text-left'
                     )}>
                         <div className="flex items-center gap-2">
-                            <AlertTriangle size={13} className="text-warning-text" />
+                            <AlertTriangle size={13} className="text-warning-text shrink-0" />
                             <span className="text-[11.5px] font-bold text-warning-text">
                                 {unpaidInvoices.length} unresolved invoice{unpaidInvoices.length !== 1 ? 's' : ''} across {groupedInvoices.length} member{groupedInvoices.length !== 1 ? 's' : ''}
                             </span>
