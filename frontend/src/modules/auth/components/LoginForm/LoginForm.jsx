@@ -96,7 +96,7 @@ const LoginForm = () => {
 
             {/* Inline backend error message */}
             {isError && message && (
-                <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400" role="alert">
+                <div className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive" role="alert">
                     <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
                     <span>{message}</span>
                 </div>

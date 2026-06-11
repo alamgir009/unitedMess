@@ -21,6 +21,7 @@ const Reveal = memo(({ children, delay = 0 }) => {
         </motion.div>
     );
 });
+Reveal.displayName = 'Reveal';
 
 const Section = ({ title, Icon, children, delay }) => (
     <Reveal delay={delay}>

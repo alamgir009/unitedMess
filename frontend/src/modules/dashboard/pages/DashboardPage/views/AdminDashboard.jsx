@@ -1,6 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { fetchAdminDashboardStats } from '../../../store/dashboard.slice';
 import { fetchUsers, searchUsers } from '../../../../members/store/members.slice';
@@ -32,7 +31,6 @@ const AlertPill = ({ count, label, color, icon: Icon }) => {
 
 const AdminDashboard = () => {
     const dispatch  = useDispatch();
-    const navigate  = useNavigate();
     const [showNotificationModal, setShowNotificationModal] = useState(false);
 
     const {

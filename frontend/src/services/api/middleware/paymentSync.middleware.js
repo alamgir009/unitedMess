@@ -16,7 +16,7 @@ import {
 
 // FIX: Import centralized billing period utilities from shared source of truth.
 // Eliminates the duplicated local getBillingPeriod() that drifted from backend logic.
-import { getBillingPeriod, getLastFinalizedPeriod } from '@shared/utils/billingPeriod';
+import { getLastFinalizedPeriod } from '@shared/utils/billingPeriod';
 
 const MEAL_MUTATIONS = [
     'meal/create/fulfilled',

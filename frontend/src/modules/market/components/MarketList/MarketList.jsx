@@ -82,7 +82,7 @@ const MarketCard = React.memo(React.forwardRef(({ market, onEdit, onDelete, isAd
                 <div className="flex items-start gap-1.5 mx-4 mt-1.5 min-w-0">
                     <HiOutlineChatBubbleBottomCenterText className="w-3 h-3 mt-[1px] text-muted-foreground/50 flex-shrink-0" />
                     <p className="text-[11px] italic text-muted-foreground/60 leading-relaxed line-clamp-2">
-                        "{market.description}"
+                        &quot;{market.description}&quot;
                     </p>
                 </div>
             )}
@@ -176,7 +176,7 @@ const MarketRow = React.memo(React.forwardRef(({ market, onEdit, onDelete, isAdm
                             <div className="hidden sm:flex items-center gap-1 min-w-0">
                                 <HiOutlineChatBubbleBottomCenterText className="w-3 h-3 text-muted-foreground/40 flex-shrink-0" />
                                 <span className="text-[11px] italic text-muted-foreground/50 truncate max-w-[160px]">
-                                    "{market.description}"
+                                    &quot;{market.description}&quot;
                                 </span>
                             </div>
                         </>

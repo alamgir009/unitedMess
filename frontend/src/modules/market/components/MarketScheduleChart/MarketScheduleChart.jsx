@@ -206,11 +206,10 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
                                     ref={scrollRef}
                                     className="
                                         flex gap-4 overflow-x-auto pb-3
-                                        scroll-smooth
+                                        scroll-smooth snap-x snap-mandatory
                                         [-webkit-overflow-scrolling:touch]
                                         [scrollbar-width:thin]
                                     "
-                                    style={{ scrollSnapType: 'x mandatory' }}
                                 >
                                     {schedule.map((day) => {
                                         const dateObj = new Date(day.date);

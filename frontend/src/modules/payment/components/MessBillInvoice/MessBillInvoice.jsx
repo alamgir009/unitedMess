@@ -45,72 +45,75 @@ const StatCard = memo(({ icon: Icon, label, value, subLabel, accent = false }) =
     <div
         className={`flex-1 min-w-[150px] p-5 rounded-2xl border backdrop-blur-sm transition-all duration-300 hover:shadow-lg ${
             accent
-                ? 'bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 border-indigo-200 dark:border-indigo-800 shadow-indigo-500/5'
-                : 'bg-white/80 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 shadow-gray-500/5'
+                ? 'bg-primary/10 border-primary/20 shadow-primary/5'
+                : 'bg-card/80 border-border shadow-muted-foreground/5'
         }`}
     >
         <div className="flex items-start gap-3">
             <div
                 className={`p-2.5 rounded-xl ${
                     accent
-                        ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                        ? 'bg-primary/10 text-primary'
+                        : 'bg-muted text-muted-foreground'
                 }`}
             >
                 <Icon className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{label}</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
                 <p
                     className={`text-2xl font-bold tabular-nums mt-1 ${
-                        accent ? 'text-indigo-700 dark:text-indigo-200' : 'text-gray-900 dark:text-white'
+                        accent ? 'text-primary' : 'text-foreground'
                     }`}
                 >
                     {value}
                 </p>
-                {subLabel && <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{subLabel}</p>}
+                {subLabel && <p className="text-xs text-muted-foreground mt-0.5">{subLabel}</p>}
             </div>
         </div>
     </div>
 ));
+StatCard.displayName = 'StatCard';
 
 /** Individual breakdown line */
 const LineItem = memo(({ icon: Icon, label, value, subText, accent = false }) => (
-    <div className="flex items-center justify-between py-3.5 px-1 border-b border-gray-100 dark:border-gray-800/60 last:border-0 group transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-800/40 rounded-lg">
+    <div className="flex items-center justify-between py-3.5 px-1 border-b border-border last:border-0 group transition-colors hover:bg-muted/50 rounded-lg">
         <div className="flex items-center gap-3 min-w-0">
             <div
                 className={`p-2 rounded-lg transition-colors ${
                     accent
-                        ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
-                        : 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                        ? 'bg-primary/10 text-primary'
+                        : 'bg-muted text-muted-foreground'
                 }`}
             >
                 <Icon className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-                <p className={`text-sm font-medium ${accent ? 'text-indigo-700 dark:text-indigo-300' : 'text-gray-700 dark:text-gray-200'}`}>
+                <p className={`text-sm font-medium ${accent ? 'text-primary' : 'text-foreground'}`}>
                     {label}
                 </p>
-                {subText && <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate">{subText}</p>}
+                {subText && <p className="text-xs text-muted-foreground mt-0.5 truncate">{subText}</p>}
             </div>
         </div>
         <span
             className={`text-sm font-bold tabular-nums whitespace-nowrap ml-4 ${
-                accent ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-900 dark:text-white'
+                accent ? 'text-primary' : 'text-foreground'
             }`}
         >
             {value}
         </span>
     </div>
 ));
+LineItem.displayName = 'LineItem';
 
 /** Section divider with uppercase label */
 const SectionDivider = memo(({ label }) => (
     <div className="flex items-center gap-3 pt-6 pb-3 first:pt-0">
-        <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-gray-400 dark:text-gray-500">{label}</span>
-        <div className="flex-1 h-px bg-gradient-to-r from-gray-200 dark:from-gray-700 to-transparent" />
+        <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-muted-foreground">{label}</span>
+        <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
     </div>
 ));
+SectionDivider.displayName = 'SectionDivider';
 
 /* ────────────────────────────────────────
    MAIN INVOICE COMPONENT
@@ -224,7 +227,6 @@ const MessBillInvoice = ({
     const {
         grandTotalMarketAmount = 0,
         grandTotalMeal = 0,
-        totalGuestRevenue = 0,
         adjustedMealCharge = 0,
         userStats = {},
     } = data;
@@ -290,12 +292,12 @@ const MessBillInvoice = ({
 
     const statusLabel = isPaid ? 'Paid' : isPartiallyPaid ? 'Partial' : isRefund ? 'Refund' : 'Due';
     const statusCls   = isPaid
-        ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-emerald-400/30'
+        ? 'bg-success-bg text-success-text'
         : isPartiallyPaid
-        ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-amber-400/30'
+        ? 'bg-warning-bg text-warning-text'
         : isRefund
-        ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-emerald-400/30'
-        : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-amber-400/30';
+        ? 'bg-success-bg text-success-text'
+        : 'bg-warning-bg text-warning-text';
 
     return (
         <motion.div
@@ -309,28 +311,28 @@ const MessBillInvoice = ({
             <button
                 type="button"
                 onClick={() => setIsExpanded(p => !p)}
-                className="w-full flex items-center justify-between gap-4 px-6 py-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors text-left"
+                className="w-full flex items-center justify-between gap-4 px-6 py-4 hover:bg-foreground/5 transition-colors text-left"
                 aria-expanded={isExpanded}
             >
                 <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 flex-shrink-0">
+                    <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 flex-shrink-0">
                         <HiOutlineDocumentText className="w-4 h-4 text-white" />
                     </div>
                     <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-bold text-gray-900 dark:text-white tracking-tight">Mess Bill Invoice</p>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full ring-1 uppercase tracking-wide bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-700/50">
+                            <p className="text-sm font-bold text-foreground tracking-tight">Mess Bill Invoice</p>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full ring-1 uppercase tracking-wide bg-primary/10 text-primary border border-primary/20">
                                 {displayMonth}
                             </span>
                         </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        <p className="text-xs text-muted-foreground mt-0.5">
                             United Mess · {displayDate}
                         </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0">
                     <div className="text-right">
-                        <p className="text-lg font-black tabular-nums text-gray-900 dark:text-white">
+                        <p className="text-lg font-black tabular-nums text-foreground">
                             {isRefund ? '−' : ''}₹{fmt(displayAmt)}
                         </p>
                         <span className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-full ring-1 ${statusCls}`}>
@@ -356,33 +358,33 @@ const MessBillInvoice = ({
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                className="overflow-hidden border-t border-gray-200 dark:border-gray-800/60"
+                className="overflow-hidden border-t border-border"
             >
             {/* ── Header ── */}
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 px-6 md:px-8 pt-6 md:pt-8 pb-5 border-b border-gray-200 dark:border-gray-800/60">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 px-6 md:px-8 pt-6 md:pt-8 pb-5 border-b border-border">
                 <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+                    <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/25">
                         <HiOutlineDocumentText className="w-5 h-5 text-white" />
                     </div>
                     <div>
                         <div className="flex items-center flex-wrap gap-2">
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Mess Bill Invoice</h3>
-                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 text-xs font-semibold border border-indigo-200 dark:border-indigo-700/50">
+                            <h3 className="text-xl font-bold text-foreground tracking-tight">Mess Bill Invoice</h3>
+                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold border border-primary/20">
                                 <HiOutlineSparkles className="w-3.5 h-3.5" /> {displayMonth}
                             </span>
                         </div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5 flex items-center gap-1">
+                        <p className="text-sm text-muted-foreground mt-1.5 flex items-center gap-1">
                             <HiOutlineBuildingOffice2 className="w-4 h-4" />
                             United Mess · {displayDate}
                         </p>
                     </div>
                 </div>
                 <div className="flex flex-col items-start sm:items-end gap-0.5">
-                    <p className="text-xs font-mono text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-md">
+                    <p className="text-xs font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
                         {invMeta.no}
                     </p>
-                    {user?.name && <p className="text-sm font-semibold text-gray-900 dark:text-white">{user.name}</p>}
-                    {user?.email && <p className="text-xs text-gray-400 dark:text-gray-500 max-w-[200px] truncate">{user.email}</p>}
+                    {user?.name && <p className="text-sm font-semibold text-foreground">{user.name}</p>}
+                    {user?.email && <p className="text-xs text-muted-foreground max-w-[200px] truncate">{user.email}</p>}
                 </div>
             </div>
 
@@ -423,34 +425,34 @@ const MessBillInvoice = ({
             </div>
 
             {/* ── Total & Payment Area ── */}
-            <div className={`px-4 md:px-6 pt-6 pb-8 mt-0 rounded-b-2xl border-t border-gray-200 dark:border-gray-800 ${
+            <div className={`px-4 md:px-6 pt-6 pb-8 mt-0 rounded-b-2xl border-t border-border ${
             isRefund
-                ? 'bg-gradient-to-b from-emerald-50/60 to-white dark:from-emerald-900/10 dark:to-gray-900/20'
-                : 'bg-gradient-to-b from-gray-50 to-white dark:from-gray-800/40 dark:to-gray-900/20'
+                ? 'bg-card'
+                : 'bg-card'
             }`}>
 
             {/* ── Amount + Status unified card ── */}
             <div className={`flex items-center justify-between gap-4 p-4 md:p-5 rounded-2xl mb-5 border shadow-sm ${
                 isPaid
-                ? 'bg-white dark:bg-gray-800/70 border-emerald-200/70 dark:border-emerald-800/60'
+                ? 'bg-card border-success-border'
                 : isRefund
-                ? 'bg-white dark:bg-gray-800/70 border-emerald-200/70 dark:border-emerald-800/60'
+                ? 'bg-card border-success-border'
                 : isPartiallyPaid
-                ? 'bg-white dark:bg-gray-800/70 border-amber-200/70 dark:border-amber-800/60'
-                : 'bg-white dark:bg-gray-800/70 border-gray-200 dark:border-gray-700'
+                ? 'bg-card border-warning-border'
+                : 'bg-card border-border'
             }`}>
                 <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500 mb-1">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground mb-1">
                     {isRefund ? 'Refund Amount' : 'Total Payable'}
                 </p>
                 <div className="flex items-baseline gap-2 flex-wrap">
                     <span className={`text-3xl md:text-4xl font-black tabular-nums leading-none ${
-                    isRefund ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-white'
+                    isRefund ? 'text-success-text' : 'text-foreground'
                     }`}>
                     {isRefund ? '−' : ''}₹{fmt(displayAmt)}
                     </span>
                     {isPartiallyPaid && totalPayable > 0 && (
-                    <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
+                    <span className="text-xs text-muted-foreground font-medium">
                         of ₹{fmt(totalPayable)}
                     </span>
                     )}
@@ -460,12 +462,12 @@ const MessBillInvoice = ({
                 {/* ── Premium Status Pill ── */}
                 <div className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border shadow-sm select-none backdrop-blur-sm transition-all duration-200 ${
                 isPaid
-                    ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:bg-emerald-400/10 dark:border-emerald-400/30 dark:text-emerald-300 shadow-emerald-500/10'
+                    ? 'bg-success-bg border-success-border text-success-text shadow-none'
                     : isPartiallyPaid
-                    ? 'bg-amber-500/15 border-amber-500/30 text-amber-700 dark:bg-amber-400/10 dark:border-amber-400/30 dark:text-amber-300 shadow-amber-500/10'
+                    ? 'bg-warning-bg border-warning-border text-warning-text shadow-none'
                     : isRefund
-                    ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:bg-emerald-400/10 dark:border-emerald-400/30 dark:text-emerald-300 shadow-emerald-500/10'
-                    : 'bg-amber-500/15 border-amber-500/30 text-amber-700 dark:bg-amber-400/10 dark:border-amber-400/30 dark:text-amber-300 shadow-amber-500/10'
+                    ? 'bg-success-bg border-success-border text-success-text shadow-none'
+                    : 'bg-warning-bg border-warning-border text-warning-text shadow-none'
                 }`}>
                 {isPaid ? <HiOutlineCheckCircle className="w-3.5 h-3.5" /> :
                 isPartiallyPaid ? <HiOutlineCurrencyRupee className="w-3.5 h-3.5" /> :
@@ -477,29 +479,29 @@ const MessBillInvoice = ({
 
             {/* ── Payment Confirmation Block (unchanged, kept clean) ── */}
             {(paymentRecord?.paymentMethod === 'upi_manual' && paymentRecord?.transactionId) || isPaid || isRefund ? (
-                <div className="rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 mb-5 shadow-sm">
+                <div className="rounded-2xl overflow-hidden border border-border mb-5 shadow-sm">
                 {paymentRecord?.paymentMethod === 'upi_manual' && paymentRecord?.transactionId && (
-                    <div className="flex items-start gap-3 px-4 py-3.5 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200/60 dark:border-blue-800/50">
-                    <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <HiOutlineIdentification className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <div className="flex items-start gap-3 px-4 py-3.5 bg-primary/10 border-b border-primary/20">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <HiOutlineIdentification className="w-4 h-4 text-primary" />
                     </div>
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <p className="text-xs font-bold text-blue-800 dark:text-blue-200 uppercase tracking-wide">UPI Manual Payment</p>
+                        <p className="text-xs font-bold text-primary uppercase tracking-wide">UPI Manual Payment</p>
                         {paymentRecord.status === 'pending_verification' && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-warning-bg text-warning-text border border-warning-border">
                             Pending Review
                             </span>
                         )}
                         {paymentRecord.status === 'completed' && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-success-bg text-success-text border border-success-border">
                             <HiOutlineCheckCircle className="w-3 h-3" /> Verified
                             </span>
                         )}
                         </div>
                         <div className="flex items-center gap-1.5 mt-1.5">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-500 dark:text-blue-400/70">UTR</span>
-                        <span className="text-sm font-mono font-bold text-blue-900 dark:text-blue-100 select-all tracking-tight break-all">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">UTR</span>
+                        <span className="text-sm font-mono font-bold text-primary select-all tracking-tight break-all">
                             {paymentRecord.transactionId}
                         </span>
                         </div>
@@ -507,29 +509,29 @@ const MessBillInvoice = ({
                     </div>
                 )}
                 {isPaid && (
-                    <div className="flex items-center gap-3 px-4 py-3.5 bg-emerald-50 dark:bg-emerald-900/20">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center flex-shrink-0">
-                        <HiOutlineCheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <div className="flex items-center gap-3 px-4 py-3.5 bg-success-bg">
+                    <div className="w-8 h-8 rounded-lg bg-success-bg flex items-center justify-center flex-shrink-0">
+                        <HiOutlineCheckCircle className="w-4 h-4 text-success-text" />
                     </div>
                     <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-emerald-800 dark:text-emerald-200">Payment Successful</p>
-                        <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/70 mt-0.5">
+                        <p className="text-xs font-bold text-success-text">Payment Successful</p>
+                        <p className="text-[11px] text-success-text/80 mt-0.5">
                         ₹{fmt(displayAmt)} received · Invoice is final
                         </p>
                     </div>
-                    <div className="flex-shrink-0 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/50 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-700/50">
+                    <div className="flex-shrink-0 text-[10px] font-bold text-success-text bg-success-bg px-2.5 py-1 rounded-lg border border-success-border">
                         SETTLED
                     </div>
                     </div>
                 )}
                 {isRefund && !isPaid && (
-                    <div className="flex items-center gap-3 px-4 py-3.5 bg-emerald-50 dark:bg-emerald-900/20">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center flex-shrink-0">
-                        <HiOutlineArrowTrendingDown className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <div className="flex items-center gap-3 px-4 py-3.5 bg-success-bg">
+                    <div className="w-8 h-8 rounded-lg bg-success-bg flex items-center justify-center flex-shrink-0">
+                        <HiOutlineArrowTrendingDown className="w-4 h-4 text-success-text" />
                     </div>
                     <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-emerald-800 dark:text-emerald-200">Refund Applicable</p>
-                        <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/70 mt-0.5">
+                        <p className="text-xs font-bold text-success-text">Refund Applicable</p>
+                        <p className="text-[11px] text-success-text/80 mt-0.5">
                         ₹{fmt(displayAmt)} will be credited · Contact your mess admin
                         </p>
                     </div>
@@ -540,20 +542,20 @@ const MessBillInvoice = ({
 
             {/* ── Partial Payment Progress (lightly enhanced) ── */}
             {isPartiallyPaid && (
-                <div className="mb-5 p-4 rounded-2xl bg-amber-50/80 dark:bg-amber-900/20 border border-amber-200/70 dark:border-amber-800/60 backdrop-blur-sm">
+                <div className="mb-5 p-4 rounded-2xl bg-warning-bg border border-warning-border backdrop-blur-sm">
                 <div className="flex items-center justify-between mb-2.5">
-                    <span className="text-xs font-bold text-amber-800 dark:text-amber-200">Payment Progress</span>
-                    <span className="text-xs font-bold text-amber-700 dark:text-amber-300 tabular-nums">{paidPercent}%</span>
+                    <span className="text-xs font-bold text-warning-text">Payment Progress</span>
+                    <span className="text-xs font-bold text-warning-text tabular-nums">{paidPercent}%</span>
                 </div>
-                <div className="h-2 w-full rounded-full bg-amber-200/60 dark:bg-amber-900/40 overflow-hidden mb-3">
+                <div className="h-2 w-full rounded-full bg-warning-bg overflow-hidden mb-3">
                     <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${paidPercent}%` }}
                     transition={{ duration: 1, ease: 'easeOut' }}
-                    className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500 shadow-inner"
+                    className="h-full rounded-full bg-gradient-to-r from-warning to-warning shadow-inner"
                     />
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-amber-700/70 dark:text-amber-400/60 font-semibold">
+                <div className="flex items-center justify-between text-[11px] text-warning-text/70 font-semibold">
                     <span>Paid: ₹{fmt(paidAmount)}</span>
                     <span>Remaining: ₹{fmt(remainingAmount)}</span>
                 </div>
@@ -568,8 +570,8 @@ const MessBillInvoice = ({
                 onClick={handleOpenPaymentFlow}
                 className={`touch-target w-full flex items-center justify-center gap-2.5 py-3 px-5 rounded-xl text-sm font-bold text-white mb-3 transition-[transform,opacity,background,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-out)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 ${
                     isPartiallyPaid
-                    ? 'bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:from-amber-700 active:to-amber-800 shadow-[0_4px_14px_rgba(245,158,11,0.25)] hover:shadow-[0_6px_20px_rgba(245,158,11,0.35)]'
-                    : 'bg-gradient-to-br from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 active:from-indigo-800 active:to-indigo-900 shadow-[0_4px_14px_rgba(79,70,229,0.25)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.35)]'
+                    ? 'bg-warning hover:brightness-90 active:from-amber-700 active:to-amber-800 shadow-md hover:shadow-lg'
+                    : 'bg-primary hover:brightness-90 active:from-indigo-800 active:to-indigo-900 shadow-md hover:shadow-lg'
                 }`}
                 >
                 <span>{isPartiallyPaid ? 'Pay Remaining Balance' : 'Pay Bill'}</span>
@@ -583,7 +585,7 @@ const MessBillInvoice = ({
                 type="button"
                 disabled={isDownloading}
                 onClick={handleDownloadPDF}
-                className="touch-target flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold border bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-[0.98] disabled:opacity-60 disabled:scale-100 transition-[transform,opacity,background,border-color,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-out)] text-gray-700 dark:text-gray-200 shadow-sm"
+                className="touch-target flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold border bg-card border-input hover:bg-muted active:scale-[0.98] disabled:opacity-60 disabled:scale-100 transition-[transform,opacity,background,border-color,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-out)] text-foreground shadow-sm"
                 >
                 {isDownloading ? <Spinner size="sm" color="current" /> : <HiOutlineArrowDownTray className="w-4 h-4 flex-shrink-0" />}
                 <span>Download</span>
@@ -592,7 +594,7 @@ const MessBillInvoice = ({
                 type="button"
                 disabled={sendingEmail}
                 onClick={handleSendEmail}
-                className="touch-target flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold border bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-[0.98] disabled:opacity-60 disabled:scale-100 transition-[transform,opacity,background,border-color,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-out)] text-gray-700 dark:text-gray-200 shadow-sm"
+                className="touch-target flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold border bg-card border-input hover:bg-muted active:scale-[0.98] disabled:opacity-60 disabled:scale-100 transition-[transform,opacity,background,border-color,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-out)] text-foreground shadow-sm"
                 >
                 {sendingEmail ? <Spinner size="sm" color="current" /> : <HiOutlineEnvelope className="w-4 h-4 flex-shrink-0" />}
                 <span>Email</span>
@@ -605,7 +607,7 @@ const MessBillInvoice = ({
                 type="button"
                 disabled={sendingAllEmails}
                 onClick={openEmailAllModal}
-                className="touch-target w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold border bg-indigo-50/80 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 active:scale-[0.98] disabled:opacity-60 disabled:scale-100 transition-[transform,opacity,background,border-color] duration-[var(--duration-base)] ease-[var(--ease-out)] text-indigo-700 dark:text-indigo-300 shadow-sm mt-3"
+                className="touch-target w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold border bg-primary/10 border-primary/20 hover:bg-primary/20 active:scale-[0.98] disabled:opacity-60 disabled:scale-100 transition-[transform,opacity,background,border-color] duration-[var(--duration-base)] ease-[var(--ease-out)] text-primary shadow-sm mt-3"
                 >
                 {sendingAllEmails ? <Spinner size="sm" color="current" /> : <HiOutlineUsers className="w-4 h-4 flex-shrink-0" />}
                 <span>{sendingAllEmails ? 'Sending to all members…' : 'Email to all'}</span>
@@ -613,7 +615,7 @@ const MessBillInvoice = ({
             )}
 
             {/* ── Footer disclaimer ── */}
-            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-5 text-center leading-relaxed">
+            <p className="text-[11px] text-muted-foreground mt-5 text-center leading-relaxed">
                 System‑generated invoice for {displayMonth}. For disputes, contact your mess admin.
             </p>
             </div>
@@ -630,7 +632,7 @@ const MessBillInvoice = ({
                 <div
                     aria-label="Close modal"
                     onClick={() => { if (!sendingAllEmails) setIsEmailAllModalOpen(false); }}
-                    className="absolute inset-0 w-full h-full bg-black/60 md:bg-black/50"
+                    className="absolute inset-0 w-full h-full bg-overlay"
                 />
 
                 <div className="flex min-h-full items-center justify-center p-3 sm:p-4">
@@ -639,7 +641,7 @@ const MessBillInvoice = ({
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.96, y: 24 }}
                         transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                        className="relative w-full max-w-sm overflow-hidden rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xl"
+                        className="relative w-full max-w-sm overflow-hidden rounded-xl border border-border bg-card text-foreground shadow-xl"
                         role="dialog"
                         aria-modal="true"
                         aria-label="Email Invoice to All"
@@ -647,10 +649,10 @@ const MessBillInvoice = ({
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* ── Header with accent bar ── */}
-                        <div className="relative z-10 flex items-center justify-between px-4 py-4 sm:px-6 sm:py-5 border-b border-black/10 dark:border-white/10">
+                        <div className="relative z-10 flex items-center justify-between px-4 py-4 sm:px-6 sm:py-5 border-b border-border">
                             <div className="flex items-center gap-3 min-w-0">
-                                <div className="w-1 h-5 rounded-full bg-gradient-to-b from-primary to-secondary-500" />
-                                <h2 className="truncate text-base font-semibold sm:text-lg text-gray-900 dark:text-white">
+                                <div className="w-1 h-5 rounded-full bg-gradient-to-b from-primary to-primary/70" />
+                                <h2 className="truncate text-base font-semibold sm:text-lg text-foreground">
                                     Email Invoice to All
                                 </h2>
                             </div>
@@ -658,7 +660,7 @@ const MessBillInvoice = ({
                                 onClick={() => !sendingAllEmails && setIsEmailAllModalOpen(false)}
                                 disabled={sendingAllEmails}
                                 aria-label="Close dialog"
-                                className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-40"
+                                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-40"
                             >
                                 <HiOutlineXMark className="w-5 h-5" />
                             </button>
@@ -666,14 +668,14 @@ const MessBillInvoice = ({
 
                         {/* ── Body ── */}
                         <div className="relative z-10 px-4 py-4 sm:px-6 sm:py-5 max-h-[82dvh] overflow-y-auto space-y-4">
-                            <p className="text-sm text-gray-500 dark:text-gray-400 -mt-1">
+                            <p className="text-sm text-muted-foreground -mt-1">
                                 Select the billing month to send
                             </p>
 
                             {/* Month + Year selects */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="flex flex-col gap-1.5">
-                                    <label htmlFor="email-all-month" className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                                    <label htmlFor="email-all-month" className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                                         Month
                                     </label>
                                     <div className="relative">
@@ -682,19 +684,19 @@ const MessBillInvoice = ({
                                             value={selectedMonth}
                                             onChange={e => setSelectedMonth(Number(e.target.value))}
                                             disabled={sendingAllEmails}
-                                            className="w-full appearance-none px-3 py-2.5 pr-9 text-sm font-medium rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="w-full appearance-none px-3 py-2.5 pr-9 text-sm font-medium rounded-lg border border-input bg-input text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             {MONTHS.map((m, i) => (
                                                 <option key={m} value={i + 1}>{m}</option>
                                             ))}
                                         </select>
-                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-gray-400">
+                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-muted-foreground">
                                             <HiOutlineChevronDown className="w-3.5 h-3.5" />
                                         </div>
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-1.5">
-                                    <label htmlFor="email-all-year" className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                                    <label htmlFor="email-all-year" className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                                         Year
                                     </label>
                                     <div className="relative">
@@ -703,13 +705,13 @@ const MessBillInvoice = ({
                                             value={selectedYear}
                                             onChange={e => setSelectedYear(Number(e.target.value))}
                                             disabled={sendingAllEmails}
-                                            className="w-full appearance-none px-3 py-2.5 pr-9 text-sm font-medium rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="w-full appearance-none px-3 py-2.5 pr-9 text-sm font-medium rounded-lg border border-input bg-input text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => (
                                                 <option key={y} value={y}>{y}</option>
                                             ))}
                                         </select>
-                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-gray-400">
+                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-muted-foreground">
                                             <HiOutlineChevronDown className="w-3.5 h-3.5" />
                                         </div>
                                     </div>
@@ -717,18 +719,18 @@ const MessBillInvoice = ({
                             </div>
 
                             {/* Selected period preview chip */}
-                            <div className="flex items-center gap-3 p-3.5 rounded-lg bg-gradient-to-r from-indigo-50/90 to-indigo-50/50 dark:from-indigo-900/20 dark:to-indigo-900/10 border-l-4 border-indigo-400 dark:border-indigo-500 border border-indigo-200/60 dark:border-indigo-700/40">
-                                <HiOutlineCalendarDays className="w-4 h-4 text-indigo-500 dark:text-indigo-400 flex-shrink-0" />
-                                <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
+                            <div className="flex items-center gap-3 p-3.5 rounded-lg bg-primary/10 border-l-4 border-primary border border-primary/20">
+                                <HiOutlineCalendarDays className="w-4 h-4 text-primary flex-shrink-0" />
+                                <p className="text-xs font-semibold text-primary">
                                     Sending invoices for{' '}
                                     <span className="font-bold">{MONTHS[selectedMonth - 1]} {selectedYear}</span>
                                 </p>
                             </div>
 
                             {/* Irreversibility warning */}
-                            <div className="flex items-start gap-3 p-3.5 rounded-lg bg-amber-50/90 dark:bg-amber-900/15 border-l-4 border-amber-400 dark:border-amber-500 border border-amber-200/60 dark:border-amber-700/40">
-                                <HiOutlineExclamationTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                                <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
+                            <div className="flex items-start gap-3 p-3.5 rounded-lg bg-warning-bg border-l-4 border-warning border border-warning-border">
+                                <HiOutlineExclamationTriangle className="w-4 h-4 text-warning-text flex-shrink-0 mt-0.5" />
+                                <p className="text-xs text-warning-text leading-relaxed">
                                     This will email a PDF invoice to every active member. Emails cannot be recalled once sent.
                                 </p>
                             </div>
@@ -740,7 +742,7 @@ const MessBillInvoice = ({
                                     id="email-all-cancel"
                                     onClick={() => setIsEmailAllModalOpen(false)}
                                     disabled={sendingAllEmails}
-                                    className="touch-target flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 transition-[transform,opacity,background,border-color] duration-[var(--duration-base)] ease-[var(--ease-out)] disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+                                    className="touch-target flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold border border-border bg-card hover:bg-muted text-foreground transition-[transform,opacity,background,border-color] duration-[var(--duration-base)] ease-[var(--ease-out)] disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
                                 >
                                     Cancel
                                 </button>
@@ -749,7 +751,7 @@ const MessBillInvoice = ({
                                     id="email-all-confirm"
                                     onClick={handleEmailAll}
                                     disabled={sendingAllEmails}
-                                    className="touch-target flex-[1.3] flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-bold text-white bg-gradient-to-br from-primary to-secondary-500 hover:from-primary/90 hover:to-secondary-500/90 shadow-[0_4px_14px_rgba(79,70,229,0.25)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.35)] transition-[transform,opacity,background,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-out)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100"
+                                    className="touch-target flex-[1.3] flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-bold text-white bg-gradient-to-br from-primary to-primary/70 hover:brightness-90 shadow-md hover:shadow-lg transition-[transform,opacity,background,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-out)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100"
                                 >
                                     {sendingAllEmails
                                         ? <Spinner size="sm" color="current" />

@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, memo } from 'react';
+import { useEffect, useCallback, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -7,6 +7,7 @@ import {
 } from 'react-icons/hi2';
 import { format } from 'date-fns';
 import { Button } from '@/shared/components/ui';
+import { SPRING_SNAPPY } from '@/core/utils/constants/spring';
 
 /* Framer variants defined outside component → stable object refs */
 const backdropVariants = {
@@ -22,12 +23,7 @@ const panelVariants = {
 };
 
 /* Spring tuned for composite-only path: no sub-1 mass, no low stiffness */
-const panelTransition = {
-    type: 'spring',
-    stiffness: 420,
-    damping: 36,
-    mass: 1,
-};
+const panelTransition = SPRING_SNAPPY;
 
 const fastFade = { duration: 0.15 };
 

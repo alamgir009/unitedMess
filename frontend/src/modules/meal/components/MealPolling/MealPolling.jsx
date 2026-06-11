@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import clsx from 'clsx';
+import { cn } from '@/core/utils/helpers/string.helper';
 import {
     HiOutlineSun,
     HiOutlineMoon,
@@ -223,7 +223,7 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
     return (
         <section className="w-full">
             <div
-                className={clsx(
+                className={cn(
                     'relative w-full overflow-hidden py-2',
                     'md:rounded-xl',
                     'md:border md:border-border/50',
@@ -282,7 +282,7 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                                 disabled={disabled}
                                 aria-pressed={isActive}
                                 aria-label={`Vote for ${option.label}`}
-                                className={clsx(
+                                className={cn(
                                     'group relative overflow-hidden rounded-xl border p-3.5 text-left',
                                     'transition-all duration-150',
                                     'min-h-[130px] sm:min-h-[140px] sm:p-4',
@@ -295,7 +295,7 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                             >
                                 {/* gradient overlay */}
                                 <div
-                                    className={clsx(
+                                    className={cn(
                                         'pointer-events-none absolute inset-0 transition-opacity duration-150',
                                         option.gradientClass,
                                         isActive ? 'opacity-100' : 'opacity-0'
@@ -306,14 +306,14 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="flex items-center gap-2.5">
                                             <div
-                                                className={clsx(
+                                                className={cn(
                                                     'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
                                                     'transition-colors duration-150',
                                                     isActive ? option.accent.bg : 'bg-muted/50 dark:bg-white/10'
                                                 )}
                                             >
                                                 <Icon
-                                                    className={clsx(
+                                                    className={cn(
                                                         'h-4 w-4 sm:h-5 sm:w-5',
                                                         isActive ? option.accent.text : 'text-foreground/65'
                                                     )}
@@ -331,7 +331,7 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                                         </div>
 
                                         <div
-                                            className={clsx(
+                                            className={cn(
                                                 'rounded-full p-1 transition-all duration-150',
                                                 option.accent.bg,
                                                 option.accent.text,
@@ -359,7 +359,7 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                                                 }}
                                             >
                                                 <div
-                                                    className={clsx(
+                                                    className={cn(
                                                         'h-full rounded-full',
                                                         isActive ? option.accent.fill : 'bg-foreground/30'
                                                     )}
@@ -403,7 +403,7 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                                     >
                                         <div className="flex items-center gap-2.5">
                                             <div
-                                                className={clsx(
+                                                className={cn(
                                                     'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
                                                     option.accent.bg,
                                                     option.accent.text

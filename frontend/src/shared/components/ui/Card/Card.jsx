@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import { clsx } from 'clsx';
+import { cn } from '@/core/utils/helpers/string.helper';
 
 const Card = forwardRef(({
   variant = 'default',
@@ -27,7 +27,7 @@ const Card = forwardRef(({
   };
 
   const interactiveStyles = interactive
-    ? 'transition-all duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+    ? 'transition-all duration-[var(--duration-base)] ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-primary/30 cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
     : '';
 
   const selectedStyle = selected
@@ -39,7 +39,7 @@ const Card = forwardRef(({
       ref={ref}
       role={interactive ? 'button' : undefined}
       tabIndex={interactive ? 0 : undefined}
-      className={clsx(variants[variant], paddings[padding], interactiveStyles, selectedStyle, className)}
+      className={cn(variants[variant], paddings[padding], interactiveStyles, selectedStyle, className)}
       {...props}
     >
       {children}
@@ -50,31 +50,31 @@ const Card = forwardRef(({
 Card.displayName = 'Card';
 
 export const CardHeader = ({ className = '', children, ...props }) => (
-  <div className={clsx('flex flex-col space-y-1.5 pb-4', className)} {...props}>
+  <div className={cn('flex flex-col space-y-1.5 pb-4', className)} {...props}>
     {children}
   </div>
 );
 
 export const CardTitle = ({ className = '', children, ...props }) => (
-  <h3 className={clsx('font-semibold leading-none tracking-tight text-base', className)} {...props}>
+  <h3 className={cn('font-semibold leading-none tracking-tight text-base', className)} {...props}>
     {children}
   </h3>
 );
 
 export const CardDescription = ({ className = '', children, ...props }) => (
-  <p className={clsx('text-sm text-muted-foreground', className)} {...props}>
+  <p className={cn('text-sm text-muted-foreground', className)} {...props}>
     {children}
   </p>
 );
 
 export const CardContent = ({ className = '', children, ...props }) => (
-  <div className={clsx('', className)} {...props}>
+  <div className={cn('', className)} {...props}>
     {children}
   </div>
 );
 
 export const CardFooter = ({ className = '', children, ...props }) => (
-  <div className={clsx('flex items-center pt-4 border-t border-border mt-4', className)} {...props}>
+  <div className={cn('flex items-center pt-4 border-t border-border mt-4', className)} {...props}>
     {children}
   </div>
 );

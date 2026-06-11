@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { clsx } from 'clsx';
-import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/core/utils/helpers/string.helper';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Spinner } from '@/shared/components/ui';
 
 const Modal = ({
@@ -18,6 +18,8 @@ const Modal = ({
 }) => {
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
+
+  const shouldReduceMotion = useReducedMotion();
 
   const sizes = {
     sm: 'max-w-sm',
@@ -37,7 +39,13 @@ const Modal = ({
       previousFocusRef.current = document.activeElement;
       document.body.style.overflow = 'hidden';
       document.addEventListener('keydown', handleKeyDown);
-      setTimeout(() => dialogRef.current?.focus(), 50);
+      const raf = requestAnimationFrame(() => dialogRef.current?.focus());
+      return () => {
+        cancelAnimationFrame(raf);
+        document.body.style.overflow = '';
+        document.removeEventListener('keydown', handleKeyDown);
+        previousFocusRef.current?.focus();
+      };
     } else {
       document.body.style.overflow = '';
       document.removeEventListener('keydown', handleKeyDown);
@@ -58,7 +66,7 @@ const Modal = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.18 }}
+            transition={{ duration: shouldReduceMotion ? 0 : 0.25 }}
             className="fixed inset-0 z-modal bg-overlay backdrop-blur-sm"
             onClick={closeOnOverlayClick ? onClose : undefined}
             aria-hidden="true"
@@ -76,11 +84,11 @@ const Modal = ({
               key="dialog"
               ref={dialogRef}
               tabIndex={-1}
-              initial={{ opacity: 0, scale: 0.96, y: 8 }}
+              initial={shouldReduceMotion ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.96, y: 24 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 8 }}
-              transition={{ duration: 0.25, ease: [0.34, 1.56, 0.64, 1] }}
-              className={clsx(
+              transition={shouldReduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 300, damping: 30 }}
+              className={cn(
                 'relative w-full',
                 sizes[size],
                 'bg-card border border-border rounded-xl shadow-xl',
@@ -143,4 +151,5 @@ const Modal = ({
   );
 };
 
+Modal.displayName = 'Modal';
 export default Modal;

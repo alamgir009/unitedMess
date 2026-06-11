@@ -18,4 +18,5 @@ const AdminRoute = ({ children }) => {
     return <ProtectedRoute>{children}</ProtectedRoute>;
 };
 
+AdminRoute.displayName = 'AdminRoute';
 export default AdminRoute;

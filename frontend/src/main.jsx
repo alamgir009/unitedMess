@@ -12,7 +12,7 @@ if ('serviceWorker' in navigator) {
 
                 // Poll for SW updates every 60s
                 setInterval(() => {
-                    registration.update().catch(() => {});
+                    registration.update().catch((err) => console.error('SW update failed:', err));
                 }, 60000);
 
                 // Listen for a new SW being found

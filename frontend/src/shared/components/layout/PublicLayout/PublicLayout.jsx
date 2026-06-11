@@ -22,4 +22,5 @@ const PublicLayout = () => {
     );
 };
 
+PublicLayout.displayName = 'PublicLayout';
 export default PublicLayout;

@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -63,10 +63,10 @@ const toInvoiceDisplayData = (invoice) => {
 ───────────────────────────────────────────────────────── */
 const InvoiceSkeleton = () => (
     <div className="space-y-4 animate-pulse">
-        <div className="h-28 bg-gray-200 dark:bg-gray-800 rounded-2xl w-full" />
-        <div className="h-16 bg-gray-200 dark:bg-gray-800 rounded-2xl w-full" />
-        <div className="h-56 bg-gray-200 dark:bg-gray-800 rounded-2xl w-full" />
-        <div className="h-20 bg-gray-200 dark:bg-gray-800 rounded-2xl w-full" />
+        <div className="h-28 bg-muted rounded-2xl w-full" />
+        <div className="h-16 bg-muted rounded-2xl w-full" />
+        <div className="h-56 bg-muted rounded-2xl w-full" />
+        <div className="h-20 bg-muted rounded-2xl w-full" />
     </div>
 );
 
@@ -82,32 +82,32 @@ const PartialPaymentBanner = ({ remainingAmount, paidAmount, totalPayable, onPay
         <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-xl border border-amber-300 dark:border-amber-700/50 bg-amber-50 dark:bg-amber-900/15 overflow-hidden"
+            className="rounded-xl border border-warning-border bg-warning-bg overflow-hidden"
         >
             {/* Progress bar */}
-            <div className="h-1.5 bg-amber-100 dark:bg-amber-900/30 w-full">
+            <div className="h-1.5 bg-warning-bg w-full">
                 <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${paidPercent}%` }}
                     transition={{ duration: 0.8, ease: 'easeOut' }}
-                    className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full"
+                    className="h-full bg-gradient-to-r from-warning to-warning rounded-full"
                 />
             </div>
 
             <div className="p-4">
                 <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                        <HiOutlineClock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                    <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-warning-bg flex items-center justify-center">
+                        <HiOutlineClock className="w-5 h-5 text-warning-text" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-amber-800 dark:text-amber-300">
+                        <p className="text-sm font-bold text-warning-text">
                             Partial Payment Received — Balance Due
                         </p>
-                        <p className="text-xs text-amber-700/80 dark:text-amber-400/80 mt-0.5 leading-relaxed">
-                            You've paid <span className="font-semibold">₹{fmt(paidAmount)}</span> ({paidPercent}%) of
+                        <p className="text-xs text-warning-text/80 mt-0.5 leading-relaxed">
+                            You&apos;ve paid <span className="font-semibold">₹{fmt(paidAmount)}</span> ({paidPercent}%) of
                             your total bill of <span className="font-semibold">₹{fmt(totalPayable)}</span>.
                             Please pay the remaining{' '}
-                            <span className="font-bold text-amber-800 dark:text-amber-300">
+                            <span className="font-bold text-warning-text">
                                 ₹{fmt(remainingAmount)}
                             </span>{' '}
                             to clear your balance.
@@ -123,9 +123,9 @@ const PartialPaymentBanner = ({ remainingAmount, paidAmount, totalPayable, onPay
                         disabled={!!isPaying}
                         onClick={() => onPayNow(monthName)}
                         className="touch-target mt-3 w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg
-                            bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold
-                            shadow-[0_4px_14px_rgba(245,158,11,0.4)]
-                            hover:shadow-[0_6px_20px_rgba(245,158,11,0.5)]
+                            bg-warning hover:brightness-90 text-white text-sm font-bold
+                            shadow-md
+                            hover:shadow-lg
                             disabled:opacity-60 disabled:cursor-not-allowed transition-[transform,opacity,background,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-out)]"
                     >
                         {isPaying ? (
@@ -216,7 +216,7 @@ const MonthlyInvoiceModal = ({
             >
                 {/* Backdrop */}
                 <div
-                    className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm"
+                    className="absolute inset-0 bg-overlay backdrop-blur-sm"
                     onClick={handleClose}
                     aria-hidden="true"
                 />
@@ -227,22 +227,22 @@ const MonthlyInvoiceModal = ({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 20, scale: 0.95 }}
                     transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                    className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl bg-white dark:bg-slate-900 border border-black/5 dark:border-white/10 shadow-2xl overflow-hidden"
+                    className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl bg-card border border-border shadow-2xl overflow-hidden"
                     role="dialog"
                     aria-modal="true"
                     aria-label="Invoice Details"
                 >
                     {/* ── Header ─────────────────────────────────── */}
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/30">
-                                <HiOutlineDocumentText className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                            <div className="p-2 rounded-xl bg-primary/10">
+                                <HiOutlineDocumentText className="w-5 h-5 text-primary" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                                <h3 className="text-lg font-bold text-foreground">
                                     Invoice Details
                                 </h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                <p className="text-sm text-muted-foreground">
                                     {monthName || monthlyInvoice?.monthName || ''}
                                 </p>
                             </div>
@@ -253,10 +253,10 @@ const MonthlyInvoiceModal = ({
                             {!isLoadingMonthly && monthlyInvoice && (
                                 <span className={`hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
                                     invoiceStatus === 'paid'
-                                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                        ? 'bg-success-bg text-success-text'
                                         : invoiceStatus === 'partially_paid'
-                                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                                            : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                                            ? 'bg-warning-bg text-warning-text'
+                                            : 'bg-muted text-muted-foreground'
                                 }`}>
                                     {invoiceStatus === 'paid'
                                         ? '✓ Paid'
@@ -269,7 +269,7 @@ const MonthlyInvoiceModal = ({
                             <button
                                 id="monthly-invoice-modal-close"
                                 onClick={handleClose}
-                                className="p-2 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                                 aria-label="Close invoice modal"
                             >
                                 <HiOutlineXMark className="w-5 h-5" />
@@ -278,7 +278,7 @@ const MonthlyInvoiceModal = ({
                     </div>
 
                     {/* ── Scrollable body ────────────────────────── */}
-                    <div className="overflow-y-auto flex-1 p-4 sm:p-6 space-y-4 custom-scrollbar bg-gray-50/50 dark:bg-slate-900">
+                    <div className="overflow-y-auto flex-1 p-4 sm:p-6 space-y-4 custom-scrollbar bg-muted/50">
 
                         {/* Loading state */}
                         {isLoadingMonthly && <InvoiceSkeleton />}
@@ -288,16 +288,16 @@ const MonthlyInvoiceModal = ({
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.97 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="p-6 text-center bg-red-50 dark:bg-red-900/10 rounded-2xl border border-red-100 dark:border-red-900"
+                                className="p-6 text-center bg-destructive/10 rounded-2xl border border-destructive/20"
                             >
-                                <HiOutlineExclamationTriangle className="w-10 h-10 text-red-400 mx-auto mb-3" />
-                                <p className="font-semibold text-red-600 dark:text-red-400 mb-1">
+                                <HiOutlineExclamationTriangle className="w-10 h-10 text-destructive mx-auto mb-3" />
+                                <p className="font-semibold text-destructive mb-1">
                                     Failed to load invoice
                                 </p>
-                                <p className="text-sm text-red-500/80 dark:text-red-400/70">{error}</p>
+                                <p className="text-sm text-destructive/80">{error}</p>
                                 <button
                                     onClick={() => dispatch(fetchMonthlyInvoice({ year, month }))}
-                                    className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                                    className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-destructive/10 text-destructive text-sm font-medium hover:bg-destructive/20 transition-colors"
                                 >
                                     <HiOutlineArrowPath className="w-4 h-4" />
                                     Try Again
@@ -336,8 +336,8 @@ const MonthlyInvoiceModal = ({
                         {/* Empty state (no data, no error, not loading) */}
                         {!isLoadingMonthly && !error && !displayData && (
                             <div className="py-16 text-center">
-                                <HiOutlineDocumentText className="w-12 h-12 text-gray-300 dark:text-gray-700 mx-auto mb-3" />
-                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                <HiOutlineDocumentText className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
+                                <p className="text-sm font-medium text-muted-foreground">
                                     No invoice data found for this period.
                                 </p>
                             </div>

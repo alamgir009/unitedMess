@@ -7,4 +7,5 @@ const SkipNav = () => (
   </a>
 );
 
+SkipNav.displayName = 'SkipNav';
 export default SkipNav;

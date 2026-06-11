@@ -3,11 +3,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useState, useEffect, useRef, memo, useMemo } from 'react';
 
 // ─────────────────────────────────────────────────────────────
-// Tokens
-// ─────────────────────────────────────────────────────────────
-const ACCENT = '#2563eb';
-const ACCENT2 = '#7c3aed';
-
+// Motion presets
 // ─────────────────────────────────────────────────────────────
 // Motion presets
 // ─────────────────────────────────────────────────────────────
@@ -19,7 +15,7 @@ const fadeUp = {
   }),
 };
 
-const InView = memo(({ children, delay = 0, className = '' }) => {
+const InView = memo(function InView({ children, delay = 0, className = '' }) {
   const shouldReduceMotion = useReducedMotion();
   return (
     <motion.div
@@ -35,6 +31,7 @@ const InView = memo(({ children, delay = 0, className = '' }) => {
     </motion.div>
   );
 });
+InView.displayName = 'InView';
 
 // ─────────────────────────────────────────────────────────────
 // Animated counter
@@ -63,6 +60,7 @@ const Counter = memo(({ to, prefix = '', suffix = '' }) => {
 
   return <span ref={ref}>{prefix}{val.toLocaleString('en-IN')}{suffix}</span>;
 });
+Counter.displayName = 'Counter';
 
 // ─────────────────────────────────────────────────────────────
 // Pill badge
@@ -72,16 +70,18 @@ const Pill = memo(({ children }) => (
     {children}
   </span>
 ));
+Pill.displayName = 'Pill';
 
 // ─────────────────────────────────────────────────────────────
 // Live dot
 // ─────────────────────────────────────────────────────────────
 const LiveDot = memo(() => (
   <span className="relative flex h-2 w-2">
-    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success/80" />
+    <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
   </span>
 ));
+LiveDot.displayName = 'LiveDot';
 
 // ─────────────────────────────────────────────────────────────
 // Data
@@ -163,12 +163,12 @@ const features = [
 ];
 
 const toneMap = {
-  blue:   { bg: 'from-blue-500/15 to-blue-500/5', text: 'text-blue-500', badge: 'bg-blue-500/10 text-blue-600 dark:text-blue-400', border: 'group-hover:border-blue-500/40' },
-  violet: { bg: 'from-violet-500/15 to-violet-500/5', text: 'text-violet-500', badge: 'bg-violet-500/10 text-violet-600 dark:text-violet-400', border: 'group-hover:border-violet-500/40' },
-  emerald:{ bg: 'from-emerald-500/15 to-emerald-500/5', text: 'text-emerald-500', badge: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400', border: 'group-hover:border-emerald-500/40' },
-  amber:  { bg: 'from-amber-500/15 to-amber-500/5', text: 'text-amber-500', badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400', border: 'group-hover:border-amber-500/40' },
-  rose:   { bg: 'from-rose-500/15 to-rose-500/5', text: 'text-rose-500', badge: 'bg-rose-500/10 text-rose-600 dark:text-rose-400', border: 'group-hover:border-rose-500/40' },
-  sky:    { bg: 'from-sky-500/15 to-sky-500/5', text: 'text-sky-500', badge: 'bg-sky-500/10 text-sky-600 dark:text-sky-400', border: 'group-hover:border-sky-500/40' },
+  blue:   { bg: 'bg-primary/10', text: 'text-primary', badge: 'bg-primary/10 text-primary', border: 'group-hover:border-primary/40' },
+  violet: { bg: 'bg-primary/10', text: 'text-primary', badge: 'bg-primary/10 text-primary', border: 'group-hover:border-primary/40' },
+  emerald:{ bg: 'bg-success-bg', text: 'text-success-text', badge: 'bg-success-bg text-success-text', border: 'group-hover:border-success/40' },
+  amber:  { bg: 'bg-warning-bg', text: 'text-warning-text', badge: 'bg-warning-bg text-warning-text', border: 'group-hover:border-warning/40' },
+  rose:   { bg: 'bg-danger-bg', text: 'text-danger-text', badge: 'bg-danger-bg text-danger-text', border: 'group-hover:border-destructive/40' },
+  sky:    { bg: 'bg-info-bg', text: 'text-info-text', badge: 'bg-info-bg text-info-text', border: 'group-hover:border-info/40' },
 };
 
 const steps = [
@@ -306,6 +306,7 @@ const FAQItem = memo(({ q, a }) => {
     </div>
   );
 });
+FAQItem.displayName = 'FAQItem';
 
 // ─────────────────────────────────────────────────────────────
 // FeatureCard
@@ -327,6 +328,7 @@ const FeatureCard = memo(({ item, index }) => {
     </InView>
   );
 });
+FeatureCard.displayName = 'FeatureCard';
 
 // ─────────────────────────────────────────────────────────────
 // HeroCard — floating dashboard preview
@@ -353,13 +355,13 @@ const HeroCard = memo(() => {
         {/* Card header */}
         <div className="flex items-center justify-between border-b border-border/50 px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-2">
-            <div className="h-2.5 w-2.5 rounded-full bg-red-400/80 sm:h-3 sm:w-3" />
-            <div className="h-2.5 w-2.5 rounded-full bg-yellow-400/80 sm:h-3 sm:w-3" />
-            <div className="h-2.5 w-2.5 rounded-full bg-emerald-400/80 sm:h-3 sm:w-3" />
+            <div className="h-2.5 w-2.5 rounded-full bg-destructive/80 sm:h-3 sm:w-3" />
+            <div className="h-2.5 w-2.5 rounded-full bg-warning/80 sm:h-3 sm:w-3" />
+            <div className="h-2.5 w-2.5 rounded-full bg-success/80 sm:h-3 sm:w-3" />
           </div>
           <div className="flex items-center gap-1.5">
             <LiveDot />
-            <span className="text-[10px] font-semibold text-emerald-500 sm:text-[11px]">Live</span>
+            <span className="text-[10px] font-semibold text-success-text sm:text-[11px]">Live</span>
           </div>
         </div>
 
@@ -379,7 +381,7 @@ const HeroCard = memo(() => {
                 <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[10px]">Monthly total</p>
                 <p className="mt-1 text-xl font-black tracking-tight text-foreground sm:mt-2 sm:text-2xl">₹18,420</p>
                 <div className="mt-1 flex items-center gap-1 sm:mt-2">
-                  <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400 sm:text-[10px]">↑ 12.4%</span>
+                  <span className="rounded-full bg-success-bg px-2 py-0.5 text-[9px] font-bold text-success-text sm:text-[10px]">↑ 12.4%</span>
                 </div>
               </div>
               <div className="flex-1 rounded-xl border border-border/60 bg-background/70 p-3 sm:rounded-2xl sm:p-4">
@@ -459,7 +461,7 @@ const HeroCard = memo(() => {
       >
         <div className="w-48 rounded-2xl border border-border/70 bg-card/95 p-3 shadow-xl backdrop-blur-xl sm:w-52 sm:p-4">
           <div className="mb-2 flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-500">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-success to-success/80">
               <svg viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2" className="h-3 w-3">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2 8l4 4 8-8" />
               </svg>
@@ -480,7 +482,7 @@ const HeroCard = memo(() => {
       >
         <div className="w-48 rounded-2xl border border-border/70 bg-card/95 p-3 shadow-xl backdrop-blur-xl sm:w-52 sm:p-4">
           <div className="mb-2 flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-indigo-500">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/80">
               <svg viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2" className="h-3 w-3">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 2v4l3 3" /><circle cx="8" cy="8" r="6" />
               </svg>
@@ -494,6 +496,7 @@ const HeroCard = memo(() => {
     </div>
   );
 });
+HeroCard.displayName = 'HeroCard';
 
 // ─────────────────────────────────────────────────────────────
 // Scrolling ticker
@@ -525,6 +528,7 @@ const Ticker = memo(() => {
     </div>
   );
 });
+Ticker.displayName = 'Ticker';
 
 // ─────────────────────────────────────────────────────────────
 // HomePage
@@ -598,7 +602,7 @@ const HomePage = () => {
             className="mt-5 max-w-xl text-base leading-[1.75] text-muted-foreground sm:mt-7 sm:text-[1.05rem] sm:leading-[1.85]"
           >
             United Mess brings a finance-grade experience to meal tracking, contributions, member management,
-            and expense control. The clarity of a top fintech product — built for India's communities.
+            and expense control. The clarity of a top fintech product — built for India&apos;s communities.
           </motion.p>
 
           {/* CTA row */}
@@ -610,8 +614,8 @@ const HomePage = () => {
           >
             <Link
               to="/register"
-              className="group inline-flex h-12 items-center justify-center gap-2 rounded-xl px-6 text-sm font-bold text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:h-auto sm:px-7 sm:py-4"
-              style={{ background: 'linear-gradient(135deg, #2563eb, #7c3aed)' }}
+              className="group inline-flex h-12 items-center justify-center gap-2 rounded-xl px-6 text-sm font-bold text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-auto sm:px-7 sm:py-4"
+              style={{ background: 'var(--gradient-primary)' }}
             >
               Start free — no card needed
               <svg className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
@@ -697,8 +701,8 @@ const HomePage = () => {
             ].map(({ src, label }) => (
               <div key={label} className="group relative overflow-hidden rounded-2xl sm:rounded-3xl">
                 <img src={src} alt={label} className="h-56 w-full object-cover transition-transform duration-700 group-hover:scale-105 sm:h-72" loading="lazy" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent" />
-                <span className="absolute bottom-4 left-4 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md border border-white/20 sm:bottom-5 sm:left-5 sm:rounded-xl sm:px-4 sm:py-2 sm:text-sm">
+                <div className="absolute inset-0 bg-gradient-to-t from-overlay via-transparent" />
+                <span className="absolute bottom-4 left-4 rounded-lg bg-foreground/10 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md border border-foreground/20 sm:bottom-5 sm:left-5 sm:rounded-xl sm:px-4 sm:py-2 sm:text-sm">
                   {label}
                 </span>
               </div>
@@ -729,7 +733,7 @@ const HomePage = () => {
                 whileHover={shouldReduceMotion ? {} : { x: 4 }}
                 className={`w-full rounded-xl border p-4 text-left transition-all duration-200 sm:rounded-2xl sm:p-6 ${
                   activeTab === idx
-                    ? 'border-blue-500/50 bg-blue-500/5 shadow-lg shadow-blue-500/10'
+                    ? 'border-primary/50 bg-primary/10 shadow-md'
                     : 'border-border/60 bg-card/50 hover:border-border hover:bg-card/70'
                 }`}
               >
@@ -737,10 +741,10 @@ const HomePage = () => {
                   <div
                     className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-black text-white transition-all duration-200 sm:h-12 sm:w-12 sm:rounded-2xl ${
                       activeTab === idx
-                        ? 'shadow-lg shadow-blue-500/30'
+                        ? 'shadow-md'
                         : 'opacity-60'
                     }`}
-                    style={{ background: activeTab === idx ? 'linear-gradient(135deg, #2563eb, #7c3aed)' : undefined, backgroundColor: activeTab === idx ? undefined : 'var(--muted)' }}
+                    style={{ background: activeTab === idx ? 'var(--gradient-primary)' : undefined, backgroundColor: activeTab === idx ? undefined : 'var(--muted)' }}
                   >
                     {step.num}
                   </div>
@@ -772,7 +776,7 @@ const HomePage = () => {
               <div className="p-4 sm:p-6">
                 <span
                   className="inline-flex items-center rounded-full px-3 py-1 text-[10px] font-bold text-white sm:text-xs"
-                  style={{ background: 'linear-gradient(135deg, #2563eb, #7c3aed)' }}
+                  style={{ background: 'var(--gradient-primary)' }}
                 >
                   Step {steps[activeTab].num}
                 </span>
@@ -797,7 +801,7 @@ const HomePage = () => {
             <div className="min-w-[540px]">
               <div className="grid grid-cols-4 border-b border-border/50 bg-muted/30 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground sm:px-6 sm:py-4 sm:text-xs">
                 <span>Feature</span>
-                <span className="text-center text-blue-600 dark:text-blue-400">United Mess</span>
+                <span className="text-center text-primary">United Mess</span>
                 <span className="text-center">WhatsApp groups</span>
                 <span className="text-center">Spreadsheets</span>
               </div>
@@ -806,14 +810,14 @@ const HomePage = () => {
                   <span className="font-medium text-foreground">{feature}</span>
                   <span className="flex justify-center">
                     {um ? (
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/15 sm:h-6 sm:w-6">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-2.5 w-2.5 text-emerald-600 dark:text-emerald-400 sm:h-3 sm:w-3">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-success-bg sm:h-6 sm:w-6">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-2.5 w-2.5 text-success-text sm:h-3 sm:w-3">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M2 8l4 4 8-8" />
                         </svg>
                       </span>
                     ) : (
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500/10 sm:h-6 sm:w-6">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-2.5 w-2.5 text-red-500 sm:h-3 sm:w-3">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-destructive/10 sm:h-6 sm:w-6">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-2.5 w-2.5 text-destructive sm:h-3 sm:w-3">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M4 4l8 8M12 4l-8 8" />
                         </svg>
                       </span>
@@ -821,14 +825,14 @@ const HomePage = () => {
                   </span>
                   <span className="flex justify-center">
                     {wa ? (
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/15 sm:h-6 sm:w-6">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-2.5 w-2.5 text-emerald-600 dark:text-emerald-400 sm:h-3 sm:w-3">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-success-bg sm:h-6 sm:w-6">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-2.5 w-2.5 text-success-text sm:h-3 sm:w-3">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M2 8l4 4 8-8" />
                         </svg>
                       </span>
                     ) : (
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500/10 sm:h-6 sm:w-6">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-2.5 w-2.5 text-red-500 sm:h-3 sm:w-3">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-destructive/10 sm:h-6 sm:w-6">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-2.5 w-2.5 text-destructive sm:h-3 sm:w-3">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M4 4l8 8M12 4l-8 8" />
                         </svg>
                       </span>
@@ -836,14 +840,14 @@ const HomePage = () => {
                   </span>
                   <span className="flex justify-center">
                     {ss ? (
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/15 sm:h-6 sm:w-6">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-2.5 w-2.5 text-emerald-600 dark:text-emerald-400 sm:h-3 sm:w-3">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-success-bg sm:h-6 sm:w-6">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-2.5 w-2.5 text-success-text sm:h-3 sm:w-3">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M2 8l4 4 8-8" />
                         </svg>
                       </span>
                     ) : (
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500/10 sm:h-6 sm:w-6">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-2.5 w-2.5 text-red-500 sm:h-3 sm:w-3">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-destructive/10 sm:h-6 sm:w-6">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-2.5 w-2.5 text-destructive sm:h-3 sm:w-3">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M4 4l8 8M12 4l-8 8" />
                         </svg>
                       </span>
@@ -872,14 +876,14 @@ const HomePage = () => {
           {testimonials.map((item, i) => (
             <InView key={item.name} delay={0.05 * i} className="mb-4 break-inside-avoid sm:mb-5">
               <blockquote className="rounded-2xl border border-border/60 bg-card/60 p-5 backdrop-blur-sm sm:rounded-3xl sm:p-7">
-                <div className="mb-4 flex gap-1 text-amber-400 sm:mb-5">
+                <div className="mb-4 flex gap-1 text-warning-text sm:mb-5">
                   {Array.from({ length: 5 }).map((_, j) => (
                     <svg key={j} viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3 sm:h-3.5 sm:w-3.5">
                       <path d="M8 1.5l1.94 3.93 4.33.63-3.14 3.06.74 4.32L8 11.18l-3.87 2.04.74-4.32L1.73 5.56l4.33-.63L8 1.5z" />
                     </svg>
                   ))}
                 </div>
-                <p className="text-xs leading-[1.85] text-muted-foreground sm:text-sm sm:leading-[1.9]">"{item.quote}"</p>
+                <p className="text-xs leading-[1.85] text-muted-foreground sm:text-sm sm:leading-[1.9]">&quot;{item.quote}&quot;</p>
                 <div className="mt-5 flex items-center gap-3 sm:mt-6">
                   <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${item.color} text-[11px] font-bold text-white sm:h-10 sm:w-10 sm:text-xs`}>
                     {item.avatar}
@@ -936,7 +940,7 @@ const HomePage = () => {
                   </div>
                   <div className="absolute -bottom-3 -right-6 rounded-xl border border-border/70 bg-card/95 px-3 py-2 shadow-xl backdrop-blur-xl sm:-bottom-4 sm:-right-8 sm:rounded-2xl sm:px-4 sm:py-3">
                     <p className="text-[11px] font-bold text-foreground sm:text-xs">₹84.30 / meal</p>
-                    <p className="text-[9px] text-muted-foreground sm:text-[10px]">Today's cost</p>
+                    <p className="text-[9px] text-muted-foreground sm:text-[10px]">Today&apos;s cost</p>
                   </div>
                 </div>
               </div>
@@ -958,7 +962,7 @@ const HomePage = () => {
             </p>
             <Link
               to="/contact"
-              className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-500 hover:text-blue-600 sm:mt-6"
+              className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary/80 sm:mt-6"
             >
               Contact support
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
@@ -984,8 +988,7 @@ const HomePage = () => {
               aria-hidden
             >
               <span
-                className="text-[8rem] font-black tracking-tighter opacity-[0.04] dark:opacity-[0.06] sm:text-[14rem]"
-                style={{ lineHeight: 1 }}
+                className="text-[8rem] font-black tracking-tighter opacity-[0.04] dark:opacity-[0.06] sm:text-[14rem] leading-none"
               >
                 ₹
               </span>
@@ -1002,10 +1005,10 @@ const HomePage = () => {
               <div className="mt-8 flex flex-col items-center gap-3 sm:mt-10 sm:flex-row sm:justify-center sm:gap-4">
                 <Link
                   to="/register"
-                  className="inline-flex h-12 items-center gap-2 rounded-xl px-6 text-sm font-bold text-white shadow-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:h-auto sm:px-8 sm:py-4 sm:text-base"
-                  style={{ background: 'linear-gradient(135deg, #2563eb, #7c3aed)' }}
+                  className="inline-flex h-12 items-center gap-2 rounded-xl px-6 text-sm font-bold text-white shadow-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-auto sm:px-8 sm:py-4 sm:text-base"
+                  style={{ background: 'var(--gradient-primary)' }}
                 >
-                  Create your mess — it's free
+                  Create your mess — it&apos;s free
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14m-6-6 6 6-6 6" />
                   </svg>

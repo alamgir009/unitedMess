@@ -21,7 +21,7 @@ const useWebPush = () => {
                     setVapidPublicKey(res.data.vapidPublicKey);
                 }
             })
-            .catch(() => {});
+            .catch((err) => console.error('Web push error:', err));
     }, [user]);
 
     // Check existing subscription on mount
@@ -36,7 +36,7 @@ const useWebPush = () => {
                     subscribedEndpoint.current = sub.endpoint;
                 }
             })
-            .catch(() => {});
+            .catch((err) => console.error('Web push error:', err));
     }, [user]);
 
     const subscribe = useCallback(async () => {

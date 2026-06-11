@@ -37,4 +37,5 @@ const ProtectedRoute = ({ children }) => {
     return children;
 };
 
+ProtectedRoute.displayName = 'ProtectedRoute';
 export default ProtectedRoute;

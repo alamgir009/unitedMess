@@ -1,30 +1,35 @@
 import { Fragment } from 'react';
 import { Menu, Transition } from '@headlessui/react';
-import { Bell, Menu as MenuIcon, User } from 'lucide-react';
+import { Menu as MenuIcon, User } from 'lucide-react';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout, toggleAdminHistory } from '@/modules/auth/store/auth.slice';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useTheme } from '@/app/providers/ThemeProvider';
 import NotificationBell from '@/modules/notification/components/NotificationBell/NotificationBell';
 
-const SunIcon = () => (
+const SunIcon = () => {
+SunIcon.displayName = 'SunIcon';
+return (
   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
   </svg>
-);
+  );
+};
 
-const MoonIcon = () => (
+const MoonIcon = () => {
+MoonIcon.displayName = 'MoonIcon';
+return (
   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
   </svg>
-);
+  );
+};
 
 const Header = ({ onMenuClick }) => {
   const { user, adminShowHistory } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
-  const { theme, toggleTheme, isDark } = useTheme();
+  const { toggleTheme, isDark } = useTheme();
 
   return (
     <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-border bg-card px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 transition-colors duration-200">
@@ -66,17 +71,11 @@ const Header = ({ onMenuClick }) => {
           <button
             onClick={toggleTheme}
             aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-            className="touch-target p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="touch-target p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <motion.span
-              key={theme}
-              initial={{ rotate: -20, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              transition={{ duration: 0.2 }}
-              className="block"
-            >
+            <span className="block transition-transform duration-200 motion-reduce:transition-none">
               {isDark ? <SunIcon /> : <MoonIcon />}
-            </motion.span>
+            </span>
           </button>
 
           <NotificationBell />
@@ -84,7 +83,7 @@ const Header = ({ onMenuClick }) => {
           <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-border" aria-hidden="true" />
 
           <Menu as="div" className="relative">
-            <Menu.Button className="-m-1.5 flex items-center p-1.5 rounded-lg hover:bg-muted transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <Menu.Button className="-m-1.5 flex items-center p-1.5 rounded-lg hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <span className="sr-only">Open user menu</span>
 
               <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold ring-1 ring-border overflow-hidden">
@@ -116,14 +115,14 @@ const Header = ({ onMenuClick }) => {
               leaveFrom="transform opacity-100 scale-100"
               leaveTo="transform opacity-0 scale-95"
             >
-              <Menu.Items className="absolute right-0 z-dropdown mt-2.5 w-32 origin-top-right rounded-lg bg-card border border-border py-2 shadow-lg focus:outline-none">
+              <Menu.Items className="absolute right-0 z-dropdown mt-2.5 w-32 origin-top-right rounded-lg bg-card border border-border py-2 shadow-xl focus:outline-none">
                 <Menu.Item>
                   {({ active }) => (
                     <Link
                       to="/profile"
                       className={cn(
                         active ? 'bg-muted' : '',
-                        'block px-3 py-1.5 text-sm leading-6 text-foreground transition-colors focus-visible:outline-none',
+                        'block px-3 py-2.5 min-h-[44px] text-sm leading-6 text-foreground transition-colors focus-visible:outline-none',
                       )}
                     >
                       Your Profile
@@ -141,7 +140,7 @@ const Header = ({ onMenuClick }) => {
                       }}
                       className={cn(
                         active ? 'bg-danger-bg' : '',
-                        'block px-3 py-1.5 text-sm leading-6 text-danger transition-colors focus-visible:outline-none',
+                        'block px-3 py-2.5 min-h-[44px] text-sm leading-6 text-danger transition-colors focus-visible:outline-none',
                       )}
                     >
                       Sign out
@@ -157,4 +156,5 @@ const Header = ({ onMenuClick }) => {
   );
 };
 
+Header.displayName = 'Header';
 export default Header;

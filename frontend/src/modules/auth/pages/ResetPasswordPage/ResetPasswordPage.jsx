@@ -143,12 +143,12 @@ const ResetPasswordPage = () => {
                                                 size="lg"
                                             />
                                             {password !== confirmPassword && confirmPassword.length > 0 && (
-                                                <p className="mt-1.5 text-xs text-red-500">Passwords don't match</p>
+                                                <p className="mt-1.5 text-xs text-red-500">Passwords don&apos;t match</p>
                                             )}
                                         </div>
 
                                         {isError && message && (
-                                            <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
+                                            <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
                                                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                                                 <span>{message}</span>
                                             </div>

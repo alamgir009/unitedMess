@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
@@ -7,7 +8,7 @@ let buildInfo = { version: '0.0.0', commit: 'unknown', buildTime: new Date().toI
 try {
     const commit = execSync('git rev-parse --short HEAD', { encoding: 'utf-8' }).trim();
     buildInfo = {
-        version: process.env.npm_package_version || '0.0.0',
+        version: '0.0.0',
         commit,
         buildTime: new Date().toISOString(),
     };
@@ -26,6 +27,12 @@ export default defineConfig({
             '@': fileURLToPath(new URL('./src', import.meta.url)),
             '@shared': fileURLToPath(new URL('../shared', import.meta.url)),
         },
+    },
+    test: {
+        globals: true,
+        environment: 'happy-dom',
+        setupFiles: ['./tests/unit/setup.js'],
+        css: true,
     },
     server: {
         port: 3000,

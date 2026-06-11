@@ -407,12 +407,12 @@ const MealPage = () => {
                     {/* Error Banner */}
                     <AnimatePresence>
                         {(isError || errorMsg) && (
-                            <div className="flex items-start gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400">
-                                <span className="w-2 h-2 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
+                            <div className="flex items-start gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive">
+                                <span className="w-2 h-2 rounded-full bg-destructive mt-1.5 flex-shrink-0" />
                                 <p className="flex-1 text-sm font-medium">{errorMsg || message || 'Something went wrong. Please try again.'}</p>
                                 <button
                                     onClick={() => { setErrorMsg(''); dispatch(reset()); }}
-                                    className="flex-shrink-0 p-1 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/10 transition-colors"
+                                    className="flex-shrink-0 p-1 rounded-lg hover:bg-destructive/10 transition-colors"
                                     title="Dismiss"
                                     aria-label="Dismiss error"
                                 >

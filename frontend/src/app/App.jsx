@@ -13,12 +13,13 @@ import useSocket from '@/modules/notification/hooks/useSocket';
 injectStore(store);
 
 const SessionGate = ({ children }) => {
+SessionGate.displayName = 'SessionGate';
     const dispatch = useDispatch();
     const sessionRestoring = useSelector((state) => state.auth.sessionRestoring);
 
     useEffect(() => {
         dispatch(restoreSession());
-    }, []);
+    }, [dispatch]);
 
     if (sessionRestoring) {
         return <FullPageLoader label="Restoring session…" />;
@@ -28,6 +29,7 @@ const SessionGate = ({ children }) => {
 };
 
 const VersionInit = () => {
+VersionInit.displayName = 'VersionInit';
     useEffect(() => {
         const cleanup = initVersionChecker();
         return () => cleanup();
@@ -36,11 +38,13 @@ const VersionInit = () => {
 };
 
 const SocketInit = () => {
+SocketInit.displayName = 'SocketInit';
     useSocket();
     return null;
 };
 
 const SessionKeepAlive = () => {
+SessionKeepAlive.displayName = 'SessionKeepAlive';
     const lastActivityRef = useRef(Date.now());
     const intervalRef = useRef(null);
     const user = useSelector((state) => state.auth.user);
@@ -95,4 +99,5 @@ const App = () => {
     );
 };
 
+App.displayName = 'App';
 export default App;

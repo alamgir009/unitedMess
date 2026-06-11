@@ -187,14 +187,14 @@ const MemberPage = React.memo(() => {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -8 }}
                             transition={{ duration: 0.15 }}
-                            className="relative z-10 flex items-start gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400"
+                            className="relative z-10 flex items-start gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive"
                         >
-                            <span className="w-2 h-2 rounded-full bg-red-500 mt-1.5 flex-shrink-0 animate-pulse" />
+                                <span className="w-2 h-2 rounded-full bg-destructive mt-1.5 flex-shrink-0 animate-pulse" />
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold leading-tight text-red-700 dark:text-red-400">
+                                <p className="text-sm font-semibold leading-tight text-destructive">
                                     Failed to load members
                                 </p>
-                                <p className="text-xs font-medium mt-0.5 opacity-80 truncate text-red-500 dark:text-red-500">
+                                <p className="text-xs font-medium mt-0.5 opacity-80 truncate text-destructive/80">
                                     {message || 'Please check your network connection and try again.'}
                                 </p>
                             </div>
@@ -202,8 +202,8 @@ const MemberPage = React.memo(() => {
                                 <button
                                     onClick={handleRetry}
                                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold
-                                               bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300
-                                               hover:bg-red-200 dark:hover:bg-red-500/30 active:scale-95 transition-all duration-150"
+                                               bg-destructive/20 text-destructive
+                                               hover:bg-destructive/30 active:scale-95 transition-all duration-150"
                                     aria-label="Retry loading members"
                                 >
                                     <RefreshCw className="w-3.5 h-3.5" />
@@ -211,7 +211,7 @@ const MemberPage = React.memo(() => {
                                 </button>
                                 <button
                                     onClick={dismissError}
-                                    className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/10 transition-colors"
+                                    className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors"
                                     title="Dismiss"
                                     aria-label="Dismiss error"
                                 >

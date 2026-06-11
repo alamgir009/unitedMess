@@ -5,6 +5,7 @@ import {
     ShieldCheck, Wallet, DollarSign, Clock, CheckCircle2, Sparkles,
 } from 'lucide-react';
 import { cn } from '@/core/utils/helpers/string.helper';
+import { SPRING_BOUNCE } from '@/core/utils/constants/spring';
 
 // ─── Icon registry ────────────────────────────────────────────────────────────
 const ICON_MAP = {
@@ -56,11 +57,10 @@ const UnreadPulse = () => (
 
 // ─── Main component ───────────────────────────────────────────────────────────
 const NotificationItem = memo(({ notification, onSelect }) => {
-    const { isRead, priority, type, title, message, createdAt, actionRequired, metadata, _id, id } = notification;
+    const { isRead, priority, type, title, message, createdAt, actionRequired, metadata } = notification;
 
     const isUnread = !isRead;
     const isUrgent = priority === 'HIGH' || type === 'SECURITY';
-    const notifId  = _id ?? id;
 
     const [relativeTime, setRelativeTime] = useState(() => formatRelativeTime(createdAt));
     useEffect(() => {
@@ -77,7 +77,7 @@ const NotificationItem = memo(({ notification, onSelect }) => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{   opacity: 0, scale: 0.95 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            transition={SPRING_BOUNCE}
             role="listitem"
             aria-label={`${isUnread ? 'Unread: ' : ''}${title}`}
             onClick={() => onSelect?.(notification)}

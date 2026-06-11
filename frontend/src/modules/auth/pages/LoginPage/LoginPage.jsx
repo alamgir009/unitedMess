@@ -1,16 +1,9 @@
-import { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { reset } from '../../store/auth.slice';
 import LoginForm from '../../components/LoginForm/LoginForm';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const LoginPage = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const dispatch = useDispatch();
-  const { user, isSuccess, sessionRestoring } = useSelector((state) => state.auth);
 
   // Where to redirect after login is now handled by GuestRoute.
 

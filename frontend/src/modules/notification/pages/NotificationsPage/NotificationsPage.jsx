@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bell, Filter, RefreshCw, CheckCircle2, Send, ChevronDown, ChevronUp } from 'lucide-react';
+import { Bell, RefreshCw, CheckCircle2, Send, ChevronDown, ChevronUp } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import useNotifications from '../../hooks/useNotifications';
 import NotificationItem from '../../components/NotificationItem/NotificationItem';

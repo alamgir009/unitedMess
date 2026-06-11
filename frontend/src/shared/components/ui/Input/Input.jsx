@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import { clsx } from 'clsx';
+import { cn } from '@/core/utils/helpers/string.helper';
 import { X } from 'lucide-react';
 
 const Input = forwardRef(({
@@ -31,27 +31,27 @@ const Input = forwardRef(({
       : 'border-border focus:ring-ring/30 focus:border-ring';
 
   const variants = {
-    default: clsx(
+    default: cn(
       'bg-card text-foreground placeholder:text-muted-foreground',
       'border rounded-lg caret-foreground',
       'focus:outline-none focus:ring-2',
-      'transition-all duration-100',
+      'transition-all duration-[var(--duration-fast)]',
       '[&:-webkit-autofill]:bg-card [&:-webkit-autofill]:text-foreground',
       stateBorder,
     ),
-    filled: clsx(
+    filled: cn(
       'bg-muted text-foreground placeholder:text-muted-foreground',
       'border border-transparent rounded-lg caret-foreground',
       'focus:bg-card focus:outline-none focus:ring-2',
-      'transition-all duration-100',
+      'transition-all duration-[var(--duration-fast)]',
       '[&:-webkit-autofill]:bg-muted [&:-webkit-autofill]:text-foreground',
       stateBorder,
     ),
-    glass: clsx(
+    glass: cn(
       'bg-card/60 backdrop-blur-sm text-foreground placeholder:text-muted-foreground',
       'border rounded-lg caret-foreground',
       'focus:outline-none focus:ring-2',
-      'transition-all duration-100',
+      'transition-all duration-[var(--duration-fast)]',
       '[&:-webkit-autofill]:text-foreground',
       stateBorder,
     ),
@@ -59,7 +59,7 @@ const Input = forwardRef(({
 
   const sizes = {
     sm: 'h-8 text-sm',
-    md: 'h-10 text-sm',
+    md: 'h-11 text-sm',
     lg: 'h-12 text-base',
   };
 
@@ -69,7 +69,7 @@ const Input = forwardRef(({
   };
 
   return (
-    <div className={clsx('flex flex-col gap-1.5', className)}>
+    <div className={cn('flex flex-col gap-1.5', className)}>
       {label && (
         <label htmlFor={inputId} className="text-sm font-medium text-foreground">
           {label}
@@ -95,7 +95,7 @@ const Input = forwardRef(({
           aria-describedby={
             error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined
           }
-          className={clsx(
+          className={cn(
             variants[variant],
             sizes[size],
             iconPadding.left,
@@ -112,7 +112,7 @@ const Input = forwardRef(({
             type="button"
             onClick={() => onChange?.({ target: { value: '' } } )}
             aria-label="Clear input"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <X className="w-4 h-4" />
           </button>

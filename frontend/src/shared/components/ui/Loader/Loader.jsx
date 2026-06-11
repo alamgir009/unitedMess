@@ -1,4 +1,4 @@
-import { clsx } from 'clsx';
+import { cn } from '@/core/utils/helpers/string.helper';
 
 export const Spinner = ({ size = 'md', className = '', color = 'primary' }) => {
   const sizes = {
@@ -19,7 +19,7 @@ export const Spinner = ({ size = 'md', className = '', color = 'primary' }) => {
     <div
       role="status"
       aria-label="Loading"
-      className={clsx(
+      className={cn(
         'animate-spin rounded-full',
         sizes[size],
         colors[color] || colors.primary,
@@ -39,11 +39,11 @@ export const DotsLoader = ({ size = 'md', className = '' }) => {
   };
 
   return (
-    <div className={clsx('flex items-center gap-1', className)} role="status" aria-label="Loading">
+    <div className={cn('flex items-center gap-1', className)} role="status" aria-label="Loading">
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className={clsx(
+          className={cn(
             dotSizes[size],
             'rounded-full bg-current animate-bounce',
           )}
@@ -55,15 +55,15 @@ export const DotsLoader = ({ size = 'md', className = '' }) => {
 };
 
 export const PulseLoader = ({ className = '' }) => (
-  <div className={clsx('flex items-center gap-2', className)} role="status" aria-label="Loading">
+  <div className={cn('flex items-center gap-2', className)} role="status" aria-label="Loading">
     <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-      <div className="h-full bg-primary rounded-full animate-shimmer" style={{ width: '40%' }} />
+      <div className="h-full bg-primary rounded-full animate-shimmer w-2/5" />
     </div>
   </div>
 );
 
 export const Skeleton = ({ className = '', as: Component = 'div' }) => (
-  <Component className={clsx('skeleton', className)} aria-hidden="true" />
+  <Component className={cn('skeleton', className)} aria-hidden="true" />
 );
 
 export const FullPageLoader = ({ label = 'Loading…' }) => (
@@ -72,7 +72,7 @@ export const FullPageLoader = ({ label = 'Loading…' }) => (
     role="status"
     aria-label={label}
   >
-    <div className="relative flex flex-col items-center gap-4 px-10 py-8 rounded-3xl border border-white/10 dark:border-white/5 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl shadow-2xl">
+    <div className="relative flex flex-col items-center gap-4 px-10 py-8 rounded-3xl border border-white/10 dark:border-white/5 bg-card/60 backdrop-blur-xl shadow-2xl">
       <Spinner size="xl" color="primary" />
       <p className="text-sm font-semibold text-muted-foreground tracking-wide">
         {label}
@@ -80,6 +80,12 @@ export const FullPageLoader = ({ label = 'Loading…' }) => (
     </div>
   </div>
 );
+
+Spinner.displayName = 'Spinner';
+DotsLoader.displayName = 'DotsLoader';
+PulseLoader.displayName = 'PulseLoader';
+Skeleton.displayName = 'Skeleton';
+FullPageLoader.displayName = 'FullPageLoader';
 
 const Loader = ({ variant = 'spinner', ...props }) => {
   switch (variant) {
@@ -91,4 +97,5 @@ const Loader = ({ variant = 'spinner', ...props }) => {
   }
 };
 
+Loader.displayName = 'Loader';
 export default Loader;

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Search,
   CheckCircle2,
@@ -7,7 +7,6 @@ import {
   Users,
   SlidersHorizontal,
   ShieldCheck,
-  ShieldOff,
   CircleDot,
   ArrowUpDown,
   ArrowUp,

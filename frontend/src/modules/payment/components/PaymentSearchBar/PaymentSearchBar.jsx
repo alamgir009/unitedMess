@@ -1,4 +1,3 @@
-import React from 'react';
 import { HiOutlineCalendarDays } from 'react-icons/hi2';
 import { SearchBar } from '@/shared/components/ui';
 

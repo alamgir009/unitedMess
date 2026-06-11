@@ -1,4 +1,3 @@
-import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
@@ -47,7 +46,7 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
             value={isAll ? 'all' : limit}
             onChange={(e) => onLimitChange(e.target.value)}
             aria-label="Rows per page"
-            className="appearance-none bg-muted/40 hover:bg-muted/60 text-foreground text-sm font-semibold py-1.5 pl-3 pr-8 rounded-lg border border-border focus:ring-2 focus:ring-ring/40 focus:outline-none transition-colors cursor-pointer"
+            className="appearance-none bg-muted/40 hover:bg-muted/60 text-foreground text-sm font-semibold py-1.5 pl-3 pr-8 rounded-lg border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none transition-colors cursor-pointer"
           >
             {limitOptions.map((opt) => (
               <option key={opt} value={opt}>
@@ -74,7 +73,7 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
               onClick={() => onPageChange(page - 1)}
               disabled={!hasPrev}
               aria-label="Previous page"
-              className={`touch-target p-1.5 rounded-lg border transition-all ${
+              className={`touch-target p-1.5 rounded-lg border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 !hasPrev
                   ? 'border-transparent text-muted-foreground/50 cursor-not-allowed'
                   : 'border-border hover:bg-muted/40 text-foreground'
@@ -93,7 +92,7 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
                     onClick={() => onPageChange(num)}
                     aria-label={`Go to page ${num}`}
                     aria-current={num === page ? 'page' : undefined}
-                    className={`touch-target min-w-[32px] h-8 px-2 rounded-lg text-sm font-medium transition-all ${
+                    className={`touch-target min-w-8 h-8 px-2 rounded-lg text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                       num === page
                         ? 'bg-primary text-primary-foreground'
                         : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
@@ -109,7 +108,7 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
               onClick={() => onPageChange(page + 1)}
               disabled={!hasNext}
               aria-label="Next page"
-              className={`touch-target p-1.5 rounded-lg border transition-all ${
+              className={`touch-target p-1.5 rounded-lg border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 !hasNext
                   ? 'border-transparent text-muted-foreground/50 cursor-not-allowed'
                   : 'border-border hover:bg-muted/40 text-foreground'
@@ -124,4 +123,5 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
   );
 };
 
+Pagination.displayName = 'Pagination';
 export default Pagination;

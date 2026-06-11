@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux';
 import useNotifications from '../../hooks/useNotifications';
 import NotificationList from '../NotificationList/NotificationList';
 import useBodyScrollLock from '@/shared/hooks/useBodyScrollLock';
+import { SPRING_SNAPPY, SPRING_BOUNCE } from '@/core/utils/constants/spring';
 
 /* ─── Framer Variants ───────────────────────────────────────────────────── */
 const BACKDROP_VARIANTS = {
@@ -20,12 +21,7 @@ const PANEL_VARIANTS = {
     exit: { opacity: 0, y: 48, scale: 0.98 },
 };
 
-const PANEL_TRANSITION = {
-    type: 'spring',
-    stiffness: 420,
-    damping: 36,
-    mass: 1,
-};
+const PANEL_TRANSITION = SPRING_SNAPPY;
 
 const BELL_SHAKE = {
     animate: { rotate: [0, -14, 14, -10, 10, -6, 6, 0], transition: { duration: 0.55, ease: 'easeInOut' } },
@@ -95,7 +91,7 @@ const NotificationBell = () => {
                             initial={{ scale: 0.4, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.4, opacity: 0 }}
-                            transition={{ type: 'spring', stiffness: 500, damping: 22 }}
+                            transition={{ ...SPRING_BOUNCE, damping: 22 }}
                             className="
                                 absolute top-0 right-0 -translate-y-[2px] translate-x-[2px]
                                 flex h-5 min-w-[20px] items-center justify-center px-1.5

@@ -52,6 +52,7 @@ function applyThemeToDOM(theme) {
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 export function ThemeProvider({ children }) {
+ThemeProvider.displayName = 'ThemeProvider';
     const [theme, setTheme] = useState(getInitialTheme);
 
     // Track whether user has set an explicit preference — ref avoids extra renders
@@ -156,6 +157,7 @@ export function ThemeProvider({ children }) {
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTheme() {
     const ctx = useContext(ThemeContext);
     if (ctx === null) {

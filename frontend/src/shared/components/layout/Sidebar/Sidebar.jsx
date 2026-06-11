@@ -47,7 +47,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   const linkClass = ({ isActive }) =>
     cn(
-      'group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors duration-150',
+      'group flex items-center gap-3 px-3 py-2.5 min-h-[44px] text-sm font-medium rounded-lg transition-colors duration-150',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
       isActive
         ? 'bg-primary/10 text-primary'
@@ -59,7 +59,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       <div
         className={cn(
           'fixed inset-0 z-40 bg-black/50 transition-opacity lg:hidden',
-          isOpen ? 'opacity-100 ease-out duration-300' : 'opacity-0 ease-in duration-200 pointer-events-none',
+          isOpen ? 'opacity-100 ease-out duration-[var(--duration-slow)]' : 'opacity-0 ease-in duration-[var(--duration-base)] pointer-events-none',
         )}
         onClick={onClose}
         aria-hidden="true"
@@ -68,7 +68,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       <aside
         className={cn(
           'fixed inset-y-0 left-0 w-64 bg-card border-r border-border text-foreground',
-          'z-50 transition-all duration-300 transform lg:translate-x-0 lg:static lg:inset-auto lg:flex lg:flex-col lg:z-auto lg:transition-none',
+          'z-50 transition-all duration-[var(--duration-slow)] transform lg:translate-x-0 lg:static lg:inset-auto lg:flex lg:flex-col lg:z-auto lg:transition-none',
           isOpen ? 'translate-x-0' : '-translate-x-full',
         )}
         aria-label="Main navigation"
@@ -103,7 +103,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               aria-label={item.name}
             >
               <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
-              {item.name}
+              <span className="truncate">{item.name}</span>
             </NavLink>
           ))}
         </nav>
@@ -113,25 +113,25 @@ const Sidebar = ({ isOpen, onClose }) => {
             <>
               <NavLink to="/unresolved-bills" className={linkClass} aria-label="Unresolved Bills">
                 <ReceiptIndianRupee className="h-5 w-5 shrink-0" aria-hidden="true" />
-                Unresolved Bills
+                <span className="truncate">Unresolved Bills</span>
               </NavLink>
               <NavLink to="/settings" className={linkClass} aria-label="System Settings">
                 <Settings className="h-5 w-5 shrink-0" aria-hidden="true" />
-                System Settings
+                <span className="truncate">System Settings</span>
               </NavLink>
             </>
           )}
           <NavLink to="/profile" className={linkClass} aria-label="Profile">
             <UserCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
-            Profile
+            <span className="truncate">Profile</span>
           </NavLink>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-danger hover:bg-danger-bg transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="w-full flex items-center gap-3 px-3 py-2.5 min-h-[44px] text-sm font-medium rounded-lg text-danger hover:bg-danger-bg transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Logout"
           >
             <LogOut className="h-5 w-5 shrink-0" aria-hidden="true" />
-            Logout
+            <span className="truncate">Logout</span>
           </button>
         </div>
       </aside>
@@ -139,4 +139,5 @@ const Sidebar = ({ isOpen, onClose }) => {
   );
 };
 
+Sidebar.displayName = 'Sidebar';
 export default Sidebar;

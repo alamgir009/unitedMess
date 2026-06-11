@@ -57,11 +57,11 @@ function shortRef(id) {
 ───────────────────────────────────────────── */
 const StatusPill = React.memo(({ status }) => {
     const map = {
-        unpaid: 'bg-rose-50   dark:bg-rose-500/10   text-rose-700  dark:text-rose-400  border-rose-200  dark:border-rose-500/25',
-        partially_paid: 'bg-amber-50  dark:bg-amber-500/10  text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/25',
-        paid: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/25',
+        unpaid: 'bg-danger-bg text-danger-text border-danger-border',
+        partially_paid: 'bg-warning-bg text-warning-text border-warning-border',
+        paid: 'bg-success-bg text-success-text border-success-border',
     };
-    const cls = map[status] ?? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700';
+    const cls = map[status] ?? 'bg-card text-muted-foreground border-border';
     const label = status === 'partially_paid' ? 'Partial' : (status ?? 'unknown');
     return (
         <span className={cn(
@@ -89,19 +89,19 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-overlay"
             onClick={onClose}>
-            <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
+            <div className="w-full max-w-md bg-card rounded-3xl shadow-2xl border border-border overflow-hidden"
                 onClick={e => e.stopPropagation()}>
 
-                <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
+                <div className="px-6 py-5 border-b border-border bg-muted dark:bg-muted/40">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-amber-500 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-2xl bg-warning flex items-center justify-center">
                             <BadgeIndianRupee size={20} className="text-white" />
                         </div>
                         <div>
-                            <h3 className="text-base font-black text-slate-900 dark:text-white">Resolve Payment</h3>
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                            <h3 className="text-base font-black text-foreground">Resolve Payment</h3>
+                            <p className="text-xs font-medium text-muted-foreground">
                                 {invoice.user?.name ?? 'Member'} — {invoice.monthName}
                             </p>
                         </div>
@@ -111,12 +111,12 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                 <div className="px-6 py-5 space-y-4">
                     <div className="grid grid-cols-3 gap-3 text-center">
                         {[
-                            { label: 'Total Bill', value: `₹ ${fmt(invoice.totalPayable)}`, color: 'text-slate-900 dark:text-white' },
-                            { label: 'Paid So Far', value: `₹ ${fmt(invoice.paidAmount)}`, color: 'text-emerald-600 dark:text-emerald-400' },
-                            { label: 'Outstanding', value: `₹ ${fmt(outstanding)}`, color: 'text-rose-600 dark:text-rose-400' },
+                            { label: 'Total Bill', value: `₹ ${fmt(invoice.totalPayable)}`, color: 'text-foreground' },
+                            { label: 'Paid So Far', value: `₹ ${fmt(invoice.paidAmount)}`, color: 'text-success-text' },
+                            { label: 'Outstanding', value: `₹ ${fmt(outstanding)}`, color: 'text-danger-text' },
                         ].map(({ label, value, color }) => (
-                            <div key={label} className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl px-3 py-3">
-                                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{label}</p>
+                            <div key={label} className="bg-muted dark:bg-muted/60 rounded-2xl px-3 py-3">
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">{label}</p>
                                 <p className={cn('text-sm font-black tabular-nums', color)}>{value}</p>
                             </div>
                         ))}
@@ -124,11 +124,11 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
 
                     <form onSubmit={handleSubmit} className="space-y-3">
                         <div>
-                            <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">
+                            <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                                 Amount Being Paid Now (₹)
                             </label>
                             <div className="relative">
-                                <span className="absolute inset-y-0 left-4 flex items-center text-slate-400 dark:text-slate-500 text-sm font-bold">₹</span>
+                                <span className="absolute inset-y-0 left-4 flex items-center text-muted-foreground text-sm font-bold">₹</span>
                                 <input
                                     type="number"
                                     min="0"
@@ -136,10 +136,10 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                                     value={amount}
                                     onChange={e => setAmount(e.target.value)}
                                     className="w-full pl-8 pr-4 py-3 rounded-2xl text-base font-bold
-                                               bg-slate-50 dark:bg-slate-800
-                                               border border-slate-200 dark:border-slate-700
-                                               text-slate-900 dark:text-white
-                                               focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500
+                                               bg-input
+                                               border border-input
+                                               text-foreground
+                                               focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary
                                                transition-all duration-150"
                                 />
                             </div>
@@ -148,15 +148,15 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                         <div className="flex gap-3 pt-1">
                             <button type="button" onClick={onClose}
                                 className="flex-1 py-3 rounded-2xl text-sm font-bold
-                                           border border-slate-200 dark:border-slate-700
-                                           text-slate-600 dark:text-slate-400
-                                           hover:bg-slate-100 dark:hover:bg-slate-800
+                                           border border-input
+                                           text-muted-foreground
+                                           hover:bg-muted
                                            active:opacity-80 transition-all duration-150">
                                 Cancel
                             </button>
                             <button type="submit" disabled={isSaving}
                                 className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold
-                                           bg-amber-500 hover:bg-amber-600 text-white
+                                           bg-warning hover:brightness-90 text-white
                                            active:opacity-80 transition-all duration-150
                                            disabled:opacity-60 disabled:cursor-not-allowed">
                                 {isSaving
@@ -179,24 +179,24 @@ ResolveModal.displayName = 'ResolveModal';
 const GroupHeader = React.memo(({ user, count }) => (
     <div className={cn(
         'flex items-center gap-3 px-6 py-3.5',
-        'bg-slate-50/90 dark:bg-slate-800/50',
-        'border-b border-slate-100 dark:border-slate-800/70'
+        'bg-muted/90 dark:bg-muted/50',
+        'border-b border-border'
     )}>
         {user?.image ? (
             <img src={user.image} alt={user.name}
-                className="w-8 h-8 rounded-full object-cover shrink-0 ring-2 ring-white dark:ring-slate-900" />
+                className="w-8 h-8 rounded-full object-cover shrink-0 ring-2 ring-card" />
         ) : (
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shrink-0 text-white text-xs font-black">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary-400 flex items-center justify-center shrink-0 text-white text-xs font-black">
                 {(user?.name?.charAt(0) ?? 'U').toUpperCase()}
             </div>
         )}
         <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-bold text-slate-800 dark:text-slate-200 truncate">{user?.name ?? 'Unknown'}</p>
-            <p className="text-[10.5px] font-medium text-slate-400 dark:text-slate-500 truncate">{user?.email ?? '—'}</p>
+            <p className="text-[13px] font-bold text-foreground truncate">{user?.name ?? 'Unknown'}</p>
+            <p className="text-[10.5px] font-medium text-muted-foreground truncate">{user?.email ?? '—'}</p>
         </div>
         <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold
-                        bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400
-                        border border-rose-200 dark:border-rose-500/25">
+                        bg-danger-bg text-danger-text
+                        border border-danger-border">
             <AlertTriangle size={10} />
             {count} unresolved
         </span>
@@ -216,7 +216,7 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
         if (invoice._id) {
             navigator.clipboard.writeText(invoice._id).then(() => {
                 toast.success('Invoice ID copied');
-            }).catch(() => {});
+            }).catch((err) => console.error('Failed to copy invoice ID:', err));
         }
     }, [invoice._id]);
 
@@ -225,27 +225,27 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
             {/* ── Desktop row ── */}
             <div className={cn(
                 'hidden md:grid grid-cols-12 gap-3 items-center px-6 py-4',
-                'border-b border-slate-100 dark:border-slate-800/70',
-                'hover:bg-slate-50/70 dark:hover:bg-slate-800/30',
+                'border-b border-border',
+                'hover:bg-muted/70',
                 'transition-colors duration-150'
             )}>
                 {/* Member + Ref */}
                 <div className="col-span-3 flex items-center gap-3 min-w-0">
                     {invoice.user?.image ? (
                         <img src={invoice.user.image} alt={invoice.user.name}
-                            className="w-8 h-8 rounded-full object-cover shrink-0 ring-2 ring-white dark:ring-slate-900" />
+                            className="w-8 h-8 rounded-full object-cover shrink-0 ring-2 ring-card" />
                     ) : (
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shrink-0 text-white text-xs font-black">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary-400 flex items-center justify-center shrink-0 text-white text-xs font-black">
                             {(invoice.user?.name?.charAt(0) ?? 'U').toUpperCase()}
                         </div>
                     )}
                     <div className="min-w-0">
-                        <p className="text-[13px] font-bold text-slate-900 dark:text-white truncate">{invoice.user?.name ?? 'Unknown'}</p>
+                        <p className="text-[13px] font-bold text-foreground truncate">{invoice.user?.name ?? 'Unknown'}</p>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[10px] font-mono font-semibold text-slate-400 dark:text-slate-500">{refId}</span>
+                            <span className="text-[10px] font-mono font-semibold text-muted-foreground">{refId}</span>
                             <button
                                 onClick={handleCopyRef}
-                                className="p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400 transition-colors"
+                                className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-muted-foreground transition-colors"
                                 title="Copy full invoice ID"
                                 aria-label="Copy invoice ID"
                             >
@@ -257,32 +257,32 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
 
                 {/* Month */}
                 <div className="col-span-2">
-                    <p className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">{invoice.monthName}</p>
+                    <p className="text-[12px] font-semibold text-muted-foreground">{invoice.monthName}</p>
                 </div>
 
                 {/* Meals */}
                 <div className="col-span-1">
-                    <p className="text-[12px] font-bold tabular-nums text-slate-700 dark:text-slate-300">{fmt(invoice.mealCount)}</p>
+                    <p className="text-[12px] font-bold tabular-nums text-foreground">{fmt(invoice.mealCount)}</p>
                 </div>
 
                 {/* Market */}
                 <div className="col-span-1">
-                    <p className="text-[12px] font-bold tabular-nums text-slate-700 dark:text-slate-300">₹{fmt(invoice.marketAmountSpent)}</p>
+                    <p className="text-[12px] font-bold tabular-nums text-foreground">₹{fmt(invoice.marketAmountSpent)}</p>
                 </div>
 
                 {/* Total Payable */}
                 <div className="col-span-1 text-right">
-                    <p className="text-[13px] font-black tabular-nums text-slate-800 dark:text-slate-100">₹{fmt(invoice.totalPayable)}</p>
+                    <p className="text-[13px] font-black tabular-nums text-foreground">₹{fmt(invoice.totalPayable)}</p>
                 </div>
 
                 {/* Paid */}
                 <div className="col-span-1 text-right">
-                    <p className="text-[12px] font-bold tabular-nums text-emerald-600 dark:text-emerald-400">₹{fmt(invoice.paidAmount)}</p>
+                    <p className="text-[12px] font-bold tabular-nums text-success-text">₹{fmt(invoice.paidAmount)}</p>
                 </div>
 
                 {/* Outstanding */}
                 <div className="col-span-1 text-right">
-                    <p className="text-[13px] font-black tabular-nums text-rose-600 dark:text-rose-400">₹{fmt(outstanding)}</p>
+                    <p className="text-[13px] font-black tabular-nums text-danger-text">₹{fmt(outstanding)}</p>
                 </div>
 
                 {/* Status */}
@@ -297,9 +297,9 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
                         disabled={isSaving}
                         className={cn(
                             'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold',
-                            'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400',
-                            'border border-amber-200 dark:border-amber-500/30',
-                            'hover:bg-amber-100 dark:hover:bg-amber-500/25',
+                            'bg-warning-bg text-warning-text',
+                            'border border-warning-border',
+                            'hover:bg-warning-bg',
                             'active:opacity-80 transition-all duration-150',
                             'disabled:opacity-50 disabled:cursor-not-allowed'
                         )}
@@ -313,8 +313,8 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
             {/* ── Mobile card ── */}
             <div className={cn(
                 'md:hidden flex flex-col gap-3 p-4 mb-3',
-                'bg-white dark:bg-slate-900 rounded-2xl',
-                'border border-slate-200 dark:border-slate-800',
+                'bg-card rounded-2xl',
+                'border border-border',
                 'shadow-sm'
             )}>
                 {/* Header: member + status */}
@@ -322,19 +322,19 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
                     <div className="flex items-center gap-3 min-w-0">
                         {invoice.user?.image ? (
                             <img src={invoice.user.image} alt={invoice.user.name}
-                                className="w-10 h-10 rounded-full object-cover shrink-0 ring-2 ring-white dark:ring-slate-900" />
+                                className="w-10 h-10 rounded-full object-cover shrink-0 ring-2 ring-card" />
                         ) : (
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shrink-0 text-white text-sm font-black">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary-400 flex items-center justify-center shrink-0 text-white text-sm font-black">
                                 {(invoice.user?.name?.charAt(0) ?? 'U').toUpperCase()}
                             </div>
                         )}
                         <div className="min-w-0">
-                            <p className="text-[14px] font-bold text-slate-900 dark:text-white truncate">{invoice.user?.name ?? 'Unknown'}</p>
+                            <p className="text-[14px] font-bold text-foreground truncate">{invoice.user?.name ?? 'Unknown'}</p>
                             <div className="flex items-center gap-1">
-                                <span className="text-[10px] font-mono font-semibold text-slate-400 dark:text-slate-500">{refId}</span>
+                                <span className="text-[10px] font-mono font-semibold text-muted-foreground">{refId}</span>
                                 <button
                                     onClick={handleCopyRef}
-                                    className="p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400 transition-colors"
+                                    className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-muted-foreground transition-colors"
                                     aria-label="Copy invoice ID"
                                 >
                                     <Copy size={9} />
@@ -347,29 +347,29 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
 
                 {/* Details grid */}
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="flex flex-col gap-1 bg-slate-50 dark:bg-slate-800/40 rounded-xl px-3 py-2.5">
-                        <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Period</span>
-                        <span className="text-[12.5px] font-bold text-slate-700 dark:text-slate-300">{invoice.monthName}</span>
+                    <div className="flex flex-col gap-1 bg-muted dark:bg-muted/40 rounded-xl px-3 py-2.5">
+                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Period</span>
+                        <span className="text-[12.5px] font-bold text-foreground">{invoice.monthName}</span>
                     </div>
-                    <div className="flex flex-col gap-1 bg-slate-50 dark:bg-slate-800/40 rounded-xl px-3 py-2.5">
-                        <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Meals</span>
-                        <span className="text-[12.5px] font-bold tabular-nums text-slate-700 dark:text-slate-300">{fmt(invoice.mealCount)}</span>
+                    <div className="flex flex-col gap-1 bg-muted dark:bg-muted/40 rounded-xl px-3 py-2.5">
+                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Meals</span>
+                        <span className="text-[12.5px] font-bold tabular-nums text-foreground">{fmt(invoice.mealCount)}</span>
                     </div>
-                    <div className="flex flex-col gap-1 bg-slate-50 dark:bg-slate-800/40 rounded-xl px-3 py-2.5">
-                        <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Market</span>
-                        <span className="text-[12.5px] font-bold tabular-nums text-slate-700 dark:text-slate-300">₹ {fmt(invoice.marketAmountSpent)}</span>
+                    <div className="flex flex-col gap-1 bg-muted dark:bg-muted/40 rounded-xl px-3 py-2.5">
+                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Market</span>
+                        <span className="text-[12.5px] font-bold tabular-nums text-foreground">₹ {fmt(invoice.marketAmountSpent)}</span>
                     </div>
-                    <div className="flex flex-col gap-1 bg-slate-50 dark:bg-slate-800/40 rounded-xl px-3 py-2.5">
-                        <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Total</span>
-                        <span className="text-[12.5px] font-bold tabular-nums text-slate-700 dark:text-slate-300">₹ {fmt(invoice.totalPayable)}</span>
+                    <div className="flex flex-col gap-1 bg-muted dark:bg-muted/40 rounded-xl px-3 py-2.5">
+                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Total</span>
+                        <span className="text-[12.5px] font-bold tabular-nums text-foreground">₹ {fmt(invoice.totalPayable)}</span>
                     </div>
-                    <div className="flex flex-col gap-1 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl px-3 py-2.5">
-                        <span className="text-[9px] font-bold text-emerald-500 dark:text-emerald-400 uppercase tracking-widest">Paid</span>
-                        <span className="text-[12.5px] font-bold tabular-nums text-emerald-700 dark:text-emerald-300">₹ {fmt(invoice.paidAmount)}</span>
+                    <div className="flex flex-col gap-1 bg-success-bg rounded-xl px-3 py-2.5">
+                        <span className="text-[9px] font-bold text-success-text uppercase tracking-widest">Paid</span>
+                        <span className="text-[12.5px] font-bold tabular-nums text-success-text">₹ {fmt(invoice.paidAmount)}</span>
                     </div>
-                    <div className="flex flex-col gap-1 bg-rose-50 dark:bg-rose-500/10 rounded-xl px-3 py-2.5">
-                        <span className="text-[9px] font-bold text-rose-500 dark:text-rose-400 uppercase tracking-widest">Due</span>
-                        <span className="text-[12.5px] font-bold tabular-nums text-rose-700 dark:text-rose-300">₹ {fmt(outstanding)}</span>
+                    <div className="flex flex-col gap-1 bg-danger-bg rounded-xl px-3 py-2.5">
+                        <span className="text-[9px] font-bold text-danger-text uppercase tracking-widest">Due</span>
+                        <span className="text-[12.5px] font-bold tabular-nums text-danger-text">₹ {fmt(outstanding)}</span>
                     </div>
                 </div>
 
@@ -379,7 +379,7 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
                     disabled={isSaving}
                     className={cn(
                         'flex items-center justify-center gap-2 py-3 rounded-xl text-[13px] font-bold',
-                        'bg-amber-500 hover:bg-amber-600 text-white',
+                        'bg-warning hover:brightness-90 text-white',
                         'active:opacity-80 transition-all duration-150',
                         'disabled:opacity-60 disabled:cursor-not-allowed',
                         'min-h-[44px]'
@@ -509,14 +509,14 @@ const AdminUnpaidPanel = React.memo(() => {
             {/* ── Section header ── */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
                 <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-2xl bg-rose-500">
+                    <div className="p-2.5 rounded-2xl bg-destructive">
                         <ShieldAlert size={20} className="text-white" />
                     </div>
                     <div>
-                        <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">
+                        <h2 className="text-lg font-black text-foreground tracking-tight leading-none">
                             Unresolved Bills
                         </h2>
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">
+                            <p className="text-xs font-medium text-muted-foreground mt-0.5">
                                 Admin view — invoices with outstanding payments
                             </p>
                     </div>
@@ -525,17 +525,17 @@ const AdminUnpaidPanel = React.memo(() => {
                 <div className="flex items-center gap-2.5 shrink-0">
                     {/* Month picker */}
                     <div className="relative">
-                        <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                         <select
                             value={selectedIdx}
                             onChange={handleMonthChange}
                             className={cn(
                                 'pl-8 pr-8 py-2.5 rounded-xl text-[12.5px] font-bold',
                                 'appearance-none cursor-pointer',
-                                'bg-white dark:bg-slate-900',
-                                'border border-slate-200 dark:border-slate-700',
-                                'text-slate-700 dark:text-slate-300',
-                                'focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500',
+                                'bg-card',
+                                'border border-input',
+                                'text-foreground',
+                                'focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary',
                                 'transition-all duration-150'
                             )}
                         >
@@ -545,7 +545,7 @@ const AdminUnpaidPanel = React.memo(() => {
                                 </option>
                             ))}
                         </select>
-                        <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                     </div>
 
                     {/* Refresh */}
@@ -554,10 +554,10 @@ const AdminUnpaidPanel = React.memo(() => {
                         disabled={unpaidInvoicesLoading}
                         className={cn(
                             'flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-[12.5px] font-bold',
-                            'bg-white dark:bg-slate-900',
-                            'border border-slate-200 dark:border-slate-700',
-                            'text-slate-600 dark:text-slate-400',
-                            'hover:bg-slate-50 dark:hover:bg-slate-800',
+                            'bg-card',
+                            'border border-input',
+                            'text-muted-foreground',
+                            'hover:bg-muted',
                             'active:opacity-80 transition-all duration-150',
                             'disabled:opacity-50 disabled:cursor-not-allowed',
                             'min-h-[44px]'
@@ -571,15 +571,15 @@ const AdminUnpaidPanel = React.memo(() => {
 
             {/* ── Error banner ── */}
             {unpaidInvoicesError && (
-                <div className="flex items-start gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 mb-4">
+                <div className="flex items-start gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive mb-4">
                     <AlertTriangle size={16} className="mt-0.5 shrink-0" />
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-red-700 dark:text-red-400">Failed to load unresolved invoices</p>
-                        <p className="text-xs font-medium mt-0.5 opacity-80 text-red-500 dark:text-red-500">{unpaidInvoicesError}</p>
+                        <p className="text-sm font-semibold text-destructive">Failed to load unresolved invoices</p>
+                        <p className="text-xs font-medium mt-0.5 opacity-80 text-destructive">{unpaidInvoicesError}</p>
                     </div>
                     <button
                         onClick={() => load(selected)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-500/30 active:opacity-80 transition-all duration-150 shrink-0"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-destructive/10 text-destructive hover:bg-destructive/20 active:opacity-80 transition-all duration-150 shrink-0"
                     >
                         <RefreshCw size={12} />
                         Retry
@@ -588,43 +588,43 @@ const AdminUnpaidPanel = React.memo(() => {
             )}
 
             {/* ── Table card ── */}
-            <div className="w-full bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div className="w-full bg-card rounded-3xl border border-border shadow-sm overflow-hidden">
 
                 {/* Desktop table header */}
                 <div className={cn(
                     'hidden md:grid grid-cols-12 gap-3 items-center px-6 py-3.5',
-                    'bg-slate-50/80 dark:bg-slate-800/40',
-                    'border-b border-slate-200 dark:border-slate-800'
+                    'bg-muted/80 dark:bg-muted/40',
+                    'border-b border-border'
                 )}>
-                    <div className="col-span-3 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">Member / Ref</div>
-                    <div className="col-span-2 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">Period</div>
-                    <div className="col-span-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">Meals</div>
-                    <div className="col-span-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">Market</div>
-                    <div className="col-span-1 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">Total</div>
-                    <div className="col-span-1 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">Paid</div>
-                    <div className="col-span-1 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">Due</div>
-                    <div className="col-span-1 text-center text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">Status</div>
-                    <div className="col-span-1 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">Action</div>
+                    <div className="col-span-3 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Member / Ref</div>
+                    <div className="col-span-2 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Period</div>
+                    <div className="col-span-1 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Meals</div>
+                    <div className="col-span-1 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Market</div>
+                    <div className="col-span-1 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Total</div>
+                    <div className="col-span-1 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Paid</div>
+                    <div className="col-span-1 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Due</div>
+                    <div className="col-span-1 text-center text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Status</div>
+                    <div className="col-span-1 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Action</div>
                 </div>
 
                 {/* Loading */}
                 {unpaidInvoicesLoading && (
                     <div className="flex flex-col items-center justify-center py-16 gap-3">
-                        <Spinner size="md" color="current" className="text-rose-500" />
-                        <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Loading invoices…</span>
+                        <Spinner size="md" color="current" className="text-destructive" />
+                        <span className="text-sm font-medium text-muted-foreground">Loading invoices…</span>
                     </div>
                 )}
 
                 {/* Empty — last finalized period (not yet settled) */}
                 {!unpaidInvoicesLoading && unpaidInvoices.length === 0 && isLastFinalizedPeriod && (
                     <div className="flex flex-col items-center justify-center py-16 gap-3">
-                        <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                            <Calendar size={26} className="text-slate-400" />
+                        <div className="w-14 h-14 rounded-full bg-border dark:bg-muted flex items-center justify-center">
+                            <Calendar size={26} className="text-muted-foreground" />
                         </div>
-                        <p className="text-sm font-bold text-slate-600 dark:text-slate-400">
+                        <p className="text-sm font-bold text-muted-foreground">
                             Last finalized period: {selected.label}
                         </p>
-                        <p className="text-xs font-medium text-slate-400 dark:text-slate-500 max-w-sm text-center">
+                        <p className="text-xs font-medium text-muted-foreground max-w-sm text-center">
                             All invoices for this period are resolved. Switch to another month above.
                         </p>
                     </div>
@@ -633,11 +633,11 @@ const AdminUnpaidPanel = React.memo(() => {
                 {/* Empty — non-finalized or older period, all resolved */}
                 {!unpaidInvoicesLoading && unpaidInvoices.length === 0 && !isLastFinalizedPeriod && (
                     <div className="flex flex-col items-center justify-center py-16 gap-3">
-                        <div className="w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center">
-                            <CheckCircle2 size={26} className="text-emerald-500" />
+                        <div className="w-14 h-14 rounded-full bg-success-bg flex items-center justify-center">
+                            <CheckCircle2 size={26} className="text-success-text" />
                         </div>
-                        <p className="text-sm font-bold text-slate-700 dark:text-slate-300">All clear for {selected.label}!</p>
-                        <p className="text-xs font-medium text-slate-400 dark:text-slate-500">No pending or partial invoices found.</p>
+                        <p className="text-sm font-bold text-foreground">All clear for {selected.label}!</p>
+                        <p className="text-xs font-medium text-muted-foreground">No pending or partial invoices found.</p>
                     </div>
                 )}
 
@@ -664,16 +664,16 @@ const AdminUnpaidPanel = React.memo(() => {
                 {!unpaidInvoicesLoading && unpaidInvoices.length > 0 && (
                     <div className={cn(
                         'flex items-center justify-between px-6 py-3.5',
-                        'bg-slate-50/60 dark:bg-slate-800/30',
-                        'border-t border-slate-100 dark:border-slate-800'
+                        'bg-muted/60 dark:bg-muted/30',
+                        'border-t border-border'
                     )}>
                         <div className="flex items-center gap-2">
-                            <AlertTriangle size={13} className="text-amber-500" />
-                            <span className="text-[11.5px] font-bold text-amber-600 dark:text-amber-400">
+                            <AlertTriangle size={13} className="text-warning-text" />
+                            <span className="text-[11.5px] font-bold text-warning-text">
                                 {unpaidInvoices.length} unresolved invoice{unpaidInvoices.length !== 1 ? 's' : ''} across {groupedInvoices.length} member{groupedInvoices.length !== 1 ? 's' : ''}
                             </span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
                             <DollarSign size={11} />
                             Total outstanding: ₹ {fmt(totalOutstanding)}
                         </div>

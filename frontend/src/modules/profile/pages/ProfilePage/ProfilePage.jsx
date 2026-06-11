@@ -28,7 +28,7 @@ import { Card, CardContent } from '@/shared/components/ui';
 import { Button } from '@/shared/components/ui';
 import { logout, deactivateAccount } from '@/modules/auth/store/auth.slice';
 import { useNavigate } from 'react-router-dom';
-import React, { useCallback, useEffect, useState, useMemo, Component } from 'react';
+import { useCallback, useEffect, useState, useMemo, Component } from 'react';
 import { EditModal } from '../../components/EditModal/EditModal';
 import { EditForm } from '../../components/EditForm/EditForm';
 import { AvatarUpload } from '../../components/AvatarUpload';
@@ -298,7 +298,7 @@ const ProfilePage = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [deactivationLoading, setDeactivationLoading] = useState(false);
     const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
-    const [avatarError, setAvatarError] = useState(null);
+    const [avatarError] = useState(null);
 
     const {
         isSubscribed: fcmEnabled,
@@ -343,21 +343,6 @@ const ProfilePage = () => {
         } catch (err) {
             toast.error(err?.response?.data?.message || 'Failed to update preferences');
         }
-    }, []);
-
-    const handleAvatarError = useCallback((error) => {
-        if (error?.message?.includes('size')) {
-            setAvatarError('File size must be less than 5 MB.');
-            toast.error('File size must be less than 5 MB.');
-        } else {
-            setAvatarError('Image upload failed. Please try again.');
-            toast.error('Image upload failed. Please try again.');
-        }
-    }, []);
-
-    const handleAvatarSuccess = useCallback(() => {
-        setAvatarError(null);
-        toast.success('Profile picture updated');
     }, []);
 
     const handleLogout = async () => {

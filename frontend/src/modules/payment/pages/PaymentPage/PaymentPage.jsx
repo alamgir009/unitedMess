@@ -213,7 +213,7 @@ const PaymentPage = () => {
         const selectedId = typeof memberId === 'string' ? memberId : (user?._id || user?.id);
         setPreselectedUserId(selectedId);
         setIsModalOpen(true);
-    }, [isAdmin, user?._id]);
+    }, [isAdmin, user?._id, user?.id]);
 
     const openEdit = useCallback((p) => {
         setEditingPayment(p);
@@ -446,9 +446,9 @@ const PaymentPage = () => {
                         )}
 
                         {bothPaid && hasInvoiceData && (
-                            <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300">
-                                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                                    <HiOutlineCheckBadge className="w-5 h-5 text-emerald-500" />
+                            <div className="flex items-center gap-3 p-4 rounded-xl bg-success-bg border border-success-border text-success-text">
+                                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-success/20 flex items-center justify-center">
+                                    <HiOutlineCheckBadge className="w-5 h-5 text-success" />
                                 </div>
                                 <div className="flex-1">
                                     <p className="font-semibold text-sm">All Bills Fully Paid</p>
@@ -493,7 +493,7 @@ const PaymentPage = () => {
                     {/* Error banner */}
                     <AnimatePresence>
                         {(isError || message) && (
-                            <div className="flex items-start gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400">
+                            <div className="flex items-start gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive">
                                 <span className="w-2 h-2 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
                                 <p className="flex-1 text-sm font-medium">
                                     {message || 'Something went wrong. Please try again.'}

@@ -51,7 +51,7 @@ export function useRazorpaySDK() {
                             clearInterval(timer);
                             cleanup();
                             if (existing) {
-                                try { existing.remove(); } catch(e) {}
+                                try { existing.remove(); } catch(e) { console.error(e); }
                             }
                             reject(new Error('Razorpay SDK failed to initialize (polling timeout)'));
                         }
@@ -72,7 +72,7 @@ export function useRazorpaySDK() {
 
             const timeoutId = setTimeout(() => {
                 cleanup();
-                try { script.remove(); } catch(e) {}
+                try { script.remove(); } catch(e) { console.error(e); }
                 reject(new Error(`Razorpay SDK did not load within ${RAZORPAY.LOAD_TIMEOUT_MS}ms`));
             }, RAZORPAY.LOAD_TIMEOUT_MS);
 
@@ -82,7 +82,7 @@ export function useRazorpaySDK() {
                     resolve();
                 } else {
                     cleanup();
-                    try { script.remove(); } catch(e) {}
+                    try { script.remove(); } catch(e) { console.error(e); }
                     reject(new Error('Razorpay SDK loaded but window.Razorpay is undefined'));
                 }
             };
@@ -90,7 +90,7 @@ export function useRazorpaySDK() {
             script.onerror = () => {
                 clearTimeout(timeoutId);
                 cleanup();
-                try { script.remove(); } catch(e) {}
+                try { script.remove(); } catch(e) { console.error(e); }
                 reject(new Error('Razorpay SDK failed to load'));
             };
 

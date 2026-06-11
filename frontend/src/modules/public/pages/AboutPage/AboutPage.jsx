@@ -22,9 +22,10 @@ const Reveal = memo(({ children, className = '', delay = 0 }) => {
             style={{ willChange: 'transform, opacity' }}
         >
             {children}
-        </motion.div>
-    );
+    </motion.div>
+);
 });
+Reveal.displayName = 'Reveal';
 
 // ─── Stat card ───
 const StatCard = memo(({ value, label, Icon, delay }) => (
@@ -40,6 +41,7 @@ const StatCard = memo(({ value, label, Icon, delay }) => (
         </div>
     </Reveal>
 ));
+StatCard.displayName = 'StatCard';
 
 // ─── Team card ───
 const TeamCard = memo(({ name, role, bio, initials, gradient, delay }) => (
@@ -58,6 +60,7 @@ const TeamCard = memo(({ name, role, bio, initials, gradient, delay }) => (
         </div>
     </Reveal>
 ));
+TeamCard.displayName = 'TeamCard';
 
 // ─── Value card ───
 const ValueCard = memo(({ Icon, title, desc, iconColor, delay }) => (
@@ -73,6 +76,7 @@ const ValueCard = memo(({ Icon, title, desc, iconColor, delay }) => (
         </div>
     </Reveal>
 ));
+ValueCard.displayName = 'ValueCard';
 
 const stats = [
     { value: '2,500+', label: 'Active Members', Icon: HiOutlineUsers, delay: 0 },
@@ -110,12 +114,9 @@ const AboutPage = () => {
 
             {/* ── Static ambient backdrop (no animated blobs/particles) ── */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
-                <div className="absolute -top-40 -left-32 w-[400px] h-[400px] rounded-full opacity-30 sm:w-[580px] sm:h-[580px] sm:opacity-50"
-                    style={{ background: 'var(--blob-1)', filter: 'blur(80px)' }} />
-                <div className="absolute top-[40%] -right-32 w-[440px] h-[440px] rounded-full opacity-20 sm:-right-48 sm:w-[640px] sm:h-[640px] sm:opacity-40"
-                    style={{ background: 'var(--blob-2)', filter: 'blur(100px)' }} />
-                <div className="absolute -bottom-32 left-[20%] w-[480px] h-[480px] rounded-full opacity-15 sm:-bottom-48 sm:w-[700px] sm:h-[700px] sm:opacity-30"
-                    style={{ background: 'var(--blob-3)', filter: 'blur(120px)' }} />
+                <div className="absolute -top-40 -left-32 w-[400px] h-[400px] rounded-full opacity-30 blur-[80px] sm:w-[580px] sm:h-[580px] sm:opacity-50 bg-[var(--blob-1)]" />
+                <div className="absolute top-[40%] -right-32 w-[440px] h-[440px] rounded-full opacity-20 blur-[100px] sm:-right-48 sm:w-[640px] sm:h-[640px] sm:opacity-40 bg-[var(--blob-2)]" />
+                <div className="absolute -bottom-32 left-[20%] w-[480px] h-[480px] rounded-full opacity-15 blur-[120px] sm:-bottom-48 sm:w-[700px] sm:h-[700px] sm:opacity-30 bg-[var(--blob-3)]" />
             </div>
 
             {/* ── HERO ── */}
@@ -192,8 +193,7 @@ const AboutPage = () => {
                         {/* Metrics panel */}
                         <Reveal delay={0.15}>
                             <div
-                                className="relative rounded-2xl overflow-hidden border border-border sm:rounded-3xl"
-                                style={{ background: 'var(--gradient-hero)', boxShadow: '0 20px 40px -15px rgba(0,0,0,0.25)' }}
+                                className="relative rounded-2xl overflow-hidden border border-border sm:rounded-3xl bg-[var(--gradient-hero)] shadow-2xl"
                             >
                                 <div className="absolute inset-0 opacity-20 dark:opacity-30"
                                     style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
@@ -265,11 +265,10 @@ const AboutPage = () => {
                     <Reveal>
                         <RiDoubleQuotesL className="w-8 h-8 text-primary/40 mx-auto mb-3 sm:w-10 sm:h-10 sm:mb-4" />
                         <blockquote className="text-lg font-semibold text-foreground leading-relaxed italic mb-5 sm:text-xl md:text-2xl sm:mb-6">
-                            "UnitedMess transformed how we manage our dorm. The glass UI is stunning — I show it to friends just to show off."
+                            &quot;UnitedMess transformed how we manage our dorm. The glass UI is stunning — I show it to friends just to show off.&quot;
                         </blockquote>
                         <div className="flex items-center justify-center gap-3">
-                            <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold sm:w-10 sm:h-10"
-                                style={{ background: 'var(--gradient-primary)' }}>A</div>
+                            <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold sm:w-10 sm:h-10 bg-[var(--gradient-primary)]">A</div>
                             <div className="text-left">
                                 <p className="text-sm font-semibold text-foreground">Asif Ekbal</p>
                                 <p className="text-[11px] text-muted-foreground sm:text-xs">Java Developer, TCS</p>
@@ -284,8 +283,7 @@ const AboutPage = () => {
                 <div className="max-w-3xl mx-auto text-center">
                     <Reveal>
                         <div
-                            className="relative rounded-2xl p-8 md:p-16 border border-border overflow-hidden sm:rounded-3xl sm:p-12"
-                            style={{ background: 'var(--gradient-hero)', boxShadow: '0 20px 50px -12px rgba(0,0,0,0.35)' }}
+                            className="relative rounded-2xl p-8 md:p-16 border border-border overflow-hidden sm:rounded-3xl sm:p-12 bg-[var(--gradient-hero)] shadow-2xl"
                         >
                             <div className="absolute top-0 inset-x-0 h-1/2 bg-white/10 dark:bg-white/5 blur-3xl rounded-t-2xl pointer-events-none sm:rounded-t-3xl" />
                             <div className="relative z-10">
@@ -300,9 +298,7 @@ const AboutPage = () => {
                                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                                     <Link to="/register">
                                         <span
-                                            className="inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl sm:h-auto sm:px-8 sm:py-3.5"
-                                            style={{ background: 'var(--gradient-primary)' }}
-                                        >
+                                            className="inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl sm:h-auto sm:px-8 sm:py-3.5 bg-[var(--gradient-primary)]">
                                             Create Free Account
                                             <HiOutlineArrowRight className="w-4 h-4" />
                                         </span>

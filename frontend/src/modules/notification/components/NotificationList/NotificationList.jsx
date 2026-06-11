@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
     BellRing, CheckCircle2, RefreshCw, Sparkles, Bell, AlertCircle
@@ -126,7 +126,7 @@ const GroupLabel = ({ label }) => (
 const NotificationList = ({ closeMenu, onNotificationClick }) => {
     const {
         items, loading, unreadCount, hasMore,
-        currentPage, total, markAllLoading, error,
+        total, markAllLoading, error,
         loadMore, markSingleAsRead, markAllAsRead, refresh,
     } = useNotifications({ limit: 20 });
 

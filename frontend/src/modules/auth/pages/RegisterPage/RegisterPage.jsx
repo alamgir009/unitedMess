@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, CheckCircle2, ArrowRight, RefreshCw, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Mail, ArrowRight, RefreshCw, AlertCircle, ArrowLeft } from 'lucide-react';
 import { reset, resendVerification, clearRegisteredEmail } from '../../store/auth.slice';
 import RegisterForm from '../../components/RegisterForm/RegisterForm';
 import { Button } from '@/shared/components/ui';
 
 const RegisterPage = () => {
     const dispatch = useDispatch();
-    const navigate = useNavigate();
-    const { isSuccess, registeredEmail, isLoading, user, sessionRestoring } = useSelector((state) => state.auth);
+    const { isSuccess, registeredEmail, isLoading } = useSelector((state) => state.auth);
     
     // Redirect authenticated users away from register page is now handled by GuestRoute.
     
@@ -163,7 +162,7 @@ const RegisterPage = () => {
                                 </h2>
                                 
                                 <p className="text-muted-foreground mb-6 leading-relaxed">
-                                    We've sent a verification link to <br />
+                                    We&apos;ve sent a verification link to <br />
                                     <span className="font-bold text-foreground bg-primary/5 px-2 py-0.5 rounded-md border border-primary/10 mt-1 inline-block">
                                         {registeredEmail}
                                     </span>
@@ -198,7 +197,7 @@ const RegisterPage = () => {
 
                                     <div className="pt-4 border-t border-border/50">
                                         <p className="text-sm text-muted-foreground mb-3">
-                                            Didn't receive the email?
+                                            Didn&apos;t receive the email?
                                         </p>
                                         <Button
                                             variant="secondary"

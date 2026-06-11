@@ -1,4 +1,3 @@
-import React from 'react';
 import { Spinner } from '@/shared/components/ui';
 import {
     HiOutlinePlus,

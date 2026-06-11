@@ -173,7 +173,7 @@ const Particles = () => {
     })), []
   );
   return (
-    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
       {particles.map(p => (
         <div key={p.id} style={{
           position: 'absolute',
@@ -192,15 +192,15 @@ const Particles = () => {
 };
 
 const OrbitalRings = ({ tokens: t }) => (
-  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 0 }}>
+  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
     {[200, 300, 400].map((size, i) => (
-      <div key={i} style={{ position: 'absolute', width: size, height: size, borderRadius: '50%', border: `1px solid ${t.ringColor}`, transition: 'border-color 0.4s' }} />
+      <div key={i} className="absolute rounded-full" style={{ width: size, height: size, border: `1px solid ${t.ringColor}`, transition: 'border-color 0.4s' }} />
     ))}
     {[0, 0.8, 1.6].map((delay, i) => (
-      <div key={`p${i}`} style={{ position: 'absolute', width: 200, height: 200, borderRadius: '50%', border: `1px solid ${t.pulseColor}`, animation: `pulse-ring 3s ${delay}s ease-out infinite`, transition: 'border-color 0.4s' }} />
+      <div key={`p${i}`} className="absolute w-[200px] h-[200px] rounded-full" style={{ border: `1px solid ${t.pulseColor}`, animation: `pulse-ring 3s ${delay}s ease-out infinite`, transition: 'border-color 0.4s' }} />
     ))}
-    <div className="nf-orbit-1" style={{ position: 'absolute', width: 8, height: 8, borderRadius: '50%', background: t.orbitDot1, boxShadow: `0 0 12px ${t.orbitDot1}`, transition: 'background 0.4s, box-shadow 0.4s' }} />
-    <div className="nf-orbit-2" style={{ position: 'absolute', width: 5, height: 5, borderRadius: '50%', background: t.orbitDot2, boxShadow: `0 0 8px ${t.orbitDot2}` }} />
+    <div className="nf-orbit-1 absolute w-2 h-2 rounded-full" style={{ background: t.orbitDot1, boxShadow: `0 0 12px ${t.orbitDot1}`, transition: 'background 0.4s, box-shadow 0.4s' }} />
+    <div className="nf-orbit-2 absolute w-[5px] h-[5px] rounded-full" style={{ background: t.orbitDot2, boxShadow: `0 0 8px ${t.orbitDot2}` }} />
   </div>
 );
 
@@ -228,29 +228,6 @@ const TerminalLine = ({ text, delay = 0, tokens: t }) => {
   );
 };
 
-// const ThemeToggle = ({ dark, tokens: t }) => (
-//   <motion.button
-//     onClick={() => document.documentElement.classList.toggle('dark')}
-//     whileHover={{ scale: 1.1, rotate: 15 }}
-//     whileTap={{ scale: 0.9 }}
-//     title={dark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-//     style={{
-//       position: 'fixed', top: 20, right: 20, zIndex: 200,
-//       width: 44, height: 44, borderRadius: '50%',
-//       border: `1px solid ${t.accentBorder}`,
-//       background: t.accentBg,
-//       backdropFilter: 'blur(12px)',
-//       cursor: 'pointer',
-//       display: 'flex', alignItems: 'center', justifyContent: 'center',
-//       fontSize: 20,
-//       boxShadow: t.toggleShadow,
-//       transition: 'background 0.4s, border-color 0.4s, box-shadow 0.4s',
-//     }}
-//   >
-//     {dark ? '☀️' : '🌙'}
-//   </motion.button>
-// );
-
 // ── Page ──────────────────────────────────────────────────────────────────────
 const NotFoundPage = () => {
   const dark = useIsDark();
@@ -261,47 +238,41 @@ const NotFoundPage = () => {
       <style>{GLOBAL_STYLES}</style>
 
       <div style={{
-        minHeight: '100vh', background: t.pageBg, color: t.textPrimary,
-        position: 'relative', overflow: 'hidden',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        padding: '40px 24px',
+        background: t.pageBg, color: t.textPrimary,
         transition: 'background 0.4s ease, color 0.4s ease',
-      }}>
-        {/* <ThemeToggle dark={dark} tokens={t} /> */}
-
+      }} className="min-h-screen relative overflow-hidden flex flex-col items-center justify-center px-6 py-10">
         {/* Scanline */}
-        <div className="nf-scanline" style={{ position: 'fixed', inset: 0, background: `linear-gradient(transparent 50%, ${t.scanline} 50%)`, backgroundSize: '100% 4px', pointerEvents: 'none', zIndex: 50 }} />
+        <div className="nf-scanline fixed inset-0 pointer-events-none z-50" style={{ background: `linear-gradient(transparent 50%, ${t.scanline} 50%)`, backgroundSize: '100% 4px' }} />
 
         {/* Bg layers */}
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: t.radialOverlay, transition: 'background 0.4s' }} />
-        <div style={{ position: 'absolute', top: '-20%', left: '-10%', width: 600, height: 600, borderRadius: '50%', background: `radial-gradient(circle, ${t.glowBg1} 0%, transparent 70%)`, pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '-10%', right: '-5%', width: 500, height: 500, borderRadius: '50%', background: `radial-gradient(circle, ${t.glowBg2} 0%, transparent 70%)`, pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: `linear-gradient(${t.gridLine} 1px, transparent 1px), linear-gradient(90deg, ${t.gridLine} 1px, transparent 1px)`, backgroundSize: '60px 60px' }} />
+        <div className="absolute inset-0 pointer-events-none" style={{ background: t.radialOverlay, transition: 'background 0.4s' }} />
+        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full pointer-events-none" style={{ background: `radial-gradient(circle, ${t.glowBg1} 0%, transparent 70%)` }} />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: `radial-gradient(circle, ${t.glowBg2} 0%, transparent 70%)` }} />
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: `linear-gradient(${t.gridLine} 1px, transparent 1px), linear-gradient(90deg, ${t.gridLine} 1px, transparent 1px)`, backgroundSize: '60px 60px' }} />
 
         <Particles />
 
         {/* Content */}
-        <div style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: 700, textAlign: 'center' }}>
+        <div className="relative z-10 w-full max-w-[700px] text-center">
 
           {/* Badge */}
           <motion.div
             initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: t.accentBg, border: `1px solid ${t.accentBorder}`, borderRadius: 100, padding: '5px 16px', marginBottom: 32, transition: 'all 0.4s' }}
+            className="inline-flex items-center gap-2 rounded-full px-4 py-1 mb-8" style={{ background: t.accentBg, border: `1px solid ${t.accentBorder}`, transition: 'all 0.4s' }}
           >
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: t.accent, boxShadow: `0 0 8px ${t.accent}`, transition: 'all 0.4s' }} />
+            <div className="w-1.5 h-1.5 rounded-full" style={{ background: t.accent, boxShadow: `0 0 8px ${t.accent}`, transition: 'all 0.4s' }} />
             <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: t.textLabel, letterSpacing: '0.2em', textTransform: 'uppercase', transition: 'color 0.4s' }}>
               System Error · Route Not Found
             </span>
           </motion.div>
 
           {/* Hero */}
-          <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+          <div className="relative flex justify-center mb-4">
             <OrbitalRings tokens={t} />
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              style={{ position: 'relative', zIndex: 2 }}
-            >
+              className="relative z-[2]">
               <GlitchNumber tokens={t} />
             </motion.div>
           </div>
@@ -309,11 +280,11 @@ const NotFoundPage = () => {
           {/* Terminal */}
           <motion.div
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}
-            style={{ background: t.terminalBg, border: `1px solid ${t.accentBorder}`, borderRadius: 12, padding: '16px 20px', marginBottom: 40, textAlign: 'left', backdropFilter: 'blur(12px)', boxShadow: t.cardShadow, transition: 'all 0.4s' }}
+            className="rounded-xl px-5 py-4 mb-10 text-left backdrop-blur-md" style={{ background: t.terminalBg, border: `1px solid ${t.accentBorder}`, boxShadow: t.cardShadow, transition: 'all 0.4s' }}
           >
-            <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+            <div className="flex gap-1.5 mb-3">
               {['#ff5f57', '#febc2e', '#28c840'].map((c, i) => (
-                <div key={i} style={{ width: 10, height: 10, borderRadius: '50%', background: c }} />
+                <div key={i} className="w-2.5 h-2.5 rounded-full" style={{ background: c }} />
               ))}
             </div>
             <TerminalLine text="GET /requested-route HTTP/1.1" delay={400} tokens={t} />
@@ -323,23 +294,22 @@ const NotFoundPage = () => {
 
           {/* Heading */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.5 }}>
-            <h1 style={{ fontFamily: "'Bebas Neue', 'Anton', sans-serif", fontSize: 'clamp(28px, 5vw, 46px)', letterSpacing: '0.08em', color: t.textPrimary, margin: '0 0 12px', textTransform: 'uppercase', transition: 'color 0.4s' }}>
+            <h1 style={{ fontFamily: "'Bebas Neue', 'Anton', sans-serif", fontSize: 'clamp(28px, 5vw, 46px)', letterSpacing: '0.08em', color: t.textPrimary, transition: 'color 0.4s' }} className="uppercase mb-3">
               Lost in the void
             </h1>
-            <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, color: t.textMuted, lineHeight: 1.8, maxWidth: 420, margin: '0 auto 40px', transition: 'color 0.4s' }}>
+            <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, color: t.textMuted, lineHeight: 1.8, transition: 'color 0.4s' }} className="max-w-[420px] mx-auto mb-10">
               This page drifted into deep space — moved,<br />deleted, or never existed in this universe.
             </p>
           </motion.div>
 
           {/* CTAs */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.65 }}
-            style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 40 }}
-          >
-            <Link to="/" style={{ textDecoration: 'none' }}>
+            className="flex gap-3 justify-center flex-wrap mb-10">
+            <Link to="/" className="no-underline">
               <motion.button
                 whileHover={{ scale: 1.04, boxShadow: `0 0 32px ${t.accentGlow}` }}
                 whileTap={{ scale: 0.97 }}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 28px', borderRadius: 10, border: `1px solid ${t.accentBtnBorder}`, background: t.accentBtnBg, color: t.accent, fontFamily: "'DM Mono', monospace", fontSize: 13, fontWeight: 500, cursor: 'pointer', letterSpacing: '0.05em', backdropFilter: 'blur(8px)', transition: 'all 0.3s' }}
+                className="inline-flex items-center gap-2 py-3.5 px-7 rounded-lg backdrop-blur" style={{ border: `1px solid ${t.accentBtnBorder}`, background: t.accentBtnBg, color: t.accent, fontFamily: "'DM Mono', monospace", fontSize: 13, fontWeight: 500, cursor: 'pointer', letterSpacing: '0.05em', transition: 'all 0.3s' }}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -350,7 +320,7 @@ const NotFoundPage = () => {
             <motion.button
               onClick={() => window.history.back()}
               whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 28px', borderRadius: 10, border: `1px solid ${t.secBorder}`, background: t.secBg, color: t.secText, fontFamily: "'DM Mono', monospace", fontSize: 13, cursor: 'pointer', letterSpacing: '0.05em', backdropFilter: 'blur(8px)', transition: 'all 0.3s' }}
+              className="inline-flex items-center gap-2 py-3.5 px-7 rounded-lg backdrop-blur" style={{ border: `1px solid ${t.secBorder}`, background: t.secBg, color: t.secText, fontFamily: "'DM Mono', monospace", fontSize: 13, cursor: 'pointer', letterSpacing: '0.05em', transition: 'all 0.3s' }}
             >
               ← Go Back
             </motion.button>
@@ -358,16 +328,16 @@ const NotFoundPage = () => {
 
           {/* Footer links */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.85 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
-              <div style={{ flex: 1, height: 1, background: t.divider, transition: 'background 0.4s' }} />
+            <div className="flex items-center gap-4 mb-4">
+              <div className="flex-1 h-px" style={{ background: t.divider, transition: 'background 0.4s' }} />
               <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: t.textLabelMid, letterSpacing: '0.15em', transition: 'color 0.4s' }}>KNOWN COORDINATES</span>
-              <div style={{ flex: 1, height: 1, background: t.divider, transition: 'background 0.4s' }} />
+              <div className="flex-1 h-px" style={{ background: t.divider, transition: 'background 0.4s' }} />
             </div>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <div className="flex gap-2 justify-center flex-wrap">
               {[{ label: '⟶ Login', href: '/login' }, { label: '⟶ Register', href: '/register' }].map(link => (
                 <Link
                   key={link.href} to={link.href}
-                  style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: t.textLabelMid, textDecoration: 'none', padding: '7px 16px', border: `1px solid ${t.divider}`, borderRadius: 8, letterSpacing: '0.05em', transition: 'all 0.2s' }}
+                  className="px-4 py-[7px] rounded-lg no-underline" style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: t.textLabelMid, border: `1px solid ${t.divider}`, letterSpacing: '0.05em', transition: 'all 0.2s' }}
                   onMouseEnter={e => { e.currentTarget.style.color = t.accent; e.currentTarget.style.borderColor = t.accentBorderHov; e.currentTarget.style.background = t.accentBg; }}
                   onMouseLeave={e => { e.currentTarget.style.color = t.textLabelMid; e.currentTarget.style.borderColor = t.divider; e.currentTarget.style.background = 'transparent'; }}
                 >

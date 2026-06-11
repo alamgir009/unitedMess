@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { FiX, FiSave, FiUser, FiMail, FiPhone, FiShield, FiCalendar } from 'react-icons/fi';
 import { fetchUsers } from '../../../members/store/members.slice';

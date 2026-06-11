@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { clsx } from 'clsx';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { cn } from '@/core/utils/helpers/string.helper';
 
 const ICONS = {
   success: (
@@ -48,7 +48,9 @@ const progressBarColors = {
 };
 
 const ToastItem = ({ id, type = 'info', title, message, duration = 4000, onRemove }) => {
+ToastItem.displayName = 'ToastItem';
   const [paused, setPaused] = useState(false);
+  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
     if (paused) return;
@@ -59,23 +61,23 @@ const ToastItem = ({ id, type = 'info', title, message, duration = 4000, onRemov
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 24, scale: 0.94 }}
+      initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 16, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.92, y: -8 }}
-      transition={{ duration: 0.25, ease: [0.34, 1.56, 0.64, 1] }}
+      exit={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, scale: 0.95 }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
       role="alert"
       aria-live="polite"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
-      className={clsx(
+      className={cn(
         'relative flex items-start gap-3 p-4 pr-5',
-        'bg-card border border-border rounded-lg shadow-lg',
+        'bg-card border border-border rounded-lg shadow-xl',
         'w-80 max-w-[calc(100vw-2rem)]',
         toastVariantStyles[type],
         'overflow-hidden',
       )}
     >
-      <span className={clsx('shrink-0 mt-0.5', toastIconStyles[type])} aria-hidden="true">
+      <span className={cn('shrink-0 mt-0.5', toastIconStyles[type])} aria-hidden="true">
         {ICONS[type]}
       </span>
 
@@ -87,7 +89,7 @@ const ToastItem = ({ id, type = 'info', title, message, duration = 4000, onRemov
       <button
         onClick={() => onRemove(id)}
         aria-label="Dismiss notification"
-        className="shrink-0 p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        className="shrink-0 p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -97,7 +99,7 @@ const ToastItem = ({ id, type = 'info', title, message, duration = 4000, onRemov
       {!paused && (
         <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-muted overflow-hidden rounded-b-lg">
           <div
-            className={clsx('h-full animate-toast-progress', progressBarColors[type])}
+            className={cn('h-full animate-toast-progress', progressBarColors[type])}
             style={{ animationDuration: `${duration}ms` }}
           />
         </div>
@@ -107,6 +109,7 @@ const ToastItem = ({ id, type = 'info', title, message, duration = 4000, onRemov
 };
 
 export const ToastContainer = ({ toasts = [], onRemove, position = 'bottom-right' }) => {
+ToastContainer.displayName = 'ToastContainer';
   const positionStyles = {
     'top-right': 'top-4 right-4',
     'top-left': 'top-4 left-4',
@@ -120,7 +123,7 @@ export const ToastContainer = ({ toasts = [], onRemove, position = 'bottom-right
     <div
       aria-live="polite"
       aria-label="Notifications"
-      className={clsx('fixed z-toast flex flex-col gap-3', positionStyles[position])}
+      className={cn('fixed z-toast flex flex-col gap-3', positionStyles[position])}
     >
       <AnimatePresence mode="popLayout">
         {toasts.map((toast) => (
@@ -132,6 +135,7 @@ export const ToastContainer = ({ toasts = [], onRemove, position = 'bottom-right
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useToast = () => {
   const [toasts, setToasts] = useState([]);
 

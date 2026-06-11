@@ -22,6 +22,7 @@ const Reveal = memo(({ children, delay = 0 }) => {
         </motion.div>
     );
 });
+Reveal.displayName = 'Reveal';
 
 const ContactMethod = ({ Icon, title, value, href, delay }) => (
     <Reveal delay={delay}>
@@ -88,7 +89,7 @@ const ContactPage = () => {
                         animate={{ opacity: 1, y: 0 }}
                         className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed"
                     >
-                        Whether you're looking for support, partnership, or just want to say hi, we're here for you.
+                        Whether you&apos;re looking for support, partnership, or just want to say hi, we&apos;re here for you.
                     </motion.p>
                 </div>
 

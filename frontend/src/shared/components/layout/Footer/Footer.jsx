@@ -65,7 +65,7 @@ const Footer = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={label}
-                    className="flex items-center justify-center w-9 h-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="touch-target flex items-center justify-center w-9 h-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     {icon}
                   </a>
@@ -136,4 +136,5 @@ const Footer = () => {
   );
 };
 
+Footer.displayName = 'Footer';
 export default Footer;

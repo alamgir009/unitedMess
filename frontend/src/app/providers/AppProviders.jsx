@@ -18,4 +18,5 @@ const AppProviders = ({ children }) => {
     );
 };
 
+AppProviders.displayName = 'AppProviders';
 export default AppProviders;

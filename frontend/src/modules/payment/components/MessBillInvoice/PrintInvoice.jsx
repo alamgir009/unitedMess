@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { fmt } from '@/core/utils/helpers/currency.helper';
 
 const PrintInvoice = ({

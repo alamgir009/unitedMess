@@ -17,16 +17,16 @@ import { Button } from '@/shared/components/ui';
 import { formatSmartDate } from '@/core/utils/helpers/date.helper';
 
 const STATUS = {
-    completed:            { label: 'Paid',      cls: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-300/60 dark:ring-emerald-400/20' },
-    pending:              { label: 'Pending',   cls: 'bg-amber-50 dark:bg-amber-500/10  text-amber-700  dark:text-amber-400  ring-1 ring-amber-300/60 dark:ring-amber-400/20'  },
-    pending_verification: { label: 'Review',    cls: 'bg-blue-50 dark:bg-blue-500/10    text-blue-700   dark:text-blue-400   ring-1 ring-blue-300/60 dark:ring-blue-400/20'    },
-    failed:               { label: 'Failed',    cls: 'bg-red-50 dark:bg-red-500/10      text-red-700    dark:text-red-400    ring-1 ring-red-300/60 dark:ring-red-400/20'    },
-    refunded:             { label: 'Refunded',  cls: 'bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 ring-1 ring-violet-300/60 dark:ring-violet-400/20' },
+    completed:            { label: 'Paid',      cls: 'bg-success-bg text-success-text ring-1 ring-success-border' },
+    pending:              { label: 'Pending',   cls: 'bg-warning-bg text-warning-text ring-1 ring-warning-border' },
+    pending_verification: { label: 'Review',    cls: 'bg-info-bg text-info-text ring-1 ring-info-border' },
+    failed:               { label: 'Failed',    cls: 'bg-danger-bg text-danger-text ring-1 ring-danger-border' },
+    refunded:             { label: 'Refunded',  cls: 'bg-info-bg text-info-text ring-1 ring-info-border' },
 };
 
 const TYPE = {
-    mess_bill: { label: 'Mess Bill', cls: 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 ring-1 ring-indigo-300/60 dark:ring-indigo-400/20' },
-    gas_bill:  { label: 'Gas Bill',  cls: 'bg-amber-50 dark:bg-amber-500/10  text-amber-700  dark:text-amber-400  ring-1 ring-amber-300/60 dark:ring-amber-400/20'  },
+    mess_bill: { label: 'Mess Bill', cls: 'bg-info-bg text-info-text ring-1 ring-info-border' },
+    gas_bill:  { label: 'Gas Bill',  cls: 'bg-warning-bg text-warning-text ring-1 ring-warning-border' },
     other:     { label: 'Other',     cls: 'bg-muted/60 text-muted-foreground ring-border/40' },
 };
 

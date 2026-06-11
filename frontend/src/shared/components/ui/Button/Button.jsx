@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 import { Loader2 } from 'lucide-react';
-import { clsx } from 'clsx';
+import { cn } from '@/core/utils/helpers/string.helper';
 
 const variantStyles = {
   primary:
@@ -14,12 +14,12 @@ const variantStyles = {
   danger:
     'bg-destructive text-destructive-foreground shadow-sm border-destructive/10 hover:bg-destructive/90 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2',
   success:
-    'bg-emerald-600 text-white shadow-sm border-emerald-600/10 hover:bg-emerald-700 focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2',
+    'bg-success text-white shadow-sm border-success/10 hover:brightness-90 focus-visible:ring-2 focus-visible:ring-success focus-visible:ring-offset-2',
 };
 
 const sizeStyles = {
   sm: 'h-8 px-3 text-xs rounded-md gap-1.5',
-  md: 'h-10 px-4 text-sm rounded-md gap-2',
+  md: 'h-11 px-4 text-sm rounded-md gap-2',
   lg: 'h-12 px-6 text-base rounded-lg gap-2.5',
   xl: 'h-14 px-8 text-base rounded-lg gap-3',
 };
@@ -49,8 +49,8 @@ const Button = forwardRef(({
       type="button"
       disabled={disabled || isLoading}
       aria-busy={isLoading}
-      className={clsx(
-        'inline-flex items-center justify-center font-medium border transition-all duration-100 ease-out',
+      className={cn(
+        'inline-flex items-center justify-center font-medium border transition-all duration-[var(--duration-base)] ease-out',
         'active:scale-[0.97] disabled:opacity-45 disabled:cursor-not-allowed disabled:pointer-events-none',
         'select-none whitespace-nowrap -webkit-tap-highlight-color-transparent',
         variantStyles[variant] || variantStyles.primary,

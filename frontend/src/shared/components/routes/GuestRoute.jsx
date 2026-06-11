@@ -43,4 +43,5 @@ const GuestRoute = ({ children }) => {
     return children;
 };
 
+GuestRoute.displayName = 'GuestRoute';
 export default GuestRoute;

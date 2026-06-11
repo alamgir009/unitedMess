@@ -1,4 +1,4 @@
-import { clsx } from 'clsx';
+import { cn } from '@/core/utils/helpers/string.helper';
 
 const Avatar = ({
     src,
@@ -64,7 +64,7 @@ const Avatar = ({
 
     return (
         <div
-            className={clsx('relative inline-block shrink-0', isClickable && 'cursor-pointer', className)}
+            className={cn('relative inline-block shrink-0', isClickable && 'cursor-pointer', className)}
             onClick={onClick}
             role={isClickable ? 'button' : undefined}
             tabIndex={isClickable ? 0 : undefined}
@@ -72,7 +72,7 @@ const Avatar = ({
             {...props}
         >
             <span
-                className={clsx(
+                className={cn(
                     'flex items-center justify-center overflow-hidden',
                     'bg-muted font-semibold text-foreground',
                     sizes[size],
@@ -92,7 +92,7 @@ const Avatar = ({
                         height="40"
                     />
                 ) : name ? (
-                    <span className={clsx(
+                    <span className={cn(
                         'w-full h-full flex items-center justify-center text-white font-bold',
                         `bg-gradient-to-br ${colorPalette[colorIndex]}`,
                     )}>
@@ -108,7 +108,7 @@ const Avatar = ({
             {status && (
                 <span
                     aria-label={status}
-                    className={clsx(
+                    className={cn(
                         'absolute bottom-0 right-0 rounded-full ring-2 ring-background',
                         statusDotSizes[size],
                         statusColors[status],
@@ -119,4 +119,5 @@ const Avatar = ({
     );
 };
 
+Avatar.displayName = 'Avatar';
 export default Avatar;

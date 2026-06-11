@@ -32,17 +32,23 @@ const MemberPage = lazy(() => import('@/modules/members/pages/members/MemberPage
 const UnresolvedBillsPage = lazy(() => import('@/modules/members/pages/UnresolvedBillsPage/UnresolvedBillsPage'));
 const SettingsPage = lazy(() => import('@/modules/settings/pages/SettingsPage/SettingsPage'));
 
-const PageLoader = () => (
+const PageLoader = () => {
+PageLoader.displayName = 'PageLoader';
+return (
     <div className="flex items-center justify-center min-h-[60vh]">
         <Spinner size="xl" />
     </div>
-);
+  );
+};
 
-const SuspenseWrapper = ({ children }) => (
+const SuspenseWrapper = ({ children }) => {
+SuspenseWrapper.displayName = 'SuspenseWrapper';
+return (
     <Suspense fallback={<PageLoader />}>
         {children}
     </Suspense>
-);
+  );
+};
 
 const AppRoutes = () => {
     return (
@@ -177,4 +183,5 @@ const AppRoutes = () => {
     );
 };
 
+AppRoutes.displayName = 'AppRoutes';
 export default AppRoutes;

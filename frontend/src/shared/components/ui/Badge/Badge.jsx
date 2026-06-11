@@ -1,4 +1,4 @@
-import { clsx } from 'clsx';
+import { cn } from '@/core/utils/helpers/string.helper';
 
 const variants = {
   default: 'bg-muted text-muted-foreground border border-border',
@@ -51,11 +51,11 @@ const Badge = ({
       tabIndex={isClickable ? 0 : undefined}
       onClick={onClick}
       onKeyDown={isClickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick?.(e); } : undefined}
-      className={clsx(
+      className={cn(
         'inline-flex items-center gap-1.5 font-medium',
         variants[variant] || variants.default,
         sizes[size],
-        isClickable && 'cursor-pointer hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+        isClickable && 'cursor-pointer hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
         className,
       )}
       {...props}
@@ -63,7 +63,7 @@ const Badge = ({
       {dot && (
         <span
           aria-hidden="true"
-          className={clsx('inline-block w-1.5 h-1.5 rounded-full shrink-0', dotColors[variant])}
+          className={cn('inline-block w-1.5 h-1.5 rounded-full shrink-0', dotColors[variant])}
         />
       )}
       {children}
@@ -71,4 +71,5 @@ const Badge = ({
   );
 };
 
+Badge.displayName = 'Badge';
 export default Badge;

@@ -79,7 +79,7 @@ const ForgotPasswordPage = () => {
                                         Forgot password?
                                     </h2>
                                     <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                                        No worries, we'll send you reset instructions.
+                                        No worries, we&apos;ll send you reset instructions.
                                     </p>
                                 </div>
 
@@ -103,7 +103,7 @@ const ForgotPasswordPage = () => {
                                     </div>
 
                                     {isError && message && (
-                                        <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
+                                        <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
                                             <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                                             <span>{message}</span>
                                         </div>
@@ -150,13 +150,13 @@ const ForgotPasswordPage = () => {
                                     Check your email
                                 </h2>
                                 <p className="text-muted-foreground mb-8 leading-relaxed">
-                                    We've sent a password reset link to <br />
+                                    We&apos;ve sent a password reset link to <br />
                                     <span className="font-bold text-foreground">{email}</span>
                                 </p>
 
                                 <div className="space-y-4">
                                     <p className="text-sm text-muted-foreground">
-                                        Didn't receive the email? Check your spam folder or try another email address.
+                                        Didn&apos;t receive the email? Check your spam folder or try another email address.
                                     </p>
                                     
                                     <Button 

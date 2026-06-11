@@ -7,7 +7,7 @@ const StatPill = React.memo(({ icon: Icon, label, value, color, trend, compact }
       'flex items-center gap-3 rounded-lg border border-border',
       'bg-card text-card-foreground',
       'shadow-sm overflow-hidden min-w-0',
-      'transition-all duration-150 ease-out',
+      'transition-all duration-[var(--duration-base)] ease-out',
       'transform-gpu hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md',
       'motion-reduce:hover:translate-y-0',
       'contain-layout',
@@ -15,11 +15,11 @@ const StatPill = React.memo(({ icon: Icon, label, value, color, trend, compact }
     )}
   >
     <div className={cn(
-      'flex-shrink-0 flex items-center justify-center transition-colors duration-150',
+      'flex-shrink-0 flex items-center justify-center transition-colors duration-[var(--duration-base)]',
       compact ? 'p-1.5 rounded-md' : 'p-2 rounded-lg',
       color,
     )}>
-      <Icon className={cn(compact ? 'w-3.5 h-3.5' : 'w-4.5 h-4.5')} aria-hidden="true" />
+      <Icon className={cn(compact ? 'w-3.5 h-3.5' : 'w-4 h-4')} aria-hidden="true" />
     </div>
     <div className="min-w-0 flex-1">
       <p className={cn(

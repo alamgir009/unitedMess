@@ -1,6 +1,6 @@
 import { useRef, useCallback } from 'react';
 import { FixedSizeList as List } from 'react-window';
-import { clsx } from 'clsx';
+import { cn } from '@/core/utils/helpers/string.helper';
 
 const VirtualizedTable = ({
   columns = [],
@@ -19,7 +19,7 @@ const VirtualizedTable = ({
     return (
       <div
         style={style}
-        className={clsx(
+        className={cn(
           'flex items-center border-b border-border transition-colors',
           onRowClick && 'cursor-pointer hover:bg-muted/40',
           index % 2 === 0 ? 'bg-transparent' : 'bg-muted/10',
@@ -33,7 +33,7 @@ const VirtualizedTable = ({
           <div
             key={col.id}
             style={{ flex: col.flex || 1, minWidth: col.minWidth || 80, maxWidth: col.maxWidth }}
-            className={clsx(
+            className={cn(
               'px-4 truncate text-sm',
               col.align === 'right' && 'text-right tabular-nums',
               col.align === 'center' && 'text-center',
@@ -50,7 +50,7 @@ const VirtualizedTable = ({
   if (rows.length === 0) return null;
 
   return (
-    <div className={clsx('border border-border rounded-lg overflow-hidden bg-card', className)}>
+    <div className={cn('border border-border rounded-lg overflow-x-auto bg-card', className)}>
       <div
         className="flex items-center border-b border-border bg-muted/30 text-xs font-semibold uppercase tracking-widest text-muted-foreground"
         style={{ height: headerHeight }}
@@ -59,7 +59,7 @@ const VirtualizedTable = ({
           <div
             key={col.id}
             style={{ flex: col.flex || 1, minWidth: col.minWidth || 80, maxWidth: col.maxWidth }}
-            className={clsx(
+            className={cn(
               'px-4 truncate',
               col.align === 'right' && 'text-right',
               col.align === 'center' && 'text-center',
@@ -84,4 +84,5 @@ const VirtualizedTable = ({
   );
 };
 
+VirtualizedTable.displayName = 'VirtualizedTable';
 export default VirtualizedTable;

@@ -91,25 +91,4 @@
   --navbar-height: 60px;
   --content-max-width: 1280px;
 
-  /* === TAILWIND-COMPATIBLE HSL TOKENS (set by themes) === */
-  --background: 0 0% 100%;
-  --foreground: 222 47% 11%;
-  --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
-  --primary: 210 92% 48%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 210 40% 94%;
-  --secondary-foreground: 222 47% 20%;
-  --muted: 210 40% 94%;
-  --muted-foreground: 215 20% 50%;
-  --accent: 160 60% 38%;
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 82% 58%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 214 32% 90%;
-  --input: 214 32% 90%;
-  --ring: 210 92% 48%;
-  --radius: 0.75rem;
 }

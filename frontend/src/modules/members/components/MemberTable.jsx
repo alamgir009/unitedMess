@@ -1,8 +1,8 @@
 import React from 'react';
 import MemberRow from './MemberRow';
-import { Loader } from '@/shared/components/ui';
 import { Users } from 'lucide-react';
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const COLUMNS = [
     { id: 'profile', label: 'Member Profile', cols: 'col-span-4', align: 'justify-start' },
     { id: 'market', label: 'Market Amount', cols: 'col-span-2', align: 'justify-start' },

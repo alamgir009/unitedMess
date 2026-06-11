@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, memo } from 'react';
+import { useEffect, useCallback, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -8,6 +8,7 @@ import {
     HiOutlineExclamationTriangle,
 } from 'react-icons/hi2';
 import { Button } from '@/shared/components/ui';
+import { SPRING_SNAPPY } from '@/core/utils/constants/spring';
 import { fmt } from '@/core/utils/helpers/currency.helper';
 import useBodyScrollLock from '@/shared/hooks/useBodyScrollLock';
 
@@ -36,12 +37,7 @@ const panelVariants = {
     exit:    { opacity: 0, y: 48 },
 };
 
-const panelTransition = {
-    type: 'spring',
-    stiffness: 420,
-    damping: 36,
-    mass: 1,
-};
+const panelTransition = SPRING_SNAPPY;
 
 const fastFade = { duration: 0.18 };
 

@@ -1,6 +1,6 @@
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Camera, Loader2, User } from 'lucide-react';
+import { Camera, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Spinner } from '@/shared/components/ui';
 import { updateAvatar } from '@/modules/auth/store/auth.slice';

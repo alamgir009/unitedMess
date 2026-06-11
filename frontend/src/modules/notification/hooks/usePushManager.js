@@ -32,7 +32,7 @@ const usePushManager = () => {
                     setVapidPublicKey(res.data.vapidPublicKey);
                 }
             })
-            .catch(() => {});
+            .catch((err) => console.error('Push manager error:', err));
     }, [user]);
 
     useEffect(() => {
@@ -50,7 +50,7 @@ const usePushManager = () => {
                     localStorage.removeItem(STORAGE_KEY);
                 }
             })
-            .catch(() => {});
+            .catch((err) => console.error('Push manager error:', err));
     }, [user, supported]);
 
     const subscribe = useCallback(async () => {

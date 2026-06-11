@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import {
     Mail, Phone, ShieldCheck, Flame, Droplets,
-    Utensils, Receipt, Users, Banknote, Hash, Fuel,
+    Utensils, Users, Banknote, Hash, Fuel,
     CheckCircle2, Clock, XCircle, ArrowDownToLine,ReceiptIndianRupee
 } from 'lucide-react';
 
@@ -154,8 +154,6 @@ SectionHeading.displayName = 'SectionHeading';
    MemberInvoiceDetails — root component
 ───────────────────────────────────────────── */
 const MemberInvoiceDetails = React.memo(({ user }) => {
-    const formattedPayable = useMemo(() => fmt(user?.paybleAmountforMeal ?? 0), [user?.paybleAmountforMeal]);
-    const formattedMarket = useMemo(() => fmt(user?.totalMarketAmount ?? 0), [user?.totalMarketAmount]);
     const formattedMeals = useMemo(() => fmt(user?.totalMeal ?? 0), [user?.totalMeal]);
     const formattedGuest = useMemo(() => fmt(user?.guestMeal ?? 0), [user?.guestMeal]);
     const formattedCooking = useMemo(() => fmt(user?.cookingCharge ?? 0), [user?.cookingCharge]);

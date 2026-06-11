@@ -33,7 +33,7 @@ export function usePayment({ user, onSuccess }) {
 
             // Step 1: Create order on server — this binds the order to the backend's key
             const orderRes = await paymentService.createOnlineOrder({ amount, type: paymentType, months });
-            const { order, payment, payments, keyId: serverKeyId } = orderRes?.data ?? {};
+            const { order, payment, keyId: serverKeyId } = orderRes?.data ?? {};
             if (!order?.id) throw new Error('Invalid order response from server');
 
             // Step 2: The checkout MUST use the server's key — the order was created with it.
