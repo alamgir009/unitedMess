@@ -10,6 +10,7 @@ import {
   UserCircle,
   LogOut,
   X,
+  Receipt,
 } from 'lucide-react';
 import { IoFastFoodOutline } from 'react-icons/io5';
 import { cn } from '@/core/utils/helpers/string.helper';
@@ -109,10 +110,16 @@ const Sidebar = ({ isOpen, onClose }) => {
 
         <div className="border-t border-border px-4 py-4 space-y-1">
           {user?.role === 'admin' && (
-            <NavLink to="/settings" className={linkClass} aria-label="System Settings">
-              <Settings className="h-5 w-5 shrink-0" aria-hidden="true" />
-              System Settings
-            </NavLink>
+            <>
+              <NavLink to="/unresolved-bills" className={linkClass} aria-label="Unresolved Bills">
+                <Receipt className="h-5 w-5 shrink-0" aria-hidden="true" />
+                Unresolved Bills
+              </NavLink>
+              <NavLink to="/settings" className={linkClass} aria-label="System Settings">
+                <Settings className="h-5 w-5 shrink-0" aria-hidden="true" />
+                System Settings
+              </NavLink>
+            </>
           )}
           <NavLink to="/profile" className={linkClass} aria-label="Profile">
             <UserCircle className="h-5 w-5 shrink-0" aria-hidden="true" />

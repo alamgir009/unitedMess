@@ -29,6 +29,7 @@ const MarketPage = lazy(() => import('@/modules/market/pages/MarketPage/MarketPa
 const PaymentPage = lazy(() => import('@/modules/payment/pages/PaymentPage/PaymentPage'));
 const NotificationsPage = lazy(() => import('@/modules/notification/pages/NotificationsPage/NotificationsPage'));
 const MemberPage = lazy(() => import('@/modules/members/pages/members/MemberPage'));
+const UnresolvedBillsPage = lazy(() => import('@/modules/members/pages/UnresolvedBillsPage/UnresolvedBillsPage'));
 const SettingsPage = lazy(() => import('@/modules/settings/pages/SettingsPage/SettingsPage'));
 
 const PageLoader = () => (
@@ -156,6 +157,16 @@ const AppRoutes = () => {
                     <SuspenseWrapper>
                         <AdminRoute>
                             <SettingsPage/>
+                        </AdminRoute>
+                    </SuspenseWrapper>
+                }
+            />
+            <Route
+                path="/unresolved-bills"
+                element={
+                    <SuspenseWrapper>
+                        <AdminRoute>
+                            <UnresolvedBillsPage/>
                         </AdminRoute>
                     </SuspenseWrapper>
                 }

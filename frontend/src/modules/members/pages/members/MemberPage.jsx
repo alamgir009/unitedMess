@@ -14,10 +14,8 @@ import { IoFastFoodOutline } from 'react-icons/io5';
 
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import MemberTable from '../../components/MemberTable';
-import AdminUnpaidPanel from '../../components/AdminUnpaidPanel';
 import StatPill from '@/shared/components/ui/StatPill/StatPill';
 import { fetchUsers, fetchBillingMonthStats, reset } from '../../store/members.slice';
-import { cn } from '@/core/utils/helpers/string.helper';
 
 /* ─────────────────────────────────────────────
    MemberPage — Main
@@ -234,14 +232,6 @@ const MemberPage = React.memo(() => {
                     />
                 </main>
 
-                {/* ════════════════════════════════
-                    Admin — Unresolved Bills Panel
-                ════════════════════════════════ */}
-                {isAdmin && (
-                    <div className="relative z-10 animate-fade-in-up">
-                        <AdminUnpaidPanel />
-                    </div>
-                )}
             </div>
         </MainLayout>
     );
