@@ -477,7 +477,9 @@ const AdminUnpaidPanel = React.memo(() => {
     const groupedInvoices = useMemo(() => {
         const groups = {};
         unpaidInvoices.forEach(inv => {
-            const uid = inv.user?._id || 'unknown';
+            // Normalise the user ID to a string to avoid duplicate groups
+            // caused by ObjectId vs string mismatches.
+            const uid = inv.user?._id ? String(inv.user._id) : 'unknown';
             if (!groups[uid]) {
                 groups[uid] = { user: inv.user, invoices: [] };
             }
