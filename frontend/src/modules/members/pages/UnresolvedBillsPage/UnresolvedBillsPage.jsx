@@ -4,9 +4,7 @@ import AdminUnpaidPanel from '../../components/AdminUnpaidPanel';
 const UnresolvedBillsPage = () => {
     return (
         <MainLayout>
-            <div className="max-w-7xl mx-auto">
-                <AdminUnpaidPanel />
-            </div>
+            <AdminUnpaidPanel />
         </MainLayout>
     );
 };
