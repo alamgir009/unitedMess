@@ -3,7 +3,7 @@ import AdminUnpaidPanel from '../../components/AdminUnpaidPanel';
 
 const UnresolvedBillsPage = () => {
     return (
-        <MainLayout paddingClass="p-0 sm:p-6 lg:p-8">
+        <MainLayout paddingClass="p-0 md:p-6 lg:p-8">
             <AdminUnpaidPanel />
         </MainLayout>
     );

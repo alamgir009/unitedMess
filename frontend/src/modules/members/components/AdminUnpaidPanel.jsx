@@ -96,7 +96,7 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
 
                 <div className="px-6 py-5 border-b border-border bg-muted dark:bg-muted/40">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500 flex items-center justify-center shadow-sm shadow-emerald-600/20">
                             <BadgeIndianRupee size={20} className="text-white" />
                         </div>
                         <div>
@@ -232,8 +232,8 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
             <div className={cn(
                 'hidden md:grid grid-cols-12 gap-3 items-center px-6 py-4',
                 'border-b border-border',
-                'hover:shadow-sm',
-                'transition-shadow duration-150'
+                'hover:bg-muted/30 hover:shadow-sm',
+                'transition-[background,box-shadow] duration-150'
             )}>
                 {/* Invoice Ref */}
                 <div className="col-span-3 flex items-center gap-2 min-w-0">
@@ -492,7 +492,7 @@ const AdminUnpaidPanel = React.memo(() => {
         <section aria-label="Administrator Unpaid Bills Panel" className="w-full">
 
             {/* ── Section header ── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 px-4 md:px-0">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5 px-4 md:px-0">
                 <div className="flex items-center gap-3">
                     <div className="p-2.5 rounded-2xl bg-warning">
                         <ShieldAlert size={20} className="text-white" />
@@ -648,9 +648,9 @@ const AdminUnpaidPanel = React.memo(() => {
                 {/* Footer count */}
                 {!unpaidInvoicesLoading && unpaidInvoices.length > 0 && (
                     <div className={cn(
-                        'flex flex-col sm:flex-row gap-3 items-center justify-between px-4 md:px-6 py-3.5',
+                        'flex flex-col md:flex-row gap-3 items-center justify-between px-4 md:px-6 py-3.5',
                         'bg-muted/60 dark:bg-muted/30',
-                        'border-t border-border text-center sm:text-left'
+                        'border-t border-border text-center md:text-left'
                     )}>
                         <div className="flex items-center gap-2">
                             <AlertTriangle size={13} className="text-warning-text shrink-0" />
