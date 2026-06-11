@@ -14,6 +14,10 @@ import {
     fetchUserDashboardStats,
 } from '../../../modules/dashboard/store/dashboard.slice';
 
+// FIX: Import centralized billing period utilities from shared source of truth.
+// Eliminates the duplicated local getBillingPeriod() that drifted from backend logic.
+import { getBillingPeriod, getLastFinalizedPeriod } from '@shared/utils/billingPeriod';
+
 const MEAL_MUTATIONS = [
     'meal/create/fulfilled',
     'meal/update/fulfilled',
@@ -55,18 +59,6 @@ const DEFAULT_USER_PARAMS = {
     userStatus: 'approved',
 };
 
-function getBillingPeriod() {
-    const date = new Date();
-    const day = date.getDate();
-    let month = date.getMonth() + 1;
-    let year = date.getFullYear();
-    if (day <= 10) {
-        if (month === 1) { month = 12; year--; }
-        else { month--; }
-    }
-    return { month, year };
-}
-
 const paymentSyncMiddleware = (store) => (next) => (action) => {
     const result = next(action);
 
@@ -90,13 +82,26 @@ const paymentSyncMiddleware = (store) => (next) => (action) => {
     // ── 5. Refresh active invoice ──
     store.dispatch(fetchActiveInvoice());
 
-    // ── 6. Refresh admin unpaid invoices panel ──
-    const bp = getBillingPeriod();
-    store.dispatch(fetchAdminUnpaidInvoices({ month: bp.month, year: bp.year }));
-
-    // ── 7. Refresh dashboard data ──
+    // ── 6. Admin-only dispatches ──
+    // FIX: Guard admin-only endpoints behind role check so non-admin users
+    // don't trigger 403 errors that pollute Redux state.
     const state = store.getState();
     if (state.auth.user?.role === 'admin') {
+        // Refresh admin unpaid invoices panel
+        // FIX: Fetch BOTH the last finalized period (what the admin is likely viewing)
+        // and the billing period (for when the admin switches to it).
+        // Previously only fetched the billing period, which after day 11 always returned
+        // empty (current month has no finalized invoices), overwriting the admin's view.
+        const lastFinalized = getLastFinalizedPeriod();
+        const bp = getBillingPeriod();
+        store.dispatch(fetchAdminUnpaidInvoices({ month: lastFinalized.month, year: lastFinalized.year }));
+        // Also refresh billing period data in case admin switches to it
+        store.dispatch(fetchAdminUnpaidInvoices({ month: bp.month, year: bp.year }));
+
+        // Refresh member list (admin-only endpoint)
+        store.dispatch(fetchUsers(DEFAULT_USER_PARAMS));
+
+        // Refresh admin dashboard stats
         store.dispatch(fetchAdminDashboardStats());
     } else if (state.auth.user) {
         store.dispatch(fetchUserDashboardStats());

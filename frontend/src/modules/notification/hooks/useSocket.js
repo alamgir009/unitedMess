@@ -19,6 +19,7 @@ import {
     fetchUsers,
     fetchAdminUnpaidInvoices,
 } from '@/modules/members/store/members.slice';
+import { getLastFinalizedPeriod } from '@shared/utils/billingPeriod';
 import {
     fetchAdminDashboardStats,
     fetchUserDashboardStats,
@@ -116,21 +117,14 @@ const useSocket = () => {
                 socketRef.current.on('billing:updated', () => {
                     dispatch(fetchPayableAmount());
                     dispatch(fetchPayableGasBill());
-                    dispatch(fetchUsers({ page: 1, limit: 100, isActive: true, userStatus: 'approved' }));
                     dispatch(fetchBillingMonthStats());
                     dispatch(fetchPayments({ page: 1, limit: 20 }));
                     dispatch(fetchActiveInvoice());
-                    const date = new Date();
-                    const day = date.getDate();
-                    let month = date.getMonth() + 1;
-                    let year = date.getFullYear();
-                    if (day <= 10) {
-                        if (month === 1) { month = 12; year--; }
-                        else { month--; }
-                    }
-                    dispatch(fetchAdminUnpaidInvoices({ month, year }));
                     const state = store.getState();
                     if (state.auth.user?.role === 'admin') {
+                        const lastFinalized = getLastFinalizedPeriod();
+                        dispatch(fetchAdminUnpaidInvoices({ month: lastFinalized.month, year: lastFinalized.year }));
+                        dispatch(fetchUsers({ page: 1, limit: 100, isActive: true, userStatus: 'approved' }));
                         dispatch(fetchAdminDashboardStats());
                     } else if (state.auth.user) {
                         dispatch(fetchUserDashboardStats());

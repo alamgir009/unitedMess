@@ -32,7 +32,7 @@ router.get('/me/payable/gasbill', ...authenticated, userController.getPaybleAmou
 
 // ==================== USER MANAGEMENT (Admin Only for modifications, Authenticated for viewing) ====================
 router.route('/')
-    .get(...authenticated, userController.getUsers)
+    .get(...adminOnly, userController.getUsers)
 
 // Specific actions before generic routes
 router.post('/:userId/approve', ...adminOnly, userController.approveUser);

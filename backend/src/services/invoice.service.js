@@ -5,7 +5,7 @@ const Meal = require('../models/Meal.model');
 const Market = require('../models/Market.model');
 const Payment = require('../models/Payment.model');
 const AppError = require('../utils/errors/AppError');
-const { getBillingPeriod } = require('../utils/helpers/date.helper');
+const { getBillingPeriod, getLastFinalizedPeriod } = require('../utils/helpers/date.helper');
 const emailService = require('./email.service');
 const pdfService   = require('./pdf.service');
 
@@ -137,7 +137,12 @@ const getInvoice = async (userId, month, year) => {
     // totalBill = messCost + fixedCosts + guestRevenue - marketAmountSpent
     const totalBill = messCost + (user.cookingCharge || 0) + (user.waterBill || 0) + (user.platformFee || 0) + guestRevenue - uMarketSpent;
 
-    const monthName = new Date(year, month - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+    // FIX: Use explicit 'en-US' locale — see calculatePaidAmount for rationale
+    const monthName = new Intl.DateTimeFormat('en-US', {
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'UTC',
+    }).format(new Date(Date.UTC(year, month - 1, 1)));
 
     const invoiceData = {
         user: userId,
@@ -203,7 +208,15 @@ const getInvoice = async (userId, month, year) => {
  * Calculate total completed payments for a user in a specific month
  */
 const calculatePaidAmount = async (userId, month, year) => {
-    const monthName = new Date(year, month - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+    // FIX: Use Intl.DateTimeFormat with explicit 'en-US' locale to prevent
+    // month-name mismatch when server locale is non-English.
+    // Previously used toLocaleString('default', ...) which varies by server locale.
+    const monthName = new Intl.DateTimeFormat('en-US', {
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'UTC',
+    }).format(new Date(Date.UTC(year, month - 1, 1)));
+
     const payments = await Payment.find({
         user: userId,
         month: monthName,
@@ -374,9 +387,11 @@ const resetUserStatsAfterFinalization = async () => {
  * @param {number} year  - full year (optional, defaults to last active billing month)
  */
 const getAdminUnpaidInvoices = async (month, year) => {
-    // If no month/year provided, default to the active billing month (which naturally shifts on the 10th)
+    // FIX: Default to the LAST FINALIZED period instead of the active billing month.
+    // This ensures the admin sees the just-finalized month's unpaid bills immediately
+    // on day 11+ (billing cycle rollover), instead of seeing an empty current month.
     if (!month || !year) {
-        const period = getBillingPeriod();
+        const period = getLastFinalizedPeriod();
         month = period.month;
         year  = period.year;
     }
@@ -420,7 +435,12 @@ const emailAllInvoices = async (month, year) => {
     const grandTotalMeal   = messStats.totalMealCount;
 
     /* ── Process most-recent completed payment for each member (for PDF payment block) ── */
-    const monthName = new Date(year, month - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+    // FIX: Use explicit 'en-US' locale — see calculatePaidAmount for rationale
+    const monthName = new Intl.DateTimeFormat('en-US', {
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'UTC',
+    }).format(new Date(Date.UTC(year, month - 1, 1)));
 
     /* Helper: process a single user — returns true on success */
     const processUser = async (user) => {

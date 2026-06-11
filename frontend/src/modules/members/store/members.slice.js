@@ -27,6 +27,7 @@ const initialState = {
     // ── Admin unpaid invoices panel ──
     unpaidInvoices: [],
     unpaidInvoicesLoading: false,
+    unpaidInvoicesError: null,
     // ── Generic flags ──
     isError: false,
     isSuccess: false,
@@ -230,14 +231,22 @@ export const membersSlice = createSlice({
             // ── fetchAdminUnpaidInvoices ─────────────────────────────────────
             .addCase(fetchAdminUnpaidInvoices.pending, (state) => {
                 state.unpaidInvoicesLoading = true;
+                state.unpaidInvoicesError = null;
             })
             .addCase(fetchAdminUnpaidInvoices.fulfilled, (state, action) => {
                 state.unpaidInvoicesLoading = false;
+                state.unpaidInvoicesError = null;
                 state.unpaidInvoices = Array.isArray(action.payload) ? action.payload : [];
             })
-            .addCase(fetchAdminUnpaidInvoices.rejected, (state) => {
+            .addCase(fetchAdminUnpaidInvoices.rejected, (state, action) => {
                 state.unpaidInvoicesLoading = false;
-                state.unpaidInvoices = [];
+                // FIX: Preserve existing data on error — don't clear to empty array.
+                // Only set empty if there's no prior data.
+                // Also track the error so the UI can display a retry option.
+                if (state.unpaidInvoices.length === 0) {
+                    state.unpaidInvoices = [];
+                }
+                state.unpaidInvoicesError = action.payload || 'Failed to load unresolved invoices';
             })
             // ── resolveInvoicePayment ────────────────────────────────────────
             .addCase(resolveInvoicePayment.fulfilled, (state, action) => {

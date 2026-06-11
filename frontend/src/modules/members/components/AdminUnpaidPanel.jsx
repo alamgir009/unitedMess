@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
     ShieldAlert, ChevronDown, RefreshCw, CheckCircle2,
@@ -10,21 +10,9 @@ import { toast } from 'react-hot-toast';
 import { Spinner } from '@/shared/components/ui';
 import { cn } from '@/core/utils/helpers/string.helper';
 
-/* ─────────────────────────────────────────────
-   Billing period — mirrors backend logic
-   Days 1-10 → previous month; Days 11+ → current month
-───────────────────────────────────────────── */
-function getBillingPeriod(date = new Date()) {
-    const day = date.getDate();
-    let month = date.getMonth() + 1;
-    let year = date.getFullYear();
-    if (day <= 10) {
-        if (month === 1) { month = 12; year--; }
-        else { month--; }
-    }
-    const monthName = new Date(year, month - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
-    return { month, year, monthName };
-}
+// FIX: Import centralized billing period utilities from shared source of truth.
+// Eliminates the duplicated local getBillingPeriod() that drifted from backend logic.
+import { getLastFinalizedPeriod } from '@shared/utils/billingPeriod';
 
 /* ─────────────────────────────────────────────
    Helpers
@@ -39,18 +27,20 @@ const MONTHS = [
     'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
+// FIX: Build month options from the LAST FINALIZED period as the default,
+// so on day 11+ the admin sees the just-finalized month's unpaid bills first.
 function buildMonthOptions() {
-    const { month: bpMonth, year: bpYear } = getBillingPeriod();
+    const { month: lpMonth, year: lpYear } = getLastFinalizedPeriod();
     const opts = [];
     for (let i = 0; i < 12; i++) {
-        let m = bpMonth - i;
-        let y = bpYear;
+        let m = lpMonth - i;
+        let y = lpYear;
         if (m <= 0) { m += 12; y--; }
         opts.push({
             label: `${MONTHS[m - 1]} ${y}`,
             month: m,
             year: y,
-            isBillingPeriod: i === 0,
+            isLastFinalized: i === 0,
         });
     }
     return opts;
@@ -423,20 +413,52 @@ InvoiceRow.displayName = 'InvoiceRow';
 ───────────────────────────────────────────── */
 const AdminUnpaidPanel = React.memo(() => {
     const dispatch = useDispatch();
-    const { unpaidInvoices, unpaidInvoicesLoading } = useSelector(s => s.members);
+    const { unpaidInvoices, unpaidInvoicesLoading, unpaidInvoicesError } = useSelector(s => s.members);
 
-    const monthOptions = useMemo(() => buildMonthOptions(), []);
+    // FIX: billingRefreshKey forces monthOptions to recompute across month boundaries
+    // even without component remount. Increases on midnight detection.
+    const [billingRefreshKey, setBillingRefreshKey] = useState(0);
+
+    // FIX: monthOptions now depends on billingRefreshKey so it re-evaluates
+    // when the date changes across the 10th/11th boundary.
+    const monthOptions = useMemo(() => buildMonthOptions(),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [billingRefreshKey]
+    );
 
     const [selectedIdx, setSelectedIdx] = useState(0);
     const [savingId, setSavingId] = useState(null);
 
-    const selected = useMemo(() => monthOptions[selectedIdx] ?? monthOptions[0], [selectedIdx, monthOptions]);
+    // FIX: guard against monthOptions being empty or missing
+    const safeMonthOptions = monthOptions.length > 0 ? monthOptions : [{
+        label: '—', month: undefined, year: undefined, isLastFinalized: true
+    }];
+
+    const selected = useMemo(
+        () => safeMonthOptions[selectedIdx] ?? safeMonthOptions[0],
+        [selectedIdx, safeMonthOptions]
+    );
 
     const load = useCallback((opt) => {
+        if (!opt.month || !opt.year) return;
         dispatch(fetchAdminUnpaidInvoices({ month: opt.month, year: opt.year }));
     }, [dispatch]);
 
-    React.useEffect(() => { load(selected); }, [selected, load]);
+    useEffect(() => { load(selected); }, [selected, load]);
+
+    // FIX: Check for midnight boundary (±1 day) to refresh month options
+    // when the date crosses the 10th/11th boundary while the component stays mounted.
+    const lastDateRef = useRef(new Date().getDate());
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const currentDate = new Date().getDate();
+            if (currentDate !== lastDateRef.current) {
+                lastDateRef.current = currentDate;
+                setBillingRefreshKey(k => k + 1);
+            }
+        }, 60000); // check every 60 seconds
+        return () => clearInterval(interval);
+    }, []);
 
     const handleMonthChange = (e) => {
         setSelectedIdx(parseInt(e.target.value, 10));
@@ -459,10 +481,10 @@ const AdminUnpaidPanel = React.memo(() => {
         [unpaidInvoices]
     );
 
-    /* ── Determine if selected month is the current billing period ── */
-    const isCurrentBillingPeriod = useMemo(() => {
-        const bp = getBillingPeriod();
-        return bp.month === selected.month && bp.year === selected.year;
+    /* ── Determine if selected month is the most-recently finalized period ── */
+    const isLastFinalizedPeriod = useMemo(() => {
+        const lp = getLastFinalizedPeriod();
+        return lp.month === selected.month && lp.year === selected.year;
     }, [selected.month, selected.year]);
 
     /* ── Group invoices by member ── */
@@ -516,9 +538,9 @@ const AdminUnpaidPanel = React.memo(() => {
                                 'transition-all duration-150'
                             )}
                         >
-                            {monthOptions.map((opt, i) => (
+                            {safeMonthOptions.map((opt, i) => (
                                 <option key={opt.label} value={i}>
-                                    {opt.isBillingPeriod ? `★ ${opt.label}` : opt.label}
+                                    {opt.isLastFinalized ? `★ ${opt.label}` : opt.label}
                                 </option>
                             ))}
                         </select>
@@ -545,6 +567,24 @@ const AdminUnpaidPanel = React.memo(() => {
                     </button>
                 </div>
             </div>
+
+            {/* ── Error banner ── */}
+            {unpaidInvoicesError && (
+                <div className="flex items-start gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 mb-4">
+                    <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-red-700 dark:text-red-400">Failed to load unresolved invoices</p>
+                        <p className="text-xs font-medium mt-0.5 opacity-80 text-red-500 dark:text-red-500">{unpaidInvoicesError}</p>
+                    </div>
+                    <button
+                        onClick={() => load(selected)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-500/30 active:scale-95 transition-all duration-150 shrink-0"
+                    >
+                        <RefreshCw size={12} />
+                        Retry
+                    </button>
+                </div>
+            )}
 
             {/* ── Table card ── */}
             <div className="w-full bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
@@ -574,24 +614,23 @@ const AdminUnpaidPanel = React.memo(() => {
                     </div>
                 )}
 
-                {/* Empty — current billing period (not yet finalized) */}
-                {!unpaidInvoicesLoading && unpaidInvoices.length === 0 && isCurrentBillingPeriod && (
+                {/* Empty — last finalized period (not yet settled) */}
+                {!unpaidInvoicesLoading && unpaidInvoices.length === 0 && isLastFinalizedPeriod && (
                     <div className="flex flex-col items-center justify-center py-16 gap-3">
                         <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                             <Calendar size={26} className="text-slate-400" />
                         </div>
                         <p className="text-sm font-bold text-slate-600 dark:text-slate-400">
-                            Current billing period: {selected.label}
+                            Last finalized period: {selected.label}
                         </p>
                         <p className="text-xs font-medium text-slate-400 dark:text-slate-500 max-w-sm text-center">
-                            Invoices for this period are finalized on the 11th of next month.
-                            Unresolved bills from previous months are preserved below &mdash; switch the month filter above.
+                            All invoices for this period are resolved. Switch to another month above.
                         </p>
                     </div>
                 )}
 
-                {/* Empty — finalized month, all resolved */}
-                {!unpaidInvoicesLoading && unpaidInvoices.length === 0 && !isCurrentBillingPeriod && (
+                {/* Empty — non-finalized or older period, all resolved */}
+                {!unpaidInvoicesLoading && unpaidInvoices.length === 0 && !isLastFinalizedPeriod && (
                     <div className="flex flex-col items-center justify-center py-16 gap-3">
                         <div className="w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center">
                             <CheckCircle2 size={26} className="text-emerald-500" />
