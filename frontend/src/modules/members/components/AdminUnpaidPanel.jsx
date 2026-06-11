@@ -492,7 +492,7 @@ const AdminUnpaidPanel = React.memo(() => {
         <section aria-label="Administrator Unpaid Bills Panel" className="w-full">
 
             {/* ── Section header ── */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5 px-4 md:px-0">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-4 pb-5 md:pt-0 md:pb-5 px-4 md:px-0">
                 <div className="flex items-center gap-3">
                     <div className="p-2.5 rounded-2xl bg-warning">
                         <ShieldAlert size={20} className="text-white" />
