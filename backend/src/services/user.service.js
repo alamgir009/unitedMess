@@ -269,7 +269,11 @@ async function getAllUsers(filters = {}, pagination = {}) {
     const limit = Math.min(MAX_LIMIT, Math.max(1, Number(pagination.limit) || DEFAULT_LIMIT));
     const skip = (page - 1) * limit;
 
-    const { start, end } = getBillingPeriod();
+    const bp = getBillingPeriod();
+    const { start, end } = bp;
+    const billingMonth = bp.month;
+    const billingYear = bp.year;
+    const billingMonthName = bp.monthName;
 
     const query = Object.entries(filters).reduce((acc, [key, value]) => {
         if (value !== undefined && value !== '') acc[key] = value;
@@ -359,17 +363,113 @@ async function getAllUsers(filters = {}, pagination = {}) {
                 as: 'marketStats'
             }
         },
+        // ── Current-period payment-status lookups ───────────────
+        // The Invoice collection is the authoritative per-month
+        // source of truth for mess-bill payment status.
+        // Gas-bill status is derived from completed Payment records.
+        // Without these lookups, the stored user.payment / user.gasBill
+        // fields (which may have been set to 'success' by past-period
+        // payments before the bug fix) would incorrectly show the
+        // current period as paid.
+        {
+            $lookup: {
+                from: 'invoices',
+                let: { userId: '$_id' },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    { $eq: ['$user', '$$userId'] },
+                                    { $eq: ['$month', billingMonth] },
+                                    { $eq: ['$year', billingYear] }
+                                ]
+                            }
+                        }
+                    },
+                    { $project: { status: 1, _id: 0 } }
+                ],
+                as: 'currentPeriodInvoice'
+            }
+        },
+        {
+            $lookup: {
+                from: 'payments',
+                let: { userId: '$_id' },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    { $eq: ['$user', '$$userId'] },
+                                    { $eq: ['$month', billingMonthName] },
+                                    { $eq: ['$type', 'gas_bill'] },
+                                    { $eq: ['$status', 'completed'] }
+                                ]
+                            }
+                        }
+                    },
+                    { $limit: 1 },
+                    { $project: { _id: 1 } }
+                ],
+                as: 'gasPayments'
+            }
+        },
         {
             $addFields: {
                 totalMeal: { $ifNull: [{ $arrayElemAt: ['$mealStats.totalMeal', 0] }, 0] },
                 guestMeal: { $ifNull: [{ $arrayElemAt: ['$mealStats.guestMeal', 0] }, 0] },
-                totalMarketAmount: { $ifNull: [{ $arrayElemAt: ['$marketStats.totalMarket', 0] }, 0] }
+                totalMarketAmount: { $ifNull: [{ $arrayElemAt: ['$marketStats.totalMarket', 0] }, 0] },
+                // Derive payment status from the current-period invoice.
+                // The Invoice status is 'paid' only when paidAmount >= totalPayable,
+                // so a partial payment is correctly NOT shown as 'success'.
+                payment: {
+                    $cond: {
+                        if: {
+                            $and: [
+                                { $gt: [{ $size: '$currentPeriodInvoice' }, 0] },
+                                { $eq: [{ $arrayElemAt: ['$currentPeriodInvoice.status', 0] }, 'paid'] }
+                            ]
+                        },
+                        then: 'success',
+                        else: {
+                            $cond: {
+                                if: { $eq: ['$payment', 'success'] },
+                                then: 'pending',
+                                else: '$payment'
+                            }
+                        }
+                    }
+                },
+                // Gas bill paid status is derived from completed gas_bill
+                // payments for the current billing period.
+                gasBill: {
+                    $cond: {
+                        if: {
+                            $gt: [{
+                                $size: {
+                                    $ifNull: ['$gasPayments', []]
+                                }
+                            }, 0]
+                        },
+                        then: 'success',
+                        else: {
+                            $cond: {
+                                if: { $eq: ['$gasBill', 'success'] },
+                                then: 'pending',
+                                else: '$gasBill'
+                            }
+                        }
+                    }
+                }
             }
         },
         {
             $project: {
                 mealStats: 0,
-                marketStats: 0
+                marketStats: 0,
+                currentPeriodInvoice: 0,
+                gasPayments: 0
             }
         }
     ];

@@ -215,9 +215,10 @@ const createPayment = async (paymentBody) => {
 
     // Sub-fix C & D: Sync and Email (non-blocking)
     if (payment.status === 'completed') {
-        // Sync payment status
-        // Ensure this function receives student._id
+        // Sync payment status (only if current billing period)
         await syncUserPaymentStatus(student._id, payment.type, payment.status, payment.month);
+        // Sync invoice paid amount and status
+        await syncInvoiceAfterPayment(student._id, payment.month);
 
         // Send payment email
         // Ensure this function receives student.email and student.name
@@ -649,9 +650,12 @@ const createBulkPayments = async (body) => {
     // ValidationError propagates up and the error middleware returns 400.
     const createdPayments = await Payment.create(docs);
 
-    // Sync user payment statuses in parallel
+    // Sync user payment statuses and invoice amounts in parallel
     await Promise.all(createdPayments.map(p =>
-        syncUserPaymentStatus(p.user, p.type, p.status, p.month)
+        Promise.all([
+            syncUserPaymentStatus(p.user, p.type, p.status, p.month),
+            syncInvoiceAfterPayment(p.user, p.month),
+        ])
     ));
 
     // Emails fire non-blocking — never fail the request
