@@ -116,8 +116,6 @@ const PaymentPage = () => {
     const [isPaymentFlowOpen, setIsPaymentFlowOpen] = useState(false);
     const [activePaymentMonth, setActivePaymentMonth] = useState('');
     const [paymentFlowType, setPaymentFlowType] = useState('mess_bill');
-    const [paymentFlowAmount, setPaymentFlowAmount] = useState(0);
-    const [paymentFlowMonthName, setPaymentFlowMonthName] = useState('');
     const [gasBillModal, setGasBillModal] = useState({ open: false, amount: 0, monthName: '' });
     const [verifyPayment, setVerifyPayment] = useState(null);
     const [isUpiVerifyOpen, setIsUpiVerifyOpen] = useState(false);
@@ -156,8 +154,6 @@ const PaymentPage = () => {
         setInvoiceModal(prev => ({ ...prev, open: false }));
         setActivePaymentMonth(monthName || payableAmountData?.monthName || '');
         setPaymentFlowType('mess_bill');
-        setPaymentFlowAmount(0);
-        setPaymentFlowMonthName('');
         setIsPaymentFlowOpen(true);
     }, [payableAmountData]);
 
@@ -607,8 +603,6 @@ const PaymentPage = () => {
                     onClose={() => {
                         setIsPaymentFlowOpen(false);
                         setPaymentFlowType('mess_bill');
-                        setPaymentFlowAmount(0);
-                        setPaymentFlowMonthName('');
                     }}
                     user={user}
                     isAdmin={isAdmin}
