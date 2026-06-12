@@ -216,7 +216,7 @@ const SuccessView = ({ onClose }) => (
   </div>
 );
 
-const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthName = '', user, isAdmin, onRazorpayPay, onSuccess }) => {
+const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthName = '', onRazorpayPay, onSuccess }) => {
   const [exiting, setExiting] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
   const dialogRef = useRef(null);

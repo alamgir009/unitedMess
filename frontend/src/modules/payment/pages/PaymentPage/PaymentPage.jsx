@@ -174,7 +174,7 @@ const PaymentPage = () => {
             });
         }
         setGasBillModal({ open: true, amount, monthName });
-    }, [getBillingPeriod]);
+    }, []);
 
     const latestMessBillPayment = useMemo(() => {
         if (lastPaymentId && payments) {
@@ -466,6 +466,9 @@ const PaymentPage = () => {
                         onViewModeChange={setViewMode}
                         onAddClick={openCreate}
                         gasBillStatus={gasBillStatus}
+                        gasBillAmount={gasBillVal}
+                        onGasBillPay={handleGasBillPayClick}
+                        isPaying={isPaying}
                     />
 
                     {/* Stats bar */}
