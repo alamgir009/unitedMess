@@ -465,10 +465,6 @@ const PaymentPage = () => {
                         viewMode={viewMode}
                         onViewModeChange={setViewMode}
                         onAddClick={openCreate}
-                        gasBillStatus={gasBillStatus}
-                        gasBillAmount={gasBillVal}
-                        onGasBillPay={handleGasBillPayClick}
-                        isPaying={isPaying}
                     />
 
                     {/* Stats bar */}
