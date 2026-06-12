@@ -674,8 +674,6 @@ const PaymentPage = () => {
                     onClose={() => setGasBillModal({ open: false, amount: 0, monthName: '' })}
                     payableAmount={gasBillModal.amount}
                     payableMonthName={gasBillModal.monthName}
-                    user={user}
-                    isAdmin={isAdmin}
                     onRazorpayPay={handleRazorpayCheckout}
                     onSuccess={refreshData}
                 />
