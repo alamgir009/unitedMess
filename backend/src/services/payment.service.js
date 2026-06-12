@@ -34,10 +34,28 @@ const getUserFieldByType = (paymentType) => {
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Syncs user.payment or user.gasBill after any payment status change
+ * Syncs user.payment or user.gasBill after any payment status change.
+ * Only updates the user-level status field when the payment is for the
+ * current billing period — past-period payments must NOT overwrite
+ * the user's current-period status.
  */
-const syncUserPaymentStatus = async (userId, paymentType, paymentStatus) => {
+const syncUserPaymentStatus = async (userId, paymentType, paymentStatus, paymentMonth) => {
     try {
+        // Only sync if the payment is for the current billing period.
+        // Past-period payments should never update the single flat
+        // user.payment / user.gasBill field — that field represents the
+        // current period's status, not a historical record.
+        if (paymentMonth) {
+            const { monthName } = getBillingPeriod();
+            if (paymentMonth !== monthName) {
+                console.info(
+                    `[Sync] Skipping user status sync: payment for ${paymentMonth} ` +
+                    `differs from current billing period ${monthName}.`
+                );
+                return;
+            }
+        }
+
         const userStatus = PAYMENT_TO_USER_STATUS[paymentStatus];
         if (!userStatus) {
             console.warn(`[Sync] Unknown payment status: ${paymentStatus}. Skipping user status sync.`);
@@ -199,7 +217,7 @@ const createPayment = async (paymentBody) => {
     if (payment.status === 'completed') {
         // Sync payment status
         // Ensure this function receives student._id
-        await syncUserPaymentStatus(student._id, payment.type, payment.status);
+        await syncUserPaymentStatus(student._id, payment.type, payment.status, payment.month);
 
         // Send payment email
         // Ensure this function receives student.email and student.name
@@ -390,7 +408,7 @@ const verifyOnlinePayment = async ({ orderId, paymentId, signature }) => {
         .lean();
 
     for (const p of updatedPayments) {
-        await syncUserPaymentStatus(p.user, p.type, p.status);
+        await syncUserPaymentStatus(p.user, p.type, p.status, p.month);
         await syncInvoiceAfterPayment(p.user, p.month);
         if (user) {
             sendPaymentEmail(user, p, 'completed').catch(err => {
@@ -526,7 +544,7 @@ const updatePaymentById = async (paymentId, updateBody) => {
             .lean();
 
         await Promise.all([
-            syncUserPaymentStatus(payment.user, payment.type, payment.status),
+            syncUserPaymentStatus(payment.user, payment.type, payment.status, payment.month),
             user && ['completed', 'failed', 'refunded'].includes(safeUpdate.status)
                 ? sendPaymentEmail(user, payment, safeUpdate.status)
                 : Promise.resolve()
@@ -557,7 +575,7 @@ const deletePaymentById = async (paymentId) => {
 
     await Promise.all([
         payment.deleteOne(),
-        syncUserPaymentStatus(payment.user, payment.type, 'pending'),
+        syncUserPaymentStatus(payment.user, payment.type, 'pending', payment.month),
     ]);
 
     await syncInvoiceAfterPayment(payment.user, payment.month);
@@ -633,7 +651,7 @@ const createBulkPayments = async (body) => {
 
     // Sync user payment statuses in parallel
     await Promise.all(createdPayments.map(p =>
-        syncUserPaymentStatus(p.user, p.type, p.status)
+        syncUserPaymentStatus(p.user, p.type, p.status, p.month)
     ));
 
     // Emails fire non-blocking — never fail the request
@@ -706,7 +724,7 @@ const verifyUpiManualPaymentService = async (paymentId, { status, adminRemarks, 
     const user = await User.findById(payment.user).select('name email').lean();
 
     await Promise.all([
-        syncUserPaymentStatus(payment.user, payment.type, status),
+        syncUserPaymentStatus(payment.user, payment.type, status, payment.month),
         syncInvoiceAfterPayment(payment.user, payment.month),
     ]);
 
