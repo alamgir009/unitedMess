@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, memo, useCallback, useRef } from 'react';
+import { useState, useEffect, memo, useCallback, useRef } from 'react';
 import { toast } from 'react-hot-toast';
 import {
   HiOutlineXMark,
@@ -217,8 +217,7 @@ const SuccessView = ({ onClose }) => (
 );
 
 const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthName = '', user, isAdmin, onRazorpayPay, onSuccess }) => {
-  const [exiting, setExiting] = useState(false);
-  const [shouldRender, setShouldRender] = useState(false);
+  const [animatingOut, setAnimatingOut] = useState(false);
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
   const focusableRef = useRef([]);
@@ -240,21 +239,22 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
 
   useEffect(() => {
     if (isOpen) {
+      setAnimatingOut(false);
       previousFocusRef.current = document.activeElement;
-      setExiting(false);
-      setShouldRender(true);
-    } else {
-      setExiting(true);
-      const timer = setTimeout(() => {
-        setShouldRender(false);
-        resetState();
-        if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
-          previousFocusRef.current.focus();
-        }
-      }, 200);
-      return () => clearTimeout(timer);
     }
-  }, [isOpen, resetState]);
+  }, [isOpen]);
+
+  const handleClose = useCallback(() => {
+    setAnimatingOut(true);
+    setTimeout(() => {
+      setAnimatingOut(false);
+      resetState();
+      if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
+        previousFocusRef.current.focus();
+      }
+      onClose();
+    }, 200);
+  }, [onClose, resetState]);
 
   const fetchUpiDetails = useCallback(async () => {
     setLoadingUpi(true);
@@ -272,7 +272,7 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
   }, []);
 
   useEffect(() => {
-    if (!shouldRender || exiting) return;
+    if (!isOpen) return;
     fetchUpiDetails();
     const scrollY = window.scrollY;
     const html = document.documentElement;
@@ -287,7 +287,7 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
       html.style.top = '';
       window.scrollTo(0, scrollY);
     };
-  }, [shouldRender, exiting, fetchUpiDetails]);
+  }, [isOpen, fetchUpiDetails]);
 
   const rebuildFocusable = useCallback(() => {
     const dialog = dialogRef.current;
@@ -297,20 +297,19 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
   }, []);
 
   useEffect(() => {
-    if (shouldRender && !exiting) {
-      rebuildFocusable();
-      if (focusableRef.current.length > 0) {
-        focusableRef.current[0].focus();
-      } else {
-        dialogRef.current?.focus();
-      }
+    if (!isOpen) return;
+    rebuildFocusable();
+    if (focusableRef.current.length > 0) {
+      focusableRef.current[0].focus();
+    } else {
+      dialogRef.current?.focus();
     }
-  }, [shouldRender, exiting, payStep, rebuildFocusable]);
+  }, [isOpen, payStep, rebuildFocusable]);
 
   useEffect(() => {
-    if (!shouldRender || exiting) return;
+    if (!isOpen) return;
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key === 'Escape') { handleClose(); return; }
       if (e.key === 'Tab') {
         const focusable = focusableRef.current;
         if (focusable.length === 0) return;
@@ -325,7 +324,7 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [shouldRender, exiting, onClose]);
+  }, [isOpen, animatingOut, handleClose]);
 
   const copyToClipboard = useCallback(async (text) => {
     try {
@@ -368,7 +367,8 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
 
   const handleBackFromPay = useCallback(() => setPayStep(2), []);
 
-  if (!shouldRender) return null;
+  const isClosing = animatingOut && !isOpen;
+  if (!isOpen && !animatingOut) return null;
 
   const baseAmount = payableAmount;
   const gatewayFee = Math.round(baseAmount * 0.02 * 100) / 100;
@@ -385,16 +385,16 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
       className={cn(
         'fixed inset-0 z-50 flex items-end sm:items-center justify-center',
         'transition-opacity duration-200 ease-out motion-reduce:transition-none',
-        exiting ? 'opacity-0' : 'opacity-100'
+        isClosing ? 'opacity-0' : 'opacity-100'
       )}
     >
       <div
-        onClick={onClose}
+        onClick={handleClose}
         aria-hidden="true"
         className={cn(
           'fixed inset-0 bg-black/40',
           'transition-opacity duration-200 motion-reduce:transition-none',
-          exiting ? 'opacity-0' : 'opacity-100'
+          isClosing ? 'opacity-0' : 'opacity-100'
         )}
       />
 
@@ -405,7 +405,7 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
         'overflow-hidden z-10',
         'max-h-[90dvh] sm:max-h-[85dvh] flex flex-col',
         'transition-all duration-200 ease-out motion-reduce:transition-none',
-        exiting ? 'opacity-0 translate-y-4 sm:translate-y-2' : 'opacity-100 translate-y-0'
+        isClosing ? 'opacity-0 translate-y-4 sm:translate-y-2' : 'opacity-100 translate-y-0'
       )}>
         <div className="h-1 bg-primary/80 shrink-0" />
 
@@ -419,7 +419,7 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
             </h3>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="flex items-center justify-center w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             aria-label="Close payment dialog"
           >
@@ -675,11 +675,11 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
             </div>
           )}
 
-          {payStep === 4 && <SuccessView onClose={onClose} />}
+          {payStep === 4 && <SuccessView onClose={handleClose} />}
         </div>
       </div>
     </div>
   );
 };
 
-export default memo(GasBillPaymentModal);
+export default GasBillPaymentModal;

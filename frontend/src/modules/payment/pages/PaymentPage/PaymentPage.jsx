@@ -166,7 +166,8 @@ const PaymentPage = () => {
         try {
             const period = getBillingPeriod();
             monthName = period?.monthName || '';
-        } catch {
+        } catch (err) {
+            console.error('[GasBill] getBillingPeriod failed:', err);
             monthName = new Date().toLocaleDateString('en-US', {
                 month: 'long', year: 'numeric',
             });
