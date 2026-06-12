@@ -158,9 +158,21 @@ const PaymentPage = () => {
     }, [payableAmountData]);
 
     const handleGasBillPayClick = useCallback((amount) => {
-        const { monthName } = getBillingPeriod();
+        if (!amount || amount <= 0) {
+            toast.error('No gas bill amount due.');
+            return;
+        }
+        let monthName = '';
+        try {
+            const period = getBillingPeriod();
+            monthName = period?.monthName || '';
+        } catch {
+            monthName = new Date().toLocaleDateString('en-US', {
+                month: 'long', year: 'numeric',
+            });
+        }
         setGasBillModal({ open: true, amount, monthName });
-    }, []);
+    }, [getBillingPeriod]);
 
     const latestMessBillPayment = useMemo(() => {
         if (lastPaymentId && payments) {

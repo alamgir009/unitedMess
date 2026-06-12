@@ -6,6 +6,7 @@ import {
     HiOutlineCurrencyRupee,
     HiOutlineShieldCheck,
     HiOutlineCheckCircle,
+    HiOutlineFire,
 } from 'react-icons/hi2';
 
 const PaymentHeader = ({
@@ -60,24 +61,33 @@ const PaymentHeader = ({
                         </div>
                     </div>
                 ) : gasBillVal > 0 ? (
-                    <div className="flex items-center gap-3 px-3.5 h-[42px] rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 shrink-0 select-none">
-                        <div className="flex flex-col justify-center leading-none">
-                            <span className="text-[9px] uppercase font-bold tracking-widest opacity-60">Gas Bill</span>
-                            <span className="text-xs font-black tabular-nums mt-0.5">
-                                ₹{gasBillVal.toLocaleString('en-IN')}
-                            </span>
+                    <div className="flex items-center gap-2 h-[42px] rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 shrink-0 select-none shadow-sm">
+                        <div className="flex items-center gap-2 pl-3.5 pr-1 h-full">
+                            <div className="flex flex-col justify-center leading-none">
+                                <span className="text-[9px] uppercase font-bold tracking-widest opacity-60">Gas Bill</span>
+                                <span className="text-xs font-black tabular-nums mt-0.5">
+                                    ₹{gasBillVal.toLocaleString('en-IN')}
+                                </span>
+                            </div>
                         </div>
                         <button
                             disabled={isPaying}
                             onClick={() => onPayNowClick(gasBillVal)}
-                            className="inline-flex items-center justify-center px-2.5 h-7 rounded-lg text-[10px] font-bold text-white shadow-sm
-                                bg-[#02042B] border border-[#3395FF]/30 hover:border-[#3395FF]/70 active:scale-95
-                                transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
+                            className="relative inline-flex items-center justify-center gap-1.5 px-4 h-[34px] mr-[4px] rounded-lg text-xs font-bold text-white shadow-md
+                                bg-gradient-to-br from-slate-900 to-slate-800
+                                hover:from-slate-800 hover:to-slate-700
+                                active:scale-[0.97] active:shadow-sm
+                                transition-all duration-150 ease-out
+                                disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100
+                                border border-white/10 hover:border-white/20
+                                before:absolute before:inset-0 before:rounded-lg before:bg-gradient-to-br before:from-white/10 before:to-transparent before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-150"
                         >
                             {isPaying ? (
-                                <Spinner size="sm" color="white" className="!w-2.5 !h-2.5 !border-[1.5px] mr-1" />
-                            ) : null}
-                            {isPaying ? 'Processing…' : 'Pay'}
+                                <Spinner size="sm" color="white" className="!w-3 !h-3 !border-[1.5px]" />
+                            ) : (
+                                <HiOutlineFire className="w-3.5 h-3.5" />
+                            )}
+                            <span className="relative">{isPaying ? 'Processing' : 'Pay'}</span>
                         </button>
                     </div>
                 ) : null}
