@@ -235,6 +235,8 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
 
   const resetState = useCallback(() => {
     setPayStep(1);
+    setSelectedMethod('upi');
+    setQrCodeError(false);
     setUtr('');
   }, []);
 
@@ -243,6 +245,7 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
       previousFocusRef.current = document.activeElement;
       setExiting(false);
       setShouldRender(true);
+      resetState();
     } else {
       setExiting(true);
       const timer = setTimeout(() => {
