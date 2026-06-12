@@ -536,7 +536,7 @@ const PaymentPage = () => {
                                         <button
                                             onClick={() => handleGasBillPayClick(gasBillVal)}
                                             disabled={isPaying}
-                                            className="inline-flex items-center justify-center gap-1.5 px-4 min-w-[80px] h-9 rounded-lg text-[13px] font-medium tracking-tight text-white bg-primary hover:brightness-110 active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none transition-all duration-[120ms] shadow-sm"
+                                            className="inline-flex items-center justify-center gap-1.5 px-4 min-w-[80px] h-[42px] rounded-xl text-sm font-semibold tracking-tight text-white bg-primary hover:brightness-110 hover:shadow-md active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none transition-all duration-[120ms] shadow-sm"
                                         >
                                             {isPaying ? (
                                                 <Spinner size="sm" color="white" className="!w-4 !h-4 !border-[1.5px]" />
