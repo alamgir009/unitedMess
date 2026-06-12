@@ -217,7 +217,8 @@ const SuccessView = ({ onClose }) => (
 );
 
 const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthName = '', user, isAdmin, onRazorpayPay, onSuccess }) => {
-  const [animatingOut, setAnimatingOut] = useState(false);
+  const [exiting, setExiting] = useState(false);
+  const [shouldRender, setShouldRender] = useState(false);
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
   const focusableRef = useRef([]);
@@ -239,22 +240,25 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
 
   useEffect(() => {
     if (isOpen) {
-      setAnimatingOut(false);
       previousFocusRef.current = document.activeElement;
+      setExiting(false);
+      setShouldRender(true);
+    } else {
+      setExiting(true);
+      const timer = setTimeout(() => {
+        setShouldRender(false);
+        resetState();
+        if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
+          previousFocusRef.current.focus();
+        }
+      }, 200);
+      return () => clearTimeout(timer);
     }
-  }, [isOpen]);
+  }, [isOpen, resetState]);
 
   const handleClose = useCallback(() => {
-    setAnimatingOut(true);
-    setTimeout(() => {
-      setAnimatingOut(false);
-      resetState();
-      if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
-        previousFocusRef.current.focus();
-      }
-      onClose();
-    }, 200);
-  }, [onClose, resetState]);
+    onClose();
+  }, [onClose]);
 
   const fetchUpiDetails = useCallback(async () => {
     setLoadingUpi(true);
@@ -272,7 +276,7 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
   }, []);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!shouldRender || exiting) return;
     fetchUpiDetails();
     const scrollY = window.scrollY;
     const html = document.documentElement;
@@ -287,7 +291,7 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
       html.style.top = '';
       window.scrollTo(0, scrollY);
     };
-  }, [isOpen, fetchUpiDetails]);
+  }, [shouldRender, exiting, fetchUpiDetails]);
 
   const rebuildFocusable = useCallback(() => {
     const dialog = dialogRef.current;
@@ -297,17 +301,17 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
   }, []);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!shouldRender || exiting) return;
     rebuildFocusable();
     if (focusableRef.current.length > 0) {
       focusableRef.current[0].focus();
     } else {
       dialogRef.current?.focus();
     }
-  }, [isOpen, payStep, rebuildFocusable]);
+  }, [shouldRender, exiting, payStep, rebuildFocusable]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!shouldRender || exiting) return;
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') { handleClose(); return; }
       if (e.key === 'Tab') {
@@ -324,7 +328,7 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, animatingOut, handleClose]);
+  }, [shouldRender, exiting, handleClose]);
 
   const copyToClipboard = useCallback(async (text) => {
     try {
@@ -367,8 +371,7 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
 
   const handleBackFromPay = useCallback(() => setPayStep(2), []);
 
-  const isClosing = animatingOut && !isOpen;
-  if (!isOpen && !animatingOut) return null;
+  if (!shouldRender) return null;
 
   const baseAmount = payableAmount;
   const gatewayFee = Math.round(baseAmount * 0.02 * 100) / 100;
@@ -385,7 +388,7 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
       className={cn(
         'fixed inset-0 z-50 flex items-end sm:items-center justify-center',
         'transition-opacity duration-200 ease-out motion-reduce:transition-none',
-        isClosing ? 'opacity-0' : 'opacity-100'
+        exiting ? 'opacity-0' : 'opacity-100'
       )}
     >
       <div
@@ -394,7 +397,7 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
         className={cn(
           'fixed inset-0 bg-black/40',
           'transition-opacity duration-200 motion-reduce:transition-none',
-          isClosing ? 'opacity-0' : 'opacity-100'
+          exiting ? 'opacity-0' : 'opacity-100'
         )}
       />
 
@@ -405,7 +408,7 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
         'overflow-hidden z-10',
         'max-h-[90dvh] sm:max-h-[85dvh] flex flex-col',
         'transition-all duration-200 ease-out motion-reduce:transition-none',
-        isClosing ? 'opacity-0 translate-y-4 sm:translate-y-2' : 'opacity-100 translate-y-0'
+        exiting ? 'opacity-0 translate-y-4 sm:translate-y-2' : 'opacity-100 translate-y-0'
       )}>
         <div className="h-1 bg-primary/80 shrink-0" />
 
