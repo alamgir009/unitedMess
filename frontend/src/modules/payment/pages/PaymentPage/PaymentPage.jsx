@@ -113,6 +113,9 @@ const PaymentPage = () => {
     const [invoiceFetchDone, setInvoiceFetchDone] = useState(false);
     const [isPaymentFlowOpen, setIsPaymentFlowOpen] = useState(false);
     const [activePaymentMonth, setActivePaymentMonth] = useState('');
+    const [paymentFlowType, setPaymentFlowType] = useState('mess_bill');
+    const [paymentFlowAmount, setPaymentFlowAmount] = useState(0);
+    const [paymentFlowMonthName, setPaymentFlowMonthName] = useState('');
     const [verifyPayment, setVerifyPayment] = useState(null);
     const [isUpiVerifyOpen, setIsUpiVerifyOpen] = useState(false);
 
@@ -143,6 +146,16 @@ const PaymentPage = () => {
     const handlePayBillClick = useCallback((monthName) => {
         setInvoiceModal(prev => ({ ...prev, open: false }));
         setActivePaymentMonth(monthName || payableAmountData?.monthName || '');
+        setPaymentFlowType('mess_bill');
+        setPaymentFlowAmount(0);
+        setPaymentFlowMonthName('');
+        setIsPaymentFlowOpen(true);
+    }, [payableAmountData]);
+
+    const handleGasBillPayClick = useCallback((amount) => {
+        setPaymentFlowType('gas_bill');
+        setPaymentFlowAmount(amount);
+        setPaymentFlowMonthName(payableAmountData?.monthName || '');
         setIsPaymentFlowOpen(true);
     }, [payableAmountData]);
 
@@ -432,7 +445,7 @@ const PaymentPage = () => {
                         onAddClick={openCreate}
                         payableGasBill={gasBillVal}
                         gasBillStatus={gasBillStatus}
-                        onPayNowClick={handleRazorpayCheckout}
+                        onPayNowClick={handleGasBillPayClick}
                         isPaying={isPaying}
                     />
 
@@ -580,12 +593,20 @@ const PaymentPage = () => {
 
                 <PaymentFlowModal
                     isOpen={isPaymentFlowOpen}
-                    onClose={() => setIsPaymentFlowOpen(false)}
+                    onClose={() => {
+                        setIsPaymentFlowOpen(false);
+                        setPaymentFlowType('mess_bill');
+                        setPaymentFlowAmount(0);
+                        setPaymentFlowMonthName('');
+                    }}
                     user={user}
                     isAdmin={isAdmin}
                     activeInvoiceMonth={activePaymentMonth}
                     onRazorpayPay={handleRazorpayCheckout}
                     onSuccess={refreshData}
+                    paymentType={paymentFlowType}
+                    payableAmount={paymentFlowAmount}
+                    payableMonthName={paymentFlowMonthName}
                 />
 
                 <UpiVerificationModal

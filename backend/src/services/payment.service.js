@@ -323,7 +323,8 @@ const createOnlinePaymentOrderForMonths = async (userId, months, type) => {
             status: 'completed'
         });
         if (duplicate) {
-            throw new AppError(`${monthStr} mess bill is already paid.`, 409);
+            const label = type === 'gas_bill' ? 'Gas bill' : 'Payment';
+            throw new AppError(`${monthStr} ${label.toLowerCase()} is already paid.`, 409);
         }
 
         totalAmount += remaining;

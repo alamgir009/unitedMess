@@ -288,11 +288,9 @@ const uploadQrCode = asyncHandler(async (req, res) => {
  * Submit manual UPI payment UTR references for verification
  */
 const submitUpiManualPayment = asyncHandler(async (req, res) => {
-    const { months, transactionId, remarks } = req.body;
+    const { months, transactionId, remarks, type } = req.body;
+    const paymentType = type === 'gas_bill' ? 'gas_bill' : 'mess_bill';
 
-    if (!months || !Array.isArray(months) || months.length === 0) {
-        throw new AppError('At least one month must be selected', 400);
-    }
     if (!transactionId) {
         throw new AppError('Transaction ID (UTR) is required', 400);
     }
@@ -311,41 +309,93 @@ const submitUpiManualPayment = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const createdPayments = [];
 
-    for (const monthStr of months) {
-        const parsed = paymentService.parseMonthString(monthStr);
-        if (!parsed) {
-            throw new AppError(`Invalid month format: ${monthStr}`, 400);
+    if (paymentType === 'gas_bill') {
+        // Gas bill: single payment for current billing period
+        const { monthName: billingMonthName } = getBillingPeriod();
+        const user = await User.findById(userId).select('gasBillCharge gasBill').lean();
+        if (!user) throw new AppError('User not found', 404);
+
+        const amount = user.gasBillCharge || 0;
+        if (amount <= 0) {
+            throw new AppError('No gas bill amount due', 400);
         }
 
-        const invoice = await invoiceService.getInvoice(userId, parsed.month, parsed.year);
-        const remaining = Math.max(0, invoice.totalPayable - invoice.paidAmount);
-        if (remaining <= 0) {
-            throw new AppError(`Invoice for ${monthStr} is already fully paid`, 400);
+        // Check duplicate completed payment
+        const completed = await Payment.exists({
+            user: userId,
+            type: 'gas_bill',
+            month: billingMonthName,
+            status: 'completed'
+        });
+        if (completed) {
+            throw new AppError(`Gas bill already paid for ${billingMonthName}`, 400);
         }
 
         // Check duplicate pending verification
         const pendingVerify = await Payment.exists({
             user: userId,
-            month: monthStr,
+            type: 'gas_bill',
+            month: billingMonthName,
             status: 'pending_verification'
         });
         if (pendingVerify) {
-            throw new AppError(`A payment verification is already pending for ${monthStr}`, 400);
+            throw new AppError(`A gas bill payment verification is already pending for ${billingMonthName}`, 400);
         }
 
         const payment = await Payment.create({
             user: userId,
-            amount: remaining,
-            month: monthStr,
-            type: 'mess_bill',
+            amount,
+            month: billingMonthName,
+            type: 'gas_bill',
             status: 'pending_verification',
             paymentMethod: 'upi_manual',
             transactionId: cleanUtr,
             remarks: remarks || '',
             createdBy: userId
         });
-
         createdPayments.push(payment);
+    } else {
+        // Mess bill: payment per month
+        if (!months || !Array.isArray(months) || months.length === 0) {
+            throw new AppError('At least one month must be selected', 400);
+        }
+
+        for (const monthStr of months) {
+            const parsed = paymentService.parseMonthString(monthStr);
+            if (!parsed) {
+                throw new AppError(`Invalid month format: ${monthStr}`, 400);
+            }
+
+            const invoice = await invoiceService.getInvoice(userId, parsed.month, parsed.year);
+            const remaining = Math.max(0, invoice.totalPayable - invoice.paidAmount);
+            if (remaining <= 0) {
+                throw new AppError(`Invoice for ${monthStr} is already fully paid`, 400);
+            }
+
+            // Check duplicate pending verification
+            const pendingVerify = await Payment.exists({
+                user: userId,
+                month: monthStr,
+                status: 'pending_verification'
+            });
+            if (pendingVerify) {
+                throw new AppError(`A payment verification is already pending for ${monthStr}`, 400);
+            }
+
+            const payment = await Payment.create({
+                user: userId,
+                amount: remaining,
+                month: monthStr,
+                type: 'mess_bill',
+                status: 'pending_verification',
+                paymentMethod: 'upi_manual',
+                transactionId: cleanUtr,
+                remarks: remarks || '',
+                createdBy: userId
+            });
+
+            createdPayments.push(payment);
+        }
     }
 
     // Notify all admins about the new UTR submission
@@ -367,6 +417,7 @@ const submitUpiManualPayment = asyncHandler(async (req, res) => {
                 userName: user?.name || 'Unknown',
                 amount: totalAmount,
                 months: createdPayments.map(p => p.month),
+                type: paymentType,
             },
         }
     );
