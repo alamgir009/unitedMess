@@ -117,15 +117,15 @@ export function usePayment({ user, onSuccess, onCheckoutReady }) {
 
         } catch (err) {
             const statusCode = err?.response?.status;
-            let msg = err?.response?.data?.message || err?.message || 'Payment failed';
-            if (statusCode === 400 || msg.includes('preferences')) {
-                msg = 'Payment gateway rejected the request. Please contact the administrator to verify the Razorpay configuration.';
-            }
-            if (statusCode === 409 || msg.includes('already completed') || msg.includes('already paid')) {
+            let msg = err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Payment failed';
+            if (statusCode === 400) {
+                msg = Array.isArray(msg) ? msg.join('. ') : msg;
+            } else if (statusCode === 409 || msg.includes('already completed') || msg.includes('already paid')) {
                 msg = 'This bill has already been paid. Refresh to see updated status.';
-            }
-            if (msg.includes('timeout') || msg.includes('load')) {
+            } else if (msg.includes('timeout') || msg.includes('load')) {
                 msg = 'Payment gateway failed to initialize. Check your internet connection and try again.';
+            } else if (statusCode === 502 || msg.includes('preferences')) {
+                msg = 'Payment gateway rejected the request. Please contact the administrator to verify the Razorpay configuration.';
             }
             toast.error(msg);
         } finally {

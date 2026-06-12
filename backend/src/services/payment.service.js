@@ -282,6 +282,7 @@ const createOnlinePaymentOrder = async (userId, amount, type) => {
         status: 'pending',
         paymentMethod: 'razorpay',
         transactionId: order.id,
+        createdBy: userId,
     });
 
     return { order, payment };
