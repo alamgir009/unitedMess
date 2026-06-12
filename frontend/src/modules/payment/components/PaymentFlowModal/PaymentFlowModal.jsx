@@ -12,6 +12,7 @@ import {
   HiOutlineCheck,
   HiOutlineLockClosed,
   HiOutlineReceiptRefund,
+  HiOutlineCurrencyRupee,
   HiOutlineCreditCard,
   HiOutlineDevicePhoneMobile,
   HiOutlineBanknotes,
@@ -25,7 +26,8 @@ import paymentService from '../../services/payment.service';
 
 const UTR_PATTERN = /^[a-zA-Z0-9]{8,20}$/;
 
-const STEP_LABELS = ['Months', 'Method', 'Pay'];
+const MESS_STEP_LABELS = ['Months', 'Method', 'Pay'];
+const GAS_STEP_LABELS  = ['Amount', 'Method', 'Pay'];
 
 // ─── Brand Logo SVG Components ──────────────────────────────────────────────
 const UpiLogo = memo(({ className, ...props }) => (
@@ -113,7 +115,7 @@ NpciLogo.displayName = 'NpciLogo';
 
 // ─── Sub‑components (memoised) ──────────────────────────────────────────────
 
-const StepIndicator = memo(({ payStep, labels = STEP_LABELS }) => (
+const StepIndicator = memo(({ payStep, labels = MESS_STEP_LABELS }) => (
   <div
     className="flex items-center justify-between px-1"
     role="progressbar"
@@ -431,8 +433,10 @@ const PaymentSummary = ({ total, months, compact }) => (
 );
 
 // ─── Main Component ────────────────────────────────────────────────────────
-const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazorpayPay, onSuccess, paymentType = 'mess_bill' }) => {
-  // State and refs as before – kept identical for no logic change
+const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazorpayPay, onSuccess, paymentType = 'mess_bill', gasBillAmount = 0 }) => {
+  const isGasBill = paymentType === 'gas_bill';
+  const STEP_LABELS = isGasBill ? GAS_STEP_LABELS : MESS_STEP_LABELS;
+
   const [exiting, setExiting] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
   const dialogRef = useRef(null);
@@ -460,10 +464,10 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
   const resetState = useCallback(() => {
     setPayStep(1);
     setUtr('');
-    setSelectedMonths([]);
+    setSelectedMonths(isGasBill && activeInvoiceMonth ? [activeInvoiceMonth] : []);
     setIsAdminUpiEdit(false);
     setQrFile(null);
-  }, []);
+  }, [isGasBill, activeInvoiceMonth]);
 
   // Open/Close logic – unchanged
   useEffect(() => {
@@ -524,7 +528,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
 
   useEffect(() => {
     if (!shouldRender || exiting) return;
-    fetchMonths();
+    if (!isGasBill) fetchMonths();
     fetchUpiDetails();
 
     const scrollY = window.scrollY;
@@ -541,7 +545,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
       html.style.top = '';
       window.scrollTo(0, scrollY);
     };
-  }, [shouldRender, exiting, fetchMonths, fetchUpiDetails]);
+  }, [shouldRender, exiting, fetchMonths, fetchUpiDetails, isGasBill]);
 
   const rebuildFocusable = useCallback(() => {
     const dialog = dialogRef.current;
@@ -608,8 +612,8 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
   }, []);
 
   const selectedTotalPayable = useMemo(
-    () => payableMonths.filter((m) => selectedMonths.includes(m.monthName)).reduce((sum, m) => sum + m.remainingAmount, 0),
-    [payableMonths, selectedMonths]
+    () => isGasBill ? gasBillAmount : payableMonths.filter((m) => selectedMonths.includes(m.monthName)).reduce((sum, m) => sum + m.remainingAmount, 0),
+    [payableMonths, selectedMonths, isGasBill, gasBillAmount]
   );
 
   const handleSubmitUtr = useCallback(async () => {
@@ -624,10 +628,11 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
     }
     setSubmittingUpi(true);
     try {
+      const months = isGasBill ? [activeInvoiceMonth] : selectedMonths;
       const res = await paymentService.submitUpiManual({
-        months: selectedMonths,
+        months,
         transactionId: trimmed,
-        remarks: `Manual UPI transfer for ${selectedMonths.join(', ')}`,
+        remarks: `Manual UPI transfer for ${months.join(', ')}`,
         type: paymentType,
       });
       if (res?.success) {
@@ -640,7 +645,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
     } finally {
       setSubmittingUpi(false);
     }
-  }, [utr, selectedMonths, onSuccess, paymentType]);
+  }, [utr, selectedMonths, onSuccess, paymentType, isGasBill, activeInvoiceMonth]);
 
   const handleUpdateUpiConfig = useCallback(
     async (e) => {
@@ -680,15 +685,15 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
   const handleRazorpayProceed = useCallback(() => {
     if (typeof onRazorpayPay === 'function') {
       const baseAmount = selectedTotalPayable;
-      Promise.resolve(onRazorpayPay(baseAmount, paymentType, selectedMonths)).catch(() => {});
+      Promise.resolve(onRazorpayPay(baseAmount, paymentType, isGasBill ? null : selectedMonths)).catch(() => {});
     }
-  }, [onRazorpayPay, selectedTotalPayable, paymentType, selectedMonths]);
+  }, [onRazorpayPay, selectedTotalPayable, paymentType, selectedMonths, isGasBill]);
 
   const handleBackFromPay = useCallback(() => setPayStep(2), []);
 
   if (!shouldRender) return null;
 
-  const title = isAdminUpiEdit ? 'Setup UPI Billing' : 'Mess Bill Payment';
+  const title = isAdminUpiEdit ? 'Setup UPI Billing' : isGasBill ? 'Gas Bill Payment' : 'Mess Bill Payment';
 
   return (
     <div
@@ -770,7 +775,39 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
             <>
               {isStepFlow && <StepIndicator payStep={payStep} labels={STEP_LABELS} />}
 
-              {payStep === 1 && (
+              {payStep === 1 && (isGasBill ? (
+                <div className="space-y-5">
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">Gas Bill Payment</h4>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Pay your gas bill share for the current billing period.
+                    </p>
+                  </div>
+
+                  <div className="bg-card border border-border rounded-xl p-5 space-y-3">
+                    <div className="flex items-center gap-3 pb-3 border-b border-border">
+                      <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                        <HiOutlineCurrencyRupee className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-foreground">Gas Bill Share</p>
+                        <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
+                          {activeInvoiceMonth || 'Current Period'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center pt-1">
+                      <span className="text-sm text-muted-foreground font-medium">Amount Due</span>
+                      <span className="text-xl font-black text-foreground font-mono tabular-nums">₹{fmt(gasBillAmount)}</span>
+                    </div>
+                  </div>
+
+                  <Button variant="primary" size="lg" fullWidth onClick={() => setPayStep(2)} disabled={gasBillAmount <= 0} className="mt-1">
+                    Continue to Payment Method
+                    <HiOutlineArrowRight className="w-4 h-4 ml-1.5" />
+                  </Button>
+                </div>
+              ) : (
                 <div className="space-y-5">
                   <div>
                     <h4 className="text-sm font-semibold text-foreground">Select Billing Cycle</h4>
@@ -818,7 +855,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
                     <HiOutlineArrowRight className="w-4 h-4 ml-1.5" />
                   </Button>
                 </div>
-              )}
+              ))}
 
               {/* Step 2: Choose Method */}
               {payStep === 2 && (

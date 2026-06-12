@@ -32,7 +32,6 @@ import MessBillInvoice  from '../../components/MessBillInvoice/MessBillInvoice';
 import MonthlyInvoiceModal from '../../components/MonthlyInvoiceModal/MonthlyInvoiceModal';
 import PaymentDeleteDialog from '../../components/PaymentDeleteDialog/PaymentDeleteDialog';
 import PaymentFlowModal from '../../components/PaymentFlowModal/PaymentFlowModal';
-import GasBillPaymentModal from '../../components/GasBillPaymentModal/GasBillPaymentModal';
 import UpiVerificationModal from '../../components/UpiVerificationModal/UpiVerificationModal';
 
 import {
@@ -654,13 +653,15 @@ const PaymentPage = () => {
                     paymentType={paymentFlowType}
                 />
 
-                <GasBillPaymentModal
+                <PaymentFlowModal
                     isOpen={gasBillModal.open}
                     onClose={() => setGasBillModal({ open: false, amount: 0, monthName: '' })}
-                    payableAmount={gasBillModal.amount}
-                    payableMonthName={gasBillModal.monthName}
+                    isAdmin={isAdmin}
+                    activeInvoiceMonth={gasBillModal.monthName}
                     onRazorpayPay={handleCheckout}
                     onSuccess={refreshData}
+                    paymentType="gas_bill"
+                    gasBillAmount={gasBillModal.amount}
                 />
 
                 <UpiVerificationModal
