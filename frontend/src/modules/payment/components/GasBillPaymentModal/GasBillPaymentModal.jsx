@@ -369,7 +369,7 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
   const handleRazorpayProceed = useCallback(() => {
     if (typeof onRazorpayPay !== 'function') return;
     const baseAmount = payableAmount;
-    onRazorpayPay(baseAmount, 'gas_bill', null);
+    Promise.resolve(onRazorpayPay(baseAmount, 'gas_bill', null)).catch(() => {});
   }, [onRazorpayPay, payableAmount]);
 
   const handleBackFromPay = useCallback(() => setPayStep(2), []);

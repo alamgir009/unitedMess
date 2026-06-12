@@ -96,7 +96,6 @@ const PaymentPage = () => {
     const isAdmin = user?.role === 'admin';
 
     /* ── state ── */
-    const [isPaying,       setIsPaying]       = useState(false);
     const [isModalOpen,    setIsModalOpen]    = useState(false);
     const [invoiceModal,   setInvoiceModal]   = useState({ open: false, year: null, month: null, monthName: '', paymentRecord: null, userId: null });
     const [editingPayment, setEditingPayment] = useState(null);
@@ -131,25 +130,15 @@ const PaymentPage = () => {
     const handleCheckoutReady = useCallback(() => {
         setIsPaymentFlowOpen(false);
         setGasBillModal(prev => ({ ...prev, open: false }));
-    }, []);
+    }, [setIsPaymentFlowOpen, setGasBillModal]);
 
-    const { handleCheckout, lastPaymentId, markUnmounted } = usePayment({
+    const { handleCheckout, lastPaymentId, markUnmounted, isPaying } = usePayment({
         user,
         onSuccess: () => {
-            setIsPaying(false);
             refreshData();
         },
         onCheckoutReady: handleCheckoutReady,
     });
-
-    const handleRazorpayCheckout = useCallback(async (amount, paymentType, months = null) => {
-        setIsPaying(true);
-        try {
-            await handleCheckout(amount, paymentType, months);
-        } finally {
-            setIsPaying(false);
-        }
-    }, [handleCheckout]);
 
     const handlePayBillClick = useCallback((monthName) => {
         setInvoiceModal(prev => ({ ...prev, open: false }));
@@ -159,13 +148,7 @@ const PaymentPage = () => {
     }, [payableAmountData]);
 
     const handleGasBillPayClick = useCallback((amount) => {
-        // BEFORE: Empty dependency array, stale amount
-        // AFTER: Use current payableGasBill state as fallback
-        const currentAmount = payableGasBill && typeof payableGasBill === 'object'
-            ? (payableGasBill.payableAmount ?? 0)
-            : typeof payableGasBill === 'number' ? payableGasBill : 0;
-        const amountToUse = amount || currentAmount;
-        if (!amountToUse || amountToUse <= 0) {
+        if (!amount || amount <= 0) {
             toast.error('No gas bill amount due.');
             return;
         }
@@ -179,8 +162,8 @@ const PaymentPage = () => {
                 month: 'long', year: 'numeric',
             });
         }
-        setGasBillModal({ open: true, amount: amountToUse, monthName });
-    }, [payableGasBill]);
+        setGasBillModal({ open: true, amount, monthName });
+    }, []);
 
     const latestMessBillPayment = useMemo(() => {
         if (lastPaymentId && payments) {
@@ -666,7 +649,7 @@ const PaymentPage = () => {
                     user={user}
                     isAdmin={isAdmin}
                     activeInvoiceMonth={activePaymentMonth}
-                    onRazorpayPay={handleRazorpayCheckout}
+                    onRazorpayPay={handleCheckout}
                     onSuccess={refreshData}
                     paymentType={paymentFlowType}
                 />
@@ -676,7 +659,7 @@ const PaymentPage = () => {
                     onClose={() => setGasBillModal({ open: false, amount: 0, monthName: '' })}
                     payableAmount={gasBillModal.amount}
                     payableMonthName={gasBillModal.monthName}
-                    onRazorpayPay={handleRazorpayCheckout}
+                    onRazorpayPay={handleCheckout}
                     onSuccess={refreshData}
                 />
 

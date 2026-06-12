@@ -10,10 +10,7 @@ export function usePayment({ user, onSuccess, onCheckoutReady }) {
     const isPayingRef    = useRef(false);
     const isMountedRef   = useRef(true);
     const [lastPaymentId, setLastPaymentId] = useState(null);
-
-    const safeSetPaying = useCallback((val) => {
-        if (isMountedRef.current) isPayingRef.current = val;
-    }, []);
+    const [isPaying, setIsPaying] = useState(false);
 
     const handleCheckout = useCallback(async (
         amount,
@@ -30,6 +27,7 @@ export function usePayment({ user, onSuccess, onCheckoutReady }) {
         }
 
         isPayingRef.current = true;
+        setIsPaying(true);
 
         try {
             await loadSDK();
@@ -118,11 +116,12 @@ export function usePayment({ user, onSuccess, onCheckoutReady }) {
             });
 
         } catch (err) {
+            const statusCode = err?.response?.status;
             let msg = err?.response?.data?.message || err?.message || 'Payment failed';
-            if (msg.includes('400') || msg.includes('Bad Request') || msg.includes('preferences')) {
+            if (statusCode === 400 || msg.includes('preferences')) {
                 msg = 'Payment gateway rejected the request. Please contact the administrator to verify the Razorpay configuration.';
             }
-            if (msg.includes('409') || msg.includes('already completed') || msg.includes('already paid')) {
+            if (statusCode === 409 || msg.includes('already completed') || msg.includes('already paid')) {
                 msg = 'This bill has already been paid. Refresh to see updated status.';
             }
             if (msg.includes('timeout') || msg.includes('load')) {
@@ -130,13 +129,15 @@ export function usePayment({ user, onSuccess, onCheckoutReady }) {
             }
             toast.error(msg);
         } finally {
-            safeSetPaying(false);
+            isPayingRef.current = false;
+            if (isMountedRef.current) setIsPaying(false);
         }
-    }, [loadSDK, user, onSuccess, onCheckoutReady, safeSetPaying]);
+    }, [loadSDK, user, onSuccess, onCheckoutReady]);
 
     return {
         lastPaymentId,
         handleCheckout,
+        isPaying,
         markUnmounted: () => { isMountedRef.current = false; },
     };
 }

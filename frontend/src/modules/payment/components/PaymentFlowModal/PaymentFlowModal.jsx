@@ -680,7 +680,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
   const handleRazorpayProceed = useCallback(() => {
     if (typeof onRazorpayPay === 'function') {
       const baseAmount = selectedTotalPayable;
-      onRazorpayPay(baseAmount, paymentType, selectedMonths);
+      Promise.resolve(onRazorpayPay(baseAmount, paymentType, selectedMonths)).catch(() => {});
     }
   }, [onRazorpayPay, selectedTotalPayable, paymentType, selectedMonths]);
 
