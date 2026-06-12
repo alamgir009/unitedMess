@@ -728,8 +728,11 @@ const getPaybleAmountforMeal = async (userId) => {
             platformFee: round2(invoice.fixedCosts?.platformFee || user.platformFee || 0)
         },
         payableAmount: finalPayable,
-        paymentStatus: user.payment === 'success' || invoice.status === 'paid' ? 'success' : 'pending',
-        gasBillStatus: user.gasBill === 'success' || completedGasAuth ? 'success' : 'pending',
+        // Use the Invoice as source of truth — never trust the stored
+        // user.payment / user.gasBill field, which may have been set
+        // to 'success' by a past-period payment (the pre-fix bug).
+        paymentStatus: invoice.status === 'paid' ? 'success' : 'pending',
+        gasBillStatus: completedGasAuth ? 'success' : 'pending',
         monthName: invoice.monthName,
     };
 };
@@ -815,7 +818,10 @@ const getPaybleAmountforGasBill = async (userId) => {
 
     return {
         payableAmount: user.gasBillCharge || 0,
-        status: user.gasBill === 'success' || completedGasAuth ? 'success' : 'pending'
+        // Use completed payment records as source of truth — never trust
+        // the stored user.gasBill field which may have been set to 'success'
+        // by a past-period payment (the pre-fix bug).
+        status: completedGasAuth ? 'success' : 'pending'
     };
 };
 
