@@ -14,9 +14,10 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AnimatePresence } from 'framer-motion';
-import { HiOutlineXMark, HiOutlineCheckBadge } from 'react-icons/hi2';
+import { HiOutlineXMark, HiOutlineCheckBadge, HiOutlineCurrencyRupee, HiOutlineCheckCircle } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 
+import { Spinner }     from '@/shared/components/ui';
 import MainLayout      from '@/shared/components/layout/MainLayout/MainLayout';
 import Pagination      from '@/shared/components/ui/Pagination/Pagination';
 
@@ -447,7 +448,8 @@ const PaymentPage = () => {
         : typeof payableGasBill === 'number' ? payableGasBill : 0;
     const messBillStatus  = payableAmountData?.paymentStatus || 'pending';
     const gasBillStatus   = payableGasBill?.status           || 'pending';
-    const bothPaid        = messBillStatus === 'success' && gasBillStatus === 'success';
+    const gasBillPaid     = gasBillStatus === 'success';
+    const bothPaid        = messBillStatus === 'success' && gasBillPaid;
     const hasInvoiceData  = !!payableAmountData && 'payableAmount' in payableAmountData;
     const isInvoiceLoading = !invoiceFetchDone && !hasInvoiceData && !!(user?._id || user?.id);
 
@@ -463,10 +465,7 @@ const PaymentPage = () => {
                         viewMode={viewMode}
                         onViewModeChange={setViewMode}
                         onAddClick={openCreate}
-                        payableGasBill={gasBillVal}
                         gasBillStatus={gasBillStatus}
-                        onPayNowClick={handleGasBillPayClick}
-                        isPaying={isPaying}
                     />
 
                     {/* Stats bar */}
@@ -506,6 +505,54 @@ const PaymentPage = () => {
                             />
                         )}
                     </AnimatePresence>
+
+                    {/* Gas Bill Pay card */}
+                    {(gasBillVal > 0 || gasBillPaid) && !bothPaid && (
+                        <div className="rounded-xl border border-border/50 bg-card p-5 shadow-sm">
+                            <div className="flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 shrink-0">
+                                        <HiOutlineCurrencyRupee className="w-5 h-5" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-bold text-foreground">Gas Bill</p>
+                                        <p className="text-xs text-muted-foreground truncate">
+                                            Monthly gas bill share
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3 shrink-0">
+                                    <span className="text-xl font-black tabular-nums text-foreground">
+                                        ₹{gasBillVal.toLocaleString('en-IN')}
+                                    </span>
+                                    {gasBillPaid ? (
+                                        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 text-xs font-bold">
+                                            <HiOutlineCheckCircle className="w-4 h-4" /> Paid
+                                        </span>
+                                    ) : (
+                                        <button
+                                            onClick={() => handleGasBillPayClick(gasBillVal)}
+                                            disabled={isPaying}
+                                            className="inline-flex items-center justify-center gap-1.5 px-5 h-[42px] rounded-xl text-sm font-bold text-white
+                                                bg-gradient-to-br from-slate-900 to-slate-800
+                                                hover:from-slate-800 hover:to-slate-700
+                                                active:scale-[0.97]
+                                                transition-all duration-150
+                                                disabled:opacity-50 disabled:cursor-not-allowed
+                                                shadow-md hover:shadow-lg border border-white/10"
+                                        >
+                                            {isPaying ? (
+                                                <Spinner size="sm" color="white" className="!w-4 !h-4 !border-[1.5px]" />
+                                            ) : (
+                                                <HiOutlineCurrencyRupee className="w-4 h-4" />
+                                            )}
+                                            {isPaying ? 'Processing' : 'Pay Now'}
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Search + filter bar */}
                     <PaymentSearchBar
