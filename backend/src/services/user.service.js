@@ -821,7 +821,8 @@ const getPaybleAmountforGasBill = async (userId) => {
         // Use completed payment records as source of truth — never trust
         // the stored user.gasBill field which may have been set to 'success'
         // by a past-period payment (the pre-fix bug).
-        status: completedGasAuth ? 'success' : 'pending'
+        status: completedGasAuth ? 'success' : 'pending',
+        monthName: billingMonthName,
     };
 };
 

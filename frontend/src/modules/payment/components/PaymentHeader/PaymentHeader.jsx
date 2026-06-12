@@ -69,7 +69,7 @@ const PaymentHeader = ({
                         </div>
                         <button
                             disabled={isPaying}
-                            onClick={() => onPayNowClick(gasBillVal, 'gas_bill')}
+                            onClick={() => onPayNowClick(gasBillVal)}
                             className="inline-flex items-center justify-center px-2.5 h-7 rounded-lg text-[10px] font-bold text-white shadow-sm
                                 bg-[#02042B] border border-[#3395FF]/30 hover:border-[#3395FF]/70 active:scale-95
                                 transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"

@@ -147,7 +147,7 @@ const StepIndicator = memo(({ payStep, labels = STEP_LABELS }) => (
               {label}
             </span>
           </div>
-          {i < STEP_LABELS.length - 1 && (
+          {i < labels.length - 1 && (
             <div
               className={cn(
                 'flex-1 h-0.5 mx-2 rounded-full transition-colors duration-300',
@@ -528,7 +528,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
 
   useEffect(() => {
     if (!shouldRender || exiting) return;
-    fetchMonths();
+    if (!isGasBill) fetchMonths();
     fetchUpiDetails();
 
     const scrollY = window.scrollY;
@@ -545,7 +545,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
       html.style.top = '';
       window.scrollTo(0, scrollY);
     };
-  }, [shouldRender, exiting, fetchMonths, fetchUpiDetails]);
+  }, [shouldRender, exiting, fetchMonths, fetchUpiDetails, isGasBill]);
 
   const rebuildFocusable = useCallback(() => {
     const dialog = dialogRef.current;

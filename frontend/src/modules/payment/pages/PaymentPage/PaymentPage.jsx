@@ -43,6 +43,7 @@ import {
 } from '../../store/payment.slice';
 import { fetchPayableAmount, fetchPayableGasBill } from '../../../auth/store/auth.slice';
 
+import { getBillingPeriod } from '@shared/utils/billingPeriod';
 import { usePayment } from '../../hooks/usePayment';
 
 const SkeletonCard = React.memo(() => (
@@ -153,11 +154,12 @@ const PaymentPage = () => {
     }, [payableAmountData]);
 
     const handleGasBillPayClick = useCallback((amount) => {
+        const { monthName } = getBillingPeriod();
         setPaymentFlowType('gas_bill');
         setPaymentFlowAmount(amount);
-        setPaymentFlowMonthName(payableAmountData?.monthName || '');
+        setPaymentFlowMonthName(monthName);
         setIsPaymentFlowOpen(true);
-    }, [payableAmountData]);
+    }, []);
 
     const latestMessBillPayment = useMemo(() => {
         if (lastPaymentId && payments) {
@@ -187,8 +189,12 @@ const PaymentPage = () => {
             Promise.all([
                 dispatch(fetchPayableAmount()),
                 dispatch(fetchPayableGasBill()),
-            ]).then(() => setInvoiceFetchDone(true))
-              .catch(() => setInvoiceFetchDone(true));
+            ])
+                .then(() => setInvoiceFetchDone(true))
+                .catch((err) => {
+                    toast.error(typeof err === 'string' ? err : 'Failed to load billing data');
+                    setInvoiceFetchDone(true);
+                });
         }
     }, [dispatch, user?._id, user?.id]);
 
