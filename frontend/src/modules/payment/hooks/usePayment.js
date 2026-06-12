@@ -5,7 +5,7 @@ import { useRazorpaySDK } from './useRazorpaySDK';
 import { RAZORPAY, PAYMENT_TYPES, isValidRazorpayKey, getRazorpayKeyMode } from '../config/payment.config';
 import paymentService from '../services/payment.service';
 
-export function usePayment({ user, onSuccess }) {
+export function usePayment({ user, onSuccess, onCheckoutReady }) {
     const loadSDK        = useRazorpaySDK();
     const isPayingRef    = useRef(false);
     const isMountedRef   = useRef(true);
@@ -24,21 +24,20 @@ export function usePayment({ user, onSuccess }) {
             toast.error('Invalid payable amount');
             return;
         }
-        if (isPayingRef.current) return;
+        if (isPayingRef.current) {
+            toast.error('A payment is already in progress. Please wait.');
+            return;
+        }
 
         isPayingRef.current = true;
 
         try {
             await loadSDK();
 
-            // Step 1: Create order on server — this binds the order to the backend's key
             const orderRes = await paymentService.createOnlineOrder({ amount, type: paymentType, months });
             const { order, payment, keyId: serverKeyId } = orderRes?.data ?? {};
             if (!order?.id) throw new Error('Invalid order response from server');
 
-            // Step 2: The checkout MUST use the server's key — the order was created with it.
-            // Never substitute with a frontend env key; doing so would cause a 400 error
-            // because Razorpay validates key_id matches the order's account.
             const rzpKey = serverKeyId;
             if (!rzpKey) {
                 throw new Error(
@@ -47,7 +46,6 @@ export function usePayment({ user, onSuccess }) {
                 );
             }
 
-            // Step 3: Validate key format
             if (!isValidRazorpayKey(rzpKey)) {
                 throw new Error(
                     'Invalid Razorpay key format. ' +
@@ -55,7 +53,6 @@ export function usePayment({ user, onSuccess }) {
                 );
             }
 
-            // Step 4: In production, hard-block test keys — prevents accidental test-mode transactions
             const isProd = import.meta.env.PROD;
             const keyMode = getRazorpayKeyMode(rzpKey);
             if (isProd && keyMode === 'test') {
@@ -67,7 +64,6 @@ export function usePayment({ user, onSuccess }) {
                 );
             }
 
-            // Step 5: Open Razorpay checkout modal
             await new Promise((resolve, reject) => {
                 const options = {
                     key:         rzpKey,
@@ -117,20 +113,26 @@ export function usePayment({ user, onSuccess }) {
                     reject(new Error(desc || code || 'Payment failed'));
                 });
 
+                onCheckoutReady?.();
                 rzp.open();
             });
 
         } catch (err) {
             let msg = err?.response?.data?.message || err?.message || 'Payment failed';
-            // Surface Razorpay-specific errors with clearer messaging
             if (msg.includes('400') || msg.includes('Bad Request') || msg.includes('preferences')) {
                 msg = 'Payment gateway rejected the request. Please contact the administrator to verify the Razorpay configuration.';
+            }
+            if (msg.includes('409') || msg.includes('already completed') || msg.includes('already paid')) {
+                msg = 'This bill has already been paid. Refresh to see updated status.';
+            }
+            if (msg.includes('timeout') || msg.includes('load')) {
+                msg = 'Payment gateway failed to initialize. Check your internet connection and try again.';
             }
             toast.error(msg);
         } finally {
             safeSetPaying(false);
         }
-    }, [loadSDK, user, onSuccess, safeSetPaying]);
+    }, [loadSDK, user, onSuccess, onCheckoutReady, safeSetPaying]);
 
     return {
         lastPaymentId,

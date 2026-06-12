@@ -31,6 +31,7 @@ import MessBillInvoice  from '../../components/MessBillInvoice/MessBillInvoice';
 import MonthlyInvoiceModal from '../../components/MonthlyInvoiceModal/MonthlyInvoiceModal';
 import PaymentDeleteDialog from '../../components/PaymentDeleteDialog/PaymentDeleteDialog';
 import PaymentFlowModal from '../../components/PaymentFlowModal/PaymentFlowModal';
+import GasBillPaymentModal from '../../components/GasBillPaymentModal/GasBillPaymentModal';
 import UpiVerificationModal from '../../components/UpiVerificationModal/UpiVerificationModal';
 
 import {
@@ -117,6 +118,7 @@ const PaymentPage = () => {
     const [paymentFlowType, setPaymentFlowType] = useState('mess_bill');
     const [paymentFlowAmount, setPaymentFlowAmount] = useState(0);
     const [paymentFlowMonthName, setPaymentFlowMonthName] = useState('');
+    const [gasBillModal, setGasBillModal] = useState({ open: false, amount: 0, monthName: '' });
     const [verifyPayment, setVerifyPayment] = useState(null);
     const [isUpiVerifyOpen, setIsUpiVerifyOpen] = useState(false);
 
@@ -127,12 +129,18 @@ const PaymentPage = () => {
         dispatch(fetchPayableGasBill());
     }, [dispatch, page, limit]);
 
+    const handleCheckoutReady = useCallback(() => {
+        setIsPaymentFlowOpen(false);
+        setGasBillModal(prev => ({ ...prev, open: false }));
+    }, []);
+
     const { handleCheckout, lastPaymentId, markUnmounted } = usePayment({
         user,
         onSuccess: () => {
             setIsPaying(false);
             refreshData();
         },
+        onCheckoutReady: handleCheckoutReady,
     });
 
     const handleRazorpayCheckout = useCallback(async (amount, paymentType, months = null) => {
@@ -155,10 +163,7 @@ const PaymentPage = () => {
 
     const handleGasBillPayClick = useCallback((amount) => {
         const { monthName } = getBillingPeriod();
-        setPaymentFlowType('gas_bill');
-        setPaymentFlowAmount(amount);
-        setPaymentFlowMonthName(monthName);
-        setIsPaymentFlowOpen(true);
+        setGasBillModal({ open: true, amount, monthName });
     }, []);
 
     const latestMessBillPayment = useMemo(() => {
@@ -611,8 +616,17 @@ const PaymentPage = () => {
                     onRazorpayPay={handleRazorpayCheckout}
                     onSuccess={refreshData}
                     paymentType={paymentFlowType}
-                    payableAmount={paymentFlowAmount}
-                    payableMonthName={paymentFlowMonthName}
+                />
+
+                <GasBillPaymentModal
+                    isOpen={gasBillModal.open}
+                    onClose={() => setGasBillModal({ open: false, amount: 0, monthName: '' })}
+                    payableAmount={gasBillModal.amount}
+                    payableMonthName={gasBillModal.monthName}
+                    user={user}
+                    isAdmin={isAdmin}
+                    onRazorpayPay={handleRazorpayCheckout}
+                    onSuccess={refreshData}
                 />
 
                 <UpiVerificationModal
