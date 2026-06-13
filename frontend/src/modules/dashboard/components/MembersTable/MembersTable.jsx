@@ -45,7 +45,7 @@ const STATUS_CONFIG = {
 const StatusBadge = ({ status }) => {
   const { icon: Icon, cls } = STATUS_CONFIG[status] ?? STATUS_CONFIG.inactive;
   return (
-    <span className={cn('inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-semibold sm:gap-2 sm:px-2.5 sm:py-1 sm:text-caption backdrop-blur-sm transition-colors duration-150', cls)}>
+    <span className={cn('inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-semibold backdrop-blur-sm transition-colors duration-150', cls)}>
       <Icon size={12} strokeWidth={2.5} className="shrink-0" />
       <span className="leading-none">{status}</span>
     </span>
@@ -63,7 +63,7 @@ const resolvePayment = (raw) => {
 const PaymentBadge = ({ status }) => {
   const { label, icon: Icon, cls } = resolvePayment(status);
   return (
-    <span className={cn('inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-semibold sm:gap-2 sm:px-2.5 sm:py-1 sm:text-caption backdrop-blur-sm transition-colors duration-150', cls)}>
+    <span className={cn('inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-semibold backdrop-blur-sm transition-colors duration-150', cls)}>
       <Icon size={12} strokeWidth={2.5} className="shrink-0" />
       <span className="leading-none">{label}</span>
     </span>
