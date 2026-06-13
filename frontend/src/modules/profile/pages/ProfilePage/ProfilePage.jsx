@@ -395,7 +395,7 @@ const ProfilePage = () => {
 
     return (
         <MainLayout>
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+            <div className="sm:max-w-5xl sm:mx-auto px-0 sm:px-6 lg:px-8 py-2">
                 {/* Premium Banner Header */}
                 <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 p-6 sm:p-8 text-white mb-6 sm:mb-8 shadow-md">
                     <div className="absolute right-0 top-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
