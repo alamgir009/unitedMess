@@ -58,7 +58,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     <>
       <div
         className={cn(
-          'fixed inset-0 z-40 bg-black/50 transition-opacity lg:hidden',
+          'fixed inset-0 z-[45] bg-black/50 transition-opacity lg:hidden', /* z-[45]: above Header z-40 on mobile */
           isOpen ? 'opacity-100 ease-out duration-[var(--duration-slow)]' : 'opacity-0 ease-in duration-[var(--duration-base)] pointer-events-none',
         )}
         onClick={onClose}

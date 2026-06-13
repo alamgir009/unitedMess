@@ -8,12 +8,14 @@ const MainLayout = ({ children, paddingClass = "p-3 sm:p-6 lg:p-8" }) => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     return (
-        <div className="h-full bg-background transition-colors duration-200">
+        <div className="relative h-full bg-background transition-colors duration-200">
+            {/* position: relative — positioning context for SkipNav absolute */}
             <SkipNav />
             <div className="flex h-[100dvh] overflow-hidden">
                 <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
                 <div className="flex flex-1 flex-col overflow-hidden">
+                    {/* sticky top-0: parent overflow-hidden prevents scroll, so visual-only; z-40 keeps stacking */}
                     <Header onMenuClick={() => setSidebarOpen(true)} />
 
                     <main

@@ -86,7 +86,7 @@
   --btn-height-sm: 32px;
   --btn-height-md: 40px;
   --btn-height-lg: 48px;
-  --sidebar-width: 240px;
+  --sidebar-width: 256px; /* aligns with w-64 (16rem = 256px) */
   --sidebar-width-collapsed: 64px;
   --navbar-height: 60px;
   --content-max-width: 1280px;

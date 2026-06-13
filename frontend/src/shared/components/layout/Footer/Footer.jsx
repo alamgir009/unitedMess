@@ -57,7 +57,7 @@ const Footer = () => {
               <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
                 Seamless campus dining. Smart meal plans. One platform for your entire mess experience.
               </p>
-              <div className="flex items-center gap-2.5 mt-1">
+              <div className="flex items-center gap-3 mt-1">
                 {SOCIAL_LINKS.map(({ label, href, icon }) => (
                   <a
                     key={label}
