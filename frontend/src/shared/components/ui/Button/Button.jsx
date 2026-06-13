@@ -5,19 +5,19 @@ import { cn } from '@/core/utils/helpers/string.helper';
 
 const variantStyles = {
   primary:
-    'bg-primary text-primary-foreground shadow-sm border border-primary/10 hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+    'bg-primary text-primary-foreground shadow-sm shadow-primary/25 border-0 hover:bg-primary/90 hover:shadow-md hover:shadow-primary/35 active:shadow-sm active:shadow-primary/25 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
   secondary:
-    'bg-secondary text-secondary-foreground shadow-sm border border-secondary/20 hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+    'bg-secondary text-secondary-foreground shadow-sm border border-border/60 hover:bg-secondary/70 hover:shadow-md hover:border-border active:shadow-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
   ghost:
-    'bg-transparent text-foreground border border-transparent hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+    'bg-transparent text-foreground border-0 hover:bg-muted/60 active:bg-muted/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
   destructive:
-    'bg-destructive text-destructive-foreground shadow-sm border border-destructive/10 hover:bg-destructive/90 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2',
+    'bg-destructive text-destructive-foreground shadow-sm shadow-destructive/30 border-0 hover:bg-destructive/90 hover:shadow-md hover:shadow-destructive/40 active:shadow-sm active:shadow-destructive/30 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2',
   outline:
-    'bg-transparent text-primary border border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+    'bg-transparent text-primary border border-primary/30 hover:bg-primary/[0.08] hover:border-primary/50 active:bg-primary/[0.12] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
   danger:
-    'bg-destructive text-destructive-foreground shadow-sm border border-destructive/10 hover:bg-destructive/90 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2',
+    'bg-destructive text-destructive-foreground shadow-sm shadow-destructive/30 border-0 hover:bg-destructive/90 hover:shadow-md hover:shadow-destructive/40 active:shadow-sm active:shadow-destructive/30 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2',
   success:
-    'bg-success text-white shadow-sm border border-success/10 hover:brightness-90 focus-visible:ring-2 focus-visible:ring-success focus-visible:ring-offset-2',
+    'bg-success text-white shadow-sm shadow-success/25 border-0 hover:bg-success/90 hover:shadow-md hover:shadow-success/35 active:shadow-sm active:shadow-success/25 focus-visible:ring-2 focus-visible:ring-success focus-visible:ring-offset-2',
 };
 
 const sizeStyles = {
@@ -58,7 +58,7 @@ const Button = forwardRef(({
       aria-busy={isLoading || undefined}
       aria-disabled={disabled || undefined}
       className={cn(
-        'relative inline-flex items-center justify-center font-medium border',
+        'relative inline-flex items-center justify-center font-medium',
         'select-none whitespace-nowrap',
         'transition-all duration-[var(--duration-base)] ease-out',
         'min-h-[44px] min-w-[44px]',
