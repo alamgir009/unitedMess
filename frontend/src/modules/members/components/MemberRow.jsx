@@ -71,88 +71,26 @@ MobileLabel.displayName = 'MobileLabel';
 /* ─────────────────────────────────────────────
    MemberRow
 ───────────────────────────────────────────── */
-const MemberRow = React.memo(({ user, index, isLast, isAdmin }) => {
+const MemberRow = React.memo(({ user, index, isLast }) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
     const toggle = useCallback(() => setIsExpanded((v) => !v), []);
 
-    /* Row variants — memoized to avoid .join(' ') on every render */
     const rowBase = useMemo(() => [
-        'group w-full relative transition-colors duration-150',
-        // Desktop layout
+        'group w-full relative cursor-pointer',
+        'transition-colors duration-150',
         'md:grid md:grid-cols-12 md:gap-4 md:items-center md:px-8 md:py-5',
-        // Mobile layout
         'flex flex-col gap-3.5 p-5',
-        // Mobile card border
         'border border-slate-200 dark:border-slate-800 md:border-x-0 md:border-t-0',
         'rounded-2xl md:rounded-none',
-        // States
-        isAdmin && isExpanded
+        isExpanded
             ? 'bg-slate-50 dark:bg-slate-800/50 md:bg-slate-50/70 md:dark:bg-slate-800/30 z-20 rounded-b-none border-b-0 md:border-b'
             : 'bg-white dark:bg-slate-900 shadow-sm md:shadow-none md:hover:bg-slate-50/80 md:dark:hover:bg-slate-800/40',
-        // First row — no top border
         index === 0 ? 'md:border-t-0' : '',
-        // Last row — round bottom corners and remove bottom border if not expanded
-        isLast && !(isAdmin && isExpanded) ? 'md:border-b-0' : '',
-        isAdmin ? 'cursor-pointer' : '',
-    ].join(' '), [isExpanded, index, isLast, isAdmin]);
+        isLast && !isExpanded ? 'md:border-b-0' : '',
+    ].join(' '), [isExpanded, index, isLast]);
 
     const formattedMarketAmount = useMemo(() => (user.totalMarketAmount ?? 0).toLocaleString('en-IN'), [user.totalMarketAmount]);
-
-    const profileCell = (
-        <div className="md:col-span-5 flex items-center justify-between md:justify-start gap-3">
-            <div className="flex items-center gap-3.5 min-w-0">
-                <Avatar
-                    src={user.image}
-                    alt={user.name ?? 'Member'}
-                    fallback={(user.name?.charAt(0) ?? 'U').toUpperCase()}
-                    className="w-11 h-11 rounded-full ring-2 ring-white dark:ring-slate-900 shadow-sm shrink-0 object-cover"
-                />
-                <div className="flex flex-col min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[14.5px] md:text-[15px] font-bold text-slate-900 dark:text-white leading-tight truncate">
-                            {user.name ?? 'Unknown Member'}
-                        </span>
-                        {!user.isActive && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-widest bg-rose-50 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30">
-                                <UserX size={10} strokeWidth={2.5} />
-                                Inactive
-                            </span>
-                        )}
-                    </div>
-                    <span className="text-[12.5px] font-medium text-slate-400 dark:text-slate-500 truncate mt-0.5">
-                        {user.email ?? '\u2014'}
-                    </span>
-                </div>
-            </div>
-        </div>
-    );
-
-    if (!isAdmin) {
-        return (
-            <div className="flex flex-col w-full">
-                <div className={rowBase}>
-                    {profileCell}
-                    <div className="md:col-span-3 flex items-center justify-between md:block gap-2">
-                        <MobileLabel>Phone</MobileLabel>
-                        <span className="text-[14px] md:text-[15px] font-medium text-slate-600 dark:text-slate-300">
-                            {user.phone || '\u2014'}
-                        </span>
-                    </div>
-                    <div className="md:col-span-2 flex items-center justify-between md:block gap-2">
-                        <MobileLabel>Role</MobileLabel>
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10.5px] font-bold uppercase tracking-widest border bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-200 dark:border-sky-500/25">
-                            {user.role || 'user'}
-                        </span>
-                    </div>
-                    <div className="md:col-span-2 flex items-center justify-between md:block gap-2">
-                        <MobileLabel>Status</MobileLabel>
-                        <StatusBadge status={user.userStatus} />
-                    </div>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="flex flex-col w-full">

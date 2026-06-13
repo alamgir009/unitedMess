@@ -51,7 +51,7 @@ const getUsers = asyncHandler(async (req, res) => {
     if (options.page) options.page = Math.max(1, parseInt(options.page, 10));
     if (options.limit) options.limit = Math.min(100, Math.max(1, parseInt(options.limit, 10)));
 
-    const result = await userService.getAllUsers(filter, options, req.user.role);
+    const result = await userService.getAllUsers(filter, options);
     sendSuccessResponse(res, 200, 'Users retrieved successfully', result);
 });
 

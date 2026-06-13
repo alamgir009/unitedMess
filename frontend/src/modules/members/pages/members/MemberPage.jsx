@@ -229,7 +229,6 @@ const MemberPage = React.memo(() => {
                     <MemberTable
                         users={safeUsers}
                         isLoading={isLoading && safeUsers.length === 0}
-                        isAdmin={isAdmin}
                     />
                 </main>
 

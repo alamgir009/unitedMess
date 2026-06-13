@@ -3,20 +3,12 @@ import MemberRow from './MemberRow';
 import { Users } from 'lucide-react';
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const ADMIN_COLUMNS = [
+export const COLUMNS = [
     { id: 'profile', label: 'Member Profile', cols: 'col-span-4', align: 'justify-start' },
     { id: 'market', label: 'Market Amount', cols: 'col-span-2', align: 'justify-start' },
     { id: 'gas', label: 'Gas Bill', cols: 'col-span-2', align: 'justify-start' },
     { id: 'payment', label: 'Payment Status', cols: 'col-span-3', align: 'justify-start' },
     { id: 'expand', label: '', cols: 'col-span-1', align: 'justify-end' },
-];
-
-// eslint-disable-next-line react-refresh/only-export-components
-export const DIRECTORY_COLUMNS = [
-    { id: 'profile', label: 'Member Profile', cols: 'col-span-5', align: 'justify-start' },
-    { id: 'phone', label: 'Phone', cols: 'col-span-3', align: 'justify-start' },
-    { id: 'role', label: 'Role', cols: 'col-span-2', align: 'justify-start' },
-    { id: 'status', label: 'Status', cols: 'col-span-2', align: 'justify-start' },
 ];
 
 const EmptyState = React.memo(() => (
@@ -53,15 +45,14 @@ const SkeletonRow = React.memo(() => (
 ));
 SkeletonRow.displayName = 'SkeletonRow';
 
-const MemberTable = ({ users, isLoading, isAdmin }) => {
+const MemberTable = ({ users, isLoading }) => {
     const membersList = Array.isArray(users) ? users : [];
-    const columns = isAdmin ? ADMIN_COLUMNS : DIRECTORY_COLUMNS;
-    const gridCols = isAdmin ? 'grid-cols-12' : 'grid-cols-12';
+    const columns = COLUMNS;
 
     if (isLoading) {
         return (
             <div className="w-full md:bg-card md:rounded-2xl md:border md:border-border md:shadow-sm md:overflow-hidden">
-                <div className={`hidden md:grid ${gridCols} gap-4 items-center px-8 py-4 border-b border-border bg-muted/30`}>
+                <div className="hidden md:grid grid-cols-12 gap-4 items-center px-8 py-4 border-b border-border bg-muted/30">
                     {columns.map((col) => (
                         col.label ? (
                             <div key={col.id} className={`${col.cols} flex items-center ${col.align} text-caption font-semibold uppercase tracking-wider text-muted-foreground`}>
@@ -82,7 +73,7 @@ const MemberTable = ({ users, isLoading, isAdmin }) => {
     return (
         <div className="w-full">
             <div className="w-full md:bg-card md:rounded-2xl md:border md:border-border md:shadow-sm md:overflow-hidden">
-                <div className={`hidden md:grid ${gridCols} gap-4 items-center px-8 py-4 sticky top-0 z-30 bg-card/90 backdrop-blur-lg border-b border-border`}>
+                <div className="hidden md:grid grid-cols-12 gap-4 items-center px-8 py-4 sticky top-0 z-30 bg-card/90 backdrop-blur-lg border-b border-border">
                     {columns.map((col) => (
                         <div key={col.id} className={`${col.cols} flex items-center ${col.align} text-caption font-semibold uppercase tracking-wider text-muted-foreground select-none`}>
                             {col.label}
@@ -97,7 +88,6 @@ const MemberTable = ({ users, isLoading, isAdmin }) => {
                             user={user}
                             index={index}
                             isLast={index === membersList.length - 1}
-                            isAdmin={isAdmin}
                         />
                     ))}
                 </div>
