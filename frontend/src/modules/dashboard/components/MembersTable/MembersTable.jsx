@@ -36,36 +36,38 @@ const getDisplayStatus = ({ userStatus, isActive }) => {
 };
 
 const STATUS_CONFIG = {
-  active:   { icon: ShieldCheck,  cls: 'bg-success-bg text-success-text border-success-border' },
-  inactive: { icon: BiBlock,      cls: 'bg-muted text-muted-foreground border-border' },
-  pending:  { icon: Clock,        cls: 'bg-warning-bg text-warning-text border-warning-border' },
-  denied:   { icon: XCircle,      cls: 'bg-danger-bg text-danger-text border-danger-border' },
+  active:   { icon: ShieldCheck,  cls: 'bg-success-bg text-success-text border-success-border', dot: 'bg-success' },
+  inactive: { icon: BiBlock,      cls: 'bg-neutral-bg text-neutral-text border-border',           dot: 'bg-neutral' },
+  pending:  { icon: Clock,        cls: 'bg-warning-bg text-warning-text border-warning-border', dot: 'bg-warning' },
+  denied:   { icon: XCircle,      cls: 'bg-danger-bg text-danger-text border-danger-border',    dot: 'bg-danger' },
 };
 
 const StatusBadge = ({ status }) => {
-  const { icon: Icon, cls } = STATUS_CONFIG[status] ?? STATUS_CONFIG.inactive;
+  const { icon: Icon, cls, dot } = STATUS_CONFIG[status] ?? STATUS_CONFIG.inactive;
   return (
-    <span className={cn('inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-caption font-bold uppercase tracking-wider', cls)}>
-      <Icon size={11} strokeWidth={2.5} />
-      {status}
+    <span className={cn('inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-semibold sm:gap-2 sm:px-2.5 sm:py-1 sm:text-caption backdrop-blur-sm transition-colors duration-150', cls)}>
+      <span className={cn('inline-block h-1.5 w-1.5 rounded-full shrink-0 ring-1 ring-inset ring-black/5', dot)} />
+      <Icon size={12} strokeWidth={2.5} className="shrink-0" />
+      <span className="leading-none">{status}</span>
     </span>
   );
 };
 
 const resolvePayment = (raw) => {
   const s = String(raw || '').toLowerCase();
-  if (s === 'paid' || s === 'success')  return { label: 'Paid',     icon: CheckCircle2, cls: 'bg-success-bg text-success-text border-success-border' };
-  if (s === 'pending')                  return { label: 'Pending',  icon: Clock,        cls: 'bg-warning-bg text-warning-text border-warning-border' };
-  if (s === 'refunded')                 return { label: 'Refunded', icon: CircleDot,    cls: 'bg-info-bg text-info-text border-info-border' };
-  return                                       { label: 'Unpaid',   icon: XCircle,      cls: 'bg-danger-bg text-danger-text border-danger-border' };
+  if (s === 'paid' || s === 'success')  return { label: 'Paid',     icon: CheckCircle2, cls: 'bg-success-bg text-success-text border-success-border', dot: 'bg-success' };
+  if (s === 'pending')                  return { label: 'Pending',  icon: Clock,        cls: 'bg-warning-bg text-warning-text border-warning-border', dot: 'bg-warning' };
+  if (s === 'refunded')                 return { label: 'Refunded', icon: CircleDot,    cls: 'bg-info-bg text-info-text border-info-border',          dot: 'bg-info' };
+  return                                       { label: 'Unpaid',   icon: XCircle,      cls: 'bg-danger-bg text-danger-text border-danger-border',   dot: 'bg-danger' };
 };
 
 const PaymentBadge = ({ status }) => {
-  const { label, icon: Icon, cls } = resolvePayment(status);
+  const { label, icon: Icon, cls, dot } = resolvePayment(status);
   return (
-    <span className={cn('inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-caption font-bold uppercase tracking-wider', cls)}>
-      <Icon size={11} strokeWidth={2.5} />
-      {label}
+    <span className={cn('inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-semibold sm:gap-2 sm:px-2.5 sm:py-1 sm:text-caption backdrop-blur-sm transition-colors duration-150', cls)}>
+      <span className={cn('inline-block h-1.5 w-1.5 rounded-full shrink-0 ring-1 ring-inset ring-black/5', dot)} />
+      <Icon size={12} strokeWidth={2.5} className="shrink-0" />
+      <span className="leading-none">{label}</span>
     </span>
   );
 };
@@ -180,7 +182,7 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
 
   return (
     <>
-      <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+      <div className="flex flex-col overflow-hidden bg-card sm:rounded-lg sm:border sm:border-border sm:shadow-sm">
         <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 border border-primary/10">
