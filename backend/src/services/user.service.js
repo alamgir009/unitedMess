@@ -264,25 +264,48 @@ async function deactivateAccount(userId) {
  * Get all users with optimized pagination and filtering.
  * Important: Returns current billing-month stats (meals/market) for each user.
  */
-async function getAllUsers(filters = {}, pagination = {}) {
+async function getAllUsers(filters = {}, pagination = {}, viewerRole = 'user') {
     const page = Math.max(1, Number(pagination.page) || DEFAULT_PAGE);
     const limit = Math.min(MAX_LIMIT, Math.max(1, Number(pagination.limit) || DEFAULT_LIMIT));
     const skip = (page - 1) * limit;
-
-    const bp = getBillingPeriod();
-    const { start, end } = bp;
-    const billingMonth = bp.month;
-    const billingYear = bp.year;
-    const billingMonthName = bp.monthName;
 
     const query = Object.entries(filters).reduce((acc, [key, value]) => {
         if (value !== undefined && value !== '') acc[key] = value;
         return acc;
     }, {});
 
-    // Use aggregation to fetch current-period stats per user
-    // NOTE: No isActive filter is applied by default — the admin sees ALL users.
-    // The caller can pass isActive=true/false in the filter object to narrow results.
+    // ── Regular user directory view: basic profile fields only ──
+    if (viewerRole !== 'admin') {
+        const [users, total] = await Promise.all([
+            User.find(query)
+                .select('name email image phone role userStatus isActive')
+                .sort({ name: 1 })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+            User.countDocuments(query),
+        ]);
+
+        return {
+            users,
+            pagination: {
+                page,
+                limit,
+                total,
+                pages: Math.ceil(total / limit),
+                hasNext: skip + users.length < total,
+                hasPrev: page > 1,
+            },
+        };
+    }
+
+    // ── Admin view: full data with billing-period financial lookups ──
+    const bp = getBillingPeriod();
+    const { start, end } = bp;
+    const billingMonth = bp.month;
+    const billingYear = bp.year;
+    const billingMonthName = bp.monthName;
+
     const aggregationPipeline = [
         { $match: query },
         {
