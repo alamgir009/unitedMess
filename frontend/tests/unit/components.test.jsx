@@ -9,10 +9,17 @@ describe('Button', () => {
         expect(screen.getByRole('button', { name: /click me/i })).toBeInTheDocument();
     });
 
-    it('applies variant styles', () => {
-        const { container } = render(<Button variant="primary">Primary</Button>);
-        const btn = container.firstChild;
-        expect(btn.className).toContain('bg-primary');
+    it.each([
+        ['primary', 'bg-primary'],
+        ['secondary', 'bg-secondary'],
+        ['ghost', 'bg-transparent'],
+        ['destructive', 'bg-destructive'],
+        ['danger', 'bg-destructive'],
+        ['outline', 'bg-transparent'],
+        ['success', 'bg-success'],
+    ])('applies %s variant styles', (variant, expectedClass) => {
+        const { container } = render(<Button variant={variant}>Test</Button>);
+        expect(container.firstChild.className).toContain(expectedClass);
     });
 
     it('shows spinner when loading', () => {
@@ -25,10 +32,19 @@ describe('Button', () => {
         expect(screen.getByRole('button')).toBeDisabled();
     });
 
-    it('applies size styles', () => {
-        const { container } = render(<Button size="lg">Large</Button>);
-        const btn = container.firstChild;
-        expect(btn.className).toContain('h-12');
+    it('preserves children in DOM during loading to prevent layout shift', () => {
+        render(<Button isLoading>Loading</Button>);
+        expect(screen.getByText('Loading')).toBeInTheDocument();
+    });
+
+    it.each([
+        ['sm', 'h-8'],
+        ['md', 'h-11'],
+        ['lg', 'h-12'],
+        ['xl', 'h-14'],
+    ])('applies %s size styles', (size, expectedClass) => {
+        const { container } = render(<Button size={size}>Test</Button>);
+        expect(container.firstChild.className).toContain(expectedClass);
     });
 
     it('applies fullWidth', () => {
@@ -36,15 +52,35 @@ describe('Button', () => {
         expect(container.firstChild.className).toContain('w-full');
     });
 
-    it('applies iconOnly sizing', () => {
-        const { container } = render(<Button iconOnly size="md">X</Button>);
-        expect(container.firstChild.className).toContain('w-10');
+    it.each([
+        ['sm', 'h-8 w-8'],
+        ['md', 'h-10 w-10'],
+        ['lg', 'h-12 w-12'],
+        ['xl', 'h-14 w-14'],
+    ])('applies iconOnly %s sizing', (size, expectedClass) => {
+        const { container } = render(<Button iconOnly size={size}>X</Button>);
+        expect(container.firstChild.className).toContain(expectedClass);
+    });
+
+    it('meets touch target minimum dimensions', () => {
+        const { container } = render(<Button size="sm">Tiny</Button>);
+        expect(container.firstChild.className).toContain('min-h-[44px]');
+    });
+
+    it('defaults type to button', () => {
+        render(<Button>Submit</Button>);
+        expect(screen.getByRole('button')).toHaveAttribute('type', 'button');
     });
 
     it('forwards ref', () => {
         const ref = { current: null };
         render(<Button ref={ref}>Ref</Button>);
         expect(ref.current).toBeInstanceOf(HTMLButtonElement);
+    });
+
+    it('applies aria-disabled when disabled', () => {
+        render(<Button disabled>Disabled</Button>);
+        expect(screen.getByRole('button')).toHaveAttribute('aria-disabled', 'true');
     });
 });
 

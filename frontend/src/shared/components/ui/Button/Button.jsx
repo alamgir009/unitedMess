@@ -1,20 +1,23 @@
 import { forwardRef } from 'react';
 import { Loader2 } from 'lucide-react';
+import { useReducedMotion } from 'framer-motion';
 import { cn } from '@/core/utils/helpers/string.helper';
 
 const variantStyles = {
   primary:
-    'bg-primary text-primary-foreground shadow-sm border-primary/10 hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+    'bg-primary text-primary-foreground shadow-sm border border-primary/10 hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
   secondary:
-    'bg-secondary text-secondary-foreground border-secondary/20 shadow-sm hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-  outline:
-    'bg-transparent text-primary border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+    'bg-secondary text-secondary-foreground shadow-sm border border-secondary/20 hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
   ghost:
-    'bg-transparent text-muted-foreground border-transparent hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+    'bg-transparent text-foreground border border-transparent hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+  destructive:
+    'bg-destructive text-destructive-foreground shadow-sm border border-destructive/10 hover:bg-destructive/90 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2',
+  outline:
+    'bg-transparent text-primary border border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
   danger:
-    'bg-destructive text-destructive-foreground shadow-sm border-destructive/10 hover:bg-destructive/90 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2',
+    'bg-destructive text-destructive-foreground shadow-sm border border-destructive/10 hover:bg-destructive/90 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2',
   success:
-    'bg-success text-white shadow-sm border-success/10 hover:brightness-90 focus-visible:ring-2 focus-visible:ring-success focus-visible:ring-offset-2',
+    'bg-success text-white shadow-sm border border-success/10 hover:brightness-90 focus-visible:ring-2 focus-visible:ring-success focus-visible:ring-offset-2',
 };
 
 const sizeStyles = {
@@ -31,6 +34,8 @@ const iconSizeStyles = {
   xl: 'h-14 w-14 rounded-lg',
 };
 
+const loaderSizeMap = { sm: 14, md: 16, lg: 18, xl: 20 };
+
 const Button = forwardRef(({
   children,
   variant = 'primary',
@@ -40,34 +45,41 @@ const Button = forwardRef(({
   fullWidth = false,
   className = '',
   disabled,
-  onClick,
+  type = 'button',
   ...props
 }, ref) => {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <button
       ref={ref}
-      type="button"
+      type={type}
       disabled={disabled || isLoading}
-      aria-busy={isLoading}
+      aria-busy={isLoading || undefined}
+      aria-disabled={disabled || undefined}
       className={cn(
-        'inline-flex items-center justify-center font-medium border transition-all duration-[var(--duration-base)] ease-out',
-        'active:scale-[0.97] disabled:opacity-45 disabled:cursor-not-allowed disabled:pointer-events-none',
-        'select-none whitespace-nowrap -webkit-tap-highlight-color-transparent',
+        'relative inline-flex items-center justify-center font-medium border',
+        'select-none whitespace-nowrap',
+        'transition-all duration-[var(--duration-base)] ease-out',
+        'min-h-[44px] min-w-[44px]',
+        '-webkit-tap-highlight-color-transparent',
+        !shouldReduceMotion && 'active:scale-[0.97] transform-gpu will-change-transform',
+        'disabled:opacity-45 disabled:cursor-not-allowed disabled:pointer-events-none',
         variantStyles[variant] || variantStyles.primary,
-        iconOnly ? iconSizeStyles[size] : sizeStyles[size],
+        iconOnly ? (iconSizeStyles[size] || iconSizeStyles.md) : (sizeStyles[size] || sizeStyles.md),
         fullWidth && 'w-full',
         className,
       )}
-      onClick={onClick}
       {...props}
     >
+      <span className={cn('inline-flex items-center justify-center gap-2', isLoading && 'opacity-0')}>
+        {children}
+      </span>
       {isLoading && (
-        <Loader2
-          className="animate-spin shrink-0"
-          size={size === 'sm' ? 13 : size === 'lg' || size === 'xl' ? 18 : 15}
-        />
+        <span className="absolute inset-0 flex items-center justify-center" aria-hidden="true">
+          <Loader2 className="animate-spin shrink-0" size={loaderSizeMap[size] || 16} />
+        </span>
       )}
-      {children}
     </button>
   );
 });
