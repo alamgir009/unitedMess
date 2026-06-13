@@ -250,7 +250,7 @@ const MemberSelect = ({
                                         className={`
                                             w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-all duration-100
                                             ${blocked
-                                                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 cursor-not-allowed'
+                                                ? 'bg-success/10 text-success cursor-not-allowed'
                                                 : selected
                                                     ? `${ac.selected} font-medium`
                                                     : 'hover:bg-muted/40 text-foreground'
@@ -261,14 +261,14 @@ const MemberSelect = ({
                                         <span className={`
                                             relative flex items-center justify-center w-4 h-4 shrink-0 rounded border-2 transition-all duration-100
                                             ${blocked
-                                                ? 'border-emerald-400/60 bg-emerald-400/20'
+                                                ? 'border-success/60 bg-success/20'
                                                 : selected
                                                     ? ac.checkbox
                                                     : `border-muted-foreground/30 ${ac.hoverCheck}`
                                             }
                                         `}>
                                             {(blocked || selected) && (
-                                                <HiOutlineCheck className={`w-3 h-3 ${blocked ? 'text-emerald-500' : ac.checkIcon}`} strokeWidth={3} />
+                                                <HiOutlineCheck className={`w-3 h-3 ${blocked ? 'text-success' : ac.checkIcon}`} strokeWidth={3} />
                                             )}
                                         </span>
 
@@ -287,7 +287,7 @@ const MemberSelect = ({
 
                                         {/* Blocked badge */}
                                         {blocked && (
-                                            <span className="flex items-center gap-1 shrink-0 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                            <span className="flex items-center gap-1 shrink-0 text-[11px] font-semibold text-success">
                                                 <HiOutlineCheck className="w-3.5 h-3.5" />
                                                 All paid
                                             </span>

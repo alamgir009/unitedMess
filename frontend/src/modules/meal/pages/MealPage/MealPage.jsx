@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AnimatePresence } from 'framer-motion';
 import {
@@ -13,6 +13,7 @@ import toast from 'react-hot-toast';
 
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import Button from '@/shared/components/ui/Button/Button';
+import { SkeletonCard } from '@/shared/components/ui/Loader';
 import MealList from '../../components/MealList/MealList';
 import AdminMealView from '../../components/AdminMealView/AdminMealView';
 import MealForm from '../../components/MealForm/MealForm';
@@ -25,22 +26,6 @@ import { fetchMeals, createMeal, bulkCreateMeals, updateMeal, deleteMeal, bulkDe
 import DeleteMealDialog from '../../components/DeleteMealDialog/DeleteMealDialog';
 import MealSearchBar from '../../components/MealSearchBar/MealSearchBar';
 import MealStatsBar from '../../components/MealStatsBar/MealStatsBar';
-
-const SkeletonCard = React.memo(() => (
-    <div className="rounded-xl border border-border/50 bg-card p-5 animate-pulse">
-        <div className="flex justify-between mb-4">
-            <div className="space-y-2">
-                <div className="h-7 w-14 bg-muted/60 rounded-md" />
-                <div className="h-3 w-28 bg-muted/40 rounded" />
-            </div>
-            <div className="h-6 w-14 bg-muted/40 rounded-full" />
-        </div>
-        <div className="h-3 w-full bg-muted/30 rounded mb-1.5" />
-        <div className="h-3 w-2/3 bg-muted/20 rounded mb-5" />
-        <div className="h-8 w-full bg-muted/30 rounded-xl" />
-    </div>
-));
-SkeletonCard.displayName = 'SkeletonCard';
 
 const MealPage = () => {
     const dispatch = useDispatch();
@@ -284,7 +269,7 @@ const MealPage = () => {
                                     <HiOutlineSparkles className="w-3.5 h-3.5" /> My Meals
                                 </span>
                             )}
-                            <h2 className="text-xl sm:text-2xl tracking-tight text-foreground">
+                            <h2 className="text-h1">
                                 {isAdmin ? 'Meals Overview' : 'Meals Hub'}
                             </h2>
                             <p className="text-sm text-muted-foreground">
@@ -293,14 +278,14 @@ const MealPage = () => {
                         </div>
 
                         <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
-                            <button
+                            <Button
+                                variant="primary"
+                                size="md"
                                 onClick={openCreate}
-                                className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md transition-all duration-150"
-                                style={{ background: 'linear-gradient(135deg, hsl(210,92%,52%) 0%, hsl(268,76%,56%) 100%)' }}
                             >
                                 <HiOutlinePlus className="w-4 h-4 flex-shrink-0" />
                                 <span>Add Meal</span>
-                            </button>
+                            </Button>
 
                             <div className="flex items-center p-1 rounded-xl bg-muted/30 border border-border/40">
                                 <button

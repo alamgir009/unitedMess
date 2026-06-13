@@ -237,8 +237,8 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                     <div className="space-y-2">
                         <div className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/30 px-2.5 py-1">
                             <span className="relative flex h-1.5 w-1.5">
-                                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                <span className="absolute inline-flex h-full w-full rounded-full bg-success/60 opacity-75" />
+                                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-success" />
                             </span>
                             <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-foreground/75">
                                 Live Poll
@@ -288,7 +288,7 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                                     'min-h-[130px] sm:min-h-[140px] sm:p-4',
                                     'hover:scale-[1.01] active:scale-[0.98]',
                                     isActive
-                                        ? `border-transparent bg-white/95 ring-1 ${option.accent.ring} dark:bg-slate-900/90`
+                                        ? `border-transparent bg-card ring-1 ${option.accent.ring}`
                                         : 'border-border/50 bg-muted/20 hover:bg-muted/30 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.07]',
                                     disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
                                 )}
@@ -375,7 +375,7 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                 </div>
 
                 {/* STANDINGS SECTION */}
-                <div className="relative mt-5 overflow-hidden rounded-xl border border-border/40 bg-muted/20 p-0.5 dark:border-white/10 dark:bg-slate-950/80 sm:mt-6">
+                <div className="relative mt-5 overflow-hidden rounded-xl border border-border/40 bg-muted/20 p-0.5 dark:border-white/10 dark:bg-card/80 sm:mt-6">
                     <div className="overflow-hidden rounded-lg bg-transparent p-3.5 sm:p-4">
                         <div className="mb-3 flex items-center justify-between border-b border-border/40 pb-2.5 dark:border-white/10">
                             <div className="flex items-center gap-2">
@@ -384,8 +384,8 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                                     Current Standings
                                 </h4>
                             </div>
-                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-400">
-                                <span className="h-1 w-1 rounded-full bg-emerald-500" />
+                            <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.16em] text-success">
+                                <span className="h-1 w-1 rounded-full bg-success" />
                                 Live
                             </span>
                         </div>

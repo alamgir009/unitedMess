@@ -1,3 +1,4 @@
+import Button from '@/shared/components/ui/Button/Button';
 import {
     HiOutlinePlus,
     HiOutlineSquares2X2,
@@ -24,7 +25,7 @@ const PaymentHeader = ({
                         <HiOutlineCurrencyRupee className="w-3.5 h-3.5" /> My Payments
                     </span>
                 )}
-                <h2 className="text-xl sm:text-2xl tracking-tight text-foreground font-semibold">
+                <h2 className="text-h1">
                     {isAdmin ? 'Payment Overview' : 'Payment Hub'}
                 </h2>
                 <p className="text-sm text-muted-foreground">
@@ -36,13 +37,14 @@ const PaymentHeader = ({
 
             <div className="flex items-center flex-wrap sm:flex-nowrap gap-2 sm:gap-3 w-full lg:w-auto justify-start sm:justify-end flex-shrink-0">
                 {isAdmin && (
-                    <button
+                    <Button
+                        variant="primary"
+                        size="md"
                         onClick={onAddClick}
-                        className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 h-[42px] rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-150 shrink-0 bg-gradient-to-br from-indigo-500 to-violet-600"
                     >
                         <HiOutlinePlus className="w-4 h-4 flex-shrink-0" />
                         <span>Add Payment</span>
-                    </button>
+                    </Button>
                 )}
 
                 <div className="flex items-center h-[42px] p-1 rounded-xl bg-muted/30 border border-border/40 shrink-0 select-none">

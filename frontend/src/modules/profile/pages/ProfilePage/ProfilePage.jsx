@@ -57,11 +57,11 @@ const CopyButton = ({ text, label }) => {
         <button
             onClick={handleCopy}
             type="button"
-            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all active:scale-95 shadow-sm"
+            className="p-1.5 rounded-lg border border-border text-muted-foreground hover:text-primary hover:bg-muted transition-all active:scale-95 shadow-sm"
             title={`Copy ${label}`}
         >
             {copied ? (
-                <Check className="w-3.5 h-3.5 text-emerald-500" />
+                <Check className="w-3.5 h-3.5 text-success" />
             ) : (
                 <Copy className="w-3.5 h-3.5" />
             )}
@@ -90,23 +90,23 @@ const ConfirmDialog = ({ isOpen, onClose, onConfirm, title, message, confirmLabe
                         exit={{ scale: 0.985, opacity: 0, y: 12 }}
                         transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
                         onClick={(e) => e.stopPropagation()}
-                        className="relative z-10 bg-white dark:bg-slate-900 rounded-xl shadow-xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-800"
+                        className="relative z-10 bg-card rounded-xl shadow-xl max-w-md w-full p-6 border border-border"
                     >
                         <div className="flex items-start gap-4">
                             <div className={`p-2.5 rounded-xl shrink-0 border ${
                                 variant === 'danger'
-                                    ? 'bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border-red-100 dark:border-red-900/30'
-                                    : 'bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/30'
+                                    ? 'bg-danger-bg text-danger border-danger-border'
+                                    : 'bg-primary/10 text-primary border-primary/20'
                             }`}>
                                 <AlertTriangle className="w-5 h-5" />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h3 className="text-base font-bold text-slate-900 dark:text-slate-50">{title}</h3>
-                                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{message}</p>
+                                <h3 className="text-base font-bold text-foreground">{title}</h3>
+                                <p className="mt-2 text-xs text-muted-foreground leading-relaxed">{message}</p>
                             </div>
                             <button
                                 onClick={onClose}
-                                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 -mt-1 -mr-1"
+                                className="text-muted-foreground hover:text-foreground transition-colors p-1 -mt-1 -mr-1"
                                 aria-label="Close"
                             >
                                 <X className="w-4 h-4" />
@@ -140,16 +140,16 @@ const ConfirmDialog = ({ isOpen, onClose, onConfirm, title, message, confirmLabe
 // ---------------------------------------------------------------------------- //
 const ProfileDetailCard = ({ icon: Icon, label, value, isCopyable, copyLabel }) => {
     return (
-        <div className="group relative flex items-center justify-between p-4 rounded-xl border border-slate-200/60 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 hover:bg-gray-100 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200 shadow-sm">
+        <div className="group relative flex items-center justify-between p-4 rounded-xl border border-border bg-muted/30 hover:bg-muted hover:border-border transition-all duration-200 shadow-sm">
             <div className="flex items-center gap-3.5 min-w-0">
-                <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-blue-50 dark:group-hover:bg-blue-600/10 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors shrink-0 border border-transparent dark:border-slate-700/30">
+                <div className="p-2.5 rounded-xl bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors shrink-0 border border-transparent">
                     <Icon className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                    <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    <span className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                         {label}
                     </span>
-                    <span className="block text-sm font-semibold text-slate-800 dark:text-slate-100 truncate mt-0.5">
+                    <span className="block text-sm font-semibold text-foreground truncate mt-0.5">
                         {value}
                     </span>
                 </div>
@@ -167,26 +167,26 @@ const ProfileDetailCard = ({ icon: Icon, label, value, isCopyable, copyLabel }) 
 // Notification Toggle Row (Hover matched to Sidebar styling)
 // ---------------------------------------------------------------------------- //
 const NotificationToggle = ({ icon: Icon, iconBg, iconColor, title, description, enabled, loading, onToggle, error }) => (
-    <div className="py-4 px-4 rounded-xl border border-slate-200/40 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/20 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+    <div className="py-4 px-4 rounded-xl border border-border bg-muted/20 hover:bg-muted transition-colors">
         <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className={`p-2.5 rounded-xl shrink-0 ${iconBg} border border-slate-200/50 dark:border-slate-800`}>
+                <div className={`p-2.5 rounded-xl shrink-0 ${iconBg} border border-border`}>
                     <Icon className={`w-4 h-4 ${iconColor}`} />
                 </div>
                 <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 leading-tight">{title}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-1.5">{description}</p>
+                    <p className="text-sm font-semibold text-foreground leading-tight">{title}</p>
+                    <p className="text-xs text-muted-foreground truncate mt-1.5">{description}</p>
                 </div>
             </div>
             <button
                 onClick={onToggle}
                 disabled={loading}
-                className={`relative inline-flex h-[24px] w-11 items-center rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-400 shrink-0 ml-4 ${
+                className={`relative inline-flex h-[24px] w-11 items-center rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary shrink-0 ml-4 ${
                     loading ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
                 } ${
                     enabled
-                        ? 'bg-emerald-500 dark:bg-emerald-600'
-                        : 'bg-slate-200 dark:bg-slate-700'
+                        ? 'bg-success'
+                        : 'bg-muted-foreground/30'
                 }`}
                 role="switch"
                 aria-checked={enabled}
@@ -197,7 +197,7 @@ const NotificationToggle = ({ icon: Icon, iconBg, iconColor, title, description,
             </button>
         </div>
         {error && (
-            <div className="flex items-center gap-1.5 mt-2.5 ml-12 text-red-500">
+            <div className="flex items-center gap-1.5 mt-2.5 ml-12 text-danger">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
                 <p className="text-xs font-semibold leading-snug">{error}</p>
             </div>
@@ -211,19 +211,19 @@ const NotificationToggle = ({ icon: Icon, iconBg, iconColor, title, description,
 const ProfileSkeleton = () => (
     <div className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 animate-pulse">
         {/* Header Skeleton */}
-        <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+        <div className="h-32 bg-muted rounded-2xl" />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
             {/* Left Column Skeleton */}
             <div className="space-y-6">
-                <div className="bg-slate-200 dark:bg-slate-800 h-64 rounded-2xl" />
-                <div className="bg-slate-200 dark:bg-slate-800 h-40 rounded-2xl" />
+                <div className="bg-muted h-64 rounded-2xl" />
+                <div className="bg-muted h-40 rounded-2xl" />
             </div>
 
             {/* Right Column Skeleton */}
             <div className="md:col-span-2 space-y-6">
-                <div className="bg-slate-200 dark:bg-slate-800 h-80 rounded-2xl" />
-                <div className="bg-slate-200 dark:bg-slate-800 h-60 rounded-2xl" />
+                <div className="bg-muted h-80 rounded-2xl" />
+                <div className="bg-muted h-60 rounded-2xl" />
             </div>
         </div>
     </div>
@@ -249,17 +249,17 @@ class ProfileCardErrorBoundary extends Component {
     render() {
         if (this.state.hasError) {
             return (
-                <div className="p-6 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 rounded-2xl text-center space-y-3">
-                    <div className="inline-flex p-2.5 rounded-xl bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/30">
+                <div className="p-6 bg-danger-bg border border-danger-border rounded-2xl text-center space-y-3">
+                    <div className="inline-flex p-2.5 rounded-xl bg-danger-bg text-danger border border-danger-border">
                         <AlertTriangle className="w-5 h-5" />
                     </div>
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-50">Card Load Failed</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                    <h3 className="text-sm font-semibold text-foreground">Card Load Failed</h3>
+                    <p className="text-xs text-muted-foreground max-w-md mx-auto">
                         An error occurred while loading this section of your profile: {this.state.error?.message || "Unknown error"}
                     </p>
                     <button
                         onClick={() => this.setState({ hasError: false, error: null })}
-                        className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-red-600 hover:bg-red-700 text-white shadow-sm transition-colors active:scale-95"
+                        className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-danger text-white hover:bg-danger/90 shadow-sm transition-colors active:scale-95"
                     >
                         Try Again
                     </button>
@@ -397,22 +397,22 @@ const ProfilePage = () => {
         <MainLayout>
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
                 {/* Premium Banner Header */}
-                <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 p-6 sm:p-8 text-white mb-6 sm:mb-8 shadow-md">
-                    <div className="absolute right-0 top-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
-                    <div className="absolute left-1/3 bottom-0 -mb-20 w-80 h-80 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
+                <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 p-6 sm:p-8 text-white mb-6 sm:mb-8 shadow-md">
+                    <div className="absolute right-0 top-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+                    <div className="absolute left-1/3 bottom-0 -mb-20 w-80 h-80 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
                     
                     <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
                             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
                                 {user?.name || 'User Profile'}
                             </h2>
-                            <p className="text-xs sm:text-sm text-slate-400 mt-2 max-w-xl leading-relaxed">
+                            <p className="text-xs sm:text-sm text-muted-foreground mt-2 max-w-xl leading-relaxed">
                                 View your account details, manage notification channels, and update personal settings.
                             </p>
                         </div>
                         <div className="flex items-center gap-3 shrink-0 self-start sm:self-center">
                             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 text-white border border-white/10">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-success" />
                                 Active Session
                             </span>
                         </div>
@@ -423,38 +423,38 @@ const ProfilePage = () => {
                     {/* Left Column: Avatar & Quick Info */}
                     <div className="md:col-span-1 space-y-6">
                         {/* Avatar Card */}
-                        <Card variant="default" padding="none" className="overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+                        <Card variant="default" padding="none" className="overflow-hidden bg-card border border-border shadow-sm">
                             <CardContent className="p-6">
                                 <div className="flex flex-col items-center text-center space-y-4">
                                     <AvatarUpload />
                                     
                                     <div className="space-y-1">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                                             Account User
                                         </p>
-                                        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 truncate max-w-full">
+                                        <h3 className="text-lg font-bold text-foreground truncate max-w-full">
                                             {user?.name || 'Member User'}
                                         </h3>
                                         <div className="flex items-center justify-center pt-1.5">
                                             {isAdmin ? (
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold tracking-wider uppercase bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-900/30 shadow-sm">
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold tracking-wider uppercase bg-primary/10 text-primary border border-primary/20 shadow-sm">
                                                     <Crown className="w-3 h-3" />
                                                     Admin
                                                 </span>
                                             ) : (
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold tracking-wider uppercase bg-slate-50 dark:bg-slate-950/40 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 shadow-sm">
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold tracking-wider uppercase bg-muted text-muted-foreground border border-border shadow-sm">
                                                     Member
                                                 </span>
                                             )}
                                         </div>
                                     </div>
                                     
-                                    <div className="h-px bg-slate-100 dark:bg-slate-800 w-full" />
-                                    <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                                    <div className="h-px bg-border w-full" />
+                                    <p className="text-[10px] text-muted-foreground">
                                         JPG, PNG or GIF. Max 5 MB.
                                     </p>
                                     {avatarError && (
-                                        <div className="flex items-center gap-1.5 text-xs font-semibold text-red-500">
+                                        <div className="flex items-center gap-1.5 text-xs font-semibold text-danger">
                                             <AlertTriangle className="w-4 h-4" />
                                             {avatarError}
                                         </div>
@@ -464,51 +464,51 @@ const ProfilePage = () => {
                         </Card>
 
                         {/* Quick Actions */}
-                        <Card variant="default" padding="none" className="overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+                        <Card variant="default" padding="none" className="overflow-hidden bg-card border border-border shadow-sm">
                             <CardContent className="p-3">
                                 <div className="space-y-1">
                                     {isAdmin && (
                                         <>
                                             <button
-                                                className="w-full flex items-center justify-between p-3 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white transition-colors group font-medium"
+                                                className="w-full flex items-center justify-between p-3 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors group font-medium"
                                                 onClick={() => navigate('/settings')}
                                             >
                                                 <span className="flex items-center gap-3 text-sm">
-                                                    <Settings className="w-5 h-5 text-gray-400 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+                                                    <Settings className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                                                     Account Settings
                                                 </span>
-                                                <ChevronDown className="w-4 h-4 -rotate-90 text-slate-400 dark:text-slate-500" />
+                                                <ChevronDown className="w-4 h-4 -rotate-90 text-muted-foreground" />
                                             </button>
-                                            <div className="h-px bg-slate-100 dark:bg-slate-800 mx-2" />
+                                            <div className="h-px bg-border mx-2" />
                                         </>
                                     )}
 
                                     <button
                                         onClick={handleLogout}
-                                        className="w-full flex items-center justify-between p-3 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white transition-colors group font-medium"
+                                        className="w-full flex items-center justify-between p-3 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors group font-medium"
                                     >
                                         <span className="flex items-center gap-3 text-sm">
-                                            <LogOut className="w-5 h-5 text-gray-400 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+                                            <LogOut className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                                             Sign Out
                                         </span>
-                                        <ChevronDown className="w-4 h-4 -rotate-90 text-slate-400 dark:text-slate-500" />
+                                        <ChevronDown className="w-4 h-4 -rotate-90 text-muted-foreground" />
                                     </button>
 
-                                    <div className="h-px bg-slate-100 dark:bg-slate-800 mx-2" />
+                                    <div className="h-px bg-border mx-2" />
 
                                     <button
                                         onClick={() => setShowDeactivateConfirm(true)}
                                         disabled={deactivationLoading}
-                                        className="w-full flex items-center justify-between p-3 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-400/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group font-medium"
+                                        className="w-full flex items-center justify-between p-3 rounded-xl text-danger hover:bg-danger-bg transition-colors disabled:opacity-50 disabled:cursor-not-allowed group font-medium"
                                     >
                                         <span className="flex items-center gap-3 text-sm">
-                                            <UserX className="w-5 h-5 text-red-400 dark:text-red-400 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors" />
+                                            <UserX className="w-5 h-5 text-danger group-hover:text-danger transition-colors" />
                                             Deactivate Account
                                         </span>
                                         {deactivationLoading ? (
-                                            <Spinner size="sm" color="current" className="text-red-600 dark:text-red-400" />
+                                            <Spinner size="sm" color="current" className="text-danger" />
                                         ) : (
-                                            <ChevronDown className="w-4 h-4 -rotate-90 text-red-300 dark:text-red-700" />
+                                            <ChevronDown className="w-4 h-4 -rotate-90 text-danger/50" />
                                         )}
                                     </button>
                                 </div>
@@ -520,22 +520,22 @@ const ProfilePage = () => {
                     <div className="md:col-span-2 space-y-6">
                         {/* Personal Details Card */}
                         <ProfileCardErrorBoundary>
-                            <Card variant="default" padding="none" className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm">
-                                <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <Card variant="default" padding="none" className="bg-card border border-border shadow-sm">
+                                <div className="px-6 py-5 border-b border-border flex items-center justify-between">
                                     <div className="flex items-center gap-2.5">
-                                        <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100/50 dark:border-indigo-900/30">
-                                            <User className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                        <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/20">
+                                            <User className="w-4 h-4 text-primary" />
                                         </div>
                                         <div>
-                                            <h3 className="text-base font-bold text-slate-900 dark:text-slate-50">
+                                            <h3 className="text-base font-bold text-foreground">
                                                 Personal Details
                                             </h3>
-                                            <p className="text-[11px] text-slate-400 dark:text-slate-500">Your profile registration data</p>
+                                            <p className="text-[11px] text-muted-foreground">Your profile registration data</p>
                                         </div>
                                     </div>
                                     <button
                                         onClick={() => setIsModalOpen(true)}
-                                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg border border-indigo-200 dark:border-indigo-900/50 text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-950/20 hover:bg-indigo-100/60 dark:hover:bg-indigo-950/60 transition-colors active:scale-95 shadow-sm"
+                                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg border border-primary/30 text-primary bg-primary/10 hover:bg-primary/20 transition-colors active:scale-95 shadow-sm"
                                         aria-label="Edit personal details"
                                     >
                                         <Edit3 className="w-3.5 h-3.5" />
@@ -558,22 +558,22 @@ const ProfilePage = () => {
 
                         {/* Notification Preferences */}
                         <ProfileCardErrorBoundary>
-                            <Card variant="default" padding="none" className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm">
-                                <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <Card variant="default" padding="none" className="bg-card border border-border shadow-sm">
+                                <div className="px-6 py-5 border-b border-border flex items-center justify-between">
                                     <div className="flex items-center gap-2.5">
-                                        <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100/50 dark:border-emerald-900/30">
-                                            <Bell className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                                        <div className="p-1.5 rounded-lg bg-success-bg border border-success-border">
+                                            <Bell className="w-4 h-4 text-success" />
                                         </div>
                                         <div>
-                                            <h3 className="text-base font-bold text-slate-900 dark:text-slate-50">
+                                            <h3 className="text-base font-bold text-foreground">
                                                 Communication Channels
                                             </h3>
-                                            <p className="text-[11px] text-slate-400 dark:text-slate-500">Configure alert channels and push tokens</p>
+                                            <p className="text-[11px] text-muted-foreground">Configure alert channels and push tokens</p>
                                         </div>
                                     </div>
                                     <button
                                         onClick={() => setPrefsOpen(!prefsOpen)}
-                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                                         aria-expanded={prefsOpen}
                                     >
                                         {prefsOpen ? 'Hide Preferences' : 'Manage Preferences'}
@@ -592,16 +592,16 @@ const ProfilePage = () => {
                                             <CardContent className="px-6 pb-6 pt-6">
                                                 {prefsLoading ? (
                                                     <div className="flex items-center gap-2.5 justify-center py-8">
-                                                        <Spinner size="sm" color="current" className="text-indigo-500" />
-                                                        <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">Synchronizing configurations…</span>
+                                                        <Spinner size="sm" color="current" className="text-primary" />
+                                                        <span className="text-xs text-muted-foreground font-medium">Synchronizing configurations…</span>
                                                     </div>
                                                 ) : prefsError ? (
                                                     <div className="flex flex-col items-center gap-2 py-8 text-center">
-                                                        <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30">
-                                                            <WifiOff className="w-5 h-5 text-red-500 dark:text-red-400" />
+                                                        <div className="p-2.5 rounded-xl bg-danger-bg border border-danger-border">
+                                                            <WifiOff className="w-5 h-5 text-danger" />
                                                         </div>
-                                                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Failed to load channels</p>
-                                                        <p className="text-xs text-slate-400 dark:text-slate-500 max-w-xs leading-normal">Verify security certificates and device connection settings.</p>
+                                                        <p className="text-sm font-semibold text-foreground">Failed to load channels</p>
+                                                        <p className="text-xs text-muted-foreground max-w-xs leading-normal">Verify security certificates and device connection settings.</p>
                                                         <button
                                                             onClick={() => {
                                                                 setPrefsLoading(true);
@@ -615,7 +615,7 @@ const ProfilePage = () => {
                                                                     .catch(() => setPrefsError(true))
                                                                     .finally(() => setPrefsLoading(false));
                                                             }}
-                                                            className="mt-3 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors active:scale-95 shadow-sm"
+                                                            className="mt-3 px-3 py-1.5 text-xs font-semibold rounded-lg border border-border text-muted-foreground hover:bg-muted transition-colors active:scale-95 shadow-sm"
                                                         >
                                                             Retry Handshake
                                                         </button>
@@ -624,8 +624,8 @@ const ProfilePage = () => {
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                         <NotificationToggle
                                                             icon={Smartphone}
-                                                            iconBg="bg-blue-50 dark:bg-blue-950/30"
-                                                            iconColor="text-blue-600 dark:text-blue-400"
+                                                            iconBg="bg-primary/10"
+                                                            iconColor="text-primary"
                                                             title="FCM Push Notifications"
                                                             description={fcmSupported ? (fcmEnabled ? 'Subscribed' : 'Inactive') : 'Not supported on this device'}
                                                             enabled={fcmEnabled}
@@ -635,8 +635,8 @@ const ProfilePage = () => {
                                                         />
                                                         <NotificationToggle
                                                             icon={Smartphone}
-                                                            iconBg="bg-green-50 dark:bg-emerald-950/20"
-                                                            iconColor="text-green-600 dark:text-emerald-400"
+                                                            iconBg="bg-success-bg"
+                                                            iconColor="text-success"
                                                             title="VAPID Web Push"
                                                             description={vapidSupported ? (vapidEnabled ? 'Subscribed' : 'Inactive') : 'Not supported on this device'}
                                                             enabled={vapidEnabled}
@@ -646,8 +646,8 @@ const ProfilePage = () => {
                                                         />
                                                         <NotificationToggle
                                                             icon={MailIcon}
-                                                            iconBg="bg-purple-50 dark:bg-purple-950/30"
-                                                            iconColor="text-purple-600 dark:text-purple-400"
+                                                            iconBg="bg-primary/10"
+                                                            iconColor="text-primary"
                                                             title="Email Notifications"
                                                             description={notifPrefs.email ? 'Alerts enabled' : 'Alerts disabled'}
                                                             enabled={notifPrefs.email}
@@ -656,8 +656,8 @@ const ProfilePage = () => {
                                                         />
                                                         <NotificationToggle
                                                             icon={Moon}
-                                                            iconBg="bg-indigo-50 dark:bg-indigo-950/30"
-                                                            iconColor="text-indigo-600 dark:text-indigo-400"
+                                                            iconBg="bg-primary/10"
+                                                            iconColor="text-primary"
                                                             title="Quiet Hours (DND)"
                                                             description={notifPrefs.quietHours?.enabled
                                                                 ? `${notifPrefs.quietHours.start || '22:00'} – ${notifPrefs.quietHours.end || '08:00'}`
@@ -674,11 +674,11 @@ const ProfilePage = () => {
                                                     </div>
                                                 ) : (
                                                     <div className="flex flex-col items-center gap-2 py-8 text-center">
-                                                        <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
-                                                            <Bell className="w-5 h-5 text-slate-400 dark:text-slate-500" />
+                                                        <div className="p-2 rounded-xl bg-muted border border-border">
+                                                            <Bell className="w-5 h-5 text-muted-foreground" />
                                                         </div>
-                                                        <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">No preference schema</p>
-                                                        <p className="text-xs text-slate-400 dark:text-slate-500">Contact admin to provision notification parameters.</p>
+                                                        <p className="text-sm font-semibold text-muted-foreground">No preference schema</p>
+                                                        <p className="text-xs text-muted-foreground">Contact admin to provision notification parameters.</p>
                                                     </div>
                                                 )}
                                             </CardContent>

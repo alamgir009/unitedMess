@@ -32,11 +32,11 @@ const Skeleton = () => (
     <div className="space-y-1.5 p-3" aria-busy="true" aria-label="Loading notifications">
         {Array.from({ length: 4 }, (_, i) => (
             <div key={i} className="flex items-start gap-3 p-3 rounded-xl animate-pulse">
-                <div className="shrink-0 w-9 h-9 rounded-xl bg-slate-200 dark:bg-slate-700" />
+                <div className="shrink-0 w-9 h-9 rounded-xl bg-muted" />
                 <div className="flex-1 space-y-2 py-0.5">
-                    <div className="h-3.5 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
-                    <div className="h-3   bg-slate-200 dark:bg-slate-700 rounded w-full" />
-                    <div className="h-2.5 bg-slate-200 dark:bg-slate-700 rounded w-2/5" />
+                    <div className="h-3.5 bg-muted rounded w-3/4" />
+                    <div className="h-3   bg-muted rounded w-full" />
+                    <div className="h-2.5 bg-muted rounded w-2/5" />
                 </div>
             </div>
         ))}
@@ -52,19 +52,18 @@ const EmptyState = ({ hasUnread }) => (
     >
         <div className="
             w-14 h-14 rounded-full mb-4 shadow-inner
-            bg-gradient-to-br from-slate-100 to-slate-200
-            dark:from-slate-800 dark:to-slate-700
+            bg-gradient-to-br from-muted to-muted/50
             flex items-center justify-center
         ">
             {hasUnread
-                ? <BellRing  className="w-5 h-5 text-slate-400 dark:text-slate-500" />
-                : <Sparkles  className="w-5 h-5 text-slate-400 dark:text-slate-500" />
+                ? <BellRing  className="w-5 h-5 text-muted-foreground" />
+                : <Sparkles  className="w-5 h-5 text-muted-foreground" />
             }
         </div>
-        <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+        <h4 className="text-sm font-semibold text-foreground mb-1">
             {hasUnread ? 'No unread notifications' : 'All caught up!'}
         </h4>
-        <p className="text-xs text-slate-400 dark:text-slate-500 max-w-[180px] leading-relaxed">
+        <p className="text-xs text-muted-foreground max-w-[180px] leading-relaxed">
             {hasUnread
                 ? "You've read everything"
                 : "We'll alert you when something needs attention"
@@ -82,24 +81,23 @@ const ErrorState = ({ error, onRetry }) => (
     >
         <div className="
             w-14 h-14 rounded-full mb-4 shadow-inner
-            bg-gradient-to-br from-red-50 to-red-100
-            dark:from-red-900/20 dark:to-red-800/30
+            bg-gradient-to-br from-danger-bg to-danger-bg/50
             flex items-center justify-center
         ">
-            <AlertCircle className="w-5 h-5 text-red-400 dark:text-red-400" />
+            <AlertCircle className="w-5 h-5 text-danger" />
         </div>
-        <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+        <h4 className="text-sm font-semibold text-foreground mb-1">
             Failed to load
         </h4>
-        <p className="text-xs text-slate-400 dark:text-slate-500 max-w-[220px] leading-relaxed mb-3">
+        <p className="text-xs text-muted-foreground max-w-[220px] leading-relaxed mb-3">
             {error || 'Something went wrong while fetching notifications.'}
         </p>
         <button
             onClick={onRetry}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-                text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40
-                border border-blue-100 dark:border-blue-900/50
-                hover:bg-blue-100 dark:hover:bg-blue-950/70 transition-all"
+                text-primary bg-primary/10
+                border border-primary/20
+                hover:bg-primary/20 transition-all"
         >
             <RefreshCw className="w-3 h-3" />
             Try again
@@ -111,12 +109,12 @@ const ErrorState = ({ error, onRetry }) => (
 const GroupLabel = ({ label }) => (
     <div className="
         px-4 py-2 sticky top-0 z-[1]
-        bg-slate-50/90 dark:bg-slate-800/80
-        border-b border-slate-100 dark:border-slate-800/60
+        bg-muted/90
+        border-b border-border
         backdrop-blur-sm
     ">
         <span className="text-[10px] font-semibold tracking-widest uppercase
-            text-slate-400 dark:text-slate-500 font-mono">
+            text-muted-foreground font-mono">
             {label}
         </span>
     </div>
@@ -175,15 +173,15 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
     const lastGroup  = groupKeys.at(-1);
 
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-slate-900 overflow-hidden">
+        <div className="flex flex-col h-full bg-card overflow-hidden">
 
             {/* ── Header ── */}
             <div className="
                 sticky top-0 z-10 shrink-0
                 flex items-center justify-between
                 px-5 py-4
-                border-b border-slate-100 dark:border-slate-800
-                bg-white/90 dark:bg-slate-900/90
+                border-b border-border
+                bg-card/90
                 backdrop-blur-sm
             ">
                 <div className="flex items-center gap-2.5">
@@ -195,11 +193,11 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
                         <Bell className="w-4 h-4 md:w-5 md:h-5 lg:w-5 lg:h-5 text-white" aria-hidden />
                     </div>
                     <div>
-                        <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-[15px] tracking-tight">
+                        <h3 className="font-semibold text-foreground text-[15px] tracking-tight">
                             Notifications
                         </h3>
                         {total > 0 && (
-                            <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
+                            <p className="text-[11px] font-mono text-muted-foreground">
                                 {total} total · {unreadCount} new
                             </p>
                         )}
@@ -235,8 +233,8 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
                 aria-live="polite"
                 className="overflow-y-auto flex-1 overscroll-contain
                     scrollbar-thin scrollbar-track-transparent
-                    scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700
-                    hover:scrollbar-thumb-slate-300 dark:hover:scrollbar-thumb-slate-600"
+                    scrollbar-thumb-muted-foreground/30
+                    hover:scrollbar-thumb-muted-foreground/50"
             >
                 {loading && items.length === 0 ? (
                     <Skeleton />
@@ -245,7 +243,7 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
                 ) : items.length === 0 ? (
                     <EmptyState hasUnread={unreadCount > 0} />
                 ) : (
-                    <div className="divide-y divide-slate-100/60 dark:divide-slate-800/40 py-1">
+                    <div className="divide-y divide-border/60 py-1">
                         {groupKeys.map(groupKey => (
                             <div key={groupKey}>
                                 <GroupLabel label={groupKey} />
@@ -272,13 +270,13 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
                         {/* Infinite scroll states */}
                         {isLoadingMore && (
                             <div className="flex items-center justify-center gap-2 py-5">
-                                <Spinner size="sm" color="current" className="text-blue-500" />
-                                <span className="text-xs text-slate-400 font-mono">Loading more…</span>
+                                <Spinner size="sm" color="current" className="text-primary" />
+                                <span className="text-xs text-muted-foreground font-mono">Loading more…</span>
                             </div>
                         )}
 
                         {!hasMore && items.length >= 20 && (
-                            <p className="py-6 text-center text-[11px] font-mono text-slate-400 dark:text-slate-500">
+                            <p className="py-6 text-center text-[11px] font-mono text-muted-foreground">
                                 — {total} notifications total —
                             </p>
                         )}
@@ -290,15 +288,14 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
             {items.length > 0 && (
                 <div className="
                     shrink-0 px-5 py-4
-                    border-t border-slate-100 dark:border-slate-800
-                    bg-slate-50/50 dark:bg-slate-800/20
+                    border-t border-border
+                    bg-muted/50
                     flex items-center justify-between
                 ">
                     <button
                         onClick={handleRefresh}
                         className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider
-                            text-slate-400 dark:text-slate-500 hover:text-blue-500
-                            dark:hover:text-blue-400 transition-all"
+                            text-muted-foreground hover:text-primary transition-all"
                         aria-label="Refresh notifications"
                     >
                         <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} aria-hidden />
@@ -308,8 +305,7 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
                     <button
                         onClick={closeMenu}
                         className="text-[11px] font-bold uppercase tracking-wider
-                            text-slate-400 dark:text-slate-500 hover:text-slate-700
-                            dark:hover:text-slate-200 transition-colors"
+                            text-muted-foreground hover:text-foreground transition-colors"
                     >
                         Close
                     </button>

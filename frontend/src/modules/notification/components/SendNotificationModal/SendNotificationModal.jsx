@@ -130,16 +130,16 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
+                        className="relative w-full max-w-lg bg-card rounded-2xl shadow-2xl border border-border overflow-hidden"
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-                            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+                            <h2 className="text-lg font-semibold text-foreground">
                                 {confirmBroadcast ? 'Confirm Broadcast' : 'Send Notification'}
                             </h2>
                             <button
                                 onClick={() => { reset(); onClose(); }}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+                                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -148,13 +148,13 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                         {confirmBroadcast ? (
                             /* Confirmation step for ALL broadcast */
                             <div className="p-6 space-y-4">
-                                <div className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-xl">
-                                    <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                                <div className="flex items-start gap-3 p-4 bg-warning-bg border border-warning-border rounded-xl">
+                                    <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
                                     <div>
-                                        <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                                        <p className="text-sm font-semibold text-warning">
                                             Broadcast to all {estimatedRecipients} active users
                                         </p>
-                                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                                        <p className="text-xs text-warning mt-1">
                                             This will send a notification to every active user in the system. This action is logged for audit purposes.
                                         </p>
                                     </div>
@@ -163,14 +163,14 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                                 <div className="flex items-center gap-3 pt-2">
                                     <button
                                         onClick={() => setConfirmBroadcast(false)}
-                                        className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+                                        className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium border border-border text-muted-foreground hover:bg-muted transition-all"
                                     >
                                         Edit
                                     </button>
                                     <button
                                         onClick={handleSubmit}
                                         disabled={submitting}
-                                        className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium bg-amber-500 hover:bg-amber-600 text-white disabled:opacity-50 transition-all"
+                                        className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium bg-warning text-white hover:bg-warning/90 disabled:opacity-50 transition-all"
                                     >
                                         {submitting ? 'Sending...' : `Send to ${estimatedRecipients} users`}
                                     </button>
@@ -181,7 +181,7 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                             <form onSubmit={handleSubmit} className="p-6 space-y-4">
                                 {/* Target Type */}
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                        <label className="block text-sm font-medium text-foreground mb-1.5">
                                         Send to
                                     </label>
                                     <div className="flex gap-2">
@@ -192,8 +192,8 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                                                 onClick={() => setTargetType(t.value)}
                                                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                                                     targetType === t.value
-                                                        ? 'bg-blue-500 text-white'
-                                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                                        ? 'bg-primary text-white'
+                                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
                                                 }`}
                                             >
                                                 {t.label}
@@ -205,7 +205,7 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                                 {/* User/Role ID */}
                                 {(targetType === 'USER' || targetType === 'ROLE') && (
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                        <label className="block text-sm font-medium text-foreground mb-1.5">
                                             {targetType === 'USER' ? 'User ID' : 'Role'}
                                         </label>
                                         {targetType === 'USER' ? (
@@ -214,13 +214,13 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                                                 value={userId}
                                                 onChange={(e) => setUserId(e.target.value)}
                                                 placeholder="Enter user ID"
-                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                                                className="w-full px-3 py-2 rounded-xl border border-border bg-card text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                                             />
                                         ) : (
                                             <select
                                                 value={userId}
                                                 onChange={(e) => setUserId(e.target.value)}
-                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                                                className="w-full px-3 py-2 rounded-xl border border-border bg-card text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                                             >
                                                 <option value="">Select role</option>
                                                 <option value="admin">Admin</option>
@@ -232,9 +232,9 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
 
                                 {/* Title */}
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                                        Title <span className="text-red-500">*</span>
-                                        <span className="text-xs text-slate-400 ml-1">({title.length}/80)</span>
+                                        <label className="block text-sm font-medium text-foreground mb-1.5">
+                                        Title <span className="text-danger">*</span>
+                                        <span className="text-xs text-muted-foreground ml-1">({title.length}/80)</span>
                                     </label>
                                     <input
                                         type="text"
@@ -243,15 +243,15 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                                         required
                                         maxLength={80}
                                         placeholder="Notification title"
-                                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                                        className="w-full px-3 py-2 rounded-xl border border-border bg-card text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                                     />
                                 </div>
 
                                 {/* Message */}
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                                        Message <span className="text-red-500">*</span>
-                                        <span className="text-xs text-slate-400 ml-1">({message.length}/300)</span>
+                                        <label className="block text-sm font-medium text-foreground mb-1.5">
+                                        Message <span className="text-danger">*</span>
+                                        <span className="text-xs text-muted-foreground ml-1">({message.length}/300)</span>
                                     </label>
                                     <textarea
                                         value={message}
@@ -260,18 +260,18 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                                         maxLength={300}
                                         rows={3}
                                         placeholder="Notification message"
-                                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-none"
+                                        className="w-full px-3 py-2 rounded-xl border border-border bg-card text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none"
                                     />
                                 </div>
 
                                 {/* Type & Priority */}
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Type</label>
+                                        <label className="block text-sm font-medium text-foreground mb-1.5">Type</label>
                                         <select
                                             value={type}
                                             onChange={(e) => setType(e.target.value)}
-                                            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                                            className="w-full px-3 py-2 rounded-xl border border-border bg-card text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                                         >
                                             {TYPES.map((t) => (
                                                 <option key={t} value={t}>{t}</option>
@@ -279,11 +279,11 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Priority</label>
+                                        <label className="block text-sm font-medium text-foreground mb-1.5">Priority</label>
                                         <select
                                             value={priority}
                                             onChange={(e) => setPriority(e.target.value)}
-                                            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                                            className="w-full px-3 py-2 rounded-xl border border-border bg-card text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                                         >
                                             {PRIORITIES.map((p) => (
                                                 <option key={p} value={p}>{p}</option>
@@ -299,9 +299,9 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                                             type="checkbox"
                                             checked={actionRequired}
                                             onChange={(e) => setActionRequired(e.target.checked)}
-                                            className="rounded border-slate-300 dark:border-slate-600 text-blue-500 focus:ring-blue-500"
+                                            className="rounded border-border text-primary focus:ring-primary"
                                         />
-                                        <span className="text-sm text-slate-700 dark:text-slate-300">Requires action</span>
+                                        <span className="text-sm text-foreground">Requires action</span>
                                     </label>
 
                                     {actionRequired && (
@@ -310,7 +310,7 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                                             value={actionUrl}
                                             onChange={(e) => setActionUrl(e.target.value)}
                                             placeholder="Action URL (optional)"
-                                            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                                            className="w-full px-3 py-2 rounded-xl border border-border bg-card text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                                         />
                                     )}
                                 </div>
@@ -319,28 +319,28 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                                 <button
                                     type="button"
                                     onClick={() => setShowPreview(!showPreview)}
-                                    className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-all"
+                                    className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-all"
                                 >
                                     {showPreview ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                                     {showPreview ? 'Hide preview' : 'Show preview'}
                                 </button>
 
                                 {showPreview && (
-                                    <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
-                                        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Preview</p>
-                                        <div className="flex items-start gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
+                                    <div className="p-3 bg-muted rounded-xl border border-border">
+                                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Preview</p>
+                                        <div className="flex items-start gap-3 p-3 bg-card rounded-lg border border-border">
                                             <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
-                                                priority === 'CRITICAL' ? 'bg-red-100 text-red-600' :
-                                                priority === 'HIGH' ? 'bg-amber-100 text-amber-600' :
-                                                'bg-slate-100 text-slate-600'
+                                                priority === 'CRITICAL' ? 'bg-danger-bg text-danger' :
+                                                priority === 'HIGH' ? 'bg-warning-bg text-warning' :
+                                                'bg-muted text-muted-foreground'
                                             }`}>
                                                 {type.charAt(0)}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{previewNotification.title}</p>
-                                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{previewNotification.message}</p>
+                                                <p className="text-sm font-semibold text-foreground">{previewNotification.title}</p>
+                                                <p className="text-xs text-muted-foreground mt-0.5">{previewNotification.message}</p>
                                                 {actionRequired && (
-                                                    <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                                                    <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-warning-bg text-warning">
                                                         Action needed
                                                     </span>
                                                 )}
@@ -354,14 +354,14 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                                     <button
                                         type="button"
                                         onClick={() => { reset(); onClose(); }}
-                                        className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+                                        className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium border border-border text-muted-foreground hover:bg-muted transition-all"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
                                         disabled={submitting || !title.trim() || !message.trim()}
-                                        className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-1.5"
+                                        className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-1.5"
                                     >
                                         {submitting ? (
                                             <>

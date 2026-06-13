@@ -5,7 +5,7 @@ import { useSelector } from 'react-redux';
 import useNotifications from '../../hooks/useNotifications';
 import NotificationItem from '../../components/NotificationItem/NotificationItem';
 import NotificationService from '../../services/notification.service';
-import { Spinner } from '@/shared/components/ui';
+import { Spinner, Button } from '@/shared/components/ui';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import toast from 'react-hot-toast';
 
@@ -32,11 +32,11 @@ const Skeleton = () => (
     <div className="space-y-1.5 p-3" aria-busy="true" aria-label="Loading notifications">
         {Array.from({ length: 6 }, (_, i) => (
             <div key={i} className="flex items-start gap-3 p-4 rounded-xl animate-pulse">
-                <div className="shrink-0 w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-700" />
+                <div className="shrink-0 w-10 h-10 rounded-xl bg-muted" />
                 <div className="flex-1 space-y-2 py-0.5">
-                    <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
-                    <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-full" />
-                    <div className="h-2.5 bg-slate-200 dark:bg-slate-700 rounded w-2/5" />
+                    <div className="h-4 bg-muted rounded w-3/4" />
+                    <div className="h-3 bg-muted rounded w-full" />
+                    <div className="h-2.5 bg-muted rounded w-2/5" />
                 </div>
             </div>
         ))}
@@ -73,17 +73,17 @@ const AdminComposeCard = ({ onSent }) => {
     };
 
     return (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
             <button
                 type="button"
                 onClick={() => setOpen(!open)}
-                className="w-full flex items-center justify-between px-5 py-3.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                className="w-full flex items-center justify-between px-5 py-3.5 text-sm font-semibold text-foreground hover:bg-muted/50 transition-colors"
             >
                 <span className="flex items-center gap-2">
-                    <Send className="w-4 h-4 text-blue-500" />
+                    <Send className="w-4 h-4 text-primary" />
                     Send Notification to All Users
                 </span>
-                {open ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
             </button>
 
             <AnimatePresence initial={false}>
@@ -96,11 +96,11 @@ const AdminComposeCard = ({ onSent }) => {
                         transition={{ duration: 0.2, ease: 'easeInOut' }}
                         className="overflow-hidden"
                     >
-                        <form onSubmit={handleSubmit} className="px-5 pb-5 space-y-3 border-t border-slate-100 dark:border-slate-800 pt-4">
+                        <form onSubmit={handleSubmit} className="px-5 pb-5 space-y-3 border-t border-border pt-4">
                             <div>
                                 <div className="flex items-center justify-between mb-1">
-                                    <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Title</label>
-                                    <span className="text-[10px] text-slate-400">{title.length}/80</span>
+                                    <label className="text-xs font-medium text-muted-foreground">Title</label>
+                                    <span className="text-caption text-muted-foreground">{title.length}/80</span>
                                 </div>
                                 <input
                                     type="text"
@@ -109,13 +109,13 @@ const AdminComposeCard = ({ onSent }) => {
                                     maxLength={80}
                                     placeholder="Notification title"
                                     required
-                                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                                    className="w-full input-base"
                                 />
                             </div>
                             <div>
                                 <div className="flex items-center justify-between mb-1">
-                                    <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Message</label>
-                                    <span className="text-[10px] text-slate-400">{message.length}/300</span>
+                                    <label className="text-xs font-medium text-muted-foreground">Message</label>
+                                    <span className="text-caption text-muted-foreground">{message.length}/300</span>
                                 </div>
                                 <textarea
                                     value={message}
@@ -124,26 +124,20 @@ const AdminComposeCard = ({ onSent }) => {
                                     rows={3}
                                     placeholder="Notification message"
                                     required
-                                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-none"
+                                    className="w-full input-base resize-none"
                                 />
                             </div>
-                            <button
+                            <Button
                                 type="submit"
+                                variant="primary"
+                                size="md"
+                                fullWidth
                                 disabled={submitting || !title.trim() || !message.trim()}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                isLoading={submitting}
                             >
-                                {submitting ? (
-                                    <>
-                                        <Spinner size="sm" color="white" className="!w-4 !h-4" />
-                                        Sending...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Send className="w-4 h-4" />
-                                        Send to All Users
-                                    </>
-                                )}
-                            </button>
+                                {!submitting && <Send className="w-4 h-4" />}
+                                {submitting ? 'Sending...' : 'Send to All Users'}
+                            </Button>
                         </form>
                     </motion.div>
                 )}
@@ -209,40 +203,36 @@ const NotificationsPage = () => {
                     {/* Header */}
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="p-2.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl">
+                            <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
                                 <Bell className="w-6 h-6" />
                             </div>
                             <div>
-                                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Notifications</h1>
-                                <p className="text-sm text-slate-500 dark:text-slate-400">
+                                <h1 className="text-h1">Notifications</h1>
+                                <p className="text-body text-muted-foreground">
                                     {total} total &middot; {unreadCount} unread
                                 </p>
                             </div>
                         </div>
                         <div className="flex items-center gap-1.5 sm:gap-2">
-                            <button
+                            <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={refresh}
                                 disabled={loading}
-                                className="flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-sm font-medium
-                                    text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800
-                                    border border-slate-200 dark:border-slate-700
-                                    hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
                                 aria-label="Refresh notifications"
                             >
                                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                                 <span className="hidden sm:inline">Refresh</span>
-                            </button>
+                            </Button>
                             {unreadCount > 0 && (
                                 <motion.button
                                     initial={{ opacity: 0, scale: 0.85 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     onClick={markAllAsRead}
                                     disabled={markAllLoading}
-                                    className="flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-sm font-medium
-                                        text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40
-                                        border border-blue-100 dark:border-blue-900/50
-                                        hover:bg-blue-100 dark:hover:bg-blue-950/70
-                                        disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                    className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-sm font-medium
+                                        text-primary bg-primary/10 border border-primary/20
+                                        hover:bg-primary/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                                 >
                                     {markAllLoading
                                         ? <Spinner size="sm" color="current" className="!w-4 !h-4" />
@@ -260,21 +250,21 @@ const NotificationsPage = () => {
                     )}
 
                     {/* Filter Tabs */}
-                    <div className="overflow-x-auto scrollbar-none">
-                        <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl w-fit">
+                    <div className="overflow-x-auto no-scrollbar">
+                        <div className="flex items-center gap-1 p-1 bg-muted rounded-xl w-fit">
                             {FILTER_TABS.map((tab) => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveFilter(tab)}
                                     className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                                         activeFilter === tab
-                                            ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
-                                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                                            ? 'bg-card text-foreground shadow-sm'
+                                            : 'text-muted-foreground hover:text-foreground'
                                     }`}
                                 >
                                     {tab}
                                     {tab === 'Unread' && unreadCount > 0 && (
-                                        <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-blue-500 text-white">
+                                        <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-primary text-primary-foreground">
                                             {unreadCount}
                                         </span>
                                     )}
@@ -286,51 +276,49 @@ const NotificationsPage = () => {
 
                 {/* Scrollable list — edge-to-edge on mobile */}
                 <div className="flex-1 overflow-y-auto min-h-0 sm:px-6 lg:px-8 pb-4 sm:pb-6">
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden rounded-none sm:rounded-2xl">
+                    <div className="bg-card border border-border shadow-sm overflow-hidden rounded-none sm:rounded-2xl">
                         {loading && items.length === 0 ? (
                             <Skeleton />
                         ) : error ? (
                             <div className="flex flex-col items-center justify-center py-10 md:py-20 px-6 text-center">
-                                <div className="w-14 h-14 rounded-full mb-4 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/30 flex items-center justify-center">
-                                    <Bell className="w-5 h-5 text-red-400" />
+                                <div className="w-14 h-14 rounded-full mb-4 bg-destructive/10 flex items-center justify-center">
+                                    <Bell className="w-5 h-5 text-destructive" />
                                 </div>
-                                <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                <h4 className="text-sm font-semibold text-foreground mb-1">
                                     Failed to load
                                 </h4>
-                                <p className="text-xs text-slate-400 dark:text-slate-500 max-w-[220px] leading-relaxed mb-3">
+                                <p className="text-xs text-muted-foreground max-w-[220px] leading-relaxed mb-3">
                                     {error || 'Something went wrong while fetching notifications.'}
                                 </p>
-                                <button
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
                                     onClick={refresh}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-                                        text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40
-                                        border border-blue-100 dark:border-blue-900/50
-                                        hover:bg-blue-100 dark:hover:bg-blue-950/70 transition-all"
                                 >
                                     <RefreshCw className="w-3 h-3" />
                                     Try again
-                                </button>
+                                </Button>
                             </div>
                         ) : filteredItems.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-10 md:py-20 px-6 text-center">
-                                <div className="w-14 h-14 rounded-full mb-4 shadow-inner bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center">
-                                    <Bell className="w-5 h-5 text-slate-400 dark:text-slate-500" />
+                                <div className="w-14 h-14 rounded-full mb-4 bg-muted/50 flex items-center justify-center">
+                                    <Bell className="w-5 h-5 text-muted-foreground" />
                                 </div>
-                                <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                <h4 className="text-sm font-semibold text-foreground mb-1">
                                     {activeFilter === 'All' ? 'All caught up!' : `No ${activeFilter.toLowerCase()} notifications`}
                                 </h4>
-                                <p className="text-xs text-slate-400 dark:text-slate-500 max-w-[200px] leading-relaxed">
+                                <p className="text-xs text-muted-foreground max-w-[200px] leading-relaxed">
                                     {activeFilter === 'All'
                                         ? "We'll alert you when something needs attention"
                                         : `Try switching to a different filter`}
                                 </p>
                             </div>
                         ) : (
-                            <div className="divide-y divide-slate-100/60 dark:divide-slate-800/40">
+                            <div className="divide-y divide-border/60">
                                 {groupKeys.map((groupKey) => (
                                     <div key={groupKey}>
-                                        <div className="px-5 py-2 sticky top-0 z-[1] bg-slate-50/90 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800/60 backdrop-blur-sm">
-                                            <span className="text-[10px] font-semibold tracking-widest uppercase text-slate-400 dark:text-slate-500 font-mono">
+                                        <div className="px-5 py-2 sticky top-0 z-[1] bg-muted/90 border-b border-border/60 backdrop-blur-sm">
+                                            <span className="text-caption font-semibold tracking-widest uppercase text-muted-foreground">
                                                 {groupKey}
                                             </span>
                                         </div>
@@ -357,12 +345,12 @@ const NotificationsPage = () => {
                                 ))}
                                 {isLoadingMore && (
                                     <div className="flex items-center justify-center gap-2 py-5">
-                                        <Spinner size="sm" color="current" className="text-blue-500" />
-                                        <span className="text-xs text-slate-400 font-mono">Loading more&hellip;</span>
+                                        <Spinner size="sm" color="current" className="text-primary" />
+                                        <span className="text-xs text-muted-foreground">Loading more&hellip;</span>
                                     </div>
                                 )}
                                 {!hasMore && items.length >= 20 && (
-                                    <p className="py-6 text-center text-[11px] font-mono text-slate-400 dark:text-slate-500">
+                                    <p className="py-6 text-center text-caption text-muted-foreground">
                                         &mdash; {total} notifications total &mdash;
                                     </p>
                                 )}

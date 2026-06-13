@@ -6,6 +6,7 @@ import { fetchUsers, searchUsers } from '../../../../members/store/members.slice
 import StatOverview from '../../../components/StatOverview/StatOverview';
 import MembersTable from '../../../components/MembersTable/MembersTable';
 import SendNotificationModal from '@/modules/notification/components/SendNotificationModal/SendNotificationModal';
+import Button from '@/shared/components/ui/Button/Button';
 import {
     FiUsers, FiDollarSign, FiPieChart, FiShoppingBag, FiCommand,
     FiAlertCircle, FiCheckSquare, FiCoffee, FiTrendingUp,
@@ -17,9 +18,9 @@ import {
 const AlertPill = ({ count, label, color, icon: Icon }) => {
     if (!count || count === 0) return null;
     const colors = {
-        amber: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/10 dark:border-amber-500/20',
-        red:   'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/10 dark:border-rose-500/20',
-        green: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/10 dark:border-emerald-500/20',
+        amber: 'bg-warning-bg text-warning-text border-warning-border',
+        red:   'bg-danger-bg text-danger-text border-danger-border',
+        green: 'bg-success-bg text-success-text border-success-border',
     };
     return (
         <div className={`flex items-center justify-center lg:justify-start gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] font-bold uppercase tracking-wider w-full lg:w-auto ${colors[color] || colors.amber}`}>
@@ -107,11 +108,11 @@ const AdminDashboard = () => {
             {/* Header / Actions Row */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                    <div className="p-3 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/10 rounded-2xl shrink-0 shadow-sm">
+                    <div className="p-3 bg-primary/10 text-primary border border-primary/10 rounded-2xl shrink-0 shadow-sm">
                         <FiCommand size={20} />
                     </div>
                     <div className="min-w-0">
-                        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground leading-tight">
+                        <h2 className="text-h1">
                             Command Center
                         </h2>
                         <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 truncate">
@@ -120,21 +121,23 @@ const AdminDashboard = () => {
                     </div>
                 </div>
                 <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
-                    <button
+                    <Button
+                        variant="primary"
+                        size="md"
                         onClick={() => setShowNotificationModal(true)}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 shadow-sm"
                     >
                         <FiSend size={13} />
                         Send Notification
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        size="md"
                         onClick={handleRefresh}
                         disabled={isDashboardLoading || isMembersLoading}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-xl border border-border bg-card text-foreground hover:bg-muted/40 transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <FiRefreshCw size={13} className={isDashboardLoading || isMembersLoading ? 'animate-spin' : ''} />
                         Refresh
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -152,7 +155,7 @@ const AdminDashboard = () => {
                 >
                     <div className="flex items-center gap-2 text-muted-foreground">
                         <FiAlertCircle size={14} className="text-amber-500" />
-                        <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+                        <span className="text-caption font-bold uppercase tracking-wider">
                             Action Items Required
                         </span>
                     </div>
@@ -171,10 +174,10 @@ const AdminDashboard = () => {
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-card border border-emerald-500/10 dark:border-emerald-500/20 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    className="bg-card border border-success-border/50 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                 >
                     <div className="flex items-start sm:items-center gap-3">
-                        <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/10 rounded-xl shrink-0">
+                        <div className="p-2 bg-success-bg text-success-text border border-success-border rounded-xl shrink-0">
                             <FiCheckSquare size={18} strokeWidth={2.5} />
                         </div>
                         <div className="min-w-0">
@@ -184,7 +187,7 @@ const AdminDashboard = () => {
                             </p>
                         </div>
                     </div>
-                    <div className="self-stretch sm:self-auto flex items-center justify-center px-3 py-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/10 rounded-xl text-[10px] font-bold uppercase tracking-wider">
+                    <div className="self-stretch sm:self-auto flex items-center justify-center px-3 py-1.5 bg-success-bg text-success-text border border-success-border rounded-xl text-caption font-bold uppercase tracking-wider">
                         Clear ✓
                     </div>
                 </motion.div>

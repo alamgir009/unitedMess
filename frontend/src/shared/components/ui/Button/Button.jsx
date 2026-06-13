@@ -6,7 +6,7 @@ const variantStyles = {
   primary:
     'bg-primary text-primary-foreground shadow-sm border-primary/10 hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
   secondary:
-    'bg-card text-foreground border-border-strong shadow-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+    'bg-secondary text-secondary-foreground border-secondary/20 shadow-sm hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
   outline:
     'bg-transparent text-primary border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
   ghost:

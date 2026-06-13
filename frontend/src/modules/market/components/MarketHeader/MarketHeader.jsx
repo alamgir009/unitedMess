@@ -1,4 +1,5 @@
 import React from 'react';
+import Button from '@/shared/components/ui/Button/Button';
 import {
     HiOutlinePlus,
     HiOutlineSquares2X2,
@@ -17,12 +18,12 @@ const MarketHeader = React.memo(({ isAdmin, viewMode, onViewModeChange, onAddCli
                         Admin View
                     </span>
                 ) : (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 mb-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 mb-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
                         <HiOutlineShoppingBag className="w-3.5 h-3.5" />
                         My Markets
                     </span>
                 )}
-                <h2 className="text-xl sm:text-2xl tracking-tight text-foreground">
+                <h2 className="text-h1">
                     {isAdmin ? 'Market Overview' : 'Market Hub'}
                 </h2>
                 <p className="text-sm text-muted-foreground">
@@ -33,15 +34,15 @@ const MarketHeader = React.memo(({ isAdmin, viewMode, onViewModeChange, onAddCli
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">
-                <button
+                <Button
+                    variant="primary"
+                    size="md"
                     onClick={onAddClick}
                     aria-label="Add market entry"
-                    className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:shadow-md transition-all duration-150"
-                    style={{ background: 'linear-gradient(135deg, hsl(152,76%,46%) 0%, hsl(176,76%,38%) 100%)' }}
                 >
                     <HiOutlinePlus className="w-4 h-4 flex-shrink-0" />
                     <span>Add Entry</span>
-                </button>
+                </Button>
 
                 <div className="flex items-center p-1 rounded-xl bg-muted/30 border border-border/40">
                     <button

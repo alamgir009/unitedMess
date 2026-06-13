@@ -20,10 +20,10 @@ const Card = forwardRef(({
 
   const paddings = {
     none: '',
-    sm: 'p-4',
-    md: 'p-6',
-    lg: 'p-8',
-    xl: 'p-10',
+    sm: 'p-3.5',
+    md: 'p-4',
+    lg: 'p-5',
+    xl: 'p-6',
   };
 
   const interactiveStyles = interactive
@@ -56,7 +56,7 @@ export const CardHeader = ({ className = '', children, ...props }) => (
 );
 
 export const CardTitle = ({ className = '', children, ...props }) => (
-  <h3 className={cn('font-semibold leading-none tracking-tight text-base', className)} {...props}>
+  <h3 className={cn('text-h3', className)} {...props}>
     {children}
   </h3>
 );

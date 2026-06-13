@@ -1,3 +1,4 @@
+import React from 'react';
 import { cn } from '@/core/utils/helpers/string.helper';
 
 export const Spinner = ({ size = 'md', className = '', color = 'primary' }) => {
@@ -81,11 +82,27 @@ export const FullPageLoader = ({ label = 'Loading…' }) => (
   </div>
 );
 
+export const SkeletonCard = React.memo(() => (
+  <div className="rounded-xl border border-border/50 bg-card p-5 animate-pulse">
+    <div className="flex justify-between mb-4">
+      <div className="space-y-2">
+        <div className="h-7 w-14 bg-muted/60 rounded-md" />
+        <div className="h-3 w-28 bg-muted/40 rounded" />
+      </div>
+      <div className="h-6 w-14 bg-muted/40 rounded-full" />
+    </div>
+    <div className="h-3 w-full bg-muted/30 rounded mb-1.5" />
+    <div className="h-3 w-2/3 bg-muted/20 rounded mb-5" />
+    <div className="h-8 w-full bg-muted/30 rounded-xl" />
+  </div>
+));
+
 Spinner.displayName = 'Spinner';
 DotsLoader.displayName = 'DotsLoader';
 PulseLoader.displayName = 'PulseLoader';
 Skeleton.displayName = 'Skeleton';
 FullPageLoader.displayName = 'FullPageLoader';
+SkeletonCard.displayName = 'SkeletonCard';
 
 const Loader = ({ variant = 'spinner', ...props }) => {
   switch (variant) {

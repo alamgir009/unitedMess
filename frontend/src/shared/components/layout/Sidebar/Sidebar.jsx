@@ -47,11 +47,11 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   const linkClass = ({ isActive }) =>
     cn(
-      'group flex items-center gap-3 px-3 py-2.5 min-h-[44px] text-sm font-medium rounded-lg transition-colors duration-150',
+      'group relative flex items-center gap-3 px-3 py-2.5 min-h-[44px] text-sm rounded-lg transition-all duration-150',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
       isActive
-        ? 'bg-primary/10 text-primary'
-        : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+        ? 'bg-primary/10 text-primary font-semibold before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-5 before:w-1 before:rounded-r-full before:bg-primary'
+        : 'text-muted-foreground hover:bg-muted hover:text-foreground font-medium',
     );
 
   return (

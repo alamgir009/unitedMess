@@ -17,7 +17,8 @@ import { AnimatePresence } from 'framer-motion';
 import { HiOutlineXMark, HiOutlineCheckBadge, HiOutlineCurrencyRupee, HiOutlineCheckCircle } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 
-import { Spinner }     from '@/shared/components/ui';
+import { SkeletonCard }              from '@/shared/components/ui';
+import Button          from '@/shared/components/ui/Button/Button';
 import MainLayout      from '@/shared/components/layout/MainLayout/MainLayout';
 import Pagination      from '@/shared/components/ui/Pagination/Pagination';
 
@@ -46,22 +47,6 @@ import { fetchPayableAmount, fetchPayableGasBill } from '../../../auth/store/aut
 
 import { getBillingPeriod } from '@shared/utils/billingPeriod';
 import { usePayment } from '../../hooks/usePayment';
-
-const SkeletonCard = React.memo(() => (
-    <div className="rounded-xl border border-border/50 bg-card p-5 animate-pulse">
-        <div className="flex justify-between mb-4">
-            <div className="space-y-2">
-                <div className="h-7 w-14 bg-muted/60 rounded-md" />
-                <div className="h-3 w-28 bg-muted/40 rounded" />
-            </div>
-            <div className="h-6 w-14 bg-muted/40 rounded-full" />
-        </div>
-        <div className="h-3 w-full bg-muted/30 rounded mb-1.5" />
-        <div className="h-3 w-2/3 bg-muted/20 rounded mb-5" />
-        <div className="h-8 w-full bg-muted/30 rounded-xl" />
-    </div>
-));
-SkeletonCard.displayName = 'SkeletonCard';
 
 const InvoiceSkeleton = React.memo(() => (
     <div className="rounded-xl border border-border/50 bg-card p-5 animate-pulse space-y-4">
@@ -517,18 +502,16 @@ const PaymentPage = () => {
                                             <HiOutlineCheckCircle className="w-4 h-4" /> Paid
                                         </span>
                                     ) : (
-                                        <button
+                                        <Button
+                                            variant="primary"
+                                            size="md"
                                             onClick={() => handleGasBillPayClick(gasBillVal)}
                                             disabled={isPaying}
-                                            className="inline-flex items-center justify-center gap-1.5 px-4 min-w-[80px] h-9 rounded-lg text-sm font-medium tracking-tight text-white bg-primary hover:brightness-105 hover:shadow-md active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none disabled:cursor-not-allowed transition-all duration-120 shadow-sm"
+                                            isLoading={isPaying}
                                         >
-                                            {isPaying ? (
-                                                <Spinner size="sm" color="white" className="!w-4 !h-4 !border-[1.5px]" />
-                                            ) : (
-                                                <HiOutlineCurrencyRupee className="w-4 h-4" />
-                                            )}
+                                            {!isPaying && <HiOutlineCurrencyRupee className="w-4 h-4" />}
                                             {isPaying ? 'Processing' : 'Pay Now'}
-                                        </button>
+                                        </Button>
                                     )}
                                 </div>
                             </div>

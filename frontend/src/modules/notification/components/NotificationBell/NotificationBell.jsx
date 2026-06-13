@@ -72,11 +72,10 @@ const NotificationBell = () => {
                     w-11 h-11 rounded-xl
                     border transition-all duration-200
                     focus:outline-none focus-visible:ring-2
-                    focus-visible:ring-blue-500/50 focus-visible:ring-offset-2
-                    dark:focus-visible:ring-offset-slate-900
+                    focus-visible:ring-ring focus-visible:ring-offset-2
                     ${open
-                        ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100'
-                        : 'bg-transparent border-transparent text-slate-500 dark:text-slate-400 hover:bg-slate-100/70 dark:hover:bg-slate-800/70 hover:border-slate-200 dark:hover:border-slate-700'
+                        ? 'bg-muted text-foreground border-border'
+                        : 'bg-transparent border-transparent text-muted-foreground hover:bg-muted/70 hover:text-foreground hover:border-border'
                     }
                 `}
             >
@@ -97,7 +96,7 @@ const NotificationBell = () => {
                                 flex h-5 min-w-[20px] items-center justify-center px-1.5
                                 rounded-full bg-gradient-to-br from-red-500 to-rose-600
                                 text-[10px] font-bold leading-none text-white
-                                ring-2 ring-white dark:ring-slate-900 shadow-sm
+                                ring-2 ring-background shadow-sm
                             "
                         >
                             {badgeLabel}
@@ -113,7 +112,7 @@ const NotificationBell = () => {
                             animate={{ scale: 1.8, opacity: 0 }}
 
                             transition={{ duration: 0.6 }}
-                            className="absolute inset-0 rounded-full bg-blue-400 dark:bg-blue-500 pointer-events-none"
+                                className="absolute inset-0 rounded-full bg-primary/30 pointer-events-none"
                         />
                     )}
                 </AnimatePresence>
@@ -154,8 +153,8 @@ const NotificationBell = () => {
                                 className={[
                                     'relative z-10 w-full sm:max-w-[480px] mx-auto',
                                     'rounded-t-[28px] sm:rounded-[28px]',
-                                    'bg-white dark:bg-slate-900',
-                                    'border-t border-x sm:border border-black/[0.08] dark:border-white/10',
+                    'bg-card',
+                    'border-t border-x sm:border border-border',
                                     'shadow-2xl overflow-hidden',
                                     // Flex to manage NotificationList height
                                     'flex flex-col max-h-[85vh] sm:max-h-[80vh]'
@@ -163,7 +162,7 @@ const NotificationBell = () => {
                             >
                                 {/* Mobile Drag Indicator */}
                                 <div className="flex justify-center pt-3 pb-2 sm:hidden shrink-0 bg-white dark:bg-slate-900" aria-hidden="true">
-                                    <div className="w-10 h-1 rounded-full bg-black/10 dark:bg-white/20" />
+                                    <div className="w-10 h-1 rounded-full bg-muted-foreground/20" />
                                 </div>
 
                                 <NotificationList closeMenu={() => setOpen(false)} />

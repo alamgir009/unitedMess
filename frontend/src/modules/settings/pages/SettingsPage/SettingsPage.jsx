@@ -14,20 +14,20 @@ import toast from 'react-hot-toast';
 import settingsService from '../../services/settings.service';
 import apiClient from '@/services/api/client/apiClient';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
-import { Spinner } from '@/shared/components/ui';
+import { Button } from '@/shared/components/ui';
 
 const CurrentBadge = ({ value, loading, prefix = '₹ ', suffix = '' }) => {
     if (loading) {
         return (
-            <div className="h-5 w-20 rounded-md bg-slate-200 dark:bg-slate-700 animate-pulse" />
+            <div className="h-5 w-20 rounded-md bg-muted animate-pulse" />
         );
     }
     return (
-        <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+            <span className="text-caption font-semibold uppercase tracking-wider text-muted-foreground">
                 Current:
             </span>
-            <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold tabular-nums">
+            <span className="px-2 py-0.5 rounded-md bg-muted border border-border text-foreground font-semibold tabular-nums">
                 {prefix}{typeof value === 'number' ? value.toLocaleString('en-IN') : '—'}{suffix}
             </span>
         </div>
@@ -74,38 +74,38 @@ const SettingCard = ({
     };
 
     return (
-        <div className="flex flex-col rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+        <div className="flex flex-col rounded-xl border border-border bg-card shadow-sm">
             <div className="p-6 flex flex-col flex-1 gap-4">
                 <div className="flex items-start gap-3">
-                    <div className="shrink-0 flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
-                        <Icon className="w-5 h-5 text-slate-600 dark:text-slate-400" strokeWidth={2} />
+                    <div className="shrink-0 flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                        <Icon className="w-5 h-5 text-muted-foreground" strokeWidth={2} />
                     </div>
                     <div className="min-w-0">
-                        <h3 className="text-sm font-semibold text-slate-900 dark:text-white leading-tight">
+                        <h3 className="text-sm font-semibold text-foreground leading-tight">
                             {title}
                         </h3>
                         {badge && (
-                            <span className="mt-1 inline-block text-[10px] font-semibold px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                            <span className="mt-1 inline-block text-caption font-semibold px-2 py-0.5 rounded-md border border-border bg-muted text-muted-foreground uppercase tracking-wider">
                                 {badge}
                             </span>
                         )}
                     </div>
                 </div>
 
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                <p className="text-xs text-muted-foreground leading-relaxed">
                     {description}
                 </p>
 
                 <CurrentBadge value={currentValue} loading={currentLoading} />
 
-                <div className="border-t border-dashed border-slate-200 dark:border-slate-800" />
+                <div className="border-t border-dashed border-border" />
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-2 flex-1 justify-end">
-                    <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    <label className="text-caption font-semibold uppercase tracking-wider text-muted-foreground">
                         New Value
                     </label>
                     <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400 dark:text-slate-500 pointer-events-none">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground pointer-events-none">
                             ₹
                         </span>
                         <input
@@ -116,30 +116,24 @@ const SettingCard = ({
                             value={value}
                             onChange={(e) => setValue(e.target.value)}
                             placeholder={placeholder}
-                            className="w-full h-9 pl-8 pr-4 border border-slate-300 dark:border-slate-700 rounded-md text-sm bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none transition-colors duration-150 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full h-9 pl-8 pr-4 border border-border rounded-md text-sm bg-background text-foreground placeholder-muted-foreground outline-none transition-colors duration-150 focus:ring-2 focus:ring-ring focus:border-primary"
                         />
                     </div>
 
-                    <button
+                    <Button
                         type="submit"
+                        variant="primary"
+                        size="sm"
                         disabled={isLoading}
-                        className="h-9 px-4 rounded-md text-sm font-medium transition-colors duration-150 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        fullWidth
+                        isLoading={isLoading}
                     >
-                        {isLoading ? (
-                            <>
-                                <Spinner size="sm" color="current" />
-                                Updating…
-                            </>
-                        ) : (
-                            <>
-                                <Save className="w-4 h-4" />
-                                {buttonLabel}
-                            </>
-                        )}
-                    </button>
+                        {!isLoading && <Save className="w-4 h-4" />}
+                        {isLoading ? 'Updating…' : buttonLabel}
+                    </Button>
 
                     {lastUpdated && (
-                        <p className="text-center text-xs text-green-600 dark:text-green-400 font-medium">
+                        <p className="text-center text-xs text-success font-medium">
                             Updated at {lastUpdated}
                         </p>
                     )}
@@ -265,33 +259,34 @@ const SettingsPage = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-2 mb-1">
-                            <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                            <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                            <Shield className="w-4 h-4 text-primary" />
+                            <span className="text-xs font-semibold text-primary uppercase tracking-wider">
                                 Admin Panel
                             </span>
                         </div>
-                        <h1 className="text-xl font-semibold text-slate-900 dark:text-white tracking-tight">
+                        <h1 className="text-h1">
                             System Settings
                         </h1>
-                        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                        <p className="mt-1 text-body text-muted-foreground">
                             Manage global mess charges and distribute monthly utility bills across active members.
                         </p>
                     </div>
 
                     <div className="flex items-center gap-3 shrink-0">
-                        <button
+                        <Button
+                            variant="secondary"
+                            size="sm"
                             onClick={fetchCurrentValues}
                             disabled={valuesLoading}
                             aria-label="Refresh current values"
-                            className="h-9 px-4 rounded-md text-sm font-medium transition-colors duration-150 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-50 flex items-center gap-2"
                         >
                             <RefreshCw className={`w-4 h-4 ${valuesLoading ? 'animate-spin' : ''}`} />
                             Refresh
-                        </button>
+                        </Button>
 
-                        <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/40 rounded-md">
-                            <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                            <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                        <div className="flex items-center gap-2 px-3 py-2 bg-warning-bg border border-warning-border rounded-md">
+                            <AlertCircle className="w-4 h-4 text-warning-text shrink-0" />
+                            <span className="text-xs font-medium text-warning-text">
                                 Applies instantly to all members
                             </span>
                         </div>
@@ -305,14 +300,14 @@ const SettingsPage = () => {
                             className={`flex items-center gap-3 p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm
                 ${cards.length % 2 !== 0 && index === cards.length - 1 ? 'col-span-2 lg:col-span-1' : ''}`}
                         >
-                            <div className="shrink-0 flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
-                                <Icon className="w-4 h-4 text-slate-600 dark:text-slate-400" strokeWidth={2} />
+                            <div className="shrink-0 flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+                                <Icon className="w-4 h-4 text-muted-foreground" strokeWidth={2} />
                             </div>
                             <div className="min-w-0">
-                                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate">{title}</p>
-                                <p className="text-sm font-semibold text-slate-900 dark:text-white tabular-nums">
+                                <p className="text-xs font-medium text-muted-foreground truncate">{title}</p>
+                                <p className="text-sm font-semibold text-foreground tabular-nums">
                                     {valuesLoading
-                                        ? <span className="inline-block h-4 w-12 rounded-md bg-slate-200 dark:bg-slate-700 animate-pulse align-middle" />
+                                        ? <span className="inline-block h-4 w-12 rounded-md bg-muted animate-pulse align-middle" />
                                         : `₹ ${typeof currentValue === 'number' ? currentValue.toLocaleString('en-IN') : '—'}`
                                     }
                                 </p>
@@ -331,15 +326,15 @@ const SettingsPage = () => {
                     ))}
                 </div>
 
-                <div className="flex items-start gap-4 p-6 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/30 rounded-xl">
-                    <div className="shrink-0 flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/40">
-                        <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <div className="flex items-start gap-4 p-6 bg-primary/5 border border-primary/20 rounded-xl">
+                    <div className="shrink-0 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+                        <TrendingUp className="w-4 h-4 text-primary" />
                     </div>
                     <div>
-                        <p className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-1">
+                        <p className="text-sm font-semibold text-primary mb-1">
                             How charges work
                         </p>
-                        <p className="text-xs text-blue-700/80 dark:text-blue-400/80 leading-relaxed">
+                        <p className="text-xs text-primary/80 leading-relaxed">
                             <strong>Water</strong> &amp; <strong>Gas</strong> charges accept a <em>total monthly amount</em> — the system divides it equally among all <strong>active</strong> members and stores the per-member share.
                             <strong> Guest Meal</strong> and <strong>Cooking</strong> are fixed rates stored directly per member.
                             All updates take effect instantly across the entire platform.

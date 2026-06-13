@@ -20,16 +20,16 @@ const InfoItem = React.memo(({ icon: Icon, label, value }) => (
     <div className="flex items-center gap-3.5">
         <div
             className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center
-                       bg-slate-100 dark:bg-slate-800
-                       text-slate-500 dark:text-slate-400"
+                       bg-muted
+                       text-muted-foreground"
         >
             <Icon size={16} strokeWidth={2} />
         </div>
         <div className="flex flex-col min-w-0">
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.07em] mb-0.5">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.07em] mb-0.5">
                 {label}
             </span>
-            <span className="text-[13.5px] font-semibold text-slate-800 dark:text-slate-200 truncate">
+            <span className="text-[13.5px] font-semibold text-foreground truncate">
                 {value ?? 'N/A'}
             </span>
         </div>
@@ -57,14 +57,14 @@ const ICON_MAP = {
 const InvoiceCard = React.memo(({ label, amount, accent = 'blue', subtext, icon: Icon }) => (
     <div
         className="group relative overflow-hidden flex flex-col p-5 md:p-6
-                   bg-white dark:bg-slate-900
-                   rounded-2xl border border-slate-200 dark:border-slate-800
-                   shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700
+                    bg-card
+                    rounded-2xl border border-border
+                    shadow-sm hover:shadow-md hover:border-border
                    transition-all duration-200"
     >
         {/* Header row */}
         <div className="flex items-start justify-between mb-5">
-            <span className="text-[10.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.07em] leading-tight max-w-[9rem]">
+            <span className="text-[10.5px] font-bold text-muted-foreground uppercase tracking-[0.07em] leading-tight max-w-[9rem]">
                 {label}
             </span>
             {Icon && (
@@ -82,7 +82,7 @@ const InvoiceCard = React.memo(({ label, amount, accent = 'blue', subtext, icon:
         </span>
 
         {subtext && (
-            <span className="mt-1.5 text-[11px] font-medium text-slate-400 dark:text-slate-500 leading-snug">
+            <span className="mt-1.5 text-[11px] font-medium text-muted-foreground leading-snug">
                 {subtext}
             </span>
         )}
@@ -103,32 +103,32 @@ const MiniMetric = React.memo(({ icon: Icon, label, value, subtext }) => (
     <div
         className="flex items-center justify-between gap-3
                    px-4 py-3.5 rounded-2xl
-                   bg-white dark:bg-slate-900
-                   border border-slate-200 dark:border-slate-800
-                   shadow-sm hover:border-blue-400/40 dark:hover:border-blue-500/30
+                   bg-card
+                   border border-border
+                   shadow-sm hover:border-primary/30
                    transition-colors duration-200"
     >
         {/* Left */}
         <div className="flex items-center gap-3 min-w-0">
             <div
                 className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center
-                           bg-slate-50 dark:bg-slate-800
-                           text-slate-400 dark:text-slate-500"
+                           bg-muted
+                           text-muted-foreground"
             >
                 <Icon size={15} strokeWidth={2} />
             </div>
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.07em] truncate">
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.07em] truncate">
                 {label}
             </span>
         </div>
 
         {/* Right */}
         <div className="text-right shrink-0">
-            <div className="text-[13.5px] md:text-[14px] font-black text-slate-900 dark:text-white leading-tight tabular-nums">
+            <div className="text-[13.5px] md:text-[14px] font-black text-foreground leading-tight tabular-nums">
                 {value}
             </div>
             {subtext && (
-                <div className="text-[10.5px] font-medium text-slate-400 dark:text-slate-500 mt-0.5">
+                <div className="text-[10.5px] font-medium text-muted-foreground mt-0.5">
                     {subtext}
                 </div>
             )}
@@ -143,7 +143,7 @@ MiniMetric.displayName = 'MiniMetric';
 const SectionHeading = React.memo(({ color = 'blue-500', children }) => (
     <div className="flex items-center gap-3 mb-5">
         <div className={`w-1 h-5 rounded-full bg-${color}`} />
-        <h4 className="text-base font-black text-slate-900 dark:text-white tracking-tight leading-none">
+        <h4 className="text-base font-black text-foreground tracking-tight leading-none">
             {children}
         </h4>
     </div>
@@ -172,8 +172,8 @@ const MemberInvoiceDetails = React.memo(({ user }) => {
                 ════════════════════════════════ */}
                 <div
                     className="xl:col-span-4 flex flex-col
-                               bg-white dark:bg-slate-900
-                               rounded-2xl border border-slate-200 dark:border-slate-800
+                               bg-card
+                               rounded-2xl border border-border
                                shadow-sm p-5 md:p-6"
                 >
                     <SectionHeading color="blue-500">Identity &amp; Contact</SectionHeading>
@@ -194,18 +194,18 @@ const MemberInvoiceDetails = React.memo(({ user }) => {
 
                     {/* User ID footer */}
                     <div
-                        className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800
+                        className="mt-5 pt-4 border-t border-border
                                    flex items-center justify-between gap-3"
                     >
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest shrink-0">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest shrink-0">
                             <Hash size={10} strokeWidth={2.5} />
                             User ID
                         </div>
                         <span
                             title={user?._id ?? user?.id}
-                            className="text-[11px] font-mono font-semibold text-slate-500 dark:text-slate-400
-                                       truncate max-w-[160px] bg-slate-50 dark:bg-slate-800
-                                       px-2 py-1 rounded-md border border-slate-200 dark:border-slate-700"
+                            className="text-[11px] font-mono font-semibold text-muted-foreground
+                                       truncate max-w-[160px] bg-muted
+                                       px-2 py-1 rounded-md border border-border"
                         >
                             {user?._id ?? user?.id ?? '—'}
                         </span>
@@ -302,46 +302,46 @@ MemberInvoiceDetails.displayName = 'MemberInvoiceDetails';
 ───────────────────────────────────────────── */
 const PAYMENT_CONFIG = {
     paid: {
-        container: 'bg-emerald-50/80 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800 dark:shadow-lg dark:shadow-emerald-950/30',
-        text:      'text-emerald-700 dark:text-emerald-300',
-        badge:     'bg-emerald-100 dark:bg-emerald-900/80 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700',
-        iconBox:   'bg-emerald-50 dark:bg-emerald-900/70 border-emerald-200 dark:border-emerald-700 text-emerald-600 dark:text-emerald-300',
+        container: 'bg-success-bg border-success-border',
+        text:      'text-success',
+        badge:     'bg-success-bg text-success border-success-border',
+        iconBox:   'bg-success-bg border-success-border text-success',
         icon:      CheckCircle2,
         label:     'Paid',
         message:   (a) => `Payment of ₹\u202F${a} completed successfully`,
     },
     due: {
-        container: 'bg-amber-50/80  dark:bg-amber-950  border-amber-200  dark:border-amber-800 dark:shadow-lg dark:shadow-amber-950/30',
-        text:      'text-amber-700  dark:text-amber-300',
-        badge:     'bg-amber-100  dark:bg-amber-900/80  text-amber-700  dark:text-amber-300  border-amber-300  dark:border-amber-700',
-        iconBox:   'bg-amber-50 dark:bg-amber-900/70 border-amber-200 dark:border-amber-700 text-amber-600 dark:text-amber-300',
+        container: 'bg-warning-bg border-warning-border',
+        text:      'text-warning',
+        badge:     'bg-warning-bg text-warning border-warning-border',
+        iconBox:   'bg-warning-bg border-warning-border text-warning',
         icon:      Clock,
         label:     'Due',
         message:   (a) => `You have to pay ₹\u202F${a}`,
     },
     failed: {
-        container: 'bg-rose-50/80   dark:bg-rose-950   border-rose-200   dark:border-rose-800 dark:shadow-lg dark:shadow-rose-950/30',
-        text:      'text-rose-700   dark:text-rose-300',
-        badge:     'bg-rose-100   dark:bg-rose-900/80   text-rose-700   dark:text-rose-300   border-rose-300   dark:border-rose-700',
-        iconBox:   'bg-rose-50 dark:bg-rose-900/70 border-rose-200 dark:border-rose-700 text-rose-600 dark:text-rose-300',
+        container: 'bg-danger-bg border-danger-border',
+        text:      'text-danger',
+        badge:     'bg-danger-bg text-danger border-danger-border',
+        iconBox:   'bg-danger-bg border-danger-border text-danger',
         icon:      XCircle,
         label:     'Failed',
         message:   (a) => `Payment failed — ₹\u202F${a} is due immediately`,
     },
     settled: {
-        container: 'bg-slate-50     dark:bg-slate-800/80  border-slate-200  dark:border-slate-600',
-        text:      'text-slate-600  dark:text-slate-300',
-        badge:     'bg-slate-100  dark:bg-slate-700/80     text-slate-600  dark:text-slate-300  border-slate-300  dark:border-slate-500',
-        iconBox:   'bg-slate-100 dark:bg-slate-700/60 border-slate-300 dark:border-slate-500 text-slate-500 dark:text-slate-300',
+        container: 'bg-muted border-border',
+        text:      'text-muted-foreground',
+        badge:     'bg-muted text-muted-foreground border-border',
+        iconBox:   'bg-muted border-border text-muted-foreground',
         icon:      CheckCircle2,
         label:     'Settled',
         message:   () => 'Already settled — no balance outstanding',
     },
     credit: {
-        container: 'bg-emerald-50/80 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800 dark:shadow-lg dark:shadow-emerald-950/30',
-        text:      'text-emerald-700 dark:text-emerald-300',
-        badge:     'bg-emerald-100 dark:bg-emerald-900/80 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700',
-        iconBox:   'bg-emerald-50 dark:bg-emerald-900/70 border-emerald-200 dark:border-emerald-700 text-emerald-600 dark:text-emerald-300',
+        container: 'bg-success-bg border-success-border',
+        text:      'text-success',
+        badge:     'bg-success-bg text-success border-success-border',
+        iconBox:   'bg-success-bg border-success-border text-success',
         icon:      ArrowDownToLine,
         label:     'Credit',
         message:   (a) => `You will get a refund of ₹\u202F${a}`,
@@ -386,7 +386,7 @@ const PaymentStatusBanner = React.memo(({ user }) => {
                     <Icon size={18} strokeWidth={2.5} className={cfg.text} />
                 </div>
                 <div className="flex flex-col gap-0.5 min-w-0">
-                    <span className="text-[10.5px] font-bold uppercase tracking-[0.07em] text-slate-400 dark:text-slate-500">
+                    <span className="text-[10.5px] font-bold uppercase tracking-[0.07em] text-muted-foreground">
                         Payable Amount
                     </span>
                     <span className={`text-[15px] md:text-[17px] font-black tabular-nums leading-tight ${cfg.text}`}>

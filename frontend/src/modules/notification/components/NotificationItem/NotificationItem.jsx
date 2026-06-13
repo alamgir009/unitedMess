@@ -9,18 +9,18 @@ import { SPRING_BOUNCE } from '@/core/utils/constants/spring';
 
 // ─── Icon registry ────────────────────────────────────────────────────────────
 const ICON_MAP = {
-    PAYMENT:    { Icon: CreditCard,  color: 'text-emerald-500', bg: 'bg-emerald-50    dark:bg-emerald-950/30' },
-    TRANSFER:   { Icon: TrendingUp,  color: 'text-blue-500',    bg: 'bg-blue-50       dark:bg-blue-950/30'    },
-    DEPOSIT:    { Icon: Wallet,      color: 'text-green-500',   bg: 'bg-green-50      dark:bg-green-950/30'   },
-    WITHDRAWAL: { Icon: DollarSign,  color: 'text-amber-500',   bg: 'bg-amber-50      dark:bg-amber-950/30'   },
-    ACCOUNT:    { Icon: UserCog,     color: 'text-indigo-500',  bg: 'bg-indigo-50     dark:bg-indigo-950/30'  },
-    SECURITY:   { Icon: ShieldCheck, color: 'text-purple-500',  bg: 'bg-purple-50     dark:bg-purple-950/30'  },
-    BILLING:    { Icon: AlertCircle, color: 'text-amber-500',   bg: 'bg-amber-50      dark:bg-amber-950/30'   },
-    SYSTEM:     { Icon: Info,        color: 'text-slate-500',   bg: 'bg-slate-50      dark:bg-slate-800/50'   },
-    INVESTMENT: { Icon: TrendingUp,  color: 'text-teal-500',    bg: 'bg-teal-50       dark:bg-teal-950/30'    },
-    REWARD:     { Icon: Sparkles,    color: 'text-amber-500',   bg: 'bg-amber-50      dark:bg-amber-950/30'   },
+    PAYMENT:    { Icon: CreditCard,  color: 'text-success', bg: 'bg-success-bg' },
+    TRANSFER:   { Icon: TrendingUp,  color: 'text-primary', bg: 'bg-primary/10' },
+    DEPOSIT:    { Icon: Wallet,      color: 'text-success', bg: 'bg-success-bg' },
+    WITHDRAWAL: { Icon: DollarSign,  color: 'text-warning', bg: 'bg-warning-bg' },
+    ACCOUNT:    { Icon: UserCog,     color: 'text-primary', bg: 'bg-primary/10' },
+    SECURITY:   { Icon: ShieldCheck, color: 'text-primary', bg: 'bg-primary/10' },
+    BILLING:    { Icon: AlertCircle, color: 'text-warning', bg: 'bg-warning-bg' },
+    SYSTEM:     { Icon: Info,        color: 'text-muted-foreground', bg: 'bg-muted' },
+    INVESTMENT: { Icon: TrendingUp,  color: 'text-success', bg: 'bg-success-bg' },
+    REWARD:     { Icon: Sparkles,    color: 'text-warning', bg: 'bg-warning-bg' },
 };
-const FALLBACK_ICON = { Icon: Info, color: 'text-slate-400', bg: 'bg-slate-50 dark:bg-slate-800/50' };
+const FALLBACK_ICON = { Icon: Info, color: 'text-muted-foreground', bg: 'bg-muted' };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const formatRelativeTime = (date) => {
@@ -50,8 +50,8 @@ const NotificationIcon = ({ type }) => {
 
 const UnreadPulse = () => (
     <span className="relative shrink-0 flex h-2 w-2 mt-1" aria-hidden>
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-        <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/60 opacity-75" />
+        <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
     </span>
 );
 
@@ -84,9 +84,9 @@ const NotificationItem = memo(({ notification, onSelect }) => {
             className={cn(
                 'group relative flex items-start gap-3 sm:gap-4 px-4 sm:px-5 py-3 sm:py-4',
                 'cursor-pointer transition-all duration-200 active:scale-[0.99] sm:active:scale-100',
-                'hover:bg-slate-50 dark:hover:bg-slate-800/40',
-                isUnread && !isUrgent && 'bg-blue-50/30 dark:bg-blue-900/10',
-                isUrgent && isUnread  && 'bg-red-50/30 dark:bg-red-950/20 sm:border-l-[3px] border-l-2 border-red-500',
+                'hover:bg-muted/40',
+                isUnread && !isUrgent && 'bg-primary/5',
+                isUrgent && isUnread  && 'bg-danger-bg sm:border-l-[3px] border-l-2 border-danger',
                 !isUnread             && 'opacity-70 hover:opacity-100',
             )}
         >
@@ -98,9 +98,9 @@ const NotificationItem = memo(({ notification, onSelect }) => {
                     <p className={cn(
                         'text-sm leading-snug transition-colors',
                         isUnread
-                            ? 'font-semibold text-slate-900 dark:text-slate-100'
-                            : 'font-medium text-slate-500 dark:text-slate-400',
-                        isUrgent && 'text-red-700 dark:text-red-400',
+                            ? 'font-semibold text-foreground'
+                            : 'font-medium text-muted-foreground',
+                        isUrgent && 'text-danger',
                     )}>
                         {title}
                     </p>
@@ -110,14 +110,14 @@ const NotificationItem = memo(({ notification, onSelect }) => {
                 {/* Message */}
                 <p className={cn(
                     "text-[13px] leading-relaxed line-clamp-3 sm:line-clamp-2",
-                    isUnread ? "text-slate-600 dark:text-slate-300" : "text-slate-500 dark:text-slate-400"
+                    isUnread ? "text-foreground/80" : "text-muted-foreground"
                 )}>
                     {message}
                 </p>
 
                 {/* Meta row */}
                 <div className="flex items-center gap-2 pt-0.5 flex-wrap">
-                    <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                    <span className="text-[10px] font-mono text-muted-foreground flex items-center gap-1">
                         <Clock className="w-2.5 h-2.5" aria-hidden />
                         {relativeTime}
                     </span>
@@ -125,15 +125,14 @@ const NotificationItem = memo(({ notification, onSelect }) => {
                     {actionRequired && (
                         <span className="
                             text-[10px] px-1.5 py-0.5 rounded-full font-medium
-                            bg-amber-100 text-amber-700
-                            dark:bg-amber-900/40 dark:text-amber-400
+                            bg-warning-bg text-warning
                         ">
                             Action needed
                         </span>
                     )}
 
                     {type === 'PAYMENT' && metadata?.amount && (
-                        <span className="text-[10px] font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                        <span className="text-[10px] font-mono font-semibold text-success">
                             {metadata.amount}
                         </span>
                     )}
@@ -145,15 +144,15 @@ const NotificationItem = memo(({ notification, onSelect }) => {
                 className="
                     absolute right-2 sm:right-3 top-1/2 -translate-y-1/2
                     w-6 h-6 rounded-full
-                    bg-slate-100 dark:bg-slate-700
-                    border border-slate-200 dark:border-slate-600
+                    bg-muted
+                    border border-border
                     flex items-center justify-center
                     opacity-30 sm:opacity-0 sm:group-hover:opacity-100
                     transition-opacity duration-150
                 "
                 aria-hidden
             >
-                <CheckCircle2 className="w-3.5 h-3.5 text-slate-400 dark:text-slate-400" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-muted-foreground" />
             </div>
         </motion.div>
     );

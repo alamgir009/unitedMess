@@ -7,15 +7,15 @@ import MemberInvoiceDetails from './MemberInvoiceDetails';
    StatusBadge — pill indicator
 ───────────────────────────────────────────── */
 const STATUS_MAP = {
-    success: { bg: 'bg-emerald-50 dark:bg-emerald-500/10', text: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-500/25', dot: 'bg-emerald-500' },
-    approved: { bg: 'bg-emerald-50 dark:bg-emerald-500/10', text: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-500/25', dot: 'bg-emerald-500' },
-    paid: { bg: 'bg-emerald-50 dark:bg-emerald-500/10', text: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-500/25', dot: 'bg-emerald-500' },
-    failed: { bg: 'bg-rose-50 dark:bg-rose-500/10', text: 'text-rose-700 dark:text-rose-400', border: 'border-rose-200 dark:border-rose-500/25', dot: 'bg-rose-500' },
-    denied: { bg: 'bg-rose-50 dark:bg-rose-500/10', text: 'text-rose-700 dark:text-rose-400', border: 'border-rose-200 dark:border-rose-500/25', dot: 'bg-rose-500' },
-    pending: { bg: 'bg-amber-50 dark:bg-amber-500/10', text: 'text-amber-700 dark:text-amber-400', border: 'border-amber-200 dark:border-amber-500/25', dot: 'bg-amber-400' },
+    success: { bg: 'bg-success-bg', text: 'text-success', border: 'border-success-border', dot: 'bg-success' },
+    approved: { bg: 'bg-success-bg', text: 'text-success', border: 'border-success-border', dot: 'bg-success' },
+    paid: { bg: 'bg-success-bg', text: 'text-success', border: 'border-success-border', dot: 'bg-success' },
+    failed: { bg: 'bg-danger-bg', text: 'text-danger', border: 'border-danger-border', dot: 'bg-danger' },
+    denied: { bg: 'bg-danger-bg', text: 'text-danger', border: 'border-danger-border', dot: 'bg-danger' },
+    pending: { bg: 'bg-warning-bg', text: 'text-warning', border: 'border-warning-border', dot: 'bg-warning' },
 };
 
-const DEFAULT_STATUS = { bg: 'bg-slate-50 dark:bg-slate-800', text: 'text-slate-600 dark:text-slate-400', border: 'border-slate-200 dark:border-slate-700', dot: 'bg-slate-400' };
+const DEFAULT_STATUS = { bg: 'bg-muted', text: 'text-muted-foreground', border: 'border-border', dot: 'bg-muted-foreground' };
 
 export const StatusBadge = React.memo(({ status }) => {
     const key = (status || 'pending').toLowerCase();
@@ -45,8 +45,8 @@ const ExpandButton = React.memo(({ isExpanded }) => (
         className={[
             'w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200',
             isExpanded
-                ? 'bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400'
-                : 'text-slate-400 dark:text-slate-500 group-hover:bg-slate-100 dark:group-hover:bg-slate-800 group-hover:text-slate-600 dark:group-hover:text-slate-300',
+                ? 'bg-primary/10 text-primary'
+                : 'text-muted-foreground group-hover:bg-muted group-hover:text-foreground',
         ].join(' ')}
     >
         <ChevronDown
@@ -62,7 +62,7 @@ ExpandButton.displayName = 'ExpandButton';
    Mobile label — appears above each value on sm
 ───────────────────────────────────────────── */
 const MobileLabel = React.memo(({ children }) => (
-    <span className="md:hidden text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+    <span className="md:hidden text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
         {children}
     </span>
 ));
@@ -81,11 +81,11 @@ const MemberRow = React.memo(({ user, index, isLast }) => {
         'transition-colors duration-150',
         'md:grid md:grid-cols-12 md:gap-4 md:items-center md:px-8 md:py-5',
         'flex flex-col gap-3.5 p-5',
-        'border border-slate-200 dark:border-slate-800 md:border-x-0 md:border-t-0',
+        'border border-border md:border-x-0 md:border-t-0',
         'rounded-2xl md:rounded-none',
         isExpanded
-            ? 'bg-slate-50 dark:bg-slate-800/50 md:bg-slate-50/70 md:dark:bg-slate-800/30 z-20 rounded-b-none border-b-0 md:border-b'
-            : 'bg-white dark:bg-slate-900 shadow-sm md:shadow-none md:hover:bg-slate-50/80 md:dark:hover:bg-slate-800/40',
+            ? 'bg-muted/50 md:bg-muted/30 z-20 rounded-b-none border-b-0 md:border-b'
+            : 'bg-card shadow-sm md:shadow-none md:hover:bg-muted/40',
         index === 0 ? 'md:border-t-0' : '',
         isLast && !isExpanded ? 'md:border-b-0' : '',
     ].join(' '), [isExpanded, index, isLast]);
@@ -112,27 +112,27 @@ const MemberRow = React.memo(({ user, index, isLast }) => {
                             src={user.image}
                             alt={user.name ?? 'Member'}
                             fallback={(user.name?.charAt(0) ?? 'U').toUpperCase()}
-                            className="w-11 h-11 rounded-full ring-2 ring-white dark:ring-slate-900 shadow-sm shrink-0 object-cover"
+                            className="w-11 h-11 rounded-full ring-2 ring-background shadow-sm shrink-0 object-cover"
                         />
                         <div className="flex flex-col min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-[14.5px] md:text-[15px] font-bold text-slate-900 dark:text-white leading-tight truncate">
+                                <span className="text-[14.5px] md:text-[15px] font-bold text-foreground leading-tight truncate">
                                     {user.name ?? 'Unknown Member'}
                                 </span>
                                 {!user.isActive && (
                                     <span
                                         className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md
                                                    text-[10px] font-bold uppercase tracking-widest
-                                                   bg-rose-50 dark:bg-rose-500/15
-                                                   text-rose-600 dark:text-rose-400
-                                                   border border-rose-200 dark:border-rose-500/30"
+                                                   bg-danger-bg
+                                                   text-danger
+                                                   border border-danger-border"
                                     >
                                         <UserX size={10} strokeWidth={2.5} />
                                         Inactive
                                     </span>
                                 )}
                             </div>
-                            <span className="text-[12.5px] font-medium text-slate-400 dark:text-slate-500 truncate mt-0.5">
+                            <span className="text-[12.5px] font-medium text-muted-foreground truncate mt-0.5">
                                 {user.email ?? '\u2014'}
                             </span>
                         </div>
@@ -143,8 +143,8 @@ const MemberRow = React.memo(({ user, index, isLast }) => {
                         className={[
                             'md:hidden shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200',
                             isExpanded
-                                ? 'bg-blue-50 dark:bg-blue-500/15 text-blue-500'
-                                : 'bg-slate-50 dark:bg-slate-800 text-slate-400',
+                                ? 'bg-primary/10 text-primary'
+                                : 'bg-muted text-muted-foreground',
                         ].join(' ')}
                     >
                         <ChevronDown
@@ -156,12 +156,12 @@ const MemberRow = React.memo(({ user, index, isLast }) => {
                 </div>
 
                 {/* Mobile divider */}
-                <div className="md:hidden h-px w-full bg-slate-100 dark:bg-slate-800/70" />
+                <div className="md:hidden h-px w-full bg-border" />
 
                 {/* 2 ── Market Amount (col-span-2) ── */}
                 <div className="md:col-span-2 flex items-center justify-between md:block gap-2">
                     <MobileLabel>Market Amount</MobileLabel>
-                    <span className="text-[14px] md:text-[15px] font-extrabold text-slate-700 dark:text-slate-200 tabular-nums">
+                    <span className="text-[14px] md:text-[15px] font-extrabold text-foreground tabular-nums">
                         ₹&nbsp;{formattedMarketAmount}
                     </span>
                 </div>
@@ -195,8 +195,8 @@ const MemberRow = React.memo(({ user, index, isLast }) => {
                 <div
                     className={[
                         'px-5 pt-4 pb-6 md:px-8 md:py-6',
-                        'bg-slate-50/60 dark:bg-slate-800/25',
-                        'border border-t-0 border-slate-200 dark:border-slate-800',
+                        'bg-muted/30',
+                        'border border-t-0 border-border',
                         'rounded-b-2xl md:rounded-b-none',
                         isLast ? 'md:rounded-b-[1.5rem]' : '',
                     ].join(' ')}

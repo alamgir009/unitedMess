@@ -119,7 +119,7 @@ const MemberPage = React.memo(() => {
                 icon: HiOutlineArrowTrendingUp,
                 label: 'Meal Rate',
                 value: billingStatsLoading ? '...' : formattedMealRate,
-                color: 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400',
+                color: 'bg-warning-bg border-warning-border text-warning-text',
             },
         ];
     }, [activeCount, billingStatsLoading, formattedMarketExp, formattedTotalMeals, formattedMealRate]);
@@ -145,7 +145,7 @@ const MemberPage = React.memo(() => {
                                     <HiOutlineUserGroup className="w-3.5 h-3.5" /> Directory
                                 </span>
                             )}
-                            <h2 className="text-xl sm:text-2xl tracking-tight text-foreground font-semibold leading-tight">
+                            <h2 className="text-h1">
                                 {isAdmin ? 'Members & Finalized Bills' : 'Members Directory'}
                             </h2>
                             <p className="text-sm text-muted-foreground">
@@ -155,10 +155,10 @@ const MemberPage = React.memo(() => {
 
                         {/* Billing month badge */}
                         {billingStats.billingMonth && (
-                            <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-700 dark:text-indigo-400 shadow-sm self-start">
-                                <HiOutlineCalendarDays className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+                            <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary/10 border border-primary/20 text-primary shadow-sm self-start">
+                                <HiOutlineCalendarDays className="w-4 h-4 text-primary flex-shrink-0" />
                                 <div className="leading-none text-left">
-                                    <p className="text-[9px] uppercase font-bold tracking-widest opacity-70">Billing Period</p>
+                                    <p className="text-caption uppercase font-bold tracking-widest opacity-70">Billing Period</p>
                                     <p className="text-sm font-bold mt-0.5">{billingStats.billingMonth}</p>
                                 </div>
                             </div>

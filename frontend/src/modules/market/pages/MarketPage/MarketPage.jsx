@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useMemo, useCallback, lazy, Suspense } from 'react';
+import { useEffect, useState, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AnimatePresence, motion } from 'framer-motion';
 import { HiOutlineXMark } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
+import { SkeletonCard } from '@/shared/components/ui/Loader';
 import Pagination from '@/shared/components/ui/Pagination/Pagination';
 
 // Market-specific components
@@ -31,23 +32,6 @@ import {
 
 
 const MarketForm = lazy(() => import('../../components/MarketForm/MarketForm'));
-
-/* ── Skeleton loader card ── */
-const SkeletonCard = React.memo(() => (
-    <div className="rounded-xl border border-border/50 bg-card p-5 animate-pulse">
-        <div className="flex justify-between mb-4">
-            <div className="space-y-2">
-                <div className="h-7 w-14 bg-muted/60 rounded-md" />
-                <div className="h-3 w-28 bg-muted/40 rounded" />
-            </div>
-            <div className="h-6 w-14 bg-muted/40 rounded-full" />
-        </div>
-        <div className="h-3 w-full bg-muted/30 rounded mb-1.5" />
-        <div className="h-3 w-2/3 bg-muted/20 rounded mb-5" />
-        <div className="h-8 w-full bg-muted/30 rounded-lg" />
-    </div>
-));
-SkeletonCard.displayName = 'SkeletonCard';
 
 /* ══════════════════════════════════════════════
    MARKET PAGE

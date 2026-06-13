@@ -35,20 +35,20 @@ TabsTrigger.displayName = 'TabsTrigger';
     'touch-target',
   ];
 
-  const variants = {
-    underline: {
-      base: 'text-muted-foreground hover:text-foreground border-b-2 border-transparent rounded-none -mb-[1px]',
-      active: 'text-foreground border-primary',
-    },
-    pill: {
-      base: 'text-muted-foreground hover:text-foreground rounded-lg',
-      active: 'bg-background text-foreground shadow-sm rounded-lg',
-    },
-    glass: {
-      base: 'text-muted-foreground hover:text-foreground rounded-lg',
-      active: 'bg-card text-foreground shadow-sm rounded-lg',
-    },
-  };
+    const variants = {
+      underline: {
+        base: 'text-muted-foreground hover:text-foreground border-b-2 border-transparent rounded-none -mb-[1px]',
+        active: 'text-foreground border-primary font-semibold',
+      },
+      pill: {
+        base: 'text-muted-foreground hover:text-foreground rounded-lg',
+        active: 'bg-background text-foreground shadow-sm rounded-lg font-semibold',
+      },
+      glass: {
+        base: 'text-muted-foreground hover:text-foreground rounded-lg',
+        active: 'bg-card text-foreground shadow-sm rounded-lg font-semibold',
+      },
+    };
 
   return (
     <button

@@ -130,13 +130,13 @@ export default {
       fontSize: {
         caption: ['0.75rem', { lineHeight: '1rem' }],
         label: ['0.8125rem', { lineHeight: '1.25rem' }],
-        base: ['1rem', { lineHeight: '1.5rem' }],
+        body: ['clamp(0.875rem, 0.5vw + 0.75rem, 1rem)', { lineHeight: '1.5' }],
         'body-lg': ['1.0625rem', { lineHeight: '1.625rem' }],
         h4: ['1.125rem', { lineHeight: '1.5rem' }],
-        h3: ['1.25rem', { lineHeight: '1.75rem' }],
-        h2: ['1.5rem', { lineHeight: '2rem' }],
-        h1: ['2rem', { lineHeight: '2.25rem' }],
-        display: ['2.5rem', { lineHeight: '2.75rem' }],
+        h3: ['clamp(1rem, 1.5vw + 0.5rem, 1.375rem)', { lineHeight: '1.3', fontWeight: '600' }],
+        h2: ['clamp(1.125rem, 2vw + 0.625rem, 1.875rem)', { lineHeight: '1.3', letterSpacing: '-0.015em', fontWeight: '600' }],
+        h1: ['clamp(1.375rem, 2.5vw + 0.875rem, 2.5rem)', { lineHeight: '1.25', letterSpacing: '-0.02em', fontWeight: '700' }],
+        display: ['clamp(1.75rem, 3vw + 1.125rem, 3.25rem)', { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '700' }],
       },
 
       zIndex: {
