@@ -3,62 +3,35 @@ import { getAccessToken } from '@/services/api/client/apiClient';
 import { showUpdateToast } from './UpdateNotification';
 
 let currentVersion = '';
+let currentCommit = '';
 let hasNotified = false;
-let canNotify = false;
 
-const COOLDOWN_MS = 15000;
-const INTENT_COOLDOWN_MS = 30000;
-const INTENT_EXPIRY_MS = 60000;
-
-// Detect if this page load was triggered by clicking "Update" — extend cooldown
-let cooldownMs = COOLDOWN_MS;
-try {
-    const raw = sessionStorage.getItem('__um_update_intent');
-    if (raw) {
-        sessionStorage.removeItem('__um_update_intent');
-        const intent = JSON.parse(raw);
-        if (intent && Date.now() - intent.time < INTENT_EXPIRY_MS) {
-            cooldownMs = INTENT_COOLDOWN_MS;
-        }
-    }
-} catch { /* ignore */ }
-
-setTimeout(() => { canNotify = true; }, cooldownMs);
+const DISMISSED_KEY = '__um_dismissed_commit';
 
 const getApiBase = () => {
     const apiUrl = import.meta.env.VITE_API_URL || 'https://api.unitedmess.uk/api/v1';
     return apiUrl.replace(/\/api\/v1\/?$/, '');
 };
 
-const notify = (source, newVersion) => {
-    if (!canNotify) return;
+const notify = (source) => {
     if (hasNotified) return;
-
-    if (newVersion) {
-        try {
-            const ignored = localStorage.getItem('__um_ignored_version');
-            if (ignored === newVersion) return;
-        } catch { /* ignore */ }
-    }
-
     hasNotified = true;
-    showUpdateToast(source, newVersion);
+    showUpdateToast(source, currentVersion, currentCommit);
 };
 
-// Layer 1: Service Worker messages
+// Layer 1: Service Worker lifecycle — the primary "new deploy" signal.
+// Fires once per SW version (on activate).
 const setupSWListener = () => {
     if (!('serviceWorker' in navigator)) return;
     const handler = (event) => {
         if (event.data?.type !== 'NEW_VERSION_READY') return;
-        const swVersion = event.data?.version;
-        if (swVersion && swVersion === currentVersion) return;
-        notify('service_worker', swVersion);
+        notify('service_worker');
     };
     navigator.serviceWorker.addEventListener('message', handler);
     return () => navigator.serviceWorker.removeEventListener('message', handler);
 };
 
-// Layer 2: Socket.io connection for version events
+// Layer 2: Socket.io version event — fallback.
 const setupSocket = () => {
     const token = getAccessToken();
     if (!token) return null;
@@ -73,7 +46,7 @@ const setupSocket = () => {
 
     socketInstance.on('server:version', (data) => {
         if (currentVersion && data.version && data.version !== currentVersion) {
-            notify('socket', data.version);
+            notify('socket');
         }
         if (!currentVersion && data.version) {
             currentVersion = data.version;
@@ -87,7 +60,7 @@ const setupSocket = () => {
     };
 };
 
-// Layer 3: Periodic polling of version endpoint
+// Layer 3: Periodic polling of version endpoint — fallback.
 const setupPolling = () => {
     const check = async () => {
         try {
@@ -102,7 +75,7 @@ const setupPolling = () => {
             if (!res.ok) return;
             const data = await res.json();
             if (currentVersion && data.version && data.version !== currentVersion) {
-                notify('poll', data.version);
+                notify('poll');
             }
             if (!currentVersion && data.version) {
                 currentVersion = data.version;
@@ -124,10 +97,24 @@ const setupVitePreloadListener = () => {
 export const initVersionChecker = () => {
     try {
         const info = typeof __BUILD_INFO__ !== 'undefined' ? __BUILD_INFO__ : null;
-        if (info && info.version) currentVersion = info.version;
+        if (info) {
+            if (info.version) currentVersion = info.version;
+            if (info.commit) currentCommit = info.commit;
+        }
     } catch { /* not available */ }
 
     hasNotified = false;
+
+    // If this build has already been dismissed ("Update" or "Later" was clicked
+    // for its commit hash), suppress all notifications for the entire session.
+    if (currentCommit) {
+        try {
+            const dismissed = localStorage.getItem(DISMISSED_KEY);
+            if (dismissed === currentCommit) {
+                hasNotified = true;
+            }
+        } catch { /* ignore */ }
+    }
 
     const cleanups = [
         setupSWListener(),

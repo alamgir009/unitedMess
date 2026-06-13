@@ -1,8 +1,9 @@
 import toast from 'react-hot-toast';
 
 const TOAST_ID = 'app-update-notification';
+const DISMISSED_KEY = '__um_dismissed_commit';
 
-const showUpdateToast = (source, newVersion) => {
+const showUpdateToast = (source, newVersion, commit) => {
     toast(
         (t) => (
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 px-2 py-1">
@@ -13,8 +14,16 @@ const showUpdateToast = (source, newVersion) => {
                 <button
                     onClick={async () => {
                         toast.dismiss(t.id);
-                        
-                        // Set the intent for versionChecker's cooldown
+
+                        // Persist the commit so versionChecker suppresses future notifications
+                        // for this build — even before the reload completes.
+                        if (commit) {
+                            try {
+                                localStorage.setItem(DISMISSED_KEY, commit);
+                            } catch { /* quota exceeded */ }
+                        }
+
+                        // Mark intent so cooldown is extended (backward compat).
                         try {
                             sessionStorage.setItem(
                                 '__um_update_intent',
@@ -22,7 +31,7 @@ const showUpdateToast = (source, newVersion) => {
                             );
                         } catch { /* ignore */ }
 
-                        // On mobile devices, browsers heavily cache assets. 
+                        // On mobile devices, browsers heavily cache assets.
                         // We must clear CacheStorage manually before reloading.
                         if ('caches' in window) {
                             try {
@@ -42,9 +51,9 @@ const showUpdateToast = (source, newVersion) => {
                 <button
                     onClick={() => {
                         toast.dismiss(t.id);
-                        if (newVersion) {
+                        if (commit) {
                             try {
-                                localStorage.setItem('__um_ignored_version', newVersion);
+                                localStorage.setItem(DISMISSED_KEY, commit);
                             } catch { /* quota exceeded */ }
                         }
                     }}

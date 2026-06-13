@@ -3,12 +3,15 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
 import { execSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 
-let buildInfo = { version: '0.0.0', commit: 'unknown', buildTime: new Date().toISOString() };
+const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
+
+let buildInfo = { version: pkg.version, commit: 'unknown', buildTime: new Date().toISOString() };
 try {
     const commit = execSync('git rev-parse --short HEAD', { encoding: 'utf-8' }).trim();
     buildInfo = {
-        version: '0.0.0',
+        version: pkg.version,
         commit,
         buildTime: new Date().toISOString(),
     };
