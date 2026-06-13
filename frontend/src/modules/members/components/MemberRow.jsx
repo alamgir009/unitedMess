@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { ChevronDown, UserX } from 'lucide-react';
+import { ChevronDown, UserX, ShieldCheck, Clock, XCircle } from 'lucide-react';
 import { Avatar } from '@/shared/components/ui';
 import MemberInvoiceDetails from './MemberInvoiceDetails';
 
@@ -7,19 +7,20 @@ import MemberInvoiceDetails from './MemberInvoiceDetails';
    StatusBadge — pill indicator
 ───────────────────────────────────────────── */
 const STATUS_MAP = {
-    success: { bg: 'bg-success-bg', text: 'text-success', border: 'border-success-border', dot: 'bg-success' },
-    approved: { bg: 'bg-success-bg', text: 'text-success', border: 'border-success-border', dot: 'bg-success' },
-    paid: { bg: 'bg-success-bg', text: 'text-success', border: 'border-success-border', dot: 'bg-success' },
-    failed: { bg: 'bg-danger-bg', text: 'text-danger', border: 'border-danger-border', dot: 'bg-danger' },
-    denied: { bg: 'bg-danger-bg', text: 'text-danger', border: 'border-danger-border', dot: 'bg-danger' },
-    pending: { bg: 'bg-warning-bg', text: 'text-warning', border: 'border-warning-border', dot: 'bg-warning' },
+    success: { bg: 'bg-success-bg', text: 'text-success', border: 'border-success-border', icon: ShieldCheck },
+    approved: { bg: 'bg-success-bg', text: 'text-success', border: 'border-success-border', icon: ShieldCheck },
+    paid: { bg: 'bg-success-bg', text: 'text-success', border: 'border-success-border', icon: ShieldCheck },
+    failed: { bg: 'bg-danger-bg', text: 'text-danger', border: 'border-danger-border', icon: XCircle },
+    denied: { bg: 'bg-danger-bg', text: 'text-danger', border: 'border-danger-border', icon: XCircle },
+    pending: { bg: 'bg-warning-bg', text: 'text-warning', border: 'border-warning-border', icon: Clock },
 };
 
-const DEFAULT_STATUS = { bg: 'bg-muted', text: 'text-muted-foreground', border: 'border-border', dot: 'bg-muted-foreground' };
+const DEFAULT_STATUS = { bg: 'bg-muted', text: 'text-muted-foreground', border: 'border-border', icon: null };
 
 export const StatusBadge = React.memo(({ status }) => {
     const key = (status || 'pending').toLowerCase();
     const style = STATUS_MAP[key] ?? DEFAULT_STATUS;
+    const Icon = style.icon;
 
     return (
         <span
@@ -30,7 +31,7 @@ export const StatusBadge = React.memo(({ status }) => {
                 style.bg, style.text, style.border,
             ].join(' ')}
         >
-            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${style.dot}`} />
+            {Icon && <Icon size={12} strokeWidth={2.5} className="shrink-0" />}
             {key}
         </span>
     );
