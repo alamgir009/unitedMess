@@ -2,83 +2,91 @@
 html.light {
   color-scheme: light;
 
-  /* Brand */
-  --brand: #2563EB;
+  /* ── Brand ── */
+  --brand: hsl(221.2 83.3% 53.3%);           /* #2563EB (blue-600) */
   --brand-rgb: 37, 99, 235;
-  --brand-hover: #1D4ED8;
-  --brand-subtle: #EFF6FF;
-  --brand-foreground: #FFFFFF;
+  --brand-hover: hsl(224.3 76.3% 48%);        /* #1D4ED8 (blue-700) */
+  --brand-active: hsl(225.9 70.7% 40.2%);     /* #1E40AF (blue-800) */
+  --brand-subtle: hsl(213.8 100% 96.9%);       /* #EFF6FF (blue-50) */
+  --brand-foreground: hsl(0 0% 100%);          /* #FFFFFF */
 
-  /* Surface hierarchy */
-  --bg-base: #FFFFFF;
-  --bg-subtle: #F8FAFC;
-  --bg-muted: #F1F5F9;
-  --bg-overlay: rgba(15, 23, 42, 0.5);
+  /* ── Surface hierarchy ── */
+  --bg-base: hsl(0 0% 100%);                  /* #FFFFFF */
+  --bg-surface: hsl(210 40% 98%);             /* #F8FAFC (slate-50) */
+  --bg-raised: hsl(210 40% 96.1%);            /* #F1F5F9 (slate-100) */
+  --bg-subtle: hsl(210 40% 98%);              /* #F8FAFC (slate-50) */
+  --bg-muted: hsl(210 40% 96.1%);             /* #F1F5F9 (slate-100) */
+  --bg-overlay: hsl(222.2 47.4% 11.2% / 0.5); /* #0F172A @ 50% */
 
-  /* Borders */
-  --border-default: #E2E8F0;
-  --border-muted: #F1F5F9;
-  --border-strong: #CBD5E1;
-  --border-brand: #2563EB;
+  /* ── Borders ── */
+  --border-default: hsl(214.3 31.8% 91.4%);  /* #E2E8F0 (slate-200) */
+  --border-muted: hsl(210 40% 96.1%);         /* #F1F5F9 (slate-100) */
+  --border-strong: hsl(212.7 26.8% 83.9%);    /* #CBD5E1 (slate-300) */
+  --border-brand: hsl(221.2 83.3% 53.3%);     /* #2563EB (blue-600) */
 
-  /* Text hierarchy */
-  --text-primary: #0F172A;
-  --text-secondary: #475569;
-  --text-muted: #94A3B8;
-  --text-disabled: #CBD5E1;
-  --text-on-brand: #FFFFFF;
-  --text-inverse: #F8FAFC;
+  /* ── Text hierarchy ── */
+  --text-primary: hsl(222.2 47.4% 11.2%);     /* #0F172A (slate-900) */
+  --text-secondary: hsl(215 14.3% 34.1%);     /* #475569 (slate-600) */
+  --text-muted: hsl(215 20.2% 65.1%);          /* #94A3B8 (slate-400) */
+  --text-disabled: hsl(212.7 26.8% 83.9%);    /* #CBD5E1 (slate-300) */
+  --text-on-brand: hsl(0 0% 100%);            /* #FFFFFF */
+  --text-inverse: hsl(210 40% 98%);           /* #F8FAFC (slate-50) */
 
-  /* Semantic tokens */
-  --success: #16A34A;
-  --success-bg: #F0FDF4;
-  --success-border: #BBF7D0;
-  --success-text: #15803D;
+  /* ── Semantic tokens ── */
+  --success: hsl(142.1 76.2% 36.3%);          /* #16A34A (green-600) */
+  --success-bg: hsl(138.5 76.5% 96.7%);       /* #F0FDF4 (green-50) */
+  --success-border: hsl(141 79.2% 85.1%);     /* #BBF7D0 (green-200) */
+  --success-text: hsl(142.4 71.8% 29.2%);     /* #15803D (green-700) */
 
-  --warning: #D97706;
-  --warning-bg: #FFFBEB;
-  --warning-border: #FDE68A;
-  --warning-text: #B45309;
+  --warning: hsl(37.7 92.1% 42.2%);           /* #D97706 (amber-600) */
+  --warning-bg: hsl(48 100% 96.1%);            /* #FFFBEB (amber-50) */
+  --warning-border: hsl(48 96.5% 76.7%);      /* #FDE68A (amber-200) */
+  --warning-text: hsl(31.8 94.6% 36.7%);      /* #B45309 (amber-700) */
 
-  --danger: #DC2626;
-  --danger-bg: #FEF2F2;
-  --danger-border: #FECACA;
-  --danger-text: #B91C1C;
+  --danger: hsl(0 72.2% 50.6%);               /* #DC2626 (red-600) */
+  --danger-bg: hsl(0 85.7% 97.3%);            /* #FEF2F2 (red-50) */
+  --danger-border: hsl(0 96% 89%);            /* #FECACA (red-200) */
+  --danger-text: hsl(0 73.7% 41.8%);          /* #B91C1C (red-700) */
 
-  --info: #0284C7;
-  --info-bg: #F0F9FF;
-  --info-border: #BAE6FD;
-  --info-text: #0369A1;
+  --error: hsl(0 72.2% 50.6%);               /* alias for danger */
+  --error-bg: hsl(0 85.7% 97.3%);
+  --error-border: hsl(0 96% 89%);
+  --error-text: hsl(0 73.7% 41.8%);
 
-  /* Financial tokens */
-  --profit: #16A34A;
-  --profit-bg: #F0FDF4;
-  --profit-text: #15803D;
+  --info: hsl(200.4 98% 39.4%);               /* #0284C7 (sky-600) */
+  --info-bg: hsl(204 100% 97.1%);              /* #F0F9FF (sky-50) */
+  --info-border: hsl(201.3 94.4% 86.1%);      /* #BAE6FD (sky-200) */
+  --info-text: hsl(201.3 96.3% 32.2%);        /* #0369A1 (sky-700) */
 
-  --loss: #DC2626;
-  --loss-bg: #FEF2F2;
-  --loss-text: #B91C1C;
+  /* ── Financial tokens (aliases) ── */
+  --profit: hsl(142.1 76.2% 36.3%);           /* same as success */
+  --profit-bg: hsl(138.5 76.5% 96.7%);
+  --profit-text: hsl(142.4 71.8% 29.2%);
 
-  --neutral: #6B7280;
-  --neutral-bg: #F3F4F6;
-  --neutral-text: #4B5563;
+  --loss: hsl(0 72.2% 50.6%);                 /* same as danger */
+  --loss-bg: hsl(0 85.7% 97.3%);
+  --loss-text: hsl(0 73.7% 41.8%);
 
-  /* Component */
-  --input-bg: #FFFFFF;
-  --input-bg-disabled: #F8FAFC;
-  --input-border: #CBD5E1;
-  --input-border-hover: #94A3B8;
-  --input-border-focus: #2563EB;
-  --input-border-error: #DC2626;
+  --neutral: hsl(220 9% 46%);                 /* #6B7280 (gray-500) */
+  --neutral-bg: hsl(220 14.3% 95.9%);          /* #F3F4F6 (gray-100) */
+  --neutral-text: hsl(215 14.3% 34.1%);        /* #475569 (slate-600) */
 
-  /* Shadows */
-  --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
-  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
-  --shadow-lg: 0 10px 15px rgba(0,0,0,0.08), 0 4px 6px rgba(0,0,0,0.05);
-  --shadow-xl: 0 20px 25px rgba(0,0,0,0.08), 0 10px 10px rgba(0,0,0,0.04);
+  /* ── Component inputs ── */
+  --input-bg: hsl(0 0% 100%);                 /* #FFFFFF */
+  --input-bg-disabled: hsl(210 40% 98%);      /* #F8FAFC (slate-50) */
+  --input-border: hsl(212.7 26.8% 83.9%);     /* #CBD5E1 (slate-300) */
+  --input-border-hover: hsl(215 20.2% 65.1%); /* #94A3B8 (slate-400) */
+  --input-border-focus: hsl(221.2 83.3% 53.3%); /* #2563EB (blue-600) */
+  --input-border-error: hsl(0 72.2% 50.6%);   /* #DC2626 (red-600) */
 
-  /* Tailwind-compatible HSL tokens */
+  /* ── Shadows ── */
+  --shadow-xs: 0 1px 2px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0 1px 3px hsl(0 0% 0% / 0.08), 0 1px 2px hsl(0 0% 0% / 0.06);
+  --shadow-md: 0 4px 6px hsl(0 0% 0% / 0.07), 0 2px 4px hsl(0 0% 0% / 0.06);
+  --shadow-lg: 0 10px 15px hsl(0 0% 0% / 0.08), 0 4px 6px hsl(0 0% 0% / 0.05);
+  --shadow-xl: 0 20px 25px hsl(0 0% 0% / 0.08), 0 10px 10px hsl(0 0% 0% / 0.04);
+
+  /* ── Tailwind-compatible HSL tokens (space-separated, used via hsl()) ── */
   --background: 0 0% 100%;
   --foreground: 222 47% 11%;
   --card: 0 0% 100%;
@@ -100,24 +108,24 @@ html.light {
   --ring: 210 92% 48%;
   --radius: 0.75rem;
 
-  /* Navbar + Sidebar */
-  --navbar-bg: #ffffff;
-  --navbar-border: #E2E8F0;
-  --sidebar-bg: #F8FAFC;
-  --sidebar-border: #E2E8F0;
+  /* ── Navbar + Sidebar ── */
+  --navbar-bg: hsl(0 0% 100%);               /* #FFFFFF */
+  --navbar-border: hsl(214.3 31.8% 91.4%);   /* #E2E8F0 (slate-200) */
+  --sidebar-bg: hsl(210 40% 98%);            /* #F8FAFC (slate-50) */
+  --sidebar-border: hsl(214.3 31.8% 91.4%);  /* #E2E8F0 (slate-200) */
 
-  /* Status backgrounds */
-  --success-glass: #F0FDF4;
-  --warning-glass: #FFFBEB;
-  --error-glass: #FEF2F2;
-  --info-glass: #F0F9FF;
+  /* ── Status glass backgrounds ── */
+  --success-glass: hsl(138.5 76.5% 96.7%);   /* #F0FDF4 (green-50) */
+  --warning-glass: hsl(48 100% 96.1%);        /* #FFFBEB (amber-50) */
+  --error-glass: hsl(0 85.7% 97.3%);          /* #FEF2F2 (red-50) */
+  --info-glass: hsl(204 100% 97.1%);          /* #F0F9FF (sky-50) */
 
-  /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #2563EB 0%, #7C3AED 100%);
-  --gradient-hero: linear-gradient(135deg, #f0f7ff 0%, #f5f0ff 60%, #f0fdf9 100%);
-  --gradient-text: linear-gradient(135deg, #2563EB 0%, #7C3AED 100%);
+  /* ── Gradients ── */
+  --gradient-primary: linear-gradient(135deg, hsl(221.2 83.3% 53.3%) 0%, hsl(271 76% 53%) 100%);
+  --gradient-hero: linear-gradient(135deg, hsl(210 100% 97%) 0%, hsl(260 100% 97%) 60%, hsl(160 64% 97%) 100%);
+  --gradient-text: linear-gradient(135deg, hsl(221.2 83.3% 53.3%) 0%, hsl(271 76% 53%) 100%);
 
-  /* Blobs (disabled for perf) */
+  /* ── Blobs ── */
   --blob-1: transparent;
   --blob-2: transparent;
   --blob-3: transparent;

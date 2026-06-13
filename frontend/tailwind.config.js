@@ -75,6 +75,12 @@ export default {
           text: "var(--danger-text)",
           border: "var(--danger-border)",
         },
+        error: {
+          DEFAULT: "var(--error)",
+          bg: "var(--error-bg)",
+          text: "var(--error-text)",
+          border: "var(--error-border)",
+        },
         info: {
           DEFAULT: "var(--info)",
           bg: "var(--info-bg)",
@@ -97,6 +103,16 @@ export default {
           text: "var(--neutral-text)",
         },
         overlay: "var(--bg-overlay)",
+        'bg-base': "var(--bg-base)",
+        'bg-surface': "var(--bg-surface)",
+        'bg-raised': "var(--bg-raised)",
+        'text-primary': "var(--text-primary)",
+        'text-muted': "var(--text-muted)",
+        brand: {
+          DEFAULT: "var(--brand)",
+          hover: "var(--brand-hover)",
+          active: "var(--brand-active)",
+        },
       },
       borderRadius: {
         lg: "var(--radius-lg)",

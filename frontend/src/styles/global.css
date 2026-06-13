@@ -156,16 +156,16 @@
   /* ─── High contrast mode ─── */
   @media (prefers-contrast: high) {
     :root {
-      --border-default: #64748B;
-      --border-strong: #475569;
-      --text-muted: #64748B;
-      --text-disabled: #94A3B8;
+      --border-default: hsl(215.4 16.3% 46.9%);
+      --border-strong: hsl(215 14.3% 34.1%);
+      --text-muted: hsl(215.4 16.3% 46.9%);
+      --text-disabled: hsl(215 20.2% 65.1%);
     }
     html.dark {
-      --border-default: #475569;
-      --border-strong: #64748B;
-      --text-muted: #94A3B8;
-      --text-disabled: #64748B;
+      --border-default: hsl(215 14.3% 34.1%);
+      --border-strong: hsl(215.4 16.3% 46.9%);
+      --text-muted: hsl(215 20.2% 65.1%);
+      --text-disabled: hsl(215.4 16.3% 46.9%);
     }
     :focus-visible {
       outline: 3px solid hsl(var(--ring));
