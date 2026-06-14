@@ -239,7 +239,7 @@ export default {
     },
   },
   plugins: [
-    function({ addUtilities, matchUtilities, theme }) {
+    function({ addUtilities }) {
       const variants = [
         'primary', 'secondary', 'destructive', 'warning', 'success',
         'icon', 'loading', 'premium', 'inverse', 'glass',
