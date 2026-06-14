@@ -127,9 +127,9 @@ html.dark {
   --gradient-text: linear-gradient(135deg, hsl(213.1 93.9% 67.8%) 0%, hsl(258 90% 66%) 100%);
 
   /* ── Button gradient tokens (dark mode — 135deg, linear) ── */
-  --btn-primary-from: #3B5B9E;
-  --btn-primary-to: #5A7FCA;
-  --btn-primary-label: #F5F7FA;
+  --btn-primary-from: #2563EB;
+  --btn-primary-to: #22D3EE;
+  --btn-primary-label: #FFFFFF;
   --btn-primary-border: transparent;
 
   --btn-secondary-from: #2A3450;
@@ -168,10 +168,10 @@ html.dark {
   --btn-loading-label: #889AB8;
   --btn-loading-border: transparent;
 
-  --btn-premium-from: #2563EB;
-  --btn-premium-via: #38BDF8;
-  --btn-premium-to: #22D3EE;
-  --btn-premium-label: #FFFFFF;
+  --btn-premium-from: #CDA55C;
+  --btn-premium-via: #E8CC8A;
+  --btn-premium-to: #F5E3B0;
+  --btn-premium-label: #1A1A1A;
   --btn-premium-border: transparent;
 
   --btn-inverse-from: #F8FAFD;
