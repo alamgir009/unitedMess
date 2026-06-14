@@ -191,7 +191,7 @@ const MarketRow = React.memo(React.forwardRef(({ market, onEdit, onDelete, isAdm
 
             {/* Actions -- hover reveal */}
             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150 flex-shrink-0 pl-1">
-                <Button variant="secondary" size="sm" iconOnly onClick={() => onEdit(market)} title="Edit">
+                <Button variant="icon" size="sm" iconOnly onClick={() => onEdit(market)} title="Edit">
                     <HiOutlinePencilSquare className="w-4 h-4" />
                 </Button>
                 <Button variant="danger" size="sm" iconOnly onClick={() => onDelete(market)} title="Delete">

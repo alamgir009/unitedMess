@@ -383,7 +383,7 @@ const AdminUpiForm = memo(({
       </label>
     </div>
     <div className="flex gap-3 pt-2">
-      <Button variant="outline" size="md" fullWidth onClick={onCancel}>
+      <Button variant="glass" size="md" fullWidth onClick={onCancel}>
         Cancel
       </Button>
       <Button variant="premium" size="md" fullWidth isLoading={savingUpiConfig}>
@@ -405,7 +405,7 @@ const SuccessView = ({ onClose }) => (
         Your UTR reference has been received. The admin will verify and update your bill shortly.
       </p>
     </div>
-    <Button variant="outline" size="md" onClick={onClose}>
+    <Button variant="glass" size="md" onClick={onClose}>
       Close
     </Button>
   </div>
@@ -802,7 +802,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
                     </div>
                   </div>
 
-                  <Button variant="primary" size="lg" fullWidth onClick={() => setPayStep(2)} disabled={gasBillAmount <= 0} className="mt-1">
+                  <Button variant="elevated" size="lg" fullWidth onClick={() => setPayStep(2)} disabled={gasBillAmount <= 0} className="mt-1">
                     Continue to Payment Method
                     <HiOutlineArrowRight className="w-4 h-4 ml-1.5" />
                   </Button>
@@ -844,7 +844,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
                   <PaymentSummary total={selectedTotalPayable} months={selectedMonths} />
 
                   <Button
-                    variant="primary"
+                    variant="elevated"
                     size="lg"
                     fullWidth
                     onClick={() => setPayStep(2)}
@@ -888,11 +888,11 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
                   </div>
 
                   <div className="flex gap-3 pt-1">
-                    <Button variant="outline" size="md" fullWidth onClick={() => setPayStep(1)}>
+                    <Button variant="glass" size="md" fullWidth onClick={() => setPayStep(1)}>
                       <HiOutlineArrowLeft className="w-4 h-4 mr-1" />
                       Back
                     </Button>
-                    <Button variant="primary" size="md" fullWidth onClick={() => setPayStep(3)}>
+                    <Button variant="elevated" size="md" fullWidth onClick={() => setPayStep(3)}>
                       Continue
                       <HiOutlineArrowRight className="w-4 h-4 ml-1" />
                     </Button>
@@ -1023,7 +1023,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
                               />
                               {isAdmin && (
                                 <Button
-                                  variant="outline"
+                                  variant="glass"
                                   size="md"
                                   fullWidth
                                   onClick={() => setIsAdminUpiEdit(true)}

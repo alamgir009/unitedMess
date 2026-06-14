@@ -121,14 +121,14 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewIn
                         ) : (
                             <>
                                 {payment.type === 'mess_bill' && (
-                                    <Button variant="secondary" size="sm"
+                                    <Button variant="link" size="sm"
                                         onClick={() => onViewInvoice?.(payment)}
-                                        className="text-xs text-indigo-600 dark:text-indigo-400">
+                                        className="text-xs">
                                         <HiOutlineDocumentText className="w-3.5 h-3.5 mr-1" />
                                         Invoice
                                     </Button>
                                 )}
-                                <Button variant="secondary" size="sm" onClick={() => onEdit(payment)} className="flex-1 text-xs">
+                                <Button variant="brand-subtle" size="sm" onClick={() => onEdit(payment)} className="flex-1 text-xs">
                                     <HiOutlinePencilSquare className="w-4 h-4 mr-1" /> Edit
                                 </Button>
                             </>
@@ -140,13 +140,13 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewIn
                 ) : (
                     <>
                         {payment.type === 'mess_bill' && (
-                            <Button variant="secondary" size="sm" onClick={() => onViewInvoice?.(payment)}
-                                className="flex-1 text-xs text-indigo-600 dark:text-indigo-400">
+                            <Button variant="link" size="sm" onClick={() => onViewInvoice?.(payment)}
+                                className="flex-1 text-xs">
                                 <HiOutlineDocumentText className="w-3.5 h-3.5 mr-1" />
                                 {payment.status === 'completed' ? 'Invoice' : 'View Bill'}
                             </Button>
                         )}
-                        <Button variant="secondary" size="sm" onClick={() => onEdit(payment)} className="flex-1 text-xs">
+                        <Button variant="brand-subtle" size="sm" onClick={() => onEdit(payment)} className="flex-1 text-xs">
                             <HiOutlineReceiptRefund className="w-4 h-4 mr-1" /> View
                         </Button>
                     </>
@@ -229,14 +229,13 @@ const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInv
                 ) : (
                     <>
                         {payment.type === 'mess_bill' && (
-                            <Button variant="secondary" size="sm" iconOnly
+                            <Button variant="icon" size="sm" iconOnly
                                 onClick={() => onViewInvoice?.(payment)}
-                                aria-label="View Invoice"
-                                className="text-indigo-600 dark:text-indigo-400">
+                                aria-label="View Invoice">
                                 <HiOutlineDocumentText className="w-4 h-4" />
                             </Button>
                         )}
-                        <Button variant="secondary" size="sm" iconOnly onClick={() => onEdit(payment)} aria-label={canEdit ? 'Edit' : 'View'}>
+                        <Button variant="icon" size="sm" iconOnly onClick={() => onEdit(payment)} aria-label={canEdit ? 'Edit' : 'View'}>
                             <HiOutlinePencilSquare className="w-4 h-4" />
                         </Button>
                     </>

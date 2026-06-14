@@ -4,6 +4,7 @@ import {
     FiArrowRight, FiAlertCircle,
 } from 'react-icons/fi';
 import { cn } from '@/core/utils/helpers/string.helper';
+import { Button } from '@/shared/components/ui';
 
 /**
  * PayableWidget
@@ -109,12 +110,13 @@ const PayableWidget = ({
                                     Paid
                                 </span>
                             ) : (
-                                <button
+                                <Button
+                                    variant="inverse"
+                                    size="sm"
                                     onClick={() => navigate('/payments')}
-                                    className="flex items-center gap-1 bg-white text-indigo-700 dark:bg-white dark:text-indigo-950 px-3.5 py-1.5 rounded-xl font-bold text-xs sm:text-sm hover:bg-white/90 active:bg-white/80 transition-colors shrink-0"
                                 >
                                     Pay <FiArrowRight size={13} />
-                                </button>
+                                </Button>
                             )
                         )}
                     </div>
@@ -151,12 +153,13 @@ const PayableWidget = ({
                                     Paid
                                 </span>
                             ) : (
-                                <button
+                                <Button
+                                    variant="inverse"
+                                    size="sm"
                                     onClick={() => navigate('/payments')}
-                                    className="flex items-center gap-1 bg-white text-purple-700 dark:bg-white dark:text-purple-950 px-3.5 py-1.5 rounded-xl font-bold text-xs sm:text-sm hover:bg-white/90 active:bg-white/80 transition-colors shrink-0"
                                 >
                                     Pay <FiArrowRight size={13} />
-                                </button>
+                                </Button>
                             )
                         )}
                     </div>
