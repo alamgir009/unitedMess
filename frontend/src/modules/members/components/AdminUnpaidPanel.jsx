@@ -75,18 +75,23 @@ StatusPill.displayName = 'StatusPill';
 ───────────────────────────────────────────── */
 const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
     const outstanding = invoice.totalPayable - invoice.paidAmount;
-    const [amount, setAmount] = useState(String(outstanding > 0 ? outstanding : '0'));
+    const isOverpaid = outstanding < 0;
+    const isSettled = outstanding === 0;
 
-    const isRefund = parseFloat(amount) < 0;
+    // Auto-populate: refund amount for overpaid, outstanding due for underpaid
+    const defaultAmount = isOverpaid ? String(-outstanding) : String(outstanding);
+    const [amount, setAmount] = useState(defaultAmount);
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        if (isSettled) { toast.error('Invoice is fully settled — no action needed'); return; }
         const val = parseFloat(amount);
-        if (isNaN(val)) { toast.error('Enter a valid amount'); return; }
-        if (val === 0) { toast.error('Amount must be non-zero'); return; }
-        const newPaidAmount = invoice.paidAmount + val;
-        if (newPaidAmount < 0) { toast.error('Paid amount cannot go below zero'); return; }
-        onResolve(invoice._id, newPaidAmount, val);
+        if (isNaN(val) || val <= 0) { toast.error('Enter a valid positive amount'); return; }
+        // Determine delta: negative for refund (overpaid), positive for payment (underpaid)
+        const delta = isOverpaid ? -val : val;
+        const newPaidAmount = invoice.paidAmount + delta;
+        if (newPaidAmount < 0) { toast.error('Refund cannot exceed the amount paid'); return; }
+        onResolve(invoice._id, newPaidAmount, delta);
     };
 
     return (
@@ -96,14 +101,14 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                     <div className="flex items-center gap-3">
                         <div className={cn(
                             'w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm',
-                            isRefund
+                            isOverpaid
                                 ? 'bg-gradient-to-br from-amber-500 to-orange-500 dark:from-amber-400 dark:to-orange-400 shadow-amber-600/20'
                                 : 'bg-gradient-to-br from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500 shadow-emerald-600/20'
                         )}>
-                            {isRefund ? <RefreshCw size={20} className="text-white" /> : <BadgeIndianRupee size={20} className="text-white" />}
+                            {isOverpaid ? <RefreshCw size={20} className="text-white" /> : <BadgeIndianRupee size={20} className="text-white" />}
                         </div>
                         <div>
-                            <h3 className="text-base font-black text-foreground">{isRefund ? 'Process Refund' : 'Resolve Payment'}</h3>
+                            <h3 className="text-base font-black text-foreground">{isOverpaid ? 'Process Refund' : 'Resolve Payment'}</h3>
                             <p className="text-xs font-medium text-muted-foreground">
                                 {invoice.user?.name ?? 'Member'} — {invoice.monthName}
                             </p>
@@ -126,19 +131,21 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                     <form onSubmit={handleSubmit} className="space-y-3">
                         <div>
                             <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
-                                {isRefund ? 'Refund Amount (₹)' : 'Amount Being Paid Now (₹)'}
+                                {isOverpaid ? 'Refund Amount (₹)' : 'Amount Being Paid Now (₹)'}
                             </label>
                             <div className="relative">
                                 <span className="absolute inset-y-0 left-4 flex items-center text-muted-foreground text-sm font-bold">₹</span>
                                 <input
                                     type="number"
                                     step="0.01"
+                                    min="0"
                                     value={amount}
                                     onChange={e => setAmount(e.target.value)}
-                                    className="w-full pl-8 pr-4 py-3 rounded-2xl text-base font-bold bg-input border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-all"
+                                    disabled={isSettled}
+                                    className="w-full pl-8 pr-4 py-3 rounded-2xl text-base font-bold bg-input border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-all disabled:opacity-50"
                                 />
                             </div>
-                            {isRefund && (
+                            {isOverpaid && (
                                 <p className="flex items-center gap-1 mt-1.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
                                     <AlertTriangle size={11} /> Refund will be issued — invoice marked as refunded
                                 </p>
@@ -148,14 +155,14 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                             <button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl text-sm font-bold border border-input text-muted-foreground hover:bg-muted active:opacity-80">
                                 Cancel
                             </button>
-                            <button type="submit" disabled={isSaving} className={cn(
+                            <button type="submit" disabled={isSaving || isSettled} className={cn(
                                 'flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black text-white dark:text-slate-950 hover:brightness-105 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed shadow-md',
-                                isRefund
+                                isOverpaid
                                     ? 'bg-gradient-to-r from-amber-600 to-orange-600 dark:from-amber-500 dark:to-orange-500'
                                     : 'bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500'
                             )}>
-                                {isSaving ? <Spinner size="sm" color="white" /> : isRefund ? <RefreshCw size={16} /> : <CheckCircle2 size={16} />}
-                                {isSaving ? 'Saving…' : isRefund ? 'Issue Refund' : 'Mark Payment'}
+                                {isSaving ? <Spinner size="sm" color="white" /> : isOverpaid ? <RefreshCw size={16} /> : <CheckCircle2 size={16} />}
+                                {isSaving ? 'Saving…' : isOverpaid ? 'Issue Refund' : 'Mark Payment'}
                             </button>
                         </div>
                     </form>
