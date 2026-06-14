@@ -78,19 +78,26 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
     const isOverpaid = outstanding < 0;
     const isSettled = outstanding === 0;
 
-    // Auto-populate: refund amount for overpaid, outstanding due for underpaid
-    const defaultAmount = isOverpaid ? String(-outstanding) : String(outstanding);
+    const refundableAmount = isOverpaid ? -outstanding : 0;
+    const defaultAmount = isOverpaid ? String(refundableAmount) : String(outstanding);
     const [amount, setAmount] = useState(defaultAmount);
+
+    const parsed = parseFloat(amount);
+    const clamped = isOverpaid ? Math.min(parsed || 0, refundableAmount) : parsed || 0;
 
     const handleSubmit = (e) => {
         e.preventDefault();
         if (isSettled) { toast.error('Invoice is fully settled — no action needed'); return; }
-        const val = parseFloat(amount);
-        if (isNaN(val) || val <= 0) { toast.error('Enter a valid positive amount'); return; }
-        // Determine delta: negative for refund (overpaid), positive for payment (underpaid)
-        const delta = isOverpaid ? -val : val;
+        const raw = parseFloat(amount);
+        if (isNaN(raw) || raw <= 0) { toast.error('Enter a valid positive amount'); return; }
+        // Clamp refund to max refundable (paidAmount - 0)
+        const safeVal = isOverpaid ? Math.min(raw, refundableAmount) : raw;
+        const delta = isOverpaid ? -safeVal : safeVal;
         const newPaidAmount = invoice.paidAmount + delta;
         if (newPaidAmount < 0) { toast.error('Refund cannot exceed the amount paid'); return; }
+        if (safeVal !== raw) {
+            toast(`Refund capped to ₹ ${fmt(refundableAmount)} — maximum refundable amount`, { icon: 'ℹ️' });
+        }
         onResolve(invoice._id, newPaidAmount, delta);
     };
 
@@ -131,23 +138,39 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                     <form onSubmit={handleSubmit} className="space-y-3">
                         <div>
                             <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
-                                {isOverpaid ? 'Refund Amount (₹)' : 'Amount Being Paid Now (₹)'}
+                                {isOverpaid ? `Refund Amount (max ₹ ${fmt(refundableAmount)})` : 'Amount Being Paid Now (₹)'}
                             </label>
                             <div className="relative">
-                                <span className="absolute inset-y-0 left-4 flex items-center text-muted-foreground text-sm font-bold">₹</span>
+                                <span className={cn(
+                                    'absolute inset-y-0 left-4 flex items-center text-sm font-bold',
+                                    isOverpaid ? 'text-amber-500 dark:text-amber-400' : 'text-muted-foreground'
+                                )}>
+                                    {isOverpaid ? '− ₹' : '₹'}
+                                </span>
                                 <input
                                     type="number"
                                     step="0.01"
                                     min="0"
+                                    max={isOverpaid ? refundableAmount : undefined}
                                     value={amount}
-                                    onChange={e => setAmount(e.target.value)}
+                                    onChange={e => {
+                                        const raw = e.target.value;
+                                        if (isOverpaid && raw !== '' && Number(raw) > refundableAmount) {
+                                            setAmount(String(refundableAmount));
+                                        } else {
+                                            setAmount(raw);
+                                        }
+                                    }}
                                     disabled={isSettled}
-                                    className="w-full pl-8 pr-4 py-3 rounded-2xl text-base font-bold bg-input border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-all disabled:opacity-50"
+                                    className={cn(
+                                        'w-full py-3 rounded-2xl text-base font-bold bg-input border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-all disabled:opacity-50',
+                                        isOverpaid ? 'pl-16' : 'pl-8'
+                                    )}
                                 />
                             </div>
                             {isOverpaid && (
                                 <p className="flex items-center gap-1 mt-1.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
-                                    <AlertTriangle size={11} /> Refund will be issued — invoice marked as refunded
+                                    <AlertTriangle size={11} /> −₹ {fmt(clamped || refundableAmount)} will be deducted — invoice marked as refunded
                                 </p>
                             )}
                         </div>
