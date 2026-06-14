@@ -140,14 +140,14 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
     }
   };
 
+  if (!shouldRender || !user) return null;
+
   const avatarColor = getAvatarColor(user.name);
   const joinedDate = user.createdAt ? format(new Date(user.createdAt), 'MMM d, yyyy') : 'N/A';
   const mealPaidColor = user.payment === 'success' ? 'green' : 'red';
   const gasPaidColor  = user.gasBill === 'success'  ? 'green' : 'red';
   const statusColor =
     user.userStatus === 'approved' ? 'green' : user.userStatus === 'pending' ? 'amber' : 'red';
-
-  if (!shouldRender || !user) return null;
 
   return createPortal(
     <div className={cn(

@@ -264,12 +264,12 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
                   <tr key={user._id} className="group transition-colors hover:bg-muted/40">
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
-                        <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-full', 'bg-gradient-to-br text-sm font-bold text-white shadow-sm', avatarGradient(user.name))}>
-                          {user.name?.charAt(0).toUpperCase() ?? 'U'}
+                        <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-full', 'bg-gradient-to-br text-sm font-bold text-white shadow-sm', avatarGradient(user?.name))}>
+                          {user?.name?.charAt(0)?.toUpperCase() ?? 'U'}
                         </div>
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold leading-snug text-foreground">
-                            {user.name}
+                            {user?.name}
                           </p>
                           <p className="truncate text-xs text-muted-foreground">
                             {user.email}
