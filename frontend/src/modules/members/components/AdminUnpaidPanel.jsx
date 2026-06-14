@@ -74,29 +74,43 @@ StatusPill.displayName = 'StatusPill';
    ResolveModal
 ───────────────────────────────────────────── */
 const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
-    const outstanding = invoice.totalPayable - invoice.paidAmount;
-    const isOverpaid = outstanding < 0;
+    const { totalPayable, paidAmount } = invoice;
+    const outstanding = totalPayable - paidAmount;
+    const isRefundMode = outstanding < 0;
     const isSettled = outstanding === 0;
 
-    const refundableAmount = isOverpaid ? -outstanding : 0;
-    const defaultAmount = isOverpaid ? String(refundableAmount) : String(outstanding);
+    // Minimum paidAmount allowed after refund:
+    //   totalPayable > 0 → 0  (can't go below zero on a positive bill)
+    //   totalPayable < 0 → totalPayable (negative bill allows matching negative paidAmount)
+    const minAllowedPaid = Math.min(0, totalPayable);
+
+    // Maximum refund amount = current paidAmount - lowest allowed paidAmount
+    const maxRefund = paidAmount - minAllowedPaid;
+
+    // Suggested refund: the amount that settles paidAmount to totalPayable
+    const suggestedRefund = Math.max(0, paidAmount - totalPayable);
+
+    const defaultAmount = isRefundMode ? String(Math.min(suggestedRefund, maxRefund)) : String(outstanding);
     const [amount, setAmount] = useState(defaultAmount);
 
     const parsed = parseFloat(amount);
-    const clamped = isOverpaid ? Math.min(parsed || 0, refundableAmount) : parsed || 0;
+    const clamped = isRefundMode ? Math.min(parsed || 0, maxRefund) : parsed || 0;
+    const displayRefund = clamped || (isRefundMode ? maxRefund : 0);
 
     const handleSubmit = (e) => {
         e.preventDefault();
         if (isSettled) { toast.error('Invoice is fully settled — no action needed'); return; }
         const raw = parseFloat(amount);
         if (isNaN(raw) || raw <= 0) { toast.error('Enter a valid positive amount'); return; }
-        // Clamp refund to max refundable (paidAmount - 0)
-        const safeVal = isOverpaid ? Math.min(raw, refundableAmount) : raw;
-        const delta = isOverpaid ? -safeVal : safeVal;
-        const newPaidAmount = invoice.paidAmount + delta;
-        if (newPaidAmount < 0) { toast.error('Refund cannot exceed the amount paid'); return; }
+        const safeVal = isRefundMode ? Math.min(raw, maxRefund) : raw;
+        const delta = isRefundMode ? -safeVal : safeVal;
+        const newPaidAmount = paidAmount + delta;
+        if (newPaidAmount < minAllowedPaid) {
+            toast.error(`Refund cannot exceed ₹ ${fmt(maxRefund)}`);
+            return;
+        }
         if (safeVal !== raw) {
-            toast(`Refund capped to ₹ ${fmt(refundableAmount)} — maximum refundable amount`, { icon: 'ℹ️' });
+            toast(`Amount capped to ₹ ${fmt(maxRefund)} — maximum refundable`, { icon: 'ℹ️' });
         }
         onResolve(invoice._id, newPaidAmount, delta);
     };
@@ -108,14 +122,14 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                     <div className="flex items-center gap-3">
                         <div className={cn(
                             'w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm',
-                            isOverpaid
+                            isRefundMode
                                 ? 'bg-gradient-to-br from-amber-500 to-orange-500 dark:from-amber-400 dark:to-orange-400 shadow-amber-600/20'
                                 : 'bg-gradient-to-br from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500 shadow-emerald-600/20'
                         )}>
-                            {isOverpaid ? <RefreshCw size={20} className="text-white" /> : <BadgeIndianRupee size={20} className="text-white" />}
+                            {isRefundMode ? <RefreshCw size={20} className="text-white" /> : <BadgeIndianRupee size={20} className="text-white" />}
                         </div>
                         <div>
-                            <h3 className="text-base font-black text-foreground">{isOverpaid ? 'Process Refund' : 'Resolve Payment'}</h3>
+                            <h3 className="text-base font-black text-foreground">{isRefundMode ? 'Process Refund' : 'Resolve Payment'}</h3>
                             <p className="text-xs font-medium text-muted-foreground">
                                 {invoice.user?.name ?? 'Member'} — {invoice.monthName}
                             </p>
@@ -125,8 +139,8 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                 <div className="px-6 py-5 space-y-4">
                     <div className="grid grid-cols-3 gap-3 text-center">
                         {[
-                            { label: 'Total Bill', value: `₹ ${fmt(invoice.totalPayable)}`, color: 'text-foreground' },
-                            { label: 'Paid So Far', value: `₹ ${fmt(invoice.paidAmount)}`, color: 'text-success-text' },
+                            { label: 'Total Bill', value: `₹ ${fmt(totalPayable)}`, color: totalPayable < 0 ? 'text-success-text' : 'text-foreground' },
+                            { label: 'Paid So Far', value: `₹ ${fmt(paidAmount)}`, color: 'text-success-text' },
                             { label: 'Outstanding', value: `₹ ${fmt(outstanding)}`, color: outstanding < 0 ? 'text-success-text' : 'text-danger-text' },
                         ].map(({ label, value, color }) => (
                             <div key={label} className="bg-muted dark:bg-muted/60 rounded-2xl px-3 py-3">
@@ -138,25 +152,25 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                     <form onSubmit={handleSubmit} className="space-y-3">
                         <div>
                             <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
-                                {isOverpaid ? `Refund Amount (max ₹ ${fmt(refundableAmount)})` : 'Amount Being Paid Now (₹)'}
+                                {isRefundMode ? `Refund Amount (max ₹ ${fmt(maxRefund)})` : 'Amount Being Paid Now (₹)'}
                             </label>
                             <div className="relative">
                                 <span className={cn(
                                     'absolute inset-y-0 left-4 flex items-center text-sm font-bold',
-                                    isOverpaid ? 'text-amber-500 dark:text-amber-400' : 'text-muted-foreground'
+                                    isRefundMode ? 'text-amber-500 dark:text-amber-400' : 'text-muted-foreground'
                                 )}>
-                                    {isOverpaid ? '− ₹' : '₹'}
+                                    {isRefundMode ? '− ₹' : '₹'}
                                 </span>
                                 <input
                                     type="number"
                                     step="0.01"
                                     min="0"
-                                    max={isOverpaid ? refundableAmount : undefined}
+                                    max={isRefundMode ? maxRefund : undefined}
                                     value={amount}
                                     onChange={e => {
                                         const raw = e.target.value;
-                                        if (isOverpaid && raw !== '' && Number(raw) > refundableAmount) {
-                                            setAmount(String(refundableAmount));
+                                        if (isRefundMode && raw !== '' && Number(raw) > maxRefund) {
+                                            setAmount(String(maxRefund));
                                         } else {
                                             setAmount(raw);
                                         }
@@ -164,13 +178,13 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                                     disabled={isSettled}
                                     className={cn(
                                         'w-full py-3 rounded-2xl text-base font-bold bg-input border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-all disabled:opacity-50',
-                                        isOverpaid ? 'pl-16' : 'pl-8'
+                                        isRefundMode ? 'pl-16' : 'pl-8'
                                     )}
                                 />
                             </div>
-                            {isOverpaid && (
+                            {isRefundMode && (
                                 <p className="flex items-center gap-1 mt-1.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
-                                    <AlertTriangle size={11} /> −₹ {fmt(clamped || refundableAmount)} will be deducted — invoice marked as refunded
+                                    <AlertTriangle size={11} /> −₹ {fmt(displayRefund)} will be deducted — invoice marked as refunded
                                 </p>
                             )}
                         </div>
@@ -180,12 +194,12 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                             </button>
                             <button type="submit" disabled={isSaving || isSettled} className={cn(
                                 'flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black text-white dark:text-slate-950 hover:brightness-105 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed shadow-md',
-                                isOverpaid
+                                isRefundMode
                                     ? 'bg-gradient-to-r from-amber-600 to-orange-600 dark:from-amber-500 dark:to-orange-500'
                                     : 'bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500'
                             )}>
-                                {isSaving ? <Spinner size="sm" color="white" /> : isOverpaid ? <RefreshCw size={16} /> : <CheckCircle2 size={16} />}
-                                {isSaving ? 'Saving…' : isOverpaid ? 'Issue Refund' : 'Mark Payment'}
+                                {isSaving ? <Spinner size="sm" color="white" /> : isRefundMode ? <RefreshCw size={16} /> : <CheckCircle2 size={16} />}
+                                {isSaving ? 'Saving…' : isRefundMode ? 'Issue Refund' : 'Mark Payment'}
                             </button>
                         </div>
                     </form>
