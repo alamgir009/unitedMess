@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { memo } from 'react';
+import Button from '@/shared/components/ui/Button/Button';
 import {
     HiOutlineUsers, HiOutlineHome, HiOutlineStar, HiOutlineClock,
     HiOutlineShieldCheck, HiOutlineBolt, HiOutlineSparkles,
@@ -9,269 +10,315 @@ import {
 } from 'react-icons/hi2';
 import { RiDoubleQuotesL } from 'react-icons/ri';
 
-// ─── Reveal with reduced-motion support ───
+// ─── Motion-Safe Reveal Component ───
 const Reveal = memo(({ children, className = '', delay = 0 }) => {
     const shouldReduceMotion = useReducedMotion();
     return (
         <motion.div
-            initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+            initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.5, delay, ease: [0.16, 1, 0.3, 1] }}
+            viewport={{ once: true, margin: '-24px' }}
+            transition={{ duration: 0.4, delay, ease: [0.16, 1, 0.3, 1] }}
             className={className}
-            style={{ willChange: 'transform, opacity' }}
         >
             {children}
-    </motion.div>
-);
+        </motion.div>
+    );
 });
 Reveal.displayName = 'Reveal';
 
-// ─── Stat card ───
+// ─── Stat Card Component (Numbers Section) ───
 const StatCard = memo(({ value, label, Icon, delay }) => (
-    <Reveal delay={delay} className="flex-1 min-w-[130px]">
-        <div className="relative rounded-xl border border-border bg-card/60 p-5 text-center backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:shadow-lg sm:rounded-2xl sm:p-6">
-            <div className="flex justify-center mb-2.5 sm:mb-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20 sm:h-12 sm:w-12 sm:rounded-xl">
-                    <Icon className="h-4 w-4 text-primary sm:h-5 sm:w-5" />
-                </div>
+    <Reveal delay={delay}>
+        <div className="flex flex-col items-center justify-center p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md transition-transform duration-200 hover:-translate-y-1 transform-gpu will-change-transform shadow-sm">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 mb-3 shrink-0">
+                <Icon className="h-5 w-5 text-primary" />
             </div>
-            <p className="text-2xl font-black text-foreground tabular-nums sm:text-3xl">{value}</p>
-            <p className="mt-1 text-[10px] font-medium text-muted-foreground uppercase tracking-widest sm:text-xs">{label}</p>
+            <p className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100 tracking-tight text-numeric mb-1">{value}</p>
+            <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 text-center mt-0.5">{label}</p>
         </div>
     </Reveal>
 ));
 StatCard.displayName = 'StatCard';
 
-// ─── Team card ───
-const TeamCard = memo(({ name, role, bio, initials, gradient, delay }) => (
+// ─── Team Card Component (Team Section) ───
+const TeamCard = memo(({ name, role, bio, avatar, delay }) => (
     <Reveal delay={delay}>
-        <div className="group relative overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:rounded-2xl">
-            <div className="h-24 w-full flex items-center justify-center sm:h-32" style={{ background: gradient }}>
-                <div className="flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-white/30 backdrop-blur-sm text-white font-black text-xl shadow-lg sm:h-20 sm:w-20 sm:text-2xl">
-                    {initials}
-                </div>
+        <div className="group flex flex-col h-full rounded-2xl border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md p-6 transition-transform duration-200 hover:-translate-y-1 transform-gpu will-change-transform shadow-sm">
+            <div className="relative w-24 h-24 rounded-full overflow-hidden mx-auto mb-4 border border-slate-200/80 dark:border-slate-800/60 shadow-sm shrink-0">
+                <img
+                    src={avatar}
+                    alt={name}
+                    loading="lazy"
+                    width={96}
+                    height={96}
+                    className="w-full h-full object-cover"
+                />
             </div>
-            <div className="relative p-5 sm:p-6">
-                <h3 className="font-bold text-foreground text-base sm:text-lg">{name}</h3>
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-primary mt-0.5 mb-2.5 sm:mb-3 sm:text-xs">{role}</p>
-                <p className="text-xs text-muted-foreground leading-relaxed sm:text-sm">{bio}</p>
+            <div className="text-center flex flex-col flex-1">
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 mb-1 leading-tight">{name}</h3>
+                <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-primary mb-3 mt-0.5">{role}</p>
+                <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed mt-auto">{bio}</p>
             </div>
         </div>
     </Reveal>
 ));
 TeamCard.displayName = 'TeamCard';
 
-// ─── Value card ───
+// ─── Value Card Component (Mission Subsection) ───
 const ValueCard = memo(({ Icon, title, desc, iconColor, delay }) => (
     <Reveal delay={delay}>
-        <div className="flex gap-3 rounded-xl border border-border bg-card/60 p-4 backdrop-blur-md transition-colors duration-200 hover:border-primary/30 hover:bg-primary/[0.03] sm:gap-4 sm:rounded-2xl sm:p-6">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 border border-primary/20 transition-transform duration-200 group-hover:scale-105 sm:h-12 sm:w-12 sm:rounded-xl">
-                <Icon className={`h-4 w-4 ${iconColor} sm:h-5 sm:w-5`} />
+        <div className="flex gap-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md p-5 transition-transform duration-200 hover:-translate-y-0.5 transform-gpu will-change-transform shadow-sm">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
+                <Icon className={`h-5 w-5 ${iconColor}`} />
             </div>
             <div className="min-w-0">
-                <h4 className="font-semibold text-foreground text-sm sm:text-base mb-0.5 sm:mb-1">{title}</h4>
-                <p className="text-xs text-muted-foreground leading-relaxed sm:text-sm">{desc}</p>
+                <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-sm sm:text-base mb-1 leading-tight">{title}</h4>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{desc}</p>
             </div>
         </div>
     </Reveal>
 ));
 ValueCard.displayName = 'ValueCard';
 
+// ─── Static Data Arrays ───
 const stats = [
     { value: '2,500+', label: 'Active Members', Icon: HiOutlineUsers, delay: 0 },
-    { value: '200+', label: 'Messes Managed', Icon: HiOutlineHome, delay: 0.07 },
-    { value: '98%', label: 'Satisfaction', Icon: HiOutlineStar, delay: 0.14 },
-    { value: '3 yrs', label: 'In Operation', Icon: HiOutlineClock, delay: 0.21 },
+    { value: '200+', label: 'Messes Managed', Icon: HiOutlineHome, delay: 0.06 },
+    { value: '98%', label: 'Satisfaction', Icon: HiOutlineStar, delay: 0.12 },
+    { value: '3 yrs', label: 'In Operation', Icon: HiOutlineClock, delay: 0.18 },
 ];
 
 const team = [
-    { name: 'Alamgir Islam', role: 'Founder & Lead Engineer', bio: 'Visionary behind UnitedMess. Passionate about elegant software that solves real community problems, one mess at a time.', initials: 'AI', gradient: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', delay: 0 },
-    { name: 'Hafizur Rahaman', role: 'UX & Design Lead', bio: 'Crafts every pixel with purpose. Obsessed with accessibility, motion design, and turning complex workflows into delightful interactions.', initials: 'HR', gradient: 'linear-gradient(135deg, #ec4899 0%, #f97316 100%)', delay: 0.08 },
-    { name: 'Alamgir Islam', role: 'Backend Architect', bio: 'Builds the engine under the hood. Expert in distributed systems, real-time data, and making things scale without breaking a sweat.', initials: 'AI', gradient: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)', delay: 0.16 },
+    { name: 'Alamgir Islam', role: 'Founder & Lead Engineer', bio: 'Visionary behind UnitedMess. Passionate about elegant software that solves real community problems, one mess at a time.', avatar: '/assets/images/founder_avatar.png', delay: 0 },
+    { name: 'Hafizur Rahaman', role: 'UX & Design Lead', bio: 'Crafts every pixel with purpose. Obsessed with accessibility, motion design, and turning complex workflows into delightful interactions.', avatar: '/assets/images/design_avatar.png', delay: 0.08 },
+    { name: 'Alamgir Islam', role: 'Backend Architect', bio: 'Builds the engine under the hood. Expert in distributed systems, real-time data, and making things scale without breaking a sweat.', avatar: '/assets/images/backend_avatar.png', delay: 0.16 },
 ];
 
 const values = [
-    { Icon: HiOutlineUsers, iconColor: 'text-blue-500', title: 'Community First', desc: 'Every decision is made with real communities in mind. We listen, iterate, and build what actually matters.', delay: 0 },
-    { Icon: HiOutlineShieldCheck, iconColor: 'text-violet-500', title: 'Privacy by Design', desc: 'Your data is yours. End-to-end security, minimal data collection, and full transparency in how we handle it.', delay: 0.07 },
-    { Icon: HiOutlineBolt, iconColor: 'text-amber-500', title: 'Performance Obsessed', desc: 'Sub-100ms interactions. Every component is optimised for speed so the app feels instant on any device.', delay: 0.14 },
-    { Icon: HiOutlineSparkles, iconColor: 'text-pink-500', title: 'Craft & Aesthetics', desc: 'We believe beautiful software creates trust. Every detail — spacing, motion, colour — is deliberate.', delay: 0.21 },
-    { Icon: HiOutlineGlobeAlt, iconColor: 'text-emerald-500', title: 'Accessible to All', desc: 'WCAG 2.1 AA compliant. Screen-reader friendly. Keyboard navigable. Premium UX is a right, not a privilege.', delay: 0.28 },
-    { Icon: HiOutlineHandRaised, iconColor: 'text-cyan-500', title: 'Open Collaboration', desc: 'Transparent roadmap, open API, and a community forum. We build alongside our users, not just for them.', delay: 0.35 },
+    { Icon: HiOutlineUsers, iconColor: 'text-blue-500 dark:text-blue-400', title: 'Community First', desc: 'Every decision is made with real communities in mind. We listen, iterate, and build what actually matters.', delay: 0 },
+    { Icon: HiOutlineShieldCheck, iconColor: 'text-violet-500 dark:text-violet-400', title: 'Privacy by Design', desc: 'Your data is yours. End-to-end security, minimal data collection, and full transparency in how we handle it.', delay: 0.05 },
+    { Icon: HiOutlineBolt, iconColor: 'text-amber-500 dark:text-amber-400', title: 'Performance Obsessed', desc: 'Sub-100ms interactions. Every component is optimised for speed so the app feels instant on any device.', delay: 0.10 },
+    { Icon: HiOutlineSparkles, iconColor: 'text-pink-500 dark:text-pink-400', title: 'Craft & Aesthetics', desc: 'We believe beautiful software creates trust. Every detail — spacing, motion, colour — is deliberate.', delay: 0.15 },
+    { Icon: HiOutlineGlobeAlt, iconColor: 'text-emerald-500 dark:text-emerald-400', title: 'Accessible to All', desc: 'WCAG 2.1 AA compliant. Screen-reader friendly. Keyboard navigable. Premium UX is a right, not a privilege.', delay: 0.20 },
+    { Icon: HiOutlineHandRaised, iconColor: 'text-cyan-500 dark:text-cyan-400', title: 'Open Collaboration', desc: 'Transparent roadmap, open API, and a community forum. We build alongside our users, not just for them.', delay: 0.25 },
 ];
 
-const metrics = [
-    { label: 'Total Expenses Tracked', value: '₹ 12 Cr+', Icon: HiOutlineChartBar, color: 'text-primary' },
-    { label: 'Meals Logged', value: '85,000+', Icon: HiOutlineStar, color: 'text-violet-500 dark:text-violet-400' },
-    { label: 'Dues Collected On-time', value: '94%', Icon: HiOutlineCheckBadge, color: 'text-emerald-500' },
+const milestones = [
+    {
+        year: '2023',
+        title: 'Dorm Room Inception',
+        desc: 'Born out of frustration with spreadsheets and chaotic WhatsApp group tracking, building our first core ledger.',
+        metric: '1st Mess Active',
+        Icon: HiOutlineHome
+    },
+    {
+        year: '2024',
+        title: 'Community Expansion',
+        desc: 'Flats and campus dorms adopted the platform, leading to custom expense splitting and meal logging features.',
+        metric: '200+ Messes Managed',
+        Icon: HiOutlineUsers
+    },
+    {
+        year: '2025',
+        title: 'National Growth & Scale',
+        desc: 'Rolled out automatic dues collection and instant split settlements. Reached thousands of users across India.',
+        metric: '₹ 12 Cr+ Tracked',
+        Icon: HiOutlineChartBar
+    },
+    {
+        year: '2026',
+        title: 'Premium Glass Redesign',
+        desc: 'Redesigned from the ground up for a liquid-glass fintech user interface, featuring ultra-fast sub-100ms interactions.',
+        metric: '85,000+ Meals Logged',
+        Icon: HiOutlineSparkles
+    }
 ];
 
 const AboutPage = () => {
-    const shouldReduceMotion = useReducedMotion();
-
     return (
-        <div className="relative min-h-screen bg-background text-foreground overflow-x-hidden">
+        <div className="relative w-full bg-background text-foreground overflow-x-hidden flex flex-col items-center">
 
-            {/* ── Static ambient backdrop (no animated blobs/particles) ── */}
+            {/* ── Ambient Background Layer (Static) ── */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
-                <div className="absolute -top-40 -left-32 w-[400px] h-[400px] rounded-full opacity-30 blur-[80px] sm:w-[580px] sm:h-[580px] sm:opacity-50 bg-[var(--blob-1)]" />
-                <div className="absolute top-[40%] -right-32 w-[440px] h-[440px] rounded-full opacity-20 blur-[100px] sm:-right-48 sm:w-[640px] sm:h-[640px] sm:opacity-40 bg-[var(--blob-2)]" />
-                <div className="absolute -bottom-32 left-[20%] w-[480px] h-[480px] rounded-full opacity-15 blur-[120px] sm:-bottom-48 sm:w-[700px] sm:h-[700px] sm:opacity-30 bg-[var(--blob-3)]" />
+                <div className="absolute -top-40 -left-32 w-[320px] h-[320px] sm:w-[500px] sm:h-[500px] rounded-full opacity-20 dark:opacity-10 blur-[80px] bg-[var(--blob-1)]" />
+                <div className="absolute top-[35%] -right-32 w-[320px] h-[320px] sm:w-[500px] sm:h-[500px] rounded-full opacity-15 dark:opacity-5 blur-[100px] bg-[var(--blob-2)]" />
             </div>
 
             {/* ── HERO ── */}
-            <section className="relative z-10 pt-28 pb-16 px-4 text-center sm:pt-36 sm:pb-24 sm:px-6">
-                <div className="max-w-3xl mx-auto flex flex-col items-center gap-4 sm:gap-6">
-                    <motion.div
-                        initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.4 }}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-card/80 backdrop-blur-sm text-[11px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-xs"
-                    >
+            <section className="relative z-10 w-full max-w-[1280px] pt-16 pb-8 px-4 sm:pt-20 sm:pb-10 md:pt-24 md:pb-12 sm:px-6 lg:px-8 text-center flex flex-col items-center">
+                <div className="max-w-3xl mx-auto flex flex-col items-center gap-3 sm:gap-4">
+                    <Reveal className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200/80 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 shadow-sm shrink-0">
                         <HiOutlineSparkles className="w-3.5 h-3.5 text-primary" />
                         Our Story
-                    </motion.div>
-
-                    <motion.h1
-                        initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 24 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-                        className="text-4xl font-black tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl"
-                    >
-                        <span className="text-foreground">Built for</span>{' '}
-                        <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'var(--gradient-text)' }}>
-                            Real People
-                        </span>
-                    </motion.h1>
-
-                    <motion.p
-                        initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.2 }}
-                        className="text-base text-muted-foreground max-w-2xl leading-relaxed sm:text-lg"
-                    >
-                        UnitedMess was born in a university dorm room out of frustration with spreadsheets and WhatsApp chaos.
-                        Today we serve thousands of communities across India with a platform built on empathy, craft, and code.
-                    </motion.p>
-                </div>
-            </section>
-
-            {/* ── STATS ── */}
-            <section className="relative z-10 pb-16 px-4 sm:pb-24 sm:px-6">
-                <div className="max-w-4xl mx-auto">
-                    <div className="flex flex-wrap gap-3 justify-center sm:gap-4">
-                        {stats.map((s) => <StatCard key={s.label} {...s} />)}
-                    </div>
-                </div>
-            </section>
-
-            {/* ── MISSION ── */}
-            <section className="relative z-10 py-14 px-4 sm:py-20 sm:px-6">
-                <div className="max-w-5xl mx-auto">
-                    <div className="grid md:grid-cols-2 gap-8 items-center md:gap-10">
-                        <Reveal>
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[11px] font-semibold uppercase tracking-widest mb-4 sm:text-xs sm:mb-5">
-                                <HiOutlineHome className="w-3.5 h-3.5" />
-                                Our Mission
-                            </span>
-                            <h2 className="text-2xl font-black tracking-tighter text-foreground mb-4 leading-tight sm:text-3xl md:text-4xl sm:mb-5">
-                                Simplifying lives,<br />
-                                <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'var(--gradient-text)' }}>
-                                    one mess at a time.
-                                </span>
-                            </h2>
-                            <p className="text-sm text-muted-foreground leading-relaxed mb-3 sm:text-base sm:mb-4">
-                                Managing a shared living space is inherently complex — tracking expenses, planning meals, collecting dues,
-                                and keeping everyone in sync. We believe technology should make this invisible, not add to the friction.
-                            </p>
-                            <p className="text-sm text-muted-foreground leading-relaxed sm:text-base">
-                                Our mission is to give every community — from a 5-person apartment to a 500-resident dormitory — the same
-                                tools that enterprise teams use, wrapped in an experience that feels effortless and beautiful.
-                            </p>
-                        </Reveal>
-
-                        {/* Metrics panel */}
-                        <Reveal delay={0.15}>
-                            <div
-                                className="relative rounded-2xl overflow-hidden border border-border sm:rounded-3xl bg-[var(--gradient-hero)] shadow-2xl"
-                            >
-                                <div className="absolute inset-0 opacity-20 dark:opacity-30"
-                                    style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
-                                <div className="relative p-6 flex flex-col gap-1 sm:p-10 sm:gap-2">
-                                    {metrics.map(({ label, value, Icon, color }) => (
-                                        <div
-                                            key={label}
-                                            className="flex items-center justify-between py-3 border-b border-border/50 last:border-0 gap-4 sm:py-4"
-                                        >
-                                            <div className="flex items-center gap-2.5 sm:gap-3">
-                                                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-card/60 border border-border shrink-0 sm:h-8 sm:w-8 sm:rounded-lg">
-                                                    <Icon className={`h-3.5 w-3.5 ${color} sm:h-4 sm:w-4`} />
-                                                </div>
-                                                <span className="text-xs text-muted-foreground sm:text-sm">{label}</span>
-                                            </div>
-                                            <span className={`text-base font-black tabular-nums shrink-0 sm:text-xl ${color}`}>{value}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-                            </div>
-                        </Reveal>
-                    </div>
-                </div>
-            </section>
-
-            {/* ── VALUES ── */}
-            <section className="relative z-10 py-14 px-4 sm:py-20 sm:px-6">
-                <div className="max-w-5xl mx-auto">
-                    <Reveal className="text-center mb-10 sm:mb-14">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary/10 border border-border text-muted-foreground text-[11px] font-semibold uppercase tracking-widest mb-3 sm:text-xs sm:mb-4">
-                            <HiOutlineCheckBadge className="w-3.5 h-3.5" />
-                            What We Stand For
-                        </span>
-                        <h2 className="text-2xl font-black tracking-tighter text-foreground sm:text-3xl md:text-5xl">
-                            Principles that guide us
-                        </h2>
                     </Reveal>
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                        {values.map((v) => <ValueCard key={v.title} {...v} />)}
-                    </div>
+
+                    <Reveal delay={0.06}>
+                        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl mt-1 mb-2">
+                            <span className="text-slate-900 dark:text-slate-100">Built for</span>{' '}
+                            <span className="text-gradient">Real People</span>
+                        </h1>
+                    </Reveal>
+
+                    <Reveal delay={0.12}>
+                        <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed mt-1">
+                            UnitedMess was born in a university dorm room out of frustration with spreadsheets and WhatsApp chaos.
+                            Today we serve thousands of communities across India with a platform built on empathy, craft, and code.
+                        </p>
+                    </Reveal>
                 </div>
             </section>
 
             {/* ── TEAM ── */}
-            <section className="relative z-10 py-14 px-4 sm:py-20 sm:px-6">
-                <div className="max-w-5xl mx-auto">
-                    <Reveal className="text-center mb-10 sm:mb-14">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[11px] font-semibold uppercase tracking-widest mb-3 sm:text-xs sm:mb-4">
-                            <HiOutlineUsers className="w-3.5 h-3.5" />
-                            The Team
-                        </span>
-                        <h2 className="text-2xl font-black tracking-tighter text-foreground sm:text-3xl md:text-5xl">
-                            People behind the product
-                        </h2>
-                        <p className="text-muted-foreground text-base mt-3 max-w-xl mx-auto sm:text-lg sm:mt-4">
-                            A small, focused team that ships fast and cares deeply.
-                        </p>
-                    </Reveal>
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                        {team.map((t) => <TeamCard key={t.role} {...t} />)}
+            <section className="relative z-10 w-full max-w-[1280px] py-10 px-4 sm:py-12 md:py-14 sm:px-6 lg:px-8 border-t border-slate-200/40 dark:border-slate-800/20">
+                <div className="text-center flex flex-col items-center gap-2 max-w-2xl mx-auto mb-8 md:mb-12">
+                    <span className="text-xs font-semibold uppercase tracking-widest text-primary">
+                        The Builders
+                    </span>
+                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mt-1">
+                        People behind the product
+                    </h2>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xl">
+                        A small, focused team that ships fast, values clean design, and cares deeply.
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                    {team.map((t) => <TeamCard key={t.role} {...t} />)}
+                </div>
+            </section>
+
+            {/* ── MISSION & VALUES ── */}
+            <section className="relative z-10 w-full bg-slate-50/50 dark:bg-slate-900/10 border-y border-slate-200/40 dark:border-slate-800/20 py-12 md:py-16">
+                <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-10 md:gap-14">
+                    
+                    {/* Mission Intro */}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+                        <div className="md:col-span-5 flex flex-col gap-2">
+                            <span className="text-xs font-semibold uppercase tracking-widest text-primary">
+                                Our Mission
+                            </span>
+                            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mt-1">
+                                Simplifying lives,<br className="hidden md:block" /> one mess at a time.
+                            </h2>
+                        </div>
+                        <div className="md:col-span-7 flex flex-col gap-4 text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
+                            <p>
+                                Managing a shared living space is inherently complex — tracking expenses, planning meals, collecting dues,
+                                and keeping everyone in sync. We believe technology should make this invisible, not add to the friction.
+                            </p>
+                            <p>
+                                Our mission is to give every community — from a 5-person apartment to a 500-resident dormitory — the same
+                                tools that enterprise teams use, wrapped in an experience that feels effortless and beautiful.
+                            </p>
+                        </div>
                     </div>
+
+                    {/* Values Subsection */}
+                    <div className="flex flex-col gap-6 md:gap-8 border-t border-slate-200/60 dark:border-slate-800/40 pt-10 md:pt-12">
+                        <div className="text-center flex flex-col items-center gap-1">
+                            <span className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                Core Foundations
+                            </span>
+                            <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mt-1">
+                                Principles that guide us
+                            </h3>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {values.map((v) => <ValueCard key={v.title} {...v} />)}
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            {/* ── NUMBERS (STATS) ── */}
+            <section className="relative z-10 w-full max-w-[1280px] py-10 px-4 sm:py-12 md:py-14 sm:px-6 lg:px-8">
+                <div className="text-center flex flex-col items-center gap-2 max-w-2xl mx-auto mb-8 md:mb-12">
+                    <span className="text-xs font-semibold uppercase tracking-widest text-primary">
+                        Our Scale
+                    </span>
+                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mt-1">
+                        Growing day by day
+                    </h2>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xl">
+                        Thousands of community members rely on UnitedMess every single day for expense tracking and dining logs.
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
+                    {stats.map((s) => <StatCard key={s.label} {...s} />)}
+                </div>
+            </section>
+
+            {/* ── MILESTONES (TIMELINE) ── */}
+            <section className="relative z-10 w-full bg-slate-50/50 dark:bg-slate-900/10 border-y border-slate-200/40 dark:border-slate-800/20 py-12 md:py-16">
+                <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+                    
+                    <div className="text-center flex flex-col items-center gap-2 max-w-2xl mx-auto mb-10 md:mb-14">
+                        <span className="text-xs font-semibold uppercase tracking-widest text-primary">
+                            Journey Timeline
+                        </span>
+                        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mt-1">
+                            Key Milestones
+                        </h2>
+                        <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xl">
+                            From a dorm-room draft to a platform processing lakhs of transactions securely.
+                        </p>
+                    </div>
+
+                    <div className="relative max-w-4xl mx-auto">
+                        
+                        {/* Timeline Center Line */}
+                        <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-800 -translate-x-1/2" aria-hidden="true" />
+
+                        <div className="flex flex-col gap-8">
+                            {milestones.map((m, index) => {
+                                const isEven = index % 2 === 0;
+                                return (
+                                    <div key={m.year} className="relative grid grid-cols-1 md:grid-cols-2 md:gap-8 items-center">
+                                        
+                                        {/* Timeline Node Point */}
+                                        <div className="absolute left-4 md:left-1/2 -translate-x-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 z-10">
+                                            <m.Icon className="w-4 h-4 text-primary" />
+                                        </div>
+
+                                        {/* Content Card container */}
+                                        <div className={`pl-10 md:pl-0 ${isEven ? 'md:pr-12 md:text-right md:col-start-1' : 'md:pl-12 md:col-start-2'}`}>
+                                            <div className="p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800/40 bg-white dark:bg-slate-900/50 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 transform-gpu will-change-transform">
+                                                <span className="text-xs font-bold text-primary tracking-wider uppercase">{m.year}</span>
+                                                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 mt-0.5 leading-tight">{m.title}</h3>
+                                                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">{m.desc}</p>
+                                                <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/20 text-primary text-[10px] font-semibold uppercase tracking-wider">
+                                                    {m.metric}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                    </div>
+
                 </div>
             </section>
 
             {/* ── TESTIMONIAL QUOTE ── */}
-            <section className="relative z-10 py-12 px-4 sm:py-16 sm:px-6">
-                <div className="max-w-2xl mx-auto text-center">
+            <section className="relative z-10 w-full max-w-[1280px] py-10 px-4 sm:py-12 md:py-14 sm:px-6 lg:px-8">
+                <div className="max-w-3xl mx-auto text-center flex flex-col items-center">
                     <Reveal>
-                        <RiDoubleQuotesL className="w-8 h-8 text-primary/40 mx-auto mb-3 sm:w-10 sm:h-10 sm:mb-4" />
-                        <blockquote className="text-lg font-semibold text-foreground leading-relaxed italic mb-5 sm:text-xl md:text-2xl sm:mb-6">
+                        <RiDoubleQuotesL className="w-8 h-8 text-primary/40 mx-auto mb-3 shrink-0" />
+                        <blockquote className="text-lg sm:text-xl md:text-2xl font-semibold text-slate-900 dark:text-slate-100 leading-relaxed italic mb-5 max-w-2xl">
                             &quot;UnitedMess transformed how we manage our dorm. The glass UI is stunning — I show it to friends just to show off.&quot;
                         </blockquote>
-                        <div className="flex items-center justify-center gap-3">
-                            <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold sm:w-10 sm:h-10 bg-[var(--gradient-primary)]">A</div>
-                            <div className="text-left">
-                                <p className="text-sm font-semibold text-foreground">Asif Ekbal</p>
-                                <p className="text-[11px] text-muted-foreground sm:text-xs">Java Developer, TCS</p>
+                        <div className="inline-flex items-center justify-center gap-3">
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold bg-[var(--gradient-primary)] shadow-sm shrink-0">
+                                A
+                            </div>
+                            <div className="text-left leading-tight">
+                                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Asif Ekbal</p>
+                                <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">Java Developer, TCS</p>
                             </div>
                         </div>
                     </Reveal>
@@ -279,36 +326,36 @@ const AboutPage = () => {
             </section>
 
             {/* ── CTA ── */}
-            <section className="relative z-10 py-16 px-4 sm:py-24 sm:px-6">
-                <div className="max-w-3xl mx-auto text-center">
-                    <Reveal>
-                        <div
-                            className="relative rounded-2xl p-8 md:p-16 border border-border overflow-hidden sm:rounded-3xl sm:p-12 bg-[var(--gradient-hero)] shadow-2xl"
-                        >
-                            <div className="absolute top-0 inset-x-0 h-1/2 bg-white/10 dark:bg-white/5 blur-3xl rounded-t-2xl pointer-events-none sm:rounded-t-3xl" />
-                            <div className="relative z-10">
-                                <h2 className="text-2xl font-black tracking-tighter mb-3 sm:text-3xl md:text-4xl sm:mb-4">
-                                    <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'var(--gradient-primary)' }}>
+            <section className="relative z-10 w-full max-w-[1280px] py-12 px-4 sm:py-16 md:py-20 sm:px-6 lg:px-8 border-t border-slate-200/40 dark:border-slate-800/20">
+                <div className="max-w-3xl mx-auto text-center flex flex-col items-center">
+                    <Reveal className="w-full">
+                        <div className="relative rounded-3xl p-8 md:p-14 border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md overflow-hidden shadow-sm flex flex-col items-center">
+                            
+                            {/* Static Top Light Reflection Overlay */}
+                            <div className="absolute top-0 inset-x-0 h-1/2 bg-white/10 dark:bg-white/5 blur-2xl rounded-t-3xl pointer-events-none" aria-hidden="true" />
+                            
+                            <div className="relative z-10 flex flex-col items-center max-w-xl">
+                                <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight mb-3">
+                                    <span className="text-gradient">
                                         Ready to join us?
                                     </span>
                                 </h2>
-                                <p className="text-muted-foreground text-base mb-6 sm:text-lg sm:mb-8">
+                                <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base leading-relaxed mb-6 sm:mb-8">
                                     Start managing your mess better today — free forever for small communities.
                                 </p>
-                                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                                    <Link to="/register">
-                                        <span
-                                            className="inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl sm:h-auto sm:px-8 sm:py-3.5 bg-[var(--gradient-primary)]">
+                                <div className="flex flex-col sm:flex-row gap-3 justify-center items-center w-full">
+                                    <Button asChild variant="primary" className="rounded-[10px] w-full sm:w-auto hover:scale-[1.02] transform-gpu transition-all">
+                                        <Link to="/register">
                                             Create Free Account
                                             <HiOutlineArrowRight className="w-4 h-4" />
-                                        </span>
-                                    </Link>
-                                    <Link to="/food-gallery">
-                                        <span className="inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl text-sm font-semibold text-foreground border border-border bg-card/70 backdrop-blur-xl transition-colors hover:bg-card sm:h-auto sm:px-8 sm:py-3.5">
+                                        </Link>
+                                    </Button>
+                                    <Button asChild variant="glass" className="w-full sm:w-auto hover:scale-[1.02] transform-gpu transition-all">
+                                        <Link to="/food-gallery">
                                             Browse Food Gallery
                                             <HiOutlineArrowRight className="w-4 h-4" />
-                                        </span>
-                                    </Link>
+                                        </Link>
+                                    </Button>
                                 </div>
                             </div>
                         </div>
