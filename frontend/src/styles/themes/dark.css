@@ -168,10 +168,10 @@ html.dark {
   --btn-loading-label: #889AB8;
   --btn-loading-border: transparent;
 
-  --btn-premium-from: #CDA55C;
-  --btn-premium-via: #E8CC8A;
-  --btn-premium-to: #F5E3B0;
-  --btn-premium-label: #1A1A1A;
+  --btn-premium-from: #2563EB;
+  --btn-premium-via: #38BDF8;
+  --btn-premium-to: #22D3EE;
+  --btn-premium-label: #FFFFFF;
   --btn-premium-border: transparent;
 
   --btn-inverse-from: #F8FAFD;

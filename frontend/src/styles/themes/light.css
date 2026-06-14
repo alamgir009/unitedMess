@@ -169,10 +169,10 @@ html.light {
   --btn-loading-label: #D5E0EE;
   --btn-loading-border: transparent;
 
-  --btn-premium-from: #C59B4E;
-  --btn-premium-via: #DFB76C;
-  --btn-premium-to: #F3DCA3;
-  --btn-premium-label: #1A1A1A;
+  --btn-premium-from: #1D4ED8;
+  --btn-premium-via: #0EA5E9;
+  --btn-premium-to: #06B6D4;
+  --btn-premium-label: #FFFFFF;
   --btn-premium-border: transparent;
 
   --btn-inverse-from: #F2F7FD;
