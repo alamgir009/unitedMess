@@ -425,7 +425,7 @@ async function getAllUsers(filters = {}, pagination = {}) {
                         if: {
                             $and: [
                                 { $gt: [{ $size: '$currentPeriodInvoice' }, 0] },
-                                { $eq: [{ $arrayElemAt: ['$currentPeriodInvoice.status', 0] }, 'paid'] }
+                                { $in: [{ $arrayElemAt: ['$currentPeriodInvoice.status', 0] }, ['paid', 'refunded']] }
                             ]
                         },
                         then: 'success',
@@ -728,7 +728,7 @@ const getPaybleAmountforMeal = async (userId) => {
         // Use the Invoice as source of truth — never trust the stored
         // user.payment / user.gasBill field, which may have been set
         // to 'success' by a past-period payment (the pre-fix bug).
-        paymentStatus: invoice.status === 'paid' ? 'success' : 'pending',
+        paymentStatus: (invoice.status === 'paid' || invoice.status === 'refunded') ? 'success' : 'pending',
         gasBillStatus: completedGasAuth ? 'success' : 'pending',
         monthName: invoice.monthName,
     };

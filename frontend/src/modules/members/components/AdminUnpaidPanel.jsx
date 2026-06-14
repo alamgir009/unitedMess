@@ -55,9 +55,10 @@ const StatusPill = React.memo(({ status }) => {
         unpaid: 'bg-danger-bg text-danger-text border-danger-border',
         partially_paid: 'bg-warning-bg text-warning-text border-warning-border',
         paid: 'bg-success-bg text-success-text border-success-border',
+        refunded: 'bg-info-bg text-info-text border-info-border',
     };
     const cls = map[status] ?? 'bg-card text-muted-foreground border-border';
-    const label = status === 'partially_paid' ? 'Partial' : (status ?? 'unknown');
+    const label = status === 'partially_paid' ? 'Partial' : status === 'refunded' ? 'Refunded' : (status ?? 'unknown');
     return (
         <span className={cn(
             'inline-flex items-center px-2.5 py-1 rounded-full text-[10.5px] font-bold uppercase tracking-widest border',
@@ -74,13 +75,18 @@ StatusPill.displayName = 'StatusPill';
 ───────────────────────────────────────────── */
 const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
     const outstanding = invoice.totalPayable - invoice.paidAmount;
-    const [amount, setAmount] = useState(String(Math.max(0, outstanding)));
+    const [amount, setAmount] = useState(String(outstanding > 0 ? outstanding : '0'));
+
+    const isRefund = parseFloat(amount) < 0;
 
     const handleSubmit = (e) => {
         e.preventDefault();
         const val = parseFloat(amount);
-        if (isNaN(val) || val < 0) { toast.error('Enter a valid amount'); return; }
-        onResolve(invoice._id, invoice.paidAmount + val);
+        if (isNaN(val)) { toast.error('Enter a valid amount'); return; }
+        if (val === 0) { toast.error('Amount must be non-zero'); return; }
+        const newPaidAmount = invoice.paidAmount + val;
+        if (newPaidAmount < 0) { toast.error('Paid amount cannot go below zero'); return; }
+        onResolve(invoice._id, newPaidAmount, val);
     };
 
     return (
@@ -88,11 +94,16 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
             <div className="w-full max-w-md bg-card rounded-3xl shadow-2xl border border-border overflow-hidden" onClick={e => e.stopPropagation()}>
                 <div className="px-6 py-5 border-b border-border bg-muted dark:bg-muted/40">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500 flex items-center justify-center shadow-sm shadow-emerald-600/20">
-                            <BadgeIndianRupee size={20} className="text-white" />
+                        <div className={cn(
+                            'w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm',
+                            isRefund
+                                ? 'bg-gradient-to-br from-amber-500 to-orange-500 dark:from-amber-400 dark:to-orange-400 shadow-amber-600/20'
+                                : 'bg-gradient-to-br from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500 shadow-emerald-600/20'
+                        )}>
+                            {isRefund ? <RefreshCw size={20} className="text-white" /> : <BadgeIndianRupee size={20} className="text-white" />}
                         </div>
                         <div>
-                            <h3 className="text-base font-black text-foreground">Resolve Payment</h3>
+                            <h3 className="text-base font-black text-foreground">{isRefund ? 'Process Refund' : 'Resolve Payment'}</h3>
                             <p className="text-xs font-medium text-muted-foreground">
                                 {invoice.user?.name ?? 'Member'} — {invoice.monthName}
                             </p>
@@ -104,7 +115,7 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                         {[
                             { label: 'Total Bill', value: `₹ ${fmt(invoice.totalPayable)}`, color: 'text-foreground' },
                             { label: 'Paid So Far', value: `₹ ${fmt(invoice.paidAmount)}`, color: 'text-success-text' },
-                            { label: 'Outstanding', value: `₹ ${fmt(outstanding)}`, color: 'text-danger-text' },
+                            { label: 'Outstanding', value: `₹ ${fmt(outstanding)}`, color: outstanding < 0 ? 'text-success-text' : 'text-danger-text' },
                         ].map(({ label, value, color }) => (
                             <div key={label} className="bg-muted dark:bg-muted/60 rounded-2xl px-3 py-3">
                                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">{label}</p>
@@ -115,27 +126,36 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                     <form onSubmit={handleSubmit} className="space-y-3">
                         <div>
                             <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
-                                Amount Being Paid Now (₹)
+                                {isRefund ? 'Refund Amount (₹)' : 'Amount Being Paid Now (₹)'}
                             </label>
                             <div className="relative">
                                 <span className="absolute inset-y-0 left-4 flex items-center text-muted-foreground text-sm font-bold">₹</span>
                                 <input
                                     type="number"
-                                    min="0"
                                     step="0.01"
                                     value={amount}
                                     onChange={e => setAmount(e.target.value)}
                                     className="w-full pl-8 pr-4 py-3 rounded-2xl text-base font-bold bg-input border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-all"
                                 />
                             </div>
+                            {isRefund && (
+                                <p className="flex items-center gap-1 mt-1.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                                    <AlertTriangle size={11} /> Refund will be issued — invoice marked as refunded
+                                </p>
+                            )}
                         </div>
                         <div className="flex gap-3 pt-1">
                             <button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl text-sm font-bold border border-input text-muted-foreground hover:bg-muted active:opacity-80">
                                 Cancel
                             </button>
-                            <button type="submit" disabled={isSaving} className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500 text-white dark:text-slate-950 hover:brightness-105 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed shadow-md">
-                                {isSaving ? <Spinner size="sm" color="white" /> : <CheckCircle2 size={16} />}
-                                {isSaving ? 'Saving…' : 'Mark Payment'}
+                            <button type="submit" disabled={isSaving} className={cn(
+                                'flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black text-white dark:text-slate-950 hover:brightness-105 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed shadow-md',
+                                isRefund
+                                    ? 'bg-gradient-to-r from-amber-600 to-orange-600 dark:from-amber-500 dark:to-orange-500'
+                                    : 'bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500'
+                            )}>
+                                {isSaving ? <Spinner size="sm" color="white" /> : isRefund ? <RefreshCw size={16} /> : <CheckCircle2 size={16} />}
+                                {isSaving ? 'Saving…' : isRefund ? 'Issue Refund' : 'Mark Payment'}
                             </button>
                         </div>
                     </form>
@@ -181,8 +201,8 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
     }, [invoice._id]);
 
     const handleCloseModal = useCallback(() => setShowModal(false), []);
-    const handleResolveInvoice = useCallback((id, amt) => {
-        onResolve(id, amt);
+    const handleResolveInvoice = useCallback((id, amt, delta) => {
+        onResolve(id, amt, delta);
         setShowModal(false);
     }, [onResolve]);
 
@@ -301,11 +321,12 @@ const AdminUnpaidPanel = React.memo(() => {
     }, []);
 
     const handleMonthChange = (e) => setSelectedIdx(parseInt(e.target.value, 10));
-    const handleResolve = useCallback(async (invoiceId, paidAmount) => {
+    const handleResolve = useCallback(async (invoiceId, paidAmount, delta) => {
         setSavingId(invoiceId);
         try {
-            await dispatch(resolveInvoicePayment({ invoiceId, paidAmount })).unwrap();
-            toast.success('Payment recorded successfully');
+            const isRefund = delta !== undefined && delta < 0;
+            await dispatch(resolveInvoicePayment({ invoiceId, paidAmount, delta })).unwrap();
+            toast.success(isRefund ? 'Refund recorded successfully' : 'Payment recorded successfully');
         } catch (err) {
             toast.error(err?.message || 'Failed to update payment');
         } finally {
@@ -314,7 +335,10 @@ const AdminUnpaidPanel = React.memo(() => {
     }, [dispatch]);
 
     const totalOutstanding = useMemo(
-        () => unpaidInvoices.reduce((sum, inv) => sum + (inv.totalPayable - inv.paidAmount), 0),
+        () => unpaidInvoices.reduce((sum, inv) => {
+            if (inv.status === 'refunded') return sum;
+            return sum + Math.max(0, inv.totalPayable - inv.paidAmount);
+        }, 0),
         [unpaidInvoices]
     );
 

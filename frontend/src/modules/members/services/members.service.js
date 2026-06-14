@@ -68,12 +68,14 @@ const getAdminUnpaidInvoices = async (month, year) => {
 };
 
 /**
- * Admin: Update an invoice's paid amount (mark paid / partially paid).
+ * Admin: Update an invoice's paid amount (mark paid / partially paid / refunded).
  * @param {string} invoiceId
- * @param {number} paidAmount
+ * @param {number} paidAmount - new total paid amount
+ * @param {number} [delta] - the actual amount entered (negative = refund)
  */
-const updateInvoicePayment = async (invoiceId, paidAmount) => {
-    const response = await apiClient.patch(`${INVOICE_URL}/${invoiceId}/payment`, { paidAmount });
+const updateInvoicePayment = async (invoiceId, paidAmount, delta) => {
+    const payload = delta !== undefined ? { paidAmount, delta } : { paidAmount };
+    const response = await apiClient.patch(`${INVOICE_URL}/${invoiceId}/payment`, payload);
     return response.data;
 };
 

@@ -93,21 +93,27 @@ const getAdminUnpaidInvoices = asyncHandler(async (req, res) => {
 /**
  * Admin: Update an invoice's paid amount and status.
  * PATCH /invoices/:id/payment
- * Body: { paidAmount: number }
+ * Body: { paidAmount: number, delta?: number }
+ *   paidAmount — new total paid amount (backward compatible)
+ *   delta     — the amount entered by the admin (negative = refund)
  */
 const updateInvoicePayment = asyncHandler(async (req, res) => {
     const invoice = await Invoice.findById(req.params.id);
     if (!invoice) throw new AppError('Invoice not found', 404);
 
-    const { paidAmount } = req.body;
+    const { paidAmount, delta } = req.body;
     if (paidAmount === undefined || isNaN(Number(paidAmount))) {
         throw new AppError('Valid paidAmount is required', 400);
     }
 
     invoice.paidAmount = Number(paidAmount);
-    if (invoice.paidAmount >= invoice.totalPayable) invoice.status = 'paid';
-    else if (invoice.paidAmount > 0)                invoice.status = 'partially_paid';
-    else                                             invoice.status = 'unpaid';
+
+    // If delta < 0, this is a refund operation — status is always 'refunded'
+    if (delta !== undefined && Number(delta) < 0) {
+        invoice.status = 'refunded';
+    } else {
+        invoice.status = invoiceService.determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
+    }
 
     await invoice.save();
     sendSuccessResponse(res, 200, 'Invoice payment updated', invoice);

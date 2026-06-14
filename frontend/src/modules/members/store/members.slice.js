@@ -145,12 +145,12 @@ export const fetchAdminUnpaidInvoices = createAsyncThunk(
     }
 );
 
-// ── Admin: update a specific invoice's paid amount ───────────────────────────
+// ── Admin: update a specific invoice's paid amount (or process a refund) ─────
 export const resolveInvoicePayment = createAsyncThunk(
     'members/resolveInvoicePayment',
-    async ({ invoiceId, paidAmount }, thunkAPI) => {
+    async ({ invoiceId, paidAmount, delta }, thunkAPI) => {
         try {
-            const response = await membersService.updateInvoicePayment(invoiceId, paidAmount);
+            const response = await membersService.updateInvoicePayment(invoiceId, paidAmount, delta);
             return response?.data ?? response;
         } catch (error) {
             const message = (error.response?.data?.message) || error.message;
@@ -254,7 +254,7 @@ export const membersSlice = createSlice({
                 if (updated?._id) {
                     state.unpaidInvoices = state.unpaidInvoices
                         .map(inv => inv._id === updated._id ? { ...inv, ...updated } : inv)
-                        .filter(inv => inv.status !== 'paid');
+                        .filter(inv => inv.status !== 'paid' && inv.status !== 'refunded');
                 }
             });
     },

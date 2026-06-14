@@ -10,6 +10,21 @@ const emailService = require('./email.service');
 const pdfService   = require('./pdf.service');
 
 /**
+ * Determine invoice status from paidAmount and totalPayable.
+ * Fintech-grade deterministic logic:
+ *  - paidAmount < 0  → refunded (never unpaid)
+ *  - paidAmount >= totalPayable && totalPayable > 0 → paid
+ *  - paidAmount > 0  → partially_paid
+ *  - otherwise       → unpaid
+ */
+function determineInvoiceStatus(paidAmount, totalPayable) {
+    if (paidAmount < 0) return 'refunded';
+    if (paidAmount >= totalPayable && totalPayable > 0) return 'paid';
+    if (paidAmount > 0) return 'partially_paid';
+    return 'unpaid';
+}
+
+/**
  * Get date range for a specific month/year
  */
 const getMonthRange = (month, year) => {
@@ -80,13 +95,7 @@ const getInvoice = async (userId, month, year) => {
         const paid = await calculatePaidAmount(userId, month, year);
         if (paid !== invoice.paidAmount) {
             invoice.paidAmount = paid;
-            if (invoice.paidAmount >= invoice.totalPayable && invoice.totalPayable > 0) {
-                invoice.status = 'paid';
-            } else if (invoice.paidAmount > 0) {
-                invoice.status = 'partially_paid';
-            } else {
-                invoice.status = 'unpaid';
-            }
+            invoice.status = determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
             await invoice.save();
         }
         const invoiceObj = invoice.toObject ? invoice.toObject() : invoice;
@@ -173,14 +182,7 @@ const getInvoice = async (userId, month, year) => {
     if (invoice) {
         if (!invoice.isFinalized) {
             Object.assign(invoice, invoiceData);
-            // Sync payment status for unfinalized invoices
-            if (invoice.paidAmount >= invoice.totalPayable && invoice.totalPayable > 0) {
-                invoice.status = 'paid';
-            } else if (invoice.paidAmount > 0) {
-                invoice.status = 'partially_paid';
-            } else {
-                invoice.status = 'unpaid';
-            }
+            invoice.status = determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
             await invoice.save();
         }
         // Attach computed remainingAmount for the UI (not persisted)
@@ -189,15 +191,7 @@ const getInvoice = async (userId, month, year) => {
         return invoiceObj;
     }
 
-    // First-time creation — set initial status
-    const totalPayable = invoiceData.totalPayable;
-    if (invoiceData.paidAmount >= totalPayable && totalPayable > 0) {
-        invoiceData.status = 'paid';
-    } else if (invoiceData.paidAmount > 0) {
-        invoiceData.status = 'partially_paid';
-    } else {
-        invoiceData.status = 'unpaid';
-    }
+    invoiceData.status = determineInvoiceStatus(invoiceData.paidAmount, invoiceData.totalPayable);
     const created = await Invoice.create(invoiceData);
     const createdObj = created.toObject();
     createdObj.remainingAmount = Math.max(0, createdObj.totalPayable - createdObj.paidAmount);
@@ -272,13 +266,7 @@ const finalizeMonth = async (month, year) => {
         invoice.isFinalized = true;
         invoice.finalizedAt = new Date();
 
-        if (invoice.paidAmount >= invoice.totalPayable && invoice.totalPayable > 0) {
-            invoice.status = 'paid';
-        } else if (invoice.paidAmount > 0) {
-            invoice.status = 'partially_paid';
-        } else {
-            invoice.status = 'unpaid';
-        }
+        invoice.status = determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
 
         await invoice.save();
         results.push(invoice.toObject());
@@ -296,10 +284,7 @@ const syncInvoiceStatus = async (invoiceId) => {
 
     invoice.paidAmount = await calculatePaidAmount(invoice.user, invoice.month, invoice.year);
     
-    // Update status
-    if (invoice.paidAmount >= invoice.totalPayable) invoice.status = 'paid';
-    else if (invoice.paidAmount > 0) invoice.status = 'partially_paid';
-    else invoice.status = 'unpaid';
+    invoice.status = determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
 
     await invoice.save();
     return invoice;
@@ -410,7 +395,7 @@ const getAdminUnpaidInvoices = async (month, year) => {
     const invoices = await Invoice.find({
         month: Number(month),
         year:  Number(year),
-        status: { $in: ['unpaid', 'partially_paid'] }
+        status: { $nin: ['paid', 'refunded'] }
     })
     .populate('user', 'name email image role isActive')
     .sort({ totalPayable: -1 })
@@ -508,6 +493,7 @@ const emailAllInvoices = async (month, year) => {
 };
 
 module.exports = {
+    determineInvoiceStatus,
     getInvoice,
     getActiveInvoice,
     getInvoiceForMonth,
