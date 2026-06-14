@@ -79,6 +79,12 @@
   --tracking-wide: 0.02em;
   --tracking-wider: 0.05em;
 
+  /* === BUTTON RADII (scales with size — never pill, never sharp) === */
+  --btn-radius-sm: 8px;
+  --btn-radius-md: 10px;
+  --btn-radius-lg: 12px;
+  --btn-radius-xl: 14px;
+
   /* === COMPONENT SIZES === */
   --input-height-sm: 32px;
   --input-height-md: 40px;

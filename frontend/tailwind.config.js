@@ -114,6 +114,57 @@ export default {
           active: "var(--brand-active)",
         },
       },
+      backgroundImage: {
+        'gradient-primary': 'linear-gradient(135deg, var(--btn-primary-from), var(--btn-primary-to))',
+        'gradient-secondary': 'linear-gradient(135deg, var(--btn-secondary-from), var(--btn-secondary-to))',
+        'gradient-destructive': 'linear-gradient(135deg, var(--btn-destructive-from), var(--btn-destructive-to))',
+        'gradient-warning': 'linear-gradient(135deg, var(--btn-warning-from), var(--btn-warning-to))',
+        'gradient-success': 'linear-gradient(135deg, var(--btn-success-from), var(--btn-success-to))',
+        'gradient-icon': 'linear-gradient(135deg, var(--btn-icon-from), var(--btn-icon-to))',
+        'gradient-loading': 'linear-gradient(135deg, var(--btn-loading-from), var(--btn-loading-to))',
+        'gradient-premium': 'linear-gradient(135deg, var(--btn-premium-from), var(--btn-premium-via), var(--btn-premium-to))',
+        'gradient-inverse': 'linear-gradient(135deg, var(--btn-inverse-from), var(--btn-inverse-to))',
+        'gradient-glass': 'linear-gradient(135deg, var(--btn-glass-from), var(--btn-glass-to))',
+        'gradient-neutral': 'linear-gradient(135deg, var(--btn-neutral-from), var(--btn-neutral-to))',
+        'gradient-link': 'linear-gradient(135deg, var(--btn-link-from), var(--btn-link-to))',
+        'gradient-elevated': 'linear-gradient(135deg, var(--btn-elevated-from), var(--btn-elevated-to))',
+        'gradient-brand-subtle': 'linear-gradient(135deg, var(--btn-brand-subtle-from), var(--btn-brand-subtle-to))',
+        'gradient-ghost-border': 'linear-gradient(135deg, var(--btn-ghost-border-from), var(--btn-ghost-border-to))',
+      },
+      colors: {
+        'btn-label': {
+          primary: 'var(--btn-primary-label)',
+          secondary: 'var(--btn-secondary-label)',
+          ghost: 'var(--btn-ghost-label)',
+          destructive: 'var(--btn-destructive-label)',
+          warning: 'var(--btn-warning-label)',
+          success: 'var(--btn-success-label)',
+          icon: 'var(--btn-icon-label)',
+          loading: 'var(--btn-loading-label)',
+          premium: 'var(--btn-premium-label)',
+          inverse: 'var(--btn-inverse-label)',
+          glass: 'var(--btn-glass-label)',
+          neutral: 'var(--btn-neutral-label)',
+          elevated: 'var(--btn-elevated-label)',
+          'brand-subtle': 'var(--btn-brand-subtle-label)',
+        },
+        'btn-border': {
+          primary: 'var(--btn-primary-border)',
+          secondary: 'var(--btn-secondary-border)',
+          ghost: 'transparent',
+          destructive: 'var(--btn-destructive-border)',
+          warning: 'var(--btn-warning-border)',
+          success: 'var(--btn-success-border)',
+          icon: 'var(--btn-icon-border)',
+          loading: 'var(--btn-loading-border)',
+          premium: 'var(--btn-premium-border)',
+          inverse: 'var(--btn-inverse-border)',
+          glass: 'var(--btn-glass-border)',
+          neutral: 'var(--btn-neutral-border)',
+          elevated: 'var(--btn-elevated-border)',
+          'brand-subtle': 'var(--btn-brand-subtle-border)',
+        },
+      },
       borderRadius: {
         lg: "var(--radius-lg)",
         xl: "var(--radius-xl)",
@@ -122,6 +173,10 @@ export default {
         sm: "var(--radius-sm)",
         xs: "var(--radius-xs)",
         full: "var(--radius-full)",
+        'btn-sm': 'var(--btn-radius-sm)',
+        'btn-md': 'var(--btn-radius-md)',
+        'btn-lg': 'var(--btn-radius-lg)',
+        'btn-xl': 'var(--btn-radius-xl)',
       },
       fontFamily: {
         sans: ['Inter', 'SF Pro Display', '-apple-system', 'sans-serif'],
@@ -185,5 +240,96 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    function({ addUtilities, matchUtilities, theme }) {
+      const variants = [
+        'primary', 'secondary', 'destructive', 'warning', 'success',
+        'icon', 'loading', 'premium', 'inverse', 'glass',
+        'neutral', 'elevated', 'brand-subtle',
+      ];
+
+      const btnBase = {};
+      const btnHover = {};
+      const btnActive = {};
+      const btnGhost = {};
+      const btnGlass = {};
+      const btnLink = {};
+      const btnLinkHover = {};
+
+      variants.forEach(v => {
+        const className = `.btn-${v}`;
+        btnBase[className] = {
+          backgroundImage: `linear-gradient(135deg, var(--btn-${v}-from)${v === 'premium' ? ', var(--btn-' + v + '-via)' : ''}, var(--btn-${v}-to))`,
+          color: `var(--btn-${v}-label)`,
+          borderColor: `var(--btn-${v}-border, transparent)`,
+        };
+        btnHover[`${className}:hover`] = {
+          backgroundImage: `linear-gradient(315deg, var(--btn-${v}-from)${v === 'premium' ? ', var(--btn-' + v + '-via)' : ''}, var(--btn-${v}-to))`,
+          filter: 'brightness(0.95)',
+        };
+        btnActive[`${className}:active`] = {
+          backgroundImage: `linear-gradient(135deg, var(--btn-${v}-from)${v === 'premium' ? ', var(--btn-' + v + '-via)' : ''}, var(--btn-${v}-to))`,
+          filter: 'brightness(0.88)',
+        };
+      });
+
+      btnGhost['.btn-ghost'] = {
+        background: 'transparent',
+        color: 'var(--btn-ghost-label)',
+        border: '1px solid transparent',
+        borderImage: 'linear-gradient(135deg, var(--btn-ghost-border-from), var(--btn-ghost-border-to)) 1',
+      };
+      btnHover['.btn-ghost:hover'] = {
+        background: 'var(--btn-ghost-hover-fill)',
+        borderImage: 'linear-gradient(315deg, var(--btn-ghost-border-from), var(--btn-ghost-border-to)) 1',
+      };
+      btnActive['.btn-ghost:active'] = {
+        background: 'var(--btn-ghost-active-fill)',
+      };
+
+      btnGlass['.btn-glass'] = {
+        backgroundImage: 'linear-gradient(135deg, var(--btn-glass-from), var(--btn-glass-to))',
+        color: 'var(--btn-glass-label)',
+        borderColor: 'var(--btn-glass-border)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+      };
+      btnHover['.btn-glass:hover'] = {
+        filter: 'brightness(var(--btn-glass-hover-brightness))',
+      };
+      btnActive['.btn-glass:active'] = {
+        filter: 'brightness(var(--btn-glass-active-brightness))',
+      };
+
+      btnLink['.btn-link'] = {
+        background: 'linear-gradient(135deg, var(--btn-link-from), var(--btn-link-to))',
+        WebkitBackgroundClip: 'text',
+        backgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        color: 'transparent',
+        border: 'none',
+      };
+      btnLinkHover['.btn-link:hover'] = {
+        textDecoration: 'underline',
+        textDecorationColor: 'var(--btn-link-to)',
+        filter: 'saturate(1.05)',
+      };
+
+      addUtilities({
+        ...btnBase,
+        ...btnGhost,
+        ...btnGlass,
+        ...btnLink,
+      }, ['responsive']);
+
+      addUtilities({
+        ...btnHover,
+        ...btnLinkHover,
+      }, ['responsive', 'hover']);
+
+      addUtilities({
+        ...btnActive,
+      }, ['responsive', 'active']);
+    },
+  ],
 }

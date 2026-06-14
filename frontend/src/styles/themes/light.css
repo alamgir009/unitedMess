@@ -127,6 +127,84 @@ html.light {
   --gradient-hero: linear-gradient(135deg, hsl(210 100% 97%) 0%, hsl(260 100% 97%) 60%, hsl(160 64% 97%) 100%);
   --gradient-text: linear-gradient(135deg, hsl(221.2 83.3% 53.3%) 0%, hsl(271 76% 53%) 100%);
 
+  /* ── Button gradient tokens (light mode — 135deg, linear) ── */
+  --btn-primary-from: #1A2D5E;
+  --btn-primary-to: #2D4A7A;
+  --btn-primary-label: #F5F7FA;
+  --btn-primary-border: transparent;
+
+  --btn-secondary-from: #EAF0F8;
+  --btn-secondary-to: #D5E0EE;
+  --btn-secondary-label: #1A2D5E;
+  --btn-secondary-border: #C5D1E2;
+
+  --btn-ghost-label: #1A2D5E;
+  --btn-ghost-border-from: #1A2D5E;
+  --btn-ghost-border-to: #2D4A7A;
+  --btn-ghost-hover-fill: rgba(26, 45, 94, 0.04);
+  --btn-ghost-active-fill: rgba(26, 45, 94, 0.10);
+
+  --btn-destructive-from: #7A2E3E;
+  --btn-destructive-to: #5C1F2B;
+  --btn-destructive-label: #F5F7FA;
+  --btn-destructive-border: transparent;
+
+  --btn-warning-from: #7A5E32;
+  --btn-warning-to: #5E4624;
+  --btn-warning-label: #F5F7FA;
+  --btn-warning-border: transparent;
+
+  --btn-success-from: #1B6B4A;
+  --btn-success-to: #217A55;
+  --btn-success-label: #F5F7FA;
+  --btn-success-border: transparent;
+
+  --btn-icon-from: #D8E0EC;
+  --btn-icon-to: #C2CDDC;
+  --btn-icon-label: #1A2D5E;
+  --btn-icon-border: transparent;
+
+  --btn-loading-from: #6B7FA0;
+  --btn-loading-to: #55678A;
+  --btn-loading-label: #D5E0EE;
+  --btn-loading-border: transparent;
+
+  --btn-premium-from: #7A6F58;
+  --btn-premium-via: #8A7E62;
+  --btn-premium-to: #9A8A6A;
+  --btn-premium-label: #1A1A1A;
+  --btn-premium-border: transparent;
+
+  --btn-inverse-from: #F2F7FD;
+  --btn-inverse-to: #E4EDF8;
+  --btn-inverse-label: #1A2D5E;
+  --btn-inverse-border: transparent;
+
+  --btn-glass-from: rgba(255, 255, 255, 0.18);
+  --btn-glass-to: rgba(255, 255, 255, 0.08);
+  --btn-glass-label: #1E2A4A;
+  --btn-glass-border: rgba(255, 255, 255, 0.40);
+  --btn-glass-hover-brightness: 1.06;
+  --btn-glass-active-brightness: 1.12;
+
+  --btn-neutral-from: #D5DBE3;
+  --btn-neutral-to: #C2C9D4;
+  --btn-neutral-label: #1A1E2E;
+  --btn-neutral-border: transparent;
+
+  --btn-link-from: #1A2D5E;
+  --btn-link-to: #2D4A7A;
+
+  --btn-elevated-from: #F8FAFE;
+  --btn-elevated-to: #EFF4FB;
+  --btn-elevated-label: #1A2D5E;
+  --btn-elevated-border: transparent;
+
+  --btn-brand-subtle-from: #D1DBEA;
+  --btn-brand-subtle-to: #B8C8DE;
+  --btn-brand-subtle-label: #1A2D5E;
+  --btn-brand-subtle-border: transparent;
+
   /* ── Blobs ── */
   --blob-1: transparent;
   --blob-2: transparent;

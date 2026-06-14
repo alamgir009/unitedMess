@@ -126,6 +126,84 @@ html.dark {
   --gradient-hero: linear-gradient(135deg, hsl(222.2 47.4% 11.2%) 0%, hsl(248 47% 20%) 60%, hsl(212 59% 11%) 100%);
   --gradient-text: linear-gradient(135deg, hsl(213.1 93.9% 67.8%) 0%, hsl(258 90% 66%) 100%);
 
+  /* ── Button gradient tokens (dark mode — 135deg, linear) ── */
+  --btn-primary-from: #3B5B9E;
+  --btn-primary-to: #5A7FCA;
+  --btn-primary-label: #F5F7FA;
+  --btn-primary-border: transparent;
+
+  --btn-secondary-from: #2A3450;
+  --btn-secondary-to: #1F293D;
+  --btn-secondary-label: #D5E0EE;
+  --btn-secondary-border: #3B4770;
+
+  --btn-ghost-label: #D5E0EE;
+  --btn-ghost-border-from: #5A7FCA;
+  --btn-ghost-border-to: #7B9FD4;
+  --btn-ghost-hover-fill: rgba(90, 127, 202, 0.08);
+  --btn-ghost-active-fill: rgba(90, 127, 202, 0.15);
+
+  --btn-destructive-from: #B84C5E;
+  --btn-destructive-to: #8A2E3E;
+  --btn-destructive-label: #F5F7FA;
+  --btn-destructive-border: transparent;
+
+  --btn-warning-from: #D4A84A;
+  --btn-warning-to: #B8923C;
+  --btn-warning-label: #1E1E1E;
+  --btn-warning-border: transparent;
+
+  --btn-success-from: #2DA075;
+  --btn-success-to: #3CC08A;
+  --btn-success-label: #1E1E1E;
+  --btn-success-border: transparent;
+
+  --btn-icon-from: #343E56;
+  --btn-icon-to: #283248;
+  --btn-icon-label: #D5E0EE;
+  --btn-icon-border: transparent;
+
+  --btn-loading-from: #3A4D6A;
+  --btn-loading-to: #2C3D58;
+  --btn-loading-label: #889AB8;
+  --btn-loading-border: transparent;
+
+  --btn-premium-from: #C9B88A;
+  --btn-premium-via: #D4C498;
+  --btn-premium-to: #E0D0A5;
+  --btn-premium-label: #1A1A1A;
+  --btn-premium-border: transparent;
+
+  --btn-inverse-from: #F8FAFD;
+  --btn-inverse-to: #EFF4FB;
+  --btn-inverse-label: #1A2D5E;
+  --btn-inverse-border: transparent;
+
+  --btn-glass-from: rgba(255, 255, 255, 0.10);
+  --btn-glass-to: rgba(255, 255, 255, 0.04);
+  --btn-glass-label: #E8EEF5;
+  --btn-glass-border: rgba(255, 255, 255, 0.12);
+  --btn-glass-hover-brightness: 1.04;
+  --btn-glass-active-brightness: 1.08;
+
+  --btn-neutral-from: #3A4358;
+  --btn-neutral-to: #2C3448;
+  --btn-neutral-label: #D5DBE3;
+  --btn-neutral-border: transparent;
+
+  --btn-link-from: #5A7FCA;
+  --btn-link-to: #7B9FD4;
+
+  --btn-elevated-from: #323C56;
+  --btn-elevated-to: #28324A;
+  --btn-elevated-label: #E0E8F2;
+  --btn-elevated-border: transparent;
+
+  --btn-brand-subtle-from: #2A3B5E;
+  --btn-brand-subtle-to: #1E2D4A;
+  --btn-brand-subtle-label: #D5E0EE;
+  --btn-brand-subtle-border: transparent;
+
   /* ── Blobs ── */
   --blob-1: transparent;
   --blob-2: transparent;
