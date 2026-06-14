@@ -1,121 +1,88 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useModalAnimation } from '@/shared/hooks/useModalAnimation';
+import { cn } from '@/core/utils/helpers/string.helper';
 import { HiOutlineXMark } from 'react-icons/hi2';
 
-const useMediaQuery = (query) => {
-    const getMatches = () =>
-        typeof window !== 'undefined' ? window.matchMedia(query).matches : false;
-    const [matches, setMatches] = useState(getMatches);
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-        const mql = window.matchMedia(query);
-        const handler = (e) => setMatches(e.matches);
-        setMatches(mql.matches);
-        mql.addEventListener?.('change', handler);
-        return () => mql.removeEventListener?.('change', handler);
-    }, [query]);
-
-    return matches;
-};
-
 const PaymentModal = ({ isOpen, onClose, title, children }) => {
-    const isMobile = useMediaQuery('(max-width: 767px)');
+  const { shouldRender, exiting } = useModalAnimation(isOpen, { exitTimeout: 120 });
 
-    const transition = useMemo(
-        () => ({
-            backdrop: { duration: isMobile ? 0.1 : 0.15, ease: [0.16, 1, 0.3, 1] },
-            modal: { duration: isMobile ? 0.12 : 0.18, ease: [0.16, 1, 0.3, 1] },
-        }),
-        [isMobile]
-    );
+  useEffect(() => {
+    if (!shouldRender || exiting) return;
+    const original = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const esc = (e) => e.key === 'Escape' && onClose?.();
+    window.addEventListener('keydown', esc);
+    return () => {
+      document.body.style.overflow = original;
+      window.removeEventListener('keydown', esc);
+    };
+  }, [shouldRender, exiting, onClose]);
 
-    const initialState = isMobile
-        ? { opacity: 0, scale: 0.985, y: 14 }
-        : { opacity: 0, scale: 0.96, y: 24 };
+  if (typeof document === 'undefined') return null;
 
-    useEffect(() => {
-        if (!isOpen) return;
-        const original = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        const esc = (e) => e.key === 'Escape' && onClose?.();
-        window.addEventListener('keydown', esc);
-        return () => {
-            document.body.style.overflow = original;
-            window.removeEventListener('keydown', esc);
-        };
-    }, [isOpen, onClose]);
+  return createPortal(
+    shouldRender ? (
+      <div
+        className={cn(
+          'fixed inset-0 z-[1000]',
+          'modal-animate-backdrop',
+          exiting ? 'modal-exit-backdrop' : 'modal-enter'
+        )}
+        style={{ pointerEvents: exiting ? 'none' : 'auto' }}
+      >
+        <button
+          aria-label="Close modal"
+          onClick={onClose}
+          className="absolute inset-0 w-full h-full bg-black/60 md:bg-black/50"
+        />
 
-    if (typeof document === 'undefined') return null;
-
-    return createPortal(
-        <AnimatePresence>
-            {isOpen && (
-                <div className="fixed inset-0 z-[1000] contain-[layout_style_paint]">
-                    {/* Backdrop */}
-                    <motion.button
-                        aria-label="Close modal"
-                        onClick={onClose}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={transition.backdrop}
-                        className="absolute inset-0 w-full h-full bg-black/60 md:bg-black/50"
-                    />
-
-                    {/* Modal */}
-                    <div className="flex min-h-full items-center justify-center p-3 sm:p-4">
-                        <motion.div
-                            initial={initialState}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={initialState}
-                            transition={transition.modal}
-                            role="dialog"
-                            aria-modal="true"
-                            className="
-                                relative w-full max-w-lg overflow-hidden rounded-3xl
-                                border border-black/10 dark:border-white/10
-                                bg-white dark:bg-slate-900 text-slate-900 dark:text-white
-                                shadow-2xl
-                                md:bg-white/95 md:dark:bg-slate-900/95
-                            "
-                        >
-                            {/* Header */}
-                            <div className="
-                                relative z-10 flex items-center justify-between
-                                px-4 py-4 sm:px-6 sm:py-5
-                                border-b border-black/10 dark:border-white/10
-                            ">
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <div className="w-1 h-6 rounded-full bg-gradient-to-b from-sky-500 to-violet-600" />
-                                    <h2 className="truncate text-lg font-semibold">
-                                        {title}
-                                    </h2>
-                                </div>
-                                <button
-                                    onClick={onClose}
-                                    className="flex items-center justify-center w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                                    aria-label="Close modal"
-                                >
-                                    <HiOutlineXMark className="w-5 h-5" />
-                                </button>
-                            </div>
-
-                            {/* Body */}
-                            <div className="
-                                relative z-10 px-4 py-4 sm:px-6 sm:py-5
-                                max-h-[82dvh] overflow-y-auto
-                            ">
-                                {children}
-                            </div>
-                        </motion.div>
-                    </div>
-                </div>
+        <div className="flex min-h-full items-center justify-center p-3 sm:p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            className={cn(
+              'relative w-full max-w-lg overflow-hidden rounded-3xl',
+              'border border-black/10 dark:border-white/10',
+              'bg-white dark:bg-slate-900 text-slate-900 dark:text-white',
+              'shadow-2xl',
+              'md:bg-white/95 md:dark:bg-slate-900/95',
+              'modal-animate modal-gpu',
+              exiting ? 'modal-exit' : 'modal-enter'
             )}
-        </AnimatePresence>,
-        document.body
-    );
+          >
+            <div className="
+              relative z-10 flex items-center justify-between
+              px-4 py-4 sm:px-6 sm:py-5
+              border-b border-black/10 dark:border-white/10
+            ">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-1 h-6 rounded-full bg-gradient-to-b from-sky-500 to-violet-600" />
+                <h2 className="truncate text-lg font-semibold">
+                  {title}
+                </h2>
+              </div>
+              <button
+                onClick={onClose}
+                className="flex items-center justify-center w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                aria-label="Close modal"
+              >
+                <HiOutlineXMark className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="
+              relative z-10 px-4 py-4 sm:px-6 sm:py-5
+              max-h-[82dvh] overflow-y-auto
+            ">
+              {children}
+            </div>
+          </div>
+        </div>
+      </div>
+    ) : null,
+    document.body
+  );
 };
 
 export default PaymentModal;

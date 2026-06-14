@@ -254,7 +254,7 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
         if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
           previousFocusRef.current.focus();
         }
-      }, 200);
+      }, 120);
       return () => clearTimeout(timer);
     }
   }, [isOpen, resetState]);
@@ -390,7 +390,7 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
       tabIndex={-1}
       className={cn(
         'fixed inset-0 z-50 flex items-end sm:items-center justify-center',
-        'transition-opacity duration-200 ease-out motion-reduce:transition-none',
+        'transition-opacity duration-100 ease-out motion-reduce:transition-none',
         exiting ? 'opacity-0' : 'opacity-100'
       )}
     >
@@ -399,7 +399,7 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
         aria-hidden="true"
         className={cn(
           'fixed inset-0 bg-black/40',
-          'transition-opacity duration-200 motion-reduce:transition-none',
+          'transition-opacity duration-100 motion-reduce:transition-none',
           exiting ? 'opacity-0' : 'opacity-100'
         )}
       />
@@ -410,8 +410,9 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
         'shadow-[0_8px_30px_rgba(0,0,0,0.06)] border border-border',
         'overflow-hidden z-10',
         'max-h-[90dvh] sm:max-h-[85dvh] flex flex-col',
-        'transition-all duration-200 ease-out motion-reduce:transition-none',
-        exiting ? 'opacity-0 translate-y-4 sm:translate-y-2' : 'opacity-100 translate-y-0'
+          'transition-[opacity,transform] duration-100 ease-out motion-reduce:transition-none',
+          'will-change-transform will-change-opacity backface-hidden',
+          exiting ? 'opacity-0 translate-y-4 sm:translate-y-2' : 'opacity-100 translate-y-0'
       )}>
         <div className="h-1 bg-primary/80 shrink-0" />
 

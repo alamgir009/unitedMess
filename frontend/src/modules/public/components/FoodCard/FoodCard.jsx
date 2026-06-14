@@ -1,5 +1,4 @@
 import { memo } from 'react';
-import { motion } from 'framer-motion';
 import { HiOutlineFire, HiOutlineClock, HiOutlineTag } from 'react-icons/hi2';
 import { TbToolsKitchen2 } from 'react-icons/tb';
 
@@ -7,27 +6,13 @@ import FoodImage from '../FoodImage/FoodImage';
 import Stars from '../Stars/Stars';
 import { CAT_ICONS } from '../FoodConstants/FoodConstants';
 
-/**
- * FoodCard
- * Animated grid card. Clicking opens the detail modal.
- *
- * Props:
- *   food     {object} — food item from FOODS
- *   onSelect {fn}     — called with food object on click
- */
 const FoodCard = memo(({ food, onSelect }) => (
-    <motion.div
-        layoutId={`food-card-${food.id}`}
-        initial={{ opacity: 0, y: 20, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
+    <div
         onClick={() => onSelect(food)}
         className="group relative cursor-pointer flex flex-col rounded-2xl border border-white/20 dark:border-white/10 bg-card/60 backdrop-blur-xl overflow-hidden
                    hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-glow-primary dark:hover:shadow-glow-primary
                    transition-[transform,box-shadow] duration-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] will-change-transform"
     >
-        {/* ── Photo ── */}
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted shrink-0">
             <FoodImage
                 src={food.image}
@@ -52,7 +37,6 @@ const FoodCard = memo(({ food, onSelect }) => (
             </span>
         </div>
 
-        {/* ── Body ── */}
         <div className="p-5 flex flex-col gap-3 flex-1">
             <div className="flex items-start justify-between gap-2">
                 <h3 className="font-bold text-foreground text-base leading-tight">{food.name}</h3>
@@ -80,12 +64,11 @@ const FoodCard = memo(({ food, onSelect }) => (
             </div>
         </div>
 
-        {/* Hover radial glow */}
         <div
             className="absolute inset-0 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-500"
             style={{ background: 'radial-gradient(ellipse at 50% 0%, hsl(var(--primary)/0.06), transparent 70%)' }}
         />
-    </motion.div>
+    </div>
 ));
 
 FoodCard.displayName = 'FoodCard';

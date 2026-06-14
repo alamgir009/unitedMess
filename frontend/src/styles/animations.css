@@ -1,3 +1,55 @@
+/* ─── Modal transition primitives (CSS-only, zero JS per frame) ────────── */
+/*
+ * Use with Tailwind conditional classes for enter/exit state.
+ * Only opacity & transform — both GPU-composited, no layout/paint trigger.
+ *
+ * <div className={`modal-animate ${exiting ? 'modal-exit' : 'modal-enter'}`}>
+ */
+.modal-animate {
+  transition: opacity 100ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 100ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.modal-animate-backdrop {
+  transition: opacity 80ms ease-out;
+  will-change: opacity;
+}
+
+.modal-enter {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+}
+
+.modal-exit {
+  opacity: 0;
+  transform: translate3d(0, 8px, 0) scale(0.96);
+  transition: opacity 80ms ease-out,
+              transform 80ms ease-out;
+}
+
+.modal-exit-backdrop {
+  opacity: 0;
+  transition: opacity 60ms ease-out;
+}
+
+/* GPU compositing layer — promote BEFORE animation starts */
+.modal-gpu {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  isolation: isolate;
+}
+
+/* Contain paint for scrollable content areas inside modals */
+.modal-scroll {
+  contain: content;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* ─── Reduced motion ─── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
