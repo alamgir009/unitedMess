@@ -4,6 +4,7 @@ const { sendSuccessResponse } = require('../../../utils/helpers/response.helper'
 const { getBillingPeriod } = require('../../../utils/helpers/date.helper');
 const asyncHandler = require('../../../utils/helpers/asyncHandler');
 const Invoice = require('../../../models/Invoice.model');
+const Payment = require('../../../models/Payment.model');
 const User = require('../../../models/User.model');
 const AppError = require('../../../utils/errors/AppError');
 
@@ -108,9 +109,24 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
 
     invoice.paidAmount = Number(paidAmount);
 
+    const refundDelta = delta !== undefined ? Number(delta) : 0;
+
     // If delta < 0, this is a refund operation — status is always 'refunded'
-    if (delta !== undefined && Number(delta) < 0) {
+    if (refundDelta < 0) {
         invoice.status = 'refunded';
+
+        // Persist a Payment record so the refund appears in both member
+        // and admin payment history (Payments page / invoice history).
+        await Payment.create({
+            user: invoice.user,
+            amount: refundDelta,
+            month: invoice.monthName,
+            type: 'mess_bill',
+            status: 'refunded',
+            paymentMethod: 'cash',
+            createdBy: req.user.id,
+            remarks: `Refund of ₹ ${Math.abs(refundDelta).toLocaleString('en-IN', { maximumFractionDigits: 2 })} processed by admin`,
+        });
     } else {
         invoice.status = invoiceService.determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
     }
