@@ -274,7 +274,7 @@ const SettingsPage = () => {
 
                     <div className="flex items-center gap-3 shrink-0">
                         <Button
-                            variant="secondary"
+                            variant="neutral"
                             size="sm"
                             onClick={fetchCurrentValues}
                             disabled={valuesLoading}

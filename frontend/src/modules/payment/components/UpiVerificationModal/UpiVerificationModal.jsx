@@ -256,7 +256,7 @@ const UpiVerificationModal = ({ isOpen, onClose, payment, onVerified }) => {
 
           <div className="flex gap-3 pt-2 border-t border-border/30">
             <Button
-              variant="danger"
+              variant="warning"
               size="md"
               fullWidth
               onClick={() => handleVerify('failed')}

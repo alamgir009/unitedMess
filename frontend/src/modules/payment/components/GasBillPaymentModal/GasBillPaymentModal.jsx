@@ -564,7 +564,7 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
                       You will be redirected to Razorpay&apos;s secure checkout environment to complete the payment.
                     </p>
                     <Button
-                      variant="primary"
+                      variant="premium"
                       size="lg"
                       fullWidth
                       onClick={handleRazorpayProceed}
@@ -654,7 +654,7 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
                           </p>
                         )}
                         <Button
-                          variant="primary"
+                          variant="premium"
                           size="lg"
                           fullWidth
                           onClick={handleSubmitUtr}

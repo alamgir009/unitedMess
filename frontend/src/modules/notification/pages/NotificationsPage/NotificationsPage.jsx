@@ -215,7 +215,7 @@ const NotificationsPage = () => {
                         </div>
                         <div className="flex items-center gap-1.5 sm:gap-2">
                             <Button
-                                variant="ghost"
+                                variant="neutral"
                                 size="sm"
                                 onClick={refresh}
                                 disabled={loading}
@@ -291,7 +291,7 @@ const NotificationsPage = () => {
                                     {error || 'Something went wrong while fetching notifications.'}
                                 </p>
                                 <Button
-                                    variant="ghost"
+                                    variant="neutral"
                                     size="sm"
                                     onClick={refresh}
                                 >

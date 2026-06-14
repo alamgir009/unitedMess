@@ -130,7 +130,7 @@ const AdminDashboard = () => {
                         Send Notification
                     </Button>
                     <Button
-                        variant="secondary"
+                        variant="neutral"
                         size="md"
                         onClick={handleRefresh}
                         disabled={isDashboardLoading || isMembersLoading}

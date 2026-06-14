@@ -386,7 +386,7 @@ const AdminUpiForm = memo(({
       <Button variant="outline" size="md" fullWidth onClick={onCancel}>
         Cancel
       </Button>
-      <Button variant="primary" size="md" fullWidth isLoading={savingUpiConfig}>
+      <Button variant="premium" size="md" fullWidth isLoading={savingUpiConfig}>
         Save Setup
       </Button>
     </div>
@@ -954,7 +954,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
                           </p>
                           
                           <Button
-                            variant="primary"
+                            variant="premium"
                             size="lg"
                             fullWidth
                             onClick={handleRazorpayProceed}
@@ -1062,7 +1062,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
                                 </p>
                               )}
                               <Button
-                                variant="primary"
+                                variant="premium"
                                 size="lg"
                                 fullWidth
                                 onClick={handleSubmitUtr}

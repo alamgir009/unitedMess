@@ -138,6 +138,7 @@ const ContactPage = () => {
                                 </div>
                                 <Button 
                                     type="submit" 
+                                    variant="premium"
                                     className="w-full h-12 rounded-xl font-bold tracking-tight shadow-lg shadow-primary/20"
                                     disabled={isSubmitting}
                                 >

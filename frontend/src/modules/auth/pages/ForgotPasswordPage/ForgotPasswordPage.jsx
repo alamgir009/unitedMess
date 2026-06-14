@@ -160,7 +160,7 @@ const ForgotPasswordPage = () => {
                                     </p>
                                     
                                     <Button 
-                                        variant="secondary" 
+                                        variant="neutral" 
                                         size="lg"
                                         onClick={() => setIsSubmitted(false)}
                                         className="w-full rounded-xl"
