@@ -122,6 +122,8 @@ html.light {
 
   /* ── Gradients ── */
   --gradient-primary: linear-gradient(135deg, hsl(221.2 83.3% 53.3%) 0%, hsl(271 76% 53%) 100%);
+  --gradient-secondary: linear-gradient(135deg, hsl(268 76% 52%) 0%, hsl(160 60% 38%) 100%);
+  --gradient-destructive: linear-gradient(135deg, hsl(0 72% 51%) 0%, hsl(12 80% 54%) 100%);
   --gradient-hero: linear-gradient(135deg, hsl(210 100% 97%) 0%, hsl(260 100% 97%) 60%, hsl(160 64% 97%) 100%);
   --gradient-text: linear-gradient(135deg, hsl(221.2 83.3% 53.3%) 0%, hsl(271 76% 53%) 100%);
 

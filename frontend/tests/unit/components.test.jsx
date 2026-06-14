@@ -10,16 +10,15 @@ describe('Button', () => {
     });
 
     it.each([
-        ['primary', 'bg-primary', 'shadow-primary'],
-        ['secondary', 'bg-secondary', 'shadow-sm'],
-        ['ghost', 'bg-transparent', null],
-        ['destructive', 'bg-destructive', 'shadow-destructive'],
-        ['danger', 'bg-destructive', 'shadow-destructive'],
-        ['outline', 'bg-transparent', 'border-primary'],
-        ['success', 'bg-success', 'shadow-success'],
-    ])('applies %s variant with bg and premium shadow', (variant, bgClass, shadowClass) => {
+        ['primary', 'shadow-primary'],
+        ['secondary', 'shadow-sm'],
+        ['ghost', null],
+        ['destructive', 'shadow-destructive'],
+        ['danger', 'shadow-destructive'],
+        ['outline', 'border-primary'],
+        ['success', 'shadow-success'],
+    ])('applies %s variant with appropriate shadow', (variant, shadowClass) => {
         const { container } = render(<Button variant={variant}>Test</Button>);
-        expect(container.firstChild.className).toContain(bgClass);
         if (shadowClass) {
             expect(container.firstChild.className).toContain(shadowClass);
         }
@@ -29,12 +28,12 @@ describe('Button', () => {
         const { container } = render(<Button variant="primary">CTA</Button>);
         const c = container.firstChild.className;
         expect(c).toContain('border-0');
-        expect(c).toContain('shadow-primary/25');
+        expect(c).toContain('shadow-primary/20');
     });
 
     it('renders destructive with colored shadow', () => {
         const { container } = render(<Button variant="destructive">Delete</Button>);
-        expect(container.firstChild.className).toContain('shadow-destructive/30');
+        expect(container.firstChild.className).toContain('shadow-destructive/20');
     });
 
     it('renders outline with brand border', () => {

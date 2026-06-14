@@ -3,19 +3,28 @@ import { Loader2 } from 'lucide-react';
 import { useReducedMotion } from 'framer-motion';
 import { cn } from '@/core/utils/helpers/string.helper';
 
+const gradientVariants = new Set(['primary', 'secondary', 'destructive', 'danger']);
+
+const gradientStyleMap = {
+  primary: 'var(--gradient-primary)',
+  secondary: 'var(--gradient-secondary)',
+  destructive: 'var(--gradient-destructive)',
+  danger: 'var(--gradient-destructive)',
+};
+
 const variantStyles = {
   primary:
-    'bg-primary text-primary-foreground shadow-sm shadow-primary/25 border-0 hover:bg-primary/90 hover:shadow-md hover:shadow-primary/35 active:shadow-sm active:shadow-primary/25 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+    'text-primary-foreground shadow-sm shadow-primary/20 border-0 hover:brightness-110 active:brightness-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
   secondary:
-    'bg-secondary text-secondary-foreground shadow-sm border border-border/60 hover:bg-secondary/70 hover:shadow-md hover:border-border active:shadow-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+    'text-secondary-foreground shadow-sm border-0 hover:brightness-110 active:brightness-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
   ghost:
     'bg-transparent text-foreground border-0 hover:bg-muted/60 active:bg-muted/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
   destructive:
-    'bg-destructive text-destructive-foreground shadow-sm shadow-destructive/30 border-0 hover:bg-destructive/90 hover:shadow-md hover:shadow-destructive/40 active:shadow-sm active:shadow-destructive/30 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2',
+    'text-destructive-foreground shadow-sm shadow-destructive/20 border-0 hover:brightness-110 active:brightness-95 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2',
   outline:
     'bg-transparent text-primary border border-primary/30 hover:bg-primary/[0.08] hover:border-primary/50 active:bg-primary/[0.12] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
   danger:
-    'bg-destructive text-destructive-foreground shadow-sm shadow-destructive/30 border-0 hover:bg-destructive/90 hover:shadow-md hover:shadow-destructive/40 active:shadow-sm active:shadow-destructive/30 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2',
+    'text-destructive-foreground shadow-sm shadow-destructive/20 border-0 hover:brightness-110 active:brightness-95 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2',
   success:
     'bg-success text-white shadow-sm shadow-success/25 border-0 hover:bg-success/90 hover:shadow-md hover:shadow-success/35 active:shadow-sm active:shadow-success/25 focus-visible:ring-2 focus-visible:ring-success focus-visible:ring-offset-2',
 };
@@ -57,6 +66,11 @@ const Button = forwardRef(({
       disabled={disabled || isLoading}
       aria-busy={isLoading || undefined}
       aria-disabled={disabled || undefined}
+      style={
+        gradientVariants.has(variant)
+          ? { backgroundImage: gradientStyleMap[variant] }
+          : undefined
+      }
       className={cn(
         'relative inline-flex items-center justify-center font-medium',
         'select-none whitespace-nowrap',

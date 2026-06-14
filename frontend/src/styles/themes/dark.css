@@ -121,6 +121,8 @@ html.dark {
 
   /* ── Gradients ── */
   --gradient-primary: linear-gradient(135deg, hsl(217.2 91.2% 59.8%) 0%, hsl(271 81% 56%) 100%);
+  --gradient-secondary: linear-gradient(135deg, hsl(268 76% 62%) 0%, hsl(160 60% 48%) 100%);
+  --gradient-destructive: linear-gradient(135deg, hsl(0 72% 60%) 0%, hsl(12 80% 62%) 100%);
   --gradient-hero: linear-gradient(135deg, hsl(222.2 47.4% 11.2%) 0%, hsl(248 47% 20%) 60%, hsl(212 59% 11%) 100%);
   --gradient-text: linear-gradient(135deg, hsl(213.1 93.9% 67.8%) 0%, hsl(258 90% 66%) 100%);
 
