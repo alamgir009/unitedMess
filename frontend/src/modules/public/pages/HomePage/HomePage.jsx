@@ -310,15 +310,15 @@ const FeatureCard = memo(({ item, index }) => {
   const t = toneMap[item.tone];
   return (
     <InView delay={0.05 * index}>
-      <div className={`group h-full rounded-xl border border-border/60 bg-card/60 p-5 motion-safe:transition-[transform,opacity] motion-safe:duration-300 lg:backdrop-blur-sm motion-safe:hover:scale-[1.02] motion-reduce:hover:scale-100 active:scale-[0.98] transform-gpu sm:rounded-2xl sm:p-7 ${t.border}`}>
-        <div className={`mb-4 inline-flex rounded-xl bg-gradient-to-br ${t.bg} p-3 sm:mb-5 sm:rounded-xl`}>
+      <div className={`group h-full rounded-xl border border-border/60 bg-card/60 p-4 motion-safe:transition-[transform,opacity] motion-safe:duration-300 lg:backdrop-blur-sm motion-safe:hover:scale-[1.02] motion-reduce:hover:scale-100 active:scale-[0.98] transform-gpu sm:rounded-2xl sm:p-5 ${t.border}`}>
+        <div className={`mb-3 inline-flex rounded-xl bg-gradient-to-br ${t.bg} p-3 sm:rounded-xl`}>
           <span className={t.text}>{item.icon}</span>
         </div>
         <span className={`inline-flex rounded-full px-2.5 py-0.5 text-caption font-bold uppercase tracking-widest ${t.badge}`}>
           {item.badge}
         </span>
-        <h3 className="mt-3 text-body-lg font-bold tracking-tight text-foreground">{item.title}</h3>
-        <p className="mt-2 text-body leading-[1.75] text-muted-foreground sm:mt-3 sm:leading-7">{item.description}</p>
+        <h3 className="mt-2 text-body-lg font-bold tracking-tight text-foreground">{item.title}</h3>
+        <p className="mt-1.5 text-body leading-[1.75] text-muted-foreground sm:leading-7">{item.description}</p>
       </div>
     </InView>
   );
@@ -342,7 +342,7 @@ const HeroCard = memo(() => {
         transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
         className="relative overflow-hidden rounded-xl border border-border/60 bg-card/80 shadow-[0_20px_60px_-20px_rgba(15,23,42,0.35)] dark:shadow-[0_20px_60px_-20px_rgba(0,0,0,0.6)] lg:backdrop-blur-2xl sm:rounded-[2.25rem] sm:shadow-[0_40px_100px_-30px_rgba(15,23,42,0.4)] dark:sm:shadow-[0_40px_100px_-30px_rgba(0,0,0,0.7)]"
       >
-        <div className="flex items-center justify-between border-b border-border/50 px-4 py-3 sm:px-6 sm:py-4">
+        <div className="flex items-center justify-between border-b border-border/50 px-3 py-2.5 sm:px-5 sm:py-3">
           <div className="flex items-center gap-2">
             <div className="h-2.5 w-2.5 rounded-full bg-destructive/80 sm:h-3 sm:w-3" />
             <div className="h-2.5 w-2.5 rounded-full bg-warning/80 sm:h-3 sm:w-3" />
@@ -354,7 +354,7 @@ const HeroCard = memo(() => {
           </div>
         </div>
 
-        <div className="space-y-3 p-3 sm:space-y-4 sm:p-5">
+        <div className="space-y-2 p-3 sm:space-y-3 sm:p-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-5 sm:gap-4">
             <div className="overflow-hidden rounded-xl sm:col-span-3 sm:rounded-2xl">
               <img
@@ -514,14 +514,14 @@ const HomePage = () => {
         <div className="absolute bottom-[-10rem] left-1/3 h-[24rem] w-[24rem] rounded-full bg-accent/10 blur-[100px] dark:bg-accent/10 sm:bottom-[-16rem] sm:h-[38rem] sm:w-[38rem] sm:blur-[120px]" />
       </div>
 
-      <section className="relative mx-auto grid min-h-[85vh] max-w-7xl items-center gap-8 px-4 pb-12 pt-20 sm:min-h-screen sm:px-6 sm:pb-20 sm:pt-24 lg:grid-cols-[1fr_1.05fr] lg:px-8 lg:pb-28 lg:pt-28 xl:gap-16">
+      <section className="relative mx-auto grid max-w-7xl items-center gap-6 px-4 pb-8 pt-20 sm:gap-8 sm:px-6 sm:pb-12 sm:pt-24 lg:grid-cols-[1fr_1.05fr] lg:px-8 lg:pb-16 lg:pt-24 xl:gap-10">
 
         <div>
           <motion.div
             initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="mb-5 flex flex-wrap items-center gap-2 sm:mb-7 sm:gap-3"
+            className="mb-4 flex flex-wrap items-center gap-2 sm:gap-3"
           >
             <Pill>
               <LiveDot />
@@ -552,7 +552,7 @@ const HomePage = () => {
             initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.16 }}
-            className="mt-5 max-w-xl text-body-lg leading-[1.75] text-muted-foreground sm:mt-7"
+            className="mt-4 max-w-xl text-body-lg leading-[1.75] text-muted-foreground sm:mt-5"
           >
             United Mess brings a finance-grade experience to meal tracking, contributions, member management,
             and expense control. The clarity of a top fintech product — built for India&apos;s communities.
@@ -562,7 +562,7 @@ const HomePage = () => {
             initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.24 }}
-            className="mt-7 flex flex-col gap-3 sm:mt-9 sm:flex-row sm:items-center"
+            className="mt-5 flex flex-col gap-3 sm:mt-6 sm:flex-row sm:items-center"
           >
             <Button variant="primary" size="lg" asChild>
               <Link to="/register">
@@ -586,7 +586,7 @@ const HomePage = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.7, delay: 0.35 }}
-            className="mt-8 grid grid-cols-2 gap-2 sm:mt-12 sm:gap-3"
+            className="mt-6 grid grid-cols-2 gap-2 sm:mt-8 sm:gap-3"
           >
             {stats.map((s) => (
               <div key={s.label} className="rounded-xl border border-border/60 bg-card/60 px-3 py-3 sm:rounded-2xl sm:px-4 sm:py-4">
@@ -604,8 +604,8 @@ const HomePage = () => {
 
       <Ticker />
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-14 lg:px-8">
-        <div className="rounded-xl border border-border/60 bg-card/50 px-5 py-6 sm:rounded-[2rem] sm:px-6 sm:py-8">
+      <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+        <div className="rounded-xl border border-border/60 bg-card/50 px-5 py-4 sm:rounded-[2rem] sm:px-6 sm:py-6">
           <p className="mb-4 text-center text-caption font-bold uppercase tracking-[0.28em] text-muted-foreground sm:mb-6">Security & compliance</p>
           <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-10">
             {trustLogos.map(({ label, sub }) => (
@@ -618,24 +618,24 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section id="features" className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-20 lg:px-8 lg:py-28">
+      <section id="features" className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
         <InView className="mx-auto max-w-2xl text-center">
           <Pill>Core capabilities</Pill>
-          <h2 className="mt-4 text-h1 font-bold tracking-tight text-foreground sm:mt-5">
+          <h2 className="mt-3 text-h1 font-bold tracking-tight text-foreground">
             Every detail designed to feel premium.
           </h2>
-          <p className="mt-3 text-body leading-7 text-muted-foreground sm:mt-4 sm:leading-8">
+          <p className="mt-2 text-body leading-7 text-muted-foreground sm:leading-8">
             A refined operating layer for mess leaders who want modern design, accurate data architecture,
             and zero visual clutter — all in one coherent product.
           </p>
         </InView>
 
-        <div className="mt-10 grid gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3">
+        <div className="mt-6 grid gap-3 sm:mt-8 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
           {features.map((item, i) => <FeatureCard key={item.title} item={item} index={i} />)}
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 sm:pb-20 lg:px-8 lg:pb-28">
+      <section className="mx-auto max-w-7xl px-4 pb-6 sm:px-6 sm:pb-10 lg:px-8 lg:pb-14">
         <InView>
           <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
             {[
@@ -655,33 +655,33 @@ const HomePage = () => {
         </InView>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-20 lg:px-8 lg:py-28">
-        <InView className="mx-auto max-w-2xl text-center mb-10 sm:mb-16">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
+        <InView className="mx-auto max-w-2xl text-center mb-6 sm:mb-10">
           <Pill>Simple workflow</Pill>
-          <h2 className="mt-4 text-h1 font-bold tracking-tight text-foreground sm:mt-5">
+          <h2 className="mt-3 text-h1 font-bold tracking-tight text-foreground">
             From setup to settlement in minutes.
           </h2>
-          <p className="mt-3 text-body leading-7 text-muted-foreground sm:mt-4 sm:leading-8">
+          <p className="mt-2 text-body leading-7 text-muted-foreground sm:leading-8">
             Three steps that remove every bottleneck in traditional mess management.
           </p>
         </InView>
 
-        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-10">
-          <div className="space-y-3 sm:space-y-4">
+        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-8">
+          <div className="space-y-2 sm:space-y-3">
             {steps.map((step, idx) => (
               <motion.button
                 key={step.num}
                 onClick={() => setActiveTab(idx)}
                 whileHover={shouldReduceMotion ? {} : { x: 4 }}
-                className={`w-full rounded-xl border p-4 text-left motion-safe:transition-all motion-safe:duration-200 sm:rounded-2xl sm:p-6 ${
+                className={`w-full rounded-xl border p-3 text-left motion-safe:transition-all motion-safe:duration-200 sm:rounded-2xl sm:p-4 ${
                   activeTab === idx
                     ? 'border-primary/50 bg-primary/10'
                     : 'border-border/60 bg-card/50 hover:border-border hover:bg-card/70'
                 }`}
               >
-                <div className="flex items-start gap-4 sm:gap-5">
+                <div className="flex items-start gap-3 sm:gap-4">
                   <div
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white motion-safe:transition-all motion-safe:duration-200 sm:h-12 sm:w-12 sm:rounded-2xl ${
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white motion-safe:transition-all motion-safe:duration-200 sm:h-10 sm:w-10 sm:rounded-xl ${
                       activeTab === idx
                         ? 'bg-gradient-primary shadow-md'
                         : 'bg-muted opacity-60'
@@ -690,8 +690,8 @@ const HomePage = () => {
                     {step.num}
                   </div>
                   <div className="min-w-0">
-                    <h3 className="text-sm font-bold text-foreground sm:text-base">{step.title}</h3>
-                    <p className="mt-1 text-xs leading-6 text-muted-foreground sm:mt-1.5 sm:text-body sm:leading-7">{step.description}</p>
+                    <h3 className="text-sm font-bold text-foreground">{step.title}</h3>
+                    <p className="mt-0.5 text-xs leading-6 text-muted-foreground sm:text-body sm:leading-7">{step.description}</p>
                   </div>
                 </div>
               </motion.button>
@@ -716,22 +716,22 @@ const HomePage = () => {
                 loading="lazy"
                 decoding="async"
               />
-              <div className="p-4 sm:p-6">
-                <span className="inline-flex items-center rounded-full px-3 py-1 text-caption font-bold text-white bg-gradient-primary">
+              <div className="p-3 sm:p-4">
+                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-caption font-bold text-white bg-gradient-primary">
                   Step {steps[activeTab].num}
                 </span>
-                <h3 className="mt-2 text-body-lg font-bold text-foreground sm:mt-3">{steps[activeTab].title}</h3>
-                <p className="mt-1.5 text-body leading-6 text-muted-foreground sm:mt-2 sm:leading-7">{steps[activeTab].description}</p>
+                <h3 className="mt-1.5 text-body-lg font-bold text-foreground">{steps[activeTab].title}</h3>
+                <p className="mt-1 text-body leading-6 text-muted-foreground sm:leading-7">{steps[activeTab].description}</p>
               </div>
             </motion.div>
           </AnimatePresence>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-20 lg:px-8 lg:py-28">
-        <InView className="mx-auto max-w-2xl text-center mb-10 sm:mb-14">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
+        <InView className="mx-auto max-w-2xl text-center mb-6 sm:mb-10">
           <Pill>Why United Mess</Pill>
-          <h2 className="mt-4 text-h1 font-bold tracking-tight text-foreground sm:mt-5">
+          <h2 className="mt-3 text-h1 font-bold tracking-tight text-foreground">
             The clearest choice for serious messes.
           </h2>
         </InView>
@@ -745,7 +745,7 @@ const HomePage = () => {
                 <span className="text-center">Spreadsheets</span>
               </div>
               {comparisonRows.map(([feature, um, wa, ss]) => (
-                <div key={feature} className="grid grid-cols-4 border-b border-border/40 px-4 py-3 text-body last:border-0 sm:px-6 sm:py-4">
+                <div key={feature} className="grid grid-cols-4 border-b border-border/40 px-4 py-2.5 text-body last:border-0 sm:px-6 sm:py-3">
                   <span className="font-medium text-foreground">{feature}</span>
                   <span className="flex justify-center">
                     {um ? (
@@ -787,18 +787,18 @@ const HomePage = () => {
         </InView>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-20 lg:px-8 lg:py-28">
-        <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-start lg:gap-16">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
+        <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start lg:gap-12">
           <InView>
             <Pill>Meal Calendar</Pill>
-            <h2 className="mt-4 text-h1 font-bold tracking-tight text-foreground sm:mt-5">
+            <h2 className="mt-3 text-h1 font-bold tracking-tight text-foreground">
               Plan meals, track participation.
             </h2>
-            <p className="mt-3 text-body leading-7 text-muted-foreground sm:mt-4 sm:leading-8">
+            <p className="mt-2 text-body leading-7 text-muted-foreground sm:leading-8">
               Interactive calendar view lets you schedule meals, mark attendance, and see monthly patterns
               at a glance. Every member stays informed about menu changes and meal counts.
             </p>
-            <div className="mt-5 sm:mt-6">
+            <div className="mt-4 sm:mt-5">
               <Button variant="ghost" asChild>
                 <Link to="/register">
                   Try it free
@@ -810,29 +810,29 @@ const HomePage = () => {
             </div>
           </InView>
           <InView delay={0.1}>
-            <div className="rounded-xl border border-border/60 bg-card/60 p-5 sm:rounded-2xl sm:p-6">
+            <div className="rounded-xl border border-border/60 bg-card/60 p-4 sm:rounded-2xl sm:p-5">
               <Calendar />
             </div>
           </InView>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-20 lg:px-8 lg:py-28">
-        <InView className="mx-auto max-w-2xl text-center mb-10 sm:mb-14">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
+        <InView className="mx-auto max-w-2xl text-center mb-6 sm:mb-10">
           <Pill>Testimonials</Pill>
-          <h2 className="mt-4 text-h1 font-bold tracking-tight text-foreground sm:mt-5">
+          <h2 className="mt-3 text-h1 font-bold tracking-tight text-foreground">
             Trusted by real communities across India.
           </h2>
-          <p className="mt-3 text-body leading-7 text-muted-foreground sm:mt-4 sm:leading-8">
+          <p className="mt-2 text-body leading-7 text-muted-foreground sm:leading-8">
             From IITs to regional colleges — messes that switched never looked back.
           </p>
         </InView>
 
         <div className="columns-1 gap-4 sm:columns-2 sm:gap-5 lg:columns-3">
           {testimonials.map((item, i) => (
-            <InView key={item.name} delay={0.05 * i} className="mb-4 break-inside-avoid sm:mb-5">
+            <InView key={item.name} delay={0.05 * i} className="mb-3 break-inside-avoid sm:mb-4">
               <blockquote className="rounded-xl border border-border/60 bg-card/60 p-5 sm:rounded-2xl sm:p-7">
-                <div className="mb-4 flex gap-1 text-warning-text sm:mb-5">
+                <div className="mb-3 flex gap-1 text-warning-text">
                   {Array.from({ length: 5 }).map((_, j) => (
                     <svg key={j} viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3 sm:h-3.5 sm:w-3.5">
                       <path d="M8 1.5l1.94 3.93 4.33.63-3.14 3.06.74 4.32L8 11.18l-3.87 2.04.74-4.32L1.73 5.56l4.33-.63L8 1.5z" />
@@ -840,7 +840,7 @@ const HomePage = () => {
                   ))}
                 </div>
                 <p className="text-body leading-[1.85] text-muted-foreground sm:leading-[1.9]">&quot;{item.quote}&quot;</p>
-                <div className="mt-5 flex items-center gap-3 sm:mt-6">
+                <div className="mt-4 flex items-center gap-3">
                   <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${item.gradient} text-caption font-bold text-white sm:h-10 sm:w-10`}>
                     {item.avatar}
                   </div>
@@ -855,30 +855,30 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-20 lg:px-8 lg:py-28">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
         <InView>
-          <div className="relative overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br from-primary/[0.08] via-card/70 to-secondary/[0.08] p-6 sm:rounded-[2rem] sm:p-12 lg:p-16">
+          <div className="relative overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br from-primary/[0.08] via-card/70 to-secondary/[0.08] p-5 sm:rounded-[2rem] sm:p-8 lg:p-10">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(37,99,235,0.18),transparent_55%),radial-gradient(ellipse_at_bottom_left,rgba(124,58,237,0.15),transparent_50%)]" />
-            <div className="relative grid gap-8 lg:grid-cols-2 lg:items-center lg:gap-12">
+            <div className="relative grid gap-6 lg:grid-cols-2 lg:items-center lg:gap-10">
               <div>
                 <Pill>Cross-platform</Pill>
-                <h2 className="mt-4 text-h1 font-bold tracking-tight text-foreground sm:mt-5">
+                <h2 className="mt-3 text-h1 font-bold tracking-tight text-foreground">
                   Your mess, in your pocket.
                 </h2>
-                <p className="mt-3 max-w-lg text-body leading-7 text-muted-foreground sm:mt-4 sm:leading-8">
+                <p className="mt-2 max-w-lg text-body leading-7 text-muted-foreground sm:leading-8">
                   Fully responsive PWA — installs on iOS and Android from the browser. No app store required.
                   Every workflow is optimised for thumb-reach on mobile screens.
                 </p>
-                <div className="mt-6 grid grid-cols-2 gap-3 sm:mt-8 sm:gap-4">
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-6 sm:gap-4">
                   {[
                     { label: 'Instant install', desc: 'No app store needed' },
                     { label: 'Offline-ready', desc: 'Works without network' },
                     { label: 'Push alerts', desc: 'Real-time notifications' },
                     { label: 'Biometric auth', desc: 'Face ID / fingerprint' },
                   ].map(({ label, desc }) => (
-                    <div key={label} className="rounded-xl border border-border/60 bg-background/60 p-3 sm:rounded-2xl sm:p-4">
+                    <div key={label} className="rounded-xl border border-border/60 bg-background/60 p-2.5 sm:rounded-xl sm:p-3">
                       <p className="text-label font-bold text-foreground">{label}</p>
-                      <p className="mt-0.5 text-caption text-muted-foreground sm:mt-1">{desc}</p>
+                      <p className="text-caption text-muted-foreground">{desc}</p>
                     </div>
                   ))}
                 </div>
@@ -907,17 +907,17 @@ const HomePage = () => {
         </InView>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-20 lg:px-8 lg:py-28">
-        <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-start lg:gap-16">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
+        <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start lg:gap-12">
           <InView>
             <Pill>FAQ</Pill>
-            <h2 className="mt-4 text-h1 font-bold tracking-tight text-foreground sm:mt-5">
+            <h2 className="mt-3 text-h1 font-bold tracking-tight text-foreground">
               Everything you need to know.
             </h2>
-            <p className="mt-3 text-body leading-7 text-muted-foreground sm:mt-4 sm:leading-8">
+            <p className="mt-2 text-body leading-7 text-muted-foreground sm:leading-8">
               Still have questions? Reach out to the team — we respond within 2 hours.
             </p>
-            <div className="mt-5 sm:mt-6">
+            <div className="mt-4 sm:mt-5">
               <Button variant="ghost" asChild>
                 <Link to="/contact">
                   Contact support
@@ -928,15 +928,15 @@ const HomePage = () => {
               </Button>
             </div>
           </InView>
-          <InView delay={0.1} className="space-y-2.5 sm:space-y-3">
+          <InView delay={0.1} className="space-y-2">
             {faqItems.map((item) => <FAQItem key={item.q} {...item} />)}
           </InView>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-20 lg:px-8 lg:py-28">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
         <InView>
-          <div className="relative overflow-hidden rounded-xl border border-border/60 p-8 text-center bg-gradient-to-br from-primary/10 via-secondary/10 to-transparent sm:rounded-[2rem] sm:p-16 lg:p-20">
+          <div className="relative overflow-hidden rounded-xl border border-border/60 p-6 text-center bg-gradient-to-br from-primary/10 via-secondary/10 to-transparent sm:rounded-[2rem] sm:p-10 lg:p-12">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(37,99,235,0.2),transparent_50%),radial-gradient(ellipse_at_bottom,rgba(124,58,237,0.16),transparent_50%)]" />
             <div
               className="pointer-events-none absolute inset-0 flex items-center justify-center select-none overflow-hidden"
@@ -948,14 +948,14 @@ const HomePage = () => {
             </div>
             <div className="relative z-10">
               <Pill>Ready to launch</Pill>
-              <h2 className="mx-auto mt-4 max-w-3xl text-display leading-[1.08] tracking-[-0.03em] text-foreground sm:mt-6 sm:leading-[1.06]">
+              <h2 className="mx-auto mt-4 max-w-3xl text-display leading-[1.08] tracking-[-0.03em] text-foreground sm:leading-[1.06]">
                 Give your mess the product it deserves.
               </h2>
-              <p className="mx-auto mt-4 max-w-xl text-body leading-7 text-muted-foreground sm:mt-5 sm:leading-8">
+              <p className="mx-auto mt-3 max-w-xl text-body leading-7 text-muted-foreground sm:mt-4 sm:leading-8">
                 Join 12,500+ members across India who trust United Mess for transparent, effortless,
                 finance-grade mess operations. Free forever for small messes.
               </p>
-              <div className="mt-8 flex flex-col items-center gap-3 sm:mt-10 sm:flex-row sm:justify-center sm:gap-4">
+              <div className="mt-6 flex flex-col items-center gap-3 sm:mt-8 sm:flex-row sm:justify-center sm:gap-4">
                 <Button variant="primary" size="lg" asChild>
                   <Link to="/register">
                     Create your mess — it&apos;s free
@@ -970,7 +970,7 @@ const HomePage = () => {
                   </Link>
                 </Button>
               </div>
-              <p className="mt-5 text-caption text-muted-foreground sm:mt-6">No credit card · Free for messes up to 15 members · Setup in 10 minutes</p>
+              <p className="mt-4 text-caption text-muted-foreground sm:mt-5">No credit card · Free for messes up to 15 members · Setup in 10 minutes</p>
             </div>
           </div>
         </InView>
