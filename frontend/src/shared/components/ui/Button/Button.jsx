@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import { forwardRef, cloneElement, isValidElement, Children } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useReducedMotion } from 'framer-motion';
 import { cn } from '@/core/utils/helpers/string.helper';
@@ -54,6 +54,7 @@ const Button = forwardRef(({
   children,
   variant = 'primary',
   size = 'md',
+  asChild = false,
   isLoading = false,
   iconOnly = false,
   fullWidth = false,
@@ -65,6 +66,49 @@ const Button = forwardRef(({
   const shouldReduceMotion = useReducedMotion();
   const isLink = variant === 'link';
 
+  const btnClasses = cn(
+    'font-medium select-none whitespace-nowrap',
+    'transition-all motion-reduce:transition-none duration-[var(--duration-base)] ease-out',
+    '-webkit-tap-highlight-color-transparent',
+
+    isLink && [
+      'btn-link',
+      'inline p-0 h-auto min-h-0 min-w-0 border-none shadow-none',
+      'text-base',
+    ],
+
+    !isLink && [
+      'relative inline-flex items-center justify-center',
+      'min-h-[44px] min-w-[44px]',
+      'disabled:opacity-45 disabled:cursor-not-allowed disabled:pointer-events-none',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+      !shouldReduceMotion && 'active:scale-[0.97] transform-gpu',
+    ],
+
+    isLoading && !isLink && 'btn-loading',
+    !isLoading && btnVariantClass[variant],
+    !btnVariantClass[variant] && fallbackStyles[variant],
+
+    !isLink && (iconOnly ? iconSizeStyles[size] || iconSizeStyles.md : sizeStyles[size] || sizeStyles.md),
+
+    !isLink && (radiusStyles[size] || radiusStyles.md),
+
+    fullWidth && !isLink && 'w-full',
+
+    className,
+  );
+
+  if (asChild) {
+    const child = Children.only(children);
+    if (!isValidElement(child)) return null;
+    return cloneElement(child, {
+      ref,
+      className: cn(btnClasses, child.props.className),
+      ...props,
+      ...child.props,
+    });
+  }
+
   return (
     <button
       ref={ref}
@@ -72,37 +116,7 @@ const Button = forwardRef(({
       disabled={disabled || isLoading}
       aria-busy={isLoading || undefined}
       aria-disabled={disabled || undefined}
-      className={cn(
-        'font-medium select-none whitespace-nowrap',
-        'transition-all duration-[var(--duration-base)] ease-out',
-        '-webkit-tap-highlight-color-transparent',
-
-        isLink && [
-          'btn-link',
-          'inline p-0 h-auto min-h-0 min-w-0 border-none shadow-none',
-          'text-base',
-        ],
-
-        !isLink && [
-          'relative inline-flex items-center justify-center',
-          'min-h-[44px] min-w-[44px]',
-          'disabled:opacity-45 disabled:cursor-not-allowed disabled:pointer-events-none',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-          !shouldReduceMotion && 'active:scale-[0.97] transform-gpu will-change-transform',
-        ],
-
-        isLoading && !isLink && 'btn-loading',
-        !isLoading && btnVariantClass[variant],
-        !btnVariantClass[variant] && fallbackStyles[variant],
-
-        !isLink && (iconOnly ? iconSizeStyles[size] || iconSizeStyles.md : sizeStyles[size] || sizeStyles.md),
-
-        !isLink && (radiusStyles[size] || radiusStyles.md),
-
-        fullWidth && !isLink && 'w-full',
-
-        className,
-      )}
+      className={btnClasses}
       {...props}
     >
       {!isLink && isLoading && (
