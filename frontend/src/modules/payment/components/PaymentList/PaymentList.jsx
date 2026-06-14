@@ -121,14 +121,14 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewIn
                         ) : (
                             <>
                                 {payment.type === 'mess_bill' && (
-                                    <Button variant="link" size="sm"
+                                    <Button variant="elevated" size="sm"
                                         onClick={() => onViewInvoice?.(payment)}
                                         className="text-xs">
                                         <HiOutlineDocumentText className="w-3.5 h-3.5 mr-1" />
                                         Invoice
                                     </Button>
                                 )}
-                                <Button variant="brand-subtle" size="sm" onClick={() => onEdit(payment)} className="flex-1 text-xs">
+                                <Button variant="secondary" size="sm" onClick={() => onEdit(payment)} className="flex-1 text-xs">
                                     <HiOutlinePencilSquare className="w-4 h-4 mr-1" /> Edit
                                 </Button>
                             </>
