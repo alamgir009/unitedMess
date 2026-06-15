@@ -83,9 +83,29 @@ SessionKeepAlive.displayName = 'SessionKeepAlive';
     return null;
 };
 
+const ScrollOptimizer = () => {
+    useEffect(() => {
+        let timer;
+        const onScroll = () => {
+            document.documentElement.classList.add('is-scrolling');
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                document.documentElement.classList.remove('is-scrolling');
+            }, 150);
+        };
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return () => {
+            window.removeEventListener('scroll', onScroll);
+            clearTimeout(timer);
+        };
+    }, []);
+    return null;
+};
+
 const App = () => {
     return (
         <AppProviders>
+            <ScrollOptimizer />
             <VersionInit />
             <SessionGate>
                 <SocketInit />

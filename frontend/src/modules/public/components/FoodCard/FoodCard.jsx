@@ -12,7 +12,7 @@ const FoodCard = memo(({ food, onSelect }) => (
         role="button"
         tabIndex={0}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(food); } }}
-        className="group relative flex flex-col rounded-2xl border border-border bg-card/60 overflow-hidden motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-1 transform-gpu cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="group relative flex flex-col rounded-2xl border border-border bg-card/60 overflow-hidden motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-1 gpu-layer cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring contain-content"
     >
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted shrink-0">
             <FoodImage

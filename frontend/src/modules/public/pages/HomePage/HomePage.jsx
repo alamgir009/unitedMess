@@ -1,41 +1,53 @@
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useState, useEffect, useRef, memo, useMemo } from 'react';
 import Button from '@/shared/components/ui/Button/Button';
 import Calendar from './Calendar';
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  show: (d = 0) => ({
-    opacity: 1, y: 0,
-    transition: { duration: 0.6, delay: d, ease: [0.16, 1, 0.3, 1] },
-  }),
-};
-
+/* ── CSS-only scroll reveal (zero JS per frame after first intersection) ── */
 const InView = memo(function InView({ children, delay = 0, className = '' }) {
-  const shouldReduceMotion = useReducedMotion();
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          requestAnimationFrame(() => setVisible(true));
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.01, rootMargin: '-40px' }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
   return (
-    <motion.div
-      variants={fadeUp}
-      initial={shouldReduceMotion ? 'show' : 'hidden'}
-      whileInView="show"
-      viewport={{ once: true, margin: '-40px' }}
-      custom={delay}
-      className={className}
+    <div
+      ref={ref}
+      className={`${className} ${visible ? 'reveal-visible' : 'reveal-hidden'}`}
+      style={{ '--reveal-delay': `${delay}s` }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 });
 InView.displayName = 'InView';
 
+/* ── Counter with IntersectionObserver + setInterval ── */
 const Counter = memo(({ to, prefix = '', suffix = '' }) => {
   const [val, setVal] = useState(0);
   const ref = useRef(null);
-  const shouldReduceMotion = useReducedMotion();
+  const reducedRef = useRef(null);
 
   useEffect(() => {
-    if (shouldReduceMotion) { setVal(to); return; }
+    reducedRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }, []);
+
+  useEffect(() => {
+    if (reducedRef.current) { setVal(to); return; }
     const obs = new IntersectionObserver(([e]) => {
       if (!e.isIntersecting) return;
       obs.disconnect();
@@ -49,7 +61,7 @@ const Counter = memo(({ to, prefix = '', suffix = '' }) => {
     }, { threshold: 0.4 });
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
-  }, [to, shouldReduceMotion]);
+  }, [to]);
 
   return <span ref={ref}>{prefix}{val.toLocaleString('en-IN')}{suffix}</span>;
 });
@@ -265,7 +277,6 @@ CrossIcon.displayName = 'CrossIcon';
 
 const FAQItem = memo(({ q, a }) => {
   const [open, setOpen] = useState(false);
-  const shouldReduceMotion = useReducedMotion();
   return (
     <div
       className="rounded-xl card-base motion-safe:transition-colors motion-safe:duration-200 hover:border-border overflow-hidden lg:backdrop-blur-sm"
@@ -277,30 +288,19 @@ const FAQItem = memo(({ q, a }) => {
     >
       <div className="flex items-center justify-between px-5 py-4 sm:px-6 sm:py-5">
         <span className="text-sm font-semibold text-foreground pr-4">{q}</span>
-        <motion.span
-          animate={{ rotate: open ? 45 : 0 }}
-          transition={{ duration: 0.2 }}
-          className="ml-2 shrink-0 text-muted-foreground"
+        <span
+          className={`ml-2 shrink-0 text-muted-foreground motion-safe:transition-transform motion-safe:duration-200 ${open ? 'rotate-45' : 'rotate-0'}`}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14m-7-7h14" />
           </svg>
-        </motion.span>
+        </span>
       </div>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            key="content"
-            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, scaleY: 0 }}
-            animate={{ opacity: 1, scaleY: 1 }}
-            exit={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, scaleY: 0 }}
-            transition={{ duration: 0.2, ease: 'easeInOut' }}
-            className="origin-top overflow-hidden"
-          >
-            <div className="border-t border-border/50 px-5 py-4 text-sm leading-7 text-muted-foreground sm:px-6 sm:py-5">{a}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className={`faq-collapse ${open ? 'open' : ''}`}>
+        <div>
+          <div className="border-t border-border/50 px-5 py-4 text-sm leading-7 text-muted-foreground sm:px-6 sm:py-5">{a}</div>
+        </div>
+      </div>
     </div>
   );
 });
@@ -326,21 +326,20 @@ const FeatureCard = memo(({ item, index }) => {
 FeatureCard.displayName = 'FeatureCard';
 
 const HeroCard = memo(() => {
-  const shouldReduceMotion = useReducedMotion();
   const todayIndex = useMemo(() => {
     const day = new Date().getDay();
     const map = [6, 0, 1, 2, 3, 4, 5];
     return map[day];
   }, []);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { requestAnimationFrame(() => setMounted(true)); }, []);
 
   return (
     <div className="relative">
       <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-primary/20 via-transparent to-secondary/20 blur-3xl sm:-inset-6 sm:rounded-[3rem]" />
-      <motion.div
-        initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 20, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-        className="relative overflow-hidden card-elevated depth-lg lg:backdrop-blur-2xl sm:rounded-[2.25rem]"
+      <div
+        className={`relative overflow-hidden card-elevated depth-lg lg:backdrop-blur-2xl sm:rounded-[2.25rem] ${mounted ? 'animate-hero-card' : 'opacity-0'}`}
+        style={{ animationDelay: '0.15s' }}
       >
         <div className="flex items-center justify-between border-b border-border/50 px-3 py-2.5 sm:px-5 sm:py-3">
           <div className="flex items-center gap-2">
@@ -393,12 +392,12 @@ const HeroCard = memo(() => {
             <div className="flex h-16 items-end gap-1.5 sm:gap-2">
               {[55, 72, 48, 88, 65, 91, 78].map((h, i) => (
                 <div key={i} className="flex-1 h-full rounded-t-md bg-muted/80 overflow-hidden">
-                  <motion.div
-                    initial={{ scaleY: 0 }}
-                    animate={{ scaleY: h / 100 }}
-                    transition={{ duration: 0.5, delay: 0.3 + i * 0.05, ease: [0.16, 1, 0.3, 1] }}
-                    className={`h-full w-full rounded-t-md transform-gpu origin-bottom ${i === todayIndex ? 'bg-gradient-to-t from-blue-600 to-violet-500' : 'bg-muted-foreground/20'}`}
-                  />
+                  <div
+                    className={`h-full w-full rounded-t-md origin-bottom ${mounted ? 'bar-grow loaded' : 'bar-grow'}`}
+                    style={{ '--bar-h': h / 100, transitionDelay: `${0.3 + i * 0.05}s` }}
+                  >
+                    <div className={`h-full w-full rounded-t-md ${i === todayIndex ? 'bg-gradient-to-t from-blue-600 to-violet-500' : 'bg-muted-foreground/20'}`} />
+                  </div>
                 </div>
               ))}
             </div>
@@ -427,14 +426,9 @@ const HeroCard = memo(() => {
             ))}
           </div>
         </div>
-      </motion.div>
+      </div>
 
-      <motion.div
-        initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.6, delay: 0.7 }}
-        className="absolute -right-2 top-16 hidden xl:block"
-      >
+      <div className={`absolute -right-2 top-16 hidden xl:block ${mounted ? 'animate-fade-in-right' : 'opacity-0'}`} style={{ animationDelay: '0.7s' }}>
         <div className="w-48 card-elevated depth-lg rounded-2xl p-3 lg:backdrop-blur-xl sm:w-52 sm:p-4">
           <div className="mb-2 flex items-center gap-2">
             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-success to-success/80">
@@ -447,14 +441,9 @@ const HeroCard = memo(() => {
           <p className="text-caption text-muted-foreground">Rahul deposited <span className="font-semibold text-foreground">₹2,500</span></p>
           <p className="mt-1 text-caption text-muted-foreground/60">2 min ago</p>
         </div>
-      </motion.div>
+      </div>
 
-      <motion.div
-        initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.6, delay: 0.9 }}
-        className="absolute -left-2 bottom-20 hidden xl:block"
-      >
+      <div className={`absolute -left-2 bottom-20 hidden xl:block ${mounted ? 'animate-fade-in-left' : 'opacity-0'}`} style={{ animationDelay: '0.9s' }}>
         <div className="w-48 card-elevated depth-lg rounded-2xl p-3 lg:backdrop-blur-xl sm:w-52 sm:p-4">
           <div className="mb-2 flex items-center gap-2">
             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/80">
@@ -467,7 +456,7 @@ const HeroCard = memo(() => {
           <p className="text-caption text-muted-foreground">March report available</p>
           <p className="mt-1 text-caption text-muted-foreground/60">Just now</p>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 });
@@ -487,15 +476,11 @@ const Ticker = memo(() => {
   const doubled = [...items, ...items];
   return (
     <div className="overflow-hidden border-y border-border/50 bg-card/40 py-2.5 sm:py-3">
-      <motion.div
-        className="flex gap-8 whitespace-nowrap sm:gap-10 will-change-transform"
-        animate={useReducedMotion() ? { x: 0 } : { x: ['0%', '-50%'] }}
-        transition={{ duration: 28, repeat: Infinity, ease: 'linear' }}
-      >
+      <div className="flex gap-8 whitespace-nowrap sm:gap-10 ticker-animate gpu-layer">
         {doubled.map((item, i) => (
           <span key={i} className="text-caption font-semibold uppercase tracking-[0.2em] text-muted-foreground">{item}</span>
         ))}
-      </motion.div>
+      </div>
     </div>
   );
 });
@@ -503,7 +488,6 @@ Ticker.displayName = 'Ticker';
 
 const HomePage = () => {
   const [activeTab, setActiveTab] = useState(0);
-  const shouldReduceMotion = useReducedMotion();
 
   return (
     <div className="relative min-h-screen bg-background text-foreground selection:bg-primary/20">
@@ -517,12 +501,7 @@ const HomePage = () => {
       <section className="relative mx-auto grid max-w-7xl items-center gap-6 px-4 pb-8 pt-20 sm:gap-8 sm:px-6 sm:pb-12 sm:pt-24 lg:grid-cols-[1fr_1.05fr] lg:px-8 lg:pb-16 lg:pt-24 xl:gap-10">
 
         <div>
-          <motion.div
-            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="mb-4 flex flex-wrap items-center gap-2 sm:gap-3"
-          >
+          <div className="mb-4 flex flex-wrap items-center gap-2 sm:gap-3 animate-fade-up" style={{ animationDelay: '0s' }}>
             <Pill>
               <LiveDot />
               Built for modern India
@@ -533,37 +512,22 @@ const HomePage = () => {
               </svg>
               Trusted by 12,500+ members
             </Pill>
-          </motion.div>
+          </div>
 
-          <motion.h1
-            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-            className="max-w-2xl text-display leading-[1.06]"
-          >
+          <h1 className="max-w-2xl text-display leading-[1.06] animate-fade-up" style={{ animationDelay: '0.08s' }}>
             Mess operations,
             <br />
             <span className="text-gradient">
               reimagined.
             </span>
-          </motion.h1>
+          </h1>
 
-          <motion.p
-            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.16 }}
-            className="mt-4 max-w-xl text-body-lg leading-[1.75] text-muted-foreground sm:mt-5"
-          >
+          <p className="mt-4 max-w-xl text-body-lg leading-[1.75] text-muted-foreground sm:mt-5 animate-fade-up" style={{ animationDelay: '0.16s' }}>
             United Mess brings a finance-grade experience to meal tracking, contributions, member management,
             and expense control. The clarity of a top fintech product — built for India&apos;s communities.
-          </motion.p>
+          </p>
 
-          <motion.div
-            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.24 }}
-            className="mt-5 flex flex-col gap-3 sm:mt-6 sm:flex-row sm:items-center"
-          >
+          <div className="mt-5 flex flex-col gap-3 sm:mt-6 sm:flex-row sm:items-center animate-fade-up" style={{ animationDelay: '0.24s' }}>
             <Button variant="primary" size="lg" asChild>
               <Link to="/register">
                 Start free — no card needed
@@ -580,23 +544,18 @@ const HomePage = () => {
                 Sign in to portal
               </Link>
             </Button>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.7, delay: 0.35 }}
-            className="mt-6 grid grid-cols-2 gap-2 sm:mt-8 sm:gap-3"
-          >
+          <div className="mt-6 grid grid-cols-2 gap-2 sm:mt-8 sm:gap-3 animate-fade-up" style={{ animationDelay: '0.35s' }}>
             {stats.map((s) => (
-              <div key={s.label} className="rounded-xl card-base px-3 py-3 sm:rounded-2xl sm:px-4 sm:py-4">
+              <div key={s.label} className="rounded-xl card-base px-3 py-3 sm:rounded-2xl sm:px-4 sm:py-4 contain-content">
                 <div className="text-xl font-bold tabular-nums tracking-tight text-foreground sm:text-[1.6rem]">
                   <Counter to={s.value} prefix={s.prefix} suffix={s.suffix} />
                 </div>
                 <div className="mt-0.5 text-caption font-medium text-muted-foreground sm:mt-1">{s.label}</div>
               </div>
             ))}
-          </motion.div>
+          </div>
         </div>
 
         <HeroCard />
@@ -604,7 +563,7 @@ const HomePage = () => {
 
       <Ticker />
 
-      <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8 content-visibility-auto">
         <div className="rounded-xl glass px-5 py-4 sm:rounded-[2rem] sm:px-6 sm:py-6">
           <p className="mb-4 text-center text-caption font-bold uppercase tracking-[0.28em] text-muted-foreground sm:mb-6">Security & compliance</p>
           <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-10">
@@ -618,7 +577,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section id="features" className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
+      <section id="features" className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16 content-visibility-auto">
         <InView className="mx-auto max-w-2xl text-center">
           <Pill>Core capabilities</Pill>
           <h2 className="mt-3 text-h1 font-bold tracking-tight text-foreground">
@@ -635,7 +594,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-6 sm:px-6 sm:pb-10 lg:px-8 lg:pb-14">
+      <section className="mx-auto max-w-7xl px-4 pb-6 sm:px-6 sm:pb-10 lg:px-8 lg:pb-14 content-visibility-auto">
         <InView>
           <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
             {[
@@ -643,7 +602,7 @@ const HomePage = () => {
               { src: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80', label: 'Balanced nutrition' },
               { src: 'https://images.unsplash.com/photo-1567521464027-f127ff144326?auto=format&fit=crop&w=900&q=80', label: 'Community meals' },
             ].map(({ src, label }) => (
-              <div key={label} className="group relative overflow-hidden rounded-xl sm:rounded-2xl">
+              <div key={label} className="group relative overflow-hidden rounded-xl sm:rounded-2xl contain-content">
                 <img src={src} alt={label} width={900} height={400} className="h-56 w-full object-cover motion-safe:transition-transform motion-safe:duration-700 motion-safe:group-hover:scale-105 sm:h-72" loading="lazy" decoding="async" />
                 <div className="absolute inset-0 bg-gradient-to-t from-overlay via-transparent" />
                 <span className="absolute bottom-4 left-4 rounded-lg bg-foreground/10 px-3 py-1.5 text-label font-semibold text-white lg:backdrop-blur-md border border-foreground/20 sm:bottom-5 sm:left-5 sm:rounded-xl sm:px-4 sm:py-2">
@@ -655,7 +614,7 @@ const HomePage = () => {
         </InView>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16 content-visibility-auto">
         <InView className="mx-auto max-w-2xl text-center mb-6 sm:mb-10">
           <Pill>Simple workflow</Pill>
           <h2 className="mt-3 text-h1 font-bold tracking-tight text-foreground">
@@ -669,11 +628,10 @@ const HomePage = () => {
         <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-8">
           <div className="space-y-2 sm:space-y-3">
             {steps.map((step, idx) => (
-              <motion.button
+              <button
                 key={step.num}
                 onClick={() => setActiveTab(idx)}
-                whileHover={shouldReduceMotion ? {} : { x: 4 }}
-                className={`w-full rounded-xl border p-3 text-left motion-safe:transition-all motion-safe:duration-200 sm:rounded-2xl sm:p-4 ${
+                className={`w-full rounded-xl border p-3 text-left motion-safe:transition-all motion-safe:duration-200 sm:rounded-2xl sm:p-4 motion-safe:hover:translate-x-1 active:translate-x-0 ${
                   activeTab === idx
                     ? 'border-primary/50 bg-primary/10'
                     : 'border-border/60 glass hover:border-border'
@@ -694,41 +652,36 @@ const HomePage = () => {
                     <p className="mt-0.5 text-xs leading-6 text-muted-foreground sm:text-body sm:leading-7">{step.description}</p>
                   </div>
                 </div>
-              </motion.button>
+              </button>
             ))}
           </div>
 
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: -12 }}
-              transition={{ duration: 0.3 }}
-              className="overflow-hidden card-elevated depth-lg rounded-xl sm:rounded-2xl"
-            >
-              <img
-                src={steps[activeTab].image}
-                alt={steps[activeTab].title}
-                width={800}
-                height={400}
-                className="h-56 w-full object-cover sm:h-72"
-                loading="lazy"
-                decoding="async"
-              />
-              <div className="p-3 sm:p-4">
-                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-caption font-bold text-white bg-gradient-primary">
-                  Step {steps[activeTab].num}
-                </span>
-                <h3 className="mt-1.5 text-body-lg font-bold text-foreground">{steps[activeTab].title}</h3>
-                <p className="mt-1 text-body leading-6 text-muted-foreground sm:leading-7">{steps[activeTab].description}</p>
-              </div>
-            </motion.div>
-          </AnimatePresence>
+          <div
+            key={activeTab}
+            className="overflow-hidden card-elevated depth-lg rounded-xl sm:rounded-2xl animate-fade-up"
+            style={{ animationDuration: '0.3s' }}
+          >
+            <img
+              src={steps[activeTab].image}
+              alt={steps[activeTab].title}
+              width={800}
+              height={400}
+              className="h-56 w-full object-cover sm:h-72"
+              loading="lazy"
+              decoding="async"
+            />
+            <div className="p-3 sm:p-4">
+              <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-caption font-bold text-white bg-gradient-primary">
+                Step {steps[activeTab].num}
+              </span>
+              <h3 className="mt-1.5 text-body-lg font-bold text-foreground">{steps[activeTab].title}</h3>
+              <p className="mt-1 text-body leading-6 text-muted-foreground sm:leading-7">{steps[activeTab].description}</p>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16 content-visibility-auto">
         <InView className="mx-auto max-w-2xl text-center mb-6 sm:mb-10">
           <Pill>Why United Mess</Pill>
           <h2 className="mt-3 text-h1 font-bold tracking-tight text-foreground">
@@ -787,7 +740,7 @@ const HomePage = () => {
         </InView>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16 content-visibility-auto">
         <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start lg:gap-12">
           <InView>
             <Pill>Meal Calendar</Pill>
@@ -817,7 +770,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16 content-visibility-auto">
         <InView className="mx-auto max-w-2xl text-center mb-6 sm:mb-10">
           <Pill>Testimonials</Pill>
           <h2 className="mt-3 text-h1 font-bold tracking-tight text-foreground">
@@ -831,7 +784,7 @@ const HomePage = () => {
         <div className="columns-1 gap-4 sm:columns-2 sm:gap-5 lg:columns-3">
           {testimonials.map((item, i) => (
             <InView key={item.name} delay={0.05 * i} className="mb-3 break-inside-avoid sm:mb-4">
-              <blockquote className="rounded-xl card-base p-5 sm:rounded-2xl sm:p-7">
+              <blockquote className="rounded-xl card-base p-5 sm:rounded-2xl sm:p-7 contain-content">
                 <div className="mb-3 flex gap-1 text-warning-text">
                   {Array.from({ length: 5 }).map((_, j) => (
                     <svg key={j} viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3 sm:h-3.5 sm:w-3.5">
@@ -855,7 +808,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16 content-visibility-auto">
         <InView>
           <div className="relative overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br from-primary/[0.08] via-card/70 to-secondary/[0.08] p-5 sm:rounded-[2rem] sm:p-8 lg:p-10">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(37,99,235,0.18),transparent_55%),radial-gradient(ellipse_at_bottom_left,rgba(124,58,237,0.15),transparent_50%)]" />
@@ -876,7 +829,7 @@ const HomePage = () => {
                     { label: 'Push alerts', desc: 'Real-time notifications' },
                     { label: 'Biometric auth', desc: 'Face ID / fingerprint' },
                   ].map(({ label, desc }) => (
-                    <div key={label} className="rounded-xl glass p-2.5 sm:rounded-xl sm:p-3">
+                    <div key={label} className="rounded-xl glass p-2.5 sm:rounded-xl sm:p-3 contain-content">
                       <p className="text-label font-bold text-foreground">{label}</p>
                       <p className="text-caption text-muted-foreground">{desc}</p>
                     </div>
@@ -907,7 +860,7 @@ const HomePage = () => {
         </InView>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16 content-visibility-auto">
         <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start lg:gap-12">
           <InView>
             <Pill>FAQ</Pill>
@@ -934,7 +887,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16 content-visibility-auto">
         <InView>
           <div className="relative overflow-hidden rounded-xl border border-border/60 p-6 text-center bg-gradient-to-br from-primary/10 via-secondary/10 to-transparent sm:rounded-[2rem] sm:p-10 lg:p-12">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(37,99,235,0.2),transparent_50%),radial-gradient(ellipse_at_bottom,rgba(124,58,237,0.16),transparent_50%)]" />

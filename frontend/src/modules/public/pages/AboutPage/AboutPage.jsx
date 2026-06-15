@@ -1,6 +1,5 @@
-import { motion, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { memo } from 'react';
+import { memo, useRef, useState, useEffect } from 'react';
 import Button from '@/shared/components/ui/Button/Button';
 import {
     HiOutlineUsers, HiOutlineHome, HiOutlineStar, HiOutlineClock,
@@ -11,24 +10,40 @@ import {
 import { RiDoubleQuotesL } from 'react-icons/ri';
 
 const Reveal = memo(({ children, className = '', delay = 0 }) => {
-    const shouldReduceMotion = useReducedMotion();
+    const ref = useRef(null);
+    const [visible, setVisible] = useState(false);
+
+    useEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+        const obs = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    requestAnimationFrame(() => setVisible(true));
+                    obs.disconnect();
+                }
+            },
+            { threshold: 0.01, rootMargin: '-24px' }
+        );
+        obs.observe(el);
+        return () => obs.disconnect();
+    }, []);
+
     return (
-        <motion.div
-            initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-24px' }}
-            transition={{ duration: 0.4, delay, ease: [0.16, 1, 0.3, 1] }}
-            className={className}
+        <div
+            ref={ref}
+            className={`${className} ${visible ? 'reveal-visible' : 'reveal-hidden'}`}
+            style={{ '--reveal-delay': `${delay}s` }}
         >
             {children}
-        </motion.div>
+        </div>
     );
 });
 Reveal.displayName = 'Reveal';
 
 const StatCard = memo(({ value, label, Icon, delay }) => (
     <Reveal delay={delay}>
-        <div className="flex flex-col items-center justify-center p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-1 transform-gpu shadow-sm">
+        <div className="flex flex-col items-center justify-center p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-1 gpu-layer shadow-sm contain-content">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 mb-3 shrink-0">
                 <Icon className="h-5 w-5 text-primary" />
             </div>
@@ -41,7 +56,7 @@ StatCard.displayName = 'StatCard';
 
 const TeamCard = memo(({ name, role, bio, delay }) => (
     <Reveal delay={delay}>
-        <div className="group flex flex-col h-full rounded-2xl border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md p-5 motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-1 transform-gpu shadow-sm">
+        <div className="group flex flex-col h-full rounded-2xl border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md p-5 motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-1 gpu-layer shadow-sm contain-content">
             <div className="w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center bg-gradient-primary border border-slate-200/80 dark:border-slate-800/60 shadow-sm shrink-0 text-white text-2xl font-bold">
                 {name.charAt(0)}
             </div>
@@ -57,7 +72,7 @@ TeamCard.displayName = 'TeamCard';
 
 const ValueCard = memo(({ Icon, title, desc, iconColor, delay }) => (
     <Reveal delay={delay}>
-        <div className="flex gap-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md p-4 motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-0.5 transform-gpu shadow-sm">
+        <div className="flex gap-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md p-4 motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-0.5 gpu-layer shadow-sm contain-content">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
                 <Icon className={`h-5 w-5 ${iconColor}`} />
             </div>
@@ -164,7 +179,7 @@ const AboutPage = () => {
             </section>
 
             {/* ── TEAM ── */}
-            <section className="relative z-10 w-full max-w-[1280px] py-8 md:py-12 px-4 sm:px-6 lg:px-8 border-t border-slate-200/40 dark:border-slate-800/20">
+            <section className="relative z-10 w-full max-w-[1280px] py-8 md:py-12 px-4 sm:px-6 lg:px-8 border-t border-slate-200/40 dark:border-slate-800/20 content-visibility-auto">
                 <SectionHeader label="The Builders" title="People behind the product" description="A small, focused team that ships fast, values clean design, and cares deeply." />
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
                     {team.map((t) => <TeamCard key={t.role} {...t} />)}
@@ -172,7 +187,7 @@ const AboutPage = () => {
             </section>
 
             {/* ── MISSION & VALUES ── */}
-            <section className="relative z-10 w-full bg-slate-50/50 dark:bg-slate-900/10 border-y border-slate-200/40 dark:border-slate-800/20 py-8 md:py-10">
+            <section className="relative z-10 w-full bg-slate-50/50 dark:bg-slate-900/10 border-y border-slate-200/40 dark:border-slate-800/20 py-8 md:py-10 content-visibility-auto">
                 <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-6 md:gap-8">
 
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
@@ -214,7 +229,7 @@ const AboutPage = () => {
             </section>
 
             {/* ── NUMBERS (STATS) ── */}
-            <section className="relative z-10 w-full max-w-[1280px] py-8 md:py-12 px-4 sm:px-6 lg:px-8">
+            <section className="relative z-10 w-full max-w-[1280px] py-8 md:py-12 px-4 sm:px-6 lg:px-8 content-visibility-auto">
                 <SectionHeader label="Our Scale" title="Growing day by day" description="Thousands of community members rely on UnitedMess every single day for expense tracking and dining logs." />
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
                     {stats.map((s) => <StatCard key={s.label} {...s} />)}
@@ -222,7 +237,7 @@ const AboutPage = () => {
             </section>
 
             {/* ── MILESTONES (TIMELINE) ── */}
-            <section className="relative z-10 w-full bg-slate-50/50 dark:bg-slate-900/10 border-y border-slate-200/40 dark:border-slate-800/20 py-8 md:py-10">
+            <section className="relative z-10 w-full bg-slate-50/50 dark:bg-slate-900/10 border-y border-slate-200/40 dark:border-slate-800/20 py-8 md:py-10 content-visibility-auto">
                 <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
                     <SectionHeader label="Journey Timeline" title="Key Milestones" description="From a dorm-room draft to a platform processing lakhs of transactions securely." />
                     <div className="relative max-w-4xl mx-auto">
@@ -236,7 +251,7 @@ const AboutPage = () => {
                                             <m.Icon className="w-4 h-4 text-primary" />
                                         </div>
                                         <div className={`pl-10 md:pl-0 ${isEven ? 'md:pr-12 md:text-right md:col-start-1' : 'md:pl-12 md:col-start-2'}`}>
-                                            <div className="p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 shadow-sm motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-0.5 transform-gpu">
+                                            <div className="p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 shadow-sm motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-0.5 gpu-layer contain-content">
                                                 <span className="text-xs font-bold text-primary tracking-wider uppercase">{m.year}</span>
                                                 <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight">{m.title}</h3>
                                                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{m.desc}</p>
@@ -254,7 +269,7 @@ const AboutPage = () => {
             </section>
 
             {/* ── TESTIMONIAL QUOTE ── */}
-            <section className="relative z-10 w-full max-w-[1280px] py-8 md:py-12 px-4 sm:px-6 lg:px-8">
+            <section className="relative z-10 w-full max-w-[1280px] py-8 md:py-12 px-4 sm:px-6 lg:px-8 content-visibility-auto">
                 <div className="max-w-3xl mx-auto text-center flex flex-col items-center">
                     <Reveal>
                         <RiDoubleQuotesL className="w-8 h-8 text-primary/40 mx-auto mb-2 shrink-0" />
@@ -275,7 +290,7 @@ const AboutPage = () => {
             </section>
 
             {/* ── CTA ── */}
-            <section className="relative z-10 w-full max-w-[1280px] py-8 md:py-14 px-4 sm:px-6 lg:px-8 border-t border-slate-200/40 dark:border-slate-800/20">
+            <section className="relative z-10 w-full max-w-[1280px] py-8 md:py-14 px-4 sm:px-6 lg:px-8 border-t border-slate-200/40 dark:border-slate-800/20 content-visibility-auto">
                 <div className="max-w-3xl mx-auto text-center flex flex-col items-center">
                     <Reveal className="w-full">
                         <div className="relative rounded-3xl p-5 md:p-8 border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md overflow-hidden shadow-sm flex flex-col items-center">
