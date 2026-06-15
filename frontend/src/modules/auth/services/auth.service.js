@@ -1,4 +1,5 @@
 import apiClient, { setAccessToken, clearAccessToken } from '@/services/api/client/apiClient';
+import { uploadFile } from '@/services/api/client/fileUploader';
 import Cookies from 'js-cookie';
 
 const API_URL = 'auth/';
@@ -104,7 +105,7 @@ const authService = {
     },
 
     updateAvatar: async (formData) => {
-        const response = await apiClient.patch('users/me/avatar', formData);
+        const response = await uploadFile('PATCH', 'users/me/avatar', formData);
         const updatedUser = response.data?.data;
         if (updatedUser && typeof updatedUser === 'object' && updatedUser._id) {
             Cookies.set('user', JSON.stringify(updatedUser), USER_COOKIE_OPTS);
