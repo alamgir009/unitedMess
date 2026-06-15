@@ -4,11 +4,17 @@ const fs = require('fs');
 const AppError = require('../../../utils/errors/AppError');
 
 // Whitelisted mime types and extensions
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
 
 const fileFilter = (req, file, cb) => {
     // 1. Recover mimetype if generic, missing, or alternate format
     const ext = path.extname(file.originalname || '').toLowerCase();
+
+    // Catch HEIC/HEIF files early and explain why they are rejected
+    if (ext === '.heic' || ext === '.heif') {
+        return cb(new AppError('HEIC/HEIF format is not directly supported. Please convert your image to JPG, PNG, or WEBP.', 400), false);
+    }
+
     const EXT_TO_MIME = {
         '.jpg': 'image/jpeg',
         '.jpeg': 'image/jpeg',
@@ -21,6 +27,9 @@ const fileFilter = (req, file, cb) => {
         const recoveredMime = EXT_TO_MIME[ext];
         if (recoveredMime) {
             file.mimetype = recoveredMime;
+        } else if (file.mimetype === 'image/jpg') {
+            // Default to image/jpeg if mimetype is image/jpg but extension mapping not found
+            file.mimetype = 'image/jpeg';
         }
     }
 

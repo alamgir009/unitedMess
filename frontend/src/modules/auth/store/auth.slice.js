@@ -132,7 +132,7 @@ export const updateProfile = createAsyncThunk('auth/updateProfile', async (userD
 export const updateAvatar = createAsyncThunk('auth/updateAvatar', async (formData, thunkAPI) => {
     try {
         const response = await authService.updateAvatar(formData);
-        toast.success(response?.data?.message || 'Profile picture updated successfully');
+        toast.success(response?.message || 'Profile picture updated successfully');
         return response;
     } catch (error) {
         const message =

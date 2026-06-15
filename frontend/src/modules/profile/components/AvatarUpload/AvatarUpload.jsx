@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Camera, User } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -40,6 +40,10 @@ export const AvatarUpload = () => {
     const fileInputRef = useRef(null);
 
     const [previewUrl, setPreviewUrl] = useState(user?.image || null);
+
+    useEffect(() => {
+        setPreviewUrl(user?.image || null);
+    }, [user?.image]);
 
     const handleFileChange = async (e) => {
         const file = e.target.files?.[0];

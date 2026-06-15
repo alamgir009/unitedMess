@@ -12,6 +12,7 @@ const config = require('../../../config');
 // Magic-byte validators for post-upload integrity check
 const MAGIC_VALIDATORS = {
     'image/jpeg': (buf) => buf.length >= 3 && buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF,
+    'image/jpg':  (buf) => buf.length >= 3 && buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF,
     'image/png':  (buf) => buf.length >= 4 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47,
     'image/webp': (buf) => buf.length >= 12 && buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46
                       && buf[8] === 0x57 && buf[9] === 0x45 && buf[10] === 0x42 && buf[11] === 0x50,
@@ -124,8 +125,8 @@ const updateAvatar = asyncHandler(async (req, res) => {
                 throw new AppError('Uploaded file content does not match a supported image format.', 400);
             }
         } catch (error) {
-            try { fs.unlinkSync(req.file.path); } catch {}
             if (error.isOperational) throw error;
+            try { fs.unlinkSync(req.file.path); } catch {}
             console.error('File integrity check failed:', error);
             throw new AppError('Uploaded file content integrity check failed.', 400);
         }
