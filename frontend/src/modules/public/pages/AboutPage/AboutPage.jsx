@@ -54,20 +54,27 @@ const StatCard = memo(({ value, label, Icon, delay }) => (
 ));
 StatCard.displayName = 'StatCard';
 
-const TeamCard = memo(({ name, role, bio, delay }) => (
-    <Reveal delay={delay}>
-        <div className="group flex flex-col h-full rounded-2xl border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md p-5 motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-1 gpu-layer shadow-sm contain-content">
-            <div className="w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center bg-gradient-primary border border-slate-200/80 dark:border-slate-800/60 shadow-sm shrink-0 text-white text-2xl font-bold">
-                {name.charAt(0)}
+const TeamCard = memo(({ name, role, bio, avatar, delay }) => {
+    const [imgError, setImgError] = useState(false);
+    return (
+        <Reveal delay={delay}>
+            <div className="group flex flex-col h-full rounded-2xl border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md p-5 motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-1 gpu-layer shadow-sm contain-content">
+                <div className="w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center bg-gradient-primary border border-slate-200/80 dark:border-slate-800/60 shadow-sm shrink-0 text-white text-2xl font-bold overflow-hidden">
+                    {!imgError ? (
+                        <img src={avatar} alt={name} className="w-full h-full object-cover" onError={() => setImgError(true)} />
+                    ) : (
+                        <span>{name.charAt(0)}</span>
+                    )}
+                </div>
+                <div className="text-center flex flex-col gap-1 flex-1">
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight">{name}</h3>
+                    <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-primary">{role}</p>
+                    <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed mt-auto">{bio}</p>
+                </div>
             </div>
-            <div className="text-center flex flex-col gap-1 flex-1">
-                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight">{name}</h3>
-                <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-primary">{role}</p>
-                <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed mt-auto">{bio}</p>
-            </div>
-        </div>
-    </Reveal>
-));
+        </Reveal>
+    );
+});
 TeamCard.displayName = 'TeamCard';
 
 const ValueCard = memo(({ Icon, title, desc, iconColor, delay }) => (
@@ -102,9 +109,7 @@ const stats = [
 ];
 
 const team = [
-    { name: 'Alamgir Islam', role: 'Founder & Lead Engineer', bio: 'Visionary behind UnitedMess. Passionate about elegant software that solves real community problems, one mess at a time.', avatar: '/assets/images/founder_avatar.png', delay: 0 },
-    { name: 'Hafizur Rahaman', role: 'UX & Design Lead', bio: 'Crafts every pixel with purpose. Obsessed with accessibility, motion design, and turning complex workflows into delightful interactions.', avatar: '/assets/images/design_avatar.png', delay: 0.08 },
-    { name: 'Alamgir Islam', role: 'Backend Architect', bio: 'Builds the engine under the hood. Expert in distributed systems, real-time data, and making things scale without breaking a sweat.', avatar: '/assets/images/backend_avatar.png', delay: 0.16 },
+    { name: 'Alamgir Islam', role: 'Full-Stack Creator', bio: 'Visionary behind UnitedMess. Crafts every pixel with purpose — from backend architecture and real-time systems to UI design and accessible frontend interactions. Passionate about elegant software that solves real community problems, one mess at a time.', avatar: 'https://res.cloudinary.com/ddqeexln0/image/upload/v1776511097/unitedMess/avatars/vtj5wogehgevgb0cquhw.jpg', delay: 0 },
 ];
 
 const values = [
@@ -180,9 +185,9 @@ const AboutPage = () => {
 
             {/* ── TEAM ── */}
             <section className="relative z-10 w-full max-w-[1280px] py-8 md:py-12 px-4 sm:px-6 lg:px-8 border-t border-slate-200/40 dark:border-slate-800/20 content-visibility-auto">
-                <SectionHeader label="The Builders" title="People behind the product" description="A small, focused team that ships fast, values clean design, and cares deeply." />
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-                    {team.map((t) => <TeamCard key={t.role} {...t} />)}
+                <SectionHeader label="The Builder" title="The person behind the product" description="One person with a vision — shipping fast, valuing clean design, and caring deeply." />
+                <div className="flex justify-center max-w-md mx-auto">
+                    {team.map((t) => <TeamCard key={t.name} {...t} />)}
                 </div>
             </section>
 
