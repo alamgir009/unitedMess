@@ -104,23 +104,32 @@ const updateAvatar = asyncHandler(async (req, res) => {
     // Extract existing Cloudinary Public ID and destroy old image
     if (user.image && user.image.includes('cloudinary.com')) {
         try {
-           const urlParts = user.image.split('/');
-           const folderAndFile = urlParts.slice(-2).join('/'); // avatars/filename.jpg
-           // Actually, since our folder is unitedMess/avatars, it usually looks like .../upload/v1234/unitedMess/avatars/filename.jpg
-           // Better extraction:
-           // find the part starting with 'unitedMess/'
-           const unitedMessIndex = urlParts.indexOf('unitedMess');
-           if(unitedMessIndex !== -1) {
-               const publicIdWithExt = urlParts.slice(unitedMessIndex).join('/');
-               const publicId = publicIdWithExt.split('.')[0];
-               await cloudinary.uploader.destroy(publicId);
-           }
+            const urlObj = new URL(user.image);
+            const pathSegments = urlObj.pathname.split('/');
+            const unitedMessIdx = pathSegments.indexOf('unitedMess');
+            if (unitedMessIdx !== -1) {
+                const publicIdWithExt = pathSegments.slice(unitedMessIdx).join('/');
+                const publicId = publicIdWithExt.replace(/\.[^.]+$/, '');
+                await cloudinary.uploader.destroy(publicId);
+            }
         } catch (error) {
-           console.error("Failed to delete old image from Cloudinary:", error);
+            console.error('Failed to delete old image from Cloudinary:', error);
         }
     }
 
-    const updatedUser = await userService.updateProfile(userId, { image: req.file.path }, false);
+    // Normalize image path: disk storage returns filesystem path → convert to full URL
+    let imageUrl = req.file.path;
+    if (imageUrl && !/^https?:\/\//.test(imageUrl)) {
+        const normalized = imageUrl.replace(/\\/g, '/');
+        const uploadsIdx = normalized.indexOf('/uploads/');
+        const relativePath = uploadsIdx !== -1
+            ? normalized.substring(uploadsIdx)
+            : '/uploads/avatars/' + (req.file.filename || '');
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        imageUrl = `${baseUrl}${relativePath}`;
+    }
+
+    const updatedUser = await userService.updateProfile(userId, { image: imageUrl }, false);
     sendSuccessResponse(res, 200, 'Profile picture updated successfully', updatedUser);
 });
 

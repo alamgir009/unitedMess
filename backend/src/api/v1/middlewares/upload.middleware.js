@@ -7,7 +7,14 @@ const AppError = require('../../../utils/errors/AppError');
 const config = require('../../../config');
 
 // Whitelisted mime types and extensions
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+// MIME → safe extension mapping
+const MIME_TO_EXT = {
+    'image/jpeg': '.jpg',
+    'image/png':  '.png',
+    'image/webp': '.webp',
+};
 
 const fileFilter = (req, file, cb) => {
     if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
@@ -54,24 +61,20 @@ if (isCloudinaryConfigured) {
     if (!fs.existsSync(avatarDir)) fs.mkdirSync(avatarDir, { recursive: true });
     if (!fs.existsSync(qrDir)) fs.mkdirSync(qrDir, { recursive: true });
 
+    const safeFilename = (prefix) => (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = MIME_TO_EXT[file.mimetype] || '.jpg';
+        cb(null, `${prefix}-${uniqueSuffix}${ext}`);
+    };
+
     avatarStorage = multer.diskStorage({
-        destination: (req, file, cb) => {
-            cb(null, avatarDir);
-        },
-        filename: (req, file, cb) => {
-            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-            cb(null, `avatar-${uniqueSuffix}${path.extname(file.originalname)}`);
-        }
+        destination: (req, file, cb) => cb(null, avatarDir),
+        filename: safeFilename('avatar'),
     });
 
     qrCodeStorage = multer.diskStorage({
-        destination: (req, file, cb) => {
-            cb(null, qrDir);
-        },
-        filename: (req, file, cb) => {
-            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-            cb(null, `qrcode-${uniqueSuffix}${path.extname(file.originalname)}`);
-        }
+        destination: (req, file, cb) => cb(null, qrDir),
+        filename: safeFilename('qrcode'),
     });
 }
 

@@ -8,6 +8,12 @@ const errorMiddleware = (err, req, res, next) => {
     // Log Error
     logger.error(err);
 
+    // Multer errors (file too large, unexpected field, etc.)
+    if (err.name === 'MulterError') {
+        const statusCode = err.code === 'LIMIT_FILE_SIZE' ? 400 : 400;
+        error = { statusCode, message: err.message };
+    }
+
     // Mongoose bad ObjectId
     if (err.name === 'CastError') {
         const message = `Resource not found`;

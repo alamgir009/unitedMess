@@ -104,9 +104,7 @@ const authService = {
     },
 
     updateAvatar: async (formData) => {
-        const response = await apiClient.patch('users/me/avatar', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        const response = await apiClient.patch('users/me/avatar', formData);
         const updatedUser = response.data?.data;
         if (updatedUser && typeof updatedUser === 'object' && updatedUser._id) {
             Cookies.set('user', JSON.stringify(updatedUser), USER_COOKIE_OPTS);
