@@ -6,11 +6,10 @@ import {
     HiOutlineUsers, HiOutlineHome, HiOutlineStar, HiOutlineClock,
     HiOutlineShieldCheck, HiOutlineBolt, HiOutlineSparkles,
     HiOutlineGlobeAlt, HiOutlineHandRaised, HiOutlineChartBar,
-    HiOutlineArrowRight, HiOutlineCheckBadge,
+    HiOutlineArrowRight,
 } from 'react-icons/hi2';
 import { RiDoubleQuotesL } from 'react-icons/ri';
 
-// ─── Motion-Safe Reveal Component ───
 const Reveal = memo(({ children, className = '', delay = 0 }) => {
     const shouldReduceMotion = useReducedMotion();
     return (
@@ -27,24 +26,22 @@ const Reveal = memo(({ children, className = '', delay = 0 }) => {
 });
 Reveal.displayName = 'Reveal';
 
-// ─── Stat Card Component (Numbers Section) ───
 const StatCard = memo(({ value, label, Icon, delay }) => (
     <Reveal delay={delay}>
-        <div className="flex flex-col items-center justify-center p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md transition-transform duration-200 hover:-translate-y-1 transform-gpu will-change-transform shadow-sm">
+        <div className="flex flex-col items-center justify-center p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-1 transform-gpu shadow-sm">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 mb-3 shrink-0">
                 <Icon className="h-5 w-5 text-primary" />
             </div>
-            <p className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100 tracking-tight text-numeric mb-1">{value}</p>
-            <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 text-center mt-0.5">{label}</p>
+            <p className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100 tracking-tight text-numeric">{value}</p>
+            <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 text-center">{label}</p>
         </div>
     </Reveal>
 ));
 StatCard.displayName = 'StatCard';
 
-// ─── Team Card Component (Team Section) ───
 const TeamCard = memo(({ name, role, bio, avatar, delay }) => (
     <Reveal delay={delay}>
-        <div className="group flex flex-col h-full rounded-2xl border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md p-6 transition-transform duration-200 hover:-translate-y-1 transform-gpu will-change-transform shadow-sm">
+        <div className="group flex flex-col h-full rounded-2xl border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md p-5 motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-1 transform-gpu shadow-sm">
             <div className="relative w-24 h-24 rounded-full overflow-hidden mx-auto mb-4 border border-slate-200/80 dark:border-slate-800/60 shadow-sm shrink-0">
                 <img
                     src={avatar}
@@ -55,9 +52,9 @@ const TeamCard = memo(({ name, role, bio, avatar, delay }) => (
                     className="w-full h-full object-cover"
                 />
             </div>
-            <div className="text-center flex flex-col flex-1">
-                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 mb-1 leading-tight">{name}</h3>
-                <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-primary mb-3 mt-0.5">{role}</p>
+            <div className="text-center flex flex-col gap-1 flex-1">
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight">{name}</h3>
+                <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-primary">{role}</p>
                 <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed mt-auto">{bio}</p>
             </div>
         </div>
@@ -65,15 +62,14 @@ const TeamCard = memo(({ name, role, bio, avatar, delay }) => (
 ));
 TeamCard.displayName = 'TeamCard';
 
-// ─── Value Card Component (Mission Subsection) ───
 const ValueCard = memo(({ Icon, title, desc, iconColor, delay }) => (
     <Reveal delay={delay}>
-        <div className="flex gap-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md p-5 transition-transform duration-200 hover:-translate-y-0.5 transform-gpu will-change-transform shadow-sm">
+        <div className="flex gap-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md p-4 motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-0.5 transform-gpu shadow-sm">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
                 <Icon className={`h-5 w-5 ${iconColor}`} />
             </div>
-            <div className="min-w-0">
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-sm sm:text-base mb-1 leading-tight">{title}</h4>
+            <div className="min-w-0 flex flex-col gap-1">
+                <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-sm sm:text-base leading-tight">{title}</h4>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{desc}</p>
             </div>
         </div>
@@ -81,7 +77,15 @@ const ValueCard = memo(({ Icon, title, desc, iconColor, delay }) => (
 ));
 ValueCard.displayName = 'ValueCard';
 
-// ─── Static Data Arrays ───
+const SectionHeader = memo(({ label, title, description }) => (
+    <div className="flex flex-col items-center gap-1 max-w-2xl mx-auto mb-6 md:mb-8">
+        <span className="text-xs font-semibold uppercase tracking-widest text-primary">{label}</span>
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{title}</h2>
+        {description && <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xl">{description}</p>}
+    </div>
+));
+SectionHeader.displayName = 'SectionHeader';
+
 const stats = [
     { value: '2,500+', label: 'Active Members', Icon: HiOutlineUsers, delay: 0 },
     { value: '200+', label: 'Messes Managed', Icon: HiOutlineHome, delay: 0.06 },
@@ -139,29 +143,26 @@ const AboutPage = () => {
     return (
         <div className="relative w-full bg-background text-foreground overflow-x-hidden flex flex-col items-center">
 
-            {/* ── Ambient Background Layer (Static) ── */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
                 <div className="absolute -top-40 -left-32 w-[320px] h-[320px] sm:w-[500px] sm:h-[500px] rounded-full opacity-20 dark:opacity-10 blur-[80px] bg-[var(--blob-1)]" />
                 <div className="absolute top-[35%] -right-32 w-[320px] h-[320px] sm:w-[500px] sm:h-[500px] rounded-full opacity-15 dark:opacity-5 blur-[100px] bg-[var(--blob-2)]" />
             </div>
 
             {/* ── HERO ── */}
-            <section className="relative z-10 w-full max-w-[1280px] pt-16 pb-8 px-4 sm:pt-20 sm:pb-10 md:pt-24 md:pb-12 sm:px-6 lg:px-8 text-center flex flex-col items-center">
-                <div className="max-w-3xl mx-auto flex flex-col items-center gap-3 sm:gap-4">
+            <section className="relative z-10 w-full max-w-[1280px] pt-12 md:pt-16 pb-8 md:pb-10 px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
+                <div className="max-w-3xl mx-auto flex flex-col items-center gap-4">
                     <Reveal className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200/80 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 shadow-sm shrink-0">
                         <HiOutlineSparkles className="w-3.5 h-3.5 text-primary" />
                         Our Story
                     </Reveal>
-
                     <Reveal delay={0.06}>
-                        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl mt-1 mb-2">
+                        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
                             <span className="text-slate-900 dark:text-slate-100">Built for</span>{' '}
                             <span className="text-gradient">Real People</span>
                         </h1>
                     </Reveal>
-
                     <Reveal delay={0.12}>
-                        <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed mt-1">
+                        <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
                             UnitedMess was born in a university dorm room out of frustration with spreadsheets and WhatsApp chaos.
                             Today we serve thousands of communities across India with a platform built on empathy, craft, and code.
                         </p>
@@ -170,35 +171,23 @@ const AboutPage = () => {
             </section>
 
             {/* ── TEAM ── */}
-            <section className="relative z-10 w-full max-w-[1280px] py-10 px-4 sm:py-12 md:py-14 sm:px-6 lg:px-8 border-t border-slate-200/40 dark:border-slate-800/20">
-                <div className="text-center flex flex-col items-center gap-2 max-w-2xl mx-auto mb-8 md:mb-12">
-                    <span className="text-xs font-semibold uppercase tracking-widest text-primary">
-                        The Builders
-                    </span>
-                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mt-1">
-                        People behind the product
-                    </h2>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xl">
-                        A small, focused team that ships fast, values clean design, and cares deeply.
-                    </p>
-                </div>
-
+            <section className="relative z-10 w-full max-w-[1280px] py-8 md:py-12 px-4 sm:px-6 lg:px-8 border-t border-slate-200/40 dark:border-slate-800/20">
+                <SectionHeader label="The Builders" title="People behind the product" description="A small, focused team that ships fast, values clean design, and cares deeply." />
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
                     {team.map((t) => <TeamCard key={t.role} {...t} />)}
                 </div>
             </section>
 
             {/* ── MISSION & VALUES ── */}
-            <section className="relative z-10 w-full bg-slate-50/50 dark:bg-slate-900/10 border-y border-slate-200/40 dark:border-slate-800/20 py-12 md:py-16">
-                <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-10 md:gap-14">
-                    
-                    {/* Mission Intro */}
+            <section className="relative z-10 w-full bg-slate-50/50 dark:bg-slate-900/10 border-y border-slate-200/40 dark:border-slate-800/20 py-8 md:py-10">
+                <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-6 md:gap-8">
+
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
                         <div className="md:col-span-5 flex flex-col gap-2">
                             <span className="text-xs font-semibold uppercase tracking-widest text-primary">
                                 Our Mission
                             </span>
-                            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mt-1">
+                            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
                                 Simplifying lives,<br className="hidden md:block" /> one mess at a time.
                             </h2>
                         </div>
@@ -214,13 +203,12 @@ const AboutPage = () => {
                         </div>
                     </div>
 
-                    {/* Values Subsection */}
-                    <div className="flex flex-col gap-6 md:gap-8 border-t border-slate-200/60 dark:border-slate-800/40 pt-10 md:pt-12">
+                    <div className="flex flex-col gap-6 md:gap-8 border-t border-slate-200/60 dark:border-slate-800/40 pt-6 md:pt-8">
                         <div className="text-center flex flex-col items-center gap-1">
                             <span className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
                                 Core Foundations
                             </span>
-                            <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mt-1">
+                            <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
                                 Principles that guide us
                             </h3>
                         </div>
@@ -233,63 +221,33 @@ const AboutPage = () => {
             </section>
 
             {/* ── NUMBERS (STATS) ── */}
-            <section className="relative z-10 w-full max-w-[1280px] py-10 px-4 sm:py-12 md:py-14 sm:px-6 lg:px-8">
-                <div className="text-center flex flex-col items-center gap-2 max-w-2xl mx-auto mb-8 md:mb-12">
-                    <span className="text-xs font-semibold uppercase tracking-widest text-primary">
-                        Our Scale
-                    </span>
-                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mt-1">
-                        Growing day by day
-                    </h2>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xl">
-                        Thousands of community members rely on UnitedMess every single day for expense tracking and dining logs.
-                    </p>
-                </div>
-
+            <section className="relative z-10 w-full max-w-[1280px] py-8 md:py-12 px-4 sm:px-6 lg:px-8">
+                <SectionHeader label="Our Scale" title="Growing day by day" description="Thousands of community members rely on UnitedMess every single day for expense tracking and dining logs." />
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
                     {stats.map((s) => <StatCard key={s.label} {...s} />)}
                 </div>
             </section>
 
             {/* ── MILESTONES (TIMELINE) ── */}
-            <section className="relative z-10 w-full bg-slate-50/50 dark:bg-slate-900/10 border-y border-slate-200/40 dark:border-slate-800/20 py-12 md:py-16">
+            <section className="relative z-10 w-full bg-slate-50/50 dark:bg-slate-900/10 border-y border-slate-200/40 dark:border-slate-800/20 py-8 md:py-10">
                 <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
-                    
-                    <div className="text-center flex flex-col items-center gap-2 max-w-2xl mx-auto mb-10 md:mb-14">
-                        <span className="text-xs font-semibold uppercase tracking-widest text-primary">
-                            Journey Timeline
-                        </span>
-                        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mt-1">
-                            Key Milestones
-                        </h2>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xl">
-                            From a dorm-room draft to a platform processing lakhs of transactions securely.
-                        </p>
-                    </div>
-
+                    <SectionHeader label="Journey Timeline" title="Key Milestones" description="From a dorm-room draft to a platform processing lakhs of transactions securely." />
                     <div className="relative max-w-4xl mx-auto">
-                        
-                        {/* Timeline Center Line */}
                         <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-800 -translate-x-1/2" aria-hidden="true" />
-
-                        <div className="flex flex-col gap-8">
+                        <div className="flex flex-col gap-6">
                             {milestones.map((m, index) => {
                                 const isEven = index % 2 === 0;
                                 return (
                                     <div key={m.year} className="relative grid grid-cols-1 md:grid-cols-2 md:gap-8 items-center">
-                                        
-                                        {/* Timeline Node Point */}
-                                        <div className="absolute left-4 md:left-1/2 -translate-x-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 z-10">
+                                        <div className="absolute left-4 md:left-1/2 -translate-x-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 z-10">
                                             <m.Icon className="w-4 h-4 text-primary" />
                                         </div>
-
-                                        {/* Content Card container */}
                                         <div className={`pl-10 md:pl-0 ${isEven ? 'md:pr-12 md:text-right md:col-start-1' : 'md:pl-12 md:col-start-2'}`}>
-                                            <div className="p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800/40 bg-white dark:bg-slate-900/50 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 transform-gpu will-change-transform">
+                                            <div className="p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 shadow-sm motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-0.5 transform-gpu">
                                                 <span className="text-xs font-bold text-primary tracking-wider uppercase">{m.year}</span>
-                                                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 mt-0.5 leading-tight">{m.title}</h3>
-                                                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">{m.desc}</p>
-                                                <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/20 text-primary text-[10px] font-semibold uppercase tracking-wider">
+                                                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight">{m.title}</h3>
+                                                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{m.desc}</p>
+                                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/20 text-primary text-[10px] font-semibold uppercase tracking-wider">
                                                     {m.metric}
                                                 </div>
                                             </div>
@@ -298,18 +256,16 @@ const AboutPage = () => {
                                 );
                             })}
                         </div>
-
                     </div>
-
                 </div>
             </section>
 
             {/* ── TESTIMONIAL QUOTE ── */}
-            <section className="relative z-10 w-full max-w-[1280px] py-10 px-4 sm:py-12 md:py-14 sm:px-6 lg:px-8">
+            <section className="relative z-10 w-full max-w-[1280px] py-8 md:py-12 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-3xl mx-auto text-center flex flex-col items-center">
                     <Reveal>
-                        <RiDoubleQuotesL className="w-8 h-8 text-primary/40 mx-auto mb-3 shrink-0" />
-                        <blockquote className="text-lg sm:text-xl md:text-2xl font-semibold text-slate-900 dark:text-slate-100 leading-relaxed italic mb-5 max-w-2xl">
+                        <RiDoubleQuotesL className="w-8 h-8 text-primary/40 mx-auto mb-2 shrink-0" />
+                        <blockquote className="text-lg sm:text-xl md:text-2xl font-semibold text-slate-900 dark:text-slate-100 leading-relaxed italic mb-3 max-w-2xl">
                             &quot;UnitedMess transformed how we manage our dorm. The glass UI is stunning — I show it to friends just to show off.&quot;
                         </blockquote>
                         <div className="inline-flex items-center justify-center gap-3">
@@ -318,7 +274,7 @@ const AboutPage = () => {
                             </div>
                             <div className="text-left leading-tight">
                                 <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Asif Ekbal</p>
-                                <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">Java Developer, TCS</p>
+                                <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">Java Developer, TCS</p>
                             </div>
                         </div>
                     </Reveal>
@@ -326,31 +282,28 @@ const AboutPage = () => {
             </section>
 
             {/* ── CTA ── */}
-            <section className="relative z-10 w-full max-w-[1280px] py-12 px-4 sm:py-16 md:py-20 sm:px-6 lg:px-8 border-t border-slate-200/40 dark:border-slate-800/20">
+            <section className="relative z-10 w-full max-w-[1280px] py-8 md:py-14 px-4 sm:px-6 lg:px-8 border-t border-slate-200/40 dark:border-slate-800/20">
                 <div className="max-w-3xl mx-auto text-center flex flex-col items-center">
                     <Reveal className="w-full">
-                        <div className="relative rounded-3xl p-8 md:p-14 border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md overflow-hidden shadow-sm flex flex-col items-center">
-                            
-                            {/* Static Top Light Reflection Overlay */}
+                        <div className="relative rounded-3xl p-5 md:p-8 border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md overflow-hidden shadow-sm flex flex-col items-center">
                             <div className="absolute top-0 inset-x-0 h-1/2 bg-white/10 dark:bg-white/5 blur-2xl rounded-t-3xl pointer-events-none" aria-hidden="true" />
-                            
                             <div className="relative z-10 flex flex-col items-center max-w-xl">
                                 <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight mb-3">
                                     <span className="text-gradient">
                                         Ready to join us?
                                     </span>
                                 </h2>
-                                <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base leading-relaxed mb-6 sm:mb-8">
+                                <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base leading-relaxed mb-4 sm:mb-6">
                                     Start managing your mess better today — free forever for small communities.
                                 </p>
                                 <div className="flex flex-col sm:flex-row gap-3 justify-center items-center w-full">
-                                    <Button asChild variant="primary" className="rounded-[10px] w-full sm:w-auto hover:scale-[1.02] transform-gpu transition-all">
+                                    <Button asChild variant="primary" className="rounded-[10px] w-full sm:w-auto motion-safe:hover:scale-[1.02] transform-gpu motion-safe:transition-all">
                                         <Link to="/register">
                                             Create Free Account
                                             <HiOutlineArrowRight className="w-4 h-4" />
                                         </Link>
                                     </Button>
-                                    <Button asChild variant="glass" className="w-full sm:w-auto hover:scale-[1.02] transform-gpu transition-all">
+                                    <Button asChild variant="glass" className="w-full sm:w-auto motion-safe:hover:scale-[1.02] transform-gpu motion-safe:transition-all">
                                         <Link to="/food-gallery">
                                             Browse Food Gallery
                                             <HiOutlineArrowRight className="w-4 h-4" />

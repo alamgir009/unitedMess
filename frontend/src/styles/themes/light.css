@@ -216,7 +216,7 @@ html.light {
   --btn-brand-subtle-border: transparent;
 
   /* ── Blobs ── */
-  --blob-1: transparent;
-  --blob-2: transparent;
+  --blob-1: hsla(221, 83%, 53%, 0.12);
+  --blob-2: hsla(271, 76%, 53%, 0.08);
   --blob-3: transparent;
 }

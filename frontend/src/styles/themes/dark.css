@@ -213,7 +213,7 @@ html.dark {
   --btn-brand-subtle-border: transparent;
 
   /* ── Blobs ── */
-  --blob-1: transparent;
-  --blob-2: transparent;
+  --blob-1: hsla(217, 91%, 60%, 0.08);
+  --blob-2: hsla(258, 90%, 66%, 0.05);
   --blob-3: transparent;
 }
