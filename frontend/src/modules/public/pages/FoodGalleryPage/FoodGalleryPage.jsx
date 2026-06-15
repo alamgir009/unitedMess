@@ -6,22 +6,14 @@ import FoodCard from '../../components/FoodCard/FoodCard';
 import FoodModal from '../../components/FoodModal/FoodModal';
 import { FOODS } from '../../components/FoodConstants/FoodConstants';
 
-/**
- * FoodGalleryPage
- * Zero animation libraries. GPU-optimized static layers.
- * Add `html { scroll-behavior: smooth; }` to your global CSS
- * for buttery native scrolling.
- */
 const FoodGalleryPage = () => {
     const [activeCategory, setActiveCategory] = useState('All');
     const [selectedFood, setSelectedFood] = useState(null);
     const [search, setSearch] = useState('');
 
-    // Memoised filter — only recalculates when search or category changes
     const filtered = useMemo(() => {
         const q = search.toLowerCase().trim();
         if (!q && activeCategory === 'All') return FOODS;
-
         return FOODS.filter((f) => {
             const matchCat = activeCategory === 'All' || f.category === activeCategory;
             const matchSearch = !q ||
@@ -31,7 +23,6 @@ const FoodGalleryPage = () => {
         });
     }, [activeCategory, search]);
 
-    // Stable callbacks — prevent unnecessary child re-renders
     const handleSearchChange = useCallback((v) => setSearch(v), []);
     const handleCategoryChange = useCallback((c) => setActiveCategory(c), []);
     const handleSelect = useCallback((f) => setSelectedFood(f), []);
@@ -40,9 +31,6 @@ const FoodGalleryPage = () => {
     return (
         <div className="relative min-h-screen bg-background text-foreground overflow-x-hidden isolate">
 
-            {/* ── Static ambient backdrop ──
-                 No CSS animations. translate3d forces GPU layer compositing.
-                 Sizes & blur are reduced on mobile to eliminate scroll jank. */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
                 <div
                     className="absolute -top-20 -left-16 w-[300px] h-[300px] rounded-full sm:w-[580px] sm:h-[580px] sm:-top-40 sm:-left-32"
@@ -62,18 +50,8 @@ const FoodGalleryPage = () => {
                         transform: 'translate3d(0,0,0)',
                     }}
                 />
-                <div
-                    className="absolute -bottom-20 left-[10%] w-[350px] h-[350px] rounded-full sm:w-[700px] sm:h-[700px] sm:-bottom-48 sm:left-[20%]"
-                    style={{
-                        background: 'var(--blob-3)',
-                        opacity: 0.1,
-                        filter: 'blur(100px)',
-                        transform: 'translate3d(0,0,0)',
-                    }}
-                />
             </div>
 
-            {/* ── Content ── */}
             <div className="relative z-10">
                 <Hero
                     totalCount={FOODS.length}
@@ -83,12 +61,14 @@ const FoodGalleryPage = () => {
                     onCategoryChange={handleCategoryChange}
                 />
 
-                {/* ── Food grid ── */}
-                <section className="px-4 sm:px-6 pb-16 sm:pb-24">
-                    <div className="max-w-6xl mx-auto">
+                <section className="px-4 sm:px-6 pb-12 sm:pb-16">
+                    <div className="max-w-[1280px] mx-auto">
 
-                        {/* Result count */}
-                        <p className="text-[11px] sm:text-xs text-muted-foreground mb-4 sm:mb-6 font-medium uppercase tracking-widest text-center">
+                        <p
+                            className="text-[11px] sm:text-xs text-muted-foreground mb-4 sm:mb-5 font-medium uppercase tracking-widest text-center"
+                            aria-live="polite"
+                            aria-atomic="true"
+                        >
                             {filtered.length} dish{filtered.length !== 1 ? 'es' : ''}
                             {activeCategory !== 'All' && ` in ${activeCategory}`}
                             {search && ` matching "${search}"`}
@@ -105,9 +85,9 @@ const FoodGalleryPage = () => {
                                 ))}
                             </div>
                         ) : (
-                            <div className="text-center py-20 sm:py-24">
-                                <TbToolsKitchen2 className="w-14 h-14 sm:w-16 sm:h-16 text-muted-foreground/30 mx-auto mb-4" />
-                                <p className="text-sm sm:text-base text-muted-foreground font-medium">
+                            <div className="text-center py-16 sm:py-20">
+                                <TbToolsKitchen2 className="w-12 h-12 sm:w-14 sm:h-14 text-muted-foreground/30 mx-auto mb-3" />
+                                <p className="text-sm text-muted-foreground font-medium">
                                     No dishes found. Try a different search.
                                 </p>
                             </div>
@@ -115,7 +95,6 @@ const FoodGalleryPage = () => {
                     </div>
                 </section>
 
-                {/* ── Detail modal ── */}
                 {selectedFood && (
                     <FoodModal food={selectedFood} onClose={handleClose} />
                 )}

@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { HiOutlineFire, HiOutlineClock, HiOutlineTag } from 'react-icons/hi2';
+import { HiOutlineFire, HiOutlineClock } from 'react-icons/hi2';
 import { TbToolsKitchen2 } from 'react-icons/tb';
 
 import FoodImage from '../FoodImage/FoodImage';
@@ -9,37 +9,34 @@ import { CAT_ICONS } from '../FoodConstants/FoodConstants';
 const FoodCard = memo(({ food, onSelect }) => (
     <div
         onClick={() => onSelect(food)}
-        className="group relative cursor-pointer flex flex-col rounded-2xl border border-white/20 dark:border-white/10 bg-card/60 backdrop-blur-xl overflow-hidden
-                   hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-glow-primary dark:hover:shadow-glow-primary
-                   transition-[transform,box-shadow] duration-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] will-change-transform"
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(food); } }}
+        className="group relative flex flex-col rounded-2xl border border-border bg-card/60 overflow-hidden motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-1 transform-gpu cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted shrink-0">
             <FoodImage
                 src={food.image}
                 alt={food.name}
-                className="w-full h-full transition-transform duration-500 group-hover:scale-110"
+                className="w-full h-full motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-105 transform-gpu"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
 
             {food.tag && (
-                <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full
-                                 bg-black/50 text-white text-[10px] font-bold uppercase tracking-wider
-                                 backdrop-blur-sm border border-white/10">
-                    <HiOutlineTag className="w-2.5 h-2.5" />
+                <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/50 text-white text-[10px] font-bold uppercase tracking-wider backdrop-blur-sm border border-white/10 pointer-events-none">
                     {food.tag}
                 </span>
             )}
 
-            <span className="absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-1 rounded-full
-                             bg-black/40 text-white text-[10px] font-semibold backdrop-blur-sm border border-white/10">
+            <span className="absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/40 text-white text-[10px] font-semibold backdrop-blur-sm border border-white/10 pointer-events-none">
                 {CAT_ICONS[food.category]}
                 {food.category}
             </span>
         </div>
 
-        <div className="p-5 flex flex-col gap-3 flex-1">
+        <div className="p-4 flex flex-col gap-2 flex-1">
             <div className="flex items-start justify-between gap-2">
-                <h3 className="font-bold text-foreground text-base leading-tight">{food.name}</h3>
+                <h3 className="font-bold text-foreground text-sm sm:text-base leading-tight">{food.name}</h3>
                 <Stars rating={food.rating} />
             </div>
 
@@ -49,25 +46,19 @@ const FoodCard = memo(({ food, onSelect }) => (
 
             <div className="flex items-center gap-3 pt-2 border-t border-border/50 text-xs text-muted-foreground">
                 <span className="inline-flex items-center gap-1">
-                    <HiOutlineFire className="w-3.5 h-3.5 text-orange-500" />
+                    <HiOutlineFire className="w-3.5 h-3.5 text-orange-500 dark:text-orange-400" />
                     {food.cal} kcal
                 </span>
-                <span className="w-px h-3 bg-border" />
+                <span className="w-px h-3 bg-border" aria-hidden="true" />
                 <span className="inline-flex items-center gap-1">
-                    <HiOutlineClock className="w-3.5 h-3.5 text-blue-500" />
+                    <HiOutlineClock className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
                     {food.prep}
                 </span>
-                <span className="ml-auto text-primary text-xs font-semibold opacity-0 group-hover:opacity-100
-                                 transition-opacity duration-200 flex items-center gap-0.5">
+                <span className="ml-auto text-primary text-xs font-semibold flex items-center gap-0.5 opacity-0 group-hover:opacity-100 motion-safe:transition-opacity motion-safe:duration-150">
                     View <TbToolsKitchen2 className="w-3.5 h-3.5" />
                 </span>
             </div>
         </div>
-
-        <div
-            className="absolute inset-0 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-500"
-            style={{ background: 'radial-gradient(ellipse at 50% 0%, hsl(var(--primary)/0.06), transparent 70%)' }}
-        />
     </div>
 ));
 
