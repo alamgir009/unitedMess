@@ -29,7 +29,7 @@ const Header = memo(({ onMenuClick }) => {
   const { toggleTheme, isDark } = useTheme();
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-3 surface-elevated px-4 depth-top sm:px-6 lg:px-8 transition-colors duration-200">
+    <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-3 bg-card px-4 depth-top sm:px-6 lg:px-8 transition-colors duration-200">
       {/* Mobile sidebar trigger */}
       <button
         type="button"
