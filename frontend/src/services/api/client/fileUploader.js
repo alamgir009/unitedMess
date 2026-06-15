@@ -2,13 +2,16 @@ import { getAccessToken } from './apiClient';
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/api/v1` || 'https://api.unitedmess.uk/api/v1';
 
-export function uploadFile(method, url, formData) {
+const UPLOAD_TIMEOUT = 60000;
+
+export function uploadFile(method, url, formData, { timeout = UPLOAD_TIMEOUT, onProgress } = {}) {
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         const fullUrl = url.startsWith('http') ? url : `${BASE_URL.replace(/\/+$/, '')}/${url.replace(/^\/+/, '')}`;
 
         xhr.open(method.toUpperCase(), fullUrl);
         xhr.withCredentials = true;
+        xhr.timeout = timeout;
 
         const token = getAccessToken();
         if (token) {
@@ -16,6 +19,10 @@ export function uploadFile(method, url, formData) {
         }
 
         xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+        if (typeof onProgress === 'function') {
+            xhr.upload.addEventListener('progress', onProgress);
+        }
 
         xhr.onload = () => {
             try {

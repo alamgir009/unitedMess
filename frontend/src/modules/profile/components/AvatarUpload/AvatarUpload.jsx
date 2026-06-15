@@ -5,6 +5,35 @@ import toast from 'react-hot-toast';
 import { Spinner } from '@/shared/components/ui';
 import { updateAvatar } from '@/modules/auth/store/auth.slice';
 
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+const IMAGE_MAGIC_BYTES = [
+    { bytes: [0xFF, 0xD8, 0xFF], mime: 'image/jpeg' },
+    { bytes: [0x89, 0x50, 0x4E, 0x47], mime: 'image/png' },
+    { bytes: [0x52, 0x49, 0x46, 0x46], mime: 'image/webp' },
+];
+
+async function readMagicBytes(file) {
+    const blob = file.slice(0, 12);
+    const buf = await blob.arrayBuffer();
+    return new Uint8Array(buf);
+}
+
+function matchMagic(bytes, header) {
+    for (let i = 0; i < header.length; i++) {
+        if (bytes[i] !== header[i]) return false;
+    }
+    return true;
+}
+
+function detectMimeFromMagic(bytes) {
+    for (const entry of IMAGE_MAGIC_BYTES) {
+        if (matchMagic(bytes, entry.bytes)) return entry.mime;
+    }
+    if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) return 'image/jpeg';
+    return null;
+}
+
 export const AvatarUpload = () => {
     const dispatch = useDispatch();
     const { user, isLoading } = useSelector((state) => state.auth);
@@ -19,6 +48,20 @@ export const AvatarUpload = () => {
         if (file.size > 5 * 1024 * 1024) {
             toast.error('File size must be less than 5MB');
             return;
+        }
+
+        if (!ALLOWED_TYPES.includes(file.type)) {
+            toast.error('Invalid file type. Only JPEG, PNG, and WEBP images are allowed.');
+            return;
+        }
+
+        const magicBytes = await readMagicBytes(file).catch(() => null);
+        if (magicBytes) {
+            const detectedMime = detectMimeFromMagic(magicBytes);
+            if (!detectedMime) {
+                toast.error('File content does not match a supported image format.');
+                return;
+            }
         }
 
         const objectUrl = URL.createObjectURL(file);

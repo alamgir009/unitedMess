@@ -1,9 +1,16 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const userController = require('../controllers/user.controller');
 const { protect, authorize } = require('../middlewares/auth.middleware');
 const { upload } = require('../middlewares/upload.middleware');
 
 const router = express.Router();
+
+const avatarUploadLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 5,
+    message: { success: false, error: 'Too many upload attempts. Please try again later.' },
+});
 
 // Helper to apply middleware chain
 const adminOnly = [protect, authorize('admin')];
@@ -26,7 +33,7 @@ router.route('/me')
 .patch(...authenticated, userController.updateMe)
 .delete(...authenticated, userController.deactivateMyAccount);
 
-router.patch('/me/avatar', ...authenticated, upload.single('image'), userController.updateAvatar);
+router.patch('/me/avatar', ...authenticated, avatarUploadLimiter, upload.single('image'), userController.updateAvatar);
 router.get('/me/payable', ...authenticated, userController.getPaybleAmountforMeal);
 router.get('/me/payable/gasbill', ...authenticated, userController.getPaybleAmountforGasBill);
 

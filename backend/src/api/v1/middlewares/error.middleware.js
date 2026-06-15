@@ -10,8 +10,15 @@ const errorMiddleware = (err, req, res, next) => {
 
     // Multer errors (file too large, unexpected field, etc.)
     if (err.name === 'MulterError') {
-        const statusCode = err.code === 'LIMIT_FILE_SIZE' ? 400 : 400;
-        error = { statusCode, message: err.message };
+        const statusCode = 400;
+        const multerMessages = {
+            LIMIT_FILE_SIZE: 'File size exceeds the maximum allowed limit (5MB).',
+            LIMIT_FIELD_KEY: 'Field name too long.',
+            LIMIT_FIELD_VALUE: 'Field value too long.',
+            LIMIT_FIELD_COUNT: 'Too many fields.',
+            LIMIT_UNEXPECTED_FILE: 'Unexpected file field.',
+        };
+        error = { statusCode, message: multerMessages[err.code] || err.message };
     }
 
     // Mongoose bad ObjectId
