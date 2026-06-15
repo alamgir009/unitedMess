@@ -163,6 +163,14 @@ export default {
         'gradient-brand-subtle': 'linear-gradient(135deg, var(--btn-brand-subtle-from), var(--btn-brand-subtle-to))',
         'gradient-ghost-border': 'linear-gradient(135deg, var(--btn-ghost-border-from), var(--btn-ghost-border-to))',
       },
+      boxShadow: {
+        'xs': 'var(--shadow-xs)',
+        'sm': 'var(--shadow-sm)',
+        'DEFAULT': 'var(--shadow-sm)',
+        'md': 'var(--shadow-md)',
+        'lg': 'var(--shadow-lg)',
+        'xl': 'var(--shadow-xl)',
+      },
       borderRadius: {
         lg: "var(--radius-lg)",
         xl: "var(--radius-xl)",

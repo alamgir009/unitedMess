@@ -5,7 +5,7 @@ const StatPill = React.memo(({ icon: Icon, label, value, color, trend, compact }
   <div
     className={cn(
       'flex items-center gap-3 rounded-lg border border-border',
-      'bg-card text-card-foreground',
+      'surface-elevated text-card-foreground',
       'shadow-sm overflow-hidden min-w-0',
       'transition-all duration-[var(--duration-base)] ease-out',
       'transform-gpu hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md',

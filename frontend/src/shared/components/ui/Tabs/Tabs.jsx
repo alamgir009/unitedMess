@@ -42,11 +42,11 @@ TabsTrigger.displayName = 'TabsTrigger';
       },
       pill: {
         base: 'text-muted-foreground hover:text-foreground rounded-lg',
-        active: 'bg-background text-foreground shadow-sm rounded-lg font-semibold',
+        active: 'bg-background text-foreground shadow-sm rounded-lg font-semibold relative before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-4 before:w-[3px] before:rounded-r-full before:bg-primary',
       },
       glass: {
         base: 'text-muted-foreground hover:text-foreground rounded-lg',
-        active: 'bg-card text-foreground shadow-sm rounded-lg font-semibold',
+        active: 'surface-elevated text-foreground shadow-sm rounded-lg font-semibold',
       },
     };
 

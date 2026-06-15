@@ -10,7 +10,7 @@ const EmptyState = ({
   return (
     <div className={cn('flex flex-col items-center justify-center py-16 px-4 text-center', className)}>
       {Icon && (
-        <div className="p-4 rounded-2xl bg-muted/50 text-muted-foreground mb-4">
+        <div className="p-4 rounded-2xl surface-raised text-muted-foreground mb-4">
           <Icon className="w-10 h-10" aria-hidden="true" />
         </div>
       )}

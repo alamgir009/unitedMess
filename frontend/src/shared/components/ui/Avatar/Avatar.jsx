@@ -49,12 +49,12 @@ const Avatar = ({
     };
 
     const colorPalette = [
-        'from-blue-500 to-indigo-500',
-        'from-violet-500 to-purple-500',
-        'from-emerald-500 to-teal-500',
-        'from-rose-500 to-pink-500',
-        'from-orange-500 to-amber-500',
-        'from-cyan-500 to-sky-500',
+        'avatar-gradient-1',
+        'avatar-gradient-2',
+        'avatar-gradient-3',
+        'avatar-gradient-4',
+        'avatar-gradient-5',
+        'avatar-gradient-6',
     ];
     const colorIndex = name
         ? name.charCodeAt(0) % colorPalette.length
@@ -94,7 +94,7 @@ const Avatar = ({
                 ) : name ? (
                     <span className={cn(
                         'w-full h-full flex items-center justify-center text-white font-bold',
-                        `bg-gradient-to-br ${colorPalette[colorIndex]}`,
+                        colorPalette[colorIndex],
                     )}>
                         {getInitials(name)}
                     </span>

@@ -50,9 +50,9 @@ const VirtualizedTable = ({
   if (rows.length === 0) return null;
 
   return (
-    <div className={cn('border border-border rounded-lg overflow-x-auto bg-card', className)}>
+    <div className={cn('border border-border rounded-lg overflow-x-auto surface-elevated shadow-sm', className)}>
       <div
-        className="flex items-center border-b border-border bg-muted/30 text-xs font-semibold uppercase tracking-widest text-muted-foreground"
+        className="flex items-center border-b border-border surface-raised text-xs font-semibold uppercase tracking-widest text-muted-foreground"
         style={{ height: headerHeight }}
       >
         {columns.map((col) => (

@@ -113,7 +113,7 @@ const Dropdown = ({
               'absolute z-dropdown mt-2 py-1',
               width,
               align === 'right' ? 'right-0' : 'left-0',
-              'bg-card border border-border rounded-lg shadow-lg',
+              'surface-overlay border border-border rounded-lg shadow-lg',
             )}
           >
             {items.map((item, i) => {

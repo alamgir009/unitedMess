@@ -106,7 +106,7 @@ const Modal = ({
             className={cn(
               'relative w-full modal-gpu',
               sizes[size],
-              'bg-card border border-border rounded-xl shadow-xl',
+              'surface-elevated border border-border rounded-xl shadow-lg',
               'focus:outline-none',
               'max-h-[90vh] flex flex-col',
               'modal-animate',
@@ -122,7 +122,7 @@ const Modal = ({
             ) : (
               <>
                 {(title || showCloseButton) && (
-                  <div className="flex items-center justify-between p-6 pb-0 flex-shrink-0">
+                  <div className="flex items-center justify-between p-6 pb-0 flex-shrink-0 depth-top">
                     <div className="min-w-0">
                       {title && (
                         <h2 id="modal-title" className="text-lg font-semibold text-foreground">

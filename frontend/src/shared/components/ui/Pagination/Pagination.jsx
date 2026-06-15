@@ -38,7 +38,7 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
   };
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-6 mt-6 rounded-lg border border-border bg-card">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-6 mt-6 rounded-lg border border-border surface-raised">
       <div className="flex items-center gap-3">
         <span className="text-sm font-medium text-muted-foreground">Rows per page:</span>
         <div className="relative">

@@ -11,10 +11,10 @@ const Card = forwardRef(({
   ...props
 }, ref) => {
   const variants = {
-    default: 'bg-card text-card-foreground border border-border shadow-sm rounded-lg',
-    glass: 'bg-card/80 backdrop-blur-sm text-foreground border border-border rounded-lg',
-    elevated: 'bg-card text-card-foreground border border-border shadow-lg rounded-lg',
-    flat: 'bg-muted/50 text-foreground rounded-lg',
+    default: 'surface-elevated text-card-foreground border border-border shadow-sm rounded-lg',
+    glass: 'bg-[var(--surface-elevated)]/80 backdrop-blur-sm text-foreground border border-border rounded-lg',
+    elevated: 'surface-elevated text-card-foreground border border-border shadow-lg rounded-lg',
+    flat: 'surface-raised text-foreground border-0 shadow-none rounded-lg',
     bordered: 'bg-transparent text-foreground border-2 border-border rounded-lg',
   };
 
@@ -50,7 +50,7 @@ const Card = forwardRef(({
 Card.displayName = 'Card';
 
 export const CardHeader = ({ className = '', children, ...props }) => (
-  <div className={cn('flex flex-col space-y-1.5 pb-4', className)} {...props}>
+  <div className={cn('flex flex-col space-y-1.5 pb-4 relative', className)} {...props}>
     {children}
   </div>
 );

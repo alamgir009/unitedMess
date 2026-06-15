@@ -186,8 +186,7 @@ const Navbar = () => {
 
             <Link
               to="/register"
-              className="hidden md:inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-semibold text-white transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              style={{ background: 'var(--gradient-primary)' }}
+              className="hidden md:inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-gradient-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               Get Started
             </Link>
@@ -244,8 +243,7 @@ const Navbar = () => {
                 </Link>
                 <Link
                   to="/register"
-                  className="px-4 py-2.5 rounded-lg text-sm font-semibold text-center text-white transition-opacity shadow-sm"
-                  style={{ background: 'var(--gradient-primary)' }}
+                  className="px-4 py-2.5 rounded-lg text-sm font-semibold text-center text-white bg-gradient-primary transition-opacity shadow-sm"
                 >
                   Get Started
                 </Link>

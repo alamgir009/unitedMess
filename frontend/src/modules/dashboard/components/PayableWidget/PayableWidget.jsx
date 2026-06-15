@@ -52,7 +52,7 @@ const PayableWidget = ({
     const totalOutstanding = (mealPaid ? 0 : safeMeal) + (gasPaid ? 0 : safeGas);
 
     return (
-        <div className="bg-gradient-to-br from-indigo-600 via-indigo-600 to-purple-700 dark:from-indigo-950/40 dark:to-purple-950/40 border border-indigo-500/20 dark:border-indigo-500/30 rounded-2xl p-6 relative overflow-hidden shadow-sm h-full flex flex-col transform-gpu hover:shadow-md transition-all duration-200 ease-out contain-layout">
+        <div className="rounded-2xl p-6 relative overflow-hidden shadow-sm h-full flex flex-col transform-gpu hover:shadow-md transition-all duration-200 ease-out contain-layout border border-white/10" style={{ background: 'var(--gradient-primary)' }}>
             {/* Background decoration */}
             <div className="absolute top-0 right-0 p-8 opacity-[0.04] dark:opacity-[0.08] pointer-events-none text-white">
                 <FiCreditCard size={96} />

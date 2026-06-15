@@ -32,23 +32,24 @@ const Input = forwardRef(({
 
   const variants = {
     default: cn(
-      'bg-card text-foreground placeholder:text-muted-foreground',
-      'border rounded-lg caret-foreground',
+      'surface-elevated text-foreground placeholder:text-muted-foreground',
+      'border rounded-lg caret-foreground depth-top',
       'focus:outline-none focus:ring-2',
       'transition-all duration-[var(--duration-fast)]',
-      '[&:-webkit-autofill]:bg-card [&:-webkit-autofill]:text-foreground',
+      '[&:-webkit-autofill]:bg-[var(--surface-elevated)] [&:-webkit-autofill]:text-foreground',
       stateBorder,
+      error ? 'focus:shadow-[var(--inset-shadow),0_0_0_3px_rgba(220,38,38,0.1)]' : '',
     ),
     filled: cn(
-      'bg-muted text-foreground placeholder:text-muted-foreground',
+      'surface-raised text-foreground placeholder:text-muted-foreground',
       'border border-transparent rounded-lg caret-foreground',
-      'focus:bg-card focus:outline-none focus:ring-2',
+      'focus:surface-elevated focus:outline-none focus:ring-2',
       'transition-all duration-[var(--duration-fast)]',
       '[&:-webkit-autofill]:bg-muted [&:-webkit-autofill]:text-foreground',
       stateBorder,
     ),
     glass: cn(
-      'bg-card/60 backdrop-blur-sm text-foreground placeholder:text-muted-foreground',
+      'surface-elevated/60 backdrop-blur-sm text-foreground placeholder:text-muted-foreground',
       'border rounded-lg caret-foreground',
       'focus:outline-none focus:ring-2',
       'transition-all duration-[var(--duration-fast)]',
