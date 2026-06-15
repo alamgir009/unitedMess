@@ -39,18 +39,11 @@ const StatCard = memo(({ value, label, Icon, delay }) => (
 ));
 StatCard.displayName = 'StatCard';
 
-const TeamCard = memo(({ name, role, bio, avatar, delay }) => (
+const TeamCard = memo(({ name, role, bio, delay }) => (
     <Reveal delay={delay}>
         <div className="group flex flex-col h-full rounded-2xl border border-slate-200/60 dark:border-slate-800/40 bg-white/70 dark:bg-slate-900/50 backdrop-blur-none md:backdrop-blur-md p-5 motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-1 transform-gpu shadow-sm">
-            <div className="relative w-24 h-24 rounded-full overflow-hidden mx-auto mb-4 border border-slate-200/80 dark:border-slate-800/60 shadow-sm shrink-0">
-                <img
-                    src={avatar}
-                    alt={name}
-                    loading="lazy"
-                    width={96}
-                    height={96}
-                    className="w-full h-full object-cover"
-                />
+            <div className="w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center bg-gradient-primary border border-slate-200/80 dark:border-slate-800/60 shadow-sm shrink-0 text-white text-2xl font-bold">
+                {name.charAt(0)}
             </div>
             <div className="text-center flex flex-col gap-1 flex-1">
                 <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight">{name}</h3>
