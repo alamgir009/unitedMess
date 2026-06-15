@@ -85,7 +85,7 @@ const FoodGalleryPage = () => {
                                 ))}
                             </div>
                         ) : (
-                            <div className="text-center py-16 sm:py-20">
+                            <div className="card-base rounded-xl p-8 sm:p-10 text-center">
                                 <TbToolsKitchen2 className="w-12 h-12 sm:w-14 sm:h-14 text-muted-foreground/30 mx-auto mb-3" />
                                 <p className="text-sm text-muted-foreground font-medium">
                                     No dishes found. Try a different search.

@@ -268,7 +268,7 @@ const FAQItem = memo(({ q, a }) => {
   const shouldReduceMotion = useReducedMotion();
   return (
     <div
-      className="rounded-xl border border-border/70 bg-card/60 motion-safe:transition-colors motion-safe:duration-200 hover:border-border overflow-hidden lg:backdrop-blur-sm"
+      className="rounded-xl card-base motion-safe:transition-colors motion-safe:duration-200 hover:border-border overflow-hidden lg:backdrop-blur-sm"
       onClick={() => setOpen((v) => !v)}
       role="button"
       aria-expanded={open}
@@ -310,7 +310,7 @@ const FeatureCard = memo(({ item, index }) => {
   const t = toneMap[item.tone];
   return (
     <InView delay={0.05 * index}>
-      <div className={`group h-full rounded-xl border border-border/60 bg-card/60 p-4 motion-safe:transition-[transform,opacity] motion-safe:duration-300 lg:backdrop-blur-sm motion-safe:hover:scale-[1.02] motion-reduce:hover:scale-100 active:scale-[0.98] transform-gpu sm:rounded-2xl sm:p-5 ${t.border}`}>
+      <div className={`group h-full card-base p-4 motion-safe:transition-[transform,opacity] motion-safe:duration-300 lg:backdrop-blur-sm motion-safe:hover:scale-[1.02] motion-reduce:hover:scale-100 active:scale-[0.98] transform-gpu sm:rounded-2xl sm:p-5 ${t.border}`}>
         <div className={`mb-3 inline-flex rounded-xl bg-gradient-to-br ${t.bg} p-3 sm:rounded-xl`}>
           <span className={t.text}>{item.icon}</span>
         </div>
@@ -340,7 +340,7 @@ const HeroCard = memo(() => {
         initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 20, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-        className="relative overflow-hidden rounded-xl border border-border/60 bg-card/80 shadow-[0_20px_60px_-20px_rgba(15,23,42,0.35)] dark:shadow-[0_20px_60px_-20px_rgba(0,0,0,0.6)] lg:backdrop-blur-2xl sm:rounded-[2.25rem] sm:shadow-[0_40px_100px_-30px_rgba(15,23,42,0.4)] dark:sm:shadow-[0_40px_100px_-30px_rgba(0,0,0,0.7)]"
+        className="relative overflow-hidden card-elevated depth-lg lg:backdrop-blur-2xl sm:rounded-[2.25rem]"
       >
         <div className="flex items-center justify-between border-b border-border/50 px-3 py-2.5 sm:px-5 sm:py-3">
           <div className="flex items-center gap-2">
@@ -368,14 +368,14 @@ const HeroCard = memo(() => {
               />
             </div>
             <div className="flex flex-col gap-2 sm:col-span-2 sm:gap-3">
-              <div className="flex-1 rounded-xl border border-border/60 bg-background/70 p-3 sm:rounded-2xl sm:p-4">
+              <div className="flex-1 rounded-xl glass p-3 sm:rounded-2xl sm:p-4">
                 <p className="text-caption font-semibold uppercase tracking-widest text-muted-foreground">Monthly total</p>
                 <p className="mt-1 text-xl font-bold tracking-tight text-foreground sm:mt-2 sm:text-2xl">₹18,420</p>
                 <div className="mt-1 flex items-center gap-1 sm:mt-2">
                   <span className="rounded-full bg-success-bg px-2 py-0.5 text-caption font-bold text-success-text">↑ 12.4%</span>
                 </div>
               </div>
-              <div className="flex-1 rounded-xl border border-border/60 bg-background/70 p-3 sm:rounded-2xl sm:p-4">
+              <div className="flex-1 rounded-xl glass p-3 sm:rounded-2xl sm:p-4">
                 <p className="text-caption font-semibold uppercase tracking-widest text-muted-foreground">Meal rate</p>
                 <p className="mt-1 text-xl font-bold tracking-tight text-foreground sm:mt-2 sm:text-2xl">94%</p>
                 <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted sm:mt-2">
@@ -385,7 +385,7 @@ const HeroCard = memo(() => {
             </div>
           </div>
 
-          <div className="rounded-xl border border-border/60 bg-background/60 p-3 sm:rounded-2xl sm:p-4">
+          <div className="rounded-xl glass p-3 sm:rounded-2xl sm:p-4">
             <div className="mb-2 flex items-center justify-between sm:mb-3">
               <span className="text-caption font-semibold text-muted-foreground">Weekly expense trend</span>
               <span className="text-caption font-semibold text-foreground">Apr 2025</span>
@@ -420,7 +420,7 @@ const HeroCard = memo(() => {
               { label: 'Members', value: '34' },
               { label: 'Pending', value: '6 dues' },
             ].map(({ label, value }) => (
-              <div key={label} className="rounded-lg border border-border/60 bg-background/60 p-2.5 text-center sm:rounded-xl sm:p-3">
+              <div key={label} className="rounded-lg glass p-2.5 text-center sm:rounded-xl sm:p-3">
                 <p className="text-caption font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
                 <p className="mt-1 text-xs font-bold text-foreground sm:text-sm">{value}</p>
               </div>
@@ -435,7 +435,7 @@ const HeroCard = memo(() => {
         transition={{ duration: 0.6, delay: 0.7 }}
         className="absolute -right-2 top-16 hidden xl:block"
       >
-        <div className="w-48 rounded-2xl border border-border/70 bg-card/95 p-3 shadow-xl lg:backdrop-blur-xl sm:w-52 sm:p-4">
+        <div className="w-48 card-elevated depth-lg rounded-2xl p-3 lg:backdrop-blur-xl sm:w-52 sm:p-4">
           <div className="mb-2 flex items-center gap-2">
             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-success to-success/80">
               <svg viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2" className="h-3 w-3">
@@ -455,7 +455,7 @@ const HeroCard = memo(() => {
         transition={{ duration: 0.6, delay: 0.9 }}
         className="absolute -left-2 bottom-20 hidden xl:block"
       >
-        <div className="w-48 rounded-2xl border border-border/70 bg-card/95 p-3 shadow-xl lg:backdrop-blur-xl sm:w-52 sm:p-4">
+        <div className="w-48 card-elevated depth-lg rounded-2xl p-3 lg:backdrop-blur-xl sm:w-52 sm:p-4">
           <div className="mb-2 flex items-center gap-2">
             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/80">
               <svg viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2" className="h-3 w-3">
@@ -589,7 +589,7 @@ const HomePage = () => {
             className="mt-6 grid grid-cols-2 gap-2 sm:mt-8 sm:gap-3"
           >
             {stats.map((s) => (
-              <div key={s.label} className="rounded-xl border border-border/60 bg-card/60 px-3 py-3 sm:rounded-2xl sm:px-4 sm:py-4">
+              <div key={s.label} className="rounded-xl card-base px-3 py-3 sm:rounded-2xl sm:px-4 sm:py-4">
                 <div className="text-xl font-bold tabular-nums tracking-tight text-foreground sm:text-[1.6rem]">
                   <Counter to={s.value} prefix={s.prefix} suffix={s.suffix} />
                 </div>
@@ -605,7 +605,7 @@ const HomePage = () => {
       <Ticker />
 
       <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
-        <div className="rounded-xl border border-border/60 bg-card/50 px-5 py-4 sm:rounded-[2rem] sm:px-6 sm:py-6">
+        <div className="rounded-xl glass px-5 py-4 sm:rounded-[2rem] sm:px-6 sm:py-6">
           <p className="mb-4 text-center text-caption font-bold uppercase tracking-[0.28em] text-muted-foreground sm:mb-6">Security & compliance</p>
           <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-10">
             {trustLogos.map(({ label, sub }) => (
@@ -676,7 +676,7 @@ const HomePage = () => {
                 className={`w-full rounded-xl border p-3 text-left motion-safe:transition-all motion-safe:duration-200 sm:rounded-2xl sm:p-4 ${
                   activeTab === idx
                     ? 'border-primary/50 bg-primary/10'
-                    : 'border-border/60 bg-card/50 hover:border-border hover:bg-card/70'
+                    : 'border-border/60 glass hover:border-border'
                 }`}
               >
                 <div className="flex items-start gap-3 sm:gap-4">
@@ -705,7 +705,7 @@ const HomePage = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: -12 }}
               transition={{ duration: 0.3 }}
-              className="overflow-hidden rounded-xl border border-border/60 bg-card/60 shadow-xl sm:rounded-2xl sm:shadow-2xl"
+              className="overflow-hidden card-elevated depth-lg rounded-xl sm:rounded-2xl"
             >
               <img
                 src={steps[activeTab].image}
@@ -736,7 +736,7 @@ const HomePage = () => {
           </h2>
         </InView>
         <InView>
-          <div className="overflow-x-auto rounded-xl border border-border/60 bg-card/60 sm:rounded-2xl">
+          <div className="overflow-x-auto rounded-xl card-base sm:rounded-2xl">
             <div className="min-w-[540px]">
               <div className="grid grid-cols-4 border-b border-border/50 bg-muted/30 px-4 py-3 text-caption font-bold uppercase tracking-widest text-muted-foreground sm:px-6 sm:py-4">
                 <span>Feature</span>
@@ -810,7 +810,7 @@ const HomePage = () => {
             </div>
           </InView>
           <InView delay={0.1}>
-            <div className="rounded-xl border border-border/60 bg-card/60 p-4 sm:rounded-2xl sm:p-5">
+            <div className="rounded-xl card-base p-4 sm:rounded-2xl sm:p-5">
               <Calendar />
             </div>
           </InView>
@@ -831,7 +831,7 @@ const HomePage = () => {
         <div className="columns-1 gap-4 sm:columns-2 sm:gap-5 lg:columns-3">
           {testimonials.map((item, i) => (
             <InView key={item.name} delay={0.05 * i} className="mb-3 break-inside-avoid sm:mb-4">
-              <blockquote className="rounded-xl border border-border/60 bg-card/60 p-5 sm:rounded-2xl sm:p-7">
+              <blockquote className="rounded-xl card-base p-5 sm:rounded-2xl sm:p-7">
                 <div className="mb-3 flex gap-1 text-warning-text">
                   {Array.from({ length: 5 }).map((_, j) => (
                     <svg key={j} viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3 sm:h-3.5 sm:w-3.5">
@@ -876,7 +876,7 @@ const HomePage = () => {
                     { label: 'Push alerts', desc: 'Real-time notifications' },
                     { label: 'Biometric auth', desc: 'Face ID / fingerprint' },
                   ].map(({ label, desc }) => (
-                    <div key={label} className="rounded-xl border border-border/60 bg-background/60 p-2.5 sm:rounded-xl sm:p-3">
+                    <div key={label} className="rounded-xl glass p-2.5 sm:rounded-xl sm:p-3">
                       <p className="text-label font-bold text-foreground">{label}</p>
                       <p className="text-caption text-muted-foreground">{desc}</p>
                     </div>
@@ -896,7 +896,7 @@ const HomePage = () => {
                       decoding="async"
                     />
                   </div>
-                  <div className="absolute -bottom-3 -right-6 rounded-xl border border-border/70 bg-card/95 px-3 py-2 shadow-xl sm:-bottom-4 sm:-right-8 sm:rounded-2xl sm:px-4 sm:py-3">
+                  <div className="absolute -bottom-3 -right-6 card-elevated depth-lg rounded-xl px-3 py-2 sm:-bottom-4 sm:-right-8 sm:rounded-2xl sm:px-4 sm:py-3">
                     <p className="text-caption font-bold text-foreground">₹84.30 / meal</p>
                     <p className="text-caption text-muted-foreground">Today&apos;s cost</p>
                   </div>
