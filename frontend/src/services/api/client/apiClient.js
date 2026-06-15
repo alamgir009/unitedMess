@@ -55,6 +55,10 @@ apiClient.interceptors.request.use(
         if (inMemoryAccessToken) {
             config.headers['Authorization'] = `Bearer ${inMemoryAccessToken}`;
         }
+        // Let browser auto-set Content-Type with boundary for FormData
+        if (config.data instanceof FormData) {
+            delete config.headers['Content-Type'];
+        }
         return config;
     },
     (error) => Promise.reject(error)
