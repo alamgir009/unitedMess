@@ -11,6 +11,17 @@ const Payment = require('../../../models/Payment.model');
 const User = require('../../../models/User.model');
 const notificationService = require('../../../services/notification.service');
 const { getBillingPeriod } = require('../../../utils/helpers/date.helper');
+const cloudinary = require('cloudinary').v2;
+const fs = require('fs');
+const path = require('path');
+
+// Magic-byte validators for post-upload integrity check
+const MAGIC_VALIDATORS = {
+    'image/jpeg': (buf) => buf.length >= 3 && buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF,
+    'image/png':  (buf) => buf.length >= 4 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47,
+    'image/webp': (buf) => buf.length >= 12 && buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46
+                      && buf[8] === 0x57 && buf[9] === 0x45 && buf[10] === 0x42 && buf[11] === 0x50,
+};
 
 /**
  * POST /payments
@@ -264,11 +275,64 @@ const uploadQrCode = asyncHandler(async (req, res) => {
         throw new AppError('Please upload an image file for QR code', 400);
     }
 
-    let qrCodeUrl = req.file.path;
-    // Disk storage fallback check
-    if (!req.file.path.startsWith('http')) {
-        const relativePath = req.file.path.replace(/\\/g, '/').split('/uploads/')[1];
-        qrCodeUrl = `${req.protocol}://${req.get('host')}/uploads/${relativePath}`;
+    // Post-upload magic-byte integrity check
+    if (req.file.path && !/^https?:\/\//.test(req.file.path)) {
+        try {
+            const fd = fs.openSync(req.file.path, 'r');
+            const header = Buffer.alloc(12);
+            const bytesRead = fs.readSync(fd, header, 0, 12, 0);
+            fs.closeSync(fd);
+
+            const validator = MAGIC_VALIDATORS[req.file.mimetype];
+            const valid = validator && bytesRead >= 3 && validator(new Uint8Array(header.buffer, header.byteOffset, bytesRead));
+            if (!valid) {
+                try { fs.unlinkSync(req.file.path); } catch {}
+                throw new AppError('Uploaded file content does not match a supported image format.', 400);
+            }
+        } catch (error) {
+            try { fs.unlinkSync(req.file.path); } catch {}
+            if (error.isOperational) throw error;
+            console.error('QR code file integrity check failed:', error);
+            throw new AppError('Uploaded file content integrity check failed.', 400);
+        }
+    }
+
+    // Determine if Cloudinary is configured
+    const isCloudinaryConfigured = config.cloudinary &&
+                                  config.cloudinary.cloud_name &&
+                                  config.cloudinary.api_key &&
+                                  config.cloudinary.api_secret;
+
+    let qrCodeUrl;
+    if (isCloudinaryConfigured) {
+        try {
+            const ext = path.extname(req.file.originalname).toLowerCase();
+            const base = path.basename(req.file.originalname, ext);
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+            const publicId = `${base}-${uniqueSuffix}`;
+
+            const result = await cloudinary.uploader.upload(req.file.path, {
+                folder: 'unitedMess/qrcodes',
+                public_id: publicId,
+            });
+            qrCodeUrl = result.secure_url;
+
+            // Delete temp local file
+            try { fs.unlinkSync(req.file.path); } catch {}
+        } catch (error) {
+            try { fs.unlinkSync(req.file.path); } catch {}
+            console.error('Cloudinary QR code upload failed:', error);
+            throw new AppError('Failed to upload QR code image to cloud storage.', 500);
+        }
+    } else {
+        // Disk storage: convert filesystem path to static URL
+        const normalized = req.file.path.replace(/\\/g, '/');
+        const uploadsIdx = normalized.indexOf('/uploads/');
+        const relativePath = uploadsIdx !== -1
+            ? normalized.substring(uploadsIdx)
+            : '/uploads/qrcodes/' + (req.file.filename || '');
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        qrCodeUrl = `${baseUrl}${relativePath}`;
     }
 
     let upiConfig = await UpiConfig.findOne();

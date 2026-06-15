@@ -768,7 +768,31 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
               savingUpiConfig={savingUpiConfig}
               onUpiIdChange={setEditUpiId}
               onMerchantNameChange={setEditMerchantName}
-              onQrFileChange={setQrFile}
+              onQrFileChange={(file) => {
+                if (!file) return;
+                if (file.size > 5 * 1024 * 1024) {
+                  toast.error('File size must be less than 5MB');
+                  return;
+                }
+                const ext = file.name ? file.name.substring(file.name.lastIndexOf('.')).toLowerCase() : '';
+                const EXT_TO_MIME = {
+                    '.jpg': 'image/jpeg',
+                    '.jpeg': 'image/jpeg',
+                    '.png': 'image/png',
+                    '.webp': 'image/webp',
+                    '.jfif': 'image/jpeg'
+                };
+                let detectedType = file.type;
+                if (!detectedType || detectedType === 'application/octet-stream' || detectedType === 'image/jpg') {
+                    detectedType = EXT_TO_MIME[ext] || '';
+                }
+                const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+                if (!ALLOWED_TYPES.includes(detectedType)) {
+                    toast.error('Invalid file type. Only JPEG, PNG, and WEBP images are allowed.');
+                    return;
+                }
+                setQrFile(file);
+              }}
               onCancel={() => setIsAdminUpiEdit(false)}
               onSubmit={handleUpdateUpiConfig}
             />

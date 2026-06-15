@@ -7,6 +7,7 @@ const cloudinary = require('cloudinary').v2;
 const AppError = require('../../../utils/errors/AppError');
 const fs = require('fs');
 const path = require('path');
+const config = require('../../../config');
 
 // Magic-byte validators for post-upload integrity check
 const MAGIC_VALIDATORS = {
@@ -123,8 +124,10 @@ const updateAvatar = asyncHandler(async (req, res) => {
                 throw new AppError('Uploaded file content does not match a supported image format.', 400);
             }
         } catch (error) {
+            try { fs.unlinkSync(req.file.path); } catch {}
             if (error.isOperational) throw error;
             console.error('File integrity check failed:', error);
+            throw new AppError('Uploaded file content integrity check failed.', 400);
         }
     }
 
@@ -147,10 +150,38 @@ const updateAvatar = asyncHandler(async (req, res) => {
         }
     }
 
-    // Normalize image path: disk storage returns filesystem path → convert to full URL
-    let imageUrl = req.file.path;
-    if (imageUrl && !/^https?:\/\//.test(imageUrl)) {
-        const normalized = imageUrl.replace(/\\/g, '/');
+    // Determine if Cloudinary is configured
+    const isCloudinaryConfigured = config.cloudinary && 
+                                  config.cloudinary.cloud_name && 
+                                  config.cloudinary.api_key && 
+                                  config.cloudinary.api_secret;
+
+    let imageUrl;
+    if (isCloudinaryConfigured) {
+        try {
+            const ext = path.extname(req.file.originalname).toLowerCase();
+            const base = path.basename(req.file.originalname, ext);
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+            const publicId = `${base}-${uniqueSuffix}`;
+
+            const result = await cloudinary.uploader.upload(req.file.path, {
+                folder: 'unitedMess/avatars',
+                public_id: publicId,
+                transformation: [{ width: 400, height: 400, crop: 'fill', gravity: 'face' }],
+            });
+            imageUrl = result.secure_url;
+            
+            // Delete temp local file
+            try { fs.unlinkSync(req.file.path); } catch {}
+        } catch (error) {
+            // Delete temp local file
+            try { fs.unlinkSync(req.file.path); } catch {}
+            console.error('Cloudinary upload failed:', error);
+            throw new AppError('Failed to upload image to cloud storage.', 500);
+        }
+    } else {
+        // Disk storage: convert filesystem path to static URL
+        const normalized = req.file.path.replace(/\\/g, '/');
         const uploadsIdx = normalized.indexOf('/uploads/');
         const relativePath = uploadsIdx !== -1
             ? normalized.substring(uploadsIdx)

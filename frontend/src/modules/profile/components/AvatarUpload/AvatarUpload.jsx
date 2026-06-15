@@ -50,7 +50,21 @@ export const AvatarUpload = () => {
             return;
         }
 
-        if (!ALLOWED_TYPES.includes(file.type)) {
+        const ext = file.name ? file.name.substring(file.name.lastIndexOf('.')).toLowerCase() : '';
+        const EXT_TO_MIME = {
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.webp': 'image/webp',
+            '.jfif': 'image/jpeg'
+        };
+
+        let detectedType = file.type;
+        if (!detectedType || detectedType === 'application/octet-stream' || detectedType === 'image/jpg') {
+            detectedType = EXT_TO_MIME[ext] || '';
+        }
+
+        if (!ALLOWED_TYPES.includes(detectedType)) {
             toast.error('Invalid file type. Only JPEG, PNG, and WEBP images are allowed.');
             return;
         }
