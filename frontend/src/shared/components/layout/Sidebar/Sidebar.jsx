@@ -50,15 +50,15 @@ const Sidebar = ({ isOpen, onClose }) => {
       'group relative flex items-center gap-3 px-3 py-2.5 min-h-[44px] text-sm rounded-lg transition-all duration-150',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
       isActive
-        ? 'bg-primary/[0.12] text-primary font-semibold ring-1 ring-primary/10 before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-5 before:w-1 before:rounded-r-full before:bg-primary'
-        : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground font-medium',
+        ? 'bg-primary/10 text-primary font-semibold before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-5 before:w-1 before:rounded-r-full before:bg-primary'
+        : 'text-muted-foreground hover:bg-muted hover:text-foreground font-medium',
     );
 
   return (
     <>
       <div
         className={cn(
-          'fixed inset-0 z-[45] bg-overlay transition-opacity lg:hidden',
+          'fixed inset-0 z-[45] bg-black/50 transition-opacity lg:hidden', /* z-[45]: above Header z-40 on mobile */
           isOpen ? 'opacity-100 ease-out duration-[var(--duration-slow)]' : 'opacity-0 ease-in duration-[var(--duration-base)] pointer-events-none',
         )}
         onClick={onClose}
@@ -67,13 +67,13 @@ const Sidebar = ({ isOpen, onClose }) => {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 w-64 surface-raised border-r border-border text-foreground shadow-sm',
+          'fixed inset-y-0 left-0 w-64 bg-card border-r border-border text-foreground',
           'z-50 transition-all duration-[var(--duration-slow)] transform lg:translate-x-0 lg:static lg:inset-auto lg:flex lg:flex-col lg:z-auto lg:transition-none',
           isOpen ? 'translate-x-0' : '-translate-x-full',
         )}
         aria-label="Main navigation"
       >
-          <div className="flex h-16 shrink-0 items-center justify-between px-6 border-b border-border depth-top">
+          <div className="flex h-16 shrink-0 items-center justify-between px-6 bg-muted/30 border-b border-border">
             <div className="flex items-center gap-1.5">
               <img
                 src="/assets/icons/resize_logo.png"
