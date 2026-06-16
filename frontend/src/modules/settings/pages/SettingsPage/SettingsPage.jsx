@@ -45,6 +45,8 @@ const SettingCard = ({
     currentValue,
     currentLoading,
     onSubmit,
+    iconBg = 'bg-muted border-transparent',
+    iconColor = 'text-muted-foreground',
 }) => {
     const [value, setValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -75,11 +77,11 @@ const SettingCard = ({
     };
 
     return (
-        <div className="flex flex-col rounded-xl border border-border bg-card shadow-sm">
+        <div className="flex flex-col rounded-xl border border-border bg-card depth-top motion-safe:transition-shadow motion-safe:duration-200 hover:shadow-md">
             <div className="p-6 flex flex-col flex-1 gap-4">
                 <div className="flex items-start gap-3">
-                    <div className="shrink-0 flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                        <Icon className="w-5 h-5 text-muted-foreground" strokeWidth={2} />
+                    <div className={`shrink-0 flex h-10 w-10 items-center justify-center rounded-lg border ${iconBg}`}>
+                        <Icon className={`w-5 h-5 ${iconColor}`} strokeWidth={2} />
                     </div>
                     <div className="min-w-0">
                         <h3 className="text-sm font-semibold text-foreground leading-tight">
@@ -201,6 +203,14 @@ const SettingsPage = () => {
         await fetchCurrentValues();
     }, [fetchCurrentValues]);
 
+    const TONES = [
+        { iconBg: 'bg-amber-500/15 border-amber-500/25', iconColor: 'text-amber-600 dark:text-amber-400' },
+        { iconBg: 'bg-orange-500/15 border-orange-500/25', iconColor: 'text-orange-600 dark:text-orange-400' },
+        { iconBg: 'bg-sky-500/15 border-sky-500/25', iconColor: 'text-sky-600 dark:text-sky-400' },
+        { iconBg: 'bg-violet-500/15 border-violet-500/25', iconColor: 'text-violet-600 dark:text-violet-400' },
+        { iconBg: 'bg-emerald-500/15 border-emerald-500/25', iconColor: 'text-emerald-600 dark:text-emerald-400' },
+    ];
+
     const cards = [
         {
             title: 'Guest Meal Charge',
@@ -211,6 +221,7 @@ const SettingsPage = () => {
             buttonLabel: 'Update Charge',
             currentValue: currentValues?.chargePerGuestMeal,
             onSubmit: handleUpdateGuestMeal,
+            tone: TONES[0],
         },
         {
             title: 'Cooking Charge',
@@ -221,6 +232,7 @@ const SettingsPage = () => {
             buttonLabel: 'Update Charge',
             currentValue: currentValues?.cookingCharge,
             onSubmit: handleUpdateCookingCharge,
+            tone: TONES[1],
         },
         {
             title: 'Water Bill',
@@ -231,6 +243,7 @@ const SettingsPage = () => {
             buttonLabel: 'Distribute Bill',
             currentValue: currentValues?.waterBill,
             onSubmit: handleUpdateWaterBill,
+            tone: TONES[2],
         },
         {
             title: 'Gas Bill',
@@ -241,6 +254,7 @@ const SettingsPage = () => {
             buttonLabel: 'Distribute Bill',
             currentValue: currentValues?.gasBillCharge,
             onSubmit: handleUpdateGasBill,
+            tone: TONES[3],
         },
         {
             title: 'Platform Fee',
@@ -251,6 +265,7 @@ const SettingsPage = () => {
             buttonLabel: 'Update Fee',
             currentValue: currentValues?.platformFee,
             onSubmit: handleUpdatePlatformFee,
+            tone: TONES[4],
         },
     ];
 
@@ -285,7 +300,7 @@ const SettingsPage = () => {
                             Refresh
                         </Button>
 
-                        <div className="flex items-center gap-2 px-3 py-2 bg-warning-bg border border-warning-border rounded-md">
+                        <div className="flex items-center gap-2 px-3 py-2 bg-warning-bg border border-warning-border rounded-md depth-top">
                             <AlertCircle className="w-4 h-4 text-warning-text shrink-0" />
                             <span className="text-xs font-medium text-warning-text">
                                 Applies instantly to all members
@@ -295,14 +310,14 @@ const SettingsPage = () => {
                 </div>
 
                 <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-                    {cards.map(({ title, icon: Icon, currentValue }, index) => (
+                    {cards.map(({ title, icon: Icon, currentValue, tone }, index) => (
                         <div
                             key={title}
-                            className={`flex items-center gap-3 p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm
+                            className={`flex items-center gap-3 p-4 card-base
                 ${cards.length % 2 !== 0 && index === cards.length - 1 ? 'col-span-2 lg:col-span-1' : ''}`}
                         >
-                            <div className="shrink-0 flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
-                                <Icon className="w-4 h-4 text-muted-foreground" strokeWidth={2} />
+                            <div className={`shrink-0 flex h-9 w-9 items-center justify-center rounded-lg border ${tone.iconBg}`}>
+                                <Icon className={`w-4 h-4 ${tone.iconColor}`} strokeWidth={2} />
                             </div>
                             <div className="min-w-0">
                                 <p className="text-xs font-medium text-muted-foreground truncate">{title}</p>
@@ -323,11 +338,13 @@ const SettingsPage = () => {
                             key={card.title}
                             {...card}
                             currentLoading={valuesLoading}
+                            iconBg={card.tone.iconBg}
+                            iconColor={card.tone.iconColor}
                         />
                     ))}
                 </div>
 
-                <div className="flex items-start gap-4 p-6 bg-warning-bg border border-warning-border rounded-xl">
+                <div className="flex items-start gap-4 p-6 bg-warning-bg border border-warning-border rounded-xl depth-top">
                     <div className="shrink-0 flex h-9 w-9 items-center justify-center rounded-lg bg-warning-bg">
                         <TriangleAlert className="w-4 h-4 text-warning-text" />
                     </div>
