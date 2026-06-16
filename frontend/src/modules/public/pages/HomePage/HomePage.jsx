@@ -159,12 +159,12 @@ const features = [
 ];
 
 const toneMap = {
-  blue:   { bg: 'from-primary/10 to-primary/5', text: 'text-primary', badge: 'bg-primary/10 text-primary', border: 'hover:border-primary/40' },
-  violet: { bg: 'from-primary/10 to-primary/5', text: 'text-primary', badge: 'bg-primary/10 text-primary', border: 'hover:border-primary/40' },
-  emerald:{ bg: 'from-success/10 to-success/5', text: 'text-success-text', badge: 'bg-success-bg text-success-text', border: 'hover:border-success/40' },
-  amber:  { bg: 'from-warning/10 to-warning/5', text: 'text-warning-text', badge: 'bg-warning-bg text-warning-text', border: 'hover:border-warning/40' },
-  rose:   { bg: 'from-danger/10 to-danger/5', text: 'text-danger-text', badge: 'bg-danger-bg text-danger-text', border: 'hover:border-destructive/40' },
-  sky:    { bg: 'from-info/10 to-info/5', text: 'text-info-text', badge: 'bg-info-bg text-info-text', border: 'hover:border-info/40' },
+  blue:    { iconBg: 'from-blue-500 to-blue-600', badge: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20', border: 'hover:border-blue-500/20', shadow: 'hover:shadow-blue-500/5', overlay: 'from-blue-500/10 via-transparent to-transparent' },
+  violet:  { iconBg: 'from-violet-500 to-purple-600', badge: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20', border: 'hover:border-violet-500/20', shadow: 'hover:shadow-violet-500/5', overlay: 'from-violet-500/10 via-transparent to-transparent' },
+  emerald: { iconBg: 'from-emerald-500 to-teal-600', badge: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20', border: 'hover:border-emerald-500/20', shadow: 'hover:shadow-emerald-500/5', overlay: 'from-emerald-500/10 via-transparent to-transparent' },
+  amber:   { iconBg: 'from-amber-500 to-orange-600', badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20', border: 'hover:border-amber-500/20', shadow: 'hover:shadow-amber-500/5', overlay: 'from-amber-500/10 via-transparent to-transparent' },
+  rose:    { iconBg: 'from-rose-500 to-pink-600', badge: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20', border: 'hover:border-rose-500/20', shadow: 'hover:shadow-rose-500/5', overlay: 'from-rose-500/10 via-transparent to-transparent' },
+  sky:     { iconBg: 'from-sky-500 to-cyan-600', badge: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20', border: 'hover:border-sky-500/20', shadow: 'hover:shadow-sky-500/5', overlay: 'from-sky-500/10 via-transparent to-transparent' },
 };
 
 const steps = [
@@ -310,15 +310,18 @@ const FeatureCard = memo(({ item, index }) => {
   const t = toneMap[item.tone];
   return (
     <InView delay={0.05 * index}>
-      <div className={`group h-full card-base p-4 motion-safe:transition-[transform,opacity] motion-safe:duration-300 lg:backdrop-blur-sm motion-safe:hover:scale-[1.02] motion-reduce:hover:scale-100 active:scale-[0.98] transform-gpu sm:rounded-2xl sm:p-5 ${t.border}`}>
-        <div className={`mb-3 inline-flex rounded-xl bg-gradient-to-br ${t.bg} p-3 sm:rounded-xl`}>
-          <span className={t.text}>{item.icon}</span>
+      <div className={`group relative h-full overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-5 backdrop-blur-sm motion-safe:transition-all motion-safe:duration-300 motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg ${t.border} ${t.shadow} sm:p-6`}>
+        <div className={`absolute inset-0 opacity-0 motion-safe:transition-opacity motion-safe:duration-300 motion-safe:group-hover:opacity-100 bg-gradient-to-b ${t.overlay}`} />
+        <div className="relative z-10">
+          <div className={`mb-4 inline-flex rounded-xl bg-gradient-to-br ${t.iconBg} p-3.5 shadow-md`}>
+            <span className="text-white">{item.icon}</span>
+          </div>
+          <span className={`inline-flex items-center rounded-full border px-3 py-1 text-caption font-semibold uppercase tracking-wider ${t.badge}`}>
+            {item.badge}
+          </span>
+          <h3 className="mt-3 text-body-lg font-bold tracking-tight text-foreground">{item.title}</h3>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-body">{item.description}</p>
         </div>
-        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-caption font-bold uppercase tracking-widest ${t.badge}`}>
-          {item.badge}
-        </span>
-        <h3 className="mt-2 text-body-lg font-bold tracking-tight text-foreground">{item.title}</h3>
-        <p className="mt-1.5 text-body leading-[1.75] text-muted-foreground sm:leading-7">{item.description}</p>
       </div>
     </InView>
   );
@@ -589,7 +592,7 @@ const HomePage = () => {
           </p>
         </InView>
 
-        <div className="mt-6 grid gap-3 sm:mt-8 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
+        <div className="mt-6 grid gap-4 sm:mt-8 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3">
           {features.map((item, i) => <FeatureCard key={item.title} item={item} index={i} />)}
         </div>
       </section>
