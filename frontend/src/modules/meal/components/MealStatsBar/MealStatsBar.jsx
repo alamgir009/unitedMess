@@ -79,12 +79,16 @@ const MealStatsBar = React.memo(({ meals = [], isAdmin }) => {
             aria-label="Meal statistics"
             className={gridLayoutClass}
         >
+            // Inside the map:
             {stats.map((s, idx) => {
                 const isLastAndOdd = stats.length === 3 && idx === 2;
                 return (
                     <div
                         key={s.label}
-                        className={isLastAndOdd ? 'col-span-2 md:col-span-1' : 'col-span-1'}
+                        className={cn(
+                            'card-base',
+                            isLastAndOdd ? 'col-span-2 md:col-span-1' : 'col-span-1'
+                        )}
                     >
                         <StatPill {...s} />
                     </div>
