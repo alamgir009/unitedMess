@@ -79,7 +79,6 @@ const MealStatsBar = React.memo(({ meals = [], isAdmin }) => {
             aria-label="Meal statistics"
             className={gridLayoutClass}
         >
-            // Inside the map:
             {stats.map((s, idx) => {
                 const isLastAndOdd = stats.length === 3 && idx === 2;
                 return (
