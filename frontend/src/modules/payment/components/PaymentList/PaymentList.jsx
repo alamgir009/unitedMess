@@ -41,7 +41,7 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewIn
     return (
         <article
             ref={ref}
-            className="group relative flex flex-col h-full rounded-xl bg-card border border-border/50 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200"
+            className="group relative flex flex-col h-full rounded-xl bg-card border border-border/50 overflow-hidden depth-top hover:shadow-md transition-all duration-200"
         >
             <div className="flex items-start justify-between px-4 pt-3.5">
                 <span className={`inline-flex items-center px-2.5 py-[3px] rounded-md text-[10px] font-bold uppercase tracking-wider ring-1 ${typeC.cls}`}>
@@ -166,7 +166,7 @@ const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInv
     return (
         <div
             ref={ref}
-            className="group relative flex items-center gap-3 px-3 py-2.5 rounded-xl bg-card border border-border/50 hover:bg-muted/20 transition-colors duration-200 shadow-sm overflow-hidden"
+            className="group relative flex items-center gap-3 px-3 py-2.5 rounded-xl bg-card border border-border/50 hover:bg-muted/20 transition-colors duration-200 depth-top overflow-hidden"
         >
             <div className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center
                 bg-indigo-50 dark:bg-indigo-400/10 text-indigo-600 dark:text-indigo-400">

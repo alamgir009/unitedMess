@@ -76,7 +76,7 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
                     rounded-xl
                     border border-border/50
                     bg-card
-                    shadow-sm
+                    depth-top
                     overflow-hidden
                     transition-shadow duration-200
                     ${!isCollapsed ? 'ring-1 ring-emerald-500/15' : ''}

@@ -41,7 +41,7 @@ const formatDateRange = (payments) => {
 };
 
 const SkeletonRow = React.memo(() => (
-    <div className="rounded-xl border border-border/50 bg-card animate-pulse">
+    <div className="rounded-xl border border-border/50 bg-card animate-pulse depth-top">
         <div className="flex items-center gap-3 px-4 py-3.5 sm:px-5 sm:py-4">
             <div className="w-10 h-10 rounded-full bg-muted/60 shrink-0" />
             <div className="flex-1 min-w-0 space-y-2">
@@ -83,7 +83,7 @@ const MemberRow = React.memo(({
     const dateRange = formatDateRange(payments);
 
     return (
-        <div className="rounded-xl border border-border/50 bg-card overflow-hidden transition-shadow duration-150">
+        <div className="rounded-xl border border-border/50 bg-card overflow-hidden depth-top transition-shadow duration-150">
             <button
                 onClick={() => onToggle(member._id)}
                 className="w-full px-4 py-3.5 sm:px-5 sm:py-4 flex items-center gap-3 text-left group hover:bg-muted/20 transition-colors duration-150"

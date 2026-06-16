@@ -29,7 +29,7 @@ const MarketCard = React.memo(React.forwardRef(({ market, onEdit, onDelete, isAd
     return (
         <article
             ref={ref}
-            className="group relative flex flex-col rounded-xl bg-card dark:bg-card border border-border/50 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden"
+            className="group relative flex flex-col rounded-xl bg-card dark:bg-card border border-border/50 dark:border-white/10 depth-top hover:shadow-md transition-all duration-200 overflow-hidden"
         >
             {/* Header */}
             <div className="flex items-start justify-between px-4 pt-3.5">
@@ -128,7 +128,7 @@ const MarketRow = React.memo(React.forwardRef(({ market, onEdit, onDelete, isAdm
     return (
         <div
             ref={ref}
-            className="group relative flex items-center gap-3 px-3 py-2.5 rounded-xl bg-card dark:bg-card border border-border/50 dark:border-white/10 hover:bg-muted/20 dark:hover:bg-white/[0.03] hover:border-border/70 dark:hover:border-white/15 transition-colors duration-200 shadow-sm overflow-hidden"
+            className="group relative flex items-center gap-3 px-3 py-2.5 rounded-xl bg-card dark:bg-card border border-border/50 dark:border-white/10 hover:bg-muted/20 dark:hover:bg-white/[0.03] hover:border-border/70 dark:hover:border-white/15 transition-colors duration-200 depth-top overflow-hidden"
         >
             {/* Icon pill */}
             <div className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-50 dark:bg-emerald-400/10 text-emerald-600 dark:text-emerald-400">
