@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef, memo, useMemo } from 'react';
 import Button from '@/shared/components/ui/Button/Button';
 import Calendar from './Calendar';
+import { BarChart3, Shield, Users, Receipt, BellRing, MonitorSmartphone } from 'lucide-react';
 
 /* ── CSS-only scroll reveal (zero JS per frame after first intersection) ── */
 const InView = memo(function InView({ children, delay = 0, className = '' }) {
@@ -92,79 +93,49 @@ const stats = [
 const features = [
   {
     tone: 'blue',
-    badge: 'Analytics',
     title: 'Live intelligence dashboard',
     description: 'Real-time tracking of expenses, meal counts, contribution flow, and balance trends — presented in a finance-grade visual layer built for instant decisions.',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-6 w-6">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 19V5m0 14h16M8 15v-3m4 3V8m4 7v-5" />
-      </svg>
-    ),
+    icon: <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6" />,
   },
   {
     tone: 'violet',
-    badge: 'Security',
     title: 'Enterprise-grade access control',
     description: "Granular role-based permissions for admins, managers, and members — with audit trails and secure authentication flows you'd expect from a top-tier fintech product.",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-6 w-6">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-      </svg>
-    ),
+    icon: <Shield className="h-5 w-5 sm:h-6 sm:w-6" />,
   },
   {
     tone: 'emerald',
-    badge: 'Operations',
     title: 'Fast member operations',
     description: 'Manage meals, deposits, statuses, and announcements from one clean dashboard. The information hierarchy stays uncluttered even when data gets dense.',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-6 w-6">
-        <circle cx="12" cy="8" r="4" /><path strokeLinecap="round" strokeLinejoin="round" d="M6 20a6 6 0 0 1 12 0" />
-      </svg>
-    ),
+    icon: <Users className="h-5 w-5 sm:h-6 sm:w-6" />,
   },
   {
     tone: 'amber',
-    badge: 'Transparency',
     title: 'Fairness-first billing engine',
     description: 'Accurate, auditable cost allocation with clean settlement summaries. Every ₹ is traceable — building the trust that keeps communities together longer.',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-6 w-6">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-      </svg>
-    ),
+    icon: <Receipt className="h-5 w-5 sm:h-6 sm:w-6" />,
   },
   {
     tone: 'rose',
-    badge: 'Notifications',
     title: 'Smart alert system',
     description: 'Push and in-app notifications for balance changes, meal updates, deposit confirmations, and announcements. Nothing slips through the cracks.',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-6 w-6">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 018 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0h6z" />
-      </svg>
-    ),
+    icon: <BellRing className="h-5 w-5 sm:h-6 sm:w-6" />,
   },
   {
     tone: 'sky',
-    badge: 'Cross-device',
     title: 'Fully responsive experience',
     description: 'Pixel-perfect layouts across mobile, tablet, and desktop with adaptive UI patterns. Dark and light mode both feel premium — not like an afterthought.',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-6 w-6">
-        <rect x="5" y="2" width="14" height="20" rx="2" /><path strokeLinecap="round" d="M12 18h.01" />
-      </svg>
-    ),
+    icon: <MonitorSmartphone className="h-5 w-5 sm:h-6 sm:w-6" />,
   },
 ];
 
 const toneMap = {
-  blue:    { iconBg: 'from-blue-500 to-blue-600', badge: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20', border: 'hover:border-blue-500/20', shadow: 'hover:shadow-blue-500/5', overlay: 'from-blue-500/10 via-transparent to-transparent' },
-  violet:  { iconBg: 'from-violet-500 to-purple-600', badge: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20', border: 'hover:border-violet-500/20', shadow: 'hover:shadow-violet-500/5', overlay: 'from-violet-500/10 via-transparent to-transparent' },
-  emerald: { iconBg: 'from-emerald-500 to-teal-600', badge: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20', border: 'hover:border-emerald-500/20', shadow: 'hover:shadow-emerald-500/5', overlay: 'from-emerald-500/10 via-transparent to-transparent' },
-  amber:   { iconBg: 'from-amber-500 to-orange-600', badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20', border: 'hover:border-amber-500/20', shadow: 'hover:shadow-amber-500/5', overlay: 'from-amber-500/10 via-transparent to-transparent' },
-  rose:    { iconBg: 'from-rose-500 to-pink-600', badge: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20', border: 'hover:border-rose-500/20', shadow: 'hover:shadow-rose-500/5', overlay: 'from-rose-500/10 via-transparent to-transparent' },
-  sky:     { iconBg: 'from-sky-500 to-cyan-600', badge: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20', border: 'hover:border-sky-500/20', shadow: 'hover:shadow-sky-500/5', overlay: 'from-sky-500/10 via-transparent to-transparent' },
+  blue:    { iconBg: 'from-blue-500 to-blue-600', border: 'hover:border-blue-500/20', shadow: 'hover:shadow-blue-500/5', overlay: 'from-blue-500/10 via-transparent to-transparent' },
+  violet:  { iconBg: 'from-violet-500 to-purple-600', border: 'hover:border-violet-500/20', shadow: 'hover:shadow-violet-500/5', overlay: 'from-violet-500/10 via-transparent to-transparent' },
+  emerald: { iconBg: 'from-emerald-500 to-teal-600', border: 'hover:border-emerald-500/20', shadow: 'hover:shadow-emerald-500/5', overlay: 'from-emerald-500/10 via-transparent to-transparent' },
+  amber:   { iconBg: 'from-amber-500 to-orange-600', border: 'hover:border-amber-500/20', shadow: 'hover:shadow-amber-500/5', overlay: 'from-amber-500/10 via-transparent to-transparent' },
+  rose:    { iconBg: 'from-rose-500 to-pink-600', border: 'hover:border-rose-500/20', shadow: 'hover:shadow-rose-500/5', overlay: 'from-rose-500/10 via-transparent to-transparent' },
+  sky:     { iconBg: 'from-sky-500 to-cyan-600', border: 'hover:border-sky-500/20', shadow: 'hover:shadow-sky-500/5', overlay: 'from-sky-500/10 via-transparent to-transparent' },
 };
 
 const steps = [
@@ -316,9 +287,6 @@ const FeatureCard = memo(({ item, index }) => {
           <div className={`mb-4 inline-flex rounded-xl bg-gradient-to-br ${t.iconBg} p-3.5 shadow-md`}>
             <span className="text-white">{item.icon}</span>
           </div>
-          <span className={`inline-flex items-center rounded-full border px-3 py-1 text-caption font-semibold uppercase tracking-wider ${t.badge}`}>
-            {item.badge}
-          </span>
           <h3 className="mt-3 text-body-lg font-bold tracking-tight text-foreground">{item.title}</h3>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-body">{item.description}</p>
         </div>
