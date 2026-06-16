@@ -84,10 +84,7 @@ const MealStatsBar = React.memo(({ meals = [], isAdmin }) => {
                 return (
                     <div
                         key={s.label}
-                        className={cn(
-                            'card-base',
-                            isLastAndOdd ? 'col-span-2 md:col-span-1' : 'col-span-1'
-                        )}
+                        className={isLastAndOdd ? 'col-span-2 md:col-span-1' : 'col-span-1'}
                     >
                         <StatPill {...s} />
                     </div>
