@@ -9,6 +9,7 @@ import {
     TrendingUp,
     Shield,
     RefreshCw,
+    TriangleAlert
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import settingsService from '../../services/settings.service';
@@ -326,15 +327,15 @@ const SettingsPage = () => {
                     ))}
                 </div>
 
-                <div className="flex items-start gap-4 p-6 bg-primary/5 border border-primary/20 rounded-xl">
-                    <div className="shrink-0 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                        <TrendingUp className="w-4 h-4 text-primary" />
+                <div className="flex items-start gap-4 p-6 bg-warning-bg border border-warning-border rounded-xl">
+                    <div className="shrink-0 flex h-9 w-9 items-center justify-center rounded-lg bg-warning-bg">
+                        <TriangleAlert className="w-4 h-4 text-warning-text" />
                     </div>
                     <div>
-                        <p className="text-sm font-semibold text-primary mb-1">
+                        <p className="text-sm font-semibold text-warning-text mb-1">
                             How charges work
                         </p>
-                        <p className="text-xs text-primary/80 leading-relaxed">
+                        <p className="text-xs text-warning-text leading-relaxed">
                             <strong>Water</strong> &amp; <strong>Gas</strong> charges accept a <em>total monthly amount</em> — the system divides it equally among all <strong>active</strong> members and stores the per-member share.
                             <strong> Guest Meal</strong> and <strong>Cooking</strong> are fixed rates stored directly per member.
                             All updates take effect instantly across the entire platform.
