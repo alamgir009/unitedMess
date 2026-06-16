@@ -11,11 +11,12 @@ const Card = forwardRef(({
   ...props
 }, ref) => {
   const variants = {
-    default: 'surface-elevated text-card-foreground border border-border shadow-sm rounded-lg',
+    default: 'surface-elevated text-card-foreground border border-border card-base',
     glass: 'bg-[var(--surface-elevated)]/80 backdrop-blur-sm text-foreground border border-border rounded-lg',
-    elevated: 'surface-elevated text-card-foreground border border-border shadow-lg rounded-lg',
-    flat: 'surface-raised text-foreground border-0 shadow-none rounded-lg',
+    elevated: 'surface-elevated text-card-foreground border border-border card-elevated',
+    flat: 'surface-raised text-foreground border border-muted rounded-lg',
     bordered: 'bg-transparent text-foreground border-2 border-border rounded-lg',
+    premium: 'surface-elevated text-card-foreground border border-strong card-premium',
   };
 
   const paddings = {
@@ -27,7 +28,7 @@ const Card = forwardRef(({
   };
 
   const interactiveStyles = interactive
-    ? 'transition-all duration-[var(--duration-base)] ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-primary/30 cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+    ? 'card-interactive hover:-translate-y-0.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
     : '';
 
   const selectedStyle = selected

@@ -114,16 +114,16 @@ const Navbar = () => {
       )}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <nav
-          className={cn(
-            'relative flex items-center justify-between px-5 py-2.5 rounded-2xl',
-              'transition-colors duration-150',
+          <nav
+            className={cn(
+              'relative flex items-center justify-between px-5 py-2.5 rounded-2xl',
+              'transition-all duration-150',
               scrolled
-                ? 'bg-card/80 backdrop-blur-md border-border shadow-sm'
+                ? 'bg-card/80 backdrop-blur-md border-border navbar-depth'
                 : 'bg-transparent border-transparent shadow-none',
-          )}
-          aria-label="Main navigation"
-        >
+            )}
+            aria-label="Main navigation"
+          >
           <Link
             to="/"
             className="inline-flex items-center gap-1.5 shrink-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"

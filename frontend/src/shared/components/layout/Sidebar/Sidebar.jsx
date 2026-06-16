@@ -67,13 +67,13 @@ const Sidebar = ({ isOpen, onClose }) => {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 w-64 bg-card border-r border-border text-foreground',
+          'fixed inset-y-0 left-0 w-64 bg-card border-r border-border text-foreground sidebar-depth',
           'z-50 transition-all duration-[var(--duration-slow)] transform lg:translate-x-0 lg:static lg:inset-auto lg:flex lg:flex-col lg:z-auto lg:transition-none',
           isOpen ? 'translate-x-0' : '-translate-x-full',
         )}
         aria-label="Main navigation"
       >
-          <div className="flex h-16 shrink-0 items-center justify-between px-6 bg-muted/30 border-b border-border">
+        <div className="flex h-16 shrink-0 items-center justify-between px-6 bg-muted/30 border-b border-border inset-depth">
             <div className="flex items-center gap-1.5">
               <img
                 src="/assets/icons/resize_logo.png"

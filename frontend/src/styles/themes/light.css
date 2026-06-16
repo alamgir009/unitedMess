@@ -11,11 +11,12 @@ html.light {
   --brand-foreground: hsl(0 0% 100%);          /* #FFFFFF */
 
   /* ── Surface hierarchy ── */
-  --bg-base: hsl(0 0% 100%);                  /* #FFFFFF */
+  --bg-base: hsl(0 0% 100%);                  /* #FFFFFF - pure white page */
   --bg-surface: hsl(210 40% 98%);             /* #F8FAFC (slate-50) */
   --bg-raised: hsl(210 40% 96.1%);            /* #F1F5F9 (slate-100) */
   --bg-subtle: hsl(210 40% 98%);              /* #F8FAFC (slate-50) */
   --bg-muted: hsl(210 40% 96.1%);             /* #F1F5F9 (slate-100) */
+  --bg-elevated: hsl(0 0% 100%);              /* #FFFFFF - highest surface */
   --bg-overlay: hsl(222.2 47.4% 11.2% / 0.5); /* #0F172A @ 50% */
 
   /* ── Borders ── */
@@ -82,19 +83,37 @@ html.light {
   /* ── Shadows ── */
   --shadow-xs: 0 1px 2px hsl(0 0% 0% / 0.05);
   --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.06), 0 1px 1px hsl(0 0% 0% / 0.04);
-  --shadow-md: 0 3px 8px hsl(0 0% 0% / 0.08), 0 1px 3px hsl(0 0% 0% / 0.05);
-  --shadow-lg: 0 8px 24px hsl(0 0% 0% / 0.10), 0 2px 6px hsl(0 0% 0% / 0.06);
-  --shadow-xl: 0 20px 25px hsl(0 0% 0% / 0.08), 0 10px 10px hsl(0 0% 0% / 0.04);
+  --shadow-md: 0 4px 12px hsl(0 0% 0% / 0.07), 0 1px 3px hsl(0 0% 0% / 0.05);
+  --shadow-lg: 0 10px 28px hsl(0 0% 0% / 0.09), 0 2px 6px hsl(0 0% 0% / 0.05);
+  --shadow-xl: 0 24px 48px hsl(0 0% 0% / 0.08), 0 8px 12px hsl(0 0% 0% / 0.04);
+
+  /* ── Financial-grade ambient shadows ── */
+  --shadow-ambient-xs: 0 1px 3px hsl(0 0% 0% / 0.04);
+  --shadow-ambient-sm: 0 1px 3px hsl(0 0% 0% / 0.05), 0 1px 2px hsl(0 0% 0% / 0.03);
+  --shadow-ambient-md: 0 4px 12px hsl(0 0% 0% / 0.06), 0 2px 4px hsl(0 0% 0% / 0.04);
+  --shadow-ambient-lg: 0 12px 32px hsl(0 0% 0% / 0.08), 0 4px 8px hsl(0 0% 0% / 0.04);
+  --shadow-ambient-xl: 0 24px 48px hsl(0 0% 0% / 0.10), 0 8px 16px hsl(0 0% 0% / 0.05);
+
+  /* ── Directional shadows (top-down light) ── */
+  --shadow-directional-xs: 0 2px 4px hsl(0 0% 0% / 0.03);
+  --shadow-directional-sm: 0 3px 6px hsl(0 0% 0% / 0.04);
+  --shadow-directional-md: 0 6px 14px hsl(0 0% 0% / 0.05);
+  --shadow-directional-lg: 0 14px 36px hsl(0 0% 0% / 0.07);
+  --shadow-directional-xl: 0 28px 56px hsl(0 0% 0% / 0.09);
 
   /* ── Depth Accents ── */
+  --inset-highlight-light: none;
   --inset-highlight: none;
+  --inset-highlight-subtle: none;
   --inset-shadow: inset 0 1px 0 hsl(0 0% 0% / 0.04);
+  --inset-shadow-strong: inset 0 1px 0 hsl(0 0% 0% / 0.06);
+  --inset-shadow-deep: inset 0 2px 4px hsl(0 0% 0% / 0.05);
 
   /* ── Surface layers (semantic mappings) ── */
   --surface-base: var(--bg-base);
   --surface-raised: var(--bg-surface);
-  --surface-elevated: var(--bg-base);
-  --surface-overlay: var(--bg-base);
+  --surface-elevated: var(--bg-elevated);
+  --surface-overlay: var(--bg-elevated);
 
   /* ── Tailwind-compatible HSL tokens (space-separated, used via hsl()) ── */
   --background: 0 0% 100%;

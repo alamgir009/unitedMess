@@ -9,18 +9,19 @@ html.dark {
   --brand-subtle: hsl(210 52% 25%);           /* #1E3A5F (approx) */
   --brand-foreground: hsl(0 0% 100%);         /* #FFFFFF */
 
-  /* ── Surface hierarchy ── */
-  --bg-base: hsl(222.2 47.4% 11.2%);         /* #0F172A (slate-900) */
-  --bg-surface: hsl(217.2 32.6% 17.5%);      /* #1E293B (slate-800) */
-  --bg-raised: hsl(216 26% 20%);              /* #263040 (approx) */
-  --bg-subtle: hsl(217.2 32.6% 17.5%);       /* #1E293B (slate-800) */
-  --bg-muted: hsl(216 26% 20%);               /* #263040 (approx) */
+  /* ── Surface hierarchy (fintech-grade depth: darker base, stepped surfaces with top-lit insets) ── */
+  --bg-base: hsl(225 28% 7%);                /* #0B0F18 - deep midnight, richest base */
+  --bg-surface: hsl(224 22% 11%);            /* #131724 - first step up from base */
+  --bg-raised: hsl(222 20% 14.5%);           /* #1A1F2E - elevated surface */
+  --bg-subtle: hsl(224 22% 11%);             /* #131724 - matches surface */
+  --bg-muted: hsl(222 20% 14.5%);            /* #1A1F2E - matches raised */
+  --bg-elevated: hsl(220 18% 17%);           /* #212638 - highest surface, lightest */
   --bg-overlay: hsl(0 0% 0% / 0.6);          /* #000 @ 60% */
 
   /* ── Borders ── */
-  --border-default: hsl(217.2 32.6% 17.5%);  /* #1E293B (slate-800) */
-  --border-muted: hsl(216 36% 15%);           /* #172033 (approx) */
-  --border-strong: hsl(213 31% 25%);          /* #2D3F55 (approx) */
+  --border-default: hsl(222 18% 16%);        /* #21253A - refined dark border */
+  --border-muted: hsl(224 20% 12%);          /* #161A26 - subtle border */
+  --border-strong: hsl(220 16% 24%);         /* #32384A - stronger border for hierarchy */
   --border-brand: hsl(217.2 91.2% 59.8%);    /* #3B82F6 (blue-500) */
 
   /* ── Text hierarchy ── */
@@ -70,56 +71,76 @@ html.dark {
   --neutral-bg: hsl(215.3 25% 26.7%);         /* #334155 (slate-700) */
   --neutral-text: hsl(216 12.2% 83.9%);       /* #D1D5DB (gray-300) */
 
-  /* ── Component inputs ── */
-  --input-bg: hsl(217.2 32.6% 17.5%);        /* #1E293B (slate-800) */
-  --input-bg-disabled: hsl(216 36% 15%);      /* #172033 (approx) */
-  --input-border: hsl(213 31% 25%);           /* #2D3F55 (approx) */
-  --input-border-hover: hsl(213 23% 32%);     /* #3D5068 (approx) */
+  /* ── Component inputs (deeper surfaces with strong inset highlights) ── */
+  --input-bg: hsl(224 20% 12%);              /* #181C2A - dark input base */
+  --input-bg-disabled: hsl(225 18% 10%);      /* #12151F - disabled state */
+  --input-border: hsl(222 16% 20%);           /* #262B3D - subtle border */
+  --input-border-hover: hsl(220 15% 28%);     /* #363C50 - stronger on hover */
   --input-border-focus: hsl(217.2 91.2% 59.8%); /* #3B82F6 (blue-500) */
   --input-border-error: hsl(0 84.2% 60.2%);   /* #EF4444 (red-500) */
 
-  /* ── Shadows ── */
-  --shadow-xs: 0 1px 2px hsl(0 0% 0% / 0.30);
-  --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.35), 0 1px 1px hsl(0 0% 0% / 0.25);
-  --shadow-md: 0 3px 8px hsl(0 0% 0% / 0.40), 0 1px 3px hsl(0 0% 0% / 0.30);
-  --shadow-lg: 0 8px 24px hsl(0 0% 0% / 0.45), 0 2px 6px hsl(0 0% 0% / 0.35);
-  --shadow-xl: 0 20px 25px hsl(0 0% 0% / 0.50), 0 10px 10px hsl(0 0% 0% / 0.40);
+  /* ── Premium dark shadows (ambient + directional for realistic depth) ── */
+  --shadow-xs: 0 1px 2px hsl(0 0% 0% / 0.35);
+  --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.40), 0 1px 1px hsl(0 0% 0% / 0.30);
+  --shadow-md: 0 4px 12px hsl(0 0% 0% / 0.45), 0 1px 3px hsl(0 0% 0% / 0.35);
+  --shadow-lg: 0 10px 28px hsl(0 0% 0% / 0.50), 0 2px 6px hsl(0 0% 0% / 0.40);
+  --shadow-xl: 0 24px 48px hsl(0 0% 0% / 0.55), 0 8px 12px hsl(0 0% 0% / 0.45);
 
-  /* ── Depth Accents ── */
+  /* ── Financial-grade ambient shadows (dark mode - deep wrap with top softening) ── */
+  --shadow-ambient-xs: 0 1px 3px hsl(0 0% 0% / 0.35);
+  --shadow-ambient-sm: 0 1px 3px hsl(0 0% 0% / 0.38), 0 1px 2px hsl(0 0% 0% / 0.30);
+  --shadow-ambient-md: 0 4px 12px hsl(0 0% 0% / 0.42), 0 2px 4px hsl(0 0% 0% / 0.34);
+  --shadow-ambient-lg: 0 12px 32px hsl(0 0% 0% / 0.48), 0 4px 8px hsl(0 0% 0% / 0.38);
+  --shadow-ambient-xl: 0 24px 48px hsl(0 0% 0% / 0.52), 0 8px 16px hsl(0 0% 0% / 0.42);
+
+  /* ── Directional shadows (stronger Y-offset for top-lit feel) ── */
+  --shadow-directional-xs: 0 2px 4px hsl(0 0% 0% / 0.30);
+  --shadow-directional-sm: 0 3px 6px hsl(0 0% 0% / 0.33);
+  --shadow-directional-md: 0 6px 14px hsl(0 0% 0% / 0.36);
+  --shadow-directional-lg: 0 14px 36px hsl(0 0% 0% / 0.40);
+  --shadow-directional-xl: 0 28px 56px hsl(0 0% 0% / 0.45);
+
+  /* ── Deep Accents — premium top-lit inset highlights for realistic depth ── */
+  --inset-highlight-light: inset 0 1px 0 hsl(0 0% 100% / 0.12);
   --inset-highlight: inset 0 1px 0 hsl(0 0% 100% / 0.08);
+  --inset-highlight-subtle: inset 0 1px 0 hsl(0 0% 100% / 0.05);
   --inset-shadow: none;
+  --inset-shadow-strong: none;
+  --inset-shadow-deep: none;
 
-  /* ── Surface layers (dark mode overrides — elevated/overlay lighter than page) ── */
-  --surface-elevated: var(--bg-raised);
-  --surface-overlay: var(--bg-raised);
+  /* ── Surface layers (dark mode: elevated/overlay are lighter than page for depth pyramid) ── */
+  --surface-base: var(--bg-base);
+  --surface-raised: var(--bg-surface);
+  --surface-elevated: var(--bg-elevated);
+  --surface-overlay: var(--bg-elevated);
 
   /* ── Tailwind-compatible HSL tokens (space-separated, used via hsl()) ── */
-  --background: 222 47% 6%;
+  --background: 225 28% 7%;
   --foreground: 210 40% 96%;
-  --card: 222 47% 9%;
+  --card: 220 18% 17%;
   --card-foreground: 210 40% 96%;
-  --popover: 222 47% 8%;
+  --popover: 220 18% 17%;
   --popover-foreground: 210 40% 96%;
   --primary: 210 92% 58%;
-  --primary-foreground: 222 47% 6%;
-  --secondary: 217 32% 15%;
+  --primary-foreground: 225 28% 7%;
+  --secondary: 222 20% 18%;
   --secondary-foreground: 210 40% 90%;
-  --muted: 217 32% 14%;
+  --muted: 222 20% 18%;
   --muted-foreground: 215 20% 55%;
   --accent: 160 60% 45%;
-  --accent-foreground: 222 47% 6%;
+  --accent-foreground: 225 28% 7%;
   --destructive: 0 70% 50%;
   --destructive-foreground: 210 40% 96%;
-  --border: 217 32% 15%;
-  --input: 217 32% 15%;
+  --border: 222 18% 16%;
+  --input: 222 18% 16%;
   --ring: 210 92% 58%;
   --radius: 0.75rem;
 
   /* ── Navbar + Sidebar ── */
-  --navbar-bg: hsl(222.2 47.4% 11.2%);       /* #0F172A (slate-900) */
-  --navbar-border: hsl(217.2 32.6% 17.5%);   /* #1E293B (slate-800) */
-  --sidebar-bg: hsl(222.2 47.4% 11.2%);      /* #0F172A (slate-900) */
-  --sidebar-border: hsl(217.2 32.6% 17.5%);  /* #1E293B (slate-800) */
+  --navbar-bg: hsl(225 28% 7%);              /* matches bg-base */
+  --navbar-border: hsl(222 18% 16%);          /* matches border-default */
+  --sidebar-bg: hsl(225 28% 7%);             /* matches bg-base */
+  --sidebar-border: hsl(222 18% 16%);         /* matches border-default */
 
   /* ── Status glass backgrounds ── */
   --success-glass: hsl(149 80% 10%);          /* #052E16 */
@@ -127,11 +148,11 @@ html.dark {
   --error-glass: hsl(0 74% 15%);             /* #450A0A */
   --info-glass: hsl(212 59% 11%);             /* #0C1A2E */
 
-  /* ── Gradients ── */
+  /* ── Gradients (enhanced for dark mode depth) ── */
   --gradient-primary: linear-gradient(135deg, hsl(226 70% 58%) 0%, hsl(252 75% 62%) 100%);
-  --gradient-secondary: linear-gradient(135deg, hsl(220 18% 24%) 0%, hsl(225 20% 20%) 100%);
+  --gradient-secondary: linear-gradient(135deg, hsl(222 20% 24%) 0%, hsl(225 20% 20%) 100%);
   --gradient-destructive: linear-gradient(135deg, hsl(350 65% 56%) 0%, hsl(0 72% 62%) 100%);
-  --gradient-hero: linear-gradient(135deg, hsl(222.2 47.4% 11.2%) 0%, hsl(248 47% 20%) 60%, hsl(212 59% 11%) 100%);
+  --gradient-hero: linear-gradient(135deg, hsl(225 28% 7%) 0%, hsl(248 47% 20%) 60%, hsl(212 59% 11%) 100%);
   --gradient-text: linear-gradient(135deg, hsl(213.1 93.9% 67.8%) 0%, hsl(258 90% 66%) 100%);
 
   /* ── Button gradient tokens (dark mode — 135deg, linear) ── */
@@ -199,9 +220,6 @@ html.dark {
   --btn-neutral-label: #D5DBE3;
   --btn-neutral-border: transparent;
 
-  --btn-link-from: #5A7FCA;
-  --btn-link-to: #7B9FD4;
-
   --btn-elevated-from: #323C56;
   --btn-elevated-to: #28324A;
   --btn-elevated-label: #E0E8F2;
@@ -212,7 +230,7 @@ html.dark {
   --btn-brand-subtle-label: #D5E0EE;
   --btn-brand-subtle-border: transparent;
 
-  /* ── Blobs ── */
+  /* ── Blobs (subtle brand glow on dark) ── */
   --blob-1: hsla(217, 91%, 60%, 0.08);
   --blob-2: hsla(258, 90%, 66%, 0.05);
   --blob-3: transparent;
