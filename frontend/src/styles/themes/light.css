@@ -10,28 +10,33 @@ html.light {
   --brand-subtle: hsl(213.8 100% 96.9%);       /* #EFF6FF (blue-50) */
   --brand-foreground: hsl(0 0% 100%);          /* #FFFFFF */
 
-  /* ── Surface hierarchy ── */
-  --bg-base: hsl(0 0% 100%);                  /* #FFFFFF - pure white page */
-  --bg-surface: hsl(210 40% 98%);             /* #F8FAFC (slate-50) */
-  --bg-raised: hsl(210 40% 96.1%);            /* #F1F5F9 (slate-100) */
-  --bg-subtle: hsl(210 40% 98%);              /* #F8FAFC (slate-50) */
-  --bg-muted: hsl(210 40% 96.1%);             /* #F1F5F9 (slate-100) */
-  --bg-elevated: hsl(0 0% 100%);              /* #FFFFFF - highest surface */
+  /* ── Fintech accent palette ── */
+  --accent-primary: #0052CC;                   /* CTA, active indicators */
+  --accent-subtle: hsl(210 100% 96%);          /* #E8F0FE — tinted bg */
+
+  /* ── Surface hierarchy (fintech spec: page → section → card → floating) ── */
+  --bg-base: hsl(216 12% 95%);                /* #F0F2F5 — page bg */
+  --bg-surface: hsl(220 14% 97%);             /* #F7F8FA — sidebar/nav */
+  --bg-raised: hsl(216 12% 95%);              /* #F0F2F5 */
+  --bg-subtle: hsl(220 14% 97%);              /* #F7F8FA */
+  --bg-muted: hsl(216 12% 93%);               /* #EAECF0 */
+  --bg-elevated: hsl(0 0% 100%);              /* #FFFFFF — cards, modals */
   --bg-overlay: hsl(222.2 47.4% 11.2% / 0.5); /* #0F172A @ 50% */
 
   /* ── Borders ── */
-  --border-default: hsl(214.3 31.8% 91.4%);  /* #E2E8F0 (slate-200) */
-  --border-muted: hsl(210 40% 96.1%);         /* #F1F5F9 (slate-100) */
-  --border-strong: hsl(212.7 26.8% 83.9%);    /* #CBD5E1 (slate-300) */
+  --border-default: hsl(220 11% 91%);         /* #E4E7EC */
+  --border-muted: hsl(220 11% 91%);           /* #E4E7EC */
+  --border-strong: hsl(216 10% 84%);          /* #D0D5DD */
   --border-brand: hsl(221.2 83.3% 53.3%);     /* #2563EB (blue-600) */
 
   /* ── Text hierarchy ── */
-  --text-primary: hsl(222.2 47.4% 11.2%);     /* #0F172A (slate-900) */
-  --text-secondary: hsl(215 14.3% 34.1%);     /* #475569 (slate-600) */
-  --text-muted: hsl(215 20.2% 65.1%);          /* #94A3B8 (slate-400) */
-  --text-disabled: hsl(212.7 26.8% 83.9%);    /* #CBD5E1 (slate-300) */
+  --text-primary: hsl(0 0% 5%);               /* #0D1117 */
+  --text-secondary: hsl(216 10% 37%);         /* #4B5563 */
+  --text-tertiary: hsl(216 10% 58%);          /* #9CA3AF */
+  --text-muted: hsl(216 10% 58%);             /* #9CA3AF */
+  --text-disabled: hsl(216 10% 84%);          /* #D0D5DD */
   --text-on-brand: hsl(0 0% 100%);            /* #FFFFFF */
-  --text-inverse: hsl(210 40% 98%);           /* #F8FAFC (slate-50) */
+  --text-inverse: hsl(210 40% 98%);           /* #F8FAFC */
 
   /* ── Semantic tokens ── */
   --success: hsl(142.1 76.2% 36.3%);          /* #16A34A (green-600) */
@@ -49,7 +54,7 @@ html.light {
   --danger-border: hsl(0 96% 89%);            /* #FECACA (red-200) */
   --danger-text: hsl(0 73.7% 41.8%);          /* #B91C1C (red-700) */
 
-  --error: hsl(0 72.2% 50.6%);               /* alias for danger */
+  --error: hsl(0 72.2% 50.6%);
   --error-bg: hsl(0 85.7% 97.3%);
   --error-border: hsl(0 96% 89%);
   --error-text: hsl(0 73.7% 41.8%);
@@ -60,11 +65,11 @@ html.light {
   --info-text: hsl(201.3 96.3% 32.2%);        /* #0369A1 (sky-700) */
 
   /* ── Financial tokens (aliases) ── */
-  --profit: hsl(142.1 76.2% 36.3%);           /* same as success */
+  --profit: hsl(142.1 76.2% 36.3%);
   --profit-bg: hsl(138.5 76.5% 96.7%);
   --profit-text: hsl(142.4 71.8% 29.2%);
 
-  --loss: hsl(0 72.2% 50.6%);                 /* same as danger */
+  --loss: hsl(0 72.2% 50.6%);
   --loss-bg: hsl(0 85.7% 97.3%);
   --loss-text: hsl(0 73.7% 41.8%);
 
@@ -74,11 +79,11 @@ html.light {
 
   /* ── Component inputs ── */
   --input-bg: hsl(0 0% 100%);                 /* #FFFFFF */
-  --input-bg-disabled: hsl(210 40% 98%);      /* #F8FAFC (slate-50) */
-  --input-border: hsl(212.7 26.8% 83.9%);     /* #CBD5E1 (slate-300) */
-  --input-border-hover: hsl(215 20.2% 65.1%); /* #94A3B8 (slate-400) */
-  --input-border-focus: hsl(221.2 83.3% 53.3%); /* #2563EB (blue-600) */
-  --input-border-error: hsl(0 72.2% 50.6%);   /* #DC2626 (red-600) */
+  --input-bg-disabled: hsl(220 14% 97%);      /* #F7F8FA */
+  --input-border: hsl(216 10% 84%);           /* #D0D5DD */
+  --input-border-hover: hsl(216 10% 58%);     /* #9CA3AF */
+  --input-border-focus: hsl(221.2 83.3% 53.3%); /* #2563EB */
+  --input-border-error: hsl(0 72.2% 50.6%);   /* #DC2626 */
 
   /* ── Shadows ── */
   --shadow-xs: 0 1px 2px hsl(0 0% 0% / 0.05);
@@ -87,27 +92,18 @@ html.light {
   --shadow-lg: 0 10px 28px hsl(0 0% 0% / 0.09), 0 2px 6px hsl(0 0% 0% / 0.05);
   --shadow-xl: 0 24px 48px hsl(0 0% 0% / 0.08), 0 8px 12px hsl(0 0% 0% / 0.04);
 
-  /* ── Financial-grade ambient shadows ── */
-  --shadow-ambient-xs: 0 1px 3px hsl(0 0% 0% / 0.04);
-  --shadow-ambient-sm: 0 1px 3px hsl(0 0% 0% / 0.05), 0 1px 2px hsl(0 0% 0% / 0.03);
-  --shadow-ambient-md: 0 4px 12px hsl(0 0% 0% / 0.06), 0 2px 4px hsl(0 0% 0% / 0.04);
-  --shadow-ambient-lg: 0 12px 32px hsl(0 0% 0% / 0.08), 0 4px 8px hsl(0 0% 0% / 0.04);
-  --shadow-ambient-xl: 0 24px 48px hsl(0 0% 0% / 0.10), 0 8px 16px hsl(0 0% 0% / 0.05);
+  /* ── Depth Insets (light mode — soft pressed feel) ── */
+  --inset-top-light: inset 0 1px 0 rgba(255,255,255,0.85);  /* card header edge   */
+  --inset-top-glow: none;                                     /* no glow in light   */
+  --inset-inner: inset 0 1px 3px rgba(0,0,0,0.06);           /* inputs, data cells */
 
-  /* ── Directional shadows (top-down light) ── */
-  --shadow-directional-xs: 0 2px 4px hsl(0 0% 0% / 0.03);
-  --shadow-directional-sm: 0 3px 6px hsl(0 0% 0% / 0.04);
-  --shadow-directional-md: 0 6px 14px hsl(0 0% 0% / 0.05);
-  --shadow-directional-lg: 0 14px 36px hsl(0 0% 0% / 0.07);
-  --shadow-directional-xl: 0 28px 56px hsl(0 0% 0% / 0.09);
-
-  /* ── Depth Accents ── */
+  /* Legacy alias overrides for light mode */
+  --inset-highlight: var(--inset-top-light);
   --inset-highlight-light: none;
-  --inset-highlight: none;
   --inset-highlight-subtle: none;
   --inset-shadow: inset 0 1px 0 hsl(0 0% 0% / 0.04);
   --inset-shadow-strong: inset 0 1px 0 hsl(0 0% 0% / 0.06);
-  --inset-shadow-deep: inset 0 2px 4px hsl(0 0% 0% / 0.05);
+  --inset-shadow-deep: var(--inset-inner);
 
   /* ── Surface layers (semantic mappings) ── */
   --surface-base: var(--bg-base);
@@ -115,39 +111,39 @@ html.light {
   --surface-elevated: var(--bg-elevated);
   --surface-overlay: var(--bg-elevated);
 
-  /* ── Tailwind-compatible HSL tokens (space-separated, used via hsl()) ── */
-  --background: 0 0% 100%;
-  --foreground: 222 47% 11%;
+  /* ── Tailwind-compatible HSL tokens ── */
+  --background: 216 12% 95%;
+  --foreground: 0 0% 5%;
   --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
+  --card-foreground: 0 0% 5%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
-  --primary: 210 92% 48%;
+  --popover-foreground: 0 0% 5%;
+  --primary: 221 83% 53%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 210 40% 94%;
-  --secondary-foreground: 222 47% 20%;
-  --muted: 210 40% 94%;
-  --muted-foreground: 215 20% 50%;
-  --accent: 160 60% 38%;
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 82% 58%;
+  --secondary: 220 14% 93%;
+  --secondary-foreground: 216 10% 20%;
+  --muted: 216 12% 93%;
+  --muted-foreground: 216 10% 58%;
+  --accent: 210 100% 96%;
+  --accent-foreground: 221 83% 53%;
+  --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 100%;
-  --border: 214 32% 90%;
-  --input: 214 32% 90%;
-  --ring: 210 92% 48%;
+  --border: 220 11% 91%;
+  --input: 220 11% 91%;
+  --ring: 221 83% 53%;
   --radius: 0.75rem;
 
   /* ── Navbar + Sidebar ── */
-  --navbar-bg: hsl(0 0% 100%);               /* #FFFFFF */
-  --navbar-border: hsl(214.3 31.8% 91.4%);   /* #E2E8F0 (slate-200) */
-  --sidebar-bg: hsl(210 40% 98%);            /* #F8FAFC (slate-50) */
-  --sidebar-border: hsl(214.3 31.8% 91.4%);  /* #E2E8F0 (slate-200) */
+  --navbar-bg: var(--bg-surface);
+  --navbar-border: var(--border-default);
+  --sidebar-bg: var(--bg-surface);
+  --sidebar-border: var(--border-default);
 
   /* ── Status glass backgrounds ── */
-  --success-glass: hsl(138.5 76.5% 96.7%);   /* #F0FDF4 (green-50) */
-  --warning-glass: hsl(48 100% 96.1%);        /* #FFFBEB (amber-50) */
-  --error-glass: hsl(0 85.7% 97.3%);          /* #FEF2F2 (red-50) */
-  --info-glass: hsl(204 100% 97.1%);          /* #F0F9FF (sky-50) */
+  --success-glass: hsl(138.5 76.5% 96.7%);
+  --warning-glass: hsl(48 100% 96.1%);
+  --error-glass: hsl(0 85.7% 97.3%);
+  --info-glass: hsl(204 100% 97.1%);
 
   /* ── Gradients ── */
   --gradient-primary: linear-gradient(135deg, hsl(226 70% 43%) 0%, hsl(252 75% 50%) 100%);
@@ -156,7 +152,7 @@ html.light {
   --gradient-hero: linear-gradient(135deg, hsl(210 100% 97%) 0%, hsl(260 100% 97%) 60%, hsl(160 64% 97%) 100%);
   --gradient-text: linear-gradient(135deg, hsl(221.2 83.3% 53.3%) 0%, hsl(271 76% 53%) 100%);
 
-  /* ── Button gradient tokens (light mode — 135deg, linear) ── */
+  /* ── Button gradient tokens (light mode) ── */
   --btn-primary-from: #1D4ED8;
   --btn-primary-to: #06B6D4;
   --btn-primary-label: #FFFFFF;

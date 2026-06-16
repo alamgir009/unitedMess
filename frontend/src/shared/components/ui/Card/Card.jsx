@@ -12,7 +12,7 @@ const Card = forwardRef(({
 }, ref) => {
   const variants = {
     default: 'surface-elevated text-card-foreground border border-border card-base',
-    glass: 'bg-[var(--surface-elevated)]/80 backdrop-blur-sm text-foreground border border-border rounded-lg',
+    glass: 'bg-[var(--surface-elevated)]/80 text-foreground border border-border rounded-lg',
     elevated: 'surface-elevated text-card-foreground border border-border card-elevated',
     flat: 'surface-raised text-foreground border border-muted rounded-lg',
     bordered: 'bg-transparent text-foreground border-2 border-border rounded-lg',

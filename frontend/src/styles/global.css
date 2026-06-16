@@ -43,14 +43,14 @@
   .text-body-lg { font-size: var(--text-body-lg); line-height: var(--leading-relaxed); }
   .text-body    { font-size: var(--text-body); }
   .text-label   { font-size: var(--text-label); color: var(--text-secondary); }
-  .text-caption { font-size: var(--text-caption); color: var(--text-muted); }
+  .text-caption { font-size: var(--text-caption); color: var(--text-tertiary); }
 
   .text-overline {
     font-size: var(--text-caption);
     font-weight: var(--weight-medium);
     letter-spacing: var(--tracking-wider);
     text-transform: uppercase;
-    color: var(--text-muted);
+    color: var(--text-tertiary);
   }
 
   .text-numeric {
@@ -106,7 +106,7 @@
     border-radius: var(--radius-sm);
   }
 
-  /* ─── Skip navigation (hidden until focused) ─── */
+  /* ─── Skip navigation ─── */
   .skip-nav {
     position: absolute;
     top: -100%;
@@ -183,72 +183,52 @@
   .surface-elevated { background: var(--surface-elevated); }
   .surface-overlay { background: var(--surface-overlay); }
 
-  /* ─── Depth accents (fintech-grade multi-layered inset + shadow) ─── */
+  /* ─── Depth inset accent classes ─── */
+  .inset-top-light { box-shadow: var(--inset-top-light); }
+  .inset-top-glow  { box-shadow: var(--inset-top-glow); }
+  .inset-inner     { box-shadow: var(--inset-inner); }
+
+  /* Legacy alias classes */
   .inset-highlight { box-shadow: var(--inset-highlight); }
-  .inset-shadow { box-shadow: var(--inset-shadow); }
   .inset-highlight-light { box-shadow: var(--inset-highlight-light); }
   .inset-highlight-subtle { box-shadow: var(--inset-highlight-subtle); }
+  .inset-shadow { box-shadow: var(--inset-shadow); }
+  .inset-shadow-deep { box-shadow: var(--inset-shadow-deep); }
 
-  /* Premium depth layers — combine ambient + directional shadows + top-lit inset */
-  .depth-base {
-    box-shadow: var(--shadow-ambient-xs), var(--inset-highlight-subtle);
-  }
+  /* ─── Depth layers — spec shadows + top-edge inset ─── */
   .depth-top {
-    box-shadow: var(--shadow-ambient-sm), var(--shadow-directional-xs), var(--inset-highlight);
+    box-shadow: var(--shadow-sm), var(--inset-top-light);
   }
   .depth-md {
-    box-shadow: var(--shadow-ambient-md), var(--shadow-directional-sm), var(--inset-highlight);
+    box-shadow: var(--shadow-md), var(--inset-top-light);
   }
   .depth-lg {
-    box-shadow: var(--shadow-ambient-lg), var(--shadow-directional-md), var(--inset-highlight-light);
-  }
-  .depth-xl {
-    box-shadow: var(--shadow-ambient-xl), var(--shadow-directional-lg), var(--inset-highlight-light);
-  }
-  .depth-premium {
-    box-shadow: var(--shadow-ambient-lg), var(--shadow-directional-md), var(--inset-highlight-light);
+    box-shadow: var(--shadow-lg), var(--inset-top-light);
   }
 
-  /* ─── Solid Surfaces (elevated with premium depth) ─── */
-  .glass {
-    background: var(--surface-elevated);
-    border: 1px solid var(--border-default);
-    box-shadow: var(--shadow-ambient-sm), var(--shadow-directional-xs), var(--inset-highlight);
-  }
-
-  .glass-heavy {
-    background: var(--surface-raised);
-    border: 1px solid var(--border-strong);
-    box-shadow: var(--shadow-ambient-md), var(--shadow-directional-sm), var(--inset-highlight-light);
-  }
-
-  .glass-premium {
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-ambient-lg), var(--shadow-directional-md), var(--inset-highlight-light);
-  }
-
-  /* ─── Card Variants (fintech-grade depth hierarchy) ─── */
+  /* ─── Card Variants ─── */
   .card-base {
     background: var(--surface-elevated);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-ambient-sm), var(--shadow-directional-xs), var(--inset-highlight);
+    box-shadow: var(--shadow-sm), var(--inset-top-light);
+  }
+  html.light .card-base {
+    box-shadow: var(--shadow-sm), var(--inset-top-light);
   }
 
   .card-elevated {
     background: var(--surface-elevated);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-ambient-md), var(--shadow-directional-sm), var(--inset-highlight-light);
+    box-shadow: var(--shadow-md), var(--inset-top-light);
   }
 
   .card-premium {
     background: var(--surface-elevated);
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-ambient-lg), var(--shadow-directional-md), var(--inset-highlight-light);
+    box-shadow: var(--shadow-lg), var(--inset-top-light);
   }
 
   .card-flat {
@@ -261,14 +241,33 @@
     background: var(--surface-elevated);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-ambient-sm), var(--shadow-directional-xs), var(--inset-highlight);
+    box-shadow: var(--shadow-sm), var(--inset-top-light);
     transition: box-shadow var(--duration-base) var(--ease-out),
                 transform var(--duration-base) var(--ease-out),
                 border-color var(--duration-base) var(--ease-out);
   }
   .card-interactive:hover {
-    box-shadow: var(--shadow-ambient-md), var(--shadow-directional-sm), var(--inset-highlight-light);
+    box-shadow: var(--shadow-md), var(--inset-top-light);
     border-color: hsl(var(--ring) / 0.3);
+  }
+
+  /* ─── Active/selected surface indicator ─── */
+  .active-surface {
+    background: var(--accent-subtle);
+    box-shadow: inset 3px 0 0 var(--accent-primary);
+  }
+
+  /* ─── Glass surfaces ─── */
+  .glass {
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-default);
+    box-shadow: var(--shadow-sm), var(--inset-top-light);
+  }
+
+  .glass-heavy {
+    background: var(--surface-raised);
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-md), var(--inset-top-light);
   }
 
   /* ─── Gradient Text ─── */
@@ -298,18 +297,25 @@
       background var(--duration-fast) var(--ease-out),
       box-shadow var(--duration-fast) var(--ease-out),
       transform var(--duration-fast) var(--ease-out),
-      border-color var(--duration-fast) var(--ease-out),
-      filter var(--duration-fast) var(--ease-out);
+      border-color var(--duration-fast) var(--ease-out);
     white-space: nowrap;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
   }
+
   .btn-primary {
-    box-shadow: var(--shadow-xs), var(--inset-highlight);
+    box-shadow: var(--shadow-xs), var(--inset-top-glow);
   }
   html.light .btn-primary {
     box-shadow: var(--shadow-xs), var(--inset-shadow);
   }
+  .btn-primary:hover:not(:disabled) {
+    box-shadow: var(--shadow-sm), var(--inset-top-glow);
+  }
+  html.light .btn-primary:hover:not(:disabled) {
+    box-shadow: var(--shadow-sm), var(--inset-shadow);
+  }
+
   .btn:active:not(:disabled) { transform: scale(0.97); }
   .btn:disabled {
     opacity: 0.45;
@@ -317,23 +323,16 @@
     pointer-events: none;
   }
 
-  /* ─── Button depth on hover ─── */
-  .btn-primary:hover:not(:disabled) {
-    box-shadow: var(--shadow-ambient-sm), var(--shadow-directional-xs), var(--inset-highlight);
-  }
-  html.light .btn-primary:hover:not(:disabled) {
-    box-shadow: var(--shadow-ambient-sm), var(--shadow-directional-xs), var(--inset-shadow);
-  }
   .btn-secondary:hover:not(:disabled),
   .btn-elevated:hover:not(:disabled) {
-    box-shadow: var(--shadow-ambient-sm), var(--shadow-directional-xs), var(--inset-highlight);
+    box-shadow: var(--shadow-sm), var(--inset-top-light);
   }
   html.light .btn-secondary:hover:not(:disabled),
   html.light .btn-elevated:hover:not(:disabled) {
-    box-shadow: var(--shadow-ambient-sm), var(--shadow-directional-xs), var(--inset-shadow);
+    box-shadow: var(--shadow-sm), var(--inset-shadow);
   }
 
-  /* ─── Input base (premium depth with inset shadows for realism) ─── */
+  /* ─── Input base ─── */
   .input-base {
     width: 100%;
     height: var(--input-height-md);
@@ -343,7 +342,7 @@
     border-radius: var(--radius-md);
     font-size: var(--text-label);
     color: var(--text-primary);
-    box-shadow: var(--inset-shadow-deep);
+    box-shadow: var(--inset-inner);
     transition:
       border-color var(--duration-fast) var(--ease-out),
       box-shadow var(--duration-fast) var(--ease-out);
@@ -351,25 +350,25 @@
     -webkit-appearance: none;
   }
   html.dark .input-base {
-    box-shadow: var(--inset-highlight-subtle), var(--shadow-ambient-xs);
+    box-shadow: var(--inset-top-glow), var(--shadow-xs);
   }
-  .input-base::placeholder { color: var(--text-muted); }
+  .input-base::placeholder { color: var(--text-tertiary); }
   .input-base:hover { border-color: var(--input-border-hover); }
   .input-base:focus {
     border-color: var(--input-border-focus);
-    box-shadow: var(--inset-shadow-deep), 0 0 0 3px rgba(var(--brand-rgb), 0.12);
+    box-shadow: var(--inset-inner), 0 0 0 3px rgba(var(--brand-rgb), 0.12);
   }
   html.dark .input-base:focus {
     border-color: var(--input-border-focus);
-    box-shadow: var(--inset-highlight-subtle), 0 0 0 3px rgba(var(--brand-rgb), 0.15);
+    box-shadow: var(--inset-top-glow), var(--shadow-xs), 0 0 0 3px rgba(var(--brand-rgb), 0.15);
   }
   .input-base[aria-invalid="true"] {
     border-color: var(--input-border-error);
-    box-shadow: var(--inset-shadow-deep), 0 0 0 3px rgba(220, 38, 38, 0.1);
+    box-shadow: var(--inset-inner), 0 0 0 3px rgba(220, 38, 38, 0.1);
   }
   html.dark .input-base[aria-invalid="true"] {
     border-color: var(--input-border-error);
-    box-shadow: var(--inset-highlight-subtle), 0 0 0 3px rgba(239, 68, 68, 0.15);
+    box-shadow: var(--inset-top-glow), var(--shadow-xs), 0 0 0 3px rgba(239, 68, 68, 0.15);
   }
   .input-base:disabled {
     background: var(--input-bg-disabled);
@@ -377,7 +376,7 @@
     cursor: not-allowed;
   }
 
-  /* ─── Badge base (enhanced with subtle depth) ─── */
+  /* ─── Badge base ─── */
   .badge-base {
     display: inline-flex;
     align-items: center;
@@ -403,11 +402,9 @@
   .badge-info    { background: var(--info-bg);    color: var(--info-text);    }
   .badge-neutral { background: var(--bg-muted);   color: var(--text-secondary); }
 
-  /* ─── Financial badges ─── */
   .badge-profit  { background: var(--profit-bg); color: var(--profit-text); }
   .badge-loss    { background: var(--loss-bg);   color: var(--loss-text);   }
 
-  /* ─── Premium solid badge variants ─── */
   .badge-solid-success { background: var(--success); color: var(--success-bg); }
   .badge-solid-warning { background: var(--warning); color: var(--warning-bg); }
   .badge-solid-danger  { background: var(--danger);  color: var(--danger-bg);  }
@@ -445,15 +442,14 @@
   .avatar-xl  { width: 64px; height: 64px; font-size: 20px; }
   .avatar-base img { width: 100%; height: 100%; object-fit: cover; }
 
-  /* ─── Avatar gradient palette (derived from brand tokens) ─── */
   .avatar-gradient-1 { background: linear-gradient(135deg, var(--brand), hsl(var(--accent))); }
-  .avatar-gradient-2 { background: linear-gradient(135deg, var(--brand), hsl(var(--secondary))); }
+  .avatar-gradient-2 { background: linear-gradient(135deg, var(--brand), hsl(222, 16%, 14%)); }
   .avatar-gradient-3 { background: linear-gradient(135deg, hsl(var(--accent)), hsl(160 58% 30%)); }
   .avatar-gradient-4 { background: linear-gradient(135deg, var(--danger), hsl(0 70% 40%)); }
   .avatar-gradient-5 { background: linear-gradient(135deg, hsl(38 96% 50%), hsl(31 94% 36%)); }
   .avatar-gradient-6 { background: linear-gradient(135deg, hsl(200 90% 50%), hsl(201 96% 32%)); }
 
-  /* ─── Table base (fintech-grade hierarchy with depth) ─── */
+  /* ─── Table base ─── */
   .table-base {
     width: 100%;
     border-collapse: separate;
@@ -462,7 +458,7 @@
   }
   .table-base thead th {
     background: var(--bg-muted);
-    color: var(--text-muted);
+    color: var(--text-tertiary);
     font-size: var(--text-caption);
     font-weight: var(--weight-semibold);
     letter-spacing: var(--tracking-wider);
@@ -495,7 +491,7 @@
     font-feature-settings: 'tnum';
   }
 
-  /* ─── Toast base (premium elevated toast with depth) ─── */
+  /* ─── Toast base ─── */
   .toast-base {
     display: flex;
     align-items: flex-start;
@@ -504,19 +500,16 @@
     background: var(--surface-elevated);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-ambient-lg), var(--shadow-directional-md), var(--inset-highlight);
+    box-shadow: var(--shadow-lg), var(--inset-top-light);
     min-width: 300px;
     max-width: 420px;
-  }
-  html.dark .toast-base {
-    box-shadow: var(--shadow-ambient-lg), var(--shadow-directional-md), var(--inset-highlight-light);
   }
   .toast-success { border-left: 3px solid var(--success); }
   .toast-warning { border-left: 3px solid var(--warning); }
   .toast-danger  { border-left: 3px solid var(--danger);  }
   .toast-info    { border-left: 3px solid var(--info);    }
 
-  /* ─── Searchbar (depth-refined, pill-shape with subtle elevation) ─── */
+  /* ─── Searchbar ─── */
   .searchbar-base {
     position: relative;
     display: flex;
@@ -536,13 +529,13 @@
     border-radius: var(--radius-full);
     background: var(--bg-subtle);
     border-color: transparent;
-    box-shadow: var(--inset-shadow-deep);
+    box-shadow: var(--inset-inner);
     transition: background var(--duration-fast) var(--ease-out),
                 border-color var(--duration-fast) var(--ease-out),
                 box-shadow var(--duration-fast) var(--ease-out);
   }
   html.dark .searchbar-base input {
-    box-shadow: var(--inset-highlight-subtle), var(--shadow-ambient-xs);
+    box-shadow: var(--inset-top-glow), var(--shadow-xs);
   }
   .searchbar-base input:focus {
     background: var(--surface-elevated);
@@ -552,7 +545,7 @@
   html.dark .searchbar-base input:focus {
     background: var(--surface-elevated);
     border-color: var(--input-border-focus);
-    box-shadow: var(--inset-highlight-subtle), 0 0 0 3px rgba(var(--brand-rgb), 0.15);
+    box-shadow: var(--inset-top-glow), var(--shadow-xs), 0 0 0 3px rgba(var(--brand-rgb), 0.15);
   }
   .searchbar-base .searchbar-kbd {
     position: absolute;
@@ -564,7 +557,7 @@
   .searchbar-base .searchbar-kbd kbd {
     font-size: 11px;
     font-family: var(--font-sans);
-    color: var(--text-muted);
+    color: var(--text-tertiary);
     background: var(--bg-muted);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-xs);
@@ -623,7 +616,7 @@
     contain: layout style;
   }
 
-  /* ─── Fintech-grade border utilities ─── */
+  /* ─── Border utilities ─── */
   .border-premium {
     border: 1px solid var(--border-strong);
   }
@@ -631,34 +624,26 @@
     border: 1px solid var(--border-muted);
   }
 
-  /* ─── Surface inset depth utilities ─── */
+  /* ─── Inset depth utility ─── */
   .inset-depth {
-    box-shadow: var(--inset-shadow-deep);
+    box-shadow: var(--inset-inner);
   }
   html.dark .inset-depth {
-    box-shadow: var(--inset-highlight-subtle), var(--shadow-ambient-xs);
-  }
-
-  /* ─── Premium glass surface with strong depth ─── */
-  .glass-premium-surface {
-    background: var(--bg-elevated);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--border-default);
-    box-shadow: var(--shadow-ambient-lg), var(--shadow-directional-md), var(--inset-highlight-light);
+    box-shadow: var(--inset-top-glow), var(--shadow-xs);
   }
 
   /* ─── Navbar/Sidebar depth accents ─── */
   .navbar-depth {
-    box-shadow: var(--shadow-ambient-sm), var(--inset-highlight-subtle);
+    box-shadow: var(--shadow-sm), var(--inset-top-glow);
   }
   html.light .navbar-depth {
-    box-shadow: var(--shadow-ambient-sm), var(--inset-shadow);
+    box-shadow: var(--shadow-sm), var(--inset-shadow);
   }
+
   .sidebar-depth {
-    box-shadow: var(--shadow-directional-xs), var(--inset-highlight-subtle);
+    box-shadow: var(--shadow-xs), var(--inset-top-glow);
   }
   html.light .sidebar-depth {
-    box-shadow: var(--shadow-directional-xs);
+    box-shadow: var(--shadow-xs);
   }
 }

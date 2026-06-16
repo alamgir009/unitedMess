@@ -19,40 +19,32 @@
   --radius-xl: 16px;
   --radius-full: 9999px;
 
-  /* === ELEVATION / SHADOW (ambient + directional pairs for realism) === */
+  /* === ELEVATION / SHADOW === */
   --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.06), 0 1px 1px rgba(0,0,0,0.04);
   --shadow-md: 0 3px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
   --shadow-lg: 0 8px 24px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06);
   --shadow-xl: 0 20px 25px rgba(0,0,0,0.08), 0 10px 10px rgba(0,0,0,0.04);
 
-  /* === FINANCIAL-GRADE AMBIENT SHADOWS (multi-layered depth) === */
-  --shadow-ambient-xs: 0 1px 3px rgba(0,0,0,0.04);
-  --shadow-ambient-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
-  --shadow-ambient-md: 0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04);
-  --shadow-ambient-lg: 0 12px 32px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.04);
-  --shadow-ambient-xl: 0 24px 48px rgba(0,0,0,0.10), 0 8px 16px rgba(0,0,0,0.05);
+  /* === DEPTH INSETS === */
+  /* Dark mode gets white top-edge light for physical lift; light mode gets soft pressed shadow */
+  --inset-top-light: inset 0 1px 0 rgba(255,255,255,0.10);  /* cards, nav, tabs */
+  --inset-top-glow:  inset 0 1px 0 rgba(255,255,255,0.06);  /* subtle surfaces   */
+  --inset-inner:     inset 0 2px 4px rgba(0,0,0,0.35);      /* wells, inputs     */
 
-  /* === DIRECTIONAL LIGHT SHADOWS (top-down light, stronger Y offset) === */
-  --shadow-directional-xs: 0 2px 4px rgba(0,0,0,0.03);
-  --shadow-directional-sm: 0 3px 6px rgba(0,0,0,0.04);
-  --shadow-directional-md: 0 6px 14px rgba(0,0,0,0.05);
-  --shadow-directional-lg: 0 14px 36px rgba(0,0,0,0.07);
-  --shadow-directional-xl: 0 28px 56px rgba(0,0,0,0.09);
-
-  /* === DEPTH INSETS (premium top-lit surface effect) === */
+  /* Legacy aliases (backward compat) */
+  --inset-highlight: var(--inset-top-light);
   --inset-highlight-light: inset 0 1px 0 rgba(255,255,255,0.12);
-  --inset-highlight: inset 0 1px 0 rgba(255,255,255,0.08);
-  --inset-highlight-subtle: inset 0 1px 0 rgba(255,255,255,0.04);
+  --inset-highlight-subtle: var(--inset-top-glow);
   --inset-shadow: inset 0 1px 0 rgba(0,0,0,0.04);
   --inset-shadow-strong: inset 0 1px 0 rgba(0,0,0,0.06);
-  --inset-shadow-deep: inset 0 2px 4px rgba(0,0,0,0.06);
+  --inset-shadow-deep: var(--inset-inner);
 
-  /* === SURFACE LAYERS (tonal shades of existing base) === */
+  /* === SURFACE LAYERS === */
   --surface-base: var(--bg-base);
   --surface-raised: var(--bg-surface);
-  --surface-elevated: var(--bg-base);
-  --surface-overlay: var(--bg-base);
+  --surface-elevated: var(--bg-elevated, var(--bg-base));
+  --surface-overlay: var(--bg-elevated, var(--bg-base));
 
   /* === Z-INDEX SCALE === */
   --z-base: 0;
@@ -107,7 +99,7 @@
   --tracking-wide: 0.02em;
   --tracking-wider: 0.05em;
 
-  /* === BUTTON RADII (scales with size — never pill, never sharp) === */
+  /* === BUTTON RADII (scales with size) === */
   --btn-radius-sm: 8px;
   --btn-radius-md: 10px;
   --btn-radius-lg: 12px;
@@ -120,9 +112,8 @@
   --btn-height-sm: 32px;
   --btn-height-md: 40px;
   --btn-height-lg: 48px;
-  --sidebar-width: 256px; /* aligns with w-64 (16rem = 256px) */
+  --sidebar-width: 256px;
   --sidebar-width-collapsed: 64px;
   --navbar-height: 60px;
   --content-max-width: 1280px;
-
 }

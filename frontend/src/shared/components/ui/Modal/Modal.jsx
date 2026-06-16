@@ -107,7 +107,7 @@ const Modal = ({
               'relative w-full modal-gpu',
               sizes[size],
               'surface-elevated border border-border rounded-xl',
-              'shadow-ambient-xl shadow-directional-lg',
+              'shadow-lg',
               'focus:outline-none',
               'max-h-[90vh] flex flex-col',
               'modal-animate',

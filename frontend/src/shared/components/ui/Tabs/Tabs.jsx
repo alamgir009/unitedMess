@@ -6,7 +6,7 @@ TabsList.displayName = 'TabsList';
   const wrapperStyles = {
     underline: 'flex border-b border-border gap-1 overflow-x-auto no-scrollbar',
     pill: 'flex bg-muted p-1 rounded-lg gap-1 overflow-x-auto no-scrollbar',
-    glass: 'flex bg-card/60 backdrop-blur-sm p-1 rounded-lg gap-1 border border-border overflow-x-auto no-scrollbar',
+    glass: 'flex bg-card/60 p-1 rounded-lg gap-1 border border-border overflow-x-auto no-scrollbar',
   };
   return (
     <div role="tablist" className={cn(wrapperStyles[variant], className)}>

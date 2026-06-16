@@ -9,27 +9,32 @@ html.dark {
   --brand-subtle: hsl(210 52% 25%);           /* #1E3A5F (approx) */
   --brand-foreground: hsl(0 0% 100%);         /* #FFFFFF */
 
-  /* ── Surface hierarchy (fintech-grade depth: darker base, stepped surfaces with top-lit insets) ── */
-  --bg-base: hsl(225 28% 7%);                /* #0B0F18 - deep midnight, richest base */
-  --bg-surface: hsl(224 22% 11%);            /* #131724 - first step up from base */
-  --bg-raised: hsl(222 20% 14.5%);           /* #1A1F2E - elevated surface */
-  --bg-subtle: hsl(224 22% 11%);             /* #131724 - matches surface */
-  --bg-muted: hsl(222 20% 14.5%);            /* #1A1F2E - matches raised */
-  --bg-elevated: hsl(220 18% 17%);           /* #212638 - highest surface, lightest */
+  /* ── Fintech accent palette ── */
+  --accent-primary: #4D9CFF;                   /* CTA, active indicators */
+  --accent-subtle: hsl(217 44% 17%);           /* #1A2740 — tinted bg */
+
+  /* ── Surface hierarchy (fintech spec: deepest → raised → elevated → overlay) ── */
+  --bg-base: hsl(225 14% 6%);                /* #0D0F12 — deepest page bg */
+  --bg-surface: hsl(222 16% 8%);             /* #13161B — sidebar/nav     */
+  --bg-raised: hsl(222 16% 8%);              /* #13161B */
+  --bg-subtle: hsl(222 16% 8%);              /* #13161B */
+  --bg-muted: hsl(220 14% 11%);              /* #181C24 */
+  --bg-elevated: hsl(220 12% 14%);           /* #1A1E26 — cards, elevated */
   --bg-overlay: hsl(0 0% 0% / 0.6);          /* #000 @ 60% */
 
   /* ── Borders ── */
-  --border-default: hsl(222 18% 16%);        /* #21253A - refined dark border */
-  --border-muted: hsl(224 20% 12%);          /* #161A26 - subtle border */
-  --border-strong: hsl(220 16% 24%);         /* #32384A - stronger border for hierarchy */
-  --border-brand: hsl(217.2 91.2% 59.8%);    /* #3B82F6 (blue-500) */
+  --border-default: hsl(224 12% 16%);        /* #1F2430 */
+  --border-muted: hsl(224 12% 14%);          /* #171B24 */
+  --border-strong: hsl(228 11% 23%);         /* #2D3448 */
+  --border-brand: hsl(217.2 91.2% 59.8%);    /* #3B82F6 */
 
   /* ── Text hierarchy ── */
-  --text-primary: hsl(210 40% 96.1%);         /* #F1F5F9 (slate-100) */
-  --text-secondary: hsl(215 20.2% 65.1%);     /* #94A3B8 (slate-400) */
-  --text-muted: hsl(215 14.3% 34.1%);         /* #475569 (slate-600) */
-  --text-disabled: hsl(215.3 25% 26.7%);      /* #334155 (slate-700) */
-  --text-on-brand: hsl(0 0% 100%);            /* #FFFFFF */
+  --text-primary: hsl(216 12% 95%);          /* #F0F2F5 */
+  --text-secondary: hsl(216 10% 58%);        /* #9CA3AF */
+  --text-tertiary: hsl(216 10% 37%);         /* #4B5563 */
+  --text-muted: hsl(216 10% 37%);            /* #4B5563 */
+  --text-disabled: hsl(228 11% 23%);         /* #2D3448 */
+  --text-on-brand: hsl(0 0% 100%);           /* #FFFFFF */
   --text-inverse: hsl(210 40% 98%);           /* #F8FAFC */
 
   /* ── Semantic tokens ── */
@@ -48,7 +53,7 @@ html.dark {
   --danger-border: hsl(0 62.8% 30.6%);        /* #7F1D1D (red-800) */
   --danger-text: hsl(0 93.5% 81.8%);          /* #FCA5A5 (red-300) */
 
-  --error: hsl(0 84.2% 60.2%);               /* alias for danger */
+  --error: hsl(0 84.2% 60.2%);
   --error-bg: hsl(0 74% 15%);
   --error-border: hsl(0 62.8% 30.6%);
   --error-text: hsl(0 93.5% 81.8%);
@@ -59,11 +64,11 @@ html.dark {
   --info-text: hsl(199.4 95.5% 73.9%);        /* #7DD3FC (sky-300) */
 
   /* ── Financial tokens (aliases) ── */
-  --profit: hsl(142.1 70.6% 45.3%);          /* same as success */
+  --profit: hsl(142.1 70.6% 45.3%);
   --profit-bg: hsl(149 80% 10%);
   --profit-text: hsl(141.9 69.2% 58%);
 
-  --loss: hsl(0 84.2% 60.2%);               /* same as danger */
+  --loss: hsl(0 84.2% 60.2%);
   --loss-bg: hsl(0 74% 15%);
   --loss-text: hsl(0 93.5% 81.8%);
 
@@ -71,91 +76,82 @@ html.dark {
   --neutral-bg: hsl(215.3 25% 26.7%);         /* #334155 (slate-700) */
   --neutral-text: hsl(216 12.2% 83.9%);       /* #D1D5DB (gray-300) */
 
-  /* ── Component inputs (deeper surfaces with strong inset highlights) ── */
-  --input-bg: hsl(224 20% 12%);              /* #181C2A - dark input base */
-  --input-bg-disabled: hsl(225 18% 10%);      /* #12151F - disabled state */
-  --input-border: hsl(222 16% 20%);           /* #262B3D - subtle border */
-  --input-border-hover: hsl(220 15% 28%);     /* #363C50 - stronger on hover */
-  --input-border-focus: hsl(217.2 91.2% 59.8%); /* #3B82F6 (blue-500) */
-  --input-border-error: hsl(0 84.2% 60.2%);   /* #EF4444 (red-500) */
+  /* ── Component inputs ── */
+  --input-bg: hsl(224 12% 13%);              /* #1A1E26 — recessed input well */
+  --input-bg-disabled: hsl(225 10% 10%);      /* #15181E */
+  --input-border: hsl(224 12% 16%);           /* #1F2430 */
+  --input-border-hover: hsl(228 11% 23%);     /* #2D3448 */
+  --input-border-focus: hsl(217.2 91.2% 59.8%); /* #3B82F6 */
+  --input-border-error: hsl(0 84.2% 60.2%);   /* #EF4444 */
 
-  /* ── Premium dark shadows (ambient + directional for realistic depth) ── */
+  /* ── Premium dark shadows ── */
   --shadow-xs: 0 1px 2px hsl(0 0% 0% / 0.35);
   --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.40), 0 1px 1px hsl(0 0% 0% / 0.30);
   --shadow-md: 0 4px 12px hsl(0 0% 0% / 0.45), 0 1px 3px hsl(0 0% 0% / 0.35);
   --shadow-lg: 0 10px 28px hsl(0 0% 0% / 0.50), 0 2px 6px hsl(0 0% 0% / 0.40);
   --shadow-xl: 0 24px 48px hsl(0 0% 0% / 0.55), 0 8px 12px hsl(0 0% 0% / 0.45);
 
-  /* ── Financial-grade ambient shadows (dark mode - deep wrap with top softening) ── */
-  --shadow-ambient-xs: 0 1px 3px hsl(0 0% 0% / 0.35);
-  --shadow-ambient-sm: 0 1px 3px hsl(0 0% 0% / 0.38), 0 1px 2px hsl(0 0% 0% / 0.30);
-  --shadow-ambient-md: 0 4px 12px hsl(0 0% 0% / 0.42), 0 2px 4px hsl(0 0% 0% / 0.34);
-  --shadow-ambient-lg: 0 12px 32px hsl(0 0% 0% / 0.48), 0 4px 8px hsl(0 0% 0% / 0.38);
-  --shadow-ambient-xl: 0 24px 48px hsl(0 0% 0% / 0.52), 0 8px 16px hsl(0 0% 0% / 0.42);
+  /* ── Depth Insets (dark mode — white top-edge light for physical lift) ── */
+  --inset-top-light: inset 0 1px 0 rgba(255,255,255,0.10);  /* cards, nav, tabs    */
+  --inset-top-glow:  inset 0 1px 0 rgba(255,255,255,0.06);  /* subtle surfaces      */
+  --inset-inner:     inset 0 2px 4px rgba(0,0,0,0.35);      /* wells, input fields  */
 
-  /* ── Directional shadows (stronger Y-offset for top-lit feel) ── */
-  --shadow-directional-xs: 0 2px 4px hsl(0 0% 0% / 0.30);
-  --shadow-directional-sm: 0 3px 6px hsl(0 0% 0% / 0.33);
-  --shadow-directional-md: 0 6px 14px hsl(0 0% 0% / 0.36);
-  --shadow-directional-lg: 0 14px 36px hsl(0 0% 0% / 0.40);
-  --shadow-directional-xl: 0 28px 56px hsl(0 0% 0% / 0.45);
-
-  /* ── Deep Accents — premium top-lit inset highlights for realistic depth ── */
-  --inset-highlight-light: inset 0 1px 0 hsl(0 0% 100% / 0.12);
-  --inset-highlight: inset 0 1px 0 hsl(0 0% 100% / 0.08);
-  --inset-highlight-subtle: inset 0 1px 0 hsl(0 0% 100% / 0.05);
+  /* Legacy alias overrides for dark mode */
+  --inset-highlight: var(--inset-top-light);
+  --inset-highlight-light: inset 0 1px 0 rgba(255,255,255,0.12);
+  --inset-highlight-subtle: var(--inset-top-glow);
   --inset-shadow: none;
   --inset-shadow-strong: none;
-  --inset-shadow-deep: none;
+  --inset-shadow-deep: var(--inset-inner);
 
-  /* ── Surface layers (dark mode: elevated/overlay are lighter than page for depth pyramid) ── */
+  /* ── Surface layers (dark mode: elevated/overlay lighter than base for depth pyramid) ── */
   --surface-base: var(--bg-base);
   --surface-raised: var(--bg-surface);
   --surface-elevated: var(--bg-elevated);
   --surface-overlay: var(--bg-elevated);
 
-  /* ── Tailwind-compatible HSL tokens (space-separated, used via hsl()) ── */
-  --background: 225 28% 7%;
-  --foreground: 210 40% 96%;
-  --card: 220 18% 17%;
-  --card-foreground: 210 40% 96%;
-  --popover: 220 18% 17%;
-  --popover-foreground: 210 40% 96%;
-  --primary: 210 92% 58%;
-  --primary-foreground: 225 28% 7%;
-  --secondary: 222 20% 18%;
-  --secondary-foreground: 210 40% 90%;
-  --muted: 222 20% 18%;
-  --muted-foreground: 215 20% 55%;
-  --accent: 160 60% 45%;
-  --accent-foreground: 225 28% 7%;
-  --destructive: 0 70% 50%;
-  --destructive-foreground: 210 40% 96%;
-  --border: 222 18% 16%;
-  --input: 222 18% 16%;
-  --ring: 210 92% 58%;
+  /* ── Tailwind-compatible HSL tokens ── */
+  --background: 225 14% 6%;
+  --foreground: 216 12% 95%;
+  --card: 220 12% 14%;
+  --card-foreground: 216 12% 95%;
+  --popover: 220 12% 14%;
+  --popover-foreground: 216 12% 95%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 225 14% 6%;
+  --secondary: 222 16% 14%;
+  --secondary-foreground: 216 12% 85%;
+  --muted: 220 14% 11%;
+  --muted-foreground: 216 10% 37%;
+  --accent: 217 44% 17%;
+  --accent-foreground: 217 91% 60%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 216 12% 95%;
+  --border: 224 12% 16%;
+  --input: 224 12% 16%;
+  --ring: 217 91% 60%;
   --radius: 0.75rem;
 
   /* ── Navbar + Sidebar ── */
-  --navbar-bg: hsl(225 28% 7%);              /* matches bg-base */
-  --navbar-border: hsl(222 18% 16%);          /* matches border-default */
-  --sidebar-bg: hsl(225 28% 7%);             /* matches bg-base */
-  --sidebar-border: hsl(222 18% 16%);         /* matches border-default */
+  --navbar-bg: var(--bg-surface);
+  --navbar-border: var(--border-default);
+  --sidebar-bg: var(--bg-surface);
+  --sidebar-border: var(--border-default);
 
   /* ── Status glass backgrounds ── */
-  --success-glass: hsl(149 80% 10%);          /* #052E16 */
-  --warning-glass: hsl(24 83% 14%);           /* #422006 */
-  --error-glass: hsl(0 74% 15%);             /* #450A0A */
-  --info-glass: hsl(212 59% 11%);             /* #0C1A2E */
+  --success-glass: hsl(149 80% 10%);
+  --warning-glass: hsl(24 83% 14%);
+  --error-glass: hsl(0 74% 15%);
+  --info-glass: hsl(212 59% 11%);
 
-  /* ── Gradients (enhanced for dark mode depth) ── */
+  /* ── Gradients ── */
   --gradient-primary: linear-gradient(135deg, hsl(226 70% 58%) 0%, hsl(252 75% 62%) 100%);
   --gradient-secondary: linear-gradient(135deg, hsl(222 20% 24%) 0%, hsl(225 20% 20%) 100%);
   --gradient-destructive: linear-gradient(135deg, hsl(350 65% 56%) 0%, hsl(0 72% 62%) 100%);
   --gradient-hero: linear-gradient(135deg, hsl(225 28% 7%) 0%, hsl(248 47% 20%) 60%, hsl(212 59% 11%) 100%);
   --gradient-text: linear-gradient(135deg, hsl(213.1 93.9% 67.8%) 0%, hsl(258 90% 66%) 100%);
 
-  /* ── Button gradient tokens (dark mode — 135deg, linear) ── */
+  /* ── Button gradient tokens (dark mode) ── */
   --btn-primary-from: #2563EB;
   --btn-primary-to: #22D3EE;
   --btn-primary-label: #FFFFFF;
@@ -230,7 +226,7 @@ html.dark {
   --btn-brand-subtle-label: #D5E0EE;
   --btn-brand-subtle-border: transparent;
 
-  /* ── Blobs (subtle brand glow on dark) ── */
+  /* ── Blobs ── */
   --blob-1: hsla(217, 91%, 60%, 0.08);
   --blob-2: hsla(258, 90%, 66%, 0.05);
   --blob-3: transparent;

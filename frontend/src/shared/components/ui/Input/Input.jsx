@@ -49,7 +49,7 @@ const Input = forwardRef(({
       stateBorder,
     ),
     glass: cn(
-      'surface-elevated/60 backdrop-blur-sm text-foreground placeholder:text-muted-foreground',
+      'surface-elevated/60 text-foreground placeholder:text-muted-foreground',
       'border rounded-lg caret-foreground',
       'focus:outline-none focus:ring-2',
       'transition-all duration-[var(--duration-fast)]',
