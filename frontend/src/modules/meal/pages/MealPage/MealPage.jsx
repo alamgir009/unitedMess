@@ -313,7 +313,7 @@ const MealPage = () => {
 
                     {/* Dining Roster */}
                     <div
-                        className="rounded-xl border border-border/50 bg-card overflow-hidden transition-shadow duration-200"
+                        className="card-base overflow-hidden"
                     >
                         <button
                             onClick={() => setIsRosterOpen(p => !p)}

@@ -49,7 +49,7 @@ import { getBillingPeriod } from '@shared/utils/billingPeriod';
 import { usePayment } from '../../hooks/usePayment';
 
 const InvoiceSkeleton = React.memo(() => (
-    <div className="rounded-xl border border-border/50 bg-card p-5 animate-pulse space-y-4">
+    <div className="card-base p-5 animate-pulse space-y-4">
         <div className="flex justify-between">
             <div className="h-7 w-44 bg-muted/40 rounded-md" />
             <div className="h-7 w-28 bg-muted/30 rounded-md" />
@@ -480,7 +480,7 @@ const PaymentPage = () => {
 
                     {/* Gas Bill Pay card */}
                     {(gasBillVal > 0 || gasBillPaid) && !bothPaid && (
-                        <div className="rounded-xl border border-border/50 bg-card p-5 shadow-sm">
+                        <div className="card-base p-5">
                             <div className="flex items-center justify-between gap-4">
                                 <div className="flex items-center gap-3 min-w-0">
                                     <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 shrink-0">

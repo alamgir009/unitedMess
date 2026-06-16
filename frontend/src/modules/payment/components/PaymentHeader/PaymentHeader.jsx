@@ -52,7 +52,7 @@ const PaymentHeader = ({
                         onClick={() => onViewModeChange('grid')}
                         title="Grid view"
                         aria-label="Grid view"
-                        className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-150 ${viewMode === 'grid' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                        className={`p-2 rounded-lg transition-all duration-150 ${viewMode === 'grid' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                     >
                         <HiOutlineSquares2X2 className="w-4 h-4" />
                     </button>
@@ -60,7 +60,7 @@ const PaymentHeader = ({
                         onClick={() => onViewModeChange('list')}
                         title="List view"
                         aria-label="List view"
-                        className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-150 ${viewMode === 'list' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                        className={`p-2 rounded-lg transition-all duration-150 ${viewMode === 'list' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                     >
                         <HiOutlineListBullet className="w-4 h-4" />
                     </button>
