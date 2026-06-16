@@ -9,7 +9,7 @@ import { cn } from '@/core/utils/helpers/string.helper';
 
 const COLORS = {
     primary: 'bg-primary/10 border-primary/20 text-primary',
-    accent: 'bg-accent/10 border-accent/20 text-accent-foreground',
+    accent: 'bg-accent-500/10 border-accent-500/20 text-accent-500 dark:text-accent-400',
     amber: 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400',
     secondary: 'bg-secondary-500/10 border-secondary-500/20 text-secondary-600 dark:text-secondary-400',
 };

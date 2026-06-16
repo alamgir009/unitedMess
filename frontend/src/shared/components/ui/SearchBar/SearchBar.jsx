@@ -16,7 +16,7 @@ const SearchBar = ({
   const shouldReduceMotion = useReducedMotion();
 
   return (
-  <div className="group relative flex flex-col rounded-lg border border-border surface-elevated shadow-sm overflow-hidden transition-shadow duration-150">
+  <div className="group relative flex flex-col rounded-lg border border-border surface-elevated depth-top overflow-hidden transition-shadow duration-150">
     <div className="flex flex-row items-center gap-2 p-2.5">
       <div className="relative flex-1">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />

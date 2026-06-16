@@ -81,7 +81,7 @@ const MemberRow = React.memo(({
     const dateRange = formatDateRange(meals);
 
     return (
-        <div className="rounded-xl border border-border/50 bg-card overflow-hidden transition-shadow duration-150">
+        <div className="rounded-xl border border-border/50 bg-card overflow-hidden depth-top transition-shadow duration-150">
             <button
                 onClick={() => onToggle(member._id)}
                 className="w-full px-4 py-3.5 sm:px-5 sm:py-4 flex items-center gap-3 text-left group hover:bg-muted/20 transition-colors duration-150"

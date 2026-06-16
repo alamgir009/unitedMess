@@ -65,7 +65,7 @@ const MealCard = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin,
         <article
             ref={ref}
             onClick={handleCardClick}
-            className={`group relative flex flex-col rounded-xl bg-card border overflow-hidden shadow-sm hover:shadow-md transition-all duration-150 cursor-default ${isSelected ? 'ring-2 ring-primary/40 border-primary/30' : 'border-border/50'}`}
+            className={`group relative flex flex-col rounded-xl bg-card border overflow-hidden depth-top hover:shadow-md transition-all duration-150 cursor-default ${isSelected ? 'ring-2 ring-primary/40 border-primary/30' : 'border-border/50'}`}
         >
             <div className="flex items-start justify-between px-4 pt-3.5">
                 <div className="flex items-center gap-2">
@@ -170,7 +170,7 @@ const MealRow = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin, 
     return (
         <div
             ref={ref}
-            className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl bg-card border hover:bg-muted/20 transition-all duration-150 shadow-sm overflow-hidden cursor-default ${isSelected ? 'ring-2 ring-primary/40 border-primary/30' : 'border-border/50'}`}
+            className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl bg-card border hover:bg-muted/20 transition-all duration-150 depth-top overflow-hidden cursor-default ${isSelected ? 'ring-2 ring-primary/40 border-primary/30' : 'border-border/50'}`}
         >
             <input
                 type="checkbox"
@@ -318,7 +318,7 @@ const MealList = ({ meals = [], onEdit, onDelete, isAdmin = false, viewMode = 'g
     }
 
     const selectionBar = (
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/30 border border-border/40 mb-3">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/30 border border-border/40 mb-3 depth-top">
             <SelectAllCheckbox
                 checked={allSelected}
                 indeterminate={someSelected}
