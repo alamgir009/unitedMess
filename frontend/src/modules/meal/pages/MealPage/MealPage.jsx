@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { AnimatePresence } from 'framer-motion';
+
 import {
     HiOutlinePlus, HiOutlineSquares2X2, HiOutlineListBullet,
     HiOutlineShieldCheck, HiOutlineSparkles,
@@ -29,7 +29,11 @@ import MealStatsBar from '../../components/MealStatsBar/MealStatsBar';
 
 const MealPage = () => {
     const dispatch = useDispatch();
-    const { meals, pagination, isLoading, isError, message } = useSelector((s) => s.meal);
+    const meals = useSelector((s) => s.meal.meals);
+    const pagination = useSelector((s) => s.meal.pagination);
+    const isLoading = useSelector((s) => s.meal.isLoading);
+    const isError = useSelector((s) => s.meal.isError);
+    const message = useSelector((s) => s.meal.message);
     const { user } = useSelector((s) => s.auth);
     const isAdmin = user?.role === 'admin';
 
@@ -55,6 +59,8 @@ const MealPage = () => {
         isAdmin ? { page: 1, limit: 'all' } : { page, limit },
         [isAdmin, page, limit],
     );
+
+    const selectedDate = useMemo(() => new Date().toISOString(), []);
 
     useEffect(() => {
         dispatch(fetchMeals(fetchParams))
@@ -344,18 +350,15 @@ const MealPage = () => {
                         </button>
 
                         <div
-                            className="grid transition-all duration-300 ease-out"
+                            className="overflow-hidden transition-all duration-300 ease-out"
                             style={{
-                                gridTemplateRows: isRosterOpen ? '1fr' : '0fr',
+                                maxHeight: isRosterOpen ? '2000px' : '0px',
+                                opacity: isRosterOpen ? 1 : 0,
                                 transitionTimingFunction: 'cubic-bezier(0.33, 1, 0.68, 1)',
                             }}
                         >
-                            <div className="overflow-hidden">
-                                <div
-                                    className={`px-4 pb-4 sm:px-5 sm:pb-5 transition-all duration-300 ease-out ${isRosterOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'}`}
-                                >
-                                    <MealPolling selectedDate={new Date().toISOString()} />
-                                </div>
+                            <div className="px-4 pb-4 sm:px-5 sm:pb-5 contain-content">
+                                <MealPolling selectedDate={selectedDate} />
                             </div>
                         </div>
                     </div>
@@ -380,59 +383,53 @@ const MealPage = () => {
                         onClearFilters={clearFilters}
                     />
 
-                    <AnimatePresence>
-                        {isFiltered && meals?.length > 0 && !isAdmin && (
-                            <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-primary/5 border border-primary/15 text-primary text-xs font-medium">
-                                <HiOutlineInformationCircle className="w-4 h-4 flex-shrink-0" />
-                                Filtering within the current page ({meals.length} records). Clear filters to browse all pages.
-                            </div>
-                        )}
-                    </AnimatePresence>
+                    {isFiltered && meals?.length > 0 && !isAdmin && (
+                        <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-primary/5 border border-primary/15 text-primary text-xs font-medium">
+                            <HiOutlineInformationCircle className="w-4 h-4 flex-shrink-0" />
+                            Filtering within the current page ({meals.length} records). Clear filters to browse all pages.
+                        </div>
+                    )}
 
                     {/* Error Banner */}
-                    <AnimatePresence>
-                        {(isError || errorMsg) && (
-                            <div className="flex items-start gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive">
-                                <span className="w-2 h-2 rounded-full bg-destructive mt-1.5 flex-shrink-0" />
-                                <p className="flex-1 text-sm font-medium">{errorMsg || message || 'Something went wrong. Please try again.'}</p>
-                                <button
-                                    onClick={() => { setErrorMsg(''); dispatch(reset()); }}
-                                    className="flex-shrink-0 p-1 rounded-lg hover:bg-destructive/10 transition-colors"
-                                    title="Dismiss"
-                                    aria-label="Dismiss error"
-                                >
-                                    <HiOutlineXMark className="w-5 h-5" />
-                                </button>
-                            </div>
-                        )}
-                    </AnimatePresence>
+                    {(isError || errorMsg) && (
+                        <div className="flex items-start gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive">
+                            <span className="w-2 h-2 rounded-full bg-destructive mt-1.5 flex-shrink-0" />
+                            <p className="flex-1 text-sm font-medium">{errorMsg || message || 'Something went wrong. Please try again.'}</p>
+                            <button
+                                onClick={() => { setErrorMsg(''); dispatch(reset()); }}
+                                className="flex-shrink-0 p-1 rounded-lg hover:bg-destructive/10 transition-colors"
+                                title="Dismiss"
+                                aria-label="Dismiss error"
+                            >
+                                <HiOutlineXMark className="w-5 h-5" />
+                            </button>
+                        </div>
+                    )}
 
                     {/* Bulk Action Bar */}
-                    <AnimatePresence>
-                        {selectedIds.size > 0 && (
-                            <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-primary/5 border border-primary/15">
-                                <HiOutlineInformationCircle className="w-4 h-4 text-primary flex-shrink-0" />
-                                <span className="text-sm font-medium text-foreground">
-                                    {selectedIds.size} selected
-                                </span>
-                                <div className="flex-1" />
-                                <button
-                                    onClick={clearSelection}
-                                    className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
-                                >
-                                    Deselect All
-                                </button>
-                                <Button
-                                    variant="danger"
-                                    size="sm"
-                                    onClick={handleBulkDeleteRequest}
-                                >
-                                    <HiOutlineTrash className="w-3.5 h-3.5" />
-                                    Delete Selected
-                                </Button>
-                            </div>
-                        )}
-                    </AnimatePresence>
+                    {selectedIds.size > 0 && (
+                        <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-primary/5 border border-primary/15">
+                            <HiOutlineInformationCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                            <span className="text-sm font-medium text-foreground">
+                                {selectedIds.size} selected
+                            </span>
+                            <div className="flex-1" />
+                            <button
+                                onClick={clearSelection}
+                                className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
+                            >
+                                Deselect All
+                            </button>
+                            <Button
+                                variant="danger"
+                                size="sm"
+                                onClick={handleBulkDeleteRequest}
+                            >
+                                <HiOutlineTrash className="w-3.5 h-3.5" />
+                                Delete Selected
+                            </Button>
+                        </div>
+                    )}
 
                     {/* Content */}
                     {isLoading && !isAdmin && (!meals || meals.length === 0) ? (

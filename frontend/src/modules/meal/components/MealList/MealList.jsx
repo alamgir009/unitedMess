@@ -45,11 +45,10 @@ const TYPE = {
 
 const CHECKBOX_CLS = 'appearance-none w-4 h-4 rounded border-2 border-border/60 bg-card cursor-pointer transition-all duration-100 checked:border-primary checked:bg-primary checked:shadow-sm shrink-0 hover:border-primary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30';
 
-const MealCard = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin, selectedIds, onToggleSelect }, ref) => {
+const MealCard = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin, isSelected, onToggleSelect }, ref) => {
     const cfg = TYPE[meal.type] || TYPE.both;
     const { Icon } = cfg;
     const date = formatSmartDate(meal.date);
-    const isSelected = selectedIds?.has(meal._id);
 
     const handleCheckboxChange = useCallback(() => {
         onToggleSelect(meal._id);
@@ -157,11 +156,10 @@ const MealCard = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin,
 }));
 MealCard.displayName = 'MealCard';
 
-const MealRow = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin, selectedIds, onToggleSelect }, ref) => {
+const MealRow = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin, isSelected, onToggleSelect }, ref) => {
     const cfg = TYPE[meal.type] || TYPE.both;
     const { Icon } = cfg;
     const date = formatSmartDate(meal.date);
-    const isSelected = selectedIds?.has(meal._id);
 
     const handleCheckboxChange = useCallback(() => {
         onToggleSelect(meal._id);
@@ -346,7 +344,7 @@ const MealList = ({ meals = [], onEdit, onDelete, isAdmin = false, viewMode = 'g
                             onEdit={onEdit}
                             onDelete={onDelete}
                             isAdmin={isAdmin}
-                            selectedIds={selectedIds}
+                            isSelected={selectedIds.has(meal._id)}
                             onToggleSelect={onToggleSelect}
                         />
                     ))}
@@ -366,7 +364,7 @@ const MealList = ({ meals = [], onEdit, onDelete, isAdmin = false, viewMode = 'g
                         onEdit={onEdit}
                         onDelete={onDelete}
                         isAdmin={isAdmin}
-                        selectedIds={selectedIds}
+                        isSelected={selectedIds.has(meal._id)}
                         onToggleSelect={onToggleSelect}
                     />
                 ))}

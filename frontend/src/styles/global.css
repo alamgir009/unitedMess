@@ -195,15 +195,15 @@
   .inset-shadow { box-shadow: var(--inset-shadow); }
   .inset-shadow-deep { box-shadow: var(--inset-shadow-deep); }
 
-  /* ─── Depth layers — spec shadows + top-edge inset ─── */
+  /* ─── Depth layers — single shadow for paint efficiency ─── */
   .depth-top {
-    box-shadow: var(--shadow-sm), var(--inset-top-light);
+    box-shadow: var(--shadow-xs);
   }
   .depth-md {
-    box-shadow: var(--shadow-md), var(--inset-top-light);
+    box-shadow: var(--shadow-sm);
   }
   .depth-lg {
-    box-shadow: var(--shadow-lg), var(--inset-top-light);
+    box-shadow: var(--shadow-md);
   }
 
   /* ─── Card Variants ─── */
@@ -211,24 +211,21 @@
     background: var(--surface-elevated);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm), var(--inset-top-light);
-  }
-  html.light .card-base {
-    box-shadow: var(--shadow-sm), var(--inset-top-light);
+    box-shadow: var(--shadow-xs);
   }
 
   .card-elevated {
     background: var(--surface-elevated);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md), var(--inset-top-light);
+    box-shadow: var(--shadow-sm);
   }
 
   .card-premium {
     background: var(--surface-elevated);
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg), var(--inset-top-light);
+    box-shadow: var(--shadow-md);
   }
 
   .card-flat {
@@ -241,13 +238,13 @@
     background: var(--surface-elevated);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm), var(--inset-top-light);
+    box-shadow: var(--shadow-xs);
     transition: box-shadow var(--duration-base) var(--ease-out),
                 transform var(--duration-base) var(--ease-out),
                 border-color var(--duration-base) var(--ease-out);
   }
   .card-interactive:hover {
-    box-shadow: var(--shadow-md), var(--inset-top-light);
+    box-shadow: var(--shadow-sm);
     border-color: hsl(var(--ring) / 0.3);
   }
 
@@ -261,13 +258,13 @@
   .glass {
     background: var(--surface-elevated);
     border: 1px solid var(--border-default);
-    box-shadow: var(--shadow-sm), var(--inset-top-light);
+    box-shadow: var(--shadow-xs);
   }
 
   .glass-heavy {
     background: var(--surface-raised);
     border: 1px solid var(--border-strong);
-    box-shadow: var(--shadow-md), var(--inset-top-light);
+    box-shadow: var(--shadow-sm);
   }
 
   /* ─── Gradient Text ─── */
@@ -304,16 +301,10 @@
   }
 
   .btn-primary {
-    box-shadow: var(--shadow-xs), var(--inset-top-glow);
-  }
-  html.light .btn-primary {
-    box-shadow: var(--shadow-xs), var(--inset-shadow);
+    box-shadow: var(--shadow-xs);
   }
   .btn-primary:hover:not(:disabled) {
-    box-shadow: var(--shadow-sm), var(--inset-top-glow);
-  }
-  html.light .btn-primary:hover:not(:disabled) {
-    box-shadow: var(--shadow-sm), var(--inset-shadow);
+    box-shadow: var(--shadow-sm);
   }
 
   .btn:active:not(:disabled) { transform: scale(0.97); }
@@ -325,11 +316,7 @@
 
   .btn-secondary:hover:not(:disabled),
   .btn-elevated:hover:not(:disabled) {
-    box-shadow: var(--shadow-sm), var(--inset-top-light);
-  }
-  html.light .btn-secondary:hover:not(:disabled),
-  html.light .btn-elevated:hover:not(:disabled) {
-    box-shadow: var(--shadow-sm), var(--inset-shadow);
+    box-shadow: var(--shadow-xs);
   }
 
   /* ─── Input base ─── */
@@ -500,7 +487,7 @@
     background: var(--surface-elevated);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg), var(--inset-top-light);
+    box-shadow: var(--shadow-md);
     min-width: 300px;
     max-width: 420px;
   }
@@ -634,16 +621,10 @@
 
   /* ─── Navbar/Sidebar depth accents ─── */
   .navbar-depth {
-    box-shadow: var(--shadow-sm), var(--inset-top-glow);
-  }
-  html.light .navbar-depth {
-    box-shadow: var(--shadow-sm), var(--inset-shadow);
+    box-shadow: var(--shadow-xs);
   }
 
   .sidebar-depth {
-    box-shadow: var(--shadow-xs), var(--inset-top-glow);
-  }
-  html.light .sidebar-depth {
     box-shadow: var(--shadow-xs);
   }
 }

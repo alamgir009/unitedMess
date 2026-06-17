@@ -135,10 +135,6 @@ const DeleteMealDialog = memo(({ meal, onConfirm, onCancel, isDeleting, isBulk, 
                     aria-modal="true"
                     aria-labelledby="del-dialog-title"
                     aria-describedby="del-dialog-desc"
-                    style={{
-                        willChange: 'transform, opacity',
-                        transform: 'translateZ(0)',
-                    }}
                     className={cn(
                         'relative z-10 w-full sm:max-w-[380px] mx-auto rounded-t-2xl sm:rounded-2xl',
                         'bg-white dark:bg-slate-900',

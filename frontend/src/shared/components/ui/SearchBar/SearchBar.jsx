@@ -1,5 +1,4 @@
 import { Search, X, SlidersHorizontal } from 'lucide-react';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 
 const SearchBar = ({
   searchQuery,
@@ -13,8 +12,6 @@ const SearchBar = ({
   onClearFilters,
   children,
 }) => {
-  const shouldReduceMotion = useReducedMotion();
-
   return (
   <div className="group relative flex flex-col rounded-lg border border-border surface-elevated depth-top overflow-hidden transition-shadow duration-150">
     <div className="flex flex-row items-center gap-2 p-2.5">
@@ -83,22 +80,15 @@ const SearchBar = ({
       </div>
     </div>
 
-    <AnimatePresence initial={false}>
-      {showFilters && (
-        <motion.div
-          key="filter-panel"
-          initial={shouldReduceMotion ? { opacity: 1, height: 'auto' } : { opacity: 0, height: 0 }}
-          animate={{ height: 'auto', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={shouldReduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 300, damping: 30 }}
-          className="overflow-hidden"
-        >
-          <div className="p-3 border-t border-border">
-            {children}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div
+      className={`overflow-hidden transition-all duration-300 ease-out ${
+        showFilters ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+      }`}
+    >
+      <div className="p-3 border-t border-border">
+        {children}
+      </div>
+    </div>
   </div>
   );
 };

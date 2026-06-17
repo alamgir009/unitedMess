@@ -130,37 +130,34 @@ const MemberRow = React.memo(({
             </button>
 
             <div
-                className="grid transition-all duration-300 ease-out"
+                className="overflow-hidden transition-all duration-300 ease-out"
                 style={{
-                    gridTemplateRows: isExpanded ? '1fr' : '0fr',
+                    maxHeight: isExpanded ? '9999px' : '0px',
+                    opacity: isExpanded ? 1 : 0,
                     transitionTimingFunction: 'cubic-bezier(0.33, 1, 0.68, 1)',
                 }}
             >
-                <div className="overflow-hidden">
-                    <div
-                        className={`px-4 pb-4 sm:px-5 sm:pb-5 transition-all duration-300 ease-out ${
-                            isExpanded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'
-                        }`}
-                    >
-                        <div className="pt-3 border-t border-border/40">
-                            {meals.length > 0 ? (
-                                <MealList
-                                    meals={meals}
-                                    viewMode={viewMode}
-                                    onEdit={onEdit}
-                                    onDelete={onDelete}
-                                    isAdmin={isAdmin}
-                                    selectedIds={selectedIds}
-                                    onToggleSelect={onToggleSelect}
-                                    onSelectAll={onSelectAll}
-                                />
-                            ) : (
-                                <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
-                                    <HiOutlineSparkles className="w-4 h-4" />
-                                    No meal records for this period.
-                                </div>
-                            )}
-                        </div>
+                <div
+                    className={`px-4 pb-4 sm:px-5 sm:pb-5`}
+                >
+                    <div className="pt-3 border-t border-border/40">
+                        {meals.length > 0 ? (
+                            <MealList
+                                meals={meals}
+                                viewMode={viewMode}
+                                onEdit={onEdit}
+                                onDelete={onDelete}
+                                isAdmin={isAdmin}
+                                selectedIds={selectedIds}
+                                onToggleSelect={onToggleSelect}
+                                onSelectAll={onSelectAll}
+                            />
+                        ) : (
+                            <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+                                <HiOutlineSparkles className="w-4 h-4" />
+                                No meal records for this period.
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
