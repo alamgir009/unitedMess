@@ -119,7 +119,7 @@ const Navbar = () => {
               'relative flex items-center justify-between px-5 py-2.5 rounded-2xl',
               'transition-all duration-150',
               scrolled
-                ? 'bg-card/85 border-border navbar-depth'
+                ? 'bg-card/95 border-border navbar-depth'
                 : 'bg-card/50 border-transparent',
             )}
             aria-label="Main navigation"
