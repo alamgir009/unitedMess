@@ -23,10 +23,16 @@ import { setAccessToken, clearAccessToken, authChannel } from '@/services/api/cl
 export const restoreSession = createAsyncThunk(
     'auth/restoreSession',
     async (_, thunkAPI) => {
+        // Fast-path: no user display cookie → no session to restore.
+        // Avoids a wasted 401 refresh-tokens call on every cold visit by
+        // unauthenticated users browsing public pages (Home, About, Gallery, etc.).
+        // The user cookie is set at login and removed at logout / session expiry.
+        if (!Cookies.get('user')) {
+            clearAccessToken();
+            return thunkAPI.fulfillWithValue(null);
+        }
+
         try {
-            // Always attempt refresh — the httpOnly cookie may still be valid even
-            // if the display 'user' cookie was cleared by a cleanup extension or
-            // a different browser profile. The server is the source of truth.
             const { default: apiClient } = await import('@/services/api/client/apiClient');
             const refreshRes = await apiClient.post('auth/refresh-tokens');
 
