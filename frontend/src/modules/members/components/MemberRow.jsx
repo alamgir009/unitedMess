@@ -112,8 +112,8 @@ const MemberRow = React.memo(({ user, index, isLast }) => {
                         <Avatar
                             src={user.image}
                             alt={user.name ?? 'Member'}
-                            fallback={(user.name?.charAt(0) ?? 'U').toUpperCase()}
-                            className="w-11 h-11 rounded-full ring-2 ring-background shadow-sm shrink-0 object-cover"
+                            name={user.name}
+                            className="w-11 h-11 rounded-full ring-2 ring-background shadow-sm shrink-0"
                         />
                         <div className="flex flex-col min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
