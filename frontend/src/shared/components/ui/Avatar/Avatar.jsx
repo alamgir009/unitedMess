@@ -77,6 +77,7 @@ const Avatar = ({
                     'bg-muted font-semibold text-foreground',
                     sizes[size],
                     radiusMap[variant],
+                    'w-full h-full',
                     isClickable && 'focus-visible:ring-2 focus-visible:ring-ring',
                 )}
                 aria-label={alt || name}
