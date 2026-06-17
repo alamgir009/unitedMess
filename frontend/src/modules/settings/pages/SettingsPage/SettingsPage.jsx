@@ -187,13 +187,13 @@ const SettingsPage = () => {
 
     const handleUpdateWaterBill = useCallback(async (value) => {
         const res = await settingsService.updateWaterBill({ waterBill: value });
-        toast.success(res.data?.message || 'Water bill distributed!');
+        toast.success(res.data?.message || "Water bill has been split!");
         await fetchCurrentValues();
     }, [fetchCurrentValues]);
 
     const handleUpdateGasBill = useCallback(async (value) => {
         const res = await settingsService.updateGasBillCharge({ gasBillCharge: value });
-        toast.success(res.data?.message || 'Gas bill distributed!');
+        toast.success(res.data?.message || "Gas bill has been split!");
         await fetchCurrentValues();
     }, [fetchCurrentValues]);
 
@@ -240,7 +240,7 @@ const SettingsPage = () => {
             icon: Droplets,
             badge: 'Total → Shared',
             placeholder: 'e.g. 2000',
-            buttonLabel: 'Distribute Bill',
+            buttonLabel: 'Split Bill',
             currentValue: currentValues?.waterBill,
             onSubmit: handleUpdateWaterBill,
             tone: TONES[2],
@@ -251,7 +251,7 @@ const SettingsPage = () => {
             icon: Fuel,
             badge: 'Total → Shared',
             placeholder: 'e.g. 1500',
-            buttonLabel: 'Distribute Bill',
+            buttonLabel: 'Split Bill',
             currentValue: currentValues?.gasBillCharge,
             onSubmit: handleUpdateGasBill,
             tone: TONES[3],
