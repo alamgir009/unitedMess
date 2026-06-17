@@ -113,7 +113,7 @@ const MemberRow = React.memo(({ user, index, isLast }) => {
                             src={user.image}
                             alt={user.name ?? 'Member'}
                             name={user.name}
-                            className="w-11 h-11 rounded-full ring-2 ring-background shadow-sm shrink-0"
+                            className="w-11 h-11 rounded-full shadow-sm shrink-0"
                         />
                         <div className="flex flex-col min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
