@@ -179,7 +179,7 @@ const testimonials = [
     name: 'Nayan Islam',
     role: 'Mess Secretary, United Mess',
     avatar: 'NI',
-    gradient: 'from-accent to-accent/80',
+    gradient: 'from-success to-success/97',
   },
   {
     quote: 'Every member in our hostel trusts the numbers now. The transparency engine removed every dispute we used to have about billing.',
@@ -613,7 +613,7 @@ const HomePage = () => {
                     className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white motion-safe:transition-all motion-safe:duration-200 sm:h-10 sm:w-10 sm:rounded-xl ${
                       activeTab === idx
                         ? 'bg-gradient-primary shadow-md'
-                        : 'bg-muted opacity-60'
+                        : 'bg-muted dark:opacity-60'
                     }`}
                   >
                     {step.num}
