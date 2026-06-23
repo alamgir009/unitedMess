@@ -49,12 +49,12 @@ const Avatar = ({
     };
 
     const colorPalette = [
-        'avatar-gradient-1',
-        'avatar-gradient-2',
-        'avatar-gradient-3',
-        'avatar-gradient-4',
-        'avatar-gradient-5',
-        'avatar-gradient-6',
+        'avatar-solid-1',
+        'avatar-solid-2',
+        'avatar-solid-3',
+        'avatar-solid-4',
+        'avatar-solid-5',
+        'avatar-solid-6',
     ];
     const colorIndex = name
         ? name.charCodeAt(0) % colorPalette.length

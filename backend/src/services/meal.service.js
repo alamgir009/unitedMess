@@ -289,7 +289,7 @@ const queryMeals = async (filter, options = {}, populateUser = false) => {
 
     // Populate user fields for admin views
     if (populateUser) {
-        query = query.populate('user', 'name email role');
+        query = query.populate('user', 'name email role image');
     }
 
     const [meals, total] = await Promise.all([

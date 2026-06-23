@@ -168,6 +168,9 @@ html.is-scrolling *::after {
   .animate-hero-card,
   .animate-fade-in-right,
   .animate-fade-in-left,
+  .animate-fade-in,
+  .animate-fade-in-up,
+  .animate-modal-in,
   .bar-grow { animation: none !important; }
   .bar-grow { transform: scaleY(var(--bar-h)); }
   .faq-collapse { opacity: 1; grid-template-rows: 1fr; }

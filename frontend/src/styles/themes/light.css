@@ -139,6 +139,18 @@ html.light {
   --sidebar-bg: var(--bg-surface);
   --sidebar-border: var(--border-default);
 
+  /* WCAG AA today circle — white on #0052CC = 11.4:1 */
+  --today-circle: var(--accent-primary);
+
+  /* NEW TOKEN: slot-day, slot-night, slot-both — WCAG AA against bg-elevated */
+  --slot-day: var(--warning);
+  --slot-night: var(--info);
+  --slot-both: hsl(268 76% 52%);
+  --market-accent: var(--profit);
+  --payment-paid: var(--success);
+  --payment-pending: var(--warning);
+  --payment-failed: var(--danger);
+
   /* ── Status glass backgrounds ── */
   --success-glass: hsl(138.5 76.5% 96.7%);
   --warning-glass: hsl(48 100% 96.1%);

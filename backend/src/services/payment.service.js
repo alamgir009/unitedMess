@@ -450,7 +450,7 @@ const queryPayments = async (filter, options = {}, populateUser = false) => {
             .sort(sort)
             .skip(skip)
             .limit(limit)
-            .populate(populateUser ? { path: 'user', select: 'name email' } : null)
+            .populate(populateUser ? { path: 'user', select: 'name email image' } : null)
             .lean(),
     ]);
 

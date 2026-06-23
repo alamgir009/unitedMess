@@ -54,8 +54,14 @@ const getMeals = asyncHandler(async (req, res) => {
         filter.user = req.user.id;
     }
 
-    // Apply 10th-day visual reset rule if not fetching all history
-    if (!filter.date && !(isAdmin && req.query.allHistory === 'true')) {
+    // Support explicit date range (used by the calendar view)
+    // When startDate/endDate are provided, they override the billing-start-date default
+    // so that navigating to any past month returns the correct data.
+    if (req.query.startDate || req.query.endDate) {
+        filter.date = {};
+        if (req.query.startDate) filter.date.$gte = new Date(req.query.startDate);
+        if (req.query.endDate)   filter.date.$lte = new Date(req.query.endDate);
+    } else if (!filter.date && !(isAdmin && req.query.allHistory === 'true')) {
         filter.date = { $gte: getVisibleBillingStartDate() };
     }
 

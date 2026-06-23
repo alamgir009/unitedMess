@@ -31,6 +31,7 @@ const NotificationsPage = lazy(() => import('@/modules/notification/pages/Notifi
 const MemberPage = lazy(() => import('@/modules/members/pages/members/MemberPage'));
 const UnresolvedBillsPage = lazy(() => import('@/modules/members/pages/UnresolvedBillsPage/UnresolvedBillsPage'));
 const SettingsPage = lazy(() => import('@/modules/settings/pages/SettingsPage/SettingsPage'));
+const EventsPage = lazy(() => import('@/modules/events/pages/EventsPage/EventsPage'));
 
 const PageLoader = () => {
 PageLoader.displayName = 'PageLoader';
@@ -153,6 +154,16 @@ const AppRoutes = () => {
                     <SuspenseWrapper>
                         <ProtectedRoute>
                             <NotificationsPage/>
+                        </ProtectedRoute>
+                    </SuspenseWrapper>
+                }
+            />
+            <Route
+                path="/events"
+                element={
+                    <SuspenseWrapper>
+                        <ProtectedRoute>
+                            <EventsPage/>
                         </ProtectedRoute>
                     </SuspenseWrapper>
                 }

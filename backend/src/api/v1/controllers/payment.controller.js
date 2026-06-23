@@ -114,6 +114,13 @@ const getPayments = asyncHandler(async (req, res) => {
     const isAdmin = req.user.role === 'admin';
     if (!isAdmin) filter.user = req.user.id;
 
+    // Support explicit date range (used by the calendar view)
+    if (req.query.startDate || req.query.endDate) {
+        filter.paymentDate = {};
+        if (req.query.startDate) filter.paymentDate.$gte = new Date(req.query.startDate);
+        if (req.query.endDate)   filter.paymentDate.$lte = new Date(req.query.endDate);
+    }
+
     const payments = await paymentService.queryPayments(filter, options, isAdmin);
     sendSuccessResponse(res, 200, 'Payments retrieved successfully', payments);
 });

@@ -75,7 +75,7 @@ const queryMarkets = async (filter, options = {}, populateUser = false) => {
 
     query = query.lean();
 
-    if (populateUser) query = query.populate('user', 'name email');
+    if (populateUser) query = query.populate('user', 'name email image');
 
     const [markets, total] = await Promise.all([
         query.exec(),

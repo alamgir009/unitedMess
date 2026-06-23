@@ -11,6 +11,7 @@ import {
   LogOut,
   X,
   ReceiptIndianRupee,
+  CalendarDays,
 } from 'lucide-react';
 import { IoFastFoodOutline } from 'react-icons/io5';
 import { cn } from '@/core/utils/helpers/string.helper';
@@ -29,6 +30,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     { name: 'Payments', href: '/payments', icon: CreditCard },
     { name: 'Members', href: '/members', icon: Users },
     { name: 'Notifications', href: '/notifications', icon: Bell },
+    { name: 'Events', href: '/events', icon: CalendarDays },
   ];
 
   useEffect(() => {

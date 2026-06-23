@@ -138,6 +138,18 @@ html.dark {
   --sidebar-bg: var(--bg-surface);
   --sidebar-border: var(--border-default);
 
+  /* WCAG AA today circle — white on #2D6FC4 = 5.05:1 (dark mode accent-primary is too light at 2.8:1) */
+  --today-circle: #2D6FC4;
+
+  /* NEW TOKEN: slot-day, slot-night, slot-both — WCAG AA against bg-elevated */
+  --slot-day: var(--warning);
+  --slot-night: var(--info);
+  --slot-both: hsl(268 76% 62%);
+  --market-accent: var(--profit);
+  --payment-paid: var(--success);
+  --payment-pending: var(--warning);
+  --payment-failed: var(--danger);
+
   /* ── Status glass backgrounds ── */
   --success-glass: hsl(149 80% 10%);
   --warning-glass: hsl(24 83% 14%);

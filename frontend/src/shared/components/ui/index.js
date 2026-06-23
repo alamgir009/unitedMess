@@ -14,3 +14,4 @@ export { default as Pagination } from './Pagination/Pagination.jsx';
 export { default as StatPill } from './StatPill/StatPill.jsx';
 export { default as EmptyState } from './EmptyState/EmptyState.jsx';
 export { default as PasswordInput } from './PasswordInput/PasswordInput.jsx';
+export { default as Popover } from './Popover/Popover.jsx';
