@@ -8,6 +8,7 @@ import DayDetailContent from './DayDetailContent';
 import DayDetailModal from './DayDetailModal';
 import DayDetailSheet from './DayDetailSheet';
 import SegmentedControl from '../SegmentedControl';
+
 import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
 import { formatInIST } from '@/core/utils/helpers/date.helper';
 import eventService from '../../services/event.service';
@@ -92,6 +93,10 @@ const EventCalendar = () => {
   const [errorMap, setErrorMap] = useState({});
   const [detailDate, setDetailDate] = useState(null);
   const [detailEntries, setDetailEntries] = useState([]);
+
+  const user = useSelector((state) => state.auth.user);
+  const isAdmin = user?.role === 'admin';
+  const [selectedMemberId, setSelectedMemberId] = useState(null);
 
   const abortRef = useRef(null);
   const isMobile = useMediaQuery('(max-width: 639px)');
@@ -183,6 +188,27 @@ const EventCalendar = () => {
     setDetailEntries([]);
   }, []);
 
+  const handleMemberFilter = useCallback((id) => {
+    setSelectedMemberId(id);
+  }, []);
+
+  const filteredDataMap = useMemo(() => {
+    if (!selectedMemberId) return dataMap;
+    const result = {};
+    for (const [dateKey, entries] of Object.entries(dataMap)) {
+      const matching = entries.filter((entry) => {
+        const userId = typeof entry.user === 'object'
+          ? entry.user?._id
+          : entry.user;
+        return userId === selectedMemberId;
+      });
+      if (matching.length > 0) {
+        result[dateKey] = matching;
+      }
+    }
+    return result;
+  }, [dataMap, selectedMemberId]);
+
   return (
     <div className="space-y-6">
 
@@ -206,10 +232,13 @@ const EventCalendar = () => {
             onPrevMonth={handlePrevMonth}
             onNextMonth={handleNextMonth}
             onToday={handleToday}
+            isAdmin={isAdmin}
+            selectedMemberId={selectedMemberId}
+            onMemberFilter={handleMemberFilter}
           />
           <CalendarGrid
             currentMonth={currentMonthDate}
-            dataMap={dataMap}
+            dataMap={filteredDataMap}
             category={category}
             loadingMap={loadingMap}
             errorMap={errorMap}
