@@ -166,6 +166,10 @@ const MemberFilterDropdown = ({ selectedMemberId, onSelect, disabled = false }) 
     ? activeMembers.find((u) => u._id === selectedMemberId)
     : null;
 
+  const memberName = selectedMember?.name || '';
+  const firstName = memberName.trim().split(' ')[0] || '';
+  const shortName = firstName.length > 7 ? firstName.slice(0, 7) + '…' : firstName;
+
   return (
     <div ref={ref} className="relative">
       <button
@@ -178,7 +182,7 @@ const MemberFilterDropdown = ({ selectedMemberId, onSelect, disabled = false }) 
         aria-controls="member-filter-listbox"
         aria-label={
           selectedMember
-            ? `Filter by member: ${selectedMember.name}`
+            ? `Filter by member: ${memberName}`
             : 'Filter by member: All members'
         }
         className={
@@ -189,9 +193,10 @@ const MemberFilterDropdown = ({ selectedMemberId, onSelect, disabled = false }) 
       >
         {selectedMember ? (
           <>
-            <Avatar name={selectedMember.name} size="xs" />
+            <Avatar name={memberName} size="xs" />
             <span className="flex-1 min-w-0 truncate text-sm font-medium">
-              {selectedMember.name.split(' ')[0].slice(0, 7)}
+              <span className="sm:hidden">{shortName}</span>
+              <span className="hidden sm:inline truncate">{memberName}</span>
             </span>
           </>
         ) : (
