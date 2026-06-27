@@ -10,11 +10,10 @@ import Avatar from '@/shared/components/ui/Avatar/Avatar.jsx';
 import membersService from '@/modules/members/services/members.service';
 
 const inputBase =
-  'w-full px-3 py-2 rounded-xl border border-border/60 ' +
-  'bg-background/70 backdrop-blur-sm ' +
-  'outline-none transition-all duration-200 ' +
-  'text-sm text-foreground placeholder:text-muted-foreground/50 ' +
-  'shadow-sm hover:border-border';
+  'w-full px-3 h-9 rounded-lg border ' +
+  'bg-card text-foreground ' +
+  'outline-none transition-all duration-100 ' +
+  'text-sm shadow-sm';
 
 const MemberFilterDropdown = ({ selectedMemberId, onSelect, disabled = false }) => {
   const [open, setOpen] = useState(false);
@@ -183,8 +182,9 @@ const MemberFilterDropdown = ({ selectedMemberId, onSelect, disabled = false }) 
             : 'Filter by member: All members'
         }
         className={
-          `${inputBase} h-9 flex items-center gap-2 text-left min-w-[180px] ` +
-          `${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`
+          `${inputBase} flex items-center gap-2 text-left sm:min-w-[180px] ` +
+          `${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'} ` +
+          `${open ? 'border-primary/40 shadow-sm shadow-primary/5' : 'hover:border-border-strong'}`
         }
       >
         {selectedMember ? (
@@ -211,7 +211,15 @@ const MemberFilterDropdown = ({ selectedMemberId, onSelect, disabled = false }) 
       </button>
 
       {open && (
-        <div className="absolute z-dropdown top-full mt-1.5 w-full min-w-[240px] rounded-xl border border-border/60 bg-card shadow-lg overflow-hidden animate-fade-up-fast">
+        <div
+          className="absolute z-dropdown top-full mt-1.5 right-0 sm:left-0 w-full min-w-[200px] sm:min-w-[240px] rounded-xl border border-border/60 bg-card shadow-xl overflow-hidden"
+          style={{
+            maxWidth: 'calc(100vw - 16px)',
+            animation: 'fade-up-fast 0.12s ease-out both',
+            willChange: 'transform, opacity',
+            transform: 'translateZ(0)',
+          }}
+        >
           <div className="p-2 pb-1">
             <div className="relative flex items-center rounded-lg border border-border/60 bg-muted/30 transition-all duration-150 focus-within:bg-card focus-within:border-primary/50 focus-within:shadow-sm focus-within:shadow-primary/5">
               <Search className="absolute left-3 w-4 h-4 text-muted-foreground pointer-events-none transition-colors duration-150 focus-within:text-primary" />
