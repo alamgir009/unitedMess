@@ -10,7 +10,7 @@ import Avatar from '@/shared/components/ui/Avatar/Avatar.jsx';
 import membersService from '@/modules/members/services/members.service';
 
 const inputBase =
-  'w-full px-3 h-9 rounded-lg border ' +
+  'w-full px-3 h-9 rounded-lg border overflow-hidden ' +
   'bg-card text-foreground ' +
   'outline-none transition-all duration-100 ' +
   'text-sm shadow-sm';
@@ -190,14 +190,17 @@ const MemberFilterDropdown = ({ selectedMemberId, onSelect, disabled = false }) 
         {selectedMember ? (
           <>
             <Avatar name={selectedMember.name} size="xs" />
-            <span className="flex-1 truncate text-sm font-medium">
-              {selectedMember.name}
+            <span className="flex-1 min-w-0 truncate text-sm font-medium">
+              {selectedMember.name.split(' ')[0].slice(0, 7)}
             </span>
           </>
         ) : (
           <>
             <HiOutlineUser className="w-4 h-4 shrink-0 text-muted-foreground/70" />
-            <span className="flex-1 truncate text-sm">All Members</span>
+            <span className="flex-1 min-w-0 truncate text-sm">
+              <span className="sm:hidden">All</span>
+              <span className="hidden sm:inline">All Members</span>
+            </span>
           </>
         )}
         {!disabled && (
