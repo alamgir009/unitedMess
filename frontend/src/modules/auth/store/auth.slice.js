@@ -9,25 +9,34 @@ import { setAccessToken, clearAccessToken, authChannel } from '@/services/api/cl
 // ─────────────────────────────────────────────────────────────────────────────
 // Called once on every page load / new tab open (dispatched from SessionGate).
 //
-// Flow:
-//   1. POST /auth/refresh-token  → browser auto-sends httpOnly refresh cookie.
+// Fast-path:  checks __session cookie  (a server-managed non-httpOnly marker).
+//   absent  → no session to restore, skip the API call entirely (no 401 noise).
+//   present → attempts POST /auth/refresh-token.
+//
+// Refresh flow:
+//   1. Browser auto-sends the httpOnly refresh cookie along with the request.
 //   2. Server rotates the refresh cookie and returns { tokens.accessToken, user }.
 //   3. Store accessToken in memory, user in Redux + display cookie.
 //   4. sessionRestoring = false  →  ProtectedRoute renders / redirects cleanly.
 //
-// Security:
-//   • No refresh token is ever read from / written to localStorage or sessionStorage.
-//   • The httpOnly cookie is entirely opaque to JavaScript.
-//   • On any failure the in-memory token is cleared and the user is sent to login.
+// Why __session instead of localStorage / a user cookie?
+//   • __session is set and cleared by the server in lockstep with the real
+//     httpOnly refreshToken cookie — never goes stale independently.
+//   • Contains zero sensitive data (just the literal string "1").
+//   • Invisible to XSS in the same way as the httpOnly cookie (same path,
+//     same domain, same Secure / SameSite attributes — except httpOnly).
+//
+// On failure the __session marker is also cleared (via document.cookie) so
+// subsequent page loads skip the refresh attempt immediately rather than
+// producing repeated 401s against an already-expired token.
 // ─────────────────────────────────────────────────────────────────────────────
 export const restoreSession = createAsyncThunk(
     'auth/restoreSession',
     async (_, thunkAPI) => {
-        // Fast-path: no user display cookie → no session to restore.
-        // Avoids a wasted 401 refresh-tokens call on every cold visit by
-        // unauthenticated users browsing public pages (Home, About, Gallery, etc.).
-        // The user cookie is set at login and removed at logout / session expiry.
-        if (!Cookies.get('user')) {
+        // Fast-path: no __session marker → definitely no session.
+        // The server manages __session in perfect sync with the httpOnly
+        // refreshToken cookie, so this is always accurate.
+        if (!document.cookie.includes('__session=1')) {
             clearAccessToken();
             return thunkAPI.fulfillWithValue(null);
         }
@@ -49,7 +58,7 @@ export const restoreSession = createAsyncThunk(
             if (user && typeof user === 'object' && user._id) {
                 Cookies.set('user', JSON.stringify(user), {
                     expires: 7,
-                    secure: true,
+                    secure: import.meta.env.PROD,
                     sameSite: 'strict',
                 });
             }
@@ -59,6 +68,8 @@ export const restoreSession = createAsyncThunk(
             // Refresh cookie expired, revoked, or network failure
             clearAccessToken();
             Cookies.remove('user');
+            // Clear __session marker to prevent repeated 401s on next load
+            document.cookie = `__session=; path=/; max-age=0; SameSite=Lax${import.meta.env.PROD ? '; secure' : ''}`;
             return thunkAPI.rejectWithValue(
                 error.response?.data?.message || 'Session expired'
             );

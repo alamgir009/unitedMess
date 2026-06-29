@@ -8,7 +8,7 @@ const API_URL = 'auth/';
 // This cookie is NOT the auth token — it is only a UI hint (display name, avatar URL).
 // The real authentication is done via the httpOnly refresh cookie managed by the server.
 // Expiry deliberately aligns with server refresh token (7 days) so they expire together.
-const USER_COOKIE_OPTS = { expires: 7, secure: true, sameSite: 'strict' };
+const USER_COOKIE_OPTS = { expires: 7, secure: import.meta.env.PROD, sameSite: 'strict' };
 
 // ---------------------------------------------------------------------------
 // Register

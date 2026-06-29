@@ -133,7 +133,6 @@ const Navbar = () => {
               src="/assets/icons/resize_logo.png"
               alt=""
               className="w-8 h-8 object-contain shrink-0"
-              fetchPriority="high"
             />
             <span className="font-bold text-base tracking-tight text-foreground">
               United<span className="text-gradient">Mess</span>

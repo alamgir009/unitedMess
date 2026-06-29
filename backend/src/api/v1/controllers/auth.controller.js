@@ -6,11 +6,11 @@ const AppError = require('../../../utils/errors/AppError');
 // Cookie config helper
 // SameSite=Strict: refresh cookie is never sent in cross-site contexts → CSRF-immune without tokens.
 // SameSite=Lax in development so the cookie works on localhost (http).
-const getCookieOptions = (maxAge) => {
+const getCookieOptions = (maxAge, httpOnly = true) => {
     const isProduction = process.env.NODE_ENV === 'production';
 
     return {
-        httpOnly: true,           // Invisible to JavaScript — XSS-proof
+        httpOnly,                 // true → invisible to JS; false → visible (__session marker)
         secure: isProduction,     // HTTPS only in production
         sameSite: isProduction ? 'strict' : 'lax', // Strict = no cross-site sends → CSRF-proof
         maxAge,
@@ -41,6 +41,9 @@ exports.login = asyncHandler(async (req, res) => {
 
     res.cookie('refreshToken', tokens.refresh.token, getCookieOptions(7 * 24 * 60 * 60 * 1000));
     res.cookie('accessToken', tokens.access.token, getCookieOptions(24 * 60 * 60 * 1000));
+    // Non-httpOnly session marker — frontend checks this to decide whether to
+    // attempt refresh-tokens on app load, avoiding unnecessary 401 API calls.
+    res.cookie('__session', '1', getCookieOptions(7 * 24 * 60 * 60 * 1000, false));
 
     // Also return tokens in body — required for cross-origin deployments where
     // SameSite=None cookies are blocked by Chrome's third-party cookie policy.
@@ -72,6 +75,7 @@ exports.logout = asyncHandler(async (req, res) => {
 
     res.clearCookie('refreshToken', clearOptions);
     res.clearCookie('accessToken', clearOptions);
+    res.clearCookie('__session', { ...clearOptions, httpOnly: false });
 
     sendSuccessResponse(res, 200, 'Logout successful');
 });
@@ -121,6 +125,8 @@ exports.refreshTokens = asyncHandler(async (req, res) => {
     res.cookie('refreshToken', tokens.refresh.token, getCookieOptions(7 * 24 * 60 * 60 * 1000));
     // Access token cookie kept for server-side rendering fallback only
     res.cookie('accessToken', tokens.access.token, getCookieOptions(24 * 60 * 60 * 1000));
+    // Keep session marker in sync with the rotated refresh token
+    res.cookie('__session', '1', getCookieOptions(7 * 24 * 60 * 60 * 1000, false));
 
     // Return accessToken + user in body — frontend stores accessToken in-memory (NOT localStorage)
     sendSuccessResponse(res, 200, 'Tokens refreshed successfully', {

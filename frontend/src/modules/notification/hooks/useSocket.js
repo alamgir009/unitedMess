@@ -104,7 +104,7 @@ const useSocket = () => {
 
                 socketRef.current.on('connect', () => {
                     if (import.meta.env.DEV) {
-                        console.log('Socket reconnected, resubscribing...');
+                        //console.log('Socket reconnected, resubscribing...');
                     }
                 });
                 
