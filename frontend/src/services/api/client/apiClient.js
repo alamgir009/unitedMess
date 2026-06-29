@@ -97,7 +97,8 @@ apiClient.interceptors.response.use(
             error.response?.status === 401 &&
             !originalRequest._retry &&
             !originalRequest.url?.includes('refresh-tokens') &&
-            !originalRequest.url?.includes('login')
+            !originalRequest.url?.includes('login') &&
+            !originalRequest.url?.includes('logout')
         ) {
             // Another tab already refreshed — queue and wait
             if (isRefreshing) {
@@ -162,8 +163,12 @@ apiClient.interceptors.response.use(
 // ---------------------------------------------------------------------------
 // Cross-tab sync listener
 // When another tab logs out, we clear our in-memory state immediately.
-// When another tab refreshes tokens and we have no in-memory token (e.g. page
-// was just loaded), proactively refresh so we don't wait for the next 401.
+// TOKEN_REFRESHED from another tab is intentionally ignored:
+//   With token rotation, the other tab consumed the old refreshToken. If we
+//   tried to refresh here we'd get 401 (token not found), which would then
+//   incorrectly set user=null and dispatch AUTH_LOGOUT — logging ALL tabs out.
+//   Instead, we rely on the response interceptor: the next 401 on THIS tab
+//   will naturally trigger a fresh refresh with the rotated cookie.
 // ---------------------------------------------------------------------------
 authChannel.addEventListener?.('message', async (event) => {
     if (event.data?.type === 'AUTH_LOGOUT') {
@@ -171,23 +176,6 @@ authChannel.addEventListener?.('message', async (event) => {
         if (_store) {
             const { setUser } = await import('@/modules/auth/store/auth.slice');
             _store.dispatch(setUser(null));
-        }
-    }
-
-    if (event.data?.type === 'TOKEN_REFRESHED' && !inMemoryAccessToken && _store) {
-        try {
-            const refreshRes = await apiClient.post('auth/refresh-tokens');
-            const newAccessToken = refreshRes.data?.data?.tokens?.accessToken;
-            if (newAccessToken) {
-                setAccessToken(newAccessToken);
-                const { setUser } = await import('@/modules/auth/store/auth.slice');
-                _store.dispatch(setUser(refreshRes.data?.data?.user || null));
-            }
-        } catch {
-            clearAccessToken();
-            const { setUser, setSessionReady } = await import('@/modules/auth/store/auth.slice');
-            _store.dispatch(setUser(null));
-            _store.dispatch(setSessionReady());
         }
     }
 });

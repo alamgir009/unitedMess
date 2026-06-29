@@ -10,12 +10,30 @@ const getCookieOptions = (maxAge, httpOnly = true) => {
     const isProduction = process.env.NODE_ENV === 'production';
 
     return {
-        httpOnly,                 // true → invisible to JS; false → visible (__session marker)
-        secure: isProduction,     // HTTPS only in production
-        sameSite: isProduction ? 'strict' : 'lax', // Strict = no cross-site sends → CSRF-proof
+        httpOnly,
+        secure: isProduction,
+        sameSite: isProduction ? 'strict' : 'lax',
         maxAge,
         path: '/',
     };
+};
+
+// Derive the root domain from FRONTEND_URL so the __session marker cookie
+// is accessible from both the frontend (unitedmess.uk) and API (api.unitedmess.uk).
+// Returns empty string in dev (localhost) so cookies stay scoped to the origin.
+const getRootDomain = () => {
+    if (process.env.NODE_ENV !== 'production') return '';
+    try {
+        const url = new URL(process.env.FRONTEND_URL || '');
+        const parts = url.hostname.split('.');
+        // Only set domain for multi-part hostnames (e.g. "example.com" → ".example.com")
+        if (parts.length >= 2) {
+            return `.${parts.slice(-2).join('.')}`;
+        }
+    } catch (_) {
+        // Invalid URL — don't set domain
+    }
+    return '';
 };
 
 // @desc    Register user
@@ -39,11 +57,17 @@ exports.login = asyncHandler(async (req, res) => {
 
     const { user, tokens } = await authService.login(email, password, ip, userAgent);
 
+    const rootDomain = getRootDomain();
+
     res.cookie('refreshToken', tokens.refresh.token, getCookieOptions(7 * 24 * 60 * 60 * 1000));
     res.cookie('accessToken', tokens.access.token, getCookieOptions(24 * 60 * 60 * 1000));
-    // Non-httpOnly session marker — frontend checks this to decide whether to
+    // Non-httpOnly session marker — frontend JS checks this to decide whether to
     // attempt refresh-tokens on app load, avoiding unnecessary 401 API calls.
-    res.cookie('__session', '1', getCookieOptions(7 * 24 * 60 * 60 * 1000, false));
+    // Domain is set to the root domain (e.g. .unitedmess.uk) so it's readable
+    // from both the frontend and API subdomains.
+    const sessionOptions = getCookieOptions(7 * 24 * 60 * 60 * 1000, false);
+    if (rootDomain) sessionOptions.domain = rootDomain;
+    res.cookie('__session', '1', sessionOptions);
 
     // Also return tokens in body — required for cross-origin deployments where
     // SameSite=None cookies are blocked by Chrome's third-party cookie policy.
@@ -66,12 +90,16 @@ exports.logout = asyncHandler(async (req, res) => {
         await authService.logout(refreshToken);
     }
 
+    const rootDomain = getRootDomain();
+    const isProduction = process.env.NODE_ENV === 'production';
+
     const clearOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: isProduction,
+        sameSite: isProduction ? 'strict' : 'lax',
         path: '/',
     };
+    if (rootDomain) clearOptions.domain = rootDomain;
 
     res.clearCookie('refreshToken', clearOptions);
     res.clearCookie('accessToken', clearOptions);
@@ -121,12 +149,16 @@ exports.refreshTokens = asyncHandler(async (req, res) => {
         // Non-fatal: client can still use the access token; user hydration just won't happen
     }
 
+    const rootDomain = getRootDomain();
+
     // Rotate refresh token cookie — httpOnly so JS cannot read it
     res.cookie('refreshToken', tokens.refresh.token, getCookieOptions(7 * 24 * 60 * 60 * 1000));
     // Access token cookie kept for server-side rendering fallback only
     res.cookie('accessToken', tokens.access.token, getCookieOptions(24 * 60 * 60 * 1000));
     // Keep session marker in sync with the rotated refresh token
-    res.cookie('__session', '1', getCookieOptions(7 * 24 * 60 * 60 * 1000, false));
+    const sessionOptions = getCookieOptions(7 * 24 * 60 * 60 * 1000, false);
+    if (rootDomain) sessionOptions.domain = rootDomain;
+    res.cookie('__session', '1', sessionOptions);
 
     // Return accessToken + user in body — frontend stores accessToken in-memory (NOT localStorage)
     sendSuccessResponse(res, 200, 'Tokens refreshed successfully', {

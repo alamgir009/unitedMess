@@ -33,10 +33,14 @@ import { setAccessToken, clearAccessToken, authChannel } from '@/services/api/cl
 export const restoreSession = createAsyncThunk(
     'auth/restoreSession',
     async (_, thunkAPI) => {
-        // Fast-path: no __session marker → definitely no session.
-        // The server manages __session in perfect sync with the httpOnly
-        // refreshToken cookie, so this is always accurate.
-        if (!document.cookie.includes('__session=1')) {
+        // Fast-path: no session evidence → definitely no session.
+        // __session is set by the API server on the root domain (.unitedmess.uk),
+        // readable from the frontend JS. The user cookie is set by auth.service
+        // on the frontend domain as fallback for cross-subdomain deployments.
+        const hasSessionMarker = document.cookie.includes('__session=1');
+        const hasUserCookie    = Cookies.get('user');
+
+        if (!hasSessionMarker && !hasUserCookie) {
             clearAccessToken();
             return thunkAPI.fulfillWithValue(null);
         }

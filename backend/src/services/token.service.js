@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const moment = require('moment');
 const config = require('../config');
+const AppError = require('../utils/errors/AppError');
 const RefreshToken = require('../models/RefreshToken.model');
 const { tokenTypes } = require('../config/tokens');
 
@@ -115,7 +116,7 @@ const refreshAuthTokens = async (refreshToken) => {
 
         return tokens;
     } catch (error) {
-        throw new Error('Please authenticate');
+        throw new AppError('Please authenticate', 401);
     }
 };
 
