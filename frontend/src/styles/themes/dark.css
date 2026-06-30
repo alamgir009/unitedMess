@@ -133,7 +133,7 @@ html.dark {
   --radius: 0.75rem;
 
   /* ── Navbar + Sidebar ── */
-  --navbar-bg: var(--bg-surface);
+  --navbar-bg: var(--bg-muted);
   --navbar-border: var(--border-default);
   --sidebar-bg: var(--bg-surface);
   --sidebar-border: var(--border-default);

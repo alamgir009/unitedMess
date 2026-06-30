@@ -69,7 +69,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 w-64 bg-card border-r border-border text-foreground sidebar-depth',
+          'fixed inset-y-0 left-0 w-64 bg-[var(--sidebar-bg)] border-r border-border text-foreground sidebar-depth',
           'z-50 transition-all duration-[var(--duration-slow)] transform lg:translate-x-0 lg:static lg:inset-auto lg:flex lg:flex-col lg:z-auto lg:transition-none',
           isOpen ? 'translate-x-0' : '-translate-x-full',
         )}
