@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import { X, Pencil } from 'lucide-react';
 import { cn } from '@/core/utils/helpers/string.helper';
 
 let lockCount = 0;
@@ -26,6 +26,9 @@ const DayDetailModal = ({
   onClose,
   title,
   children,
+  isAdmin = false,
+  isEditMode = false,
+  onEditToggle,
 }) => {
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
@@ -84,13 +87,24 @@ const DayDetailModal = ({
           >
             <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[var(--border-default)] shrink-0">
               <h2 className="text-base font-semibold text-[var(--text-primary)]">{title}</h2>
-              <button
-                onClick={onClose}
-                aria-label="Close"
-                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                {isAdmin && !isEditMode && (
+                  <button
+                    onClick={onEditToggle}
+                    aria-label="Edit entries"
+                    className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                )}
+                <button
+                  onClick={onClose}
+                  aria-label="Close"
+                  className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
             <div className="flex-1 overflow-y-auto overscroll-contain custom-scrollbar p-4">
               {children}
