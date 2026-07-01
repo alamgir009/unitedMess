@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Plus, Trash2, X, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/core/utils/helpers/string.helper';
@@ -165,8 +165,31 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, on
 
 // ─── Inline Add Form ───────────────────────────────────────────
 
+const MAX_RANGE_DAYS = 31;
+const typeCountMap = { both: 2, day: 1, night: 1, off: 0 };
+
+const ModeTab = ({ mode, current, onChange, label }) => (
+  <button
+    type="button"
+    role="tab"
+    aria-selected={current === mode}
+    onClick={() => onChange(mode)}
+    className={cn(
+      'flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all duration-100',
+      current === mode
+        ? 'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] shadow-xs'
+        : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]',
+    )}
+  >
+    {label}
+  </button>
+);
+
 const EntryForm = ({ category, dateStr, isAdmin, onSave, onCancel, setIsSubmitting }) => {
+  const [mode, setMode] = useState('single');
   const [date, setDate] = useState(dateStr);
+  const [rangeFrom, setRangeFrom] = useState(dateStr);
+  const [rangeTo, setRangeTo] = useState(dateStr);
   const [type, setType] = useState('day');
   const [amount, setAmount] = useState('');
   const [items, setItems] = useState('');
@@ -175,6 +198,18 @@ const EntryForm = ({ category, dateStr, isAdmin, onSave, onCancel, setIsSubmitti
   const [users, setUsers] = useState([]);
   const [isUsersLoading, setIsUsersLoading] = useState(false);
   const [errors, setErrors] = useState({});
+
+  const isRangeMode = mode === 'range' && category === 'meals';
+
+  const daysCount = useMemo(() => {
+    if (!isRangeMode || !rangeFrom || !rangeTo) return 0;
+    try {
+      const f = new Date(rangeFrom);
+      const t = new Date(rangeTo);
+      const diff = Math.floor((t - f) / 86400000) + 1;
+      return diff > 0 ? diff : 0;
+    } catch { return 0; }
+  }, [isRangeMode, rangeFrom, rangeTo]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -191,38 +226,57 @@ const EntryForm = ({ category, dateStr, isAdmin, onSave, onCancel, setIsSubmitti
     return () => { cancelled = true; };
   }, [isAdmin]);
 
-  const validate = () => {
+  const validate = useCallback(() => {
     const errs = {};
-    if (!date) errs.date = 'Date is required';
+    if (isRangeMode) {
+      if (!rangeFrom) errs.rangeFrom = 'Start date required';
+      if (!rangeTo) errs.rangeTo = 'End date required';
+      if (rangeFrom && rangeTo && rangeFrom > rangeTo) errs.rangeTo = 'End must be after start';
+      if (daysCount > MAX_RANGE_DAYS) errs.rangeTo = `Max ${MAX_RANGE_DAYS} days`;
+    } else {
+      if (!date) errs.date = 'Date is required';
+    }
     if (category === 'meals' && !type) errs.type = 'Type is required';
     if (category === 'markets' && (!amount || Number(amount) <= 0)) errs.amount = 'Amount must be > 0';
     if (category === 'markets' && !items.trim()) errs.items = 'Items is required';
     if (isAdmin && userIds.length === 0) errs.userIds = 'Select at least one member';
     setErrors(errs);
     return Object.keys(errs).length === 0;
-  };
+  }, [isRangeMode, rangeFrom, rangeTo, date, daysCount, category, type, amount, items, isAdmin, userIds]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
     setIsSubmitting(true);
     try {
-      const payload = { date: new Date(date).toISOString() };
-      if (isAdmin) payload.userIds = userIds;
-      if (category === 'meals') {
-        payload.type = type;
-        if (remarks.trim()) payload.remarks = remarks.trim();
+      if (isRangeMode) {
+        await onSave({
+          startDate: rangeFrom,
+          endDate: rangeTo,
+          type,
+          ...(isAdmin && { userIds }),
+          ...(remarks.trim() && { remarks: remarks.trim() }),
+        });
       } else {
-        payload.amount = parseFloat(amount) || 0;
-        payload.items = items.trim();
-        if (remarks.trim()) payload.description = remarks.trim();
+        const payload = { date: new Date(date).toISOString() };
+        if (isAdmin) payload.userIds = userIds;
+        if (category === 'meals') {
+          payload.type = type;
+          if (remarks.trim()) payload.remarks = remarks.trim();
+        } else {
+          payload.amount = parseFloat(amount) || 0;
+          payload.items = items.trim();
+          if (remarks.trim()) payload.description = remarks.trim();
+        }
+        await onSave(payload);
       }
-      await onSave(payload);
       onCancel();
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const rangeInvalid = isRangeMode && (daysCount === 0 || daysCount > MAX_RANGE_DAYS);
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-3 rounded-xl border border-[var(--border-default)] bg-[var(--bg-muted)]/30">
@@ -240,14 +294,63 @@ const EntryForm = ({ category, dateStr, isAdmin, onSave, onCancel, setIsSubmitti
       )}
       {errors.userIds && <p className="text-xs text-[var(--danger)]">{errors.userIds}</p>}
 
-      <div className="flex items-center gap-2">
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => { setDate(e.target.value); setErrors((p) => ({ ...p, date: undefined })); }}
-          className={cn(inputBase, 'w-40', errors.date && 'ring-2 ring-[var(--danger)]/50')}
-        />
-      </div>
+      {/* Mode toggle — only for meals (markets don't support bulk) */}
+      {category === 'meals' && (
+        <div role="tablist" aria-label="Date mode" className="flex gap-1 p-0.5 rounded-lg bg-[var(--bg-muted)]/40 border border-[var(--border-default)]">
+          <ModeTab mode="single" current={mode} onChange={setMode} label="Single" />
+          <ModeTab mode="range" current={mode} onChange={setMode} label="Range" />
+        </div>
+      )}
+
+      {/* Preview badge for range mode */}
+      {isRangeMode && (
+        <div className={cn(
+          'flex items-center justify-center gap-1.5 py-1.5 rounded-lg border text-xs font-semibold transition-colors',
+          rangeInvalid
+            ? 'border-[var(--danger)]/30 bg-[var(--danger-bg)]/15 text-[var(--danger)]'
+            : 'border-[var(--accent-primary)]/20 bg-[var(--accent-primary)]/8 text-[var(--accent-primary)]',
+        )}>
+          {rangeInvalid
+            ? <span>{daysCount > MAX_RANGE_DAYS ? `Max ${MAX_RANGE_DAYS} days` : 'Select valid range'}</span>
+            : <span>{daysCount} day{daysCount !== 1 ? 's' : ''} · {typeCountMap[type] ?? 0} meal{typeCountMap[type] !== 1 ? 's' : ''} per day</span>
+          }
+        </div>
+      )}
+
+      {/* Date inputs */}
+      {isRangeMode ? (
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <input
+              type="date"
+              value={rangeFrom}
+              onChange={(e) => { setRangeFrom(e.target.value); setErrors((p) => ({ ...p, rangeFrom: undefined, rangeTo: undefined })); }}
+              className={cn(inputBase, errors.rangeFrom && 'ring-2 ring-[var(--danger)]/50')}
+            />
+            {errors.rangeFrom && <p className="text-[10px] text-[var(--danger)] mt-0.5">{errors.rangeFrom}</p>}
+          </div>
+          <div>
+            <input
+              type="date"
+              value={rangeTo}
+              min={rangeFrom}
+              onChange={(e) => { setRangeTo(e.target.value); setErrors((p) => ({ ...p, rangeTo: undefined })); }}
+              className={cn(inputBase, errors.rangeTo && 'ring-2 ring-[var(--danger)]/50')}
+            />
+            {errors.rangeTo && <p className="text-[10px] text-[var(--danger)] mt-0.5">{errors.rangeTo}</p>}
+          </div>
+        </div>
+      ) : (
+        <div>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => { setDate(e.target.value); setErrors((p) => ({ ...p, date: undefined })); }}
+            className={cn(inputBase, errors.date && 'ring-2 ring-[var(--danger)]/50')}
+          />
+          {errors.date && <p className="text-[10px] text-[var(--danger)] mt-0.5">{errors.date}</p>}
+        </div>
+      )}
 
       {category === 'meals' ? (
         <div className="grid grid-cols-4 gap-1.5">
@@ -307,9 +410,15 @@ const EntryForm = ({ category, dateStr, isAdmin, onSave, onCancel, setIsSubmitti
         </button>
         <button
           type="submit"
-          className="flex-[2] py-1.5 rounded-lg text-xs font-semibold bg-[var(--accent-primary)] text-white hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          disabled={isRangeMode && (rangeInvalid || daysCount === 0)}
+          className={cn(
+            'flex-[2] py-1.5 rounded-lg text-xs font-semibold transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            isRangeMode && (rangeInvalid || daysCount === 0)
+              ? 'bg-[var(--text-muted)]/20 text-[var(--text-muted)] cursor-not-allowed'
+              : 'bg-[var(--accent-primary)] text-white hover:opacity-90',
+          )}
         >
-          Save
+          {isRangeMode ? `Save ${daysCount > 0 ? daysCount : ''} day${daysCount !== 1 ? 's' : ''}` : 'Save'}
         </button>
       </div>
     </form>

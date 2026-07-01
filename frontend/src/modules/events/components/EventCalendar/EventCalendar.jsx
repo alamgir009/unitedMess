@@ -14,7 +14,7 @@ import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
 import { formatInIST } from '@/core/utils/helpers/date.helper';
 import eventService from '../../services/event.service';
 import { setCurrentMonth, setLoading } from '../../store/events.slice';
-import { createMeal, updateMeal, deleteMeal } from '../../../meal/store/meal.slice';
+import { createMeal, bulkCreateMeals, updateMeal, deleteMeal } from '../../../meal/store/meal.slice';
 import { createMarket, updateMarket, deleteMarket } from '../../../market/store/market.slice';
 
 const CalendarDayEdit = lazy(() => import('./CalendarDayEdit'));
@@ -208,6 +208,30 @@ const EventCalendar = () => {
   const snapshotRef = useRef(null);
 
   const handleSaveEntry = useCallback(async (entryData) => {
+    // ── Bulk range mode (meals only) ──
+    if (entryData.startDate && entryData.endDate) {
+      try {
+        const res = await dispatch(bulkCreateMeals(entryData)).unwrap();
+        const result = res?.data || res;
+        const inserted = result?.inserted || 0;
+        const updated = result?.updated || 0;
+        const skipped = result?.skipped || 0;
+        const parts = [];
+        if (inserted > 0) parts.push(`${inserted} added`);
+        if (updated > 0) parts.push(`${updated} updated`);
+        if (skipped > 0) parts.push(`${skipped} unchanged`);
+        toast.success(parts.length ? parts.join(' · ') : 'Meals saved');
+        abortRef.current?.abort();
+        const controller = new AbortController();
+        abortRef.current = controller;
+        fetchData(controller.signal);
+      } catch (err) {
+        const msg = err?.response?.data?.message || err?.message || 'Failed to save meals';
+        toast.error(msg);
+      }
+      return;
+    }
+
     if (!detailDate) return;
     const dateKey = format(new Date(detailDate), 'yyyy-MM-dd');
 
@@ -243,18 +267,15 @@ const EventCalendar = () => {
         }));
         toast.success('Market entry added');
       }
-      // Background refetch for eventual consistency
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
       fetchData(controller.signal);
     } catch (err) {
-      // Rollback
       if (snapshotRef.current) {
         setDataMap(snapshotRef.current);
       }
-      const msg =
-        err?.response?.data?.message || err?.message || 'Failed to save';
+      const msg = err?.response?.data?.message || err?.message || 'Failed to save';
       toast.error(msg);
     }
   }, [detailDate, dataMap, category, dispatch, fetchData]);
