@@ -272,6 +272,10 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
+    if (isAdmin && userIds.length === 0) {
+      setErrors((p) => ({ ...p, userIds: 'Select at least one member' }));
+      return;
+    }
     setIsSubmitting(true);
     try {
       if (isRangeMode) {

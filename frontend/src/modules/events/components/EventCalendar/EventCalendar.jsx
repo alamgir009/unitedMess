@@ -14,8 +14,8 @@ import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
 import { formatInIST } from '@/core/utils/helpers/date.helper';
 import eventService from '../../services/event.service';
 import { setCurrentMonth, setLoading } from '../../store/events.slice';
-import { createMeal, bulkCreateMeals, updateMeal, deleteMeal } from '../../../meal/store/meal.slice';
-import { createMarket, updateMarket, deleteMarket } from '../../../market/store/market.slice';
+import { createMeal, bulkCreateMeals, updateMeal, deleteMeal, adminCreateMeal } from '../../../meal/store/meal.slice';
+import { createMarket, updateMarket, deleteMarket, adminCreateMarket } from '../../../market/store/market.slice';
 
 const CalendarDayEdit = lazy(() => import('./CalendarDayEdit'));
 
@@ -208,6 +208,12 @@ const EventCalendar = () => {
   const snapshotRef = useRef(null);
 
   const handleSaveEntry = useCallback(async (entryData) => {
+    // ── Guard: admin entry for others must have explicit target members ──
+    if (isAdmin && !entryData.startDate && 'userIds' in entryData && (!entryData.userIds || entryData.userIds.length === 0)) {
+      toast.error('Select at least one member');
+      return;
+    }
+
     // ── Bulk range mode (meals only) ──
     if (entryData.startDate && entryData.endDate) {
       try {
@@ -246,26 +252,63 @@ const EventCalendar = () => {
     }));
 
     try {
-      if (category === 'meals') {
-        const res = await dispatch(createMeal(entryData)).unwrap();
-        const created = res?.data ?? res;
-        setDataMap((prevMap) => ({
-          ...prevMap,
-          [dateKey]: (prevMap[dateKey] || []).map((e) =>
-            e._id === tempId ? created : e,
-          ),
-        }));
-        toast.success('Meal added');
+      const isCreatingForOthers = isAdmin && entryData.userIds?.length > 0;
+
+      if (isCreatingForOthers) {
+        const selectedIds = [...entryData.userIds];
+        delete entryData.userIds;
+
+        if (category === 'meals') {
+          const createdEntries = [];
+          for (const userId of selectedIds) {
+            const res = await dispatch(adminCreateMeal({ userId, mealData: entryData })).unwrap();
+            createdEntries.push(res?.data ?? res);
+          }
+          setDataMap((prevMap) => ({
+            ...prevMap,
+            [dateKey]: [
+              ...createdEntries,
+              ...(prevMap[dateKey] || []).filter((e) => e._id !== tempId),
+            ],
+          }));
+          toast.success(`${createdEntries.length} meal(s) added`);
+        } else {
+          const createdEntries = [];
+          for (const userId of selectedIds) {
+            const res = await dispatch(adminCreateMarket({ userId, marketData: entryData })).unwrap();
+            createdEntries.push(res?.data ?? res);
+          }
+          setDataMap((prevMap) => ({
+            ...prevMap,
+            [dateKey]: [
+              ...createdEntries,
+              ...(prevMap[dateKey] || []).filter((e) => e._id !== tempId),
+            ],
+          }));
+          toast.success(`${createdEntries.length} market entry(ies) added`);
+        }
       } else {
-        const res = await dispatch(createMarket(entryData)).unwrap();
-        const created = res?.data ?? res;
-        setDataMap((prevMap) => ({
-          ...prevMap,
-          [dateKey]: (prevMap[dateKey] || []).map((e) =>
-            e._id === tempId ? created : e,
-          ),
-        }));
-        toast.success('Market entry added');
+        if (category === 'meals') {
+          const res = await dispatch(createMeal(entryData)).unwrap();
+          const created = res?.data ?? res;
+          setDataMap((prevMap) => ({
+            ...prevMap,
+            [dateKey]: (prevMap[dateKey] || []).map((e) =>
+              e._id === tempId ? created : e,
+            ),
+          }));
+          toast.success('Meal added');
+        } else {
+          const res = await dispatch(createMarket(entryData)).unwrap();
+          const created = res?.data ?? res;
+          setDataMap((prevMap) => ({
+            ...prevMap,
+            [dateKey]: (prevMap[dateKey] || []).map((e) =>
+              e._id === tempId ? created : e,
+            ),
+          }));
+          toast.success('Market entry added');
+        }
       }
       abortRef.current?.abort();
       const controller = new AbortController();
@@ -278,7 +321,7 @@ const EventCalendar = () => {
       const msg = err?.response?.data?.message || err?.message || 'Failed to save';
       toast.error(msg);
     }
-  }, [detailDate, dataMap, category, dispatch, fetchData]);
+  }, [detailDate, dataMap, category, dispatch, fetchData, isAdmin]);
 
   const handleUpdateEntry = useCallback(async (entryId, entryData) => {
     if (!detailDate) return;
