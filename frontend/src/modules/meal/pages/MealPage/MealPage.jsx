@@ -5,7 +5,7 @@ import {
     HiOutlinePlus, HiOutlineSquares2X2, HiOutlineListBullet,
     HiOutlineShieldCheck, HiOutlineSparkles,
     HiOutlineXMark, HiOutlineChevronDown, HiOutlineInformationCircle,
-    HiOutlineTrash,
+    HiOutlineTrash, HiOutlineClock,
 } from 'react-icons/hi2';
 import { IoFastFoodOutline } from "react-icons/io5";
 import { format } from 'date-fns';
@@ -38,6 +38,7 @@ const MealPage = () => {
     const isAdmin = user?.role === 'admin';
 
     const [isRosterOpen, setIsRosterOpen] = useState(false);
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingMeal, setEditingMeal] = useState(null);
     const [viewMode, setViewMode] = useState('grid');
@@ -383,13 +384,6 @@ const MealPage = () => {
                         onClearFilters={clearFilters}
                     />
 
-                    {isFiltered && meals?.length > 0 && !isAdmin && (
-                        <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-primary/5 border border-primary/15 text-primary text-xs font-medium">
-                            <HiOutlineInformationCircle className="w-4 h-4 flex-shrink-0" />
-                            Filtering within the current page ({meals.length} records). Clear filters to browse all pages.
-                        </div>
-                    )}
-
                     {/* Error Banner */}
                     {(isError || errorMsg) && (
                         <div className="flex items-start gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive">
@@ -448,21 +442,67 @@ const MealPage = () => {
                             onSelectAll={handleSelectAll}
                         />
                     ) : (
-                        <>
-                            <MealList
-                                meals={filtered}
-                                viewMode={viewMode}
-                                onEdit={openEdit}
-                                onDelete={handleDeleteRequest}
-                                isAdmin={isAdmin}
-                                selectedIds={selectedIds}
-                                onToggleSelect={handleToggleSelect}
-                                onSelectAll={handleSelectAll}
-                            />
-                            {!isFiltered && (
-                                <Pagination pagination={pagination} onPageChange={handlePageChange} onLimitChange={handleLimitChange} />
-                            )}
-                        </>
+                        <div className="card-base overflow-hidden">
+                            <button
+                                onClick={() => setIsHistoryOpen(p => !p)}
+                                className="w-full px-4 py-3.5 sm:px-5 sm:py-4 flex items-center justify-between gap-3 text-left group"
+                                aria-expanded={isHistoryOpen}
+                                aria-label="Toggle meals history"
+                                type="button"
+                            >
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="p-2 sm:p-2.5 rounded-xl bg-primary/10 text-primary">
+                                        <HiOutlineClock className="w-4 h-4 sm:w-5 sm:h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm sm:text-base font-semibold text-foreground tracking-tight">
+                                            Meals History
+                                        </h3>
+                                        <p className="text-xs text-muted-foreground truncate">
+                                            {isHistoryOpen ? 'Showing all meal records' : 'Tap to view meal records'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div
+                                    className="text-muted-foreground group-hover:text-foreground transition-transform duration-200 shrink-0"
+                                    style={{ transform: isHistoryOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                                >
+                                    <HiOutlineChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />
+                                </div>
+                            </button>
+                            <div
+                                className="overflow-hidden transition-all duration-300 ease-out"
+                                style={{
+                                    maxHeight: isHistoryOpen ? '9999px' : '0px',
+                                    opacity: isHistoryOpen ? 1 : 0,
+                                    transitionTimingFunction: 'cubic-bezier(0.33, 1, 0.68, 1)',
+                                }}
+                            >
+                                <div className="px-4 pb-4 sm:px-5 sm:pb-5 contain-content">
+                                    <div className="pt-3 border-t border-border/40 space-y-4">
+                                        {isFiltered && meals?.length > 0 && (
+                                            <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-primary/5 border border-primary/15 text-primary text-xs font-medium">
+                                                <HiOutlineInformationCircle className="w-4 h-4 flex-shrink-0" />
+                                                Filtering within the current page ({meals.length} records). Clear filters to browse all pages.
+                                            </div>
+                                        )}
+                                        <MealList
+                                            meals={filtered}
+                                            viewMode={viewMode}
+                                            onEdit={openEdit}
+                                            onDelete={handleDeleteRequest}
+                                            isAdmin={isAdmin}
+                                            selectedIds={selectedIds}
+                                            onToggleSelect={handleToggleSelect}
+                                            onSelectAll={handleSelectAll}
+                                        />
+                                        {!isFiltered && (
+                                            <Pagination pagination={pagination} onPageChange={handlePageChange} onLimitChange={handleLimitChange} />
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     )}
                 </div>
 

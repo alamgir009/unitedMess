@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AnimatePresence, motion } from 'framer-motion';
-import { HiOutlineXMark } from 'react-icons/hi2';
+import { HiOutlineXMark, HiOutlineChevronDown, HiOutlineShoppingBag } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
@@ -64,6 +64,7 @@ const MarketPage = () => {
 
     // ── Scheduler collapse
     const [isSchedulerOpen, setIsSchedulerOpen] = useState(false);
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
     // ── Pagination
     const [page, setPage] = useState(1);
@@ -276,23 +277,62 @@ const MarketPage = () => {
                             isAdmin={isAdmin}
                         />
                     ) : (
-                        <>
-                            <MarketList
-                                markets={filtered}
-                                viewMode={viewMode}
-                                onEdit={openEdit}
-                                onDelete={handleDeleteClick}
-                                isAdmin={isAdmin}
-                            />
-
-                            {!hasActive && (
-                                <Pagination
-                                    pagination={pagination}
-                                    onPageChange={handlePageChange}
-                                    onLimitChange={handleLimitChange}
-                                />
-                            )}
-                        </>
+                        <div className="card-base overflow-hidden">
+                            <button
+                                onClick={() => setIsHistoryOpen(p => !p)}
+                                className="w-full px-4 py-3.5 sm:px-5 sm:py-4 flex items-center justify-between gap-3 text-left group"
+                                aria-expanded={isHistoryOpen}
+                                aria-label="Toggle markets history"
+                                type="button"
+                            >
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="p-2 sm:p-2.5 rounded-xl bg-primary/10 text-primary">
+                                        <HiOutlineShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm sm:text-base font-semibold text-foreground tracking-tight">
+                                            Markets History
+                                        </h3>
+                                        <p className="text-xs text-muted-foreground truncate">
+                                            {isHistoryOpen ? 'Showing all market records' : 'Tap to view market records'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div
+                                    className="text-muted-foreground group-hover:text-foreground transition-transform duration-200 shrink-0"
+                                    style={{ transform: isHistoryOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                                >
+                                    <HiOutlineChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />
+                                </div>
+                            </button>
+                            <div
+                                className="overflow-hidden transition-all duration-300 ease-out"
+                                style={{
+                                    maxHeight: isHistoryOpen ? '9999px' : '0px',
+                                    opacity: isHistoryOpen ? 1 : 0,
+                                    transitionTimingFunction: 'cubic-bezier(0.33, 1, 0.68, 1)',
+                                }}
+                            >
+                                <div className="px-4 pb-4 sm:px-5 sm:pb-5 contain-content">
+                                    <div className="pt-3 border-t border-border/40 space-y-4">
+                                        <MarketList
+                                            markets={filtered}
+                                            viewMode={viewMode}
+                                            onEdit={openEdit}
+                                            onDelete={handleDeleteClick}
+                                            isAdmin={isAdmin}
+                                        />
+                                        {!hasActive && (
+                                            <Pagination
+                                                pagination={pagination}
+                                                onPageChange={handlePageChange}
+                                                onLimitChange={handleLimitChange}
+                                            />
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     )}
 
                 </div>
