@@ -21,23 +21,44 @@ const inputBase =
   'transition-all duration-100 ' +
   'placeholder:text-[var(--text-muted)]/50';
 
-const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, onSave, onUpdate, onDelete, onDone }) => {
+const getEntryUserId = (entry) =>
+  typeof entry.user === 'object' ? entry.user?._id : entry.user;
+
+const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, currentUser, onSave, onUpdate, onDelete, onDone }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const dateStr = detailDate ? format(new Date(detailDate), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+  const currentUserId = currentUser?._id || currentUser?.id;
 
-  const sorted = [...entries].sort(
-    (a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt),
+  const sorted = useMemo(
+    () =>
+      [...entries].sort(
+        (a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt),
+      ),
+    [entries],
   );
+
+  // Non-admin users only see and manage their own entries
+  const visibleEntries = useMemo(() => {
+    if (isAdmin) return sorted;
+    return sorted.filter((entry) => getEntryUserId(entry) === currentUserId);
+  }, [sorted, isAdmin, currentUserId]);
+
+  const canEdit = (entry) => isAdmin || getEntryUserId(entry) === currentUserId;
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
-          {entries.length} {category === 'meals' ? 'meal' : 'market'} entr{entries.length === 1 ? 'y' : 'ies'}
+          {visibleEntries.length} {category === 'meals' ? 'meal' : 'market'} entr{visibleEntries.length === 1 ? 'y' : 'ies'}
+          {!isAdmin && entries.length > visibleEntries.length && (
+            <span className="ml-1 text-[var(--text-muted)]">
+              ({entries.length} total)
+            </span>
+          )}
         </p>
         {!isAdding && (
           <button
@@ -55,6 +76,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, on
           category={category}
           dateStr={dateStr}
           isAdmin={isAdmin}
+          currentUser={currentUser}
           onSave={onSave}
           onCancel={() => setIsAdding(false)}
           setIsSubmitting={setIsSubmitting}
@@ -62,12 +84,16 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, on
       )}
 
       <div className="flex flex-col gap-1">
-        {sorted.length === 0 && !isAdding && (
-          <p className="text-sm text-[var(--text-muted)] py-4 text-center">No entries for this day.</p>
+        {visibleEntries.length === 0 && !isAdding && (
+          <p className="text-sm text-[var(--text-muted)] py-4 text-center">
+            {!isAdmin && entries.length > 0 ? 'No entries for you on this day.' : 'No entries for this day.'}
+          </p>
         )}
-        {sorted.map((entry) => {
+        {visibleEntries.map((entry) => {
           const isEditing = editingId === entry._id;
           const isConfirming = confirmDeleteId === entry._id;
+          const isUnpopulated = entry.user && typeof entry.user === 'string';
+          const displayName = entry.user?.name || entry.userName || (isUnpopulated ? currentUser?.name : 'Unknown');
           return (
             <div key={entry._id}>
               {isEditing ? (
@@ -88,7 +114,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, on
                 >
                   <div className="flex-1 min-w-0 flex items-center gap-2">
                     <span className="text-sm font-medium text-[var(--text-primary)] truncate">
-                      {entry.user?.name || entry.userName || 'Unknown'}
+                      {displayName}
                     </span>
                     {category === 'meals' && entry.type && (
                       <SlotIcon slot={entry.type} status={entry.status} size={12} />
@@ -123,7 +149,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, on
                         <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                  ) : (
+                  ) : canEdit(entry) ? (
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => setEditingId(entry._id)}
@@ -142,7 +168,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, on
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                  )}
+                  ) : null}
                 </div>
               )}
             </div>
@@ -154,7 +180,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, on
         <button
           onClick={onDone}
           disabled={isSubmitting}
-          className="flex-1 px-3 py-2 rounded-xl text-sm font-semibold bg-[var(--accent-primary)] text-white hover:opacity-90 transition-opacity disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex-1 px-3 py-2 rounded-xl text-sm font-semibold bg-[var(--accent-primary)] text-white hover:brightness-110 active:brightness-90 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50"
         >
           {isSubmitting ? 'Saving...' : 'Done'}
         </button>
@@ -175,17 +201,17 @@ const ModeTab = ({ mode, current, onChange, label }) => (
     aria-selected={current === mode}
     onClick={() => onChange(mode)}
     className={cn(
-      'flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all duration-100',
+      'flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all duration-100 border',
       current === mode
-        ? 'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] shadow-xs'
-        : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]',
+        ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border-[var(--accent-primary)]/25 shadow-sm'
+        : 'text-[var(--text-muted)] border-transparent hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)]/50',
     )}
   >
     {label}
   </button>
 );
 
-const EntryForm = ({ category, dateStr, isAdmin, onSave, onCancel, setIsSubmitting }) => {
+const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, setIsSubmitting }) => {
   const [mode, setMode] = useState('single');
   const [date, setDate] = useState(dateStr);
   const [rangeFrom, setRangeFrom] = useState(dateStr);
@@ -250,11 +276,12 @@ const EntryForm = ({ category, dateStr, isAdmin, onSave, onCancel, setIsSubmitti
     setIsSubmitting(true);
     try {
       if (isRangeMode) {
+        const currentUserId = currentUser?._id || currentUser?.id;
         await onSave({
           startDate: rangeFrom,
           endDate: rangeTo,
           type,
-          ...(isAdmin && { userIds }),
+          userIds: isAdmin ? userIds : (currentUserId ? [currentUserId] : []),
           ...(remarks.trim() && { remarks: remarks.trim() }),
         });
       } else {
@@ -404,7 +431,7 @@ const EntryForm = ({ category, dateStr, isAdmin, onSave, onCancel, setIsSubmitti
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors"
+          className="flex-1 py-1.5 rounded-lg text-xs font-semibold border border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-muted)] active:bg-[var(--bg-muted)]/80 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30"
         >
           Cancel
         </button>
@@ -412,10 +439,10 @@ const EntryForm = ({ category, dateStr, isAdmin, onSave, onCancel, setIsSubmitti
           type="submit"
           disabled={isRangeMode && (rangeInvalid || daysCount === 0)}
           className={cn(
-            'flex-[2] py-1.5 rounded-lg text-xs font-semibold transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            'flex-[2] py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50',
             isRangeMode && (rangeInvalid || daysCount === 0)
-              ? 'bg-[var(--text-muted)]/20 text-[var(--text-muted)] cursor-not-allowed'
-              : 'bg-[var(--accent-primary)] text-white hover:opacity-90',
+              ? 'bg-[var(--bg-muted)] text-[var(--text-muted)] border border-[var(--border-default)] cursor-not-allowed'
+              : 'bg-[var(--accent-primary)] text-white hover:brightness-110 active:brightness-90 shadow-sm hover:shadow-md',
           )}
         >
           {isRangeMode ? `Save ${daysCount > 0 ? daysCount : ''} day${daysCount !== 1 ? 's' : ''}` : 'Save'}
@@ -515,7 +542,7 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
       <div className="flex items-center gap-1 shrink-0">
         <button
           type="submit"
-          className="p-1 rounded-md text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 transition-colors"
+          className="p-1.5 rounded-md text-white bg-[var(--accent-primary)] hover:brightness-110 active:brightness-90 shadow-xs transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50"
           aria-label="Save changes"
         >
           <Check className="w-3.5 h-3.5" />
@@ -523,7 +550,7 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
         <button
           type="button"
           onClick={onCancel}
-          className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors"
+          className="p-1.5 rounded-md border border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-muted)] active:bg-[var(--bg-muted)]/80 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30"
           aria-label="Cancel edit"
         >
           <X className="w-3.5 h-3.5" />

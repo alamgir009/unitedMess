@@ -29,7 +29,6 @@ const DayDetailSheet = ({
   onClose,
   title,
   children,
-  isAdmin = false,
   isEditMode = false,
   onEditToggle,
 }) => {
@@ -132,7 +131,7 @@ const DayDetailSheet = ({
                 <h2 className="text-base font-semibold text-[var(--text-primary)]">{title}</h2>
               </div>
               <div className="flex items-center gap-1">
-                {isAdmin && !isEditMode && (
+                {!isEditMode && (
                   <button
                     onClick={(e) => { e.stopPropagation(); onEditToggle?.(); }}
                     aria-label="Edit entries"

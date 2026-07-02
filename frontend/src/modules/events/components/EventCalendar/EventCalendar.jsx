@@ -423,7 +423,6 @@ const EventCalendar = () => {
             isOpen={!!detailDate}
             onClose={handleCloseDetail}
             title={`${formatInIST(detailDate, 'MMM d, yyyy')}${isEditMode ? ' — Edit' : ''} — ${category}`}
-            isAdmin={isAdmin}
             isEditMode={isEditMode}
             onEditToggle={handleEditToggle}
           >
@@ -434,6 +433,7 @@ const EventCalendar = () => {
                   category={category}
                   date={detailDate}
                   isAdmin={isAdmin}
+                  currentUser={user}
                   onSave={handleSaveEntry}
                   onUpdate={handleUpdateEntry}
                   onDelete={handleDeleteEntry}
@@ -449,7 +449,6 @@ const EventCalendar = () => {
             isOpen={!!detailDate}
             onClose={handleCloseDetail}
             title={`${formatInIST(detailDate, 'MMM d, yyyy')}${isEditMode ? ' — Edit' : ''} — ${category}`}
-            isAdmin={isAdmin}
             isEditMode={isEditMode}
             onEditToggle={handleEditToggle}
           >
@@ -460,6 +459,7 @@ const EventCalendar = () => {
                   category={category}
                   date={detailDate}
                   isAdmin={isAdmin}
+                  currentUser={user}
                   onSave={handleSaveEntry}
                   onUpdate={handleUpdateEntry}
                   onDelete={handleDeleteEntry}
