@@ -68,7 +68,7 @@ const MarketPage = () => {
 
     // ── Pagination
     const [page, setPage] = useState(1);
-    const [limit, setLimit] = useState(20);
+    const [limit, setLimit] = useState(50);
 
     // ── Error banner
     const [errorMsg, setErrorMsg] = useState('');

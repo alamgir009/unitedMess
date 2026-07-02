@@ -48,7 +48,7 @@ const MealPage = () => {
     const [dateTo, setDateTo] = useState('');
     const [showFilters, setShowFilters] = useState(false);
     const [page, setPage] = useState(1);
-    const [limit, setLimit] = useState(20);
+    const [limit, setLimit] = useState(50);
     const [errorMsg, setErrorMsg] = useState('');
     const [deletingMeal, setDeletingMeal] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
