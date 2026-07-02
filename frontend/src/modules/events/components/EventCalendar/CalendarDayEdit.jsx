@@ -8,23 +8,24 @@ import apiClient from '@/services/api/client/apiClient';
 import SlotIcon from './cells/SlotIcon';
 
 const MEAL_TYPES = [
-  { value: 'day', label: 'Day', color: 'border-amber-500/40 bg-amber-500/8 text-[var(--slot-day)]' },
-  { value: 'night', label: 'Night', color: 'border-indigo-400/40 bg-indigo-400/8 text-[var(--slot-night)]' },
-  { value: 'both', label: 'Both', color: 'border-primary/40 bg-primary/8 text-[var(--slot-both)]' },
-  { value: 'off', label: 'Off', color: 'border-muted-foreground/30 bg-muted/20 text-muted-foreground' },
+  /* selected state: border matches text exactly, bg uses same color at low opacity for hierarchy */
+  { value: 'day', label: 'Day', color: 'border-[var(--warning-text)] bg-[var(--warning-text)]/10 text-[var(--warning-text)]' },
+  { value: 'night', label: 'Night', color: 'border-[var(--info-text)] bg-[var(--info-text)]/10 text-[var(--info-text)]' },
+  { value: 'both', label: 'Both', color: 'border-[var(--slot-both)] bg-[var(--slot-both)]/10 text-[var(--slot-both)]' },
+  { value: 'off', label: 'Off', color: 'border-muted-foreground bg-muted-foreground/10 text-muted-foreground' },
 ];
 
 const inputBase =
   'w-full px-2.5 py-1.5 rounded-lg border border-[var(--border-default)] ' +
   'bg-[var(--bg-elevated)] text-sm text-[var(--text-primary)] ' +
   'focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/30 focus:border-[var(--accent-primary)]/50 ' +
-  'transition-all duration-100 ' +
+  'transition-colors duration-100 ' +
   'placeholder:text-[var(--text-muted)]/50';
 
 const getEntryUserId = (entry) =>
   typeof entry.user === 'object' ? entry.user?._id : entry.user;
 
-const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, currentUser, onSave, onUpdate, onDelete, onDone }) => {
+const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, currentUser, onSave, onUpdate, onDelete }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
@@ -107,7 +108,8 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
               ) : (
                 <div
                   className={cn(
-                    'flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-100',
+                    /* composited: only bg changes on hover */
+                    'flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-75',
                     'hover:bg-[var(--bg-muted)]',
                     isConfirming && 'bg-[var(--danger-bg)]/20 border border-[var(--danger)]/30',
                   )}
@@ -153,7 +155,8 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => setEditingId(entry._id)}
-                        className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 transition-colors"
+                        /* --text-secondary for icon UI contrast 3:1 AA (was 2.44:1 on light bg) */
+                        className="p-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 transition-colors"
                         aria-label="Edit entry"
                       >
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -162,7 +165,8 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
                       </button>
                       <button
                         onClick={() => setConfirmDeleteId(entry._id)}
-                        className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--danger)] hover:bg-[var(--danger-bg)]/20 transition-colors"
+                        /* --text-secondary for icon UI contrast 3:1 AA (was 2.44:1 on light bg) */
+                        className="p-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--danger)] hover:bg-[var(--danger-bg)]/20 transition-colors"
                         aria-label="Delete entry"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -176,15 +180,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
         })}
       </div>
 
-      <div className="flex gap-2 pt-3 border-t border-[var(--border-default)] shrink-0">
-        <button
-          onClick={onDone}
-          disabled={isSubmitting}
-          className="flex-1 px-3 py-2 rounded-xl text-sm font-semibold bg-[var(--accent-primary)] text-white hover:brightness-110 active:brightness-90 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50"
-        >
-          {isSubmitting ? 'Saving...' : 'Done'}
-        </button>
-      </div>
+
     </div>
   );
 };
@@ -201,10 +197,13 @@ const ModeTab = ({ mode, current, onChange, label }) => (
     aria-selected={current === mode}
     onClick={() => onChange(mode)}
     className={cn(
-      'flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all duration-100 border',
+      /* composited: only bg/text/border-color change */
+      'flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-colors duration-100 border',
       current === mode
-        ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border-[var(--accent-primary)]/25 shadow-sm'
-        : 'text-[var(--text-muted)] border-transparent hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)]/50',
+        /* richer bg/border for premium depth; active tab raises above the well */
+        ? 'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] border-[var(--accent-primary)]/40 shadow-sm'
+        /* --text-secondary replaces --text-muted for inactive tab AA contrast (2.44:1 fails → 4.86:1 passes) */
+        : 'text-[var(--text-secondary)] border-transparent hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)]/50',
     )}
   >
     {label}
@@ -323,7 +322,8 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
 
       {/* Mode toggle — only for meals (markets don't support bulk) */}
       {category === 'meals' && (
-        <div role="tablist" aria-label="Date mode" className="flex gap-1 p-0.5 rounded-lg bg-[var(--bg-muted)]/40 border border-[var(--border-default)]">
+        /* shadow-inner creates a recessed well; active tab with shadow-sm rises above it */
+        <div role="tablist" aria-label="Date mode" className="flex gap-1 p-0.5 rounded-lg bg-[var(--bg-muted)]/40 border border-[var(--border-default)] shadow-[var(--inset-shadow-deep)]">
           <ModeTab mode="single" current={mode} onChange={setMode} label="Single" />
           <ModeTab mode="range" current={mode} onChange={setMode} label="Range" />
         </div>
@@ -387,8 +387,8 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
               type="button"
               onClick={() => { setType(t.value); setErrors((p) => ({ ...p, type: undefined })); }}
               className={cn(
-                'py-1.5 px-1 rounded-lg text-[11px] font-bold border transition-all duration-100',
-                type === t.value ? `${t.color} shadow-xs ring-1 ring-[var(--accent-primary)]/20` : 'border-[var(--border-default)] text-[var(--text-muted)] hover:bg-[var(--bg-muted)]',
+                'py-1.5 px-1 rounded-lg text-[11px] font-bold border transition-colors duration-100',
+                type === t.value ? `${t.color} shadow-xs` : 'border-[var(--border-default)] text-[var(--text-muted)] hover:bg-[var(--bg-muted)]',
               )}
             >
               {t.label}
@@ -431,7 +431,8 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 py-1.5 rounded-lg text-xs font-semibold border border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-muted)] active:bg-[var(--bg-muted)]/80 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30"
+          /* neutral gray outline/ghost — no color competing with Save */
+          className="flex-1 py-1.5 rounded-lg text-xs font-semibold border border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)] active:bg-[var(--bg-muted)]/80 transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30"
         >
           Cancel
         </button>
@@ -439,10 +440,11 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
           type="submit"
           disabled={isRangeMode && (rangeInvalid || daysCount === 0)}
           className={cn(
-            'flex-[2] py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50',
+            /* --btn-success-* for fintech confirm; brightness → opacity for composited perf */
+            'flex-[2] py-1.5 rounded-lg text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 transition-opacity duration-100 transition-shadow duration-150',
             isRangeMode && (rangeInvalid || daysCount === 0)
               ? 'bg-[var(--bg-muted)] text-[var(--text-muted)] border border-[var(--border-default)] cursor-not-allowed'
-              : 'bg-[var(--accent-primary)] text-white hover:brightness-110 active:brightness-90 shadow-sm hover:shadow-md',
+              : 'bg-[var(--btn-success-from)] text-[var(--btn-success-label)] hover:opacity-90 active:opacity-80 shadow-sm hover:shadow-md',
           )}
         >
           {isRangeMode ? `Save ${daysCount > 0 ? daysCount : ''} day${daysCount !== 1 ? 's' : ''}` : 'Save'}
@@ -500,7 +502,7 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
               type="button"
               onClick={() => { setType(t.value); setErrors((p) => ({ ...p, type: undefined })); }}
               className={cn(
-                'px-2 py-1 rounded-md text-[10px] font-bold border transition-all duration-100',
+                'px-2 py-1 rounded-md text-[10px] font-bold border transition-colors duration-100',
                 type === t.value ? `${t.color} shadow-xs` : 'border-[var(--border-default)] text-[var(--text-muted)]',
               )}
             >
@@ -542,7 +544,8 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
       <div className="flex items-center gap-1 shrink-0">
         <button
           type="submit"
-          className="p-1.5 rounded-md text-white bg-[var(--accent-primary)] hover:brightness-110 active:brightness-90 shadow-xs transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50"
+          /* --btn-success-* for confirm; brightness→opacity for composited perf */
+          className="p-1.5 rounded-md text-[var(--btn-success-label)] bg-[var(--btn-success-from)] hover:opacity-90 active:opacity-80 shadow-xs transition-opacity duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50"
           aria-label="Save changes"
         >
           <Check className="w-3.5 h-3.5" />
@@ -550,7 +553,8 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
         <button
           type="button"
           onClick={onCancel}
-          className="p-1.5 rounded-md border border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-muted)] active:bg-[var(--bg-muted)]/80 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30"
+          /* neutral gray outline — no color competing with Save */
+          className="p-1.5 rounded-md border border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)] active:bg-[var(--bg-muted)]/80 transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30"
           aria-label="Cancel edit"
         >
           <X className="w-3.5 h-3.5" />
