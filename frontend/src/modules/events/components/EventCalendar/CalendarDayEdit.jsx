@@ -441,7 +441,7 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
           disabled={isRangeMode && (rangeInvalid || daysCount === 0)}
           className={cn(
             /* --btn-success-* for fintech confirm; brightness → opacity for composited perf */
-            'flex-[2] py-1.5 rounded-lg text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 transition-opacity duration-100 transition-shadow duration-150',
+            'flex-[2] py-1.5 rounded-lg text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 transition-[opacity,box-shadow] duration-150',
             isRangeMode && (rangeInvalid || daysCount === 0)
               ? 'bg-[var(--bg-muted)] text-[var(--text-muted)] border border-[var(--border-default)] cursor-not-allowed'
               : 'bg-[var(--btn-success-from)] text-[var(--btn-success-label)] hover:opacity-90 active:opacity-80 shadow-sm hover:shadow-md',
