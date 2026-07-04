@@ -13,6 +13,7 @@ const PrintInvoice = ({
     paymentStatus = 'pending',
     paymentMethod,
     transactionId,
+    utr,
     paymentDate,
 }) => {
     const {
@@ -296,8 +297,13 @@ const PrintInvoice = ({
                     </div>
                     {paymentMethod === 'upi_manual' && transactionId && (
                         <div style={s.utrBlock}>
-                            <p style={s.utrLabel}>UTR</p>
+                            <p style={s.utrLabel}>Transaction Ref</p>
                             <p style={s.utrValue}>{transactionId}</p>
+                            {utr && utr !== transactionId && (
+                                <p style={{ ...s.utrLabel, marginTop: '4px', color: '#64748b' }}>
+                                    Bank UTR: {utr}
+                                </p>
+                            )}
                         </div>
                     )}
                 </div>

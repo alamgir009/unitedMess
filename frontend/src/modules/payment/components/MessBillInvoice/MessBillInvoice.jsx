@@ -500,10 +500,15 @@ const MessBillInvoice = ({
                         )}
                         </div>
                         <div className="flex items-center gap-1.5 mt-1.5">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">UTR</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">Transaction Ref</span>
                         <span className="text-sm font-mono font-bold text-primary select-all tracking-tight break-all">
                             {paymentRecord.transactionId}
                         </span>
+                        {paymentRecord.utr && paymentRecord.utr !== paymentRecord.transactionId && (
+                            <span className="text-[10px] text-muted-foreground ml-2">
+                                Bank UTR: {paymentRecord.utr}
+                            </span>
+                        )}
                         </div>
                     </div>
                     </div>
@@ -783,6 +788,7 @@ const MessBillInvoice = ({
                         paymentStatus={paymentStatus}
                         paymentMethod={paymentRecord?.paymentMethod}
                         transactionId={paymentRecord?.transactionId}
+                        utr={paymentRecord?.utr}
                         paymentDate={paymentRecord?.paymentDate}
                     />
                 </div>

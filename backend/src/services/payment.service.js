@@ -695,6 +695,19 @@ const verifyUpiManualPaymentService = async (paymentId, { status, adminRemarks, 
         remarks: adminRemarks || `Admin ${status === 'completed' ? 'approved' : 'rejected'} payment`,
     };
 
+    // Build update fields — generate a unique system transaction reference
+    // at approval time so the invoice shows the system reference, not the
+    // raw user-submitted UTR. The original UTR is preserved in the `utr` field.
+    const updateFields = {
+        status,
+        verifiedBy,
+        verifiedAt: new Date(),
+        adminRemarks: adminRemarks || '',
+    };
+    if (status === 'completed') {
+        updateFields.transactionId = `UM${Date.now().toString(36).toUpperCase()}-${paymentId.slice(-6).toUpperCase()}`;
+    }
+
     // Atomic update: only succeed if the payment is still in pending_verification
     const payment = await Payment.findOneAndUpdate(
         {
@@ -703,12 +716,7 @@ const verifyUpiManualPaymentService = async (paymentId, { status, adminRemarks, 
             status: 'pending_verification',
         },
         {
-            $set: {
-                status,
-                verifiedBy,
-                verifiedAt: new Date(),
-                adminRemarks: adminRemarks || '',
-            },
+            $set: updateFields,
             $push: { statusHistory: historyEntry },
         },
         { new: true }

@@ -372,8 +372,11 @@ const submitUpiManualPayment = asyncHandler(async (req, res) => {
         throw new AppError('Invalid UTR format. Must be 8-20 alphanumeric characters.', 400);
     }
 
-    // Idempotency check: check if this UTR exists (pending, completed, etc)
-    const existingUtr = await Payment.exists({ transactionId: cleanUtr });
+    // Idempotency check: check if this UTR exists (pending_verification, completed, etc)
+    const existingUtr = await Payment.exists({
+        utr: cleanUtr,
+        status: { $in: ['pending_verification', 'completed'] }
+    });
     if (existingUtr) {
         throw new AppError('This Transaction reference number (UTR) has already been submitted.', 400);
     }
@@ -417,6 +420,7 @@ const submitUpiManualPayment = asyncHandler(async (req, res) => {
         const payment = await Payment.create({
             user: userId,
             amount,
+            utr: cleanUtr,
             month: billingMonthName,
             type: 'gas_bill',
             status: 'pending_verification',
@@ -457,6 +461,7 @@ const submitUpiManualPayment = asyncHandler(async (req, res) => {
             const payment = await Payment.create({
                 user: userId,
                 amount: remaining,
+                utr: cleanUtr,
                 month: monthStr,
                 type: 'mess_bill',
                 status: 'pending_verification',

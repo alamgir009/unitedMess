@@ -37,6 +37,10 @@ const paymentSchema = new mongoose.Schema(
         transactionId: {
             type: String,
         },
+        utr: {
+            type: String,
+            comment: "Raw user-submitted UTR for manual UPI payments (preserved for audit)",
+        },
         receiptUrl: {
             type: String,
         },
