@@ -149,18 +149,26 @@ const PaymentPage = () => {
         setGasBillModal({ open: true, amount, monthName });
     }, []);
 
+    const currentUserId = user?._id || user?.id;
+
     const latestMessBillPayment = useMemo(() => {
+        if (!currentUserId) return null;
+        const matchUser = (p) => {
+            const pUserId = p.user?._id || (typeof p.user === 'string' ? p.user : null);
+            return pUserId === currentUserId;
+        };
         if (lastPaymentId && payments) {
             const match = payments.find(p => p._id === lastPaymentId);
-            if (match) return match;
+            if (match && matchUser(match)) return match;
         }
         const activeMonth = payableAmountData?.monthName;
         return (payments || []).find(p => 
             p.type === 'mess_bill' && 
             p.status === 'completed' && 
-            (!activeMonth || p.month === activeMonth)
+            p.month === activeMonth &&
+            matchUser(p)
         ) || null;
-    }, [lastPaymentId, payments, payableAmountData?.monthName]);
+    }, [lastPaymentId, payments, payableAmountData?.monthName, currentUserId]);
 
     /* ── fetch payments ── */
     useEffect(() => {

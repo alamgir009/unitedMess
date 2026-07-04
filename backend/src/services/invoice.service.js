@@ -100,6 +100,19 @@ const getInvoice = async (userId, month, year) => {
         }
         const invoiceObj = invoice.toObject ? invoice.toObject() : invoice;
         invoiceObj.remainingAmount = Math.max(0, invoiceObj.totalPayable - invoiceObj.paidAmount);
+        // Attach latest completed payment details (scoped by user+month)
+        const latestPayment = await Payment.findOne({
+            user: userId,
+            month: invoiceObj.monthName,
+            status: 'completed',
+            type: 'mess_bill',
+        }).sort({ paymentDate: -1 }).lean();
+        if (latestPayment) {
+            invoiceObj._paymentMethod = latestPayment.paymentMethod;
+            invoiceObj._transactionId = latestPayment.transactionId || null;
+            invoiceObj._utr = latestPayment.utr || null;
+            invoiceObj._paymentDate = latestPayment.paymentDate;
+        }
         return invoiceObj;
     }
 
@@ -188,6 +201,19 @@ const getInvoice = async (userId, month, year) => {
         // Attach computed remainingAmount for the UI (not persisted)
         const invoiceObj = invoice.toObject ? invoice.toObject() : invoice;
         invoiceObj.remainingAmount = Math.max(0, invoiceObj.totalPayable - invoiceObj.paidAmount);
+        // Attach latest completed payment details (scoped by user+month)
+        const latestPayment = await Payment.findOne({
+            user: userId,
+            month: invoiceObj.monthName,
+            status: 'completed',
+            type: 'mess_bill',
+        }).sort({ paymentDate: -1 }).lean();
+        if (latestPayment) {
+            invoiceObj._paymentMethod = latestPayment.paymentMethod;
+            invoiceObj._transactionId = latestPayment.transactionId || null;
+            invoiceObj._utr = latestPayment.utr || null;
+            invoiceObj._paymentDate = latestPayment.paymentDate;
+        }
         return invoiceObj;
     }
 
@@ -195,6 +221,19 @@ const getInvoice = async (userId, month, year) => {
     const created = await Invoice.create(invoiceData);
     const createdObj = created.toObject();
     createdObj.remainingAmount = Math.max(0, createdObj.totalPayable - createdObj.paidAmount);
+    // Attach latest completed payment details (scoped by user+month)
+    const latestPayment = await Payment.findOne({
+        user: userId,
+        month: invoiceData.monthName,
+        status: 'completed',
+        type: 'mess_bill',
+    }).sort({ paymentDate: -1 }).lean();
+    if (latestPayment) {
+        createdObj._paymentMethod = latestPayment.paymentMethod;
+        createdObj._transactionId = latestPayment.transactionId || null;
+        createdObj._utr = latestPayment.utr || null;
+        createdObj._paymentDate = latestPayment.paymentDate;
+    }
     return createdObj;
 };
 

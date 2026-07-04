@@ -165,12 +165,18 @@ const MonthlyInvoiceModal = ({
         ?? Math.max(0, totalPayable - paidAmount);
 
     const invoicePaymentRecord = {
-        month:       monthlyInvoice?.monthName,
-        paymentDate: monthlyInvoice?.createdAt,
+        // externalPaymentRecord as fallback (for pending/unverified payments
+        // where no backend completed-payment record exists yet)
+        ...(externalPaymentRecord || {}),
+        // Override with backend-scoped payment data (authoritative per user+month)
+        month:          monthlyInvoice?.monthName,
+        paymentDate:    monthlyInvoice?._paymentDate || monthlyInvoice?.createdAt,
         paidAmount,
         totalPayable,
         remainingAmount,
-        ...(externalPaymentRecord || {}),
+        paymentMethod:  monthlyInvoice?._paymentMethod,
+        transactionId:  monthlyInvoice?._transactionId,
+        utr:            monthlyInvoice?._utr,
     };
 
     return (
