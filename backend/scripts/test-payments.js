@@ -40,7 +40,7 @@ async function run() {
         const validUtr = '123456789012';
         const invalidUtr = 'short';
 
-        const utrRegex = /^[a-zA-Z0-9]{8,20}$/;
+        const utrRegex = /^\d{12}$/;
         console.log(`Validating "${validUtr}":`, utrRegex.test(validUtr)); // should be true
         console.log(`Validating "${invalidUtr}":`, utrRegex.test(invalidUtr)); // should be false
 

@@ -24,7 +24,7 @@ import { fmt } from '@/core/utils/helpers/currency.helper';
 import { Button, Input, Badge, Spinner } from '@/shared/components/ui';
 import paymentService from '../../services/payment.service';
 
-const UTR_PATTERN = /^[a-zA-Z0-9]{8,20}$/;
+const UTR_PATTERN = /^\d{12}$/;
 
 const MESS_STEP_LABELS = ['Months', 'Method', 'Pay'];
 const GAS_STEP_LABELS  = ['Amount', 'Method', 'Pay'];
@@ -623,7 +623,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
       return;
     }
     if (!UTR_PATTERN.test(trimmed)) {
-      toast.error('UTR must be 8–20 alphanumeric characters (letters & numbers only).');
+      toast.error('UTR must be exactly 12 digits (numbers only).');
       return;
     }
     setSubmittingUpi(true);
@@ -1063,27 +1063,27 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
                               <div>
                                 <label className="text-xs font-semibold text-foreground">Transaction UTR / Reference</label>
                                 <p className="text-xs text-muted-foreground mt-0.5">
-                                  Enter the 8–20 character UTR number shown in your UPI app after payment.
+                                  Enter the 12-digit UTR number shown in your UPI app after payment.
                                 </p>
                               </div>
                               <Input
                                 type="text"
                                 value={utr}
-                                onChange={(e) => setUtr(e.target.value.replace(/\s/g, ''))}
-                                placeholder="e.g. HDFC12345678"
+                                onChange={(e) => setUtr(e.target.value.replace(/\D/g, ''))}
+                                placeholder="e.g. 123456789012"
                                 variant="glass"
                                 size="lg"
-                                maxLength={20}
+                                maxLength={12}
                                 required
                                 autoComplete="off"
                               />
                               <div className="flex items-center gap-2 text-[11px] text-muted-foreground/60">
                                 <HiOutlineShieldCheck className="w-3.5 h-3.5" />
-                                <span>UTR must be 8–20 alphanumeric characters (letters and numbers only)</span>
+                                <span>UTR must be exactly 12 digits</span>
                               </div>
                               {utr.length > 0 && !UTR_PATTERN.test(utr) && (
                                 <p className="text-xs text-red-500 dark:text-red-400">
-                                  Invalid format. Use only letters A–Z, a–z and numbers 0–9 (8–20 chars).
+                                  UTR must be exactly 12 digits (0–9).
                                 </p>
                               )}
                               <Button

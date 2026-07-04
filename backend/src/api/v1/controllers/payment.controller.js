@@ -368,8 +368,8 @@ const submitUpiManualPayment = asyncHandler(async (req, res) => {
     }
 
     const cleanUtr = String(transactionId).trim();
-    if (!/^[a-zA-Z0-9]{8,20}$/.test(cleanUtr)) {
-        throw new AppError('Invalid UTR format. Must be 8-20 alphanumeric characters.', 400);
+    if (!/^\d{12}$/.test(cleanUtr)) {
+        throw new AppError('Invalid UTR format. Must be exactly 12 digits.', 400);
     }
 
     // Idempotency check: check if this UTR exists (pending_verification, completed, etc)
