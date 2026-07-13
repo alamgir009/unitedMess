@@ -10,6 +10,7 @@ const Invoice = require('../../../models/Invoice.model');
 const Payment = require('../../../models/Payment.model');
 const User = require('../../../models/User.model');
 const notificationService = require('../../../services/notification.service');
+const { emitToUser } = require('../../../sockets');
 const { getBillingPeriod } = require('../../../utils/helpers/date.helper');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
@@ -521,6 +522,9 @@ const verifyUpiManualPayment = asyncHandler(async (req, res) => {
         adminRemarks: remarks || '',
         verifiedBy: req.user.id,
     });
+
+    // Emit real-time socket event so the frontend refreshes payment/balance data
+    emitToUser(updatedPayment.user.toString(), 'billing:updated');
 
     // Notify the member of the verification result
     const title = status === 'completed'

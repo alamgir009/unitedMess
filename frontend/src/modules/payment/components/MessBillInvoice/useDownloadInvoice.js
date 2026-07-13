@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 import { toast } from 'react-hot-toast';
 
 export const useDownloadInvoice = () => {
@@ -8,10 +6,17 @@ export const useDownloadInvoice = () => {
 
     /**
      * Core PDF rendering logic — shared by download and email flows.
+     * html2canvas + jspdf loaded lazily to keep PaymentPage chunk small.
      * Returns { pdf, pdfBlob } so callers can either save or convert to Base64.
      */
     const renderPDF = async ({ printRef, title, subject }) => {
         if (!printRef || !printRef.current) return null;
+
+        const [html2canvasModule, { jsPDF }] = await Promise.all([
+            import('html2canvas'),
+            import('jspdf'),
+        ]);
+        const html2canvas = html2canvasModule.default;
 
         await new Promise((r) => setTimeout(r, 100));
 

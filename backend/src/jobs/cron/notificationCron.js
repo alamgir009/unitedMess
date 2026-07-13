@@ -15,19 +15,7 @@ const registerNotificationCron = () => {
         timezone: 'Asia/Kolkata',
     });
 
-    // Prune expired subscriptions daily at 3 AM
-    cron.schedule('0 3 * * *', async () => {
-        try {
-            await notificationService.pruneExpiredSubscriptions();
-        } catch (error) {
-            logger.error(`[NotificationCron] Prune failed: ${error.message}`);
-        }
-    }, {
-        scheduled: true,
-        timezone: 'Asia/Kolkata',
-    });
-
-    logger.info('[NotificationCron] Push retry + subscription prune crons registered');
+    logger.info('[NotificationCron] Push retry cron registered (VAPID prune removed)');
 };
 
 module.exports = { registerNotificationCron };

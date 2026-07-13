@@ -7,9 +7,7 @@ const router = express.Router();
 
 router.use(protect);
 
-// Push subscription
-router.post('/subscribe', rateLimit({ windowMs: 60000, max: 10 }), notificationController.subscribeToPush);
-router.delete('/subscribe', notificationController.unsubscribeFromPush);
+// FCM-only push delivery — VAPID web-push subscribe/unsubscribe routes removed.
 
 // Read / mark
 router.get('/', notificationController.getUserNotifications);
@@ -23,9 +21,6 @@ router.post(
     rateLimit({ windowMs: 3600000, max: 20 }),
     notificationController.sendCustomAdminNotification
 );
-
-// Push config (for VAPID key rotation)
-router.get('/push-config', notificationController.getPushConfig);
 
 // FCM token management
 router.post('/fcm-token', notificationController.registerFcmToken);

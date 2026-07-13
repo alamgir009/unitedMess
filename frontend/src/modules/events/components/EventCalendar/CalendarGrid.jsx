@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import {
   startOfMonth,
   endOfMonth,
@@ -12,7 +12,7 @@ import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
 
 const DAY_HEADERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-const CalendarGrid = ({
+const CalendarGrid = memo(({
   currentMonth,
   dataMap = {},
   category,
@@ -74,7 +74,7 @@ const CalendarGrid = ({
       </div>
     </div>
   );
-};
+});
 
 CalendarGrid.displayName = 'CalendarGrid';
 export default CalendarGrid;

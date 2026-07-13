@@ -1,12 +1,10 @@
 const crypto = require('crypto');
 const notificationService = require('../../../services/notification.service');
 const Notification = require('../../../models/Notification.model');
-const PushSubscription = require('../../../models/PushSubscription.model');
 const User = require('../../../models/User.model');
 const asyncHandler = require('../../../utils/helpers/asyncHandler');
 const { sendSuccessResponse } = require('../../../utils/helpers/response.helper');
 const pick = require('../../../utils/helpers/pick');
-const config = require('../../../config');
 const logger = require('../../../utils/logger/index');
 const fcmController = require('./fcm.controller');
 
@@ -30,57 +28,7 @@ const markAllAsRead = asyncHandler(async (req, res) => {
     sendSuccessResponse(res, 200, 'All notifications marked as read', result);
 });
 
-const subscribeToPush = asyncHandler(async (req, res) => {
-    const { endpoint, keys, userAgent } = req.body;
 
-    if (!endpoint || !keys?.p256dh || !keys?.auth) {
-        return res.status(400).json({
-            success: false,
-            message: 'Invalid subscription object: endpoint, keys.p256dh, and keys.auth are required',
-        });
-    }
-
-    const existing = await PushSubscription.findOne({ endpoint });
-
-    if (existing) {
-        existing.userId = req.user.id;
-        existing.keys = keys;
-        existing.userAgent = userAgent || existing.userAgent;
-        existing.lastUsed = new Date();
-        existing.failureCount = 0;
-        existing.isActive = true;
-        await existing.save();
-        return sendSuccessResponse(res, 200, 'Push subscription updated', existing);
-    }
-
-    const subscription = await PushSubscription.create({
-        userId: req.user.id,
-        endpoint,
-        keys,
-        userAgent: userAgent || '',
-        lastUsed: new Date(),
-    });
-
-    sendSuccessResponse(res, 201, 'Push subscription created', subscription);
-});
-
-const unsubscribeFromPush = asyncHandler(async (req, res) => {
-    const { endpoint } = req.body;
-
-    if (endpoint) {
-        await PushSubscription.findOneAndUpdate(
-            { endpoint, userId: req.user.id },
-            { isActive: false }
-        );
-    } else {
-        await PushSubscription.updateMany(
-            { userId: req.user.id },
-            { isActive: false }
-        );
-    }
-
-    sendSuccessResponse(res, 200, 'Push subscription(s) deactivated');
-});
 
 const sendCustomAdminNotification = asyncHandler(async (req, res) => {
     const { targetType, userId, title, message, type, priority, actionRequired, actionUrl } = req.body;
@@ -129,11 +77,7 @@ const sendCustomAdminNotification = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: 'Invalid targetType. Use ALL, USER, or ROLE' });
 });
 
-const getPushConfig = asyncHandler(async (req, res) => {
-    sendSuccessResponse(res, 200, 'Push config retrieved', {
-        vapidPublicKey: config.vapid.publicKey || null,
-    });
-});
+
 
 const deliveryReceipt = asyncHandler(async (req, res) => {
     const { notificationId, event, timestamp } = req.body;
@@ -177,10 +121,7 @@ module.exports = {
     getUserNotifications,
     markAsRead,
     markAllAsRead,
-    subscribeToPush,
-    unsubscribeFromPush,
     sendCustomAdminNotification,
-    getPushConfig,
     deliveryReceipt,
     getNotificationPreferences,
     updateNotificationPreferences,

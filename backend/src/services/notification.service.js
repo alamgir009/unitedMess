@@ -1,29 +1,12 @@
 const crypto = require('crypto');
 const Notification = require('../models/Notification.model');
-const PushSubscription = require('../models/PushSubscription.model');
 const User = require('../models/User.model');
 const { emitToUser, emitToAll } = require('../sockets');
 const config = require('../config');
 const logger = require('../utils/logger/index');
 const fcmService = require('./fcm.service');
 
-let webPush = null;
-try {
-    webPush = require('web-push');
-    if (config.vapid?.publicKey && config.vapid?.privateKey) {
-        webPush.setVapidDetails(
-            config.vapid.subject || 'mailto:admin@unitedmess.uk',
-            config.vapid.publicKey,
-            config.vapid.privateKey
-        );
-    }
-} catch (e) {
-    logger.warn('web-push package not installed. Push notifications disabled.');
-}
-
 const BATCH_SIZE = 500;
-const PUSH_RETRY_MAX = 3;
-const PUSH_FAILURE_THRESHOLD = 3;
 
 /**
  * Create a notification with idempotency check.
@@ -62,89 +45,11 @@ const sendSocketEvent = (userId, notification) => {
     }
 };
 
-/**
- * Send web push notification to all active subscriptions for a user.
- */
-const sendWebPush = async (userId, notification) => {
-    if (!webPush) return;
 
-    try {
-        const subscriptions = await PushSubscription.find({ userId, isActive: true }).lean();
-
-        for (const sub of subscriptions) {
-            const payload = JSON.stringify({
-                title: notification.title,
-                body: notification.message,
-                icon: '/assets/icons/resize_logo.png',
-                badge: '/assets/icons/resize_logo.png',
-                data: {
-                    url: notification.actionUrl || '/notifications',
-                    notificationId: notification._id.toString(),
-                },
-                tag: notification._id.toString(),
-                requireInteraction: notification.priority === 'CRITICAL' || notification.priority === 'HIGH',
-            });
-
-            await sendPushWithRetry(sub, payload);
-        }
-    } catch (error) {
-        logger.error(`Web push error for user ${userId}: ${error.message}`);
-    }
-};
 
 /**
- * Send a push with exponential backoff retry.
- */
-const sendPushWithRetry = async (subscription, payload, attempt = 1) => {
-    try {
-        await webPush.sendNotification(subscription, payload);
-        await PushSubscription.findByIdAndUpdate(subscription._id, { lastUsed: new Date(), failureCount: 0 });
-    } catch (error) {
-        if (error.statusCode === 410) {
-            await PushSubscription.findByIdAndUpdate(subscription._id, { isActive: false });
-            logger.info(`Push subscription ${subscription._id} deactivated (410 Gone)`);
-            return;
-        }
-
-        if (error.statusCode === 429) {
-            const retryAfter = parseInt(error.headers?.['retry-after'] || '5', 10) * 1000;
-            await new Promise(resolve => setTimeout(resolve, retryAfter));
-            if (attempt < PUSH_RETRY_MAX) {
-                return sendPushWithRetry(subscription, payload, attempt + 1);
-            }
-        }
-
-        if (attempt < PUSH_RETRY_MAX) {
-            const delay = Math.pow(2, attempt) * 1000;
-            await new Promise(resolve => setTimeout(resolve, delay));
-            return sendPushWithRetry(subscription, payload, attempt + 1);
-        }
-
-        await handlePushFailure(subscription._id, error);
-    }
-};
-
-/**
- * Handle a failed push attempt — increment failure count, deactivate at threshold.
- */
-const handlePushFailure = async (subscriptionId, error) => {
-    try {
-        const sub = await PushSubscription.findById(subscriptionId);
-        if (!sub) return;
-
-        sub.failureCount = (sub.failureCount || 0) + 1;
-        if (sub.failureCount >= PUSH_FAILURE_THRESHOLD) {
-            sub.isActive = false;
-            logger.info(`Push subscription ${subscriptionId} deactivated after ${sub.failureCount} failures`);
-        }
-        await sub.save();
-    } catch (err) {
-        logger.error(`Error handling push failure for ${subscriptionId}: ${err.message}`);
-    }
-};
-
-/**
- * Create, save, and send a notification via socket + FCM (primary) + VAPID (fallback).
+ * Create, save, and send a notification via socket + FCM.
+ * VAPID web-push removed — FCM handles all push notification delivery.
  */
 const createAndSend = async (userId, type, title, message, options = {}) => {
     try {
@@ -169,13 +74,8 @@ const createAndSend = async (userId, type, title, message, options = {}) => {
             logger.error(`Failed to mark notification ${notification._id} as SENT: ${err.message}`);
         });
 
-        // Dual delivery: try FCM first, fall back to VAPID
-        const fcmResult = await fcmService.sendToUser(userId, notifObj).catch(() => null);
-        if (!fcmResult?.success) {
-            sendWebPush(userId, notifObj).catch(err => {
-                logger.error(`Web push background error: ${err.message}`);
-            });
-        }
+        // Push delivery via FCM only (VAPID web-push removed)
+        fcmService.sendToUser(userId, notifObj).catch(() => {});
 
         return notifObj;
     } catch (error) {
@@ -365,21 +265,6 @@ const markDelivered = async (notificationId) => {
 };
 
 /**
- * Prune expired push subscriptions (inactive > 90 days).
- */
-const pruneExpiredSubscriptions = async () => {
-    const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
-    const result = await PushSubscription.deleteMany({
-        isActive: false,
-        lastUsed: { $lt: cutoff },
-    });
-    if (result.deletedCount > 0) {
-        logger.info(`Pruned ${result.deletedCount} expired push subscriptions`);
-    }
-    return result;
-};
-
-/**
  * Retry PENDING notification deliveries.
  */
 const retryPendingDeliveries = async () => {
@@ -408,9 +293,7 @@ module.exports = {
     markAsRead,
     markAllAsRead,
     markDelivered,
-    pruneExpiredSubscriptions,
     retryPendingDeliveries,
     sendSocketEvent,
-    sendWebPush,
     createNotification,
 };

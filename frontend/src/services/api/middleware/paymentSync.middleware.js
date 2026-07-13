@@ -59,6 +59,40 @@ const DEFAULT_USER_PARAMS = {
     userStatus: 'approved',
 };
 
+// Debounce ref — shared across all middleware invocations.
+// Coalesces multiple rapid mutations into a single refresh batch.
+let debounceTimer = null;
+
+const syncAll = (store) => {
+    const state = store.getState();
+
+    // 1. Payable amounts
+    store.dispatch(fetchPayableAmount());
+    store.dispatch(fetchPayableGasBill());
+
+    // 2. Refresh ALL member rows
+    store.dispatch(fetchUsers(DEFAULT_USER_PARAMS));
+
+    // 3. Refresh billing stats
+    store.dispatch(fetchBillingMonthStats());
+
+    // 4. Refresh payments list
+    store.dispatch(fetchPayments({ page: 1, limit: 20 }));
+
+    // 5. Refresh active invoice
+    store.dispatch(fetchActiveInvoice());
+
+    // 6. Admin-only dispatches
+    if (state.auth.user?.role === 'admin') {
+        const lastFinalized = getLastFinalizedPeriod();
+        store.dispatch(fetchAdminUnpaidInvoices({ month: lastFinalized.month, year: lastFinalized.year }));
+        store.dispatch(fetchUsers(DEFAULT_USER_PARAMS));
+        store.dispatch(fetchAdminDashboardStats());
+    } else if (state.auth.user) {
+        store.dispatch(fetchUserDashboardStats());
+    }
+};
+
 const paymentSyncMiddleware = (store) => (next) => (action) => {
     const result = next(action);
 
@@ -66,43 +100,12 @@ const paymentSyncMiddleware = (store) => (next) => (action) => {
         return result;
     }
 
-    // ── 1. Payable amounts ──
-    store.dispatch(fetchPayableAmount());
-    store.dispatch(fetchPayableGasBill());
-
-    // ── 2. Refresh ALL member rows so every view shows fresh data ──
-    store.dispatch(fetchUsers(DEFAULT_USER_PARAMS));
-
-    // ── 3. Refresh billing stats ──
-    store.dispatch(fetchBillingMonthStats());
-
-    // ── 4. Refresh payments list ──
-    store.dispatch(fetchPayments({ page: 1, limit: 20 }));
-
-    // ── 5. Refresh active invoice ──
-    store.dispatch(fetchActiveInvoice());
-
-    // ── 6. Admin-only dispatches ──
-    // FIX: Guard admin-only endpoints behind role check so non-admin users
-    // don't trigger 403 errors that pollute Redux state.
-    const state = store.getState();
-    if (state.auth.user?.role === 'admin') {
-        // Refresh admin unpaid invoices panel (only the last finalized period).
-        // FIX: Dispatch only ONE fetch — for the last finalized period.
-        // Previously dispatched BOTH lastFinalized and billingPeriod, causing
-        // the billing period (empty, no finalized invoices) to overwrite the
-        // last finalized period's data in Redux via the second dispatch.
-        const lastFinalized = getLastFinalizedPeriod();
-        store.dispatch(fetchAdminUnpaidInvoices({ month: lastFinalized.month, year: lastFinalized.year }));
-
-        // Refresh member list (admin-only endpoint)
-        store.dispatch(fetchUsers(DEFAULT_USER_PARAMS));
-
-        // Refresh admin dashboard stats
-        store.dispatch(fetchAdminDashboardStats());
-    } else if (state.auth.user) {
-        store.dispatch(fetchUserDashboardStats());
-    }
+    // Debounce: cancel previous timer, schedule fresh batch in 300ms
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        debounceTimer = null;
+        syncAll(store);
+    }, 300);
 
     return result;
 };

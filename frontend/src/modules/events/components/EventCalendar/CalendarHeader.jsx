@@ -1,8 +1,9 @@
+import { memo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import MemberFilterDropdown from '../MemberFilterDropdown/MemberFilterDropdown';
 
-const CalendarHeader = ({ currentMonth, onPrevMonth, onNextMonth, onToday, isAdmin, selectedMemberId, onMemberFilter }) => {
+const CalendarHeader = memo(({ currentMonth, onPrevMonth, onNextMonth, onToday, isAdmin, selectedMemberId, onMemberFilter }) => {
   return (
     <div className="flex items-center justify-between mb-3 sm:mb-5">
       <h2 className="text-lg sm:text-xl font-bold tracking-tight">
@@ -46,7 +47,7 @@ const CalendarHeader = ({ currentMonth, onPrevMonth, onNextMonth, onToday, isAdm
       </div>
     </div>
   );
-};
+});
 
 CalendarHeader.displayName = 'CalendarHeader';
 export default CalendarHeader;
