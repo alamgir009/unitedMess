@@ -98,6 +98,8 @@ const EventCalendar = () => {
   const [errorMap, setErrorMap] = useState({});
   const [detailDate, setDetailDate] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedEntryIds, setSelectedEntryIds] = useState(new Set());
+  const isBulkSubmittingRef = useRef(false);
 
   // Derive entries from live dataMap so optimistic updates reflect immediately
   const currentDateEntries = useMemo(() => {
@@ -401,6 +403,134 @@ const EventCalendar = () => {
     }
   }, [detailDate, dataMap, category, dispatch, fetchData]);
 
+  // ── Bulk selection ──────────────────────────────────────────────
+  const handleToggleSelect = useCallback((entryId) => {
+    setSelectedEntryIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(entryId)) next.delete(entryId);
+      else next.add(entryId);
+      return next;
+    });
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    setSelectedEntryIds((prev) => {
+      const allIds = currentDateEntries.map((e) => e._id);
+      const allSelected = allIds.length > 0 && allIds.every((id) => prev.has(id));
+      if (allSelected) return new Set();
+      return new Set(allIds);
+    });
+  }, [currentDateEntries]);
+
+  const handleExitSelectMode = useCallback(() => {
+    setSelectedEntryIds(new Set());
+  }, []);
+
+  useEffect(() => {
+    if (!isEditMode || !detailDate) {
+      setSelectedEntryIds(new Set());
+    }
+  }, [isEditMode, detailDate]);
+
+  const handleBulkDelete = useCallback(async () => {
+    if (selectedEntryIds.size === 0 || isBulkSubmittingRef.current) return;
+    if (!detailDate) return;
+    const dateKey = format(new Date(detailDate), 'yyyy-MM-dd');
+
+    const confirmMsg = `Delete ${selectedEntryIds.size} selected entr${selectedEntryIds.size === 1 ? 'y' : 'ies'}?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    isBulkSubmittingRef.current = true;
+    snapshotRef.current = { ...dataMap };
+
+    const idsToRemove = new Set(selectedEntryIds);
+    setDataMap((prevMap) => ({
+      ...prevMap,
+      [dateKey]: (prevMap[dateKey] || []).filter((e) => !idsToRemove.has(e._id)),
+    }));
+
+    try {
+      const results = await Promise.allSettled(
+        [...idsToRemove].map((entryId) => {
+          if (category === 'meals') return dispatch(deleteMeal(entryId)).unwrap();
+          return dispatch(deleteMarket(entryId)).unwrap();
+        }),
+      );
+
+      const failed = results.filter((r) => r.status === 'rejected');
+      if (failed.length > 0) {
+        if (snapshotRef.current) setDataMap(snapshotRef.current);
+        failed.forEach((r) => {
+          const msg = r.reason?.response?.data?.message || r.reason?.message || 'Delete failed';
+          toast.error(msg);
+        });
+      } else {
+        toast.success(`${idsToRemove.size} entr${idsToRemove.size === 1 ? 'y' : 'ies'} deleted`);
+      }
+
+      handleExitSelectMode();
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      fetchData(controller.signal);
+    } catch (err) {
+      if (snapshotRef.current) setDataMap(snapshotRef.current);
+      const msg = err?.response?.data?.message || err?.message || 'Failed to delete';
+      toast.error(msg);
+    } finally {
+      isBulkSubmittingRef.current = false;
+    }
+  }, [selectedEntryIds, detailDate, dataMap, category, dispatch, fetchData, handleExitSelectMode]);
+
+  const handleBulkUpdate = useCallback(async (payload) => {
+    if (selectedEntryIds.size === 0 || isBulkSubmittingRef.current) return;
+    if (!detailDate) return;
+    const dateKey = format(new Date(detailDate), 'yyyy-MM-dd');
+
+    isBulkSubmittingRef.current = true;
+    snapshotRef.current = { ...dataMap };
+
+    const idsToUpdate = new Set(selectedEntryIds);
+    setDataMap((prevMap) => ({
+      ...prevMap,
+      [dateKey]: (prevMap[dateKey] || []).map((e) =>
+        idsToUpdate.has(e._id) ? { ...e, ...payload } : e,
+      ),
+    }));
+
+    try {
+      const results = await Promise.allSettled(
+        [...idsToUpdate].map((entryId) => {
+          if (category === 'meals') return dispatch(updateMeal({ mealId: entryId, mealData: payload })).unwrap();
+          return dispatch(updateMarket({ marketId: entryId, marketData: payload })).unwrap();
+        }),
+      );
+
+      const failed = results.filter((r) => r.status === 'rejected');
+      if (failed.length > 0) {
+        if (snapshotRef.current) setDataMap(snapshotRef.current);
+        failed.forEach((r) => {
+          const msg = r.reason?.response?.data?.message || r.reason?.message || 'Update failed';
+          toast.error(msg);
+        });
+      } else {
+        toast.success(`${idsToUpdate.size} entr${idsToUpdate.size === 1 ? 'y' : 'ies'} updated`);
+      }
+
+      handleExitSelectMode();
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      fetchData(controller.signal);
+    } catch (err) {
+      if (snapshotRef.current) setDataMap(snapshotRef.current);
+      const msg = err?.response?.data?.message || err?.message || 'Failed to update';
+      toast.error(msg);
+    } finally {
+      isBulkSubmittingRef.current = false;
+    }
+  }, [selectedEntryIds, detailDate, dataMap, category, dispatch, fetchData, handleExitSelectMode]);
+
   const handleMemberFilter = useCallback((id) => {
     setSelectedMemberId(id);
   }, []);
@@ -481,6 +611,12 @@ const EventCalendar = () => {
                   onUpdate={handleUpdateEntry}
                   onDelete={handleDeleteEntry}
                   onDone={() => setIsEditMode(false)}
+                  selectedEntryIds={selectedEntryIds}
+                  onToggleSelect={handleToggleSelect}
+                  onSelectAll={handleSelectAll}
+                  onBulkDelete={handleBulkDelete}
+                  onBulkUpdate={handleBulkUpdate}
+                  onExitSelectMode={handleExitSelectMode}
                 />
               </Suspense>
             ) : (
@@ -507,6 +643,12 @@ const EventCalendar = () => {
                   onUpdate={handleUpdateEntry}
                   onDelete={handleDeleteEntry}
                   onDone={() => setIsEditMode(false)}
+                  selectedEntryIds={selectedEntryIds}
+                  onToggleSelect={handleToggleSelect}
+                  onSelectAll={handleSelectAll}
+                  onBulkDelete={handleBulkDelete}
+                  onBulkUpdate={handleBulkUpdate}
+                  onExitSelectMode={handleExitSelectMode}
                 />
               </Suspense>
             ) : (

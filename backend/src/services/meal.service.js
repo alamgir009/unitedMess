@@ -344,7 +344,7 @@ const updateMealById = async (mealId, updateBody) => {
     const finalIsGuestMeal = updateBody.isGuestMeal ?? meal.isGuestMeal;
     let finalGuestCount = updateBody.guestCount ?? meal.guestCount ?? 0;
     if (!finalIsGuestMeal) finalGuestCount = 0;
-    const finalMealCount = mealTypeCountMap[finalType] ?? 0;
+    const finalMealCount = (mealTypeCountMap[finalType] ?? 0) + finalGuestCount;
 
     // ── 3. Check for conflicting records on the target (user, date) ──
     // A conflict exists when another meal record occupies the same
