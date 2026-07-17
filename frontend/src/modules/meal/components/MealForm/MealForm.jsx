@@ -110,6 +110,7 @@ const MealForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentUse
     const [rangeError, setRangeError] = useState('');
 
 const [isRunning, setIsRunning] = useState(false);
+const [singleAdminError, setSingleAdminError] = useState('');
 
     const [users, setUsers] = useState([]);
     const [isUsersLoading, setIsUsersLoading] = useState(false);
@@ -163,6 +164,7 @@ const [isRunning, setIsRunning] = useState(false);
 
     const handleTypeChange = useCallback((val) => {
         if (isRunning || readOnly) return;
+        setSingleAdminError('');
         setFormData(prev => ({ ...prev, type: val }));
     }, [isRunning, readOnly]);
 
@@ -196,7 +198,11 @@ const [isRunning, setIsRunning] = useState(false);
             delete payload.userIds;
         } else {
             delete payload.userId;
-            if (isAdmin && (!payload.userIds || payload.userIds.length === 0)) return;
+            if (isAdmin && (!payload.userIds || payload.userIds.length === 0)) {
+                setSingleAdminError('Please select at least one member.');
+                return;
+            }
+            setSingleAdminError('');
         }
 
         setIsRunning(true);
@@ -332,7 +338,7 @@ const [isRunning, setIsRunning] = useState(false);
                             <MemberSelect
                                 users={users}
                                 value={formData.userIds}
-                                onChange={(ids) => setFormData(p => ({ ...p, userIds: ids }))}
+                                onChange={(ids) => { setFormData(p => ({ ...p, userIds: ids })); setSingleAdminError(''); }}
                                 loading={isUsersLoading}
                                 disabled={isRunning || readOnly}
                                 accentColor="primary"
@@ -453,6 +459,10 @@ const [isRunning, setIsRunning] = useState(false);
                     />
                 </Field>
             </div>
+
+            {mode === 'single' && singleAdminError && (
+                <p className="text-xs font-semibold text-destructive px-1">{singleAdminError}</p>
+            )}
 
             {mode === 'single' && (
                 <div className="flex gap-2.5 pt-3 border-t border-border/30 shrink-0">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import {
     HiOutlineCalendarDays,
@@ -55,6 +55,8 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
 
     const [users, setUsers] = useState([]);
     const [isUsersLoading, setIsUsersLoading] = useState(false);
+    const [isRunning, setIsRunning] = useState(false);
+    const [adminError, setAdminError] = useState('');
 
     /* Fetch user list for admin */
     useEffect(() => {
@@ -99,24 +101,24 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
         }
     }, [initialData, currentUser]);
 
-    const handleChange = (e) => {
-        if (readOnly) return;
+    const handleChange = useCallback((e) => {
+        if (readOnly || isRunning) return;
         const { name, value, type } = e.target;
         let newVal = value;
         if (type === 'number') newVal = value === '' ? '' : parseFloat(value) || 0;
         setFormData((prev) => ({ ...prev, [name]: newVal }));
-    };
+    }, [readOnly, isRunning]);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (readOnly) return;
+        if (readOnly || isRunning) return;
 
         const submitDate = new Date(formData.date).toISOString();
 
         const payload = {
             ...formData,
             date: submitDate,
-            amount: parseFloat(formData.amount) || 0,
+            amount: Math.round((parseFloat(formData.amount) || 0) * 100) / 100,
         };
 
         if (initialData) {
@@ -124,10 +126,19 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
             delete payload.userIds;
         } else {
             delete payload.userId;
-            if (isAdmin && (!payload.userIds || payload.userIds.length === 0)) return;
+            if (isAdmin && (!payload.userIds || payload.userIds.length === 0)) {
+                setAdminError('Please select at least one member.');
+                return;
+            }
+            setAdminError('');
         }
 
-        onSubmit(payload);
+        setIsRunning(true);
+        try {
+            await onSubmit(payload);
+        } finally {
+            setIsRunning(false);
+        }
     };
 
     return (
@@ -175,9 +186,9 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
                             <MemberSelect
                                 users={users}
                                 value={formData.userIds}
-                                onChange={(ids) => setFormData(p => ({ ...p, userIds: ids }))}
+                                onChange={(ids) => { setFormData(p => ({ ...p, userIds: ids })); setAdminError(''); }}
                                 loading={isUsersLoading}
-                                disabled={readOnly}
+                                disabled={readOnly || isRunning}
                                 accentColor="emerald"
                                 placeholder="Select members…"
                             />
@@ -193,8 +204,8 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
                         value={formData.date}
                         onChange={handleChange}
                         required={!readOnly}
-                        disabled={readOnly}
-                        className={`${inputBase} ${readOnly ? inputDisabled : ''}`}
+                        disabled={readOnly || isRunning}
+                        className={`${inputBase} ${readOnly || isRunning ? inputDisabled : ''}`}
                     />
                 </Field>
 
@@ -210,11 +221,12 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
                             value={formData.amount}
                             onChange={handleChange}
                             min="0"
+                            max="999999"
                             step="0.01"
                             required={!readOnly}
                             placeholder="0.00"
-                            disabled={readOnly}
-                            className={`${inputBase} pl-7 ${readOnly ? inputDisabled : ''}`}
+                            disabled={readOnly || isRunning}
+                            className={`${inputBase} pl-7 ${readOnly || isRunning ? inputDisabled : ''}`}
                         />
                     </div>
                 </Field>
@@ -228,8 +240,8 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
                         onChange={handleChange}
                         required={!readOnly}
                         placeholder="e.g. Rice, Vegetables, Oil…"
-                        disabled={readOnly}
-                        className={`${inputBase} ${readOnly ? inputDisabled : ''}`}
+                        disabled={readOnly || isRunning}
+                        className={`${inputBase} ${readOnly || isRunning ? inputDisabled : ''}`}
                     />
                 </Field>
 
@@ -240,18 +252,22 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
                         value={formData.description}
                         onChange={handleChange}
                         rows={2}
-                        disabled={readOnly}
-                        className={`${inputBase} resize-none ${readOnly ? inputDisabled : ''}`}
+                        disabled={readOnly || isRunning}
+                        className={`${inputBase} resize-none ${readOnly || isRunning ? inputDisabled : ''}`}
                         placeholder={readOnly ? '' : 'Add extra notes about this purchase…'}
                     />
                 </Field>
             </div>
 
+            {adminError && (
+                <p className="text-xs font-semibold text-destructive px-1">{adminError}</p>
+            )}
+
             {/* ── Action buttons ── */}
             <div className="flex gap-2.5 pt-3 border-t border-border/30 shrink-0">
                 <Button
                     type="button" variant="secondary" size="sm"
-                    onClick={onCancel} className="flex-1"
+                    onClick={onCancel} className="flex-1" disabled={isRunning}
                 >
                     {readOnly ? 'Close' : 'Cancel'}
                 </Button>
@@ -259,8 +275,9 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
                     <Button
                         type="submit" variant="success" size="sm"
                         className="flex-[2]"
+                        disabled={isRunning}
                     >
-                        {initialData ? 'Update Entry' : 'Save Entry'}
+                        {isRunning ? 'Saving…' : (initialData ? 'Update Entry' : 'Save Entry')}
                     </Button>
                 )}
             </div>

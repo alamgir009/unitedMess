@@ -127,8 +127,9 @@ const MarketPage = () => {
             closeModal();
             dispatch(fetchMarkets(fetchParams));
         } catch (err) {
-            setErrorMsg(typeof err === 'string' ? err : err?.message || 'Failed to save market entry');
-            closeModal();
+            const msg = typeof err === 'string' ? err : err?.message || 'Failed to save market entry';
+            setErrorMsg(msg);
+            toast.error(msg);
         }
     }, [editingMarket, dispatch, closeModal, isAdmin, fetchParams]);
 
@@ -145,7 +146,9 @@ const MarketPage = () => {
             toast.success(res?.message || 'Market entry deleted successfully');
             setMarketToDelete(null);
         } catch (err) {
-            setErrorMsg(typeof err === 'string' ? err : err?.message || 'Failed to delete market entry');
+            const msg = typeof err === 'string' ? err : err?.message || 'Failed to delete market entry';
+            setErrorMsg(msg);
+            toast.error(msg);
         } finally {
             setIsDeleting(false);
         }
