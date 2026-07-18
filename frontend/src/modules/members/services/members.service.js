@@ -34,11 +34,6 @@ const updatePaymentStatus = async (userId, paymentData) => {
     return response.data;
 };
 
-const updateGasBillStatus = async (userId, gasBillData) => {
-    const response = await apiClient.patch(`${API_URL}/${userId}/gas-bill`, gasBillData);
-    return response.data;
-};
-
 const bulkUpdateStatus = async (statusData) => {
     const response = await apiClient.patch(`${API_URL}/bulk/status`, statusData);
     return response.data;
@@ -85,7 +80,6 @@ const membersService = {
     approveUser,
     denyUser,
     updatePaymentStatus,
-    updateGasBillStatus,
     bulkUpdateStatus,
     getBillingMonthStats,
     getAdminUnpaidInvoices,

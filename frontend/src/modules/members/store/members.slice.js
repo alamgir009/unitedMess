@@ -105,18 +105,6 @@ export const updatePaymentStatus = createAsyncThunk(
     }
 );
 
-export const updateGasBillStatus = createAsyncThunk(
-    'members/updateGasBillStatus',
-    async ({ userId, gasBillData }, thunkAPI) => {
-        try {
-            return await membersService.updateGasBillStatus(userId, gasBillData);
-        } catch (error) {
-            const message = (error.response?.data?.message) || error.message;
-            return thunkAPI.rejectWithValue(message);
-        }
-    }
-);
-
 // ── Billing-month stats (correct current-month totals) ───────────────────────
 export const fetchBillingMonthStats = createAsyncThunk(
     'members/fetchBillingMonthStats',

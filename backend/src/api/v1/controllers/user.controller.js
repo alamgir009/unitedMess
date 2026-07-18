@@ -243,7 +243,7 @@ const updateGasBillStatus = asyncHandler(async (req, res) => {
     const { userId } = req.params;
     const { status } = req.body;
 
-    const user = await userService.updateGasBillStatus(userId, status);
+    const user = await userService.updateGasBillStatus(userId, status, req.user.id);
     sendSuccessResponse(res, 200, 'Gas bill status updated', user);
 });
 

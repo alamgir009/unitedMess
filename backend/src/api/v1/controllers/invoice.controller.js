@@ -1,5 +1,6 @@
 const invoiceService = require('../../../services/invoice.service');
 const emailService = require('../../../services/email.service');
+const notificationService = require('../../../services/notification.service');
 const { sendSuccessResponse } = require('../../../utils/helpers/response.helper');
 const { getBillingPeriod } = require('../../../utils/helpers/date.helper');
 const asyncHandler = require('../../../utils/helpers/asyncHandler');
@@ -115,18 +116,43 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
     if (refundDelta < 0) {
         invoice.status = 'refunded';
 
+        // Detect the original payment type for this user/month so the refund
+        // record matches the original payment flow (mess_bill or gas_bill).
+        const originalPayment = await Payment.findOne({
+            user: invoice.user,
+            month: invoice.monthName,
+            status: 'completed',
+        }).sort({ paymentDate: -1 }).lean();
+        const refundType = originalPayment?.type || 'mess_bill';
+
         // Persist a Payment record so the refund appears in both member
         // and admin payment history (Payments page / invoice history).
         await Payment.create({
             user: invoice.user,
             amount: refundDelta,
             month: invoice.monthName,
-            type: 'mess_bill',
+            type: refundType,
             status: 'refunded',
             paymentMethod: 'cash',
             createdBy: req.user.id,
             remarks: `Refund of ₹ ${Math.abs(refundDelta).toLocaleString('en-IN', { maximumFractionDigits: 2 })} processed by admin`,
         });
+
+        // If gas_bill refund, sync user.gasBill status back to 'pending'
+        if (refundType === 'gas_bill') {
+            const { syncUserPaymentStatus } = require('../../../services/payment.service');
+            await syncUserPaymentStatus(invoice.user, 'gas_bill', 'refunded', invoice.monthName);
+        }
+
+        // Notify user of refund
+        const refundUser = await User.findById(invoice.user).select('name').lean();
+        notificationService.createAndSend(
+            invoice.user.toString(),
+            'PAYMENT',
+            'Payment Refunded',
+            `A refund of ₹${Math.abs(refundDelta).toLocaleString('en-IN', { maximumFractionDigits: 2 })} for ${invoice.monthName} has been processed.`,
+            { priority: 'HIGH', actionRequired: false }
+        ).catch(() => {});
     } else {
         invoice.status = invoiceService.determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
     }

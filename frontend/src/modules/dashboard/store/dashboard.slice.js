@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import dashboardService from '../services/dashboard.service';
+import { logout } from '@/modules/auth/store/auth.slice';
 
 const initialState = {
     adminStats: null,
@@ -153,6 +154,17 @@ export const dashboardSlice = createSlice({
             .addCase(fetchUserRecentActivity.rejected, (state) => {
                 state.isActivitiesLoading = false;
                 state.recentActivities = [];
+            })
+            // ── logout: clear all dashboard state ──────────────────────────
+            .addCase(logout.fulfilled, (state) => {
+                state.adminStats = null;
+                state.marketGrandTotal = null;
+                state.mealGrandTotal = null;
+                state.mealCharge = null;
+                state.userMealPayable = null;
+                state.userGasBillPayable = null;
+                state.recentActivities = [];
+                state.userStatsLoaded = false;
             });
     },
 });

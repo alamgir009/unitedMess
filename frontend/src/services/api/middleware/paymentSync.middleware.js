@@ -70,19 +70,16 @@ const syncAll = (store) => {
     store.dispatch(fetchPayableAmount());
     store.dispatch(fetchPayableGasBill());
 
-    // 2. Refresh ALL member rows
-    store.dispatch(fetchUsers(DEFAULT_USER_PARAMS));
-
-    // 3. Refresh billing stats
+    // 2. Refresh billing stats
     store.dispatch(fetchBillingMonthStats());
 
-    // 4. Refresh payments list
+    // 3. Refresh payments list
     store.dispatch(fetchPayments({ page: 1, limit: 20 }));
 
-    // 5. Refresh active invoice
+    // 4. Refresh active invoice
     store.dispatch(fetchActiveInvoice());
 
-    // 6. Admin-only dispatches
+    // 5. Admin-only dispatches
     if (state.auth.user?.role === 'admin') {
         const lastFinalized = getLastFinalizedPeriod();
         store.dispatch(fetchAdminUnpaidInvoices({ month: lastFinalized.month, year: lastFinalized.year }));

@@ -610,16 +610,19 @@ const sendAccountLockedEmail = async (to, name = 'User') => {
 
 const sendPaymentStatusEmail = async (to, name, payment, status) => {
     const isSuccess = status === 'completed';
-    const title = isSuccess ? 'Payment Successful' : 'Payment Failed';
-    const previewText = isSuccess
-        ? `Your payment for ${payment.month} was successful`
-        : 'Your payment could not be processed';
+    const isRefund = status === 'refunded';
+    const title = isRefund ? 'Payment Refunded' : isSuccess ? 'Payment Successful' : 'Payment Failed';
+    const previewText = isRefund
+        ? `Your refund for ${payment.month} has been processed`
+        : isSuccess
+            ? `Your payment for ${payment.month} was successful`
+            : 'Your payment could not be processed';
 
     const formattedAmount = new Intl.NumberFormat('en-IN', {
         style: 'currency',
         currency: 'INR',
         minimumFractionDigits: 2,
-    }).format(payment.amount);
+    }).format(Math.abs(payment.amount));
 
     const typeLabel = payment.type === 'gas_bill' ? 'Gas Bill'
         : payment.type === 'mess_bill' ? 'Mess Bill'
@@ -631,10 +634,12 @@ const sendPaymentStatusEmail = async (to, name, payment, status) => {
 
     const content = `
 <p>Hello ${validator.escape(String(name))},</p>
-<p>${isSuccess ? `Your payment for <strong>${validator.escape(String(payment.month))}</strong> has been successfully processed.` : 'We were unable to process your payment.'}</p>
+<p>${isRefund
+    ? `Your refund for <strong>${validator.escape(String(payment.month))}</strong> has been processed.`
+    : isSuccess ? `Your payment for <strong>${validator.escape(String(payment.month))}</strong> has been successfully processed.` : 'We were unable to process your payment.'}</p>
 <table style="border-collapse:collapse;width:100%;margin:20px 0;font-family:Arial,sans-serif;">
   <tr><td style="padding:10px;border:1px solid #ddd;"><strong>Billing Period:</strong></td><td style="padding:10px;border:1px solid #ddd;">${validator.escape(String(payment.month))}</td></tr>
-  <tr><td style="padding:10px;border:1px solid #ddd;"><strong>Amount:</strong></td><td style="padding:10px;border:1px solid #ddd;">${formattedAmount}</td></tr>
+  <tr><td style="padding:10px;border:1px solid #ddd;"><strong>Amount:</strong></td><td style="padding:10px;border:1px solid #ddd;">${isRefund ? '-' : ''}${formattedAmount}</td></tr>
   <tr><td style="padding:10px;border:1px solid #ddd;"><strong>Payment Type:</strong></td><td style="padding:10px;border:1px solid #ddd;">${typeLabel}</td></tr>
   <tr><td style="padding:10px;border:1px solid #ddd;"><strong>Date:</strong></td><td style="padding:10px;border:1px solid #ddd;">${paymentDate}</td></tr>
   <tr><td style="padding:10px;border:1px solid #ddd;"><strong>Transaction ID:</strong></td><td style="padding:10px;border:1px solid #ddd;word-break:break-all;">${validator.escape(String(payment.transactionId || 'N/A'))}</td></tr>
@@ -647,14 +652,18 @@ const sendPaymentStatusEmail = async (to, name, payment, status) => {
         previewText,
         content,
         showButton: false,
-        footerText: isSuccess
-            ? 'We appreciate your business. Keep this email for your records.'
-            : 'If you have any questions, please contact support.',
+        footerText: isRefund
+            ? 'This refund has been processed by your mess admin. Please contact them if you have questions.'
+            : isSuccess
+                ? 'We appreciate your business. Keep this email for your records.'
+                : 'If you have any questions, please contact support.',
     });
 
-    const subject = isSuccess
-        ? `Payment Confirmed — ${typeLabel} for ${payment.month}`
-        : `Payment Failed — ${typeLabel} for ${payment.month}`;
+    const subject = isRefund
+        ? `Refund Processed — ${typeLabel} for ${payment.month}`
+        : isSuccess
+            ? `Payment Confirmed — ${typeLabel} for ${payment.month}`
+            : `Payment Failed — ${typeLabel} for ${payment.month}`;
 
     return sendEmail({ to, subject, text, html });
 };

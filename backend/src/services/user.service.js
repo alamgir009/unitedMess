@@ -119,6 +119,13 @@ async function approveAccount(userId, approvedBy) {
         throw new AppError('Invalid ID format', 400);
     }
 
+    // Inherit current gasBillCharge from any active user so the newly
+    // approved member gets the same share as existing members.
+    const activeUser = await User.findOne({ isActive: true, gasBillCharge: { $gt: 0 } })
+        .select('gasBillCharge')
+        .lean();
+    const inheritedGasBillCharge = activeUser?.gasBillCharge || 0;
+
     const result = await User.findOneAndUpdate(
         {
             _id: userId,
@@ -129,7 +136,8 @@ async function approveAccount(userId, approvedBy) {
                 userStatus: 'approved',
                 isActive: true,
                 approvedBy,
-                approvedAt: new Date()
+                approvedAt: new Date(),
+                gasBillCharge: inheritedGasBillCharge,
             },
             $unset: { deleteIfNotApproved: 1 }
         },
@@ -220,8 +228,9 @@ async function updatePaymentStatus(userId, status) {
  * Update gas bill status
  * @param {string} userId
  * @param {string} status - 'pending' | 'success' | 'failed'
+ * @param {string} [changedBy] - ID of admin who made the change (for audit trail)
  */
-async function updateGasBillStatus(userId, status) {
+async function updateGasBillStatus(userId, status, changedBy) {
     if (!GAS_BILL_STATUSES.includes(status)) {
         throw new AppError('Invalid gas bill status', 400);
     }
@@ -231,7 +240,18 @@ async function updateGasBillStatus(userId, status) {
         throw new AppError('User not found', 404);
     }
 
+    const oldStatus = user.gasBill;
     user.gasBill = status;
+
+    // Audit trail: track who changed the status and when
+    if (!user.gasBillHistory) user.gasBillHistory = [];
+    user.gasBillHistory.push({
+        status,
+        previousStatus: oldStatus,
+        changedBy: changedBy || userId,
+        changedAt: new Date(),
+    });
+
     await user.save();
 
     notificationService.createAndSend(userId, 'BILLING', 'Gas Bill Status Updated', `Your gas bill status is now: ${status}`).catch(console.error);
@@ -439,7 +459,8 @@ async function getAllUsers(filters = {}, pagination = {}) {
                     }
                 },
                 // Gas bill paid status is derived from completed gas_bill
-                // payments for the current billing period.
+                // payments for the current billing period, with fallback to
+                // the stored user.gasBill field (which admins can toggle).
                 gasBill: {
                     $cond: {
                         if: {
@@ -450,13 +471,7 @@ async function getAllUsers(filters = {}, pagination = {}) {
                             }, 0]
                         },
                         then: 'success',
-                        else: {
-                            $cond: {
-                                if: { $eq: ['$gasBill', 'success'] },
-                                then: 'pending',
-                                else: '$gasBill'
-                            }
-                        }
+                        else: '$gasBill'
                     }
                 }
             }

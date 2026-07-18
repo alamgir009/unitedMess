@@ -100,6 +100,12 @@ const userSchema = new mongoose.Schema({
         enum: ['pending', 'success', 'failed', 'refunded'],
         default: 'pending'
     },
+    gasBillHistory: [{
+        status: { type: String, enum: ['pending', 'success', 'failed', 'refunded'], required: true },
+        previousStatus: { type: String },
+        changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        changedAt: { type: Date, default: Date.now },
+    }],
     isEmailVerified: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
     deactivatedAt: { type: Date, default: null },

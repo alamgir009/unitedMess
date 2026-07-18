@@ -62,7 +62,7 @@ async function updateWaterBill(updateData) {
         return { message: 'No active users found', modifiedCount: 0 };
     }
 
-    const perUserWaterBill = Math.round(waterBill / activeUserCount);
+    const perUserWaterBill = Math.ceil(waterBill / activeUserCount);
 
     const result = await User.updateMany(
         { isActive: true },
@@ -87,7 +87,7 @@ async function updateGasBillCharge(updateData) {
         return { message: 'No active users found', modifiedCount: 0 };
     }
 
-    const perUsergasBillCharge = Math.round(gasBillCharge / activeUserCount);
+    const perUsergasBillCharge = Math.ceil(gasBillCharge / activeUserCount);
 
     const result = await User.updateMany(
         { isActive: true },

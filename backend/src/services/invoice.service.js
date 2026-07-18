@@ -354,10 +354,27 @@ const resetUserStatsAfterFinalization = async () => {
     // Fetch only IDs of active users — no need for full documents
     const users = await User.find(
         { isActive: true },
-        { _id: 1 }
+        { _id: 1, gasBillCharge: 1 }
     ).lean();
 
     if (users.length === 0) return { modifiedCount: 0, matchedCount: 0 };
+
+    // Recalculate per-user gasBillCharge for the new cycle.
+    // If the active user count changed (users added/removed), redistribute evenly.
+    // Find the canonical per-user charge from any active user with a non-zero value.
+    const canonicalGasCharge = users.find(u => u.gasBillCharge > 0)?.gasBillCharge || 0;
+
+    // Check which users already have completed payments for the new billing period
+    // to avoid wiping already-paid statuses on cron retry/re-run.
+    const { monthName: currentMonthName } = getBillingPeriod();
+    const usersWithMessPayments = await Payment.distinct('user', {
+        month: currentMonthName, status: 'completed', type: 'mess_bill',
+    });
+    const usersWithGasPayments = await Payment.distinct('user', {
+        month: currentMonthName, status: 'completed', type: 'gas_bill',
+    });
+    const messPaidSet = new Set(usersWithMessPayments.map(id => id.toString()));
+    const gasPaidSet = new Set(usersWithGasPayments.map(id => id.toString()));
 
     // Build per-user stats in parallel (bounded I/O — Mongoose pools connections)
     const userStats = await Promise.all(
@@ -389,24 +406,31 @@ const resetUserStatsAfterFinalization = async () => {
     );
 
     // Single bulkWrite — one network round-trip to MongoDB for all users
-    const bulkOps = userStats.map(({ _id, totalMeal, guestMeal, totalMarketAmount }) => ({
-        updateOne: {
-            filter: { _id },
-            update: {
-                $set: {
-                    // ── Re-aggregated running counters for new month ──
-                    totalMeal,
-                    guestMeal,
-                    totalMarketAmount,
-                    // ── Billing-status reset for new billing cycle ──
-                    // payment & gasBill always revert to 'pending' at cycle start;
-                    // admins manually mark them 'success' once the member pays.
-                    payment: 'pending',
-                    gasBill: 'pending',
+    const bulkOps = userStats.map(({ _id, totalMeal, guestMeal, totalMarketAmount }) => {
+        const userIdStr = _id.toString();
+        const hasMessPaid = messPaidSet.has(userIdStr);
+        const hasGasPaid = gasPaidSet.has(userIdStr);
+        return {
+            updateOne: {
+                filter: { _id },
+                update: {
+                    $set: {
+                        // ── Re-aggregated running counters for new month ──
+                        totalMeal,
+                        guestMeal,
+                        totalMarketAmount,
+                        // ── Billing-status reset for new billing cycle ──
+                        // Only reset if user hasn't already paid for the new period
+                        // (prevents cron retry from wiping already-paid statuses).
+                        payment: hasMessPaid ? undefined : 'pending',
+                        gasBill: hasGasPaid ? undefined : 'pending',
+                        // ── Recalculate gas bill per user for new cycle ──
+                        gasBillCharge: canonicalGasCharge,
+                    }
                 }
             }
-        }
-    }));
+        };
+    });
 
     const result = await User.bulkWrite(bulkOps, { ordered: false });
     return { modifiedCount: result.modifiedCount, matchedCount: result.matchedCount };

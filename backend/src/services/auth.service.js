@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const User = require('../models/User.model');
+const Payment = require('../models/Payment.model');
 const tokenService = require('./token.service');
 const emailService = require('./email.service');
 const AppError = require('../utils/errors/AppError');
@@ -126,6 +127,10 @@ async function login(email, password, ip, userAgent) {
     user.password = undefined;
     user.loginAttempts = undefined;
     user.lockUntil = undefined;
+
+    // Fire-and-forget: cleanup stale pending Razorpay payments (>24h old)
+    // that are stuck due to JWT expiry or failed verification callbacks.
+    cleanupStalePendingPayments(user._id).catch(() => {});
 
     return { user, tokens };
 }
@@ -448,6 +453,39 @@ function createEmailVerificationToken(user) {
         .digest('hex');
     user.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
     return verificationToken;
+}
+
+/**
+ * Cleanup stale pending Razorpay payments for a user.
+ * Payments stuck in 'pending' for >24h are marked 'failed' — they were
+ * likely orphaned by JWT expiry or abandoned checkout flows.
+ * @private
+ */
+async function cleanupStalePendingPayments(userId) {
+    try {
+        const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
+        const cutoff = new Date(Date.now() - STALE_THRESHOLD_MS);
+
+        const stalePayments = await Payment.find({
+            user: userId,
+            status: 'pending',
+            paymentMethod: 'razorpay',
+            createdAt: { $lt: cutoff },
+        }).lean();
+
+        if (stalePayments.length === 0) return;
+
+        await Payment.updateMany(
+            { _id: { $in: stalePayments.map(p => p._id) } },
+            { $set: { status: 'failed' } }
+        );
+
+        console.info(
+            `[Auth Cleanup] Marked ${stalePayments.length} stale pending Razorpay payment(s) as failed for user ${userId}`
+        );
+    } catch (err) {
+        console.error('[Auth Cleanup] Failed to cleanup stale payments:', err.message);
+    }
 }
 
 module.exports = {

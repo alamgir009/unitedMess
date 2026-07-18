@@ -375,6 +375,7 @@ export const authSlice = createSlice({
                 state.user = null;
                 state.payableAmount = null;
                 state.payableAmountData = null;
+                state.payableGasBill = null;
                 state.sessionRestoring = false;
             })
 

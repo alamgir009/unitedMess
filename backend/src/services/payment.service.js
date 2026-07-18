@@ -6,6 +6,7 @@ const razorpayService = require('./razorpay.service');
 const emailService = require('./email.service');
 const config = require('../config');
 const { getBillingPeriod } = require('../utils/helpers/date.helper');
+const { emitToUser } = require('../sockets');
 
 // ─────────────────────────────────────────────────────────────
 // Constants
@@ -72,6 +73,10 @@ const syncUserPaymentStatus = async (userId, paymentType, paymentStatus, payment
     } catch (error) {
         // Wrap in its own try/catch — if sync fails, log the error but do NOT fail the whole request
         console.error(`[Sync Error] Failed to sync payment status for user ${userId}:`, error.message);
+        // Emit billing:updated so frontend can re-fetch; admin may need to manually correct user.gasBill
+        try {
+            emitToUser(userId.toString(), 'billing:updated');
+        } catch (_) { /* socket emit failure is non-critical */ }
     }
 };
 
@@ -237,6 +242,18 @@ const createPayment = async (paymentBody) => {
 const createOnlinePaymentOrder = async (userId, amount, type) => {
     await verifyUserExists(userId);
 
+    // Server-side amount validation for gas_bill:
+    // Never trust client-provided amount for fixed-charge payment types.
+    if (type === 'gas_bill') {
+        const user = await User.findById(userId).select('gasBillCharge').lean();
+        if (!user) throw new AppError('User not found', 404);
+        const serverAmount = user.gasBillCharge || 0;
+        if (serverAmount <= 0) {
+            throw new AppError('No gas bill amount due', 400);
+        }
+        amount = serverAmount;
+    }
+
     // Dynamic fee calculation: 2% platform fee + 18% GST on that fee (total 2.36%)
     const baseAmount = amount;
     const gatewayFee = Math.round(baseAmount * 0.02 * 100) / 100;
@@ -392,18 +409,31 @@ const verifyOnlinePayment = async ({ orderId, paymentId, signature }) => {
         throw new AppError('Payment record not found for this order', 404);
     }
 
-    // Atomically update all of them
-    await Payment.updateMany(
-        { transactionId: orderId, status: 'pending' },
-        {
-            status: 'completed',
-            transactionId: paymentId,  // replace orderId with actual Razorpay paymentId
-            paymentDate: new Date(),
-        }
-    );
+    // Atomically update each payment with findOneAndUpdate to prevent race conditions
+    // Each update filters on status:'pending' so only one concurrent request can win
+    const updatedPayments = [];
+    for (const p of pendingPayments) {
+        const updated = await Payment.findOneAndUpdate(
+            { _id: p._id, status: 'pending' },
+            {
+                $set: {
+                    status: 'completed',
+                    transactionId: paymentId,
+                    paymentDate: new Date(),
+                },
+            },
+            { new: true }
+        );
+        if (updated) updatedPayments.push(updated);
+    }
 
-    // Fetch the updated payments
-    const updatedPayments = await Payment.find({ transactionId: paymentId, status: 'completed' });
+    if (updatedPayments.length === 0) {
+        const completedCount = await Payment.countDocuments({ transactionId: paymentId, status: 'completed' });
+        if (completedCount > 0) {
+            throw new AppError('Payment already verified', 409);
+        }
+        throw new AppError('Payment record not found for this order', 404);
+    }
 
     // Fetch user once — shared by sync and email
     const user = await User.findById(updatedPayments[0].user)

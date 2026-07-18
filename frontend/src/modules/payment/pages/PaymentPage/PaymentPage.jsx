@@ -194,7 +194,7 @@ const PaymentPage = () => {
         }
     }, [dispatch, user?._id, user?.id]);
 
-    /* ── visibility / focus — re-fetch when user returns to this tab ── */
+    /* ── visibility — re-fetch when user returns to this tab ── */
     useEffect(() => {
         if (!(user?._id || user?.id)) return;
         const onVisible = () => {
@@ -204,10 +204,8 @@ const PaymentPage = () => {
             }
         };
         document.addEventListener('visibilitychange', onVisible);
-        window.addEventListener('focus', onVisible);
         return () => {
             document.removeEventListener('visibilitychange', onVisible);
-            window.removeEventListener('focus', onVisible);
         };
     }, [dispatch, user?._id, user?.id]);
 

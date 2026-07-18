@@ -22,6 +22,21 @@ try {
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [react()],
+    optimizeDeps: {
+        include: [
+            'react-icons/hi2',
+            'react-icons/fi',
+            'react-icons/bi',
+            'react-icons/bs',
+            'react-icons/md',
+            'react-icons/si',
+            'react-icons/tb',
+            'react-icons/ri',
+            'react-icons/io5',
+            'react-icons/pi',
+            'react-icons/io',
+        ],
+    },
     build: {
         rollupOptions: {
             output: {
