@@ -10,6 +10,9 @@ const adminOnly = [protect, authorize('admin')];
 router.route('/schedule/:year/:month')
     .get(...authenticated, marketController.getMarketSchedule);
 
+// ── Bulk market creation (must be before /:marketId wildcard) ────────────────────
+router.post('/bulk', ...authenticated, marketController.bulkCreateMarkets);
+
 router.route('/')
     .get(...authenticated, marketController.getMarkets)
     .post(...authenticated, marketController.createMarket);

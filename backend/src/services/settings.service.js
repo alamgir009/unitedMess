@@ -62,13 +62,25 @@ async function updateWaterBill(updateData) {
         return { message: 'No active users found', modifiedCount: 0 };
     }
 
-    const perUserWaterBill = Math.ceil(waterBill / activeUserCount);
+    const perUserWaterBill = Math.floor(waterBill / activeUserCount);
+    const remainder = waterBill - (perUserWaterBill * activeUserCount);
 
     const result = await User.updateMany(
         { isActive: true },
         { $set: { waterBill: perUserWaterBill } },
         { runValidators: true }
     );
+
+    // Apply remainder (1 extra unit) to the first N users so total matches exactly
+    if (remainder > 0) {
+        const activeUsers = await User.find({ isActive: true }).select('_id').sort({ createdAt: 1 }).limit(remainder).lean();
+        if (activeUsers.length > 0) {
+            await User.updateMany(
+                { _id: { $in: activeUsers.map(u => u._id) } },
+                { $inc: { waterBill: 1 } }
+            );
+        }
+    }
 
     await notificationService.sendToAllActiveUsers('BILLING', 'Water Bill Updated', `The total water bill has been updated. Your share is ${perUserWaterBill}. Check your invoices.`);
 
@@ -87,13 +99,25 @@ async function updateGasBillCharge(updateData) {
         return { message: 'No active users found', modifiedCount: 0 };
     }
 
-    const perUsergasBillCharge = Math.ceil(gasBillCharge / activeUserCount);
+    const perUsergasBillCharge = Math.floor(gasBillCharge / activeUserCount);
+    const remainder = gasBillCharge - (perUsergasBillCharge * activeUserCount);
 
     const result = await User.updateMany(
         { isActive: true },
         { $set: { gasBillCharge: perUsergasBillCharge } },
         { runValidators: true }
     );
+
+    // Apply remainder (1 extra unit) to the first N users so total matches exactly
+    if (remainder > 0) {
+        const activeUsers = await User.find({ isActive: true }).select('_id').sort({ createdAt: 1 }).limit(remainder).lean();
+        if (activeUsers.length > 0) {
+            await User.updateMany(
+                { _id: { $in: activeUsers.map(u => u._id) } },
+                { $inc: { gasBillCharge: 1 } }
+            );
+        }
+    }
 
     await notificationService.sendToAllActiveUsers('BILLING', 'Gas Bill Updated', `The total gas bill has been updated. Your share is ${perUsergasBillCharge}. Check your invoices.`);
 

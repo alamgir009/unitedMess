@@ -8,6 +8,7 @@ const AppError = require('../../../utils/errors/AppError');
 const fs = require('fs');
 const path = require('path');
 const config = require('../../../config');
+const logger = require('../../../utils/logger/index');
 
 // Magic-byte validators for post-upload integrity check
 const MAGIC_VALIDATORS = {
@@ -63,7 +64,19 @@ const getUsers = asyncHandler(async (req, res) => {
     if (options.page) options.page = Math.max(1, parseInt(options.page, 10));
     if (options.limit) options.limit = Math.min(100, Math.max(1, parseInt(options.limit, 10)));
 
+    const isAdmin = req.user.role === 'admin';
     const result = await userService.getAllUsers(filter, options);
+
+    // Strip sensitive fields for non-admin requests
+    if (!isAdmin && result.users) {
+        const SENSITIVE_FIELDS = ['email', 'phone', 'payment', 'gasBill', 'lastLoginIP', 'lastLoginUA'];
+        result.users = result.users.map(user => {
+            const stripped = { ...user };
+            SENSITIVE_FIELDS.forEach(f => delete stripped[f]);
+            return stripped;
+        });
+    }
+
     sendSuccessResponse(res, 200, 'Users retrieved successfully', result);
 });
 
@@ -127,7 +140,7 @@ const updateAvatar = asyncHandler(async (req, res) => {
         } catch (error) {
             if (error.isOperational) throw error;
             try { fs.unlinkSync(req.file.path); } catch {}
-            console.error('File integrity check failed:', error);
+            logger.error('File integrity check failed:', error);
             throw new AppError('Uploaded file content integrity check failed.', 400);
         }
     }
@@ -147,7 +160,7 @@ const updateAvatar = asyncHandler(async (req, res) => {
                 await cloudinary.uploader.destroy(publicId);
             }
         } catch (error) {
-            console.error('Failed to delete old image from Cloudinary:', error);
+            logger.error('Failed to delete old image from Cloudinary:', error);
         }
     }
 
@@ -177,7 +190,7 @@ const updateAvatar = asyncHandler(async (req, res) => {
         } catch (error) {
             // Delete temp local file
             try { fs.unlinkSync(req.file.path); } catch {}
-            console.error('Cloudinary upload failed:', error);
+            logger.error('Cloudinary upload failed:', error);
             throw new AppError('Failed to upload image to cloud storage.', 500);
         }
     } else {

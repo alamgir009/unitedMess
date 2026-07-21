@@ -6,6 +6,90 @@ const { parseDate } = require('../utils/helpers/date.helper');
 const { recalculateAllActiveUsersPayable } = require('./user.service');
 
 /**
+ * Bulk create markets for multiple users on a single date.
+ * Idempotent: skips users who already have a market entry for that date.
+ */
+const bulkCreateMarkets = async ({ userIds, date, amount, items, description }) => {
+    const parsedDate = parseDate(date);
+
+    if (!items || typeof items !== 'string' || !items.trim()) {
+        throw new AppError('Items description is required and must be a non-empty string', 400);
+    }
+
+    if (amount === undefined || amount === null || amount < 0) {
+        throw new AppError('A valid amount is required', 400);
+    }
+
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+        throw new AppError('At least one user must be selected', 400);
+    }
+
+    // Verify all users exist
+    const users = await User.find({ _id: { $in: userIds } }).select('_id markets totalMarketAmount').lean();
+    if (users.length !== userIds.length) {
+        throw new AppError('One or more users not found', 404);
+    }
+
+    // Find which users already have a market entry for this date
+    const existingMarkets = await Market.find({
+        user: { $in: userIds },
+        date: parsedDate,
+    }).select('user').lean();
+
+    const existingUserIds = new Set(existingMarkets.map((m) => m.user.toString()));
+
+    // Build insert docs for users without an existing entry
+    const insertDocs = [];
+    const userUpdates = [];
+    let skippedCount = 0;
+
+    for (const uid of userIds) {
+        if (existingUserIds.has(uid.toString())) {
+            skippedCount++;
+            continue;
+        }
+
+        const marketId = new mongoose.Types.ObjectId();
+        insertDocs.push({
+            _id: marketId,
+            user: uid,
+            date: parsedDate,
+            amount,
+            items: items.trim(),
+            ...(description && { description }),
+        });
+
+        userUpdates.push({
+            updateOne: {
+                filter: { _id: uid },
+                update: {
+                    $push: { markets: marketId },
+                    $inc: { totalMarketAmount: amount },
+                },
+            },
+        });
+    }
+
+    // Execute bulk writes
+    if (insertDocs.length > 0) {
+        await Market.insertMany(insertDocs, { ordered: false });
+    }
+
+    if (userUpdates.length > 0) {
+        await User.bulkWrite(userUpdates);
+    }
+
+    // Recalculate payable for all active users
+    recalculateAllActiveUsersPayable();
+
+    return {
+        inserted: insertDocs.length,
+        skipped: skippedCount,
+        total: userIds.length,
+    };
+};
+
+/**
  * Create a market entry
  */
 const createMarket = async (marketBody) => {
@@ -243,6 +327,7 @@ const generateMonthlySchedule = async (year, month) => {
 
 module.exports = {
     createMarket,
+    bulkCreateMarkets,
     queryMarkets,
     getMarketById,
     updateMarketById,

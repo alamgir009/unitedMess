@@ -25,6 +25,12 @@ const createMarket = async (marketData) => {
     return response.data;
 };
 
+// Bulk create markets for multiple users (admin)
+const bulkCreateMarkets = async (bulkData) => {
+    const response = await apiClient.post(`${API_URL}/bulk`, bulkData);
+    return response.data;
+};
+
 // Update a specific market for the current user
 const updateMarket = async (marketId, marketData) => {
     const response = await apiClient.patch(`${API_URL}/${marketId}`, marketData);
@@ -68,6 +74,7 @@ const marketService = {
     getMarkets,
     getMarketSchedule,
     createMarket,
+    bulkCreateMarkets,
     updateMarket,
     deleteMarket,
     adminGetUserMarkets,

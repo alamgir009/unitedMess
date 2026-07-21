@@ -26,7 +26,7 @@ import {
     updateMarket,
     deleteMarket,
     reset,
-    adminCreateMarket,
+    bulkCreateMarkets,
 } from '../../store/market.slice';
 
 
@@ -106,19 +106,26 @@ const MarketPage = () => {
                 const res = await dispatch(updateMarket({ marketId: editingMarket._id, marketData: formData })).unwrap();
                 toast.success(res?.message || 'Market entry updated successfully');
             } else if (isAdmin && formData.userIds?.length > 0) {
-                let created = 0, errors = 0;
-                for (const uid of formData.userIds) {
-                    try {
-                        await dispatch(adminCreateMarket({ userId: uid, marketData: formData })).unwrap();
-                        created++;
-                    } catch {
-                        errors++;
-                    }
-                }
-                if (errors === 0) {
-                    toast.success(`Entries created for ${created} member${created !== 1 ? 's' : ''}`);
+                const res = await dispatch(bulkCreateMarkets({
+                    userIds: formData.userIds,
+                    date: formData.date,
+                    amount: formData.amount,
+                    items: formData.items,
+                    description: formData.description || '',
+                })).unwrap();
+
+                const inserted = res?.inserted || 0;
+                const skipped = res?.skipped || 0;
+
+                if (inserted > 0) {
+                    const parts = [];
+                    if (inserted > 0) parts.push(`${inserted} added`);
+                    if (skipped > 0) parts.push(`${skipped} unchanged`);
+                    toast.success(parts.join(' · '));
+                } else if (skipped > 0) {
+                    toast(`All ${skipped} entries unchanged.`, { icon: 'ℹ️' });
                 } else {
-                    toast.success(`${created} created, ${errors} failed`);
+                    toast.success('Market entries saved');
                 }
             } else {
                 const res = await dispatch(createMarket(formData)).unwrap();

@@ -362,7 +362,8 @@ const createOnlinePaymentOrderForMonths = async (userId, months, type) => {
     // Create pending payment record for each month, linking them to the order.id as transactionId
     const createdPayments = [];
     for (const item of monthDetails) {
-        const itemGatewayFee = Math.round(item.amount * 0.0236 * 100) / 100;
+        const itemGatewayFee = Math.round(item.amount * 0.02 * 100) / 100;
+        const itemGstOnFee = Math.round(itemGatewayFee * 0.18 * 100) / 100;
         const payment = await Payment.create({
             user: userId,
             amount: item.amount,

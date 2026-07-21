@@ -80,6 +80,41 @@ const getMarketSchedule = asyncHandler(async (req, res) => {
     sendSuccessResponse(res, 200, 'Market schedule retrieved successfully', schedule);
 });
 
+// ─── Admin Bulk Controller ─────────────────────────────────────────────────────
+
+const bulkCreateMarkets = asyncHandler(async (req, res) => {
+    const { userIds, date, amount, items, description } = req.body;
+
+    if (!date) {
+        throw new AppError('date is required', 400);
+    }
+
+    if (amount === undefined || amount === null) {
+        throw new AppError('amount is required', 400);
+    }
+
+    if (!items || typeof items !== 'string' || !items.trim()) {
+        throw new AppError('items is required', 400);
+    }
+
+    const isAdmin = req.user.role === 'admin';
+    const targetUsers = isAdmin && userIds?.length > 0 ? userIds : [req.user.id];
+
+    const result = await marketService.bulkCreateMarkets({
+        userIds: targetUsers,
+        date,
+        amount,
+        items,
+        description: description || '',
+    });
+
+    const message = result.inserted > 0
+        ? `Successfully added ${result.inserted} market entry/entries, ${result.skipped} already existed`
+        : `All ${result.skipped} market entry/entries already existed`;
+
+    sendSuccessResponse(res, 201, message, result);
+});
+
 // ─── Admin Controllers ──────────────────────────────────────────────────────────
 
 const adminGetUserMarkets = asyncHandler(async (req, res) => {
@@ -137,6 +172,7 @@ const adminDeleteMarket = asyncHandler(async (req, res) => {
 
 module.exports = {
     createMarket,
+    bulkCreateMarkets,
     getMarkets,
     getMarket,
     updateMarket,

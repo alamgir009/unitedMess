@@ -171,7 +171,7 @@ async function forgotPassword(email) {
 
     // Send reset email
     try {
-        await emailService.sendPasswordResetEmail(user.email, resetToken);
+        await emailService.sendPasswordResetEmail(user.email, resetToken, user.name);
     } catch (error) {
         // Rollback token generation if email fails
         user.passwordResetToken = undefined;
@@ -301,7 +301,7 @@ async function changePassword(userId, currentPassword, newPassword) {
     await user.save();
 
     // Send notification email
-    await emailService.sendPasswordChangeNotification(user.email);
+    await emailService.sendPasswordChangeNotification(user.email, user.name);
 
     // Revoke all existing tokens (force re-login)
     await tokenService.revokeAllUserTokens(userId);
@@ -357,12 +357,12 @@ async function canRequestPasswordReset(email) {
 async function resendVerificationEmailByEmail(email) {
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-        // We don't reveal if user exists for security, but usually this is called after registration
-        throw new AppError('User not found', 404);
+        // Don't reveal whether user exists — return success regardless
+        return;
     }
 
     if (user.isEmailVerified) {
-        throw new AppError('Email is already verified', 400);
+        return;
     }
 
     // Generate new verification token

@@ -15,6 +15,7 @@ const { getBillingPeriod } = require('../../../utils/helpers/date.helper');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 const path = require('path');
+const logger = require('../../../utils/logger/index');
 
 // Magic-byte validators for post-upload integrity check
 const MAGIC_VALIDATORS = {
@@ -301,7 +302,7 @@ const uploadQrCode = asyncHandler(async (req, res) => {
         } catch (error) {
             if (error.isOperational) throw error;
             try { fs.unlinkSync(req.file.path); } catch {}
-            console.error('QR code file integrity check failed:', error);
+            logger.error('QR code file integrity check failed:', error);
             throw new AppError('Uploaded file content integrity check failed.', 400);
         }
     }
@@ -330,7 +331,7 @@ const uploadQrCode = asyncHandler(async (req, res) => {
             try { fs.unlinkSync(req.file.path); } catch {}
         } catch (error) {
             try { fs.unlinkSync(req.file.path); } catch {}
-            console.error('Cloudinary QR code upload failed:', error);
+            logger.error('Cloudinary QR code upload failed:', error);
             throw new AppError('Failed to upload QR code image to cloud storage.', 500);
         }
     } else {

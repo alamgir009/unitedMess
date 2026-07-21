@@ -103,6 +103,8 @@ const paymentSchema = new mongoose.Schema(
 paymentSchema.index({ user: 1, month: 1 });
 paymentSchema.index({ status: 1 });
 paymentSchema.index({ transactionId: 1 });
+paymentSchema.index({ utr: 1 }, { sparse: true });
+paymentSchema.index({ user: 1, month: 1, type: 1, status: 1 });
 
 const Payment = mongoose.model('Payment', paymentSchema);
 

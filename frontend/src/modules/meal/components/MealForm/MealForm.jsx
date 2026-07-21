@@ -470,7 +470,7 @@ const [singleAdminError, setSingleAdminError] = useState('');
                         {readOnly ? 'Close' : 'Cancel'}
                     </Button>
                     {!readOnly && (
-                        <Button type="submit" variant="success" size="sm" className="flex-[2]" disabled={isRunning}>
+                        <Button type="submit" variant="success" size="sm" className="flex-[2]" isLoading={isRunning} disabled={isRunning}>
                             {initialData ? 'Update Meal' : 'Save Meal'}
                         </Button>
                     )}
@@ -495,6 +495,7 @@ const [singleAdminError, setSingleAdminError] = useState('');
                             variant="success"
                             size="sm"
                             className="flex-[2]"
+                            isLoading={isRunning}
                             disabled={isRunning || rangeInvalid || daysCount === 0 || (isAdmin && formData.userIds?.length === 0)}
                         >
                             {isRunning

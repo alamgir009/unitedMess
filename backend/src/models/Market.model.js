@@ -37,6 +37,7 @@ const marketSchema = new mongoose.Schema(
 
 marketSchema.index({ date: -1 });
 marketSchema.index({ user: 1 });
+marketSchema.index({ user: 1, date: 1 }, { unique: true });
 
 const Market = mongoose.model('Market', marketSchema);
 

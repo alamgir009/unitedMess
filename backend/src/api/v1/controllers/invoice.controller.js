@@ -56,7 +56,7 @@ const getMonthlyInvoice = asyncHandler(async (req, res) => {
 const finalizeMonth = asyncHandler(async (req, res) => {
     const { month, year } = req.body;
     if (!month || !year) {
-        throw new Error('Month and year are required');
+        throw new AppError('Month and year are required', 400);
     }
     const results = await invoiceService.finalizeMonth(month, year);
     sendSuccessResponse(res, 200, `Finalized invoices for ${month}/${year}`, { count: results.length });
@@ -68,12 +68,12 @@ const finalizeMonth = asyncHandler(async (req, res) => {
 const getInvoiceById = asyncHandler(async (req, res) => {
     const invoice = await Invoice.findById(req.params.id).lean();
     if (!invoice) {
-        throw new Error('Invoice not found');
+        throw new AppError('Invoice not found', 404);
     }
 
     // Security check: only the owner or an admin can view
     if (invoice.user.toString() !== req.user.id && req.user.role !== 'admin') {
-        throw new Error('Not authorized to view this invoice');
+        throw new AppError('Not authorized to view this invoice', 403);
     }
 
     sendSuccessResponse(res, 200, 'Invoice retrieved', invoice);
@@ -114,6 +114,16 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
 
     // If delta < 0, this is a refund operation — status is always 'refunded'
     if (refundDelta < 0) {
+        // Idempotency check: prevent duplicate refunds for the same invoice
+        const existingRefund = await Payment.findOne({
+            user: invoice.user,
+            month: invoice.monthName,
+            status: 'refunded',
+        }).lean();
+        if (existingRefund) {
+            throw new AppError(`A refund for ${invoice.monthName} has already been processed`, 409);
+        }
+
         invoice.status = 'refunded';
 
         // Detect the original payment type for this user/month so the refund

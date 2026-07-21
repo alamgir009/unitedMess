@@ -69,6 +69,17 @@ export const adminCreateMarket = createAsyncThunk('market/adminCreate', async ({
     }
 });
 
+// Bulk create markets for multiple users (admin)
+export const bulkCreateMarkets = createAsyncThunk('market/bulkCreate', async (bulkData, thunkAPI) => {
+    try {
+        const response = await marketService.bulkCreateMarkets(bulkData);
+        return response.data;
+    } catch (error) {
+        const message = error.response?.data?.error || error.response?.data?.message || error.message || 'Something went wrong';
+        return thunkAPI.rejectWithValue(message);
+    }
+});
+
 // Update market
 export const updateMarket = createAsyncThunk('market/update', async ({ marketId, marketData }, thunkAPI) => {
     try {
@@ -163,6 +174,19 @@ export const marketSlice = createSlice({
                 state.markets.unshift(action.payload);
             })
             .addCase(adminCreateMarket.rejected, (state, action) => {
+                state.isLoading = false;
+                state.isError = true;
+                state.message = action.payload;
+            })
+            // Bulk Create markets
+            .addCase(bulkCreateMarkets.pending, (state) => {
+                state.isLoading = true;
+            })
+            .addCase(bulkCreateMarkets.fulfilled, (state) => {
+                state.isLoading = false;
+                state.isSuccess = true;
+            })
+            .addCase(bulkCreateMarkets.rejected, (state, action) => {
                 state.isLoading = false;
                 state.isError = true;
                 state.message = action.payload;

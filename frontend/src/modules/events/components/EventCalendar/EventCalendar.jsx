@@ -14,8 +14,8 @@ import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
 import { formatInIST } from '@/core/utils/helpers/date.helper';
 import eventService from '../../services/event.service';
 import { setCurrentMonth, setLoading } from '../../store/events.slice';
-import { createMeal, bulkCreateMeals, updateMeal, deleteMeal, adminCreateMeal } from '../../../meal/store/meal.slice';
-import { createMarket, updateMarket, deleteMarket, adminCreateMarket } from '../../../market/store/market.slice';
+import { createMeal, bulkCreateMeals, updateMeal, deleteMeal } from '../../../meal/store/meal.slice';
+import { createMarket, updateMarket, deleteMarket, bulkCreateMarkets } from '../../../market/store/market.slice';
 
 const CalendarDayEdit = lazy(() => import('./CalendarDayEdit'));
 
@@ -99,7 +99,7 @@ const EventCalendar = () => {
   const [detailDate, setDetailDate] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedEntryIds, setSelectedEntryIds] = useState(new Set());
-  const isBulkSubmittingRef = useRef(false);
+  const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
 
   // Derive entries from live dataMap so optimistic updates reflect immediately
   const currentDateEntries = useMemo(() => {
@@ -261,33 +261,36 @@ const EventCalendar = () => {
         delete entryData.userIds;
 
         if (category === 'meals') {
-          const createdEntries = [];
-          for (const userId of selectedIds) {
-            const res = await dispatch(adminCreateMeal({ userId, mealData: entryData })).unwrap();
-            createdEntries.push(res?.data ?? res);
-          }
-          setDataMap((prevMap) => ({
-            ...prevMap,
-            [dateKey]: [
-              ...createdEntries,
-              ...(prevMap[dateKey] || []).filter((e) => e._id !== tempId),
-            ],
-          }));
-          toast.success(`${createdEntries.length} meal(s) added`);
+          const res = await dispatch(bulkCreateMeals({
+            startDate: dateKey,
+            endDate: dateKey,
+            type: entryData.type,
+            userIds: selectedIds,
+            isGuestMeal: entryData.isGuestMeal || false,
+            guestCount: entryData.guestCount || 0,
+            remarks: entryData.remarks || '',
+          })).unwrap();
+          const result = res?.data || res;
+          const inserted = result?.inserted || 0;
+          const skipped = result?.skipped || 0;
+          const parts = [];
+          if (inserted > 0) parts.push(`${inserted} added`);
+          if (skipped > 0) parts.push(`${skipped} unchanged`);
+          toast.success(parts.length ? parts.join(' · ') : 'Meals saved');
         } else {
-          const createdEntries = [];
-          for (const userId of selectedIds) {
-            const res = await dispatch(adminCreateMarket({ userId, marketData: entryData })).unwrap();
-            createdEntries.push(res?.data ?? res);
-          }
-          setDataMap((prevMap) => ({
-            ...prevMap,
-            [dateKey]: [
-              ...createdEntries,
-              ...(prevMap[dateKey] || []).filter((e) => e._id !== tempId),
-            ],
-          }));
-          toast.success(`${createdEntries.length} market entry(ies) added`);
+          const res = await dispatch(bulkCreateMarkets({
+            userIds: selectedIds,
+            date: dateKey,
+            amount: entryData.amount,
+            items: entryData.items,
+            description: entryData.description || '',
+          })).unwrap();
+          const inserted = res?.inserted || 0;
+          const skipped = res?.skipped || 0;
+          const parts = [];
+          if (inserted > 0) parts.push(`${inserted} added`);
+          if (skipped > 0) parts.push(`${skipped} unchanged`);
+          toast.success(parts.length ? parts.join(' · ') : 'Market entries saved');
         }
       } else {
         if (category === 'meals') {
@@ -433,14 +436,14 @@ const EventCalendar = () => {
   }, [isEditMode, detailDate]);
 
   const handleBulkDelete = useCallback(async () => {
-    if (selectedEntryIds.size === 0 || isBulkSubmittingRef.current) return;
+    if (selectedEntryIds.size === 0 || isBulkSubmitting) return;
     if (!detailDate) return;
     const dateKey = format(new Date(detailDate), 'yyyy-MM-dd');
 
     const confirmMsg = `Delete ${selectedEntryIds.size} selected entr${selectedEntryIds.size === 1 ? 'y' : 'ies'}?`;
     if (!window.confirm(confirmMsg)) return;
 
-    isBulkSubmittingRef.current = true;
+    setIsBulkSubmitting('deleting');
     snapshotRef.current = { ...dataMap };
 
     const idsToRemove = new Set(selectedEntryIds);
@@ -478,16 +481,16 @@ const EventCalendar = () => {
       const msg = err?.response?.data?.message || err?.message || 'Failed to delete';
       toast.error(msg);
     } finally {
-      isBulkSubmittingRef.current = false;
+      setIsBulkSubmitting(false);
     }
-  }, [selectedEntryIds, detailDate, dataMap, category, dispatch, fetchData, handleExitSelectMode]);
+  }, [selectedEntryIds, detailDate, dataMap, category, dispatch, fetchData, handleExitSelectMode, isBulkSubmitting]);
 
   const handleBulkUpdate = useCallback(async (payload) => {
-    if (selectedEntryIds.size === 0 || isBulkSubmittingRef.current) return;
+    if (selectedEntryIds.size === 0 || isBulkSubmitting) return;
     if (!detailDate) return;
     const dateKey = format(new Date(detailDate), 'yyyy-MM-dd');
 
-    isBulkSubmittingRef.current = true;
+    setIsBulkSubmitting('updating');
     snapshotRef.current = { ...dataMap };
 
     const idsToUpdate = new Set(selectedEntryIds);
@@ -527,9 +530,9 @@ const EventCalendar = () => {
       const msg = err?.response?.data?.message || err?.message || 'Failed to update';
       toast.error(msg);
     } finally {
-      isBulkSubmittingRef.current = false;
+      setIsBulkSubmitting(false);
     }
-  }, [selectedEntryIds, detailDate, dataMap, category, dispatch, fetchData, handleExitSelectMode]);
+  }, [selectedEntryIds, detailDate, dataMap, category, dispatch, fetchData, handleExitSelectMode, isBulkSubmitting]);
 
   const handleMemberFilter = useCallback((id) => {
     setSelectedMemberId(id);
@@ -617,6 +620,7 @@ const EventCalendar = () => {
                   onBulkDelete={handleBulkDelete}
                   onBulkUpdate={handleBulkUpdate}
                   onExitSelectMode={handleExitSelectMode}
+                  isBulkSubmitting={isBulkSubmitting}
                 />
               </Suspense>
             ) : (
@@ -649,6 +653,7 @@ const EventCalendar = () => {
                   onBulkDelete={handleBulkDelete}
                   onBulkUpdate={handleBulkUpdate}
                   onExitSelectMode={handleExitSelectMode}
+                  isBulkSubmitting={isBulkSubmitting}
                 />
               </Suspense>
             ) : (

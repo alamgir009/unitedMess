@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Plus, Trash2, X, Check, Users } from 'lucide-react';
+import { Plus, Trash2, X, Check, Users, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { fmt } from '@/core/utils/helpers/currency.helper';
@@ -88,13 +88,14 @@ const inputBase =
 const getEntryUserId = (entry) =>
   typeof entry.user === 'object' ? entry.user?._id : entry.user;
 
-const SelectAllCheckbox = ({ checked, indeterminate, onChange, count }) => {
+const SelectAllCheckbox = ({ checked, indeterminate, onChange, count, disabled }) => {
   return (
     <div className="flex items-center gap-2 px-2 py-1.5">
       <FintechCheckbox
         checked={checked}
         indeterminate={indeterminate}
         onChange={onChange}
+        disabled={disabled}
         ariaLabel={checked ? 'Deselect all entries' : 'Select all entries'}
       />
       <span className="text-xs font-medium text-[var(--text-secondary)]">
@@ -104,7 +105,7 @@ const SelectAllCheckbox = ({ checked, indeterminate, onChange, count }) => {
   );
 };
 
-const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, currentUser, onSave, onUpdate, onDelete, selectedEntryIds, onToggleSelect, onSelectAll, onBulkDelete, onBulkUpdate, onExitSelectMode }) => {
+const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, currentUser, onSave, onUpdate, onDelete, selectedEntryIds, onToggleSelect, onSelectAll, onBulkDelete, onBulkUpdate, onExitSelectMode, isBulkSubmitting = false }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
@@ -141,7 +142,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
             </span>
           )}
         </p>
-        {!isAdding && (
+        {!isAdding && !isBulkSubmitting && (
           <button
             onClick={() => setIsAdding(true)}
             className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -159,6 +160,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
             indeterminate={selectedEntryIds?.size > 0 && selectedEntryIds?.size < visibleEntries.length}
             onChange={onSelectAll}
             count={selectedEntryIds?.size || 0}
+            disabled={isBulkSubmitting}
           />
           <div className="flex-1" />
           {selectedEntryIds?.size > 0 && (
@@ -178,6 +180,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
           onSave={onSave}
           onCancel={() => setIsAdding(false)}
           setIsSubmitting={setIsSubmitting}
+          isSubmitting={isSubmitting}
         />
       )}
 
@@ -215,6 +218,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
                     <FintechCheckbox
                       checked={selectedEntryIds.has(entry._id)}
                       onChange={() => onToggleSelect(entry._id)}
+                      disabled={isBulkSubmitting}
                       ariaLabel={`Select ${displayName}`}
                     />
                   )}
@@ -246,7 +250,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
                           try { await onDelete(entry._id); }
                           finally { setConfirmDeleteId(null); setIsSubmitting(false); }
                         }}
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || isBulkSubmitting}
                         className="p-1 rounded-md text-[var(--danger)] hover:bg-[var(--danger-bg)]/30 transition-colors disabled:opacity-50"
                         aria-label="Confirm delete"
                       >
@@ -254,7 +258,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
                       </button>
                       <button
                         onClick={() => setConfirmDeleteId(null)}
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || isBulkSubmitting}
                         className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors disabled:opacity-50"
                         aria-label="Cancel delete"
                       >
@@ -265,8 +269,9 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => setEditingId(entry._id)}
+                        disabled={isBulkSubmitting}
                         /* --text-secondary for icon UI contrast 3:1 AA (was 2.44:1 on light bg) */
-                        className="p-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 transition-colors"
+                        className="p-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 transition-colors disabled:opacity-50"
                         aria-label="Edit entry"
                       >
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -275,8 +280,9 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
                       </button>
                       <button
                         onClick={() => setConfirmDeleteId(entry._id)}
+                        disabled={isBulkSubmitting}
                         /* --text-secondary for icon UI contrast 3:1 AA (was 2.44:1 on light bg) */
-                        className="p-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--danger)] hover:bg-[var(--danger-bg)]/20 transition-colors"
+                        className="p-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--danger)] hover:bg-[var(--danger-bg)]/20 transition-colors disabled:opacity-50"
                         aria-label="Delete entry"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -293,24 +299,44 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
       {selectedEntryIds?.size > 0 && !showBulkUpdateForm && (
         <div className="flex items-center gap-2 p-2 rounded-lg border border-[var(--accent-primary)]/20 bg-[var(--accent-primary)]/5">
           <span className="text-xs font-semibold text-[var(--accent-primary)]">
-            {selectedEntryIds.size} selected
+            {isBulkSubmitting ? (
+              <span className="flex items-center gap-1.5">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                {isBulkSubmitting === 'deleting' ? 'Deleting…' : 'Updating…'}
+              </span>
+            ) : (
+              `${selectedEntryIds.size} selected`
+            )}
           </span>
           <div className="flex-1" />
           <button
             onClick={() => setShowBulkUpdateForm(true)}
-            className="px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30"
+            disabled={!!isBulkSubmitting}
+            className="px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Update
+            {isBulkSubmitting === 'updating' ? (
+              <span className="flex items-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Updating…
+              </span>
+            ) : 'Update'}
           </button>
           <button
             onClick={onBulkDelete}
-            className="px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--danger)] hover:bg-[var(--danger-bg)]/20 border border-[var(--danger)]/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--danger)]/30"
+            disabled={!!isBulkSubmitting}
+            className="px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--danger)] hover:bg-[var(--danger-bg)]/20 border border-[var(--danger)]/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--danger)]/30 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Delete
+            {isBulkSubmitting === 'deleting' ? (
+              <span className="flex items-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Deleting…
+              </span>
+            ) : 'Delete'}
           </button>
           <button
             onClick={onExitSelectMode}
-            className="px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] border border-[var(--border-default)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30"
+            disabled={!!isBulkSubmitting}
+            className="px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] border border-[var(--border-default)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
@@ -323,6 +349,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
           selectedCount={selectedEntryIds.size}
           onSubmit={(payload) => { setShowBulkUpdateForm(false); onBulkUpdate(payload); }}
           onCancel={() => setShowBulkUpdateForm(false)}
+          isBulkSubmitting={isBulkSubmitting}
         />
       )}
 
@@ -355,7 +382,7 @@ const ModeTab = ({ mode, current, onChange, label }) => (
   </button>
 );
 
-const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, setIsSubmitting }) => {
+const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, setIsSubmitting, isSubmitting = false }) => {
   const [mode, setMode] = useState('single');
   const [date, setDate] = useState(dateStr);
   const [rangeFrom, setRangeFrom] = useState(dateStr);
@@ -470,6 +497,7 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
           value={userIds}
           onChange={(ids) => { setUserIds(ids); setErrors((p) => ({ ...p, userIds: undefined })); }}
           loading={isUsersLoading}
+          disabled={isSubmitting}
           accentColor="primary"
           placeholder="Select members..."
         />
@@ -480,8 +508,8 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
       {category === 'meals' && (
         /* shadow-inner creates a recessed well; active tab with shadow-sm rises above it */
         <div role="tablist" aria-label="Date mode" className="flex gap-1 p-0.5 rounded-lg bg-[var(--bg-muted)]/40 border border-[var(--border-default)] shadow-[var(--inset-shadow-deep)]">
-          <ModeTab mode="single" current={mode} onChange={setMode} label="Single" />
-          <ModeTab mode="range" current={mode} onChange={setMode} label="Range" />
+          <ModeTab mode="single" current={mode} onChange={isSubmitting ? () => {} : setMode} label="Single" />
+          <ModeTab mode="range" current={mode} onChange={isSubmitting ? () => {} : setMode} label="Range" />
         </div>
       )}
 
@@ -508,7 +536,8 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
               type="date"
               value={rangeFrom}
               onChange={(e) => { setRangeFrom(e.target.value); setErrors((p) => ({ ...p, rangeFrom: undefined, rangeTo: undefined })); }}
-              className={cn(inputBase, errors.rangeFrom && 'ring-2 ring-[var(--danger)]/50')}
+              disabled={isSubmitting}
+              className={cn(inputBase, errors.rangeFrom && 'ring-2 ring-[var(--danger)]/50', isSubmitting && 'opacity-60 cursor-not-allowed')}
             />
             {errors.rangeFrom && <p className="text-[10px] text-[var(--danger)] mt-0.5">{errors.rangeFrom}</p>}
           </div>
@@ -518,7 +547,8 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
               value={rangeTo}
               min={rangeFrom}
               onChange={(e) => { setRangeTo(e.target.value); setErrors((p) => ({ ...p, rangeTo: undefined })); }}
-              className={cn(inputBase, errors.rangeTo && 'ring-2 ring-[var(--danger)]/50')}
+              disabled={isSubmitting}
+              className={cn(inputBase, errors.rangeTo && 'ring-2 ring-[var(--danger)]/50', isSubmitting && 'opacity-60 cursor-not-allowed')}
             />
             {errors.rangeTo && <p className="text-[10px] text-[var(--danger)] mt-0.5">{errors.rangeTo}</p>}
           </div>
@@ -529,7 +559,8 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
             type="date"
             value={date}
             onChange={(e) => { setDate(e.target.value); setErrors((p) => ({ ...p, date: undefined })); }}
-            className={cn(inputBase, errors.date && 'ring-2 ring-[var(--danger)]/50')}
+            disabled={isSubmitting}
+            className={cn(inputBase, errors.date && 'ring-2 ring-[var(--danger)]/50', isSubmitting && 'opacity-60 cursor-not-allowed')}
           />
           {errors.date && <p className="text-[10px] text-[var(--danger)] mt-0.5">{errors.date}</p>}
         </div>
@@ -541,10 +572,12 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
             <button
               key={t.value}
               type="button"
-              onClick={() => { setType(t.value); setErrors((p) => ({ ...p, type: undefined })); }}
+              onClick={() => { if (!isSubmitting) { setType(t.value); setErrors((p) => ({ ...p, type: undefined })); } }}
+              disabled={isSubmitting}
               className={cn(
                 'py-1.5 px-1 rounded-lg text-[11px] font-bold border transition-colors duration-100',
                 type === t.value ? `${t.color} shadow-xs` : 'border-[var(--border-default)] text-[var(--text-muted)] hover:bg-[var(--bg-muted)]',
+                isSubmitting && 'opacity-60 cursor-not-allowed',
               )}
             >
               {t.label}
@@ -562,7 +595,8 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
               min="0"
               step="0.01"
               placeholder="0.00"
-              className={cn(inputBase, 'pl-6', errors.amount && 'ring-2 ring-[var(--danger)]/50')}
+              disabled={isSubmitting}
+              className={cn(inputBase, 'pl-6', errors.amount && 'ring-2 ring-[var(--danger)]/50', isSubmitting && 'opacity-60 cursor-not-allowed')}
             />
           </div>
           <input
@@ -570,7 +604,8 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
             value={items}
             onChange={(e) => { setItems(e.target.value); setErrors((p) => ({ ...p, items: undefined })); }}
             placeholder="Items"
-            className={cn(inputBase, 'flex-[2]', errors.items && 'ring-2 ring-[var(--danger)]/50')}
+            disabled={isSubmitting}
+            className={cn(inputBase, 'flex-[2]', errors.items && 'ring-2 ring-[var(--danger)]/50', isSubmitting && 'opacity-60 cursor-not-allowed')}
           />
         </div>
       )}
@@ -579,16 +614,18 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
       {category === 'meals' && (
         <div className="flex items-stretch gap-2">
           <label className={cn(
-            'flex items-center gap-2.5 flex-1 px-2.5 py-2 rounded-lg border transition-colors cursor-pointer',
+            'flex items-center gap-2.5 flex-1 px-2.5 py-2 rounded-lg border transition-colors',
             isGuestMeal
               ? 'border-amber-500/30 bg-amber-500/5'
               : 'border-[var(--border-default)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-muted)]',
+            isSubmitting && 'opacity-60 cursor-not-allowed',
           )}>
             <div className="relative flex items-center flex-shrink-0">
               <input
                 type="checkbox"
                 checked={isGuestMeal}
-                onChange={() => { setIsGuestMeal((p) => { if (p) setGuestCount(1); return !p; }); setErrors((p) => ({ ...p, guestCount: undefined })); }}
+                onChange={() => { if (!isSubmitting) { setIsGuestMeal((p) => { if (p) setGuestCount(1); return !p; }); setErrors((p) => ({ ...p, guestCount: undefined })); } }}
+                disabled={isSubmitting}
                 className="peer sr-only"
               />
               <div className="w-9 h-5 bg-muted-foreground/25 peer-focus:ring-2 peer-focus:ring-amber-500/40 rounded-full transition-colors peer-checked:bg-amber-500" />
@@ -607,10 +644,12 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
                 max="20"
                 value={guestCount}
                 onChange={(e) => { setGuestCount(Math.max(1, parseInt(e.target.value) || 1)); setErrors((p) => ({ ...p, guestCount: undefined })); }}
+                disabled={isSubmitting}
                 className={cn(
                   'w-full px-2 py-2 rounded-lg border border-amber-500/30 bg-amber-500/5 text-center text-sm font-bold text-amber-600 dark:text-amber-300',
                   'focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500/50 transition-all',
                   errors.guestCount && 'ring-2 ring-[var(--danger)]/50',
+                  isSubmitting && 'opacity-60 cursor-not-allowed',
                 )}
                 placeholder="#"
               />
@@ -626,30 +665,52 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
         value={remarks}
         onChange={(e) => setRemarks(e.target.value)}
         placeholder={`${category === 'meals' ? 'Remarks' : 'Description'} (optional)`}
-        className={inputBase}
+        disabled={isSubmitting}
+        className={cn(inputBase, isSubmitting && 'opacity-60 cursor-not-allowed')}
       />
+
+      {/* Inline saving spinner */}
+      {isSubmitting && (
+        <div className="flex items-center gap-2 py-1.5 px-2.5 rounded-lg border border-[var(--accent-primary)]/20 bg-[var(--accent-primary)]/5">
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent-primary)]" />
+          <span className="text-[11px] font-semibold text-[var(--accent-primary)]">
+            {isAdmin && userIds.length > 1
+              ? `Saving for ${userIds.length} members…`
+              : 'Saving…'
+            }
+          </span>
+        </div>
+      )}
 
       <div className="flex gap-2">
         <button
           type="button"
           onClick={onCancel}
+          disabled={isSubmitting}
           /* neutral gray outline/ghost — no color competing with Save */
-          className="flex-1 py-1.5 rounded-lg text-xs font-semibold border border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)] active:bg-[var(--bg-muted)]/80 transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30"
+          className="flex-1 py-1.5 rounded-lg text-xs font-semibold border border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)] active:bg-[var(--bg-muted)]/80 transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Cancel
         </button>
         <button
           type="submit"
-          disabled={isRangeMode && (rangeInvalid || daysCount === 0)}
+          disabled={isSubmitting || (isRangeMode && (rangeInvalid || daysCount === 0))}
           className={cn(
             /* --btn-success-* for fintech confirm; brightness → opacity for composited perf */
             'flex-[2] py-1.5 rounded-lg text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 transition-[opacity,box-shadow] duration-150',
-            isRangeMode && (rangeInvalid || daysCount === 0)
+            isSubmitting || (isRangeMode && (rangeInvalid || daysCount === 0))
               ? 'bg-[var(--bg-muted)] text-[var(--text-muted)] border border-[var(--border-default)] cursor-not-allowed'
               : 'bg-[var(--btn-success-from)] text-[var(--btn-success-label)] hover:opacity-90 active:opacity-80 shadow-sm hover:shadow-md',
           )}
         >
-          {isRangeMode ? `Save ${daysCount > 0 ? daysCount : ''} day${daysCount !== 1 ? 's' : ''}` : 'Save'}
+          {isSubmitting ? (
+            <span className="flex items-center justify-center gap-1.5">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              Saving…
+            </span>
+          ) : isRangeMode ? (
+            `Save ${daysCount > 0 ? daysCount : ''} day${daysCount !== 1 ? 's' : ''}`
+          ) : 'Save'}
         </button>
       </div>
     </form>
@@ -818,7 +879,7 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
 
 // ─── Bulk Update Form ──────────────────────────────────────────
 
-const BulkUpdateForm = ({ category, selectedCount, onSubmit, onCancel }) => {
+const BulkUpdateForm = ({ category, selectedCount, onSubmit, onCancel, isBulkSubmitting = false }) => {
   const [type, setType] = useState('');
   const [amount, setAmount] = useState('');
   const [items, setItems] = useState('');
@@ -915,15 +976,24 @@ const BulkUpdateForm = ({ category, selectedCount, onSubmit, onCancel }) => {
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 py-1.5 rounded-lg text-xs font-semibold border border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)] active:bg-[var(--bg-muted)]/80 transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30"
+          disabled={!!isBulkSubmitting}
+          className="flex-1 py-1.5 rounded-lg text-xs font-semibold border border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)] active:bg-[var(--bg-muted)]/80 transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="flex-[2] py-1.5 rounded-lg text-xs font-semibold bg-[var(--btn-success-from)] text-[var(--btn-success-label)] hover:opacity-90 active:opacity-80 shadow-sm hover:shadow-md transition-[opacity,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50"
+          disabled={!!isBulkSubmitting}
+          className="flex-[2] py-1.5 rounded-lg text-xs font-semibold bg-[var(--btn-success-from)] text-[var(--btn-success-label)] hover:opacity-90 active:opacity-80 shadow-sm hover:shadow-md transition-[opacity,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Apply to {selectedCount}
+          {isBulkSubmitting === 'updating' ? (
+            <span className="flex items-center justify-center gap-1.5">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              Updating…
+            </span>
+          ) : (
+            `Apply to ${selectedCount}`
+          )}
         </button>
       </div>
     </form>

@@ -40,7 +40,20 @@ module.exports = {
         },
     },
     jwt: {
-        secret: process.env.SECRET_KEY || process.env.JWT_SECRET || 'your_jwt_secret_key',
+        secret: (() => {
+            const secret = process.env.SECRET_KEY || process.env.JWT_SECRET;
+            if (!secret || secret === 'your_jwt_secret_key') {
+                if (process.env.NODE_ENV === 'production') {
+                    throw new Error(
+                        'FATAL: JWT secret is not set or is using the default value. ' +
+                        'Set SECRET_KEY or JWT_SECRET environment variable and restart.'
+                    );
+                }
+                console.warn('[Config] WARNING: Using default JWT secret — not safe for production!');
+                return 'your_jwt_secret_key';
+            }
+            return secret;
+        })(),
         accessExpirationMinutes: process.env.JWT_ACCESS_EXPIRATION_MINUTES || 30,
         refreshExpirationDays: process.env.JWT_REFRESH_EXPIRATION_DAYS || 7,
         resetPasswordExpirationMinutes: 10,

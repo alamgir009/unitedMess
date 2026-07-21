@@ -108,7 +108,7 @@ const validateCredentials = async () => {
         return {
             valid: false,
             message: error?.error?.description || error.message || 'Unknown error',
-            statusCode: error.statusCode || error.statusCode || 0,
+            statusCode: error.statusCode || error.status || 0,
         };
     }
 };

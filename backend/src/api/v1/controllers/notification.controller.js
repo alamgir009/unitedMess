@@ -54,11 +54,18 @@ const sendCustomAdminNotification = asyncHandler(async (req, res) => {
     }
 
     if (targetType === 'ROLE') {
-        const users = await User.find({ role: userId, isActive: true }).select('_id').lean();
+        const roleName = userId;
+        if (!roleName || !['admin', 'user'].includes(roleName)) {
+            return res.status(400).json({
+                success: false,
+                message: 'userId must be a valid role name (admin or user) when targetType is ROLE',
+            });
+        }
+        const users = await User.find({ role: roleName, isActive: true }).select('_id').lean();
         for (const user of users) {
             await notificationService.createAndSend(user._id.toString(), type || 'CUSTOM', title, message, options);
         }
-        return sendSuccessResponse(res, 201, `Notification sent to ${users.length} users with role`);
+        return sendSuccessResponse(res, 201, `Notification sent to ${users.length} users with role: ${roleName}`);
     }
 
     if (targetType === 'ALL') {

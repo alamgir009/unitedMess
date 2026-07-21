@@ -174,6 +174,7 @@ exports.refreshTokens = asyncHandler(async (req, res) => {
 // @route   POST /api/v1/auth/forgot-password
 // @access  Public
 exports.forgotPassword = asyncHandler(async (req, res) => {
+    await authService.canRequestPasswordReset(req.body.email);
     await authService.forgotPassword(req.body.email);
     sendSuccessResponse(res, 200, 'Password reset link sent to email');
 });
