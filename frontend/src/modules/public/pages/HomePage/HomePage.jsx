@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef, memo, useMemo } from 'react';
 import Button from '@/shared/components/ui/Button/Button';
 import Calendar from './Calendar';
-import { BarChart3, Shield, Users, Receipt, BellRing, MonitorSmartphone } from 'lucide-react';
+import { BarChart3, Shield, Users, Receipt, BellRing, MonitorSmartphone, ReceiptIndianRupee } from 'lucide-react';
 
 /* ── CSS-only scroll reveal (zero JS per frame after first intersection) ── */
 const InView = memo(function InView({ children, delay = 0, className = '' }) {
@@ -113,7 +113,7 @@ const features = [
     tone: 'amber',
     title: 'Fairness-first billing engine',
     description: 'Accurate, auditable cost allocation with clean settlement summaries. Every ₹ is traceable — building the trust that keeps communities together longer.',
-    icon: <Receipt className="h-5 w-5 sm:h-6 sm:w-6" />,
+    icon: <ReceiptIndianRupee className="h-5 w-5 sm:h-6 sm:w-6" />,
   },
   {
     tone: 'rose',

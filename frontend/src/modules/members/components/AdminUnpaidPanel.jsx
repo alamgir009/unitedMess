@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
 import {
     ShieldAlert, ChevronDown, RefreshCw, CheckCircle2,
-    DollarSign, Calendar, AlertTriangle,
+    ReceiptIndianRupee, Calendar, AlertTriangle,
     BadgeIndianRupee, ArrowRight, Copy
 } from 'lucide-react';
 import { fetchAdminUnpaidInvoices, resolveInvoicePayment } from '../store/members.slice';
@@ -555,7 +555,7 @@ const AdminUnpaidPanel = React.memo(() => {
                             </span>
                         </div>
                         <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
-                            <DollarSign size={11} /> Total outstanding: ₹ {fmt(totalOutstanding)}
+                            <ReceiptIndianRupee size={11} /> Total outstanding: ₹ {fmt(totalOutstanding)}
                         </div>
                     </div>
                 )}

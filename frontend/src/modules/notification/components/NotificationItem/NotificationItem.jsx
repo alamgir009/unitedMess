@@ -2,7 +2,7 @@ import { memo, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
     Info, AlertCircle, CreditCard, UserCog, TrendingUp,
-    ShieldCheck, Wallet, DollarSign, Clock, CheckCircle2, Sparkles,
+    ShieldCheck, Wallet, ReceiptIndianRupee, Clock, CheckCircle2, Sparkles,
 } from 'lucide-react';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { SPRING_BOUNCE } from '@/core/utils/constants/spring';
@@ -12,7 +12,7 @@ const ICON_MAP = {
     PAYMENT:    { Icon: CreditCard,  color: 'text-success', bg: 'bg-success-bg' },
     TRANSFER:   { Icon: TrendingUp,  color: 'text-primary', bg: 'bg-primary/10' },
     DEPOSIT:    { Icon: Wallet,      color: 'text-success', bg: 'bg-success-bg' },
-    WITHDRAWAL: { Icon: DollarSign,  color: 'text-warning', bg: 'bg-warning-bg' },
+    WITHDRAWAL: { Icon: ReceiptIndianRupee,  color: 'text-warning', bg: 'bg-warning-bg' },
     ACCOUNT:    { Icon: UserCog,     color: 'text-primary', bg: 'bg-primary/10' },
     SECURITY:   { Icon: ShieldCheck, color: 'text-primary', bg: 'bg-primary/10' },
     BILLING:    { Icon: AlertCircle, color: 'text-warning', bg: 'bg-warning-bg' },
