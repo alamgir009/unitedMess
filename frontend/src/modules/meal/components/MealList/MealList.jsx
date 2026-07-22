@@ -165,7 +165,7 @@ const MealCard = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin,
 
             <div className="mx-4 mt-3 h-px bg-border/40" />
 
-            <div className="flex items-center gap-2 px-4 py-3">
+            <div className="flex items-center gap-2 px-4 py-3 min-h-[52px]">
                 <Button
                     variant="secondary"
                     size="sm"
@@ -346,7 +346,7 @@ const MealList = ({ meals = [], onEdit, onDelete, isAdmin = false, viewMode = 'g
     }
 
     const selectionBar = (
-        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border mb-3 depth-top transition-all duration-200 ${
+        <div className={`flex flex-wrap items-center gap-2 px-3 py-2 sm:py-1.5 rounded-xl border mb-3 depth-top transition-all duration-200 ${
             hasSelection
                 ? 'bg-primary/[0.04] border-primary/15'
                 : 'bg-muted/30 border-border/40'
@@ -362,19 +362,17 @@ const MealList = ({ meals = [], onEdit, onDelete, isAdmin = false, viewMode = 'g
                     {selectedIds.size} / {meals.length} selected
                 </span>
             )}
+            {hasSelection && <div className="flex-1 min-w-[8px] hidden sm:block" />}
             {hasSelection && (
-                <>
-                    <div className="flex-1 min-w-[8px] hidden sm:block" />
-                    <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={onBulkDeleteRequest}
-                        className="w-full sm:w-auto justify-center"
-                    >
-                        <HiOutlineTrash className="w-3.5 h-3.5" />
-                        Delete Selected
-                    </Button>
-                </>
+                <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={onBulkDeleteRequest}
+                    className="w-full sm:w-auto justify-center"
+                >
+                    <HiOutlineTrash className="w-3.5 h-3.5" />
+                    Delete Selected
+                </Button>
             )}
         </div>
     );
