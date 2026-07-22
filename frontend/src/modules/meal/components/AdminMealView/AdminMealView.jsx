@@ -70,6 +70,7 @@ EmptyState.displayName = 'EmptyState';
 const MemberRow = React.memo(({
     member, meals, isExpanded, onToggle,
     onEdit, onDelete, isAdmin, selectedIds, onToggleSelect, onSelectAll, viewMode,
+    onBulkDeleteRequest,
 }) => {
     const color = getMemberColor(member._id);
     const initials = getInitials(member.name);
@@ -151,6 +152,7 @@ const MemberRow = React.memo(({
                                 selectedIds={selectedIds}
                                 onToggleSelect={onToggleSelect}
                                 onSelectAll={onSelectAll}
+                                onBulkDeleteRequest={onBulkDeleteRequest}
                             />
                         ) : (
                             <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
@@ -176,6 +178,7 @@ const AdminMealView = ({
     selectedIds = new Set(),
     onToggleSelect = () => {},
     onSelectAll = () => {},
+    onBulkDeleteRequest = () => {},
 }) => {
     const [expandedIds, setExpandedIds] = useState(() => new Set());
 
@@ -233,6 +236,7 @@ const AdminMealView = ({
                     selectedIds={selectedIds}
                     onToggleSelect={onToggleSelect}
                     onSelectAll={onSelectAll}
+                    onBulkDeleteRequest={onBulkDeleteRequest}
                     viewMode={viewMode}
                 />
             ))}

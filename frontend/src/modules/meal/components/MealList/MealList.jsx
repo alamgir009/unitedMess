@@ -12,6 +12,8 @@ import {
     HiOutlineUser,
     HiOutlineEnvelope,
     HiOutlineSquares2X2,
+    HiOutlineCheck,
+    HiOutlineMinus,
 } from 'react-icons/hi2';
 import { Button } from '@/shared/components/ui';
 import { formatSmartDate } from '@/core/utils/helpers/date.helper';
@@ -43,7 +45,41 @@ const TYPE = {
     },
 };
 
-const CHECKBOX_CLS = 'appearance-none w-4 h-4 rounded border-2 border-border/60 bg-card cursor-pointer transition-all duration-100 checked:border-primary checked:bg-primary checked:shadow-sm shrink-0 hover:border-primary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30';
+const Checkbox = React.memo(({ checked, indeterminate, onChange, 'aria-label': ariaLabel, stopPropagation }) => {
+    const ref = useRef(null);
+
+    React.useEffect(() => {
+        if (ref.current) ref.current.indeterminate = indeterminate;
+    }, [indeterminate]);
+
+    const handleClick = useCallback((e) => {
+        if (stopPropagation) e.stopPropagation();
+        onChange?.(e);
+    }, [onChange, stopPropagation]);
+
+    return (
+        <button
+            ref={ref}
+            type="button"
+            role="checkbox"
+            aria-checked={indeterminate ? 'mixed' : checked}
+            aria-label={ariaLabel}
+            onClick={handleClick}
+            className={`relative flex items-center justify-center w-4 h-4 shrink-0 rounded border-2 transition-all duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
+                checked || indeterminate
+                    ? 'border-primary bg-primary'
+                    : 'border-border/60 bg-card hover:border-primary/70'
+            }`}
+        >
+            {indeterminate ? (
+                <HiOutlineMinus className="w-3 h-3 text-white" strokeWidth={3} />
+            ) : checked ? (
+                <HiOutlineCheck className="w-3 h-3 text-white" strokeWidth={3} />
+            ) : null}
+        </button>
+    );
+});
+Checkbox.displayName = 'Checkbox';
 
 const MealCard = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin, isSelected, onToggleSelect }, ref) => {
     const cfg = TYPE[meal.type] || TYPE.both;
@@ -68,13 +104,11 @@ const MealCard = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin,
         >
             <div className="flex items-start justify-between px-4 pt-3.5">
                 <div className="flex items-center gap-2">
-                    <input
-                        type="checkbox"
+                    <Checkbox
                         checked={isSelected}
                         onChange={handleCheckboxChange}
-                        onClick={(e) => e.stopPropagation()}
-                        className={CHECKBOX_CLS}
                         aria-label={`Select meal on ${date.primary}`}
+                        stopPropagation
                     />
                     <span className={`inline-flex items-center gap-1 px-2 py-[3px] rounded-md text-[10px] font-bold uppercase tracking-widest ${cfg.pill}`}>
                         <Icon className="w-2.5 h-2.5" />
@@ -170,13 +204,11 @@ const MealRow = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin, 
             ref={ref}
             className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl bg-card border hover:bg-muted/20 transition-all duration-150 depth-top overflow-hidden cursor-default ${isSelected ? 'ring-2 ring-primary/40 border-primary/30' : 'border-border/50'}`}
         >
-            <input
-                type="checkbox"
+            <Checkbox
                 checked={isSelected}
                 onChange={handleCheckboxChange}
-                onClick={(e) => e.stopPropagation()}
-                className={CHECKBOX_CLS}
                 aria-label={`Select meal on ${date.primary}`}
+                stopPropagation
             />
 
             <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${cfg.pill}`}>
@@ -264,24 +296,21 @@ const MealRow = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin, 
 }));
 MealRow.displayName = 'MealRow';
 
-const SelectAllCheckbox = React.memo(({ checked, indeterminate, onChange, count }) => {
-    const ref = useRef(null);
-    React.useEffect(() => {
-        if (ref.current) ref.current.indeterminate = indeterminate;
-    }, [indeterminate]);
-
+const SelectAllCheckbox = React.memo(({ checked, indeterminate, onChange, allSelected }) => {
     return (
-        <div className="flex items-center gap-3 px-1 py-2">
-            <input
-                ref={ref}
-                type="checkbox"
+        <div className="flex items-center gap-2.5 px-1 py-1.5">
+            <Checkbox
                 checked={checked}
+                indeterminate={indeterminate}
                 onChange={onChange}
-                className={CHECKBOX_CLS}
-                aria-label={checked ? 'Deselect all meals' : 'Select all meals'}
+                aria-label={allSelected ? 'Deselect all meals' : 'Select all meals'}
+                stopPropagation
             />
-            <span className="text-xs font-medium text-muted-foreground">
-                {checked ? `${count} selected` : 'Select all'}
+            <span
+                onClick={onChange}
+                className="text-xs font-semibold text-foreground/80 select-none cursor-pointer whitespace-nowrap hover:text-foreground transition-colors"
+            >
+                {allSelected ? 'Deselect All' : 'Select All'}
             </span>
         </div>
     );
@@ -303,9 +332,10 @@ const EmptyState = React.memo(() => (
 ));
 EmptyState.displayName = 'EmptyState';
 
-const MealList = ({ meals = [], onEdit, onDelete, isAdmin = false, viewMode = 'grid', selectedIds = new Set(), onToggleSelect = () => {}, onSelectAll = () => {} }) => {
+const MealList = ({ meals = [], onEdit, onDelete, isAdmin = false, viewMode = 'grid', selectedIds = new Set(), onToggleSelect = () => {}, onSelectAll = () => {}, onBulkDeleteRequest = () => {} }) => {
     const allSelected = meals.length > 0 && selectedIds.size === meals.length;
     const someSelected = selectedIds.size > 0 && !allSelected;
+    const hasSelection = selectedIds.size > 0;
 
     const handleSelectAllClick = useCallback(() => {
         onSelectAll(meals);
@@ -316,18 +346,35 @@ const MealList = ({ meals = [], onEdit, onDelete, isAdmin = false, viewMode = 'g
     }
 
     const selectionBar = (
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/30 border border-border/40 mb-3 depth-top">
+        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border mb-3 depth-top transition-all duration-200 ${
+            hasSelection
+                ? 'bg-primary/[0.04] border-primary/15'
+                : 'bg-muted/30 border-border/40'
+        }`}>
             <SelectAllCheckbox
                 checked={allSelected}
                 indeterminate={someSelected}
                 onChange={handleSelectAllClick}
-                count={selectedIds.size}
+                allSelected={allSelected}
             />
-            <div className="flex-1" />
-            {someSelected && (
-                <span className="text-[11px] font-medium text-muted-foreground">
+            {hasSelection && (
+                <span className="text-[11px] font-medium text-foreground/70 whitespace-nowrap">
                     {selectedIds.size} / {meals.length} selected
                 </span>
+            )}
+            {hasSelection && (
+                <>
+                    <div className="flex-1 min-w-[8px] hidden sm:block" />
+                    <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={onBulkDeleteRequest}
+                        className="w-full sm:w-auto justify-center"
+                    >
+                        <HiOutlineTrash className="w-3.5 h-3.5" />
+                        Delete Selected
+                    </Button>
+                </>
             )}
         </div>
     );

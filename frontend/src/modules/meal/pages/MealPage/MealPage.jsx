@@ -5,7 +5,7 @@ import {
     HiOutlinePlus, HiOutlineSquares2X2, HiOutlineListBullet,
     HiOutlineShieldCheck, HiOutlineSparkles,
     HiOutlineXMark, HiOutlineChevronDown, HiOutlineInformationCircle,
-    HiOutlineTrash, HiOutlineClock,
+    HiOutlineClock,
 } from 'react-icons/hi2';
 import { IoFastFoodOutline } from "react-icons/io5";
 import { format } from 'date-fns';
@@ -234,8 +234,6 @@ const MealPage = () => {
         if (!isBulkDeleting) setBulkDeleteTarget(null);
     }, [isBulkDeleting]);
 
-    const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
-
     const filtered = useMemo(() => (meals || []).filter((meal) => {
         if (typeFilter !== 'all' && meal.type !== typeFilter) return false;
         if (dateFrom && new Date(meal.date) < new Date(dateFrom)) return false;
@@ -400,31 +398,6 @@ const MealPage = () => {
                         </div>
                     )}
 
-                    {/* Bulk Action Bar */}
-                    {selectedIds.size > 0 && (
-                        <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-primary/5 border border-primary/15">
-                            <HiOutlineInformationCircle className="w-4 h-4 text-primary flex-shrink-0" />
-                            <span className="text-sm font-medium text-foreground">
-                                {selectedIds.size} selected
-                            </span>
-                            <div className="flex-1" />
-                            <button
-                                onClick={clearSelection}
-                                className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
-                            >
-                                Deselect All
-                            </button>
-                            <Button
-                                variant="danger"
-                                size="sm"
-                                onClick={handleBulkDeleteRequest}
-                            >
-                                <HiOutlineTrash className="w-3.5 h-3.5" />
-                                Delete Selected
-                            </Button>
-                        </div>
-                    )}
-
                     {/* Content */}
                     {isLoading && !isAdmin && (!meals || meals.length === 0) ? (
                         <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -440,6 +413,7 @@ const MealPage = () => {
                             selectedIds={selectedIds}
                             onToggleSelect={handleToggleSelect}
                             onSelectAll={handleSelectAll}
+                            onBulkDeleteRequest={handleBulkDeleteRequest}
                         />
                     ) : (
                         <div className="card-base overflow-hidden">
@@ -495,6 +469,7 @@ const MealPage = () => {
                                             selectedIds={selectedIds}
                                             onToggleSelect={handleToggleSelect}
                                             onSelectAll={handleSelectAll}
+                                            onBulkDeleteRequest={handleBulkDeleteRequest}
                                         />
                                         {!isFiltered && (
                                             <Pagination pagination={pagination} onPageChange={handlePageChange} onLimitChange={handleLimitChange} />
