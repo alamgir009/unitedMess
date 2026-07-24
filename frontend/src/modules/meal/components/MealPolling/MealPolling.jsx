@@ -247,7 +247,7 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
 
                         <div>
                             <h3 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
-                                Dining Roster
+                                Dining Vote
                             </h3>
                             <p className="mt-0.5 text-xs text-muted-foreground">
                                 Preferences for{' '}

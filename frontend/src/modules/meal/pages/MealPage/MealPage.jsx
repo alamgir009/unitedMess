@@ -326,7 +326,7 @@ const MealPage = () => {
                             onClick={() => setIsRosterOpen(p => !p)}
                             className="w-full px-4 py-3.5 sm:px-5 sm:py-4 flex items-center justify-between gap-3 text-left group"
                             aria-expanded={isRosterOpen}
-                            aria-label="Toggle dining roster"
+                            aria-label="Toggle dining vote"
                         >
                             <div className="flex items-center gap-3 min-w-0">
                                 <div className="p-2 sm:p-2.5 rounded-xl bg-primary/10 text-primary">
@@ -334,7 +334,7 @@ const MealPage = () => {
                                 </div>
                                 <div>
                                     <h3 className="text-sm sm:text-base font-semibold text-foreground tracking-tight">
-                                        Dining Roster
+                                        Dining Vote
                                     </h3>
                                     <p className="text-xs text-muted-foreground truncate">
                                         {isRosterOpen ? 'Viewing meal preferences' : 'Tap to view meal preferences'}
