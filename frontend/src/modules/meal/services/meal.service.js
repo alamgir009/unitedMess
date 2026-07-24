@@ -82,6 +82,27 @@ const getMealPollStatus = async (date) => {
     return response.data;
 };
 
+// --- Poll Audit Log Routes (Admin) ---
+
+const AUDIT_API_URL = `${API_URL}/poll/audit`;
+
+const getAuditMonths = async () => {
+    const response = await apiClient.get(`${AUDIT_API_URL}/months`);
+    return response.data;
+};
+
+const getAuditDays = async (monthKey, params = { page: 1, limit: 50 }) => {
+    const query = new URLSearchParams(params).toString();
+    const response = await apiClient.get(`${AUDIT_API_URL}/month/${monthKey}?${query}`);
+    return response.data;
+};
+
+const getAuditLogsByDay = async (dayKey, params = { page: 1, limit: 50 }) => {
+    const query = new URLSearchParams(params).toString();
+    const response = await apiClient.get(`${AUDIT_API_URL}/day/${dayKey}?${query}`);
+    return response.data;
+};
+
 const mealService = {
     getMeals,
     createMeal,
@@ -95,6 +116,9 @@ const mealService = {
     adminDeleteMeal,
     voteMealPoll,
     getMealPollStatus,
+    getAuditMonths,
+    getAuditDays,
+    getAuditLogsByDay,
 };
 
 export default mealService;

@@ -1,5 +1,5 @@
 const asyncHandler = require('../../../utils/helpers/asyncHandler');
-const { mealService } = require('../../../services');
+const { mealService, mealPollAuditService } = require('../../../services');
 const { sendSuccessResponse } = require('../../../utils/helpers/response.helper');
 const pick = require('../../../utils/helpers/pick');
 const AppError = require('../../../utils/errors/AppError');
@@ -194,6 +194,33 @@ const bulkDeleteMeals = asyncHandler(async (req, res) => {
     sendSuccessResponse(res, 200, `${result.deletedCount} meal(s) deleted successfully`, result);
 });
 
+// ─── Audit Log Controllers ──────────────────────────────────────────────────────
+
+const getAuditMonths = asyncHandler(async (req, res) => {
+    const months = await mealPollAuditService.getAuditMonths();
+    sendSuccessResponse(res, 200, 'Audit months retrieved successfully', { months });
+});
+
+const getAuditDays = asyncHandler(async (req, res) => {
+    const { monthKey } = req.params;
+    const options = pick(req.query, ['page', 'limit']);
+    options.page = parseInt(options.page) || 1;
+    options.limit = parseInt(options.limit) || 50;
+
+    const result = await mealPollAuditService.getAuditDays(monthKey, options);
+    sendSuccessResponse(res, 200, 'Audit days retrieved successfully', result);
+});
+
+const getAuditLogsByDay = asyncHandler(async (req, res) => {
+    const { dayKey } = req.params;
+    const options = pick(req.query, ['page', 'limit']);
+    options.page = parseInt(options.page) || 1;
+    options.limit = parseInt(options.limit) || 50;
+
+    const result = await mealPollAuditService.getAuditLogsByDay(dayKey, options);
+    sendSuccessResponse(res, 200, 'Audit logs retrieved successfully', result);
+});
+
 module.exports = {
     createMeal,
     bulkCreateMeals,
@@ -208,4 +235,7 @@ module.exports = {
     adminDeleteMeal,
     voteMealPoll,
     getMealPollStatus,
+    getAuditMonths,
+    getAuditDays,
+    getAuditLogsByDay,
 };

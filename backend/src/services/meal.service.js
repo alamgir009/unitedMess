@@ -5,6 +5,7 @@ const User = require('../models/User.model');
 const AppError = require('../utils/errors/AppError');
 const { parseDate, normalizeDate } = require('../utils/helpers/date.helper');
 const { recalculateAllActiveUsersPayable } = require('./user.service');
+const { writeAuditLog } = require('./mealPollAudit.service');
 
 const mealTypeCountMap = {
   off: 0,
@@ -547,18 +548,39 @@ const verifyUserExists = async (userId) => {
 };
 
 /**
- * Vote for a meal poll on a specific date
+ * Vote for a meal poll on a specific date.
+ * Captures before-state for audit trail before upserting.
  */
 const voteMealPoll = async (userId, pollData) => {
-    const { type, date: dateStr } = pollData;
+    const { type, date: dateStr, requestId } = pollData;
     const date = normalizeDate(parseDate(dateStr));
 
-    // Update or create vote for this specific user on this specific date
+    const existingVote = await MealPoll.findOne({ user: userId, date }).lean();
+    const previousState = existingVote
+        ? { type: existingVote.type, updatedAt: existingVote.updatedAt }
+        : null;
+    const eventType = existingVote
+        ? (existingVote.type === type ? 'vote_unchanged' : 'vote_updated')
+        : 'vote_created';
+
     const poll = await MealPoll.findOneAndUpdate(
-        { user: userId, date: date },
+        { user: userId, date },
         { type, updatedBy: userId },
         { upsert: true, new: true, runValidators: true }
     );
+
+    try {
+        await writeAuditLog({
+            userId,
+            eventType,
+            pollDate: date,
+            previousState,
+            newState: { type, updatedAt: poll.updatedAt },
+            requestId,
+        });
+    } catch (auditErr) {
+        console.error('[MealPollAudit] Failed to write audit log:', auditErr);
+    }
 
     return poll;
 };

@@ -17,6 +17,17 @@ const initialState = {
     isError: false,
     message: '',
     pollStatus: null, // { date, votes, stats }
+    auditMonths: [],
+    auditMonthsLoading: false,
+    auditMonthsError: '',
+    auditDays: [],
+    auditDayPagination: null,
+    auditDaysLoading: false,
+    auditDaysError: '',
+    auditLogs: [],
+    auditLogPagination: null,
+    auditLogsLoading: false,
+    auditLogsError: '',
 };
 
 /**
@@ -174,6 +185,56 @@ export const fetchPollStatus = createAsyncThunk(
     }
 );
 
+// ─── Audit Log Thunks ─────────────────────────────────────────────────────────
+
+export const fetchAuditMonths = createAsyncThunk('meal/fetchAuditMonths', async (_, thunkAPI) => {
+    try {
+        const response = await mealService.getAuditMonths();
+        return response.data;
+    } catch (error) {
+        const message =
+            error.response?.data?.error ||
+            error.response?.data?.message ||
+            error.message ||
+            'Failed to load audit months';
+        return thunkAPI.rejectWithValue(message);
+    }
+});
+
+export const fetchAuditDays = createAsyncThunk(
+    'meal/fetchAuditDays',
+    async ({ monthKey, page = 1, limit = 50 }, thunkAPI) => {
+        try {
+            const response = await mealService.getAuditDays(monthKey, { page, limit });
+            return response.data;
+        } catch (error) {
+            const message =
+                error.response?.data?.error ||
+                error.response?.data?.message ||
+                error.message ||
+                'Failed to load audit days';
+            return thunkAPI.rejectWithValue(message);
+        }
+    }
+);
+
+export const fetchAuditLogsByDay = createAsyncThunk(
+    'meal/fetchAuditLogsByDay',
+    async ({ dayKey, page = 1, limit = 50 }, thunkAPI) => {
+        try {
+            const response = await mealService.getAuditLogsByDay(dayKey, { page, limit });
+            return response.data;
+        } catch (error) {
+            const message =
+                error.response?.data?.error ||
+                error.response?.data?.message ||
+                error.message ||
+                'Failed to load audit logs';
+            return thunkAPI.rejectWithValue(message);
+        }
+    }
+);
+
 // ─── Slice ───────────────────────────────────────────────────────────────────
 
 export const mealSlice = createSlice({
@@ -186,6 +247,19 @@ export const mealSlice = createSlice({
             state.isSuccess = false;
             state.isError   = false;
             state.message   = '';
+        },
+        // Clear child-view audit state when navigating back up the hierarchy
+        resetAuditDays: (state) => {
+            state.auditDays = [];
+            state.auditDayPagination = null;
+            state.auditDaysLoading = false;
+            state.auditDaysError = '';
+        },
+        resetAuditLogs: (state) => {
+            state.auditLogs = [];
+            state.auditLogPagination = null;
+            state.auditLogsLoading = false;
+            state.auditLogsError = '';
         },
     },
     extraReducers: (builder) => {
@@ -342,9 +416,56 @@ export const mealSlice = createSlice({
             .addCase(voteMealPoll.fulfilled, () => {})
             .addCase(voteMealPoll.rejected,  (state, action) => {
                 state.message = action.payload;
+            })
+
+            // ── Audit Months ───────────────────────────────────────────────
+            .addCase(fetchAuditMonths.pending, (state) => {
+                state.auditMonthsLoading = true;
+                state.auditMonthsError = '';
+            })
+            .addCase(fetchAuditMonths.fulfilled, (state, action) => {
+                state.auditMonthsLoading = false;
+                const data = unwrap(action.payload);
+                state.auditMonths = data?.months ?? [];
+            })
+            .addCase(fetchAuditMonths.rejected, (state, action) => {
+                state.auditMonthsLoading = false;
+                state.auditMonthsError = action.payload;
+            })
+
+            // ── Audit Days ─────────────────────────────────────────────────
+            .addCase(fetchAuditDays.pending, (state) => {
+                state.auditDaysLoading = true;
+                state.auditDaysError = '';
+            })
+            .addCase(fetchAuditDays.fulfilled, (state, action) => {
+                state.auditDaysLoading = false;
+                const data = unwrap(action.payload);
+                state.auditDays = data?.days ?? [];
+                state.auditDayPagination = data?.pagination ?? null;
+            })
+            .addCase(fetchAuditDays.rejected, (state, action) => {
+                state.auditDaysLoading = false;
+                state.auditDaysError = action.payload;
+            })
+
+            // ── Audit Logs by Day ──────────────────────────────────────────
+            .addCase(fetchAuditLogsByDay.pending, (state) => {
+                state.auditLogsLoading = true;
+                state.auditLogsError = '';
+            })
+            .addCase(fetchAuditLogsByDay.fulfilled, (state, action) => {
+                state.auditLogsLoading = false;
+                const data = unwrap(action.payload);
+                state.auditLogs = data?.logs ?? [];
+                state.auditLogPagination = data?.pagination ?? null;
+            })
+            .addCase(fetchAuditLogsByDay.rejected, (state, action) => {
+                state.auditLogsLoading = false;
+                state.auditLogsError = action.payload;
             });
     },
 });
 
-export const { reset } = mealSlice.actions;
+export const { reset, resetAuditDays, resetAuditLogs } = mealSlice.actions;
 export default mealSlice.reducer;

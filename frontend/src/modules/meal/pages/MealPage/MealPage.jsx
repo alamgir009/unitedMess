@@ -5,7 +5,7 @@ import {
     HiOutlinePlus, HiOutlineSquares2X2, HiOutlineListBullet,
     HiOutlineShieldCheck, HiOutlineSparkles,
     HiOutlineXMark, HiOutlineChevronDown, HiOutlineInformationCircle,
-    HiOutlineClock,
+    HiOutlineClock, HiOutlineDocumentText,
 } from 'react-icons/hi2';
 import { IoFastFoodOutline } from "react-icons/io5";
 import { format } from 'date-fns';
@@ -19,6 +19,7 @@ import AdminMealView from '../../components/AdminMealView/AdminMealView';
 import MealForm from '../../components/MealForm/MealForm';
 import MealModal from '../../components/MealModal/MealModal';
 import MealPolling from '../../components/MealPolling/MealPolling';
+import AuditLogPanel from '../../components/AuditLogPanel/AuditLogPanel';
 import Pagination from '@/shared/components/ui/Pagination/Pagination';
 import { fetchMeals, createMeal, bulkCreateMeals, updateMeal, deleteMeal, bulkDeleteMeals, reset } from '../../store/meal.slice';
 
@@ -39,6 +40,7 @@ const MealPage = () => {
 
     const [isRosterOpen, setIsRosterOpen] = useState(false);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+    const [isAuditOpen, setIsAuditOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingMeal, setEditingMeal] = useState(null);
     const [viewMode, setViewMode] = useState('grid');
@@ -358,9 +360,55 @@ const MealPage = () => {
                         >
                             <div className="px-4 pb-4 sm:px-5 sm:pb-5 contain-content">
                                 <MealPolling selectedDate={selectedDate} />
+                    </div>
+                    </div>
+                </div>
+
+                    {/* Audit Log (Admin only) */}
+                    {isAdmin && (
+                    <div className="card-base overflow-hidden">
+                        <button
+                            onClick={() => setIsAuditOpen(p => !p)}
+                            className="w-full px-4 py-3.5 sm:px-5 sm:py-4 flex items-center justify-between gap-3 text-left group"
+                            aria-expanded={isAuditOpen}
+                            aria-label="Toggle audit log"
+                        >
+                            <div className="flex items-center gap-3 min-w-0">
+                                <div className="p-2 sm:p-2.5 rounded-xl bg-secondary-400/10 text-secondary-400">
+                                    <HiOutlineDocumentText className="w-4 h-4 sm:w-5 sm:h-5" />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm sm:text-base font-semibold text-foreground tracking-tight">
+                                        Poll Activity Log
+                                    </h3>
+                                    <p className="text-xs text-muted-foreground truncate">
+                                        {isAuditOpen ? 'Viewing audit trail' : 'Tap to view audit trail'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div
+                                className="text-muted-foreground group-hover:text-foreground transition-transform duration-200"
+                                style={{ transform: isAuditOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                            >
+                                <HiOutlineChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />
+                            </div>
+                        </button>
+
+                        <div
+                            className="overflow-hidden transition-all duration-300 ease-out"
+                            style={{
+                                maxHeight: isAuditOpen ? '2000px' : '0px',
+                                opacity: isAuditOpen ? 1 : 0,
+                                transitionTimingFunction: 'cubic-bezier(0.33, 1, 0.68, 1)',
+                            }}
+                        >
+                            <div className="px-4 pb-4 sm:px-5 sm:pb-5 contain-content">
+                                <AuditLogPanel />
                             </div>
                         </div>
                     </div>
+                    )}
 
 
                     {/* Search + Filter Bar */}

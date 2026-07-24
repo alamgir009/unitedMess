@@ -31,6 +31,11 @@ router.route('/admin/users/:userId/meals/:mealId')
     .patch( ...adminOnly, mealController.adminUpdateMeal)
     .delete(...adminOnly, mealController.adminDeleteMeal);
 
+// ── Polling audit log routes (admin only) ─────────────────────────────────────
+router.get('/poll/audit/months',          ...adminOnly, mealController.getAuditMonths);
+router.get('/poll/audit/month/:monthKey', ...adminOnly, mealController.getAuditDays);
+router.get('/poll/audit/day/:dayKey',     ...adminOnly, mealController.getAuditLogsByDay);
+
 // ── Authenticated user routes (collection) ────────────────────────────────────
 router.route('/')
     .get( ...authenticated, mealController.getMeals)

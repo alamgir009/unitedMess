@@ -3,6 +3,7 @@ const tokenService = require('./token.service');
 const emailService = require('./email.service');
 const userService = require('./user.service');
 const mealService = require('./meal.service');
+const mealPollAuditService = require('./mealPollAudit.service');
 const marketService = require('./market.service');
 const paymentService = require('./payment.service');
 const razorpayService = require('./razorpay.service');
@@ -15,6 +16,7 @@ module.exports = {
     emailService,
     userService,
     mealService,
+    mealPollAuditService,
     marketService,
     paymentService,
     razorpayService,
