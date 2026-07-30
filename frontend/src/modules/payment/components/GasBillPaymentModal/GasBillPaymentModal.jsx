@@ -513,11 +513,11 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
               </div>
 
               <div className="flex gap-3 pt-1">
-                <Button variant="glass" size="md" fullWidth onClick={() => setPayStep(1)}>
+                <Button variant="ghost" size="md" fullWidth onClick={() => setPayStep(1)}>
                   <HiOutlineArrowLeft className="w-4 h-4 mr-1" />
                   Back
                 </Button>
-                <Button variant="elevated" size="md" fullWidth onClick={() => setPayStep(3)}>
+                <Button variant="secondary" size="md" fullWidth onClick={() => setPayStep(3)}>
                   Continue
                   <HiOutlineArrowRight className="w-4 h-4 ml-1" />
                 </Button>
@@ -671,14 +671,16 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
                 </div>
               )}
 
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="md"
+                fullWidth
                 onClick={handleBackFromPay}
-                className="mt-2 w-full flex items-center justify-center gap-1.5 h-11 rounded-xl text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground bg-muted/30 hover:bg-muted/60 dark:bg-slate-800/30 dark:hover:bg-slate-800/60 border border-border/40 hover:border-border/80 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                className="mt-2 uppercase tracking-wider text-[11px]"
               >
                 <HiOutlineArrowLeft className="w-3.5 h-3.5" />
                 Back to methods
-              </button>
+              </Button>
             </div>
           )}
 

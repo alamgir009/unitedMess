@@ -170,10 +170,10 @@ html.light {
   --btn-primary-label: #FFFFFF;
   --btn-primary-border: transparent;
 
-  --btn-secondary-from: #EAF0F8;
-  --btn-secondary-to: #D5E0EE;
+  --btn-secondary-from: #C9D5E8;
+  --btn-secondary-to: #B0C0D8;
   --btn-secondary-label: #1A2D5E;
-  --btn-secondary-border: #C5D1E2;
+  --btn-secondary-border: #9AACC4;
 
   --btn-ghost-label: #1A2D5E;
   --btn-ghost-border-from: #1A2D5E;
@@ -232,9 +232,9 @@ html.light {
   --btn-link-from: #1A2D5E;
   --btn-link-to: #2D4A7A;
 
-  --btn-elevated-from: #F8FAFE;
-  --btn-elevated-to: #EFF4FB;
-  --btn-elevated-label: #1A2D5E;
+  --btn-elevated-from: #115E59;
+  --btn-elevated-to: #0D9488;
+  --btn-elevated-label: #FFFFFF;
   --btn-elevated-border: transparent;
 
   --btn-brand-subtle-from: #D1DBEA;
