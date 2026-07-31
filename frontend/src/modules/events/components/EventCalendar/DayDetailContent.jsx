@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { Avatar } from '@/shared/components/ui';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { fmt } from '@/core/utils/helpers/currency.helper';
+import { formatInIST } from '@/core/utils/helpers/date.helper';
 import SlotIcon from './cells/SlotIcon';
 
 const STATUS_BADGE = {
@@ -11,6 +12,19 @@ const STATUS_BADGE = {
   pending_verification: { variant: 'warning', label: 'Verifying' },
   failed: { variant: 'error', label: 'Failed' },
   refunded: { variant: 'neutral', label: 'Refunded' },
+};
+
+const VOTE_EVENT_LABELS = {
+  vote_created: { text: 'Created', color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' },
+  vote_updated: { text: 'Changed', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
+  vote_unchanged: { text: 'No Change', color: 'bg-muted/40 text-muted-foreground border-border/40' },
+};
+
+const VOTE_TYPE_LABELS = {
+  both: 'Both',
+  day: 'Day',
+  night: 'Night',
+  off: 'Off',
 };
 
 const ROW_HEIGHT = 44;
@@ -102,6 +116,22 @@ const DayDetailContent = ({ entries = [], category }) => {
                       {entry.transactionId && ` · ${entry.transactionId.slice(0, 10)}…`}
                     </span>
                   )}
+                  {category === 'votes' && entry.eventType && (
+                    <span className={cn(
+                      'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide',
+                      VOTE_EVENT_LABELS[entry.eventType]?.color || VOTE_EVENT_LABELS.vote_unchanged.color,
+                    )}>
+                      {VOTE_EVENT_LABELS[entry.eventType]?.text || entry.eventType}
+                      {entry.timestamp && (
+                        <>
+                          <span className="opacity-40 font-normal">·</span>
+                          <span className="font-normal normal-case tracking-normal">
+                            {formatInIST(entry.timestamp, 'h:mm a')}
+                          </span>
+                        </>
+                      )}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {(category === 'markets' || category === 'payments') && (
@@ -120,6 +150,13 @@ const DayDetailContent = ({ entries = [], category }) => {
                       )}
                     >
                       {STATUS_BADGE[entry.status]?.label || entry.status}
+                    </span>
+                  )}
+                  {category === 'votes' && entry.previousState?.type && (
+                    <span className="text-[11px] font-medium text-foreground/70 tabular-nums">
+                      {VOTE_TYPE_LABELS[entry.previousState.type] || entry.previousState.type}
+                      <span className="mx-1 text-foreground/40">→</span>
+                      {VOTE_TYPE_LABELS[entry.newState?.type] || entry.newState?.type}
                     </span>
                   )}
                 </div>

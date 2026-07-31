@@ -35,6 +35,7 @@ router.route('/admin/users/:userId/meals/:mealId')
 router.get('/poll/audit/months',          ...adminOnly, mealController.getAuditMonths);
 router.get('/poll/audit/month/:monthKey', ...adminOnly, mealController.getAuditDays);
 router.get('/poll/audit/day/:dayKey',     ...adminOnly, mealController.getAuditLogsByDay);
+router.get('/poll/audit/logs',            ...adminOnly, mealController.getAuditLogsForRange);
 
 // ── Authenticated user routes (collection) ────────────────────────────────────
 router.route('/')

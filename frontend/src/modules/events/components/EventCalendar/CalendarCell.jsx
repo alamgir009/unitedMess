@@ -5,17 +5,20 @@ import DateNumber from './cells/DateNumber';
 import MealCellContent from './cells/MealCellContent';
 import MarketCellContent from './cells/MarketCellContent';
 import PaymentCellContent from './cells/PaymentCellContent';
+import VoteCellContent from './cells/VoteCellContent';
 
 const CELL_CONTENT = {
   meals: MealCellContent,
   markets: MarketCellContent,
   payments: PaymentCellContent,
+  votes: VoteCellContent,
 };
 
 const CATEGORY_KEY = {
   meals: 'meal',
   markets: 'market',
   payments: 'payment',
+  votes: 'vote',
 };
 
 const CalendarCell = ({
@@ -43,6 +46,7 @@ const CalendarCell = ({
   if (data.some((e) => e.type || category === 'meals')) categoryList.add('meals');
   if (data.some((e) => e.amount && category === 'markets')) categoryList.add('markets');
   if (data.some((e) => e.status && category === 'payments')) categoryList.add('payments');
+  if (data.some((e) => e.eventType || category === 'votes')) categoryList.add('votes');
 
   return (
     <div

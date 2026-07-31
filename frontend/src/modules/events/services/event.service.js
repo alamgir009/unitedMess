@@ -28,10 +28,19 @@ const getPayments = async ({ signal, startDate, endDate } = {}) => {
   return response.data;
 };
 
+const getAuditLogs = async ({ signal, startDate, endDate } = {}) => {
+  const params = new URLSearchParams({ page: 1, limit: 9999 });
+  if (startDate) params.set('startDate', startDate);
+  if (endDate)   params.set('endDate', endDate);
+  const response = await apiClient.get(`meals/poll/audit/logs?${params}`, { signal });
+  return response.data;
+};
+
 const eventService = {
   getMeals,
   getMarkets,
   getPayments,
+  getAuditLogs,
 };
 
 export default eventService;

@@ -6,6 +6,7 @@ export const CATEGORIES = {
   MEALS: 'meals',
   MARKETS: 'markets',
   PAYMENTS: 'payments',
+  VOTES: 'votes',
 };
 
 export const SLOTS = {

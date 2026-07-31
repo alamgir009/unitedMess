@@ -5,6 +5,7 @@ const OPTIONS = [
   { value: 'meals', label: 'Meals' },
   { value: 'markets', label: 'Markets' },
   { value: 'payments', label: 'Payments' },
+  { value: 'votes', label: 'Votes' },
 ];
 
 const SegmentedControl = ({ className = '' }) => {

@@ -2,6 +2,7 @@ export const VIEWS = {
   MEALS: 'meals',
   MARKETS: 'markets',
   PAYMENTS: 'payments',
+  VOTES: 'votes',
 };
 
 export const SLOT_LABELS = {

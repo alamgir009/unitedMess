@@ -221,6 +221,16 @@ const getAuditLogsByDay = asyncHandler(async (req, res) => {
     sendSuccessResponse(res, 200, 'Audit logs retrieved successfully', result);
 });
 
+const getAuditLogsForRange = asyncHandler(async (req, res) => {
+    const { startDate, endDate } = req.query;
+    const options = pick(req.query, ['page', 'limit']);
+    options.page = parseInt(options.page) || 1;
+    options.limit = parseInt(options.limit) || 9999;
+
+    const result = await mealPollAuditService.getAuditLogsForRange({ startDate, endDate, ...options });
+    sendSuccessResponse(res, 200, 'Audit logs retrieved successfully', result);
+});
+
 module.exports = {
     createMeal,
     bulkCreateMeals,
@@ -238,4 +248,5 @@ module.exports = {
     getAuditMonths,
     getAuditDays,
     getAuditLogsByDay,
+    getAuditLogsForRange,
 };

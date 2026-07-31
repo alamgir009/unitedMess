@@ -125,9 +125,47 @@ const getAuditLogsByDay = async (dayKey, { page = 1, limit = 50 } = {}) => {
     };
 };
 
+/**
+ * Get full log entries for a date range (used by the Events Calendar "Votes" tab).
+ * Accepts startDate/endDate ISO strings, returns logs sorted newest-first.
+ */
+const getAuditLogsForRange = async ({ startDate, endDate, page = 1, limit = 9999 } = {}) => {
+    const filter = {};
+    if (startDate || endDate) {
+        filter.pollDate = {};
+        if (startDate) filter.pollDate.$gte = new Date(startDate);
+        if (endDate)   filter.pollDate.$lte = new Date(endDate);
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [logs, total] = await Promise.all([
+        MealPollAuditLog.find(filter)
+            .sort({ timestamp: -1 })
+            .skip(skip)
+            .limit(limit)
+            .populate('user', 'name email image')
+            .lean(),
+        MealPollAuditLog.countDocuments(filter),
+    ]);
+
+    return {
+        logs,
+        pagination: {
+            page,
+            limit,
+            total,
+            pages: Math.ceil(total / limit),
+            hasNext: skip + logs.length < total,
+            hasPrev: page > 1,
+        },
+    };
+};
+
 module.exports = {
     writeAuditLog,
     getAuditMonths,
     getAuditDays,
     getAuditLogsByDay,
+    getAuditLogsForRange,
 };

@@ -87,7 +87,7 @@ const DayDetailModal = ({
             <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[var(--border-default)] shrink-0">
               <h2 className="text-base font-semibold text-[var(--text-primary)]">{title}</h2>
               <div className="flex items-center gap-1">
-                {!isEditMode && (
+                {!isEditMode && onEditToggle && (
                   <button
                     onClick={onEditToggle}
                     aria-label="Edit entries"

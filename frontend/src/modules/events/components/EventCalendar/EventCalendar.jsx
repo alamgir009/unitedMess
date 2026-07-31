@@ -23,7 +23,7 @@ const CATEGORY_ENDPOINTS = {
   meals: eventService.getMeals,
   markets: eventService.getMarkets,
   payments: eventService.getPayments,
-
+  votes: eventService.getAuditLogs,
 };
 
 // Backend response shape varies by category:
@@ -34,7 +34,7 @@ const DATA_KEY = {
   meals: 'meals',
   markets: 'markets',
   payments: 'results',
-
+  votes: 'logs',
 };
 
 const extractItems = (envelope, category) => {
@@ -66,7 +66,7 @@ const groupByDateIST = (items) => {
   const map = {};
   if (!items || !Array.isArray(items)) return map;
   for (const item of items) {
-    const dateField = item.date || item.createdAt || item.updatedAt || item.paymentDate;
+    const dateField = item.date || item.pollDate || item.createdAt || item.updatedAt || item.paymentDate;
     const d = dateField ? getISTDateKey(dateField) : 'unknown';
     if (!map[d]) map[d] = [];
     map[d].push(item);
@@ -600,7 +600,7 @@ const EventCalendar = () => {
             onClose={handleCloseDetail}
             title={`${formatInIST(detailDate, 'MMM d, yyyy')}${isEditMode ? ' — Edit' : ''} — ${category}`}
             isEditMode={isEditMode}
-            onEditToggle={handleEditToggle}
+            onEditToggle={category !== 'votes' ? handleEditToggle : undefined}
           >
             {isEditMode ? (
               <Suspense fallback={<div className="flex items-center justify-center py-8"><div className="w-6 h-6 border-2 border-[var(--accent-primary)] border-t-transparent rounded-full animate-spin" /></div>}>
@@ -633,7 +633,7 @@ const EventCalendar = () => {
             onClose={handleCloseDetail}
             title={`${formatInIST(detailDate, 'MMM d, yyyy')}${isEditMode ? ' — Edit' : ''} — ${category}`}
             isEditMode={isEditMode}
-            onEditToggle={handleEditToggle}
+            onEditToggle={category !== 'votes' ? handleEditToggle : undefined}
           >
             {isEditMode ? (
               <Suspense fallback={<div className="flex items-center justify-center py-8"><div className="w-6 h-6 border-2 border-[var(--accent-primary)] border-t-transparent rounded-full animate-spin" /></div>}>
