@@ -23,10 +23,11 @@ const SegmentedControl = ({ className = '' }) => {
       role="tablist"
       aria-label="Calendar event category"
       className={cn(
-        'inline-flex bg-muted p-0.5 rounded-xl gap-0.5 border border-border/40',
-        'shadow-sm',
+        'flex w-full bg-muted p-0.5 rounded-xl border border-border/40',
+        'sm:inline-flex sm:w-auto sm:gap-0.5',
         className,
       )}
+      style={{ boxShadow: 'var(--inset-well)' }}
     >
       {OPTIONS.map(({ value, label }, i) => (
         <button
@@ -35,11 +36,12 @@ const SegmentedControl = ({ className = '' }) => {
           aria-selected={active === value}
           onClick={() => handleChange(value)}
           className={cn(
-            'relative px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-150',
+            'relative flex-1 py-1.5 text-sm font-medium rounded-lg transition-all duration-150',
+            'sm:flex-none sm:px-4',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             active === value
-              ? 'bg-gray-400/30 text-foreground shadow-sm font-semibold shadow-black/[0.03] dark:shadow-black/[0.15]'
-              : 'text-muted-foreground hover:text-foreground',
+              ? 'bg-[var(--bg-elevated)] dark:bg-gray-400/30 text-foreground font-semibold shadow-[var(--inset-well-active)]'
+              : 'text-[var(--text-secondary)] hover:text-foreground',
           )}
         >
           {label}

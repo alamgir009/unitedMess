@@ -40,6 +40,9 @@
   --inset-shadow-strong: inset 0 1px 0 rgba(0,0,0,0.06);
   --inset-shadow-deep: var(--inset-inner);
 
+  --inset-well:         inset 0 1px 3px rgba(0,0,0,0.08);   /* recessed container wells (tab trays, well groups) */
+  --inset-well-active:  0 1px 2px rgba(0,0,0,0.06);         /* lightweight elevation for active item inside well */
+
   /* === SURFACE LAYERS === */
   --surface-base: var(--bg-base);
   --surface-raised: var(--bg-surface);

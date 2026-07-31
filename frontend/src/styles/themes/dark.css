@@ -104,6 +104,9 @@ html.dark {
   --inset-shadow-strong: none;
   --inset-shadow-deep: var(--inset-inner);
 
+  --inset-well:         inset 0 2px 4px rgba(0,0,0,0.30), inset 0 0 0 1px rgba(255,255,255,0.04);  /* recessed container wells */
+  --inset-well-active:  0 1px 2px hsl(0 0% 0% / 0.40);           /* raised active item in well */
+
   /* ── Surface layers (dark mode: elevated/overlay lighter than base for depth pyramid) ── */
   --surface-base: var(--bg-base);
   --surface-raised: var(--bg-surface);

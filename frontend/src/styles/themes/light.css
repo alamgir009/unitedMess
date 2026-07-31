@@ -105,6 +105,9 @@ html.light {
   --inset-shadow-strong: inset 0 1px 0 hsl(0 0% 0% / 0.06);
   --inset-shadow-deep: var(--inset-inner);
 
+  --inset-well:         inset 0 1px 3px rgba(0,0,0,0.08);           /* recessed container wells */
+  --inset-well-active:  0 1px 2px hsl(0 0% 0% / 0.06);              /* raised active item in well */
+
   /* ── Surface layers (semantic mappings) ── */
   --surface-base: var(--bg-base);
   --surface-raised: var(--bg-surface);
