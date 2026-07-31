@@ -18,6 +18,7 @@ const VOTE_EVENT_LABELS = {
   vote_created: { text: 'Created', color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' },
   vote_updated: { text: 'Changed', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
   vote_unchanged: { text: 'No Change', color: 'bg-muted/40 text-muted-foreground border-border/40' },
+  vote_carried_forward: { text: 'Carried', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' },
 };
 
 const VOTE_TYPE_LABELS = {

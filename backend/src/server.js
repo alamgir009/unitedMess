@@ -5,6 +5,7 @@ const connectDB = require('./database/connection');
 const logger = require('./utils/logger/index');
 const { registerInvoiceCron, registerReminderCron } = require('./jobs/cron/invoiceCron');
 const { registerNotificationCron } = require('./jobs/cron/notificationCron');
+const { registerPollCarryForwardCron } = require('./jobs/cron/pollCarryForwardCron');
 const { setupSocketIO, emitToAll } = require('./sockets');
 const pkg = require('../package.json');
 
@@ -19,6 +20,7 @@ connectDB().then(() => {
     registerInvoiceCron();
     registerReminderCron();
     registerNotificationCron();
+    registerPollCarryForwardCron();
 });
 
 // Start server

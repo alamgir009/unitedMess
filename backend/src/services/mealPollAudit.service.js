@@ -8,7 +8,7 @@ const VALID_DAY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
  * Write an audit log entry. Append-only, idempotent via requestId.
  * Returns the created log, or null if idempotent duplicate.
  */
-const writeAuditLog = async ({ userId, eventType, pollDate, previousState, newState, requestId }) => {
+const writeAuditLog = async ({ userId, eventType, pollDate, previousState, newState, requestId, source }) => {
     const ts = new Date();
     const pollDateObj = pollDate instanceof Date ? pollDate : new Date(pollDate);
 
@@ -29,6 +29,7 @@ const writeAuditLog = async ({ userId, eventType, pollDate, previousState, newSt
         timestamp: ts,
         monthKey,
         dayKey,
+        source: source || 'manual',
     };
 
     if (requestId) {

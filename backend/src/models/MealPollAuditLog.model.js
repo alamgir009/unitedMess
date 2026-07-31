@@ -9,7 +9,7 @@ const mealPollAuditLogSchema = new mongoose.Schema(
         },
         eventType: {
             type: String,
-            enum: ['vote_created', 'vote_updated', 'vote_unchanged'],
+            enum: ['vote_created', 'vote_updated', 'vote_unchanged', 'vote_carried_forward'],
             required: true,
         },
         pollDate: {
@@ -54,6 +54,11 @@ const mealPollAuditLogSchema = new mongoose.Schema(
         requestId: {
             type: String,
             sparse: true,
+        },
+        source: {
+            type: String,
+            enum: ['manual', 'carried_forward'],
+            default: 'manual',
         },
     },
     {

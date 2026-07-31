@@ -17,6 +17,11 @@ const mealPollSchema = new mongoose.Schema(
             required: true,
             // We store the date without time to represent the specific day
         },
+        source: {
+            type: String,
+            enum: ['manual', 'carried_forward'],
+            default: 'manual',
+        },
         updatedBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',

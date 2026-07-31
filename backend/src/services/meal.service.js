@@ -565,7 +565,7 @@ const voteMealPoll = async (userId, pollData) => {
 
     const poll = await MealPoll.findOneAndUpdate(
         { user: userId, date },
-        { type, updatedBy: userId },
+        { type, source: 'manual', updatedBy: userId },
         { upsert: true, new: true, runValidators: true }
     );
 
@@ -577,6 +577,7 @@ const voteMealPoll = async (userId, pollData) => {
             previousState,
             newState: { type, updatedAt: poll.updatedAt },
             requestId,
+            source: 'manual',
         });
     } catch (auditErr) {
         console.error('[MealPollAudit] Failed to write audit log:', auditErr);
@@ -629,6 +630,83 @@ const getMealPollStatus = async (dateStr) => {
     };
 };
 
+/**
+ * Carry-forward: for each active user who has NO vote for `targetDate`,
+ * find their latest prior vote and materialize it as a new record for today.
+ * Writes an audit log entry for each carry-forward.
+ *
+ * Idempotent — safe to re-run; skips users who already have a vote for today.
+ * Returns { created, skipped, errors } for logging.
+ */
+const carryForwardVotes = async (targetDate) => {
+    const date = normalizeDate(targetDate);
+
+    // 1. All active approved users
+    const users = await User.find({ isActive: true, userStatus: 'approved' })
+        .select('_id')
+        .lean();
+
+    let created = 0;
+    let skipped = 0;
+    let errors = 0;
+
+    for (const user of users) {
+        try {
+            // 2. Check if user already has a vote for today
+            const todayVote = await MealPoll.findOne({ user: user._id, date }).lean();
+            if (todayVote) {
+                skipped++;
+                continue;
+            }
+
+            // 3. Find latest vote BEFORE today
+            const latestVote = await MealPoll.findOne({
+                user: user._id,
+                date: { $lt: date },
+            })
+                .sort({ date: -1 })
+                .lean();
+
+            if (!latestVote) {
+                skipped++;
+                continue;
+            }
+
+            // 4. Create carry-forward record for today
+            await MealPoll.findOneAndUpdate(
+                { user: user._id, date },
+                {
+                    type: latestVote.type,
+                    source: 'carried_forward',
+                    updatedBy: user._id,
+                },
+                { upsert: true, new: true, runValidators: true }
+            );
+
+            // 5. Write audit log entry
+            try {
+                await writeAuditLog({
+                    userId: user._id,
+                    eventType: 'vote_carried_forward',
+                    pollDate: date,
+                    previousState: null,
+                    newState: { type: latestVote.type, updatedAt: new Date() },
+                    source: 'carried_forward',
+                });
+            } catch (auditErr) {
+                console.error(`[CarryForward] Audit log failed for user ${user._id}:`, auditErr.message);
+            }
+
+            created++;
+        } catch (err) {
+            console.error(`[CarryForward] Failed for user ${user._id}:`, err.message);
+            errors++;
+        }
+    }
+
+    return { created, skipped, errors, total: users.length };
+};
+
 module.exports = {
     createMeal,
     bulkCreateMeals,
@@ -639,5 +717,6 @@ module.exports = {
     bulkDeleteMeals,
     verifyUserExists,
     voteMealPoll,
-    getMealPollStatus
+    getMealPollStatus,
+    carryForwardVotes,
 };
