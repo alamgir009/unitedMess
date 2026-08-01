@@ -16,9 +16,9 @@ const STATUS_BADGE = {
 
 const VOTE_EVENT_LABELS = {
   vote_created: { text: 'Created', color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' },
-  vote_updated: { text: 'Changed', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
+  vote_updated: { text: 'Edited', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
   vote_unchanged: { text: 'No Change', color: 'bg-muted/40 text-muted-foreground border-border/40' },
-  vote_carried_forward: { text: 'Carried', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' },
+  vote_carried_forward: { text: 'Moved', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' },
 };
 
 const VOTE_TYPE_LABELS = {
@@ -43,6 +43,8 @@ const DayDetailContent = ({ entries = [], category }) => {
   const [containerHeight, setContainerHeight] = useState(0);
   const containerRef = useRef(null);
   const currentUser = useSelector((state) => state.auth.user);
+  const isVotes = category === 'votes';
+
   const sorted = useMemo(
     () =>
       [...entries].sort(
@@ -90,6 +92,55 @@ const DayDetailContent = ({ entries = [], category }) => {
             const isFailed = entry.status === 'failed';
             const isCompleted = entry.status === 'completed';
 
+            if (isVotes) {
+              const hasPrev = !!entry.previousState?.type;
+              const eventTypeLabel = VOTE_EVENT_LABELS[entry.eventType] || VOTE_EVENT_LABELS.vote_unchanged;
+
+              return (
+                <div
+                  key={entry._id || idx}
+                  className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 rounded-lg transition-all duration-100 hover:bg-[var(--bg-muted)] hover:shadow-xs"
+                  style={{ height: ROW_HEIGHT }}
+                >
+                  <Avatar src={avatarSrc} name={name} size="sm" className="shrink-0" />
+                  <div className="flex-1 min-w-0 flex items-center gap-1.5 sm:gap-2">
+                    <span className="text-sm font-semibold text-[var(--text-primary)] truncate">
+                      {name}
+                    </span>
+                    <span className={cn(
+                      'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide shrink-0',
+                      eventTypeLabel.color,
+                    )}>
+                      {eventTypeLabel.text}
+                    </span>
+                    {entry.newState?.type && (
+                      <span className={cn(
+                        'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide shrink-0',
+                        VOTE_VALUE_BADGE_COLORS[entry.newState.type] || VOTE_VALUE_BADGE_COLORS.off,
+                      )}>
+                        {VOTE_TYPE_LABELS[entry.newState.type] || entry.newState.type}
+                      </span>
+                    )}
+                    {hasPrev && (
+                      <span className="hidden sm:inline-flex items-center text-[var(--text-muted)] text-sm mx-0.5 md:mx-1">
+                        ← {VOTE_TYPE_LABELS[entry.previousState.type] || entry.previousState.type}
+                      </span>
+                    )}
+                    {hasPrev && (
+                      <span className="sm:hidden text-[var(--text-muted)] text-xs">
+                        ← {VOTE_TYPE_LABELS[entry.previousState.type] || entry.previousState.type}
+                      </span>
+                    )}
+                  </div>
+                  {entry.timestamp && (
+                    <span className="text-[11px] font-medium text-[var(--text-secondary)] tabular-nums shrink-0">
+                      {formatInIST(entry.timestamp, 'h:mm a')}
+                    </span>
+                  )}
+                </div>
+              );
+            }
+
             return (
               <div
                 key={entry._id || idx}
@@ -124,24 +175,6 @@ const DayDetailContent = ({ entries = [], category }) => {
                       {entry.transactionId && ` · ${entry.transactionId.slice(0, 10)}…`}
                     </span>
                   )}
-                  {category === 'votes' && entry.eventType && (
-                    <>
-                      <span className={cn(
-                        'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide',
-                        VOTE_EVENT_LABELS[entry.eventType]?.color || VOTE_EVENT_LABELS.vote_unchanged.color,
-                      )}>
-                        {VOTE_EVENT_LABELS[entry.eventType]?.text || entry.eventType}
-                      </span>
-                      {entry.newState?.type && (
-                        <span className={cn(
-                          'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide',
-                          VOTE_VALUE_BADGE_COLORS[entry.newState.type] || VOTE_VALUE_BADGE_COLORS.off,
-                        )}>
-                          {VOTE_TYPE_LABELS[entry.newState.type] || entry.newState.type}
-                        </span>
-                      )}
-                    </>
-                  )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {(category === 'markets' || category === 'payments') && (
@@ -161,21 +194,6 @@ const DayDetailContent = ({ entries = [], category }) => {
                     >
                       {STATUS_BADGE[entry.status]?.label || entry.status}
                     </span>
-                  )}
-                  {category === 'votes' && (
-                    <div className="flex items-center gap-1.5 text-[11px] font-medium text-foreground/70 tabular-nums">
-                      {entry.previousState?.type && (
-                        <>
-                          <span className="inline-flex items-center gap-1 rounded-md bg-muted/40 px-1.5 py-0.5 font-medium tabular-nums">
-                            {VOTE_TYPE_LABELS[entry.previousState.type] || entry.previousState.type}
-                          </span>
-                          <span className="text-foreground/40">→</span>
-                        </>
-                      )}
-                      {entry.timestamp && (
-                        <span>{formatInIST(entry.timestamp, 'h:mm a')}</span>
-                      )}
-                    </div>
                   )}
                 </div>
               </div>
