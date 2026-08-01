@@ -88,6 +88,7 @@ const DayDetailContent = ({ entries = [], category }) => {
             const idx = startIdx + i;
             const isUnpopulated = entry.user && typeof entry.user === 'string';
             const name = entry.user?.name || entry.userName || (isUnpopulated ? currentUser?.name : 'Unknown');
+            const firstName = name.split(' ')[0];
             const avatarSrc = entry.user?.image || (isUnpopulated ? currentUser?.image : undefined);
             const isFailed = entry.status === 'failed';
             const isCompleted = entry.status === 'completed';
@@ -105,7 +106,7 @@ const DayDetailContent = ({ entries = [], category }) => {
                   <Avatar src={avatarSrc} name={name} size="sm" className="shrink-0" />
                   <div className="flex-1 min-w-0 flex items-center gap-1.5 sm:gap-2">
                     <span className="text-sm font-semibold text-[var(--text-primary)] truncate">
-                      {name}
+                      {firstName}
                     </span>
                     <span className={cn(
                       'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide shrink-0',
