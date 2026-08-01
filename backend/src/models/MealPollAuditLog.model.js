@@ -72,6 +72,12 @@ mealPollAuditLogSchema.index(
     { requestId: 1 },
     { unique: true, sparse: true, partialFilterExpression: { requestId: { $exists: true } } }
 );
+// TTL index: auto-delete audit logs 60 days (~2 months) after pollDate.
+// Also serves as the supporting index for getAuditLogsForRange (pollDate range queries).
+mealPollAuditLogSchema.index(
+    { pollDate: 1 },
+    { expireAfterSeconds: 60 * 60 * 24 * 60 }
+);
 
 const MealPollAuditLog = mongoose.model('MealPollAuditLog', mealPollAuditLogSchema);
 

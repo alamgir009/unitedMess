@@ -28,6 +28,13 @@ const VOTE_TYPE_LABELS = {
   off: 'Off',
 };
 
+const VOTE_VALUE_BADGE_COLORS = {
+  night: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20',
+  day: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+  both: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20',
+  off: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
+};
+
 const ROW_HEIGHT = 44;
 const OVERSCAN = 4;
 
@@ -118,20 +125,22 @@ const DayDetailContent = ({ entries = [], category }) => {
                     </span>
                   )}
                   {category === 'votes' && entry.eventType && (
-                    <span className={cn(
-                      'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide',
-                      VOTE_EVENT_LABELS[entry.eventType]?.color || VOTE_EVENT_LABELS.vote_unchanged.color,
-                    )}>
-                      {VOTE_EVENT_LABELS[entry.eventType]?.text || entry.eventType}
-                      {entry.timestamp && (
-                        <>
-                          <span className="opacity-40 font-normal">·</span>
-                          <span className="font-normal normal-case tracking-normal">
-                            {formatInIST(entry.timestamp, 'h:mm a')}
-                          </span>
-                        </>
+                    <>
+                      <span className={cn(
+                        'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide',
+                        VOTE_EVENT_LABELS[entry.eventType]?.color || VOTE_EVENT_LABELS.vote_unchanged.color,
+                      )}>
+                        {VOTE_EVENT_LABELS[entry.eventType]?.text || entry.eventType}
+                      </span>
+                      {entry.newState?.type && (
+                        <span className={cn(
+                          'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide',
+                          VOTE_VALUE_BADGE_COLORS[entry.newState.type] || VOTE_VALUE_BADGE_COLORS.off,
+                        )}>
+                          {VOTE_TYPE_LABELS[entry.newState.type] || entry.newState.type}
+                        </span>
                       )}
-                    </span>
+                    </>
                   )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -153,12 +162,20 @@ const DayDetailContent = ({ entries = [], category }) => {
                       {STATUS_BADGE[entry.status]?.label || entry.status}
                     </span>
                   )}
-                  {category === 'votes' && entry.previousState?.type && (
-                    <span className="text-[11px] font-medium text-foreground/70 tabular-nums">
-                      {VOTE_TYPE_LABELS[entry.previousState.type] || entry.previousState.type}
-                      <span className="mx-1 text-foreground/40">→</span>
-                      {VOTE_TYPE_LABELS[entry.newState?.type] || entry.newState?.type}
-                    </span>
+                  {category === 'votes' && (
+                    <div className="flex items-center gap-1.5 text-[11px] font-medium text-foreground/70 tabular-nums">
+                      {entry.previousState?.type && (
+                        <>
+                          <span className="inline-flex items-center gap-1 rounded-md bg-muted/40 px-1.5 py-0.5 font-medium tabular-nums">
+                            {VOTE_TYPE_LABELS[entry.previousState.type] || entry.previousState.type}
+                          </span>
+                          <span className="text-foreground/40">→</span>
+                        </>
+                      )}
+                      {entry.timestamp && (
+                        <span>{formatInIST(entry.timestamp, 'h:mm a')}</span>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

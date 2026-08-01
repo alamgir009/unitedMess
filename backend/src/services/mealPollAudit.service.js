@@ -64,8 +64,10 @@ const getAuditDays = async (monthKey, { page = 1, limit = 50 } = {}) => {
         throw new AppError('Invalid monthKey format. Use YYYY-MM', 400);
     }
 
+    const effectiveLimit = Math.min(Math.max(parseInt(limit, 10) || 50, 1), 100);
+    const effectivePage = Math.max(parseInt(page, 10) || 1, 1);
     const filter = { monthKey };
-    const skip = (page - 1) * limit;
+    const skip = (effectivePage - 1) * effectiveLimit;
 
     const [days, total] = await Promise.all([
         MealPollAuditLog.aggregate([
@@ -73,7 +75,7 @@ const getAuditDays = async (monthKey, { page = 1, limit = 50 } = {}) => {
             { $group: { _id: '$dayKey', count: { $sum: 1 } } },
             { $sort: { _id: -1 } },
             { $skip: skip },
-            { $limit: limit },
+            { $limit: effectiveLimit },
             { $project: { _id: 0, dayKey: '$_id', count: 1 } },
         ]),
         MealPollAuditLog.distinct('dayKey', filter).then((d) => d.length),
@@ -82,12 +84,12 @@ const getAuditDays = async (monthKey, { page = 1, limit = 50 } = {}) => {
     return {
         days,
         pagination: {
-            page,
-            limit,
+            page: effectivePage,
+            limit: effectiveLimit,
             total,
-            pages: Math.ceil(total / limit),
+            pages: Math.ceil(total / effectiveLimit),
             hasNext: skip + days.length < total,
-            hasPrev: page > 1,
+            hasPrev: effectivePage > 1,
         },
     };
 };
@@ -100,14 +102,16 @@ const getAuditLogsByDay = async (dayKey, { page = 1, limit = 50 } = {}) => {
         throw new AppError('Invalid dayKey format. Use YYYY-MM-DD', 400);
     }
 
+    const effectiveLimit = Math.min(Math.max(parseInt(limit, 10) || 50, 1), 200);
+    const effectivePage = Math.max(parseInt(page, 10) || 1, 1);
     const filter = { dayKey };
-    const skip = (page - 1) * limit;
+    const skip = (effectivePage - 1) * effectiveLimit;
 
     const [logs, total] = await Promise.all([
         MealPollAuditLog.find(filter)
             .sort({ timestamp: -1 })
             .skip(skip)
-            .limit(limit)
+            .limit(effectiveLimit)
             .populate('user', 'name email image')
             .lean(),
         MealPollAuditLog.countDocuments(filter),
@@ -116,12 +120,12 @@ const getAuditLogsByDay = async (dayKey, { page = 1, limit = 50 } = {}) => {
     return {
         logs,
         pagination: {
-            page,
-            limit,
+            page: effectivePage,
+            limit: effectiveLimit,
             total,
-            pages: Math.ceil(total / limit),
+            pages: Math.ceil(total / effectiveLimit),
             hasNext: skip + logs.length < total,
-            hasPrev: page > 1,
+            hasPrev: effectivePage > 1,
         },
     };
 };
@@ -130,7 +134,12 @@ const getAuditLogsByDay = async (dayKey, { page = 1, limit = 50 } = {}) => {
  * Get full log entries for a date range (used by the Events Calendar "Votes" tab).
  * Accepts startDate/endDate ISO strings, returns logs sorted newest-first.
  */
+const MAX_RANGE_LIMIT = 1000;
+
 const getAuditLogsForRange = async ({ startDate, endDate, page = 1, limit = 9999 } = {}) => {
+    const effectiveLimit = Math.min(Math.max(parseInt(limit, 10) || 9999, 1), MAX_RANGE_LIMIT);
+    const effectivePage = Math.max(parseInt(page, 10) || 1, 1);
+
     const filter = {};
     if (startDate || endDate) {
         filter.pollDate = {};
@@ -138,13 +147,13 @@ const getAuditLogsForRange = async ({ startDate, endDate, page = 1, limit = 9999
         if (endDate)   filter.pollDate.$lte = new Date(endDate);
     }
 
-    const skip = (page - 1) * limit;
+    const skip = (effectivePage - 1) * effectiveLimit;
 
     const [logs, total] = await Promise.all([
         MealPollAuditLog.find(filter)
             .sort({ timestamp: -1 })
             .skip(skip)
-            .limit(limit)
+            .limit(effectiveLimit)
             .populate('user', 'name email image')
             .lean(),
         MealPollAuditLog.countDocuments(filter),
@@ -153,12 +162,12 @@ const getAuditLogsForRange = async ({ startDate, endDate, page = 1, limit = 9999
     return {
         logs,
         pagination: {
-            page,
-            limit,
+            page: effectivePage,
+            limit: effectiveLimit,
             total,
-            pages: Math.ceil(total / limit),
+            pages: Math.ceil(total / effectiveLimit),
             hasNext: skip + logs.length < total,
-            hasPrev: page > 1,
+            hasPrev: effectivePage > 1,
         },
     };
 };

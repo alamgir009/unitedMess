@@ -204,8 +204,6 @@ const getAuditMonths = asyncHandler(async (req, res) => {
 const getAuditDays = asyncHandler(async (req, res) => {
     const { monthKey } = req.params;
     const options = pick(req.query, ['page', 'limit']);
-    options.page = parseInt(options.page) || 1;
-    options.limit = parseInt(options.limit) || 50;
 
     const result = await mealPollAuditService.getAuditDays(monthKey, options);
     sendSuccessResponse(res, 200, 'Audit days retrieved successfully', result);
@@ -214,8 +212,6 @@ const getAuditDays = asyncHandler(async (req, res) => {
 const getAuditLogsByDay = asyncHandler(async (req, res) => {
     const { dayKey } = req.params;
     const options = pick(req.query, ['page', 'limit']);
-    options.page = parseInt(options.page) || 1;
-    options.limit = parseInt(options.limit) || 50;
 
     const result = await mealPollAuditService.getAuditLogsByDay(dayKey, options);
     sendSuccessResponse(res, 200, 'Audit logs retrieved successfully', result);
@@ -224,8 +220,6 @@ const getAuditLogsByDay = asyncHandler(async (req, res) => {
 const getAuditLogsForRange = asyncHandler(async (req, res) => {
     const { startDate, endDate } = req.query;
     const options = pick(req.query, ['page', 'limit']);
-    options.page = parseInt(options.page) || 1;
-    options.limit = parseInt(options.limit) || 9999;
 
     const result = await mealPollAuditService.getAuditLogsForRange({ startDate, endDate, ...options });
     sendSuccessResponse(res, 200, 'Audit logs retrieved successfully', result);
