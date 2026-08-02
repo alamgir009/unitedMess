@@ -38,7 +38,7 @@ const VOTE_VALUE_BADGE_COLORS = {
 const ROW_HEIGHT = 44;
 const OVERSCAN = 4;
 
-const DayDetailContent = ({ entries = [], category }) => {
+const DayDetailContent = ({ entries = [], category, totalMealsCount = 0 }) => {
   const [scrollTop, setScrollTop] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const containerRef = useRef(null);
@@ -69,6 +69,8 @@ const DayDetailContent = ({ entries = [], category }) => {
     return <p className="text-sm text-[var(--text-muted)] py-8 text-center">No entries for this day.</p>;
   }
 
+  const showMealSummary = category === 'meals' && totalMealsCount > 0;
+
   const totalHeight = sorted.length * ROW_HEIGHT;
   const startIdx = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN);
   const endIdx = Math.min(sorted.length, Math.ceil((scrollTop + containerHeight) / ROW_HEIGHT) + OVERSCAN);
@@ -82,6 +84,16 @@ const DayDetailContent = ({ entries = [], category }) => {
       className="relative overflow-y-auto custom-scrollbar"
       style={{ height: '100%', minHeight: 200 }}
     >
+      {showMealSummary && (
+        <div className="flex items-center justify-center gap-1.5 mb-3 py-1.5 px-3 rounded-lg bg-[var(--slot-both)]/8 border border-[var(--slot-both)]/15">
+          <span className="text-xs font-semibold text-[var(--slot-both)]">
+            {totalMealsCount} meal{totalMealsCount !== 1 ? 's' : ''} total
+          </span>
+          <span className="text-xs text-[var(--text-muted)]">
+            ({entries.length} member{entries.length !== 1 ? 's' : ''})
+          </span>
+        </div>
+      )}
       <div style={{ height: totalHeight, position: 'relative' }}>
         <div style={{ position: 'absolute', top: startIdx * ROW_HEIGHT, left: 0, right: 0 }}>
           {visibleRows.map((entry, i) => {

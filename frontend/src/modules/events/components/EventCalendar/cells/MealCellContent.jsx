@@ -8,6 +8,8 @@ const CELL_DENSITY_THRESHOLD = 6;
 
 const SLOT_ORDER = ['day', 'night', 'both'];
 
+const MEAL_COUNT = { day: 1, night: 1, both: 2, off: 0 };
+
 const groupBySlot = (entries) => {
   const groups = {};
   for (const entry of entries) {
@@ -18,13 +20,28 @@ const groupBySlot = (entries) => {
   return groups;
 };
 
-const SlotRow = memo(({ slot, entries }) => {
+const SlotRow = memo(({ slot, entries, showMealCount = true }) => {
   const members = useMemo(() => entries.filter((e) => e.user || e.userName), [entries]);
   const status = entries[0]?.status || 'confirmed';
+  const count = MEAL_COUNT[slot] ?? 0;
 
   return (
     <div className="flex items-center gap-1 h-[22px] min-w-0">
       <SlotIcon slot={slot} status={status} size={14} />
+      {showMealCount && count > 0 && (
+        <span
+          className={cn(
+            'inline-flex items-center justify-center h-3.5 min-w-[14px] px-0.5 rounded-full',
+            'text-[9px] font-bold leading-none tabular-nums',
+            slot === 'day' && 'bg-[var(--slot-day)]/15 text-[var(--slot-day)]',
+            slot === 'night' && 'bg-[var(--slot-night)]/15 text-[var(--slot-night)]',
+            slot === 'both' && 'bg-[var(--slot-both)]/15 text-[var(--slot-both)]',
+          )}
+          aria-label={`${count} meal${count !== 1 ? 's' : ''}`}
+        >
+          {count}
+        </span>
+      )}
       <AvatarCluster members={members} size="sm" maxAvatars={2} />
     </div>
   );
@@ -52,7 +69,7 @@ const SummaryChip = memo(({ entries }) => {
 });
 SummaryChip.displayName = 'SummaryChip';
 
-const MealCellContent = memo(({ entries = [], loading, error, isCompact, onRetry, onCellClick }) => {
+const MealCellContent = memo(({ entries = [], loading, error, isCompact, onRetry, onCellClick, showMealCount = true }) => {
   const groups = useMemo(() => groupBySlot(entries), [entries]);
   const sortedSlots = useMemo(() => SLOT_ORDER.filter((s) => groups[s]), [groups]);
   const totalEntries = entries.length;
@@ -85,6 +102,7 @@ const MealCellContent = memo(({ entries = [], loading, error, isCompact, onRetry
         {sortedSlots.map((slot) => (
           <span
             key={slot}
+            aria-label={showMealCount ? `${slot} slot, ${groups[slot].length} member${groups[slot].length !== 1 ? 's' : ''}, ${MEAL_COUNT[slot]} meal${MEAL_COUNT[slot] !== 1 ? 's' : ''}` : `${slot} slot, ${groups[slot].length} member${groups[slot].length !== 1 ? 's' : ''}`}
             className={cn(
               'inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold',
               'shadow-xs',
@@ -96,6 +114,7 @@ const MealCellContent = memo(({ entries = [], loading, error, isCompact, onRetry
             {slot === 'day' && <HiOutlineSun className="w-2.5 h-2.5" aria-hidden="true" />}
             {slot === 'night' && <HiOutlineMoon className="w-2.5 h-2.5" aria-hidden="true" />}
             {slot === 'both' && <HiOutlineSparkles className="w-2.5 h-2.5" aria-hidden="true" />}
+            {showMealCount && MEAL_COUNT[slot] > 1 && <span className="text-[9px] font-bold opacity-70">×{MEAL_COUNT[slot]}</span>}
             {groups[slot].length}
           </span>
         ))}
@@ -114,7 +133,7 @@ const MealCellContent = memo(({ entries = [], loading, error, isCompact, onRetry
   return (
     <div className="flex flex-col gap-[3px]" onClick={onCellClick} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onCellClick?.(); }}>
       {sortedSlots.map((slot) => (
-        <SlotRow key={slot} slot={slot} entries={groups[slot]} />
+        <SlotRow key={slot} slot={slot} entries={groups[slot]} showMealCount={showMealCount} />
       ))}
     </div>
   );

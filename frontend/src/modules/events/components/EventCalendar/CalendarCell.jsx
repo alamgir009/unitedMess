@@ -33,6 +33,7 @@ const CalendarCell = ({
   currentMonth,
   isDesktop,
   isHovered,
+  showMealCount = true,
 }) => {
   const today = isToday(date);
   const inMonth = isSameMonth(date, currentMonth);
@@ -52,10 +53,10 @@ const CalendarCell = ({
     <div
       role="gridcell"
       aria-label={`${dayLabel}, ${category}: ${totalEntries} entries`}
+      style={{ contentVisibility: 'auto', containIntrinsicSize: '72px' }}
       className={cn(
         'relative flex flex-col p-1 sm:p-1.5 lg:p-2.5',
         'min-h-[72px] sm:min-h-[clamp(80px,11vw,110px)] lg:min-h-[clamp(88px,12vw,120px)]',
-        'border-b border-r border-[var(--border-default)]',
         'bg-[var(--bg-elevated)]',
         'transition-all duration-120 ease-out',
         'cursor-pointer select-none',
@@ -65,8 +66,6 @@ const CalendarCell = ({
         today && 'border-t-[3px] border-t-[var(--accent-primary)]',
         !inMonth && 'opacity-40',
         !today && 'hover:bg-[var(--bg-muted)] hover:shadow-xs hover:-translate-y-px',
-        '[&:nth-child(7n)]:border-r-0',
-        '[&:nth-last-child(-n+7)]:border-b-0',
       )}
       tabIndex={0}
       onClick={() => onCellClick?.(date, data)}
@@ -92,6 +91,7 @@ const CalendarCell = ({
         isCompact={!isDesktop}
         onRetry={onRetry}
         onCellClick={(e) => onCellClick?.(date, data)}
+        showMealCount={showMealCount}
       />
     </div>
   );
@@ -114,6 +114,7 @@ export default memo(CalendarCell, (prev, next) => {
     prev.currentMonth === next.currentMonth &&
     prev.isDesktop === next.isDesktop &&
     prev.isHovered === next.isHovered &&
+    prev.showMealCount === next.showMealCount &&
     isSameData(prev.data, next.data)
   );
 });

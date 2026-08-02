@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import CalendarHeader from './CalendarHeader';
 import CalendarGrid from './CalendarGrid';
+import MealLegend from './MealLegend';
 import DayDetailContent from './DayDetailContent';
 import DayDetailModal from './DayDetailModal';
 import DayDetailSheet from './DayDetailSheet';
@@ -111,6 +112,16 @@ const EventCalendar = () => {
   const user = useSelector((state) => state.auth.user);
   const isAdmin = user?.role === 'admin';
   const [selectedMemberId, setSelectedMemberId] = useState(null);
+
+  const showMealCount = category === 'meals' && (isAdmin ? !!selectedMemberId : true);
+
+  const totalMealsForDate = useMemo(() => {
+    if (category !== 'meals' || currentDateEntries.length === 0) return 0;
+    return currentDateEntries.reduce((sum, e) => {
+      const t = e.type;
+      return sum + (t === 'both' ? 2 : t === 'day' || t === 'night' ? 1 : 0);
+    }, 0);
+  }, [currentDateEntries, category]);
 
   const abortRef = useRef(null);
   const isMobile = useMediaQuery('(max-width: 639px)');
@@ -582,15 +593,19 @@ const EventCalendar = () => {
             selectedMemberId={selectedMemberId}
             onMemberFilter={handleMemberFilter}
           />
-          <CalendarGrid
-            currentMonth={currentMonthDate}
-            dataMap={filteredDataMap}
-            category={category}
-            loadingMap={loadingMap}
-            errorMap={errorMap}
-            onCellClick={handleCellClick}
-            onRetry={handleRetry}
-          />
+          <div className="rounded-xl border border-[var(--border-strong)] shadow-sm overflow-hidden">
+            <CalendarGrid
+              currentMonth={currentMonthDate}
+              dataMap={filteredDataMap}
+              category={category}
+              loadingMap={loadingMap}
+              errorMap={errorMap}
+              onCellClick={handleCellClick}
+              onRetry={handleRetry}
+              showMealCount={showMealCount}
+            />
+            {category === 'meals' && <MealLegend />}
+          </div>
       </div>
 
       {detailDate && (
@@ -624,7 +639,7 @@ const EventCalendar = () => {
                 />
               </Suspense>
             ) : (
-              <DayDetailContent entries={currentDateEntries} category={category} />
+              <DayDetailContent entries={currentDateEntries} category={category} totalMealsCount={totalMealsForDate} />
             )}
           </DayDetailSheet>
         ) : (
@@ -657,7 +672,7 @@ const EventCalendar = () => {
                 />
               </Suspense>
             ) : (
-              <DayDetailContent entries={currentDateEntries} category={category} />
+              <DayDetailContent entries={currentDateEntries} category={category} totalMealsCount={totalMealsForDate} />
             )}
           </DayDetailModal>
         ))}
