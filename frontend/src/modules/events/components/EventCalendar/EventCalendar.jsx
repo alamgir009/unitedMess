@@ -578,7 +578,7 @@ const EventCalendar = () => {
               Track daily events, meals, markets, and payments at a glance across months.
             </p>
           </div>
-          <SegmentedControl />
+          <SegmentedControl isAdmin={isAdmin} />
         </div>
       </header>
 

@@ -8,9 +8,11 @@ const OPTIONS = [
   { value: 'votes', label: 'Votes' },
 ];
 
-const SegmentedControl = ({ className = '' }) => {
+const SegmentedControl = ({ className = '', isAdmin = true }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const active = searchParams.get('view') || 'meals';
+
+  const options = isAdmin ? OPTIONS : OPTIONS.filter((o) => o.value !== 'votes');
 
   const handleChange = (value) => {
     const next = new URLSearchParams(searchParams);
@@ -29,7 +31,7 @@ const SegmentedControl = ({ className = '' }) => {
       )}
       style={{ boxShadow: 'var(--inset-well)' }}
     >
-      {OPTIONS.map(({ value, label }, i) => (
+      {options.map(({ value, label }) => (
         <button
           key={value}
           role="tab"
