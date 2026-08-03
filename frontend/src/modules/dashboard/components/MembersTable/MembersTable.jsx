@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Search,
   CheckCircle2,
@@ -11,6 +11,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Shield,
 } from 'lucide-react';
 import { BiBlock } from 'react-icons/bi';
 import MemberRowActions from './MemberRowActions';
@@ -28,6 +29,37 @@ const AVATAR_GRADIENTS = [
 
 const avatarGradient = (name = '') =>
   AVATAR_GRADIENTS[(name.charCodeAt(0) || 0) % AVATAR_GRADIENTS.length];
+
+/**
+ * Check if a user is billing-exempt for the current period.
+ * A user is exempt if they were activated AFTER the billing period started.
+ * Uses the 10th-day rule: Day 1-10 = previous month is active, Day 11+ = current month.
+ */
+const isUserBillingExempt = (user) => {
+  if (!user?.activatedAt || user?.isActive === false) return false;
+  
+  const now = new Date();
+  const day = now.getUTCDate();
+  const month = now.getUTCMonth() + 1;
+  const year = now.getUTCFullYear();
+  
+  // Calculate billing period start
+  let billingMonth, billingYear;
+  if (day <= 10) {
+    // Previous month is active
+    billingMonth = month === 1 ? 12 : month - 1;
+    billingYear = month === 1 ? year - 1 : year;
+  } else {
+    billingMonth = month;
+    billingYear = year;
+  }
+  
+  const billingPeriodStart = new Date(Date.UTC(billingYear, billingMonth - 1, 1));
+  const activatedAt = new Date(user.activatedAt);
+  
+  // User is exempt if activated AFTER billing period started
+  return activatedAt > billingPeriodStart;
+};
 
 const getDisplayStatus = ({ userStatus, isActive }) => {
   if (userStatus === 'pending') return 'pending';
@@ -69,6 +101,17 @@ const PaymentBadge = ({ status }) => {
     </span>
   );
 };
+
+const ExemptBadge = React.memo(({ isExempt }) => {
+  if (!isExempt) return null;
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-widest bg-info-bg text-info border border-info-border">
+      <Shield size={10} strokeWidth={2.5} />
+      Exempt
+    </span>
+  );
+});
+ExemptBadge.displayName = 'ExemptBadge';
 
 const FILTER_TABS = [
   { id: 'all',     label: 'All'     },
@@ -146,7 +189,11 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
   };
 
   const usersWithStatus = useMemo(
-    () => users.map(u => ({ ...u, _displayStatus: getDisplayStatus(u) })),
+    () => users.map(u => ({
+      ...u,
+      _displayStatus: getDisplayStatus(u),
+      _isExempt: isUserBillingExempt(u)
+    })),
     [users]
   );
 
@@ -293,7 +340,12 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
                     </td>
 
                     <td className="px-5 py-3.5">
-                      <PaymentBadge status={user.paymentStatus ?? user.payment} />
+                      <div className="flex flex-col items-start gap-1.5">
+                        <div className="flex items-center gap-2">
+                          <PaymentBadge status={user.paymentStatus ?? user.payment} />
+                          <ExemptBadge isExempt={user._isExempt} />
+                        </div>
+                      </div>
                     </td>
 
                     <td className="px-5 py-3.5">

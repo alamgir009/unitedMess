@@ -1,13 +1,51 @@
 import { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { createPortal } from 'react-dom';
-import { FiX, FiSave, FiUser, FiMail, FiPhone, FiShield, FiCalendar } from 'react-icons/fi';
+import { FiX, FiSave, FiUser, FiMail, FiPhone, FiShield, FiCalendar, FiAlertTriangle } from 'react-icons/fi';
 import { useModalAnimation } from '@/shared/hooks/useModalAnimation';
 import { fetchUsers } from '../../../members/store/members.slice';
 import toast from 'react-hot-toast';
 import apiClient from '@/services/api/client/apiClient';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { format } from 'date-fns';
+
+/**
+ * Check if today is in the "previous month billing window" (Day 1-10).
+ * If so, activating a member means they won't be billed for the previous month.
+ */
+const isPreviousMonthBillingWindow = () => {
+  const day = new Date().getUTCDate();
+  return day <= 10;
+};
+
+/**
+ * Get the billing period info for display
+ */
+const getBillingInfo = () => {
+  const now = new Date();
+  const day = now.getUTCDate();
+  const month = now.getUTCMonth() + 1;
+  const year = now.getUTCFullYear();
+  
+  if (day <= 10) {
+    // Previous month is active
+    const prevMonth = month === 1 ? 12 : month - 1;
+    const prevYear = month === 1 ? year - 1 : year;
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'];
+    return {
+      isExemptWindow: true,
+      message: `Member will be EXEMPT from ${monthNames[prevMonth - 1]} ${prevYear} billing (activated after billing period started)`,
+      detail: 'This member will NOT be charged for the previous month.'
+    };
+  }
+  
+  return {
+    isExemptWindow: false,
+    message: 'Member will be billed for the current month starting from today.',
+    detail: null
+  };
+};
 
 const AVATAR_COLORS = [
   'from-blue-500 to-indigo-600',
@@ -328,6 +366,24 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
                     </select>
                   </div>
                 </div>
+
+                {/* Billing Exemption Warning */}
+                {formData.isActive && !user.isActive && isPreviousMonthBillingWindow() && (
+                  <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50">
+                    <FiAlertTriangle size={16} className="text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-xs font-bold text-amber-700 dark:text-amber-300">
+                        Billing Exemption Notice
+                      </p>
+                      <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5">
+                        {getBillingInfo().message}
+                      </p>
+                      <p className="text-[10px] text-amber-500 dark:text-amber-500 mt-0.5">
+                        {getBillingInfo().detail}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {formData.userStatus === 'denied' && (
                   <div className="space-y-1">

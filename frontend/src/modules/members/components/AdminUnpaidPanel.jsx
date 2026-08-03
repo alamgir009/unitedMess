@@ -559,6 +559,15 @@ const AdminUnpaidPanel = React.memo(() => {
                         </div>
                     </div>
                 )}
+
+                {/* Exempt Notice */}
+                {!unpaidInvoicesLoading && unpaidInvoices.length === 0 && isLastFinalizedPeriod && (
+                    <div className="px-4 md:px-6 pb-4">
+                        <p className="text-[10px] font-medium text-muted-foreground text-center">
+                            Note: Members activated after the billing period started are exempt from billing for this period.
+                        </p>
+                    </div>
+                )}
             </div>
         </section>
     );

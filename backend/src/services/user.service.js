@@ -9,6 +9,33 @@ const { getBillingPeriod } = require('../utils/helpers/date.helper');
 const notificationService = require('./notification.service');
 const { emitToAll } = require('../sockets');
 
+/**
+ * Check if a user is eligible for billing in a specific month/year.
+ * A user is EXEMPT if they were activated AFTER the billing period started.
+ * This handles the case where admin activates a member on Day 1-10
+ * (previous month is active billing period) — they should NOT be billed
+ * for the previous month.
+ *
+ * @param {Object} user - User document
+ * @param {number} month - 1-indexed billing month
+ * @param {number} year - 4-digit billing year
+ * @returns {boolean} true if user IS eligible (NOT exempt)
+ */
+function isUserEligibleForBilling(user, month, year) {
+    // If user was always active (no activatedAt set), they are eligible
+    if (!user.activatedAt) return true;
+
+    // Calculate billing period start date
+    const billingPeriodStart = new Date(Date.UTC(year, month - 1, 1));
+
+    // If user was activated BEFORE or ON the billing period start, they are eligible
+    const activatedAt = user.activatedAt instanceof Date ? user.activatedAt : new Date(user.activatedAt);
+    if (activatedAt <= billingPeriodStart) return true;
+
+    // User was activated AFTER billing period started — EXEMPT
+    return false;
+}
+
 // Constants
 const PAYMENT_STATUSES = ['pending', 'success', 'failed'];
 const GAS_BILL_STATUSES = ['pending', 'success', 'failed'];
@@ -87,7 +114,49 @@ async function updateProfile(userId, updateData, isAdmin = false) {
             if (role && isAdmin) updates.role = role;
             
             // isActive update – only if requester is admin
-            if (isActive !== undefined && isAdmin) updates.isActive = isActive;
+            // Handles activation/deactivation billing logic
+            if (isActive !== undefined && isAdmin) {
+                const wasInactive = !user.isActive;
+                const isActivating = wasInactive && isActive;
+                const isDeactivating = user.isActive && !isActive;
+
+                if (isActivating) {
+                    // Member being activated — track when they became active
+                    updates.activatedAt = new Date();
+                    updates.isActive = true;
+
+                    // Billing exemption logic:
+                    // If activation happens on Day 1-10 of a month (previous month is active billing period),
+                    // the member should NOT be billed for the previous month.
+                    const { month, year, start } = getBillingPeriod();
+                    const today = new Date();
+                    const day = today.getUTCDate();
+
+                    if (day <= 10) {
+                        // Day 1-10: Previous month is active billing period
+                        // Mark user to skip billing for that period
+                        updates.billingExemptMonth = month;
+                        updates.billingExemptYear = year;
+                    }
+                } else if (isDeactivating) {
+                    // Member being deactivated — track when they became inactive
+                    updates.deactivatedAt = new Date();
+                    updates.isActive = false;
+                    // Clear any billing exemption since they're now inactive
+                    updates.billingExemptMonth = undefined;
+                    updates.billingExemptYear = undefined;
+                } else {
+                    // No change in active state
+                    updates.isActive = isActive;
+
+                    // SAFETY: If user is active but activatedAt was never set
+                    // (e.g. activated before this code was deployed), backfill it
+                    // from createdAt so the billing exemption check works.
+                    if (isActive && !user.activatedAt) {
+                        updates.activatedAt = user.createdAt || new Date();
+                    }
+                }
+            }
 
             // userStatus update - only if requester is admin
             if (userStatus && isAdmin) updates.userStatus = userStatus;
@@ -103,7 +172,17 @@ async function updateProfile(userId, updateData, isAdmin = false) {
         });
 
         // Return updated user (without session)
-        return User.findById(userId).lean();
+        const updatedUser = await User.findById(userId).lean();
+
+        // Fire-and-forget: If member was activated, recalculate their payable amount
+        // and notify all clients that billing data changed. This ensures the frontend
+        // immediately reflects the billing exemption (₹0 for exempt periods).
+        if (updatedUser && updatedUser.isActive) {
+            recalculatePayableForUser(userId).catch(console.error);
+            emitToAll('billing:updated');
+        }
+
+        return updatedUser;
     } finally {
         session.endSession();
     }
@@ -126,6 +205,21 @@ async function approveAccount(userId, approvedBy) {
         .lean();
     const inheritedGasBillCharge = activeUser?.gasBillCharge || 0;
 
+    // Determine billing exemption for newly approved user
+    // If approved on Day 1-10 (previous month is active billing period),
+    // the user should NOT be billed for the previous month.
+    const { month, year } = getBillingPeriod();
+    const today = new Date();
+    const day = today.getUTCDate();
+    const billingExemptUpdate = {};
+
+    if (day <= 10) {
+        // Day 1-10: Previous month is active billing period
+        // New user should be exempt for that period
+        billingExemptUpdate.billingExemptMonth = month;
+        billingExemptUpdate.billingExemptYear = year;
+    }
+
     const result = await User.findOneAndUpdate(
         {
             _id: userId,
@@ -137,7 +231,9 @@ async function approveAccount(userId, approvedBy) {
                 isActive: true,
                 approvedBy,
                 approvedAt: new Date(),
+                activatedAt: new Date(),
                 gasBillCharge: inheritedGasBillCharge,
+                ...billingExemptUpdate,
             },
             $unset: { deleteIfNotApproved: 1 }
         },
@@ -283,6 +379,7 @@ async function deactivateAccount(userId) {
 /**
  * Get all users with optimized pagination and filtering.
  * Important: Returns current billing-month stats (meals/market) for each user.
+ * Excludes billing for users who were activated after the billing period started.
  */
 async function getAllUsers(filters = {}, pagination = {}) {
     const page = Math.max(1, Number(pagination.page) || DEFAULT_PAGE);
@@ -300,6 +397,9 @@ async function getAllUsers(filters = {}, pagination = {}) {
     const billingYear = bp.year;
     const billingMonthName = bp.monthName;
 
+    // Calculate billing period start for exemption check
+    const billingPeriodStart = new Date(Date.UTC(billingYear, billingMonth - 1, 1));
+
     const aggregationPipeline = [
         { $match: query },
         {
@@ -314,6 +414,9 @@ async function getAllUsers(filters = {}, pagination = {}) {
                 payment: 1,
                 gasBill: 1,
                 createdAt: 1,
+                activatedAt: 1,
+                billingExemptMonth: 1,
+                billingExemptYear: 1,
                 // ── Invoice / billing fields ──
                 guestMeal: 1,
                 cookingCharge: 1,
@@ -404,7 +507,7 @@ async function getAllUsers(filters = {}, pagination = {}) {
                             }
                         }
                     },
-                    { $project: { status: 1, _id: 0 } }
+                    { $project: { status: 1, isExempt: 1, _id: 0 } }
                 ],
                 as: 'currentPeriodInvoice'
             }
@@ -437,15 +540,73 @@ async function getAllUsers(filters = {}, pagination = {}) {
                 totalMeal: { $ifNull: [{ $arrayElemAt: ['$mealStats.totalMeal', 0] }, 0] },
                 guestMeal: { $ifNull: [{ $arrayElemAt: ['$mealStats.guestMeal', 0] }, 0] },
                 totalMarketAmount: { $ifNull: [{ $arrayElemAt: ['$marketStats.totalMarket', 0] }, 0] },
+                // Check if user is exempt for this billing period
+                // A user is exempt if ANY of these signals is true:
+                //   1. activatedAt > billingPeriodStart (new code path)
+                //   2. billingExemptMonth/Year match (Day 1-10 activation edge case)
+                //   3. createdAt > billingPeriodStart (account didn't exist)
+                //   4. Zero meals AND zero markets (data-driven: user was inactive)
+                isBillingExempt: {
+                    $let: {
+                        vars: {
+                            totalMeal: { $ifNull: [{ $arrayElemAt: ['$mealStats.totalMeal', 0] }, 0] },
+                            totalMarket: { $ifNull: [{ $arrayElemAt: ['$marketStats.totalMarket', 0] }, 0] }
+                        },
+                        in: {
+                            $cond: {
+                                if: {
+                                    $or: [
+                                        {
+                                            $and: [
+                                                { $ne: ['$activatedAt', null] },
+                                                { $gt: ['$activatedAt', billingPeriodStart] }
+                                            ]
+                                        },
+                                        {
+                                            $and: [
+                                                { $eq: ['$billingExemptMonth', billingMonth] },
+                                                { $eq: ['$billingExemptYear', billingYear] }
+                                            ]
+                                        },
+                                        {
+                                            $gt: ['$createdAt', billingPeriodStart]
+                                        },
+                                        {
+                                            $and: [
+                                                { $eq: ['$$totalMeal', 0] },
+                                                { $eq: ['$$totalMarket', 0] }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                then: true,
+                                else: false
+                            }
+                        }
+                    }
+                },
                 // Derive payment status from the current-period invoice.
                 // The Invoice status is 'paid' only when paidAmount >= totalPayable,
                 // so a partial payment is correctly NOT shown as 'success'.
+                // Exempt invoices are always shown as 'success' (paid).
                 payment: {
                     $cond: {
                         if: {
-                            $and: [
-                                { $gt: [{ $size: '$currentPeriodInvoice' }, 0] },
-                                { $in: [{ $arrayElemAt: ['$currentPeriodInvoice.status', 0] }, ['paid', 'refunded']] }
+                            $or: [
+                                // Exempt user — always show as paid
+                                {
+                                    $and: [
+                                        { $gt: [{ $size: '$currentPeriodInvoice' }, 0] },
+                                        { $eq: [{ $arrayElemAt: ['$currentPeriodInvoice.isExempt', 0] }, true] }
+                                    ]
+                                },
+                                // Non-exempt user with paid/refunded invoice
+                                {
+                                    $and: [
+                                        { $gt: [{ $size: '$currentPeriodInvoice' }, 0] },
+                                        { $in: [{ $arrayElemAt: ['$currentPeriodInvoice.status', 0] }, ['paid', 'refunded']] }
+                                    ]
+                                }
                             ]
                         },
                         then: 'success',
@@ -655,6 +816,26 @@ const recalculatePayableForUser = async (userId) => {
         if (!isValidObjectId(userId)) return;
         const invoiceService = require('./invoice.service');
         const invoice = await invoiceService.getActiveInvoice(userId);
+        
+        // If invoice is exempt, set payable to 0
+        if (invoice.isExempt) {
+            await User.findByIdAndUpdate(userId, {
+                paybleAmountforMeal: 0,
+                lastCalculatedAt: new Date()
+            });
+            return;
+        }
+        
+        // Safety: if the invoice has isExempt flag OR totalPayable is 0,
+        // don't overwrite with a stale non-zero value
+        if (invoice.isExempt || invoice.totalPayable === 0) {
+            await User.findByIdAndUpdate(userId, {
+                paybleAmountforMeal: 0,
+                lastCalculatedAt: new Date()
+            });
+            return;
+        }
+        
         const finalPayable = Math.round(round2(invoice.totalPayable));
         await User.findByIdAndUpdate(userId, {
             paybleAmountforMeal: finalPayable,
@@ -699,11 +880,39 @@ const getPaybleAmountforMeal = async (userId) => {
     // Get Active Invoice (which applies the 10th-day rule and restricts queries to the correct month's start/end dates)
     const invoice = await invoiceService.getActiveInvoice(userId);
     
-    // Get the global mess stats restricted to that same active month
-    const messStats = await invoiceService.calculateMessStats(invoice.month, invoice.year);
-    
+    // Check if user is exempt for this billing period
     const user = await User.findById(userId).lean();
     if (!user) throw new AppError('User not found', 404);
+
+    // If invoice is exempt, return zero amounts
+    if (invoice.isExempt) {
+        return {
+            grandTotalMarketAmount: 0,
+            grandTotalMeal: 0,
+            totalGuestRevenue: 0,
+            adjustedMealCharge: 0,
+            userStats: {
+                totalMeal: 0,
+                totalMarketAmount: 0,
+                waterBill: 0,
+                cookingCharge: 0,
+                costOfMeals: 0,
+                guestMeal: 0,
+                chargePerGuestMeal: user.chargePerGuestMeal || 60,
+                guestMealAmount: 0,
+                platformFee: 0
+            },
+            payableAmount: 0,
+            paymentStatus: 'success',
+            gasBillStatus: 'pending',
+            monthName: invoice.monthName,
+            isExempt: true,
+            exemptReason: invoice.exemptReason
+        };
+    }
+    
+    // Get the global mess stats restricted to that same active month
+    const messStats = await invoiceService.calculateMessStats(invoice.month, invoice.year);
 
     // Calculate if user has paid the gas bill for this active month
     const completedGasAuth = await Payment.findOne({

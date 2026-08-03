@@ -87,25 +87,77 @@ const calculateMessStats = async (month, year) => {
  * Calculate/Get invoice for a specific user and month
  */
 const getInvoice = async (userId, month, year) => {
-    // 1. Check if a finalized invoice already exists
     let invoice = await Invoice.findOne({ user: userId, month, year });
+    const user = await User.findById(userId).lean();
+    if (!user) throw new AppError('User not found', 404);
+
+    // ── BILLING EXEMPTION — 4-signal check ──
+    // If ANY signal is true, user pays ₹0 for this period.
+    const billingPeriodStart = new Date(Date.UTC(year, month - 1, 1));
+    const { start, end } = getMonthRange(month, year);
+
+    // Signal 1 (cheap): activatedAt set after billing period start
+    const exemptByActivatedAt = (
+        user.activatedAt && new Date(user.activatedAt) > billingPeriodStart
+    );
+
+    // Signal 2 (cheap): billingExemptMonth/Year match (set on Day 1-10 activation)
+    const exemptByBillingFlag = (
+        user.billingExemptMonth === month && user.billingExemptYear === year
+    );
+
+    // Signal 3 (cheap): account created after billing period start
+    const exemptByCreatedAt = (
+        new Date(user.createdAt) > billingPeriodStart
+    );
+
+    // Signal 4 (data-driven, only if 1-3 all fail): zero meals + zero markets
+    // = user was inactive during this billing period. Catches pre-deployment
+    // users where activatedAt was never set and billingExempt flags were cleared.
+    let exemptByNoActivity = false;
+    if (!exemptByActivatedAt && !exemptByBillingFlag && !exemptByCreatedAt) {
+        const [{ mealCount = 0 } = {}] = await Meal.aggregate([
+            { $match: { user: new mongoose.Types.ObjectId(userId), date: { $gte: start, $lte: end } } },
+            { $group: { _id: null, mealCount: { $sum: '$mealCount' } } }
+        ]);
+        const [{ totalAmount = 0 } = {}] = await Market.aggregate([
+            { $match: { user: new mongoose.Types.ObjectId(userId), date: { $gte: start, $lte: end } } },
+            { $group: { _id: null, totalAmount: { $sum: '$amount' } } }
+        ]);
+        exemptByNoActivity = (mealCount === 0 && totalAmount === 0);
+    }
+
+    const isExempt = exemptByActivatedAt || exemptByBillingFlag || exemptByCreatedAt || exemptByNoActivity;
+
+    let exemptReason = 'Member was inactive during this billing period';
+    if (exemptByActivatedAt) exemptReason = 'Member activated after billing period started';
+    else if (exemptByBillingFlag) exemptReason = 'Member activated on Day 1-10 — previous month exempt';
+    else if (exemptByCreatedAt) exemptReason = 'Member account did not exist during this billing period';
+    else if (exemptByNoActivity) exemptReason = 'Member has no meal or market activity in this period';
+
+    // ── FINALIZED INVOICE PATH ──
     if (invoice && invoice.isFinalized) {
-        // Always refresh paidAmount from Payment records so even finalized
-        // invoices reflect the latest payments without manual re-finalization.
-        const paid = await calculatePaidAmount(userId, month, year);
-        if (paid !== invoice.paidAmount) {
-            invoice.paidAmount = paid;
-            invoice.status = determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
+        if (isExempt && !invoice.isExempt) {
+            invoice.totalBill = 0;
+            invoice.totalPayable = 0;
+            invoice.paidAmount = 0;
+            invoice.messCost = 0;
+            invoice.mealCount = 0;
+            invoice.guestMealCount = 0;
+            invoice.guestMealRevenue = 0;
+            invoice.marketAmountSpent = 0;
+            invoice.mealRate = 0;
+            invoice.fixedCosts = { cookingCharge: 0, waterBill: 0, gasBillCharge: 0, platformFee: 0 };
+            invoice.isExempt = true;
+            invoice.exemptReason = exemptReason;
+            invoice.status = 'paid';
             await invoice.save();
         }
+
         const invoiceObj = invoice.toObject ? invoice.toObject() : invoice;
         invoiceObj.remainingAmount = Math.max(0, invoiceObj.totalPayable - invoiceObj.paidAmount);
-        // Attach latest completed payment details (scoped by user+month)
         const latestPayment = await Payment.findOne({
-            user: userId,
-            month: invoiceObj.monthName,
-            status: 'completed',
-            type: 'mess_bill',
+            user: userId, month: invoiceObj.monthName, status: 'completed', type: 'mess_bill',
         }).sort({ paymentDate: -1 }).lean();
         if (latestPayment) {
             invoiceObj._paymentMethod = latestPayment.paymentMethod;
@@ -116,18 +168,42 @@ const getInvoice = async (userId, month, year) => {
         return invoiceObj;
     }
 
-    // 2. If not finalized, calculate the current (dynamic) state
-    // Always re-sync paidAmount even for non-finalized invoices so the UI
-    // reflects payments made after the invoice document was created.
+    // ── EXEMPT (non-finalized) PATH ──
+    if (isExempt) {
+        const monthName = new Intl.DateTimeFormat('en-US', {
+            month: 'long', year: 'numeric', timeZone: 'UTC',
+        }).format(new Date(Date.UTC(year, month - 1, 1)));
+
+        const exemptInvoiceData = {
+            user: userId, month, year, monthName,
+            mealCount: 0, guestMealCount: 0, marketAmountSpent: 0, mealRate: 0,
+            messCost: 0, guestMealRevenue: 0,
+            fixedCosts: { cookingCharge: 0, waterBill: 0, gasBillCharge: 0, platformFee: 0 },
+            totalBill: 0, totalPayable: 0, paidAmount: 0,
+            isExempt: true, exemptReason, status: 'paid', isFinalized: false,
+        };
+
+        invoice = await Invoice.findOne({ user: userId, month, year });
+        if (invoice) {
+            if (!invoice.isFinalized) {
+                Object.assign(invoice, exemptInvoiceData);
+                await invoice.save();
+            }
+            const invoiceObj = invoice.toObject ? invoice.toObject() : invoice;
+            invoiceObj.remainingAmount = 0;
+            return invoiceObj;
+        }
+
+        const created = await Invoice.create(exemptInvoiceData);
+        const createdObj = created.toObject();
+        createdObj.remainingAmount = 0;
+        return createdObj;
+    }
+
+    // ── NON-EXEMPT: calculate bill ──
     const livePaidAmount = await calculatePaidAmount(userId, month, year);
-
-    const user = await User.findById(userId).lean();
-    if (!user) throw new AppError('User not found', 404);
-
-    const { start, end } = getMonthRange(month, year);
     const messStats = await calculateMessStats(month, year);
 
-    // Calculate user-specific stats for the month
     const userMeals = await Meal.aggregate([
         { $match: { user: new mongoose.Types.ObjectId(userId), date: { $gte: start, $lte: end } } },
         {
@@ -156,21 +232,14 @@ const getInvoice = async (userId, month, year) => {
     const messCost = uMealCount * messStats.mealRate;
     const guestRevenue = uGuestCount * (user.chargePerGuestMeal || 60);
 
-    // totalBill = messCost + fixedCosts + guestRevenue - marketAmountSpent
     const totalBill = messCost + (user.cookingCharge || 0) + (user.waterBill || 0) + (user.platformFee || 0) + guestRevenue - uMarketSpent;
 
-    // FIX: Use explicit 'en-US' locale — see calculatePaidAmount for rationale
     const monthName = new Intl.DateTimeFormat('en-US', {
-        month: 'long',
-        year: 'numeric',
-        timeZone: 'UTC',
+        month: 'long', year: 'numeric', timeZone: 'UTC',
     }).format(new Date(Date.UTC(year, month - 1, 1)));
 
     const invoiceData = {
-        user: userId,
-        month,
-        year,
-        monthName,
+        user: userId, month, year, monthName,
         mealCount: uMealCount,
         guestMealCount: uGuestCount,
         marketAmountSpent: uMarketSpent,
@@ -189,7 +258,6 @@ const getInvoice = async (userId, month, year) => {
         isFinalized: false
     };
 
-    // Upsert safely: find first to avoid E11000 if an isFinalized:true doc exists but findOneAndUpdate upserts a duplicate
     invoice = await Invoice.findOne({ user: userId, month, year });
     
     if (invoice) {
@@ -198,15 +266,10 @@ const getInvoice = async (userId, month, year) => {
             invoice.status = determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
             await invoice.save();
         }
-        // Attach computed remainingAmount for the UI (not persisted)
         const invoiceObj = invoice.toObject ? invoice.toObject() : invoice;
         invoiceObj.remainingAmount = Math.max(0, invoiceObj.totalPayable - invoiceObj.paidAmount);
-        // Attach latest completed payment details (scoped by user+month)
         const latestPayment = await Payment.findOne({
-            user: userId,
-            month: invoiceObj.monthName,
-            status: 'completed',
-            type: 'mess_bill',
+            user: userId, month: invoiceObj.monthName, status: 'completed', type: 'mess_bill',
         }).sort({ paymentDate: -1 }).lean();
         if (latestPayment) {
             invoiceObj._paymentMethod = latestPayment.paymentMethod;
@@ -221,12 +284,8 @@ const getInvoice = async (userId, month, year) => {
     const created = await Invoice.create(invoiceData);
     const createdObj = created.toObject();
     createdObj.remainingAmount = Math.max(0, createdObj.totalPayable - createdObj.paidAmount);
-    // Attach latest completed payment details (scoped by user+month)
     const latestPayment = await Payment.findOne({
-        user: userId,
-        month: invoiceData.monthName,
-        status: 'completed',
-        type: 'mess_bill',
+        user: userId, month: invoiceData.monthName, status: 'completed', type: 'mess_bill',
     }).sort({ paymentDate: -1 }).lean();
     if (latestPayment) {
         createdObj._paymentMethod = latestPayment.paymentMethod;
@@ -289,14 +348,41 @@ const getUserInvoiceHistory = async (userId) => {
 
 /**
  * Finalize all invoices for a given month
+ * Excludes users who are EXEMPT (activated after billing period started)
  */
 const finalizeMonth = async (month, year) => {
-    const users = await User.find({ isActive: true, userStatus: 'approved' });
+    // Calculate billing period start to check exemption eligibility
+    const billingPeriodStart = new Date(Date.UTC(year, month - 1, 1));
+
+    // Fetch active users and filter out exempt ones
+    const allActiveUsers = await User.find({ isActive: true, userStatus: 'approved' }).lean();
+    
+    // Filter: include only users who were active BEFORE or ON the billing period start
+    // Exclude users who are EXEMPT (activated after billing period started)
+    const eligibleUsers = allActiveUsers.filter(user => {
+        // Signal 1: activatedAt set after billing period start — exempt
+        if (user.activatedAt && new Date(user.activatedAt) > billingPeriodStart) return false;
+        
+        // Signal 2: billingExemptMonth/Year match — exempt
+        if (user.billingExemptMonth === month && user.billingExemptYear === year) return false;
+        
+        // Signal 3: account created after billing period start — exempt
+        if (!user.activatedAt && user.createdAt && new Date(user.createdAt) > billingPeriodStart) return false;
+        
+        // User was active before or on billing period start — eligible
+        return true;
+    });
+
     const results = [];
 
-    for (const user of users) {
-        // Ensure the invoice document exists in the database (getInvoice creates/upserts it)
-        await getInvoice(user._id, month, year);
+    for (const user of eligibleUsers) {
+        // getInvoice applies the full 4-signal exemption check (including
+        // data-driven zero-activity check). If the user is exempt, the
+        // returned invoice will have isExempt: true and totalPayable: 0.
+        const invoiceObj = await getInvoice(user._id, month, year);
+
+        // Skip exempt invoices — they are handled separately below
+        if (invoiceObj.isExempt) continue;
 
         // Find the invoice as a Mongoose document so .save() works
         const invoice = await Invoice.findOne({ user: user._id, month, year });
@@ -307,6 +393,23 @@ const finalizeMonth = async (month, year) => {
 
         invoice.status = determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
 
+        await invoice.save();
+        results.push(invoice.toObject());
+    }
+
+    // Also finalize exempt invoices (they exist but have zero amounts)
+    // These are already marked as isExempt in the database
+    const exemptInvoices = await Invoice.find({
+        month,
+        year,
+        isExempt: true,
+        isFinalized: false
+    });
+
+    for (const invoice of exemptInvoices) {
+        invoice.isFinalized = true;
+        invoice.finalizedAt = new Date();
+        invoice.status = 'paid'; // Exempt invoices are always "paid"
         await invoice.save();
         results.push(invoice.toObject());
     }
@@ -337,6 +440,7 @@ const syncInvoiceStatus = async (invoiceId) => {
  *     (1st of current month → today) so the running counters are accurate.
  *  2. Resets `payment` and `gasBill` flags back to 'pending' so the Members
  *     page correctly reflects the status for the brand-new billing period.
+ *  3. Clears billing exemption flags for users who were exempt in the previous period.
  *
  * Implementation notes:
  *  - Uses a single MongoDB `bulkWrite` for all user updates → O(1) round-trips
@@ -426,6 +530,11 @@ const resetUserStatsAfterFinalization = async () => {
                         gasBill: hasGasPaid ? undefined : 'pending',
                         // ── Recalculate gas bill per user for new cycle ──
                         gasBillCharge: canonicalGasCharge,
+                    },
+                    // ── Clear billing exemption flags for new cycle ──
+                    $unset: {
+                        billingExemptMonth: '',
+                        billingExemptYear: '',
                     }
                 }
             }
@@ -442,6 +551,7 @@ const resetUserStatsAfterFinalization = async () => {
  * Admin only. Used for the "Resolve Unpaid Bills" panel.
  * Shows ALL unpaid/partially paid invoices regardless of finalization status,
  * so the admin always sees outstanding debt without depending on the cron schedule.
+ * EXCLUDES exempt invoices (users activated after billing period started).
  * @param {number} month - 1-indexed month (optional, defaults to previous month)
  * @param {number} year  - full year (optional, defaults to last active billing month)
  */
@@ -458,9 +568,11 @@ const getAdminUnpaidInvoices = async (month, year) => {
     const invoices = await Invoice.find({
         month: Number(month),
         year:  Number(year),
-        status: { $nin: ['paid', 'refunded'] }
+        status: { $nin: ['paid', 'refunded'] },
+        // EXCLUDE exempt invoices — these users were activated after billing period started
+        isExempt: { $ne: true }
     })
-    .populate('user', 'name email image role isActive')
+    .populate('user', 'name email image role isActive activatedAt')
     .sort({ totalPayable: -1 })
     .lean();
 

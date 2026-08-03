@@ -81,6 +81,16 @@ const invoiceSchema = new mongoose.Schema(
         finalizedAt: {
             type: Date,
         },
+        isExempt: {
+            type: Boolean,
+            default: false,
+            comment: "True if user was activated after billing period start — not charged"
+        },
+        exemptReason: {
+            type: String,
+            default: null,
+            comment: "Reason for billing exemption"
+        },
     },
     {
         timestamps: true,
