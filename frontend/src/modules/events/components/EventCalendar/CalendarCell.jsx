@@ -34,6 +34,9 @@ const CalendarCell = ({
   isDesktop,
   isHovered,
   showMealCount = true,
+  isLastRow = false,
+  isFirstInRow = false,
+  isLastInRow = false,
 }) => {
   const today = isToday(date);
   const inMonth = isSameMonth(date, currentMonth);
@@ -53,19 +56,25 @@ const CalendarCell = ({
     <div
       role="gridcell"
       aria-label={`${dayLabel}, ${category}: ${totalEntries} entries`}
-      style={{ contentVisibility: 'auto', containIntrinsicSize: '72px' }}
+      style={{
+        contentVisibility: 'auto',
+        containIntrinsicSize: '72px',
+        borderBottom: '1px solid var(--calendar-border)',
+        borderRight: !isLastInRow ? '1px solid var(--calendar-border)' : 'none',
+      }}
       className={cn(
         'relative flex flex-col p-1 sm:p-1.5 lg:p-2.5',
         'min-h-[72px] sm:min-h-[clamp(80px,11vw,110px)] lg:min-h-[clamp(88px,12vw,120px)]',
-        'bg-[var(--bg-elevated)]',
-        'transition-all duration-120 ease-out',
+        'transition-all duration-150 ease-out',
         'cursor-pointer select-none',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
-        'contain-layout',
-        today && 'bg-[var(--accent-primary)]/8 ring-1 sm:ring-2 ring-[var(--accent-primary)]/15 shadow-sm shadow-[var(--accent-primary)]/10 z-[1]',
-        today && 'border-t-[3px] border-t-[var(--accent-primary)]',
-        !inMonth && 'opacity-40',
-        !today && 'hover:bg-[var(--bg-muted)] hover:shadow-xs hover:-translate-y-px',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent-primary)]',
+        today && 'bg-[var(--calendar-today-bg)] shadow-md shadow-[var(--calendar-today-glow)] z-[1]',
+        today && 'border-t-[3px] border-t-[var(--calendar-today-border)]',
+        weekend && !today && 'bg-[var(--calendar-weekend-bg)]',
+        !weekend && !today && 'bg-[var(--bg-elevated)]',
+        !inMonth && 'bg-[var(--calendar-out-of-month-bg)] opacity-40',
+        !inMonth && 'hover:opacity-60',
+        !today && 'hover:bg-[var(--calendar-cell-hover-bg)] hover:shadow-sm hover:shadow-[var(--calendar-cell-hover-shadow)] hover:-translate-y-px',
       )}
       tabIndex={0}
       onClick={() => onCellClick?.(date, data)}
@@ -115,6 +124,9 @@ export default memo(CalendarCell, (prev, next) => {
     prev.isDesktop === next.isDesktop &&
     prev.isHovered === next.isHovered &&
     prev.showMealCount === next.showMealCount &&
+    prev.isLastRow === next.isLastRow &&
+    prev.isFirstInRow === next.isFirstInRow &&
+    prev.isLastInRow === next.isLastInRow &&
     isSameData(prev.data, next.data)
   );
 });

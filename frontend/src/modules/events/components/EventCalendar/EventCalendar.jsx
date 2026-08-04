@@ -593,7 +593,7 @@ const EventCalendar = () => {
             selectedMemberId={selectedMemberId}
             onMemberFilter={handleMemberFilter}
           />
-          <div className="rounded-xl border border-[var(--border-strong)] shadow-sm overflow-hidden">
+          <div className="rounded-xl border border-[var(--calendar-border)] shadow-sm overflow-hidden bg-[var(--bg-elevated)]">
             <CalendarGrid
               currentMonth={currentMonthDate}
               dataMap={filteredDataMap}

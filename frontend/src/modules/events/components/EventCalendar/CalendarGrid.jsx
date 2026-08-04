@@ -32,21 +32,52 @@ const CalendarGrid = memo(({
     return eachDayOfInterval({ start: startDate, end: endDate });
   }, [currentMonth]);
 
+  const totalRows = Math.ceil(days.length / 7);
+  const lastRowIndex = totalRows - 1;
+
   return (
-    <div className="bg-[var(--bg-elevated)] overflow-hidden">
-      <div className="grid grid-cols-7 gap-px bg-[var(--border-strong)]">
-        {DAY_HEADERS.map((d) => (
+    <div>
+      {/* Header row */}
+      <div className="grid grid-cols-7">
+        {DAY_HEADERS.map((day, idx) => (
           <div
-            key={d}
-            className="text-center text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)] py-2 sm:py-2.5 bg-[var(--bg-muted)]"
+            key={day}
+            className={`
+              text-center py-2.5 sm:py-3
+              ${idx === 0 ? 'rounded-tl-xl' : ''}
+              ${idx === 6 ? 'rounded-tr-xl' : ''}
+            `}
+            style={{
+              background: (day === 'Sun' || day === 'Sat')
+                ? 'var(--calendar-header-weekend-bg)'
+                : 'var(--calendar-header-bg)',
+              borderBottom: '1px solid var(--calendar-border)',
+            }}
           >
-            {d}
+            <span
+              className={`
+                text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.08em]
+                ${(day === 'Sun' || day === 'Sat')
+                  ? 'text-[var(--calendar-header-weekend-text)]'
+                  : 'text-[var(--calendar-header-text)]'
+                }
+              `}
+            >
+              {day}
+            </span>
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-px bg-[var(--border-strong)]">
-        {days.map((day) => {
+
+      {/* Body grid */}
+      <div className="grid grid-cols-7">
+        {days.map((day, idx) => {
           const dateStr = format(day, 'yyyy-MM-dd');
+          const weekRow = Math.floor(idx / 7);
+          const colIdx = idx % 7;
+          const isLastRow = weekRow === lastRowIndex;
+          const isFirstInRow = colIdx === 0;
+          const isLastInRow = colIdx === 6;
 
           return (
             <CalendarCell
@@ -63,6 +94,9 @@ const CalendarGrid = memo(({
               isDesktop={isDesktop}
               isHovered={false}
               showMealCount={showMealCount}
+              isLastRow={isLastRow}
+              isFirstInRow={isFirstInRow}
+              isLastInRow={isLastInRow}
             />
           );
         })}

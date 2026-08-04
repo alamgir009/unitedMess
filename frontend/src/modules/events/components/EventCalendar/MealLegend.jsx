@@ -13,7 +13,13 @@ const MealLegend = memo(() => {
     <div
       role="img"
       aria-label="Meal type legend: Day = 1 Meal, Night = 1 Meal, Both = 2 Meals"
-      className="flex items-center justify-center flex-wrap gap-x-5 gap-y-2 sm:gap-x-6 py-2.5 px-5 sm:px-6 border-t border-[var(--border-default)] bg-[var(--bg-elevated)]"
+      className={cn(
+        'flex items-center justify-center flex-wrap gap-x-5 gap-y-2 sm:gap-x-6',
+        'py-2.5 px-5 sm:px-6',
+        'rounded-b-xl',
+        'border-t border-[var(--calendar-border)]',
+        'bg-[var(--calendar-header-bg)]',
+      )}
     >
       {LEGEND_ITEMS.map(({ slot, Icon, label }) => (
         <div key={slot} className="flex items-center gap-2">
@@ -27,7 +33,7 @@ const MealLegend = memo(() => {
           >
             <Icon className="w-3 h-3" aria-hidden="true" />
           </span>
-          <span className="text-[11px] font-semibold text-[var(--text-secondary)] whitespace-nowrap">{label}</span>
+          <span className="text-[11px] font-semibold text-[var(--calendar-header-text)] whitespace-nowrap">{label}</span>
         </div>
       ))}
     </div>

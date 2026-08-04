@@ -27,10 +27,10 @@ const EntryCountBadge = memo(({ count, isHovered }) => {
   return (
     <span
       className={cn(
-        'inline-flex items-center justify-center h-4 px-1 rounded-full',
-        'text-[10px] font-medium leading-none',
-        'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]',
-        'shadow-xs',
+        'inline-flex items-center justify-center h-4 px-1.5 rounded-full',
+        'text-[10px] font-semibold leading-none',
+        'bg-[var(--accent-primary)]/12 text-[var(--accent-primary)]',
+        'shadow-xs shadow-[var(--accent-primary)]/8',
       )}
       aria-label={`${count} entries`}
     >
@@ -58,10 +58,11 @@ const DateNumber = memo(({
       {today ? (
         <span
           className={cn(
-            'inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full',
+            'inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full',
             'bg-gradient-to-br from-[var(--accent-primary)] to-[var(--brand)] text-white font-bold',
-            'text-[10px] sm:text-xs',
-            'shadow-sm shadow-[var(--accent-primary)]/25 ring-1 ring-white/20 dark:ring-white/10',
+            'text-[11px] sm:text-xs',
+            'shadow-md shadow-[var(--accent-primary)]/30',
+            'ring-2 ring-white/30 dark:ring-white/15',
             'tabular-nums leading-none shrink-0',
           )}
           aria-label={`Today, ${day}`}
@@ -72,9 +73,9 @@ const DateNumber = memo(({
         <span
           className={cn(
             'tabular-nums leading-none text-[11px] sm:text-[13px] lg:text-[15px]',
-            !inMonth && 'text-[var(--text-muted)] opacity-40',
-            inMonth && weekend && 'text-[var(--accent-primary)]/70',
-            inMonth && !weekend && 'font-semibold text-[var(--text-secondary)]',
+            !inMonth && 'text-[var(--text-muted)] opacity-35',
+            inMonth && weekend && 'font-medium text-[var(--calendar-header-weekend-text)]',
+            inMonth && !weekend && 'font-semibold text-[var(--calendar-header-text)]',
           )}
         >
           {day}

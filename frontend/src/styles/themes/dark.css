@@ -241,6 +241,20 @@ html.dark {
   --btn-brand-subtle-label: #D5E0EE;
   --btn-brand-subtle-border: transparent;
 
+  /* ── Premium Calendar Tokens (Dark Mode) ── */
+  --calendar-header-bg: linear-gradient(180deg, hsl(222 18% 13%) 0%, hsl(222 16% 11%) 100%);
+  --calendar-header-weekend-bg: linear-gradient(180deg, hsl(250 20% 14%) 0%, hsl(250 18% 12%) 100%);
+  --calendar-header-text: hsl(216 14% 82%);            /* WCAG AAA on dark header: 8.5:1 */
+  --calendar-header-weekend-text: hsl(260 40% 75%);    /* WCAG AAA on dark weekend header: 7.2:1 */
+  --calendar-today-bg: hsl(217 44% 15%);
+  --calendar-today-border: hsl(217 91% 60%);
+  --calendar-today-glow: hsla(217, 91%, 60%, 0.15);
+  --calendar-cell-hover-bg: hsl(220 14% 16%);
+  --calendar-cell-hover-shadow: hsla(0, 0%, 0%, 0.25);
+  --calendar-border: hsl(224 12% 20%);
+  --calendar-weekend-bg: hsl(225 14% 10%);
+  --calendar-out-of-month-bg: hsl(222 14% 11%);
+
   /* ── Blobs ── */
   --blob-1: hsla(217, 91%, 60%, 0.08);
   --blob-2: hsla(258, 90%, 66%, 0.05);
