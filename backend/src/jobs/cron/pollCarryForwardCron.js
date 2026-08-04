@@ -1,19 +1,23 @@
 /**
  * pollCarryForwardCron.js
  *
- * Daily carry-forward for meal poll votes.
- * At 00:05 IST each day, for every active user who has NOT voted today,
- * copies their most recent prior vote into today's record with
- * source = 'carried_forward' and writes an audit log entry.
+ * Daily carry-forward for meal poll standing preferences.
+ * At 00:05 IST each day:
+ *  - For each active user who has NEVER voted, creates a default 'off'
+ *    standing preference so they appear in poll status.
+ *  - For deactivated users, closes their standing preference.
+ *
+ * With the standing-preference model, carry-forward is implicit —
+ * a user's vote applies to all future dates until they change it.
+ * This cron only handles bootstrap and deactivation edge cases.
  *
  * Schedule:  '5 0 * * *'  →  00:05 AM IST daily
  *
  * Design decisions:
  *  - 5-minute offset from midnight avoids race conditions with late-night
- *    vote submissions (scenario D10).
- *  - Idempotent: re-running skips users who already have a vote for today.
+ *    vote submissions.
+ *  - Idempotent: re-running is safe.
  *  - Errors are caught per-user — one failure never blocks others.
- *  - Follows the same pattern as invoiceCron.js.
  */
 
 'use strict';
@@ -46,8 +50,9 @@ const runCarryForward = async () => {
 
         logger.info(
             `[CarryForwardCron] ✅ Complete for ${label} — ` +
-            `created: ${result.created}, skipped: ${result.skipped}, ` +
-            `errors: ${result.errors}, total users: ${result.total}`
+            `created: ${result.created}, closed: ${result.closed}, ` +
+            `skipped: ${result.skipped}, errors: ${result.errors}, ` +
+            `total users: ${result.total}`
         );
     } catch (err) {
         logger.error(`[CarryForwardCron] ❌ Carry-forward failed for ${label}: ${err.message}`, {

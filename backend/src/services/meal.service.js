@@ -548,34 +548,174 @@ const verifyUserExists = async (userId) => {
 };
 
 /**
- * Vote for a meal poll on a specific date.
- * Captures before-state for audit trail before upserting.
+ * Resolve the effective vote for a given user on a given date.
+ * Uses half-open interval: date <= D AND (effectiveUntil is null OR effectiveUntil > D).
+ *
+ * Returns the MealPoll document or null (caller should treat null as 'off').
+ */
+const resolveEffectiveVote = async (userId, targetDate) => {
+    return MealPoll.findOne({
+        user: userId,
+        date: { $lte: targetDate },
+        $or: [
+            { effectiveUntil: null },
+            { effectiveUntil: { $gt: targetDate } },
+        ],
+    }).sort({ date: -1 }).lean();
+};
+
+/**
+ * Close any open standing preferences for a user that would conflict
+ * with a new vote effective on `effectiveFrom`.
+ *
+ * Atomically sets effectiveUntil on all active records (effectiveUntil: null)
+ * whose date < effectiveFrom. This prevents two simultaneous active preferences.
+ *
+ * Returns the number of records closed.
+ */
+const closePreviousStandingPreferences = async (userId, effectiveFrom) => {
+    const result = await MealPoll.updateMany(
+        {
+            user: userId,
+            effectiveUntil: null,
+            date: { $lt: effectiveFrom },
+        },
+        { $set: { effectiveUntil: effectiveFrom } }
+    );
+    return result.modifiedCount;
+};
+
+/**
+ * Close any open standing preferences for a user that would conflict
+ * with a new vote effective on `effectiveFrom`, including records with
+ * date >= effectiveFrom (same boundary or later).
+ *
+ * Used when re-voting on or after the same effective boundary to ensure
+ * at most one active preference per user.
+ *
+ * Returns the number of records closed.
+ */
+const closeAllStandingPreferences = async (userId, effectiveFrom) => {
+    const result = await MealPoll.updateMany(
+        {
+            user: userId,
+            effectiveUntil: null,
+            date: { $gte: effectiveFrom },
+        },
+        { $set: { effectiveUntil: effectiveFrom } }
+    );
+    return result.modifiedCount;
+};
+
+/**
+ * Vote for a meal poll — creates or updates a standing preference.
+ *
+ * Standing-preference model (effective-dated, half-open intervals):
+ *   - date = effectiveFrom (the date from which this preference is active)
+ *   - effectiveUntil = null (active indefinitely) or the effectiveFrom of the next vote
+ *   - At most one active standing preference per user (unique partial index)
+ *
+ * Idempotent: same choice + same effectiveFrom returns existing record.
+ * Race-safe: unique partial index prevents duplicate active preferences.
+ * Retry-safe: requestId-based audit log idempotency.
+ *
+ * @param {string} userId - The voting user's ID
+ * @param {object} pollData - { type, date, requestId }
+ * @returns {object} The upserted MealPoll document
  */
 const voteMealPoll = async (userId, pollData) => {
     const { type, date: dateStr, requestId } = pollData;
-    const date = normalizeDate(parseDate(dateStr));
+    const effectiveFrom = normalizeDate(parseDate(dateStr));
 
-    const existingVote = await MealPoll.findOne({ user: userId, date }).lean();
-    const previousState = existingVote
-        ? { type: existingVote.type, updatedAt: existingVote.updatedAt }
+    // ── 1. Validate inputs ──────────────────────────────────────────────
+    const validTypes = ['day', 'night', 'both', 'off'];
+    if (!validTypes.includes(type)) {
+        throw new AppError(`Invalid vote type: "${type}". Must be one of: ${validTypes.join(', ')}`, 400);
+    }
+
+    // ── 2. Find current active standing preference ──────────────────────
+    const currentActive = await MealPoll.findOne({
+        user: userId,
+        effectiveUntil: null,
+    }).lean();
+
+    // ── 3. Idempotency: same choice + same effective boundary → no-op ───
+    if (
+        currentActive &&
+        currentActive.type === type &&
+        currentActive.date.getTime() === effectiveFrom.getTime()
+    ) {
+        // Write audit as unchanged for traceability
+        try {
+            await writeAuditLog({
+                userId,
+                eventType: 'vote_unchanged',
+                pollDate: effectiveFrom,
+                previousState: { type: currentActive.type, updatedAt: currentActive.updatedAt },
+                newState: { type: currentActive.type, updatedAt: currentActive.updatedAt },
+                requestId,
+                source: 'manual',
+            });
+        } catch (auditErr) {
+            console.error('[MealPollAudit] Failed to write audit log:', auditErr);
+        }
+        return currentActive;
+    }
+
+    // ── 4. Capture before-state for audit ───────────────────────────────
+    const previousState = currentActive
+        ? { type: currentActive.type, updatedAt: currentActive.updatedAt }
         : null;
-    const eventType = existingVote
-        ? (existingVote.type === type ? 'vote_unchanged' : 'vote_updated')
-        : 'vote_created';
 
-    const poll = await MealPoll.findOneAndUpdate(
-        { user: userId, date },
-        { type, source: 'manual', updatedBy: userId },
+    // ── 5. Close ALL standing preferences on or after effectiveFrom ─────
+    // This handles: re-voting on same boundary, changing vote, etc.
+    await closeAllStandingPreferences(userId, effectiveFrom);
+
+    // Also close any earlier active preferences that haven't been closed
+    // (edge case: old daily records from before migration)
+    await closePreviousStandingPreferences(userId, effectiveFrom);
+
+    // ── 6. Create new standing preference ───────────────────────────────
+    const newPoll = await MealPoll.findOneAndUpdate(
+        { user: userId, date: effectiveFrom },
+        {
+            type,
+            source: 'manual',
+            updatedBy: userId,
+            effectiveUntil: null, // Active standing preference
+        },
         { upsert: true, new: true, runValidators: true }
     );
+
+    // ── 7. Write audit log ──────────────────────────────────────────────
+    let eventType;
+    if (!currentActive) {
+        eventType = 'vote_created';
+    } else {
+        // Close audit for the superseded preference
+        try {
+            await writeAuditLog({
+                userId,
+                eventType: 'vote_preference_closed',
+                pollDate: currentActive.date,
+                previousState: { type: currentActive.type, updatedAt: currentActive.updatedAt },
+                newState: { type, updatedAt: newPoll.updatedAt },
+                requestId,
+                source: 'manual',
+            });
+        } catch (auditErr) {
+            console.error('[MealPollAudit] Failed to write preference_closed audit log:', auditErr);
+        }
+        eventType = 'vote_updated';
+    }
 
     try {
         await writeAuditLog({
             userId,
             eventType,
-            pollDate: date,
+            pollDate: effectiveFrom,
             previousState,
-            newState: { type, updatedAt: poll.updatedAt },
+            newState: { type, updatedAt: newPoll.updatedAt },
             requestId,
             source: 'manual',
         });
@@ -583,11 +723,15 @@ const voteMealPoll = async (userId, pollData) => {
         console.error('[MealPollAudit] Failed to write audit log:', auditErr);
     }
 
-    return poll;
+    return newPoll;
 };
 
 /**
- * Get meal poll status for a specific date (includes carry-over logic)
+ * Get meal poll status for a specific date.
+ * Resolves the effective standing preference for each active user
+ * using half-open interval: date <= D AND (effectiveUntil is null OR effectiveUntil > D).
+ *
+ * Performance: batch-queries all users in one aggregation instead of N+1.
  */
 const getMealPollStatus = async (dateStr) => {
     const targetDate = normalizeDate(parseDate(dateStr));
@@ -597,100 +741,139 @@ const getMealPollStatus = async (dateStr) => {
         .select('name image email')
         .lean();
 
-    // 2. For each user, find their latest vote ON or BEFORE targetDate
-    const pollData = await Promise.all(users.map(async (user) => {
-        const latestVote = await MealPoll.findOne({
-            user: user._id,
-            date: { $lte: targetDate }
-        })
-            .sort({ date: -1 })
-            .lean();
+    if (users.length === 0) {
+        return { date: targetDate, votes: [], stats: { total: 0, day: 0, night: 0, off: 0, both: 0 } };
+    }
 
+    const userIds = users.map(u => u._id);
+
+    // 2. Batch-fetch effective votes for ALL users in one query
+    const effectiveVotes = await MealPoll.aggregate([
+        {
+            $match: {
+                user: { $in: userIds },
+                date: { $lte: targetDate },
+                $or: [
+                    { effectiveUntil: null },
+                    { effectiveUntil: { $gt: targetDate } },
+                ],
+            },
+        },
+        { $sort: { date: -1 } },
+        // Group by user, take the first (most recent) match
+        {
+            $group: {
+                _id: '$user',
+                type: { $first: '$type' },
+                date: { $first: '$date' },
+                updatedAt: { $first: '$updatedAt' },
+            },
+        },
+    ]);
+
+    // 3. Index votes by userId for O(1) lookup
+    const voteMap = new Map();
+    for (const v of effectiveVotes) {
+        voteMap.set(v._id.toString(), v);
+    }
+
+    // 4. Build result: merge users with their effective votes
+    const pollData = users.map((user) => {
+        const vote = voteMap.get(user._id.toString());
         return {
             user,
-            type: latestVote ? latestVote.type : 'off', // Default to 'off' if no vote ever
-            lastUpdated: latestVote ? latestVote.updatedAt : null,
-            voteDate: latestVote ? latestVote.date : null
+            type: vote ? vote.type : 'off',
+            lastUpdated: vote ? vote.updatedAt : null,
+            voteDate: vote ? vote.date : null,
         };
-    }));
+    });
 
-    // 3. Aggregate stats
+    // 5. Aggregate stats
     const stats = {
         total: pollData.length,
         day: pollData.filter(p => p.type === 'day' || p.type === 'both').length,
         night: pollData.filter(p => p.type === 'night' || p.type === 'both').length,
         off: pollData.filter(p => p.type === 'off').length,
-        both: pollData.filter(p => p.type === 'both').length
+        both: pollData.filter(p => p.type === 'both').length,
     };
 
-    return {
-        date: targetDate,
-        votes: pollData,
-        stats
-    };
+    return { date: targetDate, votes: pollData, stats };
 };
 
 /**
- * Carry-forward: for each active user who has NO vote for `targetDate`,
- * find their latest prior vote and materialize it as a new record for today.
- * Writes an audit log entry for each carry-forward.
+ * Carry-forward: ensures every active user has an effective standing preference
+ * covering the target date.
  *
- * Idempotent — safe to re-run; skips users who already have a vote for today.
- * Returns { created, skipped, errors } for logging.
+ * With the standing-preference model, carry-forward is implicit — a user's
+ * standing vote covers all future dates until superseded. This function only
+ * needs to handle:
+ *   1. Users who have NEVER voted → create a default 'off' standing preference
+ *   2. Users whose active preference already covers today → skip (no-op)
+ *   3. Deactivated users → close their standing preference
+ *
+ * Idempotent — safe to re-run.
+ * Returns { created, closed, skipped, errors } for logging.
  */
 const carryForwardVotes = async (targetDate) => {
     const date = normalizeDate(targetDate);
 
-    // 1. All active approved users
-    const users = await User.find({ isActive: true, userStatus: 'approved' })
-        .select('_id')
+    // 1. All approved users (active and inactive)
+    const allUsers = await User.find({ userStatus: 'approved' })
+        .select('_id isActive')
         .lean();
 
     let created = 0;
+    let closed = 0;
     let skipped = 0;
     let errors = 0;
 
-    for (const user of users) {
+    for (const user of allUsers) {
         try {
-            // 2. Check if user already has a vote for today
-            const todayVote = await MealPoll.findOne({ user: user._id, date }).lean();
-            if (todayVote) {
-                skipped++;
-                continue;
-            }
-
-            // 3. Find latest vote BEFORE today
-            const latestVote = await MealPoll.findOne({
+            // 2. Check if user already has an active standing preference
+            const activeVote = await MealPoll.findOne({
                 user: user._id,
-                date: { $lt: date },
-            })
-                .sort({ date: -1 })
-                .lean();
+                effectiveUntil: null,
+            }).lean();
 
-            if (!latestVote) {
+            if (activeVote) {
+                // 3. Active user with existing preference → skip
+                if (user.isActive) {
+                    skipped++;
+                    continue;
+                }
+                // 4. Deactivated user → close their standing preference
+                await MealPoll.updateOne(
+                    { _id: activeVote._id },
+                    { $set: { effectiveUntil: date } }
+                );
+                closed++;
+                continue;
+            }
+
+            // 5. No active preference exists
+            if (!user.isActive) {
+                // Deactivated user with no preference → nothing to do
                 skipped++;
                 continue;
             }
 
-            // 4. Create carry-forward record for today
-            await MealPoll.findOneAndUpdate(
-                { user: user._id, date },
-                {
-                    type: latestVote.type,
-                    source: 'carried_forward',
-                    updatedBy: user._id,
-                },
-                { upsert: true, new: true, runValidators: true }
-            );
+            // 6. Active user who has never voted → create default 'off' preference
+            await MealPoll.create({
+                user: user._id,
+                type: 'off',
+                date: date,
+                effectiveUntil: null,
+                source: 'carried_forward',
+                updatedBy: user._id,
+            });
 
-            // 5. Write audit log entry
             try {
                 await writeAuditLog({
                     userId: user._id,
                     eventType: 'vote_carried_forward',
                     pollDate: date,
                     previousState: null,
-                    newState: { type: latestVote.type, updatedAt: new Date() },
+                    newState: { type: 'off', updatedAt: new Date() },
                     source: 'carried_forward',
                 });
             } catch (auditErr) {
@@ -704,7 +887,7 @@ const carryForwardVotes = async (targetDate) => {
         }
     }
 
-    return { created, skipped, errors, total: users.length };
+    return { created, closed, skipped, errors, total: allUsers.length };
 };
 
 module.exports = {
@@ -719,4 +902,5 @@ module.exports = {
     voteMealPoll,
     getMealPollStatus,
     carryForwardVotes,
+    resolveEffectiveVote,
 };

@@ -19,6 +19,7 @@ const VOTE_EVENT_LABELS = {
   vote_updated: { text: 'Edited', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
   vote_unchanged: { text: 'No Change', color: 'bg-muted/40 text-muted-foreground border-border/40' },
   vote_carried_forward: { text: 'Moved', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' },
+  vote_preference_closed: { text: 'Closed', color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20' },
 };
 
 const VOTE_TYPE_LABELS = {
