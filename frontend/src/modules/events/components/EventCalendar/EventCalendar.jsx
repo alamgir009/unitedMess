@@ -119,7 +119,8 @@ const EventCalendar = () => {
     if (category !== 'meals' || currentDateEntries.length === 0) return 0;
     return currentDateEntries.reduce((sum, e) => {
       const t = e.type;
-      return sum + (t === 'both' ? 2 : t === 'day' || t === 'night' ? 1 : 0);
+      const baseMeals = t === 'both' ? 2 : t === 'day' || t === 'night' ? 1 : 0;
+      return sum + baseMeals + (e.guestCount || 0);
     }, 0);
   }, [currentDateEntries, category]);
 

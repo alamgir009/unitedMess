@@ -178,6 +178,11 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0 }) => {
                   {category === 'meals' && entry.type && (
                     <SlotIcon slot={entry.type} status={entry.status} size={12} />
                   )}
+                  {category === 'meals' && entry.guestCount > 0 && (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 shrink-0">
+                      +{entry.guestCount} guest{entry.guestCount !== 1 ? 's' : ''}
+                    </span>
+                  )}
                   {category === 'markets' && (
                     <span className="text-xs text-[var(--text-muted)] truncate">
                       {entry.items || entry.description || ''}
