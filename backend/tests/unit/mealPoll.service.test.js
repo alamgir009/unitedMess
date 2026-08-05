@@ -32,11 +32,17 @@ const mockMealPoll = {
 const mockUser = {
     find: jest.fn(),
     findById: jest.fn(),
+    findByIdAndUpdate: jest.fn(),
+    bulkWrite: jest.fn(),
 };
 
 const mockMeal = {
+    find: jest.fn(),
+    findOne: jest.fn(),
+    create: jest.fn(),
     updateOne: jest.fn(),
     updateMany: jest.fn(),
+    bulkWrite: jest.fn(),
 };
 
 jest.mock('../../src/models/MealPoll.model', () => mockMealPoll);
@@ -52,6 +58,8 @@ const {
     getMealPollStatus,
     carryForwardVotes,
     resolveEffectiveVote,
+    autoCreateMealsFromVotes,
+    autoCreateMealForUser,
 } = require('../../src/services/meal.service');
 
 // ── Test data ───────────────────────────────────────────────────────────────
@@ -452,6 +460,73 @@ describe('carryForwardVotes', () => {
         expect(r.created).toBe(0);
         expect(r.skipped).toBe(1);
     });
+
+    it('creates carry-forward audit log for active users with Day vote', async () => {
+        mockUser.find.mockReturnValue(mockChain([{ _id: uid, isActive: true }]));
+        mockMealPoll.findOne.mockReturnValue(mockChain({
+            _id: 'cf5', user: uid, type: 'day', date: JUN1, effectiveUntil: null,
+        }));
+
+        const r = await carryForwardVotes(JUN1);
+        expect(r.skipped).toBe(1);
+        expect(r.created).toBe(0);
+        expect(mockMealPoll.create).not.toHaveBeenCalled();
+    });
+
+    it('creates carry-forward audit log for active users with Night vote', async () => {
+        mockUser.find.mockReturnValue(mockChain([{ _id: uid, isActive: true }]));
+        mockMealPoll.findOne.mockReturnValue(mockChain({
+            _id: 'cf6', user: uid, type: 'night', date: JUN1, effectiveUntil: null,
+        }));
+
+        const r = await carryForwardVotes(JUN1);
+        expect(r.skipped).toBe(1);
+        expect(r.created).toBe(0);
+    });
+
+    it('creates carry-forward audit log for active users with Both vote', async () => {
+        mockUser.find.mockReturnValue(mockChain([{ _id: uid, isActive: true }]));
+        mockMealPoll.findOne.mockReturnValue(mockChain({
+            _id: 'cf7', user: uid, type: 'both', date: JUN1, effectiveUntil: null,
+        }));
+
+        const r = await carryForwardVotes(JUN1);
+        expect(r.skipped).toBe(1);
+        expect(r.created).toBe(0);
+    });
+
+    it('creates carry-forward audit log for active users with Off vote', async () => {
+        mockUser.find.mockReturnValue(mockChain([{ _id: uid, isActive: true }]));
+        mockMealPoll.findOne.mockReturnValue(mockChain({
+            _id: 'cf8', user: uid, type: 'off', date: JUN1, effectiveUntil: null,
+        }));
+
+        const r = await carryForwardVotes(JUN1);
+        expect(r.skipped).toBe(1);
+        expect(r.created).toBe(0);
+    });
+
+    it('handles mixed active and inactive users correctly', async () => {
+        mockUser.find.mockReturnValue(mockChain([
+            { _id: uid, isActive: true },
+            { _id: uid2, isActive: false },
+        ]));
+
+        // uid has active vote, uid2 has active vote (but is deactivated)
+        mockMealPoll.findOne
+            .mockReturnValueOnce(mockChain({
+                _id: 'cf9a', user: uid, type: 'day', date: JUN1, effectiveUntil: null,
+            }))
+            .mockReturnValueOnce(mockChain({
+                _id: 'cf9b', user: uid2, type: 'night', date: JUN1, effectiveUntil: null,
+            }));
+        mockMealPoll.updateOne.mockResolvedValue({ modifiedCount: 1 });
+
+        const r = await carryForwardVotes(JUN1);
+        expect(r.skipped).toBe(1); // uid (active with vote)
+        expect(r.closed).toBe(1);  // uid2 (deactivated)
+        expect(r.created).toBe(0);
+    });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -597,5 +672,277 @@ describe('Meal count mapping', () => {
 
     it('Off resolves to day=0, night=0', () => {
         expect(mealTypeCountMap.off).toBe(0);
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// autoCreateMealsFromVotes — batch meal creation from votes
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('autoCreateMealsFromVotes', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('creates meals for all active users based on their votes', async () => {
+        mockUser.find.mockReturnValue(mockChain([{ _id: uid }, { _id: uid2 }]));
+        mockMealPoll.aggregate.mockResolvedValue([
+            { _id: uid, type: 'day' },
+            { _id: uid2, type: 'both' },
+        ]);
+        mockMeal.find.mockReturnValue(mockChain([]));
+        mockMeal.bulkWrite.mockResolvedValue({ insertedCount: 2, modifiedCount: 0 });
+        mockUser.bulkWrite.mockResolvedValue({ modifiedCount: 2 });
+
+        const r = await autoCreateMealsFromVotes(JUN1);
+        expect(r.created).toBe(2);
+        expect(r.updated).toBe(0);
+        expect(r.skipped).toBe(0);
+        expect(r.total).toBe(2);
+    });
+
+    it('skips users who already have correct meal type', async () => {
+        mockUser.find.mockReturnValue(mockChain([{ _id: uid }]));
+        mockMealPoll.aggregate.mockResolvedValue([
+            { _id: uid, type: 'day' },
+        ]);
+        mockMeal.find.mockReturnValue(mockChain([
+            { user: uid, type: 'day', mealCount: 1 },
+        ]));
+
+        const r = await autoCreateMealsFromVotes(JUN1);
+        expect(r.created).toBe(0);
+        expect(r.skipped).toBe(1);
+        expect(r.total).toBe(1);
+    });
+
+    it('updates meals when vote type changed', async () => {
+        mockUser.find.mockReturnValue(mockChain([{ _id: uid }]));
+        mockMealPoll.aggregate.mockResolvedValue([
+            { _id: uid, type: 'both' },
+        ]);
+        mockMeal.find.mockReturnValue(mockChain([
+            { user: uid, type: 'day', mealCount: 1 },
+        ]));
+        mockMeal.bulkWrite.mockResolvedValue({ modifiedCount: 1 });
+        mockUser.bulkWrite.mockResolvedValue({ modifiedCount: 1 });
+
+        const r = await autoCreateMealsFromVotes(JUN1);
+        expect(r.created).toBe(0);
+        expect(r.updated).toBe(1);
+        expect(r.skipped).toBe(0);
+    });
+
+    it('defaults to off for users with no vote', async () => {
+        mockUser.find.mockReturnValue(mockChain([{ _id: uid }]));
+        mockMealPoll.aggregate.mockResolvedValue([]);
+        mockMeal.find.mockReturnValue(mockChain([]));
+        mockMeal.bulkWrite.mockResolvedValue({ insertedCount: 1, modifiedCount: 0 });
+        mockUser.bulkWrite.mockResolvedValue({ modifiedCount: 1 });
+
+        const r = await autoCreateMealsFromVotes(JUN1);
+        expect(r.created).toBe(1);
+        // Verify the insert doc has type=off
+        const bulkWriteCall = mockMeal.bulkWrite.mock.calls[0][0];
+        expect(bulkWriteCall[0].insertOne.document.type).toBe('off');
+        expect(bulkWriteCall[0].insertOne.document.mealCount).toBe(0);
+    });
+
+    it('returns early for zero active users', async () => {
+        mockUser.find.mockReturnValue(mockChain([]));
+
+        const r = await autoCreateMealsFromVotes(JUN1);
+        expect(r.created).toBe(0);
+        expect(r.total).toBe(0);
+        expect(mockMealPoll.aggregate).not.toHaveBeenCalled();
+    });
+
+    it('is idempotent — re-running produces same state', async () => {
+        mockUser.find.mockReturnValue(mockChain([{ _id: uid }]));
+        mockMealPoll.aggregate.mockResolvedValue([
+            { _id: uid, type: 'day' },
+        ]);
+        // First run: no existing meal
+        mockMeal.find
+            .mockReturnValueOnce(mockChain([]))
+            .mockReturnValueOnce(mockChain([{ user: uid, type: 'day', mealCount: 1 }]));
+        mockMeal.bulkWrite.mockResolvedValue({ insertedCount: 1, modifiedCount: 0 });
+        mockUser.bulkWrite.mockResolvedValue({ modifiedCount: 1 });
+
+        await autoCreateMealsFromVotes(JUN1);
+
+        // Second run: meal exists with correct type
+        const r2 = await autoCreateMealsFromVotes(JUN1);
+        expect(r2.skipped).toBe(1);
+        expect(r2.created).toBe(0);
+    });
+
+    it('handles mixed votes correctly', async () => {
+        mockUser.find.mockReturnValue(mockChain([
+            { _id: uid },
+            { _id: uid2 },
+        ]));
+        mockMealPoll.aggregate.mockResolvedValue([
+            { _id: uid, type: 'day' },
+            { _id: uid2, type: 'night' },
+        ]);
+        mockMeal.find.mockReturnValue(mockChain([]));
+        mockMeal.bulkWrite.mockResolvedValue({ insertedCount: 2, modifiedCount: 0 });
+        mockUser.bulkWrite.mockResolvedValue({ modifiedCount: 2 });
+
+        const r = await autoCreateMealsFromVotes(JUN1);
+        expect(r.created).toBe(2);
+        expect(r.total).toBe(2);
+
+        // Verify both inserts have correct types
+        const bulkWriteCall = mockMeal.bulkWrite.mock.calls[0][0];
+        const types = bulkWriteCall.map(c => c.insertOne.document.type).sort();
+        expect(types).toEqual(['day', 'night']);
+    });
+
+    it('creates off meal for users with off vote', async () => {
+        mockUser.find.mockReturnValue(mockChain([{ _id: uid }]));
+        mockMealPoll.aggregate.mockResolvedValue([
+            { _id: uid, type: 'off' },
+        ]);
+        mockMeal.find.mockReturnValue(mockChain([]));
+        mockMeal.bulkWrite.mockResolvedValue({ insertedCount: 1, modifiedCount: 0 });
+        mockUser.bulkWrite.mockResolvedValue({ modifiedCount: 1 });
+
+        const r = await autoCreateMealsFromVotes(JUN1);
+        expect(r.created).toBe(1);
+
+        const bulkWriteCall = mockMeal.bulkWrite.mock.calls[0][0];
+        expect(bulkWriteCall[0].insertOne.document.type).toBe('off');
+        expect(bulkWriteCall[0].insertOne.document.mealCount).toBe(0);
+    });
+
+    it('sets remarks to Auto-created from vote', async () => {
+        mockUser.find.mockReturnValue(mockChain([{ _id: uid }]));
+        mockMealPoll.aggregate.mockResolvedValue([{ _id: uid, type: 'day' }]);
+        mockMeal.find.mockReturnValue(mockChain([]));
+        mockMeal.bulkWrite.mockResolvedValue({ insertedCount: 1 });
+        mockUser.bulkWrite.mockResolvedValue({});
+
+        await autoCreateMealsFromVotes(JUN1);
+
+        const bulkWriteCall = mockMeal.bulkWrite.mock.calls[0][0];
+        expect(bulkWriteCall[0].insertOne.document.remarks).toBe('Auto-created from vote');
+    });
+
+    it('updates remarks on existing meal when type changes', async () => {
+        mockUser.find.mockReturnValue(mockChain([{ _id: uid }]));
+        mockMealPoll.aggregate.mockResolvedValue([{ _id: uid, type: 'both' }]);
+        mockMeal.find.mockReturnValue(mockChain([
+            { user: uid, type: 'day', mealCount: 1 },
+        ]));
+        mockMeal.bulkWrite.mockResolvedValue({ modifiedCount: 1 });
+        mockUser.bulkWrite.mockResolvedValue({});
+
+        await autoCreateMealsFromVotes(JUN1);
+
+        const bulkWriteCall = mockMeal.bulkWrite.mock.calls[0][0];
+        expect(bulkWriteCall[0].updateOne.update.$set.remarks).toBe('Auto-created from vote');
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// autoCreateMealForUser — single user real-time meal creation
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('autoCreateMealForUser', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('creates a new meal for user with day vote', async () => {
+        mockMeal.findOne.mockReturnValue(mockChain(null));
+        mockMeal.create.mockResolvedValue({
+            _id: 'm1', user: uid, type: 'day', date: JUN1, mealCount: 1,
+        });
+        mockUser.findById.mockResolvedValue({ _id: uid });
+
+        await autoCreateMealForUser(uid, JUN1, 'day');
+        expect(mockMeal.create).toHaveBeenCalledWith(
+            expect.objectContaining({ type: 'day', mealCount: 1, remarks: 'Auto-created from vote' }),
+        );
+    });
+
+    it('creates a new meal for user with both vote', async () => {
+        mockMeal.findOne.mockReturnValue(mockChain(null));
+        mockMeal.create.mockResolvedValue({
+            _id: 'm2', user: uid, type: 'both', date: JUN1, mealCount: 2,
+        });
+        mockUser.findById.mockResolvedValue({ _id: uid });
+
+        await autoCreateMealForUser(uid, JUN1, 'both');
+        expect(mockMeal.create).toHaveBeenCalledWith(
+            expect.objectContaining({ type: 'both', mealCount: 2 }),
+        );
+    });
+
+    it('creates off meal with mealCount 0', async () => {
+        mockMeal.findOne.mockReturnValue(mockChain(null));
+        mockMeal.create.mockResolvedValue({
+            _id: 'm3', user: uid, type: 'off', date: JUN1, mealCount: 0,
+        });
+        mockUser.findById.mockResolvedValue({ _id: uid });
+
+        await autoCreateMealForUser(uid, JUN1, 'off');
+        expect(mockMeal.create).toHaveBeenCalledWith(
+            expect.objectContaining({ type: 'off', mealCount: 0 }),
+        );
+    });
+
+    it('skips if meal exists with same type', async () => {
+        mockMeal.findOne.mockReturnValue(mockChain({
+            _id: 'm4', user: uid, type: 'day', date: JUN1, mealCount: 1,
+        }));
+
+        await autoCreateMealForUser(uid, JUN1, 'day');
+        expect(mockMeal.updateOne).not.toHaveBeenCalled();
+        expect(mockMeal.create).not.toHaveBeenCalled();
+    });
+
+    it('updates meal if type changed', async () => {
+        mockMeal.findOne.mockReturnValue(mockChain({
+            _id: 'm5', user: uid, type: 'day', date: JUN1, mealCount: 1,
+        }));
+        mockUser.findById.mockResolvedValue({ _id: uid });
+
+        await autoCreateMealForUser(uid, JUN1, 'both');
+        expect(mockMeal.updateOne).toHaveBeenCalledWith(
+            { _id: 'm5' },
+            expect.objectContaining({ $set: expect.objectContaining({ type: 'both', mealCount: 2 }) }),
+        );
+    });
+
+    it('syncs User.totalMeal when creating new meal', async () => {
+        mockMeal.findOne.mockReturnValue(mockChain(null));
+        mockMeal.create.mockResolvedValue({
+            _id: 'm6', user: uid, type: 'day', date: JUN1, mealCount: 1,
+        });
+        mockUser.findByIdAndUpdate.mockResolvedValue({ _id: uid });
+
+        await autoCreateMealForUser(uid, JUN1, 'day');
+        expect(mockUser.findByIdAndUpdate).toHaveBeenCalledWith(
+            uid,
+            expect.objectContaining({ $push: expect.any(Object), $inc: expect.any(Object) }),
+            { runValidators: true },
+        );
+    });
+
+    it('syncs User.totalMeal delta when type changes', async () => {
+        mockMeal.findOne.mockReturnValue(mockChain({
+            _id: 'm7', user: uid, type: 'day', date: JUN1, mealCount: 1,
+        }));
+        mockUser.findByIdAndUpdate.mockResolvedValue({ _id: uid });
+
+        await autoCreateMealForUser(uid, JUN1, 'both');
+        // mealCount diff: 2 - 1 = 1
+        expect(mockUser.findByIdAndUpdate).toHaveBeenCalledWith(
+            uid,
+            { $inc: { totalMeal: 1 } },
+        );
     });
 });

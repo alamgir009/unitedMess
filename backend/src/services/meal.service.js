@@ -723,6 +723,16 @@ const voteMealPoll = async (userId, pollData) => {
         console.error('[MealPollAudit] Failed to write audit log:', auditErr);
     }
 
+    // ── 8. Auto-create meal for today if vote is for today or past ─────
+    const today = normalizeDate(new Date());
+    if (effectiveFrom.getTime() <= today.getTime()) {
+        try {
+            await autoCreateMealForUser(userId, today, type);
+        } catch (mealErr) {
+            console.error('[VoteMealPoll] Auto-create meal failed:', mealErr.message);
+        }
+    }
+
     return newPoll;
 };
 
@@ -801,6 +811,247 @@ const getMealPollStatus = async (dateStr) => {
 };
 
 /**
+ * Auto-create or update a single Meal record for a user on a given date
+ * based on their vote type. Used for real-time meal creation when a user votes.
+ *
+ * - Idempotent: skips if meal already exists with the same type.
+ * - Overwrites if meal exists with a different type.
+ * - Syncs User.totalMeal and User.meals.
+ * - Calls recalculateAllActiveUsersPayable().
+ *
+ * @param {string} userId
+ * @param {Date} date - Normalized to midnight UTC
+ * @param {string} type - 'day' | 'night' | 'both' | 'off'
+ */
+const autoCreateMealForUser = async (userId, date, type) => {
+    const normalizedDate = normalizeDate(date);
+    const mealCount = mealTypeCountMap[type] ?? 0;
+
+    const existing = await Meal.findOne({ user: userId, date: normalizedDate }).lean();
+
+    if (existing) {
+        if (existing.type === type) return;
+
+        const oldMealCount = existing.mealCount || 0;
+        const mealCountDiff = mealCount - oldMealCount;
+
+        await Meal.updateOne(
+            { _id: existing._id },
+            { $set: { type, mealCount, isGuestMeal: false, guestCount: 0, remarks: 'Auto-created from vote' } },
+        );
+
+        if (mealCountDiff !== 0) {
+            await User.findByIdAndUpdate(userId, { $inc: { totalMeal: mealCountDiff } });
+        }
+
+        recalculateAllActiveUsersPayable();
+        return;
+    }
+
+    const mealId = new mongoose.Types.ObjectId();
+    await Promise.all([
+        Meal.create({
+            _id: mealId,
+            user: userId,
+            date: normalizedDate,
+            type,
+            mealCount,
+            isGuestMeal: false,
+            guestCount: 0,
+            remarks: 'Auto-created from vote',
+        }),
+        User.findByIdAndUpdate(
+            userId,
+            { $push: { meals: mealId }, $inc: { totalMeal: mealCount } },
+            { runValidators: true },
+        ),
+    ]);
+
+    recalculateAllActiveUsersPayable();
+};
+
+/**
+ * Auto-create/update Meal records for all active users based on their
+ * effective vote for a given date. Used by the daily cron job.
+ *
+ * Performance: 5 queries total regardless of user count.
+ *   1. Fetch active approved users
+ *   2. Batch-fetch effective votes (aggregation)
+ *   3. Batch-fetch existing meals for the date
+ *   4. BulkWrite meal inserts/updates
+ *   5. BulkWrite user stat syncs
+ *
+ * Idempotent — safe to re-run. Existing meals with correct type are skipped.
+ *
+ * @param {Date} targetDate
+ * @returns {{ created: number, updated: number, skipped: number, errors: number, total: number }}
+ */
+const autoCreateMealsFromVotes = async (targetDate) => {
+    const date = normalizeDate(targetDate);
+
+    // 1. All active approved users
+    const users = await User.find({ isActive: true, userStatus: 'approved' })
+        .select('_id')
+        .lean();
+
+    if (users.length === 0) {
+        return { created: 0, updated: 0, skipped: 0, errors: 0, total: 0 };
+    }
+
+    const userIds = users.map(u => u._id);
+
+    // 2. Batch-fetch effective votes via aggregation (single query)
+    const effectiveVotes = await MealPoll.aggregate([
+        {
+            $match: {
+                user: { $in: userIds },
+                date: { $lte: date },
+                $or: [
+                    { effectiveUntil: null },
+                    { effectiveUntil: { $gt: date } },
+                ],
+            },
+        },
+        { $sort: { date: -1 } },
+        {
+            $group: {
+                _id: '$user',
+                type: { $first: '$type' },
+            },
+        },
+    ]);
+
+    // Index votes by userId for O(1) lookup
+    const voteMap = new Map();
+    for (const v of effectiveVotes) {
+        voteMap.set(v._id.toString(), v.type);
+    }
+
+    // 3. Batch-fetch existing meals for this date (single query)
+    const existingMeals = await Meal.find({
+        user: { $in: userIds },
+        date,
+    }).select('user type mealCount').lean();
+
+    const existingMap = new Map();
+    for (const m of existingMeals) {
+        existingMap.set(m.user.toString(), m);
+    }
+
+    // 4. Build bulk operations
+    const insertDocs = [];
+    const updateOps = [];
+    const userInsertDeltas = {};
+    const userUpdateDeltas = {};
+    let skippedCount = 0;
+
+    for (const uid of userIds) {
+        const uidStr = uid.toString();
+        const voteType = voteMap.get(uidStr) || 'off';
+        const mealCount = mealTypeCountMap[voteType] ?? 0;
+        const existing = existingMap.get(uidStr);
+
+        if (existing && existing.type === voteType) {
+            skippedCount++;
+            continue;
+        }
+
+        if (existing) {
+            const oldMealCount = existing.mealCount || 0;
+            const mealCountDiff = mealCount - oldMealCount;
+
+            updateOps.push({
+                updateOne: {
+                    filter: { user: uid, date },
+                    update: {
+                        $set: {
+                            type: voteType,
+                            mealCount,
+                            isGuestMeal: false,
+                            guestCount: 0,
+                            remarks: 'Auto-created from vote',
+                        },
+                    },
+                },
+            });
+
+            if (mealCountDiff !== 0) {
+                userUpdateDeltas[uidStr] = (userUpdateDeltas[uidStr] || 0) + mealCountDiff;
+            }
+        } else {
+            const mealId = new mongoose.Types.ObjectId();
+            insertDocs.push({
+                _id: mealId,
+                user: uid,
+                date,
+                type: voteType,
+                mealCount,
+                isGuestMeal: false,
+                guestCount: 0,
+                remarks: 'Auto-created from vote',
+            });
+
+            if (!userInsertDeltas[uidStr]) {
+                userInsertDeltas[uidStr] = { totalMeal: 0, mealIds: [] };
+            }
+            userInsertDeltas[uidStr].totalMeal += mealCount;
+            userInsertDeltas[uidStr].mealIds.push(mealId);
+        }
+    }
+
+    // 5. Execute bulk writes
+    if (updateOps.length > 0) {
+        await Meal.bulkWrite(updateOps, { ordered: false });
+    }
+
+    if (insertDocs.length > 0) {
+        await Meal.bulkWrite(
+            insertDocs.map(doc => ({ insertOne: { document: doc } })),
+            { ordered: false },
+        );
+    }
+
+    // 6. Sync user stats
+    const userUpdateOps = [];
+
+    for (const [uid, delta] of Object.entries(userInsertDeltas)) {
+        userUpdateOps.push({
+            updateOne: {
+                filter: { _id: new mongoose.Types.ObjectId(uid) },
+                update: {
+                    $push: { meals: { $each: delta.mealIds } },
+                    $inc: { totalMeal: delta.totalMeal },
+                },
+            },
+        });
+    }
+
+    for (const [uid, diff] of Object.entries(userUpdateDeltas)) {
+        userUpdateOps.push({
+            updateOne: {
+                filter: { _id: new mongoose.Types.ObjectId(uid) },
+                update: { $inc: { totalMeal: diff } },
+            },
+        });
+    }
+
+    if (userUpdateOps.length > 0) {
+        await User.bulkWrite(userUpdateOps);
+    }
+
+    // 7. Recalculate payables for all active users
+    recalculateAllActiveUsersPayable();
+
+    return {
+        created: insertDocs.length,
+        updated: updateOps.length,
+        skipped: skippedCount,
+        errors: 0,
+        total: users.length,
+    };
+};
+
+/**
  * Carry-forward: ensures every active user has an effective standing preference
  * covering the target date.
  *
@@ -836,8 +1087,23 @@ const carryForwardVotes = async (targetDate) => {
             }).lean();
 
             if (activeVote) {
-                // 3. Active user with existing preference → skip
                 if (user.isActive) {
+                    // 3. Active user with existing preference → record carry-forward audit log
+                    //    so the activity logs reflect that this vote carried forward to today.
+                    const cfRequestId = `cf-${user._id.toString()}-${date.toISOString().slice(0, 10)}`;
+                    try {
+                        await writeAuditLog({
+                            userId: user._id,
+                            eventType: 'vote_carried_forward',
+                            pollDate: date,
+                            previousState: null,
+                            newState: { type: activeVote.type, updatedAt: activeVote.updatedAt },
+                            source: 'carried_forward',
+                            requestId: cfRequestId,
+                        });
+                    } catch (auditErr) {
+                        console.error(`[CarryForward] Audit log failed for user ${user._id}:`, auditErr.message);
+                    }
                     skipped++;
                     continue;
                 }
@@ -867,6 +1133,7 @@ const carryForwardVotes = async (targetDate) => {
                 updatedBy: user._id,
             });
 
+            const neverVotedCfRequestId = `cf-${user._id.toString()}-${date.toISOString().slice(0, 10)}-never-voted`;
             try {
                 await writeAuditLog({
                     userId: user._id,
@@ -875,6 +1142,7 @@ const carryForwardVotes = async (targetDate) => {
                     previousState: null,
                     newState: { type: 'off', updatedAt: new Date() },
                     source: 'carried_forward',
+                    requestId: neverVotedCfRequestId,
                 });
             } catch (auditErr) {
                 console.error(`[CarryForward] Audit log failed for user ${user._id}:`, auditErr.message);
@@ -903,4 +1171,6 @@ module.exports = {
     getMealPollStatus,
     carryForwardVotes,
     resolveEffectiveVote,
+    autoCreateMealForUser,
+    autoCreateMealsFromVotes,
 };
