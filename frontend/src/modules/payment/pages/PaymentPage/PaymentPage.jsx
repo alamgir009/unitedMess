@@ -746,6 +746,7 @@ const PaymentPage = () => {
                     isPaying={isPaying}
                     paymentRecord={invoiceModal.paymentRecord}
                     userId={invoiceModal.userId}
+                    fullScreenOnMobile
                 />
 
                 <PaymentFlowModal
