@@ -17,7 +17,6 @@ import { AnimatePresence } from 'framer-motion';
 import {
     HiOutlineXMark,
     HiOutlineCurrencyRupee,
-    HiOutlineCheckCircle,
     HiOutlineFire,
     HiOutlineDocumentText,
     HiOutlineArrowRight,
@@ -126,8 +125,8 @@ const BillsOverview = React.memo(({
                     </p>
                 </div>
                 {bothPaid ? (
-                    <span className="badge-success">
-                        <HiOutlineCheckCircle className="w-4 h-4" /> All Paid
+                    <span className="badge-success [&::before]:content-none px-2.5 py-1 rounded-md text-[clamp(0.625rem,0.5vw+0.5rem,0.8125rem)]">
+                        All Paid
                     </span>
                 ) : (
                     <div className="text-right" aria-live="polite">
