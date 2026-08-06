@@ -126,6 +126,7 @@ const MonthlyInvoiceModal = ({
     isPaying,
     paymentRecord: externalPaymentRecord,
     userId,
+    fullScreenOnMobile = false,
 }) => {
     const dispatch = useDispatch();
     const { monthlyInvoice, isLoadingMonthly, error } = useSelector((state) => state.invoice);
@@ -182,7 +183,8 @@ const MonthlyInvoiceModal = ({
 
     return (
         <div className={cn(
-            'fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6',
+            'fixed inset-0 z-50 flex items-center justify-center',
+            fullScreenOnMobile ? 'p-0 sm:p-6 items-stretch sm:items-center' : 'p-4 sm:p-6 items-center',
             'modal-animate-backdrop',
             exiting ? 'modal-exit-backdrop' : 'modal-enter'
         )}>
@@ -194,8 +196,10 @@ const MonthlyInvoiceModal = ({
 
             <div
                 className={cn(
-                    'relative w-full max-w-2xl max-h-[90vh] flex flex-col',
-                    'rounded-3xl bg-card border border-border shadow-2xl overflow-hidden',
+                    'relative w-full max-w-2xl flex flex-col',
+                    fullScreenOnMobile ? 'h-full sm:h-auto sm:max-h-[90vh]' : 'max-h-[90vh]',
+                    fullScreenOnMobile ? 'rounded-none sm:rounded-3xl' : 'rounded-3xl',
+                    'bg-card border border-border shadow-2xl overflow-hidden',
                     'modal-animate modal-gpu',
                     exiting ? 'modal-exit' : 'modal-enter'
                 )}
@@ -230,7 +234,10 @@ const MonthlyInvoiceModal = ({
                     </div>
                 </div>
 
-                <div className="overflow-y-auto flex-1 p-4 sm:p-6 space-y-4 custom-scrollbar bg-muted/50">
+                <div className={cn(
+                    'overflow-y-auto flex-1 space-y-4 custom-scrollbar bg-muted/50',
+                    fullScreenOnMobile ? 'p-0 sm:p-6' : 'p-4 sm:p-6'
+                )}>
                     {isLoadingMonthly && <InvoiceSkeleton />}
 
                     {!isLoadingMonthly && error && (
