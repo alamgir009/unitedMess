@@ -140,18 +140,18 @@ const BillsOverview = React.memo(({
             {/* Bill rows */}
             <div className="divide-y divide-border/40">
                 {/* Mess Bill Row */}
-                <div className={`px-5 py-3.5 flex items-center justify-between gap-3 sm:gap-4 hover:bg-muted/30 transition-[background-color] duration-150 ease-out${messOverdue ? ' border-l-2 border-warning bg-warning/5' : ''}`}>
+                <div className={`px-4 py-3.5 flex items-center justify-between gap-3 sm:gap-4 hover:bg-muted/30 transition-[background-color] duration-150 ease-out${messOverdue ? ' border-l-2 border-warning bg-warning/5' : ''}`}>
                     <div className="flex items-center gap-3 min-w-0">
                         <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
                             <HiOutlineCurrencyRupee className="w-5 h-5" />
                         </div>
                         <div className="min-w-0">
                             <p className="text-sm font-semibold text-foreground">Mess Bill</p>
-                            <p className="text-xs text-muted-foreground truncate">Monthly mess charges</p>
+                            <p className="text-xs text-muted-foreground truncate">Monthly mess fee</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-base font-bold tabular-nums text-foreground">₹{fmtINR(messAmount)}</span>
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 justify-end">
+                        <span className="text-[clamp(0.8125rem,0.5vw+0.6rem,1rem)] font-bold tabular-nums text-foreground whitespace-nowrap">₹{fmtINR(messAmount)}</span>
                         {messPaid ? (
                             <span className="badge-success [&::before]:content-none px-2.5 py-1 rounded-md text-[clamp(0.625rem,0.5vw+0.5rem,0.8125rem)]">
                                 Paid
@@ -162,9 +162,9 @@ const BillsOverview = React.memo(({
                                 disabled={isPaying}
                                 onClick={onPayMess}
                                 aria-label={`Pay ₹${fmtINR(messAmount)} mess bill`}
-                                className="inline-flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-lg text-xs font-bold text-white bg-gradient-primary active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-[transform,opacity,filter] duration-150 ease-out hover:brightness-90"
+                                className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 min-h-[40px] sm:min-h-[44px] rounded-lg text-xs font-bold text-white bg-gradient-primary active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-[transform,opacity,filter] duration-150 ease-out hover:brightness-90"
                             >
-                                {isPaying ? 'Processing' : 'Pay Now'}
+                                {isPaying ? 'Processing' : (<><span className="sm:hidden">Pay</span><span className="hidden sm:inline">Pay Now</span></>)}
                                 {!isPaying && <HiOutlineArrowRight className="w-3.5 h-3.5" />}
                             </button>
                         )}
@@ -173,9 +173,9 @@ const BillsOverview = React.memo(({
 
                 {/* Gas Bill Row */}
                 {(gasAmount > 0 || gasPaid) && (
-                    <div className={`px-5 py-3.5 flex items-center justify-between gap-3 sm:gap-4 hover:bg-muted/30 transition-[background-color] duration-150 ease-out${gasOverdue ? ' border-l-2 border-warning bg-warning/5' : ''}`}>
+                    <div className={`px-4 py-3.5 flex items-center justify-between gap-3 sm:gap-4 hover:bg-muted/30 transition-[background-color] duration-150 ease-out${gasOverdue ? ' border-l-2 border-warning bg-warning/5' : ''}`}>
                         <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-warning/10 text-warning shrink-0">
+                            <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-warning/15 text-warning shrink-0">
                                 <HiOutlineFire className="w-5 h-5" />
                             </div>
                             <div className="min-w-0">
@@ -183,8 +183,8 @@ const BillsOverview = React.memo(({
                                 <p className="text-xs text-muted-foreground truncate">Monthly gas share</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3 shrink-0">
-                            <span className="text-base font-bold tabular-nums text-foreground">₹{fmtINR(gasAmount)}</span>
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0 justify-end">
+                            <span className="text-[clamp(0.8125rem,0.5vw+0.6rem,1rem)] font-bold tabular-nums text-foreground whitespace-nowrap">₹{fmtINR(gasAmount)}</span>
                             {gasPaid ? (
                                 <span className="badge-success [&::before]:content-none px-2.5 py-1 rounded-md text-[clamp(0.625rem,0.5vw+0.5rem,0.8125rem)]">
                                     Paid
@@ -195,9 +195,9 @@ const BillsOverview = React.memo(({
                                     disabled={isPaying}
                                     onClick={onPayGas}
                                     aria-label={`Pay ₹${fmtINR(gasAmount)} gas bill`}
-                                    className="inline-flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-lg text-xs font-bold text-white bg-gradient-primary active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-[transform,opacity,filter] duration-150 ease-out hover:brightness-90"
+                                    className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 min-h-[40px] sm:min-h-[44px] rounded-lg text-xs font-bold text-white bg-gradient-primary active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-[transform,opacity,filter] duration-150 ease-out hover:brightness-90"
                                 >
-                                    {isPaying ? 'Processing' : 'Pay Now'}
+                                {isPaying ? 'Processing' : (<><span className="sm:hidden">Pay</span><span className="hidden sm:inline">Pay Now</span></>)}
                                     {!isPaying && <HiOutlineArrowRight className="w-3.5 h-3.5" />}
                                 </button>
                             )}
