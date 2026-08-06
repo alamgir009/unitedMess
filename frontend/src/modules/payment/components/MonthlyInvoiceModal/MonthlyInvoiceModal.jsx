@@ -130,6 +130,7 @@ const MonthlyInvoiceModal = ({
     const dispatch = useDispatch();
     const { monthlyInvoice, isLoadingMonthly, error } = useSelector((state) => state.invoice);
     const { user } = useSelector((state) => state.auth);
+    const isAdmin = user?.role === 'admin';
     const { shouldRender, exiting } = useModalAnimation(isOpen, { exitTimeout: 120 });
 
     useEffect(() => {
@@ -218,22 +219,6 @@ const MonthlyInvoiceModal = ({
                     </div>
 
                     <div className="flex items-center gap-2">
-                        {!isLoadingMonthly && monthlyInvoice && (
-                            <span className={`hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
-                                invoiceStatus === 'paid'
-                                    ? 'bg-success-bg text-success-text'
-                                    : invoiceStatus === 'partially_paid'
-                                        ? 'bg-warning-bg text-warning-text'
-                                        : 'bg-muted text-muted-foreground'
-                            }`}>
-                                {invoiceStatus === 'paid'
-                                    ? '✓ Paid'
-                                    : invoiceStatus === 'partially_paid'
-                                        ? '⏳ Partially Paid'
-                                        : isFinalized ? 'Finalized' : 'Unpaid'}
-                            </span>
-                        )}
-
                         <button
                             id="monthly-invoice-modal-close"
                             onClick={handleClose}
@@ -280,12 +265,14 @@ const MonthlyInvoiceModal = ({
 
                             <MessBillInvoice
                                 data={displayData}
+                                isAdmin={isAdmin}
                                 user={user}
                                 platformFee={displayData.platformFee}
                                 paymentStatus={paymentStatus}
                                 paymentRecord={invoicePaymentRecord}
                                 onPayNow={!isPartiallyPaid && paymentStatus !== 'success' ? onPayNow : undefined}
                                 isPaying={isPaying}
+                                autoExpand
                             />
                         </>
                     )}

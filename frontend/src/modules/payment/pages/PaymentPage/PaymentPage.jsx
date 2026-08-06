@@ -14,11 +14,17 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AnimatePresence } from 'framer-motion';
-import { HiOutlineXMark, HiOutlineCheckBadge, HiOutlineCurrencyRupee, HiOutlineCheckCircle } from 'react-icons/hi2';
+import {
+    HiOutlineXMark,
+    HiOutlineCurrencyRupee,
+    HiOutlineCheckCircle,
+    HiOutlineFire,
+    HiOutlineDocumentText,
+    HiOutlineArrowRight,
+} from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 
 import { SkeletonCard }              from '@/shared/components/ui';
-import Button          from '@/shared/components/ui/Button/Button';
 import MainLayout      from '@/shared/components/layout/MainLayout/MainLayout';
 import Pagination      from '@/shared/components/ui/Pagination/Pagination';
 
@@ -29,7 +35,6 @@ import PaymentList      from '../../components/PaymentList/PaymentList';
 import AdminPaymentView from '../../components/AdminPaymentView/AdminPaymentView';
 import PaymentForm      from '../../components/PaymentForm/PaymentForm';
 import PaymentModal     from '../../components/PaymentModal/PaymentModal';
-import MessBillInvoice  from '../../components/MessBillInvoice/MessBillInvoice';
 import MonthlyInvoiceModal from '../../components/MonthlyInvoiceModal/MonthlyInvoiceModal';
 import PaymentDeleteDialog from '../../components/PaymentDeleteDialog/PaymentDeleteDialog';
 import PaymentFlowModal from '../../components/PaymentFlowModal/PaymentFlowModal';
@@ -66,6 +71,153 @@ const InvoiceSkeleton = React.memo(() => (
     </div>
 ));
 InvoiceSkeleton.displayName = 'InvoiceSkeleton';
+
+/* ══════════════════════════════════════════════════════════════
+   BILLS OVERVIEW — unified mess + gas bill card
+══════════════════════════════════════════════════════════════ */
+const fmtINR = (n) => Number(n ?? 0).toLocaleString('en-IN');
+
+const BillsOverview = React.memo(({
+    payableAmountData,
+    payableGasBill,
+    messBillStatus,
+    gasBillStatus,
+    isPaying,
+    onPayMess,
+    onPayGas,
+    onViewInvoice,
+    invoiceFetchDone,
+}) => {
+    const hasInvoiceData = !!payableAmountData && 'payableAmount' in payableAmountData;
+    const isInvoiceLoading = !invoiceFetchDone && !hasInvoiceData;
+
+    const messAmount = payableAmountData?.payableAmount ?? 0;
+    const gasAmount = payableGasBill && typeof payableGasBill === 'object'
+        ? (payableGasBill.payableAmount ?? 0)
+        : typeof payableGasBill === 'number' ? payableGasBill : 0;
+
+    const messDue = messBillStatus !== 'success';
+    const gasDue = gasBillStatus !== 'success';
+    const bothPaid = !messDue && !gasDue;
+    const totalDue = (messDue ? messAmount : 0) + (gasDue ? gasAmount : 0);
+    const monthName = payableAmountData?.monthName || 'Current Period';
+
+    if (isInvoiceLoading) return <InvoiceSkeleton />;
+
+    if (!hasInvoiceData && gasAmount <= 0 && !bothPaid) return null;
+
+    return (
+        <div className="card-base overflow-hidden border border-border/60">
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-border/60 flex items-center justify-between bg-muted/20">
+                <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                        <p className="text-sm font-bold text-foreground">Bills Due</p>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                            {monthName}
+                        </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                        {bothPaid ? 'All bills settled for this period' : 'Review and pay your pending bills'}
+                    </p>
+                </div>
+                {bothPaid ? (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-success/10 text-success border border-success/20">
+                        <HiOutlineCheckCircle className="w-4 h-4" />
+                        <span className="text-xs font-bold">All Paid</span>
+                    </div>
+                ) : (
+                    <div className="text-right">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Total Due</p>
+                        <p className="text-lg font-black tabular-nums text-foreground">₹{fmtINR(totalDue)}</p>
+                    </div>
+                )}
+            </div>
+
+            {/* Bill rows */}
+            <div className="divide-y divide-border/40">
+                {/* Mess Bill Row */}
+                <div className="px-5 py-3.5 flex items-center justify-between gap-4 hover:bg-muted/20 transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="p-2 rounded-xl bg-primary/10 text-primary shrink-0">
+                            <HiOutlineCurrencyRupee className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-sm font-semibold text-foreground">Mess Bill</p>
+                            <p className="text-xs text-muted-foreground truncate">Monthly mess charges</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-base font-black tabular-nums text-foreground">₹{fmtINR(messAmount)}</span>
+                        {messDue ? (
+                            <button
+                                type="button"
+                                disabled={isPaying}
+                                onClick={onPayMess}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white bg-primary hover:brightness-90 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
+                            >
+                                {isPaying ? 'Processing' : 'Pay Now'}
+                                {!isPaying && <HiOutlineArrowRight className="w-3.5 h-3.5" />}
+                            </button>
+                        ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-success/10 text-success text-xs font-bold border border-success/20">
+                                <HiOutlineCheckCircle className="w-3.5 h-3.5" /> Paid
+                            </span>
+                        )}
+                    </div>
+                </div>
+
+                {/* Gas Bill Row */}
+                {(gasAmount > 0 || gasBillStatus === 'success') && (
+                    <div className="px-5 py-3.5 flex items-center justify-between gap-4 hover:bg-muted/20 transition-colors">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
+                                <HiOutlineFire className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-sm font-semibold text-foreground">Gas Bill</p>
+                                <p className="text-xs text-muted-foreground truncate">Monthly gas share</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                            <span className="text-base font-black tabular-nums text-foreground">₹{fmtINR(gasAmount)}</span>
+                            {gasDue ? (
+                                <button
+                                    type="button"
+                                    disabled={isPaying}
+                                    onClick={onPayGas}
+                                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white bg-primary hover:brightness-90 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
+                                >
+                                    {isPaying ? 'Processing' : 'Pay Now'}
+                                    {!isPaying && <HiOutlineArrowRight className="w-3.5 h-3.5" />}
+                                </button>
+                            ) : (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-success/10 text-success text-xs font-bold border border-success/20">
+                                    <HiOutlineCheckCircle className="w-3.5 h-3.5" /> Paid
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Footer — View Invoice */}
+            {hasInvoiceData && (
+                <div className="px-5 py-3 border-t border-border/40 bg-muted/10">
+                    <button
+                        type="button"
+                        onClick={onViewInvoice}
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                        <HiOutlineDocumentText className="w-3.5 h-3.5" />
+                        View Detailed Invoice
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+});
+BillsOverview.displayName = 'BillsOverview';
 
 /* ══════════════════════════════════════════════════════════════
    PAYMENT PAGE
@@ -116,7 +268,7 @@ const PaymentPage = () => {
         setGasBillModal(prev => ({ ...prev, open: false }));
     }, [setIsPaymentFlowOpen, setGasBillModal]);
 
-    const { handleCheckout, lastPaymentId, markUnmounted, isPaying } = usePayment({
+    const { handleCheckout, markUnmounted, isPaying } = usePayment({
         user,
         onSuccess: () => {
             refreshData();
@@ -151,24 +303,52 @@ const PaymentPage = () => {
 
     const currentUserId = user?._id || user?.id;
 
-    const latestMessBillPayment = useMemo(() => {
-        if (!currentUserId) return null;
-        const matchUser = (p) => {
-            const pUserId = p.user?._id || (typeof p.user === 'string' ? p.user : null);
-            return pUserId === currentUserId;
-        };
-        if (lastPaymentId && payments) {
-            const match = payments.find(p => p._id === lastPaymentId);
-            if (match && matchUser(match)) return match;
+    /* ── handler: open current month invoice from BillsOverview ── */
+    const handleViewInvoiceFromOverview = useCallback(() => {
+        const monthStr = payableAmountData?.monthName || '';
+        if (!monthStr) {
+            toast.error('No invoice data available for the current period.');
+            return;
         }
-        const activeMonth = payableAmountData?.monthName;
-        return (payments || []).find(p => 
-            p.type === 'mess_bill' && 
-            p.status === 'completed' && 
-            p.month === activeMonth &&
-            matchUser(p)
-        ) || null;
-    }, [lastPaymentId, payments, payableAmountData?.monthName, currentUserId]);
+        const parts = monthStr.split(/\s+/);
+        if (parts.length >= 2) {
+            const date = new Date(`${parts[0]} 1, ${parts[parts.length - 1]}`);
+            if (!isNaN(date.getTime())) {
+                setInvoiceModal({
+                    open: true,
+                    year: date.getFullYear(),
+                    month: date.getMonth() + 1,
+                    monthName: monthStr,
+                    paymentRecord: null,
+                    userId: currentUserId,
+                });
+                return;
+            }
+        }
+        const isoMatch = monthStr.match(/^(\d{4})-(\d{1,2})$/);
+        if (isoMatch) {
+            setInvoiceModal({
+                open: true,
+                year: parseInt(isoMatch[1], 10),
+                month: parseInt(isoMatch[2], 10),
+                monthName: monthStr,
+                paymentRecord: null,
+                userId: currentUserId,
+            });
+            return;
+        }
+        const fallback = new Date(monthStr);
+        if (!isNaN(fallback.getTime())) {
+            setInvoiceModal({
+                open: true,
+                year: fallback.getFullYear(),
+                month: fallback.getMonth() + 1,
+                monthName: monthStr,
+                paymentRecord: null,
+                userId: currentUserId,
+            });
+        }
+    }, [payableAmountData?.monthName, currentUserId]);
 
     /* ── fetch payments ── */
     useEffect(() => {
@@ -427,10 +607,6 @@ const PaymentPage = () => {
         : typeof payableGasBill === 'number' ? payableGasBill : 0;
     const messBillStatus  = payableAmountData?.paymentStatus || 'pending';
     const gasBillStatus   = payableGasBill?.status           || 'pending';
-    const gasBillPaid     = gasBillStatus === 'success';
-    const bothPaid        = messBillStatus === 'success' && gasBillPaid;
-    const hasInvoiceData  = !!payableAmountData && 'payableAmount' in payableAmountData;
-    const isInvoiceLoading = !invoiceFetchDone && !hasInvoiceData && !!(user?._id || user?.id);
 
     /* ── render ── */
     return (
@@ -449,80 +625,20 @@ const PaymentPage = () => {
                     {/* Stats bar */}
                     <PaymentStatsBar payments={payments || []} isAdmin={isAdmin} totalCount={pagination?.total || 0} />
 
-                    {/* Invoice panel */}
+                    {/* Bills Overview — unified mess + gas bill card */}
                     <AnimatePresence>
-                        {isInvoiceLoading && (
-                            <InvoiceSkeleton />
-                        )}
-
-                        {bothPaid && hasInvoiceData && (
-                            <div className="flex items-center gap-3 p-4 rounded-xl bg-success-bg border border-success-border text-success-text">
-                                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-success/20 flex items-center justify-center">
-                                    <HiOutlineCheckBadge className="w-5 h-5 text-success" />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="font-semibold text-sm">All Bills Fully Paid</p>
-                                    <p className="text-xs opacity-75 mt-0.5">
-                                        Both your Mess Bill and Gas Bill are paid for this month.
-                                        Your invoice and payment history are shown below.
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-
-                        {hasInvoiceData && (
-                            <MessBillInvoice
-                                data={payableAmountData}
-                                isAdmin={isAdmin}
-                                user={user}
-                                platformFee={payableAmountData?.userStats?.platformFee || user?.platformFee || 0}
-                                onPayNow={handlePayBillClick}
-                                isPaying={isPaying}
-                                paymentStatus={messBillStatus}
-                                paymentRecord={latestMessBillPayment}
-                            />
-                        )}
+                        <BillsOverview
+                            payableAmountData={payableAmountData}
+                            payableGasBill={payableGasBill}
+                            messBillStatus={messBillStatus}
+                            gasBillStatus={gasBillStatus}
+                            isPaying={isPaying}
+                            onPayMess={() => handlePayBillClick(payableAmountData?.monthName || '')}
+                            onPayGas={() => handleGasBillPayClick(gasBillVal)}
+                            onViewInvoice={handleViewInvoiceFromOverview}
+                            invoiceFetchDone={invoiceFetchDone}
+                        />
                     </AnimatePresence>
-
-                    {/* Gas Bill Pay card */}
-                    {(gasBillVal > 0 || gasBillPaid) && !bothPaid && (
-                        <div className="card-base p-5">
-                            <div className="flex items-center justify-between gap-4">
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 shrink-0">
-                                        <HiOutlineCurrencyRupee className="w-5 h-5" />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="text-sm font-bold text-foreground">Gas Bill</p>
-                                        <p className="text-xs text-muted-foreground truncate">
-                                            Monthly gas bill share
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3 shrink-0">
-                                    <span className="text-xl font-black tabular-nums text-foreground">
-                                        ₹{gasBillVal.toLocaleString('en-IN')}
-                                    </span>
-                                    {gasBillPaid ? (
-                                        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 text-xs font-bold">
-                                            <HiOutlineCheckCircle className="w-4 h-4" /> Paid
-                                        </span>
-                                    ) : (
-                                        <Button
-                                            variant="primary"
-                                            size="md"
-                                            onClick={() => handleGasBillPayClick(gasBillVal)}
-                                            disabled={isPaying}
-                                            isLoading={isPaying}
-                                        >
-                                            {!isPaying && <HiOutlineCurrencyRupee className="w-4 h-4" />}
-                                            {isPaying ? 'Processing' : 'Pay Now'}
-                                        </Button>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
                     {/* Search + filter bar */}
                     <PaymentSearchBar
