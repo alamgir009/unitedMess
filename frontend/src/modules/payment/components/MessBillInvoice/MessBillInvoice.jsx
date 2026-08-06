@@ -949,7 +949,7 @@ const MessBillInvoice = ({
                             </div>
 
                             {/* Selected period preview chip */}
-                            <div className="flex items-center gap-3 p-3.5 rounded-lg bg-primary/10 border-l-4 border-primary border border-primary/20">
+                            <div className="flex items-center gap-3 p-3.5 rounded-lg bg-primary/10 border border-primary/20 border-l-[3px] border-l-primary">
                                 <HiOutlineCalendarDays className="w-4 h-4 text-primary flex-shrink-0" />
                                 <p className="text-xs font-semibold text-primary">
                                     Sending invoices for{' '}
@@ -958,7 +958,7 @@ const MessBillInvoice = ({
                             </div>
 
                             {/* Irreversibility warning */}
-                            <div className="flex items-start gap-3 p-3.5 rounded-lg bg-warning-bg border-l-4 border-warning border border-warning-border">
+                            <div className="flex items-start gap-3 p-3.5 rounded-lg bg-warning-bg border border-warning-border border-l-[3px] border-l-warning">
                                 <HiOutlineExclamationTriangle className="w-4 h-4 text-warning-text flex-shrink-0 mt-0.5" />
                                 <p className="text-xs text-warning-text leading-relaxed">
                                     This will email a PDF invoice to every active member. Emails cannot be recalled once sent.
