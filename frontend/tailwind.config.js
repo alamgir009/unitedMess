@@ -108,6 +108,10 @@ export default {
         'bg-raised': "var(--bg-raised)",
         'text-primary': "var(--text-primary)",
         'text-muted': "var(--text-muted)",
+        tint: {
+          DEFAULT: "var(--tint-bg)",
+          text: "var(--tint-text)",
+        },
         brand: {
           DEFAULT: "var(--brand)",
           hover: "var(--brand-hover)",

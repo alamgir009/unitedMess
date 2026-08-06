@@ -9,6 +9,10 @@ html.dark {
   --brand-subtle: hsl(210 52% 25%);           /* #1E3A5F (approx) */
   --brand-foreground: hsl(0 0% 100%);         /* #FFFFFF */
 
+  /* ── Tint tokens (pill badges, subtle category accents) ── */
+  --tint-bg: hsl(217 44% 17%);                 /* #1A2740 — accent-subtle */
+  --tint-text: hsl(217.2 91.2% 59.8%);          /* #3B82F6 — blue-500 */
+
   /* ── Fintech accent palette ── */
   --accent-primary: #4D9CFF;                   /* CTA, active indicators */
   --accent-subtle: hsl(217 44% 17%);           /* #1A2740 — tinted bg */

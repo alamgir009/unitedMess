@@ -108,6 +108,10 @@
   --btn-radius-lg: 12px;
   --btn-radius-xl: 14px;
 
+  /* === TINT TOKENS (pill badges, subtle accents) === */
+  --tint-bg: var(--brand-subtle);
+  --tint-text: var(--brand);
+
   /* === COMPONENT SIZES === */
   --input-height-sm: 32px;
   --input-height-md: 40px;

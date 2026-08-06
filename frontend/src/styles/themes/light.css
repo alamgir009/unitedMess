@@ -10,6 +10,10 @@ html.light {
   --brand-subtle: hsl(213.8 100% 96.9%);       /* #EFF6FF (blue-50) */
   --brand-foreground: hsl(0 0% 100%);          /* #FFFFFF */
 
+  /* ── Tint tokens (pill badges, subtle category accents) ── */
+  --tint-bg: hsl(213.8 100% 96.9%);            /* #EFF6FF — blue-50 */
+  --tint-text: hsl(221.2 83.3% 53.3%);         /* #2563EB — blue-600 */
+
   /* ── Fintech accent palette ── */
   --accent-primary: #0052CC;                   /* CTA, active indicators */
   --accent-subtle: hsl(210 100% 96%);          /* #E8F0FE — tinted bg */
