@@ -63,11 +63,36 @@ const finalizeMonth = async (month, year) => {
 };
 
 /**
- * Send a Base64-encoded invoice PDF to the user's email.
- * @param {{ pdfBase64: string, fileName: string, monthName: string }} payload
+ * Download invoice PDF from server — triggers browser file download.
+ * @param {number} year   — e.g. 2026
+ * @param {number} month  — 1-indexed (1 = January, 12 = December)
+ * @param {string} [userId] — optional userId for admin viewing another user's invoice
  */
-const sendInvoicePdf = async ({ pdfBase64, fileName, monthName }) => {
-    const res = await apiClient.post(`${BASE}/send-email-pdf`, { pdfBase64, fileName, monthName });
+const downloadInvoice = async (year, month, userId) => {
+    const query = userId ? `?userId=${encodeURIComponent(userId)}` : '';
+    const res = await apiClient.get(`${BASE}/me/month/${year}/${month}/download${query}`, {
+        responseType: 'blob',
+    });
+    const blob = new Blob([res.data], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `UnitedMess_Invoice_${year}_${String(month).padStart(2, '0')}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+};
+
+/**
+ * Request server to generate and email the invoice PDF.
+ * @param {number} year   — e.g. 2026
+ * @param {number} month  — 1-indexed (1 = January, 12 = December)
+ * @param {string} [userId] — optional userId for admin sending on behalf of another user
+ */
+const sendInvoiceEmail = async (year, month, userId) => {
+    const query = userId ? `?userId=${encodeURIComponent(userId)}` : '';
+    const res = await apiClient.post(`${BASE}/me/month/${year}/${month}/email${query}`);
     return res.data;
 };
 
@@ -86,7 +111,8 @@ const invoiceService = {
     getInvoiceForMonth,
     getInvoiceById,
     finalizeMonth,
-    sendInvoicePdf,
+    downloadInvoice,
+    sendInvoiceEmail,
     emailAllInvoices,
 };
 

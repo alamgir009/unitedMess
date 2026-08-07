@@ -44,7 +44,6 @@ export default defineConfig({
                     'vendor-react': ['react', 'react-dom', 'react-router-dom'],
                     'vendor-state': ['react-redux', '@reduxjs/toolkit'],
                     'vendor-ui': ['framer-motion', 'lucide-react', 'react-icons'],
-                    'vendor-pdf': ['html2canvas', 'jspdf'],
                     'vendor-firebase': ['firebase/app', 'firebase/messaging'],
                 },
             },

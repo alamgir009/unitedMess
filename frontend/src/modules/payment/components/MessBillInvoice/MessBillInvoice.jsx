@@ -2,8 +2,6 @@ import { useState, useMemo, memo, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
-import PrintInvoice from './PrintInvoice';
-import { useDownloadInvoice } from './useDownloadInvoice';
 import invoiceService from '../../services/invoice.service';
 import {
     HiOutlineCurrencyRupee,
@@ -180,8 +178,7 @@ const MessBillInvoice = ({
     const [selectedMonth,       setSelectedMonth]       = useState(1);
     const [selectedYear,        setSelectedYear]        = useState(() => new Date().getFullYear());
     const invoiceRef = useRef(null);
-    const printRef = useRef(null);
-    const { isDownloading, downloadPDF, generatePDFBase64 } = useDownloadInvoice();
+    const [isDownloading, setIsDownloading] = useState(false);
 
     /* Opens the month/year picker modal, pre-filled with the active billing period */
     const openEmailAllModal = useCallback(() => {
@@ -258,32 +255,28 @@ const MessBillInvoice = ({
         }
     };
 
-    const handleDownloadPDF = () => {
-        downloadPDF({
-            printRef,
-            fileName: invMeta.no,
-            title: `Invoice ${invMeta.no}`,
-            subject: `Mess Bill - ${displayMonth}`,
-        });
+    const handleDownloadPDF = async () => {
+        setIsDownloading(true);
+        try {
+            await invoiceService.downloadInvoice(
+                billingNums.year,
+                billingNums.month
+            );
+            toast.success('Invoice downloaded');
+        } catch (err) {
+            toast.error('Failed to download invoice');
+        } finally {
+            setIsDownloading(false);
+        }
     };
 
     const handleSendEmail = async () => {
         setSendingEmail(true);
         try {
-            const base64 = await generatePDFBase64({
-                printRef,
-                title: `Invoice ${invMeta.no}`,
-                subject: `Mess Bill - ${displayMonth}`,
-            });
-            if (!base64) {
-                toast.error('Failed to generate invoice PDF');
-                return;
-            }
-            await invoiceService.sendInvoicePdf({
-                pdfBase64: base64,
-                fileName: `${invMeta.no}.pdf`,
-                monthName: displayMonth,
-            });
+            await invoiceService.sendInvoiceEmail(
+                billingNums.year,
+                billingNums.month
+            );
             toast.success('Invoice sent to your email!');
         } catch (err) {
             toast.error(err?.response?.data?.message ?? 'Failed to send invoice email');
@@ -310,7 +303,7 @@ const MessBillInvoice = ({
             className="relative mx-auto w-full max-w-none rounded-xl bg-card border border-border/50 overflow-hidden shadow-sm transition-all duration-200 ease-out transform-gpu hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md motion-reduce:hover:translate-y-0 contain-layout"
         >
             {/* ═══════════════════════════════════════════════════
-                FLAT LAYOUT — autoExpand mode (matches PrintInvoice)
+                FLAT LAYOUT — autoExpand mode
                 ═══════════════════════════════════════════════════ */}
             {autoExpand && (
                 <div className="px-6 md:px-8 pt-6 md:pt-8 pb-6">
@@ -1003,26 +996,6 @@ const MessBillInvoice = ({
             document.body
             )}
 
-            {/* Hidden print container */}
-            <div style={{ position: 'absolute', top: '-9999px', left: '-9999px', zIndex: -1 }} aria-hidden="true">
-                <div ref={printRef}>
-                    <PrintInvoice
-                        data={data}
-                        user={user}
-                        platformFee={platformFee}
-                        finalPayable={finalPayable}
-                        displayMonth={displayMonth}
-                        displayDate={displayDate}
-                        isRefund={isRefund}
-                        invoiceNo={invMeta.no}
-                        paymentStatus={paymentStatus}
-                        paymentMethod={paymentRecord?.paymentMethod}
-                        transactionId={paymentRecord?.transactionId}
-                        utr={paymentRecord?.utr}
-                        paymentDate={paymentRecord?.paymentDate}
-                    />
-                </div>
-            </div>
         </motion.div>
     );
 };

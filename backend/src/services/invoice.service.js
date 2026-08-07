@@ -201,28 +201,29 @@ const getInvoice = async (userId, month, year) => {
     }
 
     // ── NON-EXEMPT: calculate bill ──
-    const livePaidAmount = await calculatePaidAmount(userId, month, year);
-    const messStats = await calculateMessStats(month, year);
-
-    const userMeals = await Meal.aggregate([
-        { $match: { user: new mongoose.Types.ObjectId(userId), date: { $gte: start, $lte: end } } },
-        {
-            $group: {
-                _id: null,
-                mealCount: { $sum: '$mealCount' },
-                guestCount: { $sum: '$guestCount' }
+    // All four queries are independent — run in parallel.
+    const [livePaidAmount, messStats, userMeals, userMarkets] = await Promise.all([
+        calculatePaidAmount(userId, month, year),
+        calculateMessStats(month, year),
+        Meal.aggregate([
+            { $match: { user: new mongoose.Types.ObjectId(userId), date: { $gte: start, $lte: end } } },
+            {
+                $group: {
+                    _id: null,
+                    mealCount: { $sum: '$mealCount' },
+                    guestCount: { $sum: '$guestCount' }
+                }
             }
-        }
-    ]);
-
-    const userMarkets = await Market.aggregate([
-        { $match: { user: new mongoose.Types.ObjectId(userId), date: { $gte: start, $lte: end } } },
-        {
-            $group: {
-                _id: null,
-                totalAmount: { $sum: '$amount' }
+        ]),
+        Market.aggregate([
+            { $match: { user: new mongoose.Types.ObjectId(userId), date: { $gte: start, $lte: end } } },
+            {
+                $group: {
+                    _id: null,
+                    totalAmount: { $sum: '$amount' }
+                }
             }
-        }
+        ]),
     ]);
 
     const uMealCount = userMeals[0]?.mealCount || 0;

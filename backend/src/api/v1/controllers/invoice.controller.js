@@ -1,9 +1,11 @@
 const invoiceService = require('../../../services/invoice.service');
+const pdfService = require('../../../services/pdf.service');
 const emailService = require('../../../services/email.service');
 const notificationService = require('../../../services/notification.service');
 const { sendSuccessResponse } = require('../../../utils/helpers/response.helper');
 const { getBillingPeriod } = require('../../../utils/helpers/date.helper');
 const asyncHandler = require('../../../utils/helpers/asyncHandler');
+const logger = require('../../../utils/logger');
 const Invoice = require('../../../models/Invoice.model');
 const Payment = require('../../../models/Payment.model');
 const User = require('../../../models/User.model');
@@ -172,34 +174,124 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
 });
 
 /**
- * POST /invoices/send-email-pdf
- * Receive a Base64-encoded PDF from the frontend and email it to the user.
- * Body: { pdfBase64: string, fileName: string, monthName: string }
+ * Helper: build a fully-annotated invoice + user pair ready for pdfService.
+ * Runs independent DB queries in parallel to minimize latency.
  */
-const sendInvoiceEmailPdf = asyncHandler(async (req, res) => {
-    const { pdfBase64, fileName, monthName } = req.body;
+const _buildInvoiceForPdf = async (targetUserId, year, month) => {
+    const monthName = new Intl.DateTimeFormat('en-US', {
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'UTC',
+    }).format(new Date(Date.UTC(year, month - 1, 1)));
 
-    if (!pdfBase64) {
-        throw new AppError('PDF data is required', 400);
+    // Parallel: fetch user, invoice (with payment data already attached),
+    // and mess-wide stats — these are independent of each other.
+    const [user, invoice, messStats] = await Promise.all([
+        User.findById(targetUserId).lean(),
+        invoiceService.getInvoice(targetUserId, month, year),
+        invoiceService.calculateMessStats(month, year),
+    ]);
+
+    if (!user) throw new AppError('User not found', 404);
+    if (!invoice) throw new AppError('Invoice not found', 404);
+
+    // getInvoice() already attaches _paymentMethod/_transactionId/_paymentDate
+    // for finalized and non-finalized paths. Only annotate mess-wide stats
+    // which getInvoice() does not provide.
+    invoice._messGrandTotalMarket = messStats.totalMarketAmount;
+    invoice._messGrandTotalMeal = messStats.totalMealCount;
+
+    // If getInvoice() didn't attach payment data (exempt path), fetch it.
+    if (!invoice._paymentMethod) {
+        const latestPayment = await Payment.findOne({
+            user: targetUserId,
+            month: monthName,
+            status: 'completed',
+            type: 'mess_bill',
+        }).sort({ paymentDate: -1 }).lean();
+
+        if (latestPayment) {
+            invoice._paymentMethod = latestPayment.paymentMethod;
+            invoice._transactionId = latestPayment.transactionId || null;
+            invoice._paymentDate = latestPayment.paymentDate;
+        }
     }
 
-    // Resolve target user: admin can send on behalf of any user via ?userId= query
+    return { invoice, user, monthName };
+};
+
+/**
+ * GET /invoices/me/month/:year/:month/download
+ * Server-side PDF generation — returns the PDF as a download.
+ */
+const downloadInvoicePDF = asyncHandler(async (req, res) => {
+    const { year, month } = req.params;
+    const y = parseInt(year, 10);
+    const m = parseInt(month, 10);
+    if (!y || !m || m < 1 || m > 12) throw new AppError('Invalid year or month parameter', 400);
+
     let targetUserId = req.user.id;
     if (req.user.role === 'admin' && req.query.userId) {
         targetUserId = req.query.userId;
     }
 
-    const user = await User.findById(targetUserId).lean();
-    if (!user) {
-        throw new AppError('User not found', 404);
+    const { invoice, user, monthName } = await _buildInvoiceForPdf(targetUserId, y, m);
+    const pdfBuffer = await pdfService.generateInvoicePDF(invoice, user);
+    const fileName = `UnitedMess_Invoice_${monthName.replace(/\s+/g, '_')}.pdf`;
+
+    res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="${fileName}"`,
+        'Content-Length': pdfBuffer.length,
+    });
+    res.send(pdfBuffer);
+});
+
+/**
+ * POST /invoices/me/month/:year/:month/email
+ * Fire-and-forget: validates, responds 202 immediately, then generates
+ * PDF + sends email in the background. Failure is logged server-side.
+ */
+const sendInvoiceEmailServer = asyncHandler(async (req, res) => {
+    const { year, month } = req.params;
+    const y = parseInt(year, 10);
+    const m = parseInt(month, 10);
+    if (!y || !m || m < 1 || m > 12) throw new AppError('Invalid year or month parameter', 400);
+
+    let targetUserId = req.user.id;
+    if (req.user.role === 'admin' && req.query.userId) {
+        targetUserId = req.query.userId;
     }
 
-    const pdfBuffer = Buffer.from(pdfBase64, 'base64');
-    const safeName = fileName || `Invoice_${monthName?.replace(/\s+/g, '_') || 'unknown'}.pdf`;
+    // Validate user exists (fast) — fail fast before responding 202
+    const user = await User.findById(targetUserId).select('name email').lean();
+    if (!user) throw new AppError('User not found', 404);
 
-    await emailService.sendInvoiceEmail(user.email, user.name, monthName || 'Current Month', pdfBuffer, safeName);
+    // Respond immediately — PDF generation + SMTP happen in background
+    sendSuccessResponse(res, 202, `Invoice is being sent to ${user.email}`);
 
-    sendSuccessResponse(res, 200, `Invoice sent to ${user.email}`);
+    // Fire-and-forget: no await, errors are logged not thrown
+    const safeMonthName = new Intl.DateTimeFormat('en-US', {
+        month: 'long', year: 'numeric', timeZone: 'UTC',
+    }).format(new Date(Date.UTC(y, m - 1, 1)));
+
+    _buildInvoiceForPdf(targetUserId, y, m)
+        .then(({ invoice }) =>
+            pdfService.generateInvoicePDF(invoice, user)
+        )
+        .then((pdfBuffer) => {
+            const fileName = `UnitedMess_Invoice_${safeMonthName.replace(/\s+/g, '_')}.pdf`;
+            return emailService.sendInvoiceEmail(user.email, user.name, safeMonthName, pdfBuffer, fileName);
+        })
+        .catch((err) => {
+            logger.error('[Invoice Email] Background send failed', {
+                userId: targetUserId,
+                email: user.email,
+                year: y,
+                month: m,
+                error: err.message,
+            });
+        });
 });
 
 /**
@@ -233,6 +325,7 @@ module.exports = {
     getInvoiceById,
     getAdminUnpaidInvoices,
     updateInvoicePayment,
-    sendInvoiceEmailPdf,
+    downloadInvoicePDF,
+    sendInvoiceEmailServer,
     emailAllInvoices,
 };

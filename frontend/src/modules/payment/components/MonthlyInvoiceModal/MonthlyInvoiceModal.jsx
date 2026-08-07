@@ -30,7 +30,7 @@ const toInvoiceDisplayData = (invoice) => {
         grandTotalMarketAmount: invoice.marketAmountSpent  ?? 0,
         grandTotalMeal:         invoice.mealCount          ?? 0,
         totalGuestRevenue:      invoice.guestMealRevenue   ?? 0,
-        adjustedMealCharge:     invoice.messCost           ?? 0,
+        adjustedMealCharge:     invoice.mealRate            ?? 0,
         payableAmount:          invoice.totalPayable       ?? 0,
         monthName:              invoice.monthName,
         userStats: {

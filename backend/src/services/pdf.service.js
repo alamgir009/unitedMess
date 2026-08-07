@@ -58,12 +58,22 @@ const C = {
     purple:       '#c4b5fd',
 };
 
-/** Font paths */
+/** Font paths — loaded once into memory at startup */
 const FONT_DIR = path.join(__dirname, 'fonts');
 const FONTS = {
     regular:  path.join(FONT_DIR, 'NotoSans-Regular.ttf'),
     semibold: path.join(FONT_DIR, 'NotoSans-SemiBold.ttf'),
 };
+
+/** Cache font buffers at module load — avoids disk I/O on every PDF generation */
+const FONT_BUFFERS = {
+    regular:  fs.readFileSync(FONTS.regular),
+    semibold: fs.readFileSync(FONTS.semibold),
+};
+
+/** Cache brand logo buffer at module load */
+const LOGO_PATH = path.join(FONT_DIR, 'brand-logo.png');
+const LOGO_BUFFER = fs.existsSync(LOGO_PATH) ? fs.readFileSync(LOGO_PATH) : null;
 
 /** Page geometry */
 const PAGE_W    = 680;
@@ -180,15 +190,9 @@ const generateInvoicePDF = (invoiceData, user) => {
                 },
             });
 
-            /* ── Register custom fonts (with existence guard) ── */
-            if (!fs.existsSync(FONTS.regular)) {
-                return reject(new Error(`Font not found: ${FONTS.regular}`));
-            }
-            if (!fs.existsSync(FONTS.semibold)) {
-                return reject(new Error(`Font not found: ${FONTS.semibold}`));
-            }
-            doc.registerFont('NotoSans',          FONTS.regular);
-            doc.registerFont('NotoSans-SemiBold', FONTS.semibold);
+            /* ── Register custom fonts from cached buffers (no disk I/O) ── */
+            doc.registerFont('NotoSans',          FONT_BUFFERS.regular);
+            doc.registerFont('NotoSans-SemiBold', FONT_BUFFERS.semibold);
 
             /* ── Buffer collection ── */
             const chunks = [];
@@ -251,11 +255,10 @@ const generateInvoicePDF = (invoiceData, user) => {
             doc.font('Helvetica-Bold').fontSize(BRAND_FONT_SIZE);
             const textHeight = doc.currentLineHeight();
 
-            // Logo (optional)
-            const logoPath = path.join(FONT_DIR, 'brand-logo.png');
+            // Logo (from cached buffer — no disk I/O)
             let brandTextX = MARGIN;
-            if (fs.existsSync(logoPath)) {
-                doc.image(logoPath, MARGIN, headerStartY, {
+            if (LOGO_BUFFER) {
+                doc.image(LOGO_BUFFER, MARGIN, headerStartY, {
                     fit:    [LOGO_SIZE, LOGO_SIZE],
                     align:  'left',
                     valign: 'center',
