@@ -227,8 +227,8 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
 
   return (
     <>
-      <div className="flex flex-col overflow-hidden bg-card sm:rounded-lg sm:border sm:border-border sm:shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col">
+        <div className="flex flex-col gap-3 border-b border-border/60 px-5 pt-5 pb-4 sm:px-6 sm:pt-6 sm:pb-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 border border-primary/10">
               <Users size={18} strokeWidth={2} className="text-primary" />
@@ -256,7 +256,7 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
           </div>
         </div>
 
-        <div className="flex items-center gap-0.5 overflow-x-auto border-b border-border px-4 no-scrollbar">
+        <div className="flex items-center gap-0.5 overflow-x-auto border-b border-border/60 sm:px-5 no-scrollbar">
           {FILTER_TABS.map((tab) => (
             <button
               key={tab.id}
@@ -284,7 +284,7 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] table-auto text-left text-sm">
-            <thead className="border-b border-border bg-muted/30 text-caption font-semibold uppercase tracking-wider text-muted-foreground">
+            <thead className="bg-muted/40 text-caption font-semibold uppercase tracking-wider text-muted-foreground">
               <tr>
                 {COLUMNS.map((col) => (
                   <th

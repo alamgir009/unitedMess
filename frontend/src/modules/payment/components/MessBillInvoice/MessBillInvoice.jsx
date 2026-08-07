@@ -400,12 +400,13 @@ const MessBillInvoice = ({
                                 {'\u20b9'}{fmt(Math.abs(finalPayable))}
                             </p>
                         </div>
-                        <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${
-                            isPaid ? 'bg-success-bg text-success-text border border-success-border'
+                        <span className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold ${
+                            isPaid ? 'bg-success/10 text-success border border-success-border/60'
                             : isPartiallyPaid ? 'bg-warning-bg text-warning-text border border-warning-border'
-                            : isRefund ? 'bg-success-bg text-success-text border border-success-border'
+                            : isRefund ? 'bg-success/10 text-success border border-success-border/60'
                             : 'bg-warning-bg text-warning-text border border-warning-border'
                         }`}>
+                            {isPaid && <HiOutlineCheckCircle className="w-3 h-3" />}
                             {isPaid ? 'Paid' : isPartiallyPaid ? 'Partial' : isRefund ? 'Refund' : 'Due'}
                         </span>
                     </div>
@@ -439,7 +440,10 @@ const MessBillInvoice = ({
                                 <p className="text-xs font-bold text-success-text">Payment Successful</p>
                                 <p className="text-[11px] text-success-text/80 mt-0.5">{'\u20b9'}{fmt(displayAmt)} received · Invoice is final</p>
                             </div>
-                            <span className="text-[10px] font-bold text-success-text bg-white/50 px-2.5 py-1 rounded-lg border border-success-border">SETTLED</span>
+                            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold text-success bg-success/15 border border-success-border/60">
+                                <HiOutlineCheckCircle className="w-3 h-3" />
+                                SETTLED
+                            </span>
                         </div>
                     )}
                     {isRefund && !isPaid && (
@@ -747,9 +751,10 @@ const MessBillInvoice = ({
                         {'\u20b9'}{fmt(displayAmt)} received · Invoice is final
                         </p>
                     </div>
-                    <div className="flex-shrink-0 text-[10px] font-bold text-success-text bg-success-bg px-2.5 py-1 rounded-lg border border-success-border">
+                    <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold text-success bg-success/15 border border-success-border/60">
+                        <HiOutlineCheckCircle className="w-3 h-3" />
                         SETTLED
-                    </div>
+                    </span>
                     </div>
                 )}
                 {isRefund && !isPaid && (
