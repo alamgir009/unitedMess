@@ -26,6 +26,7 @@ router.get('/stats/meal-charge', ...adminOnly, userController.getMealCharge);
 
 // Bulk operations
 router.patch('/bulk/status', ...adminOnly, userController.bulkUpdateStatus);
+router.get('/payable-batch', ...adminOnly, userController.getPayableAmountsBatch);
 
 // ==================== CURRENT USER (Me) ====================
 router.route('/me')

@@ -10,6 +10,7 @@ const Invoice = require('../../../models/Invoice.model');
 const Payment = require('../../../models/Payment.model');
 const User = require('../../../models/User.model');
 const AppError = require('../../../utils/errors/AppError');
+const { emitToAll } = require('../../../sockets');
 
 /**
  * Get the active invoice for the current user
@@ -139,7 +140,7 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
 
         // Persist a Payment record so the refund appears in both member
         // and admin payment history (Payments page / invoice history).
-        await Payment.create({
+        const refundPayment = await Payment.create({
             user: invoice.user,
             amount: refundDelta,
             month: invoice.monthName,
@@ -150,14 +151,24 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
             remarks: `Refund of ₹ ${Math.abs(refundDelta).toLocaleString('en-IN', { maximumFractionDigits: 2 })} processed by admin`,
         });
 
-        // If gas_bill refund, sync user.gasBill status back to 'pending'
-        if (refundType === 'gas_bill') {
-            const { syncUserPaymentStatus } = require('../../../services/payment.service');
-            await syncUserPaymentStatus(invoice.user, 'gas_bill', 'refunded', invoice.monthName);
+        // Sync user payment/gasBill status for ALL refund types (not just gas_bill)
+        const { syncUserPaymentStatus } = require('../../../services/payment.service');
+        await syncUserPaymentStatus(invoice.user, refundType, 'refunded', invoice.monthName);
+
+        // Fetch full user details for email (name + email required)
+        const refundUser = await User.findById(invoice.user).select('name email').lean();
+
+        // Send refund confirmation email (non-blocking — never blocks the response)
+        if (refundUser?.email) {
+            emailService.sendPaymentStatusEmail(
+                refundUser.email,
+                refundUser.name,
+                { ...refundPayment.toObject?.() ?? refundPayment, month: invoice.monthName },
+                'refunded'
+            ).catch(err => logger.error('[Refund Email] Failed:', err.message));
         }
 
-        // Notify user of refund
-        const refundUser = await User.findById(invoice.user).select('name').lean();
+        // Notify user of refund (in-app notification)
         notificationService.createAndSend(
             invoice.user.toString(),
             'PAYMENT',
@@ -165,6 +176,9 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
             `A refund of ₹${Math.abs(refundDelta).toLocaleString('en-IN', { maximumFractionDigits: 2 })} for ${invoice.monthName} has been processed.`,
             { priority: 'HIGH', actionRequired: false }
         ).catch(() => {});
+
+        // Broadcast billing:updated to all connected clients for real-time status refresh
+        emitToAll('billing:updated');
     } else {
         invoice.status = invoiceService.determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
     }

@@ -10,10 +10,12 @@ import {
     HiOutlineUser,
     HiOutlineChevronDown,
     HiOutlineLockClosed,
+    HiOutlineArrowPath,
 } from 'react-icons/hi2';
 import { BsCashCoin, BsGlobe2 } from 'react-icons/bs';
 import { MdPendingActions, MdCheckCircleOutline, MdErrorOutline, MdRefresh } from 'react-icons/md';
 import apiClient from '@/services/api/client/apiClient';
+import paymentService from '../../services/payment.service';
 import { Button, Avatar, MemberSelect } from '@/shared/components/ui';
 import { SiRazorpay } from "react-icons/si";
 import { HiOutlineIdentification } from 'react-icons/hi2';
@@ -42,6 +44,13 @@ const PAYMENT_TYPES = [
     { value: 'gas_bill',  label: 'Gas Bill',  color: 'border-amber-500/60 bg-amber-500/10 text-amber-500'   },
     { value: 'other',     label: 'Other',     color: 'border-slate-400/60 bg-slate-400/10 text-muted-foreground' },
 ];
+
+// Single source of truth: paymentType → payable-batch cache key.
+const PAYABLE_KEY_FOR_TYPE = {
+    mess_bill: 'messPayable',
+    gas_bill: 'gasPayable',
+    other: null, // no payable to auto-fill → 0
+};
 
 const PAYMENT_METHODS = [
     { value: 'cash',       label: 'Cash',       Icon: BsCashCoin,           iconClass: 'text-emerald-500' },
@@ -202,15 +211,71 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
     const [users, setUsers]              = useState([]);
     const [isUsersLoading, setUsersLoad] = useState(false);
 
-    /* Admin: fetch member list */
+    /* ── Payable amounts cache + batch-loaded state ── */
+    const payableCacheRef = useRef(new Map());
+    const [isPayableLoading, setPayableLoading] = useState(false);
+    const [isBatchLoaded, setBatchLoaded] = useState(false);
+
+    /* Admin: fetch member list + batch payable amounts */
     useEffect(() => {
         if (!isAdmin) return;
         setUsersLoad(true);
-        apiClient.get('/users?limit=100&userStatus=approved&isActive=true')
-            .then(r => setUsers(r.data?.data?.users || r.data?.users || []))
+        apiClient.get('/users?limit=500&userStatus=approved&isActive=true')
+            .then(async (r) => {
+                const userList = r.data?.data?.users || r.data?.users || [];
+                setUsers(userList);
+                if (userList.length > 0) {
+                    try {
+                        setPayableLoading(true);
+                        const ids = userList.map(u => u._id);
+                        const batchRes = await paymentService.getPayableAmountsBatch(ids);
+                        const batchData = batchRes?.data || {};
+                        for (const [uid, info] of Object.entries(batchData)) {
+                            payableCacheRef.current.set(uid, { ...payableCacheRef.current.get(uid), ...info });
+                        }
+                    } catch (err) {
+                        console.error('[PaymentForm] Batch payable fetch failed:', err);
+                    } finally {
+                        setPayableLoading(false);
+                    }
+                }
+            })
             .catch(console.error)
-            .finally(() => setUsersLoad(false));
+            .finally(() => {
+                setUsersLoad(false);
+                setBatchLoaded(true);
+            });
     }, [isAdmin]);
+
+    /* ── On-demand resolver: authoritative per-user fetch (self-healing).
+       The bulk batch is a fast path, but must NOT be a hard dependency —
+       if it is missing/slow/failed on any deployment, a single-member select
+       still resolves the exact amount via the legacy per-user endpoints. */
+    const resolvePayableForUser = useCallback(async (userId, type, cache) => {
+        const key = PAYABLE_KEY_FOR_TYPE[type];
+        if (!key || !userId) return null;
+
+        const cachedInfo = cache.get(userId);
+        if (cachedInfo && cachedInfo[key] != null) {
+            return Number(cachedInfo[key]);
+        }
+
+        try {
+            // Legacy per-user endpoints (guaranteed on all deployments).
+            const legacyRes = key === 'messPayable'
+                ? await apiClient.get(`/users/${userId}/payable`)
+                : await apiClient.get(`/users/${userId}/payable/gasbill`);
+            const value = legacyRes?.data?.data?.payableAmount;
+            if (value != null) {
+                const info = { ...cache.get(userId), [key]: value };
+                cache.set(userId, { ...info, monthName: legacyRes?.data?.data?.monthName || info.monthName || '' });
+                return Number(value);
+            }
+        } catch (err) {
+            console.error('[PaymentForm] Per-user payable fetch failed:', err);
+        }
+        return null;
+    }, []);
 
     /* Populate on edit/view */
     useEffect(() => {
@@ -238,6 +303,49 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
             setFormData(p => ({ ...p, userId: preselectedUserId || '', userIds: ids }));
         }
     }, [initialData, currentUser, preselectedUserId]);
+
+    /* ── Auto-fill amount when single member is selected or type changes ──
+       Mess Bill (messPayable) and Gas Bill (gasPayable) resolve from the
+       already-fetched batch cache (client-side, no network round-trip).
+       On cache miss the amount is resolved on demand from the authoritative
+       per-user endpoints, so the field is never left blank because a bulk
+       fetch failed. */
+    useEffect(() => {
+        if (readOnly || isSubmitting || initialData) return;
+        if (formData.userIds.length !== 1) return;
+
+        const selectedId = formData.userIds[0];
+        const key = PAYABLE_KEY_FOR_TYPE[formData.type];
+        const cache = payableCacheRef.current;
+        const cachedInfo = cache.get(selectedId);
+
+        // Fast path: cache hit.
+        if (key && cachedInfo && cachedInfo[key] != null) {
+            const amount = Number(cachedInfo[key]);
+            if (formData.amount !== amount) {
+                setFormData(p => {
+                    const next = { ...p, amount };
+                    if (amount < 0 && p.status === 'completed') next.status = 'refunded';
+                    return next;
+                });
+            }
+            return;
+        }
+
+        // Slow path: cache miss → fetch the exact user's amount on demand.
+        let cancelled = false;
+        resolvePayableForUser(selectedId, formData.type, cache).then(value => {
+            if (value == null || cancelled) return;
+            setFormData(p => {
+                if (p.userIds[0] !== selectedId) return p;
+                const next = { ...p, amount: value };
+                if (value < 0 && p.status === 'completed') next.status = 'refunded';
+                return next;
+            });
+        }).catch(() => {});
+        return () => { cancelled = true; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- formData.amount must stay out of deps: this effect only reacts to member/type selection, never to every keystroke, so manual amounts are never clobbered.
+    }, [formData.userIds, formData.type, readOnly, isSubmitting, initialData, isBatchLoaded, resolvePayableForUser]);
 
     /* Dynamic filter: block users who already have a completed payment for the selected type.
        Already-selected users are never blocked — lets pre-selected members render as selected. */
@@ -301,13 +409,29 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
             {readOnly && <ReadOnlyBanner />}
 
             {/* ── Amount preview banner ── */}
-            <div className="relative flex items-center justify-center py-3 rounded-2xl border border-indigo-500/20 bg-gradient-to-r from-indigo-500/5 via-violet-500/5 to-purple-500/5 overflow-hidden shrink-0">
+            <div className={`relative flex items-center justify-center py-3 rounded-2xl border overflow-hidden shrink-0 ${
+                formData.status === 'refunded' && parseFloat(formData.amount) < 0
+                    ? 'border-rose-500/20 bg-gradient-to-r from-rose-500/5 via-pink-500/5 to-red-500/5'
+                    : 'border-indigo-500/20 bg-gradient-to-r from-indigo-500/5 via-violet-500/5 to-purple-500/5'
+            }`}>
                 <div className="flex items-baseline gap-2">
-                    <span className="text-[28px] font-black text-foreground leading-none tracking-tight">
-                        ₹{formData.amount === '' ? '0' : Number(formData.amount).toLocaleString('en-IN')}
+                    <span className={`text-[28px] font-black leading-none tracking-tight ${
+                        formData.status === 'refunded' && parseFloat(formData.amount) < 0
+                            ? 'text-rose-500'
+                            : 'text-foreground'
+                    }`}>
+                        {formData.status === 'refunded' && Number(formData.amount) < 0 ? '-₹' : '₹'}
+                        {formData.amount === '' ? '0' : Math.abs(Number(formData.amount)).toLocaleString('en-IN')}
                     </span>
-                    <span className="text-xs font-medium text-muted-foreground">payment amount</span>
+                    <span className="text-xs font-medium text-muted-foreground">
+                        {formData.status === 'refunded' && parseFloat(formData.amount) < 0 ? 'refund amount' : 'payment amount'}
+                    </span>
                 </div>
+                {isPayableLoading && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <HiOutlineArrowPath className="w-3.5 h-3.5 animate-spin text-muted-foreground/50" />
+                    </div>
+                )}
             </div>
 
             {/* ── Form fields ── */}
@@ -339,7 +463,14 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                             <MemberSelect
                                 users={users}
                                 value={formData.userIds}
-                                onChange={(ids) => setFormData(p => ({ ...p, userIds: ids }))}
+                                onChange={(ids) => setFormData(p => ({
+                                    ...p,
+                                    userIds: ids,
+                                    userId: ids.length === 1 ? ids[0] : '',
+                                    // Clear amount when selection changes to avoid stale data
+                                    // (auto-fill effect will repopulate from cache)
+                                    amount: ids.length === 1 ? '' : p.amount,
+                                }))}
                                 loading={isUsersLoading}
                                 disabled={readOnly || isSubmitting}
                                 accentColor="indigo"
@@ -352,16 +483,22 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                 {/* Amount */}
                 <Field label="Amount (₹)" icon={HiOutlineCurrencyRupee}>
                     <div className="relative">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-indigo-500 font-semibold text-sm pointer-events-none select-none">
+                        <span className={`absolute left-3.5 top-1/2 -translate-y-1/2 font-semibold text-sm pointer-events-none select-none ${
+                            formData.status === 'refunded' ? 'text-rose-500' : 'text-indigo-500'
+                        }`}>
                             ₹
                         </span>
                         <input
                             type="number" name="amount" value={formData.amount}
-                            onChange={handleChange} min="0" step="0.01"
+                            onChange={handleChange} step="0.01"
                             required={!readOnly}
-                            placeholder="Enter amount"
+                            placeholder={formData.status === 'refunded' ? 'Enter refund amount (negative)' : 'Enter amount'}
                             disabled={readOnly || isSubmitting}
-                            className={`${inputBase} pl-7 ${readOnly || isSubmitting ? inputDisabled : ''}`}
+                            className={`${inputBase} pl-7 ${
+                                formData.status === 'refunded' && parseFloat(formData.amount) < 0
+                                    ? 'border-rose-500/40 focus:ring-rose-500/30 focus:border-rose-500/60'
+                                    : ''
+                            } ${readOnly || isSubmitting ? inputDisabled : ''}`}
                         />
                     </div>
                 </Field>
@@ -401,7 +538,15 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                         {PAYMENT_TYPES.map(t => (
                             <TypeBtn
                                 key={t.value} value={t.value} current={formData.type}
-                                onClick={v => setFormData(p => ({ ...p, type: v }))}
+                                onClick={v => {
+                                    if (v === formData.type) return; // No-op if same type
+                                    setFormData(p => ({
+                                        ...p,
+                                        type: v,
+                                        // Clear amount on type switch — auto-fill will repopulate
+                                        amount: '',
+                                    }));
+                                }}
                                 label={t.label} color={t.color}
                                 disabled={readOnly || isSubmitting}
                             />

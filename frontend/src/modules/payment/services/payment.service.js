@@ -91,6 +91,13 @@ const verifyUpiManual = async (paymentId, data) => {
     return response.data;
 };
 
+// Batch-fetch payable amounts for multiple users (admin only)
+const getPayableAmountsBatch = async (userIds) => {
+    const query = userIds.map(id => `userIds=${encodeURIComponent(id)}`).join('&');
+    const response = await apiClient.get(`users/payable-batch?${query}`);
+    return response.data;
+};
+
 const paymentService = {
     getPayments,
     getPaymentById,
@@ -106,6 +113,7 @@ const paymentService = {
     uploadQrCode,
     submitUpiManual,
     verifyUpiManual,
+    getPayableAmountsBatch,
 };
 
 export default paymentService;

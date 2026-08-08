@@ -354,6 +354,23 @@ const bulkUpdateStatus = asyncHandler(async (req, res) => {
     });
 });
 
+const getPayableAmountsBatch = asyncHandler(async (req, res) => {
+    const { userIds } = req.query;
+
+    if (!userIds) {
+        throw new AppError('userIds query parameter is required', 400);
+    }
+
+    const ids = Array.isArray(userIds) ? userIds : userIds.split(',').map(s => s.trim()).filter(Boolean);
+
+    if (ids.length === 0) {
+        throw new AppError('At least one user ID is required', 400);
+    }
+
+    const result = await userService.getPayableAmountsBatch(ids);
+    sendSuccessResponse(res, 200, 'Payable amounts retrieved', result);
+});
+
 module.exports = {
     getUsers,
     searchUsers,
@@ -373,6 +390,7 @@ module.exports = {
     getMealCharge,
     getBillingMonthStats,
     getPaybleAmountforMeal,
+    getPayableAmountsBatch,
     bulkUpdateStatus,
     deactivateMyAccount,
     getPaybleAmountforGasBill

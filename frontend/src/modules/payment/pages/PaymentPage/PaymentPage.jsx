@@ -521,13 +521,14 @@ const PaymentPage = () => {
                 toast.success('Payment recorded successfully');
             }
             closeModal();
-            dispatch(fetchPayments({ page, limit }));
+            // Immediate refresh for instant status update (fintech-grade UX)
+            refreshData();
         } catch (err) {
             toast.error(typeof err === 'string' ? err : err?.message ?? 'Failed to save payment');
         } finally {
             setIsSubmitting(false);
         }
-    }, [editingPayment, isAdmin, dispatch, closeModal, page, limit]);
+    }, [editingPayment, isAdmin, dispatch, closeModal, refreshData]);
 
     const handleDelete = useCallback((payment) => {
         if (!isAdmin || !payment) return;
@@ -545,13 +546,13 @@ const PaymentPage = () => {
             await dispatch(deletePayment(deletingPayment._id)).unwrap();
             toast.success('Payment deleted');
             setDeletingPayment(null);
-            dispatch(fetchPayments({ page, limit }));
+            refreshData();
         } catch (err) {
             toast.error(err?.message ?? 'Failed to delete payment');
         } finally {
             setIsDeleting(false);
         }
-    }, [deletingPayment, isDeleting, dispatch, page, limit]);
+    }, [deletingPayment, isDeleting, dispatch, refreshData]);
 
     const handleVerifyClick = useCallback((payment) => {
         setVerifyPayment(payment);
