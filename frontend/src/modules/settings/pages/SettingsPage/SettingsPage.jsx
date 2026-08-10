@@ -7,7 +7,6 @@ import {
     Save,
     AlertCircle,
     TrendingUp,
-    Shield,
     RefreshCw,
     TriangleAlert
 } from 'lucide-react';
@@ -15,7 +14,7 @@ import toast from 'react-hot-toast';
 import settingsService from '../../services/settings.service';
 import apiClient from '@/services/api/client/apiClient';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
-import { Button } from '@/shared/components/ui';
+import { Button, RoleBadge } from '@/shared/components/ui';
 
 const CurrentBadge = ({ value, loading, prefix = '₹ ', suffix = '' }) => {
     if (loading) {
@@ -274,11 +273,8 @@ const SettingsPage = () => {
             <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <Shield className="w-4 h-4 text-primary" />
-                            <span className="text-xs font-semibold text-primary uppercase tracking-wider">
-                                Admin Panel
-                            </span>
+                        <div className="mb-1">
+                            <RoleBadge isAdmin={true} />
                         </div>
                         <h1 className="text-h1">
                             System Settings
