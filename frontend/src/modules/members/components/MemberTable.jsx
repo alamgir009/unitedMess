@@ -73,7 +73,7 @@ const MemberTable = ({ users, isLoading }) => {
     return (
         <div className="w-full">
             <div className="w-full md:bg-card md:rounded-2xl md:border md:border-border md:shadow-sm md:overflow-hidden">
-                <div className="hidden md:grid grid-cols-12 gap-4 items-center px-8 py-4 sticky top-0 z-30 bg-card/90 backdrop-blur-lg border-b border-border">
+                <div className="hidden md:grid grid-cols-12 gap-4 items-center px-8 py-4 sticky top-0 z-30 bg-card/95 border-b border-border">
                     {columns.map((col) => (
                         <div key={col.id} className={`${col.cols} flex items-center ${col.align} text-caption font-semibold uppercase tracking-wider text-muted-foreground select-none`}>
                             {col.label}

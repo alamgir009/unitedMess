@@ -317,7 +317,7 @@ const NotificationsPage = () => {
                             <div className="divide-y divide-border/60">
                                 {groupKeys.map((groupKey) => (
                                     <div key={groupKey}>
-                                        <div className="px-5 py-2 sticky top-0 z-[1] bg-muted/90 border-b border-border/60 backdrop-blur-sm">
+                                        <div className="px-5 py-2 sticky top-0 z-[1] bg-muted/95 border-b border-border/60">
                                             <span className="text-caption font-semibold tracking-widest uppercase text-muted-foreground">
                                                 {groupKey}
                                             </span>

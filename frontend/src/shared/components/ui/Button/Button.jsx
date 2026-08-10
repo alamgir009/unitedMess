@@ -68,7 +68,7 @@ const Button = forwardRef(({
 
   const btnClasses = cn(
     'font-medium select-none whitespace-nowrap',
-    'transition-all motion-reduce:transition-none duration-[var(--duration-base)] ease-out',
+    'transition-[box-shadow,transform,border-color,background-color,color,opacity] motion-reduce:transition-none duration-[var(--duration-base)] ease-out',
     '-webkit-tap-highlight-color-transparent',
 
     isLink && [

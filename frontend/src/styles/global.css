@@ -628,4 +628,10 @@
   .sidebar-depth {
     box-shadow: var(--shadow-xs);
   }
+
+  /* ─── GPU-accelerated scroll container ─── */
+  .gpu-scroll {
+    will-change: scroll-position;
+    transform: translateZ(0);
+  }
 }
