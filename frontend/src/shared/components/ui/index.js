@@ -15,3 +15,4 @@ export { default as StatPill } from './StatPill/StatPill.jsx';
 export { default as EmptyState } from './EmptyState/EmptyState.jsx';
 export { default as PasswordInput } from './PasswordInput/PasswordInput.jsx';
 export { default as Popover } from './Popover/Popover.jsx';
+export { default as RoleBadge } from './RoleBadge/RoleBadge.jsx';

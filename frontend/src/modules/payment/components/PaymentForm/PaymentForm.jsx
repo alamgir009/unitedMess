@@ -35,8 +35,8 @@ const currentMonthYear = () => {
 
 const monthYearFromDate = (dateStr) => {
     if (!dateStr) return currentMonthYear();
-    const d = new Date(dateStr + 'T00:00:00');
-    return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+    const d = new Date(dateStr + 'T12:00:00Z');
+    return `${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 };
 
 const PAYMENT_TYPES = [
@@ -92,7 +92,9 @@ const Field = ({ label, icon: Icon, children, className = '' }) => (
 /* ─── Custom icon dropdown ──────────────────────────────────── */
 const IconDropdown = ({ name, value, onChange, options, disabled = false }) => {
     const [open, setOpen] = useState(false);
+    const [highlightedIndex, setHighlightedIndex] = useState(-1);
     const ref = useRef(null);
+    const listRef = useRef(null);
     const selected = options.find(o => o.value === value) ?? options[0];
 
     useEffect(() => {
@@ -103,10 +105,55 @@ const IconDropdown = ({ name, value, onChange, options, disabled = false }) => {
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
+    useEffect(() => {
+        if (open) {
+            const idx = options.findIndex(o => o.value === value);
+            setHighlightedIndex(idx >= 0 ? idx : 0);
+        }
+    }, [open, value, options]);
+
+    useEffect(() => {
+        if (!open || highlightedIndex < 0) return;
+        const items = listRef.current?.querySelectorAll('[role="option"]');
+        items?.[highlightedIndex]?.scrollIntoView({ block: 'nearest' });
+    }, [open, highlightedIndex]);
+
     const pick = (val) => {
         if (disabled) return;
         onChange({ target: { name, value: val } });
         setOpen(false);
+    };
+
+    const handleKeyDown = (e) => {
+        if (disabled) return;
+        if (!open) {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setOpen(true);
+            }
+            return;
+        }
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                setHighlightedIndex(i => (i + 1) % options.length);
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                setHighlightedIndex(i => (i - 1 + options.length) % options.length);
+                break;
+            case 'Enter':
+            case ' ':
+                e.preventDefault();
+                if (highlightedIndex >= 0) pick(options[highlightedIndex].value);
+                break;
+            case 'Escape':
+                e.preventDefault();
+                setOpen(false);
+                break;
+            default:
+                break;
+        }
     };
 
     return (
@@ -114,6 +161,9 @@ const IconDropdown = ({ name, value, onChange, options, disabled = false }) => {
             <button
                 type="button"
                 onClick={() => !disabled && setOpen(o => !o)}
+                onKeyDown={handleKeyDown}
+                aria-haspopup="listbox"
+                aria-expanded={open}
                 className={`${inputBase} flex items-center justify-between gap-2 text-left
                     ${disabled ? inputDisabled : 'cursor-pointer'}`}
             >
@@ -129,16 +179,26 @@ const IconDropdown = ({ name, value, onChange, options, disabled = false }) => {
             </button>
 
             {open && !disabled && (
-                <div className="absolute z-50 top-full mt-1.5 w-full rounded-xl border border-border/60 bg-white dark:bg-slate-900 shadow-lg overflow-hidden">
-                    {options.map(opt => (
+                <div
+                    ref={listRef}
+                    role="listbox"
+                    aria-label={`${name} options`}
+                    className="absolute z-50 top-full mt-1.5 w-full rounded-xl border border-border/60 bg-white dark:bg-slate-900 shadow-lg overflow-hidden max-h-[200px] overflow-y-auto"
+                >
+                    {options.map((opt, idx) => (
                         <button
                             key={opt.value}
                             type="button"
+                            role="option"
+                            aria-selected={value === opt.value}
                             onClick={() => pick(opt.value)}
+                            onMouseEnter={() => setHighlightedIndex(idx)}
                             className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors duration-100
                                 ${value === opt.value
                                     ? 'bg-indigo-500/10 text-indigo-500 font-medium'
-                                    : 'hover:bg-muted/40 text-foreground'
+                                    : idx === highlightedIndex
+                                        ? 'bg-muted/60 text-foreground'
+                                        : 'hover:bg-muted/40 text-foreground'
                                 }`}
                         >
                             <opt.Icon className={`w-4 h-4 shrink-0 ${opt.iconClass}`} />
@@ -213,6 +273,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
 
     /* ── Payable amounts cache + batch-loaded state ── */
     const payableCacheRef = useRef(new Map());
+    const previousAmountsRef = useRef({});
     const [isPayableLoading, setPayableLoading] = useState(false);
     const [isBatchLoaded, setBatchLoaded] = useState(false);
 
@@ -376,7 +437,33 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
         e.preventDefault();
         if (readOnly || isSubmitting) return;
 
-        const payload = { ...formData, amount: parseFloat(formData.amount) || 0 };
+        const parsedAmount = parseFloat(formData.amount);
+        const isRefund = formData.status === 'refunded';
+
+        // B01: Block zero/negative amounts for non-refund payments
+        if (!isRefund && (isNaN(parsedAmount) || parsedAmount <= 0)) {
+            toast.error('Please enter a valid amount greater than zero');
+            return;
+        }
+
+        // B01: Block negative amounts for non-refund status
+        if (!isRefund && parsedAmount < 0) {
+            toast.error('Amount cannot be negative for non-refund payments');
+            return;
+        }
+
+        const payload = { ...formData, amount: isRefund ? Math.abs(parsedAmount) : parsedAmount };
+
+        // B02: Soft warning if amount significantly exceeds payable (single-member only)
+        if (!isRefund && !initialData && formData.userIds.length === 1) {
+            const selectedId = formData.userIds[0];
+            const key = PAYABLE_KEY_FOR_TYPE[formData.type];
+            const cachedInfo = payableCacheRef.current.get(selectedId);
+            const payable = cachedInfo?.[key];
+            if (payable != null && parsedAmount > Number(payable) * 1.5) {
+                toast(`Heads up: ₹${parsedAmount.toLocaleString('en-IN')} is significantly more than the expected payable of ₹${Number(payable).toLocaleString('en-IN')}`, { icon: '⚠️' });
+            }
+        }
 
         if (initialData) {
             payload.userId = formData.userId;
@@ -421,7 +508,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                             : 'text-foreground'
                     }`}>
                         {formData.status === 'refunded' && Number(formData.amount) < 0 ? '-₹' : '₹'}
-                        {formData.amount === '' ? '0' : Math.abs(Number(formData.amount)).toLocaleString('en-IN')}
+                        {formData.amount === '' ? '—' : Math.abs(Number(formData.amount)).toLocaleString('en-IN')}
                     </span>
                     <span className="text-xs font-medium text-muted-foreground">
                         {formData.status === 'refunded' && parseFloat(formData.amount) < 0 ? 'refund amount' : 'payment amount'}
@@ -490,7 +577,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                         </span>
                         <input
                             type="number" name="amount" value={formData.amount}
-                            onChange={handleChange} step="0.01"
+                            onChange={handleChange} step="0.01" min="0"
                             required={!readOnly}
                             placeholder={formData.status === 'refunded' ? 'Enter refund amount (negative)' : 'Enter amount'}
                             disabled={readOnly || isSubmitting}
@@ -540,11 +627,16 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                                 key={t.value} value={t.value} current={formData.type}
                                 onClick={v => {
                                     if (v === formData.type) return; // No-op if same type
+                                    // Save current amount before switching
+                                    if (formData.amount !== '') {
+                                        previousAmountsRef.current[formData.type] = formData.amount;
+                                    }
+                                    const restoredAmount = previousAmountsRef.current[v] || '';
                                     setFormData(p => ({
                                         ...p,
                                         type: v,
-                                        // Clear amount on type switch — auto-fill will repopulate
-                                        amount: '',
+                                        // Restore previous amount for this type, or clear for auto-fill
+                                        amount: restoredAmount,
                                     }));
                                 }}
                                 label={t.label} color={t.color}

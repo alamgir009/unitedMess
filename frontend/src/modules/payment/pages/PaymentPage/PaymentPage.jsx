@@ -11,7 +11,7 @@
  *  ✓ Dead platformFee state removed
  */
 
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AnimatePresence } from 'framer-motion';
 import {
@@ -299,7 +299,7 @@ const PaymentPage = () => {
         } catch (err) {
             console.error('[GasBill] getBillingPeriod failed:', err);
             monthName = new Date().toLocaleDateString('en-US', {
-                month: 'long', year: 'numeric',
+                month: 'long', year: 'numeric', timeZone: 'UTC',
             });
         }
         setGasBillModal({ open: true, amount, monthName });
@@ -574,6 +574,15 @@ const PaymentPage = () => {
         setStatusFilter(''); setTypeFilter(''); setMethodFilter('');
     }, []);
 
+    /* ── debounced search ── */
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const searchTimerRef = useRef(null);
+    useEffect(() => {
+        if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+        searchTimerRef.current = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+        return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); };
+    }, [searchQuery]);
+
     /* ── client-side filter ── */
     const filtered = useMemo(() =>
         (payments || []).filter(p => {
@@ -582,8 +591,8 @@ const PaymentPage = () => {
             if (methodFilter && p.paymentMethod !== methodFilter) return false;
             if (dateFrom && new Date(p.paymentDate) < new Date(dateFrom)) return false;
             if (dateTo   && new Date(p.paymentDate) > new Date(dateTo))   return false;
-            if (searchQuery.trim()) {
-                const q    = searchQuery.toLowerCase();
+            if (debouncedSearch.trim()) {
+                const q    = debouncedSearch.toLowerCase();
                 const name = (typeof p.user === 'object' ? p.user?.name  : '') || '';
                 const mail = (typeof p.user === 'object' ? p.user?.email : '') || '';
                 if (
@@ -595,15 +604,15 @@ const PaymentPage = () => {
             }
             return true;
         }),
-        [payments, statusFilter, typeFilter, methodFilter, dateFrom, dateTo, searchQuery]
+        [payments, statusFilter, typeFilter, methodFilter, dateFrom, dateTo, debouncedSearch]
     );
 
     /* ── derived ── */
     const hasActive       = !!(statusFilter || typeFilter || methodFilter || dateFrom || dateTo || searchQuery.trim());
-    // Auto-dismiss error banner after 7s
+    /* ── Auto-dismiss error banner after 15s (increased from 7s) ── */
     useEffect(() => {
         if (!isError && !message) return;
-        const timer = setTimeout(() => dispatch(reset()), 7000);
+        const timer = setTimeout(() => dispatch(reset()), 15000);
         return () => clearTimeout(timer);
     }, [isError, message, dispatch]);
     const modalTitle      = isReadOnly ? 'View Payment Details' : editingPayment ? 'Edit Payment' : 'Record Payment';
@@ -691,15 +700,24 @@ const PaymentPage = () => {
                             {[1, 2, 3, 4, 5, 6].map(n => <SkeletonCard key={n} />)}
                         </div>
                     ) : isAdmin ? (
-                        <AdminPaymentView
-                            payments={filtered}
-                            viewMode={viewMode}
-                            onEdit={openEdit}
-                            onDelete={handleDelete}
-                            onViewInvoice={handleViewInvoice}
-                            onVerify={handleVerifyClick}
-                            isLoading={isListLoading}
-                        />
+                        <>
+                            <AdminPaymentView
+                                payments={filtered}
+                                viewMode={viewMode}
+                                onEdit={openEdit}
+                                onDelete={handleDelete}
+                                onViewInvoice={handleViewInvoice}
+                                onVerify={handleVerifyClick}
+                                isLoading={isListLoading}
+                            />
+                            {!hasActive && (
+                                <Pagination
+                                    pagination={pagination}
+                                    onPageChange={p => setPage(p)}
+                                    onLimitChange={l => { setLimit(l); setPage(1); }}
+                                />
+                            )}
+                        </>
                     ) : (
                         <>
                             <PaymentList

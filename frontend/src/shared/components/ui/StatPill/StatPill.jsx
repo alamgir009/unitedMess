@@ -1,16 +1,16 @@
 import React from 'react';
 import { cn } from '@/core/utils/helpers/string.helper';
 
-const StatPill = React.memo(({ icon: Icon, label, value, color, trend, compact }) => (
+const StatPill = React.memo(({ icon: Icon, label, value, color, trend, compact, sublabel }) => (
   <div
     className={cn(
       'flex items-center gap-3 rounded-lg border border-border',
       'surface-elevated text-card-foreground',
-      'shadow-sm depth-top overflow-hidden min-w-0',
+      'shadow-sm depth-top overflow-hidden min-w-0 h-full',
+      'min-h-[72px] sm:min-h-[80px]',
       'transition-all duration-[var(--duration-base)] ease-out',
       'transform-gpu hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md',
       'motion-reduce:hover:translate-y-0',
-      'contain-layout',
       compact ? 'px-2.5 py-2' : 'px-3.5 py-3 sm:px-4 sm:py-3.5',
     )}
   >
@@ -28,6 +28,9 @@ const StatPill = React.memo(({ icon: Icon, label, value, color, trend, compact }
       )}>
         {label}
       </p>
+      {sublabel && (
+        <p className="text-[10px] text-muted-foreground/60 truncate -mt-0.5">{sublabel}</p>
+      )}
       <div className="flex items-center gap-2">
         <p className={cn(
           'font-bold tracking-tight text-foreground leading-none tabular-nums truncate',

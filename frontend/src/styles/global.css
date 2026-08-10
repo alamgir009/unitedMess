@@ -197,7 +197,7 @@
 
   /* ─── Depth layers — single shadow for paint efficiency ─── */
   .depth-top {
-    box-shadow: var(--shadow-xs);
+    box-shadow: var(--shadow-sm), var(--inset-top-light);
   }
   .depth-md {
     box-shadow: var(--shadow-sm);

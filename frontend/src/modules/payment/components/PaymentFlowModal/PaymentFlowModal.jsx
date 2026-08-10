@@ -120,9 +120,9 @@ const StepIndicator = memo(({ payStep, labels = MESS_STEP_LABELS_AUTO }) => (
   <div
     className="flex items-center justify-between px-1"
     role="progressbar"
-    aria-valuenow={Math.min(payStep, 3)}
+    aria-valuenow={Math.min(payStep, labels.length)}
     aria-valuemin={1}
-    aria-valuemax={3}
+    aria-valuemax={labels.length}
   >
     {labels.map((label, i) => {
       const num = i + 1;

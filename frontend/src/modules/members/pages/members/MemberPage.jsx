@@ -7,7 +7,6 @@ import {
     HiOutlineCurrencyRupee,
     HiOutlineArrowTrendingUp,
     HiOutlineCalendarDays,
-    HiOutlineShieldCheck,
     HiOutlineXMark,
 } from 'react-icons/hi2';
 import { IoFastFoodOutline } from 'react-icons/io5';
@@ -15,6 +14,7 @@ import { IoFastFoodOutline } from 'react-icons/io5';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import MemberTable from '../../components/MemberTable';
 import StatPill from '@/shared/components/ui/StatPill/StatPill';
+import { RoleBadge } from '@/shared/components/ui';
 import { fetchUsers, fetchBillingMonthStats, reset } from '../../store/members.slice';
 
 /* ─────────────────────────────────────────────
@@ -136,15 +136,7 @@ const MemberPage = React.memo(() => {
                         
                         {/* Title block */}
                         <div className="space-y-1">
-                            {isAdmin ? (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 mb-1 rounded-full text-xs font-semibold bg-secondary-400/10 text-secondary-400 border border-secondary-400/20">
-                                    <HiOutlineShieldCheck className="w-3.5 h-3.5" /> Admin View
-                                </span>
-                            ) : (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 mb-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
-                                    <HiOutlineUserGroup className="w-3.5 h-3.5" /> Directory
-                                </span>
-                            )}
+                            <RoleBadge isAdmin={isAdmin} icon={HiOutlineUserGroup} label="Directory" />
                             <h2 className="text-h1">
                                 {isAdmin ? 'Members & Finalized Bills' : 'Members Directory'}
                             </h2>

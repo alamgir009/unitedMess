@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import {
     HiOutlinePlus, HiOutlineSquares2X2, HiOutlineListBullet,
-    HiOutlineShieldCheck, HiOutlineSparkles,
+    HiOutlineSparkles,
     HiOutlineXMark, HiOutlineChevronDown, HiOutlineInformationCircle,
     HiOutlineClock,
 } from 'react-icons/hi2';
@@ -13,6 +13,7 @@ import toast from 'react-hot-toast';
 
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import Button from '@/shared/components/ui/Button/Button';
+import { RoleBadge } from '@/shared/components/ui';
 import { SkeletonCard } from '@/shared/components/ui/Loader';
 import MealList from '../../components/MealList/MealList';
 import AdminMealView from '../../components/AdminMealView/AdminMealView';
@@ -265,15 +266,7 @@ const MealPage = () => {
                     {/* Header */}
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                         <div className="space-y-1">
-                            {isAdmin ? (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 mb-1 rounded-full text-xs font-semibold bg-secondary-400/10 text-secondary-400 border border-secondary-400/20">
-                                    <HiOutlineShieldCheck className="w-3.5 h-3.5" /> Admin View
-                                </span>
-                            ) : (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 mb-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
-                                    <HiOutlineSparkles className="w-3.5 h-3.5" /> My Meals
-                                </span>
-                            )}
+                            <RoleBadge isAdmin={isAdmin} icon={HiOutlineSparkles} label="My Meals" />
                             <h2 className="text-h1">
                                 {isAdmin ? 'Meals Overview' : 'Meals Hub'}
                             </h2>

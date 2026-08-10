@@ -38,12 +38,14 @@ const PaymentStatsBar = React.memo(({ payments = [], isAdmin, totalCount = 0 }) 
             {
                 icon: HiOutlineCurrencyRupee,
                 label: 'Total Records',
+                sublabel: totalCount > payments.length ? `${payments.length} on this page` : undefined,
                 value: totalCount || payments.length,
                 color: COLORS.primary,
             },
             {
                 icon: HiOutlineCheckCircle,
                 label: 'Total Paid',
+                sublabel: totalCount > payments.length ? 'This page only' : undefined,
                 value: `\u20B9${totalPaid.toLocaleString('en-IN')}`,
                 color: COLORS.emerald,
             },
@@ -53,6 +55,7 @@ const PaymentStatsBar = React.memo(({ payments = [], isAdmin, totalCount = 0 }) 
             items.push({
                 icon: HiOutlineClock,
                 label: 'Pending',
+                sublabel: totalCount > payments.length ? 'This page only' : undefined,
                 value: pendingCount,
                 color: COLORS.amber,
             });
@@ -71,7 +74,7 @@ const PaymentStatsBar = React.memo(({ payments = [], isAdmin, totalCount = 0 }) 
     }, [payments, isAdmin, totalCount]);
 
     const gridLayoutClass = cn(
-        'grid gap-3 sm:gap-4',
+        'grid gap-3 sm:gap-4 items-stretch',
         stats.length === 2 && 'grid-cols-2 max-w-2xl',
         stats.length === 3 && 'grid-cols-2 md:grid-cols-3',
         stats.length === 4 && 'grid-cols-2 lg:grid-cols-4'

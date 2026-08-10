@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useModalAnimation } from '@/shared/hooks/useModalAnimation';
 import { cn } from '@/core/utils/helpers/string.helper';
@@ -6,16 +6,51 @@ import { HiOutlineXMark } from 'react-icons/hi2';
 
 const PaymentModal = ({ isOpen, onClose, title, children }) => {
   const { shouldRender, exiting } = useModalAnimation(isOpen, { exitTimeout: 120 });
+  const dialogRef = useRef(null);
+  const previousFocusRef = useRef(null);
 
   useEffect(() => {
     if (!shouldRender || exiting) return;
+    previousFocusRef.current = document.activeElement;
     const original = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    const esc = (e) => e.key === 'Escape' && onClose?.();
-    window.addEventListener('keydown', esc);
+
+    const dialog = dialogRef.current;
+    const focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const getFocusable = () => dialog ? Array.from(dialog.querySelectorAll(focusableSelector)) : [];
+
+    // Focus first element
+    requestAnimationFrame(() => {
+      const focusable = getFocusable();
+      if (focusable.length > 0) focusable[0]?.focus();
+      else dialog?.focus();
+    });
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose?.();
+        return;
+      }
+      if (e.key === 'Tab') {
+        const focusable = getFocusable();
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+        } else {
+          if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
     return () => {
       document.body.style.overflow = original;
-      window.removeEventListener('keydown', esc);
+      window.removeEventListener('keydown', handleKeyDown);
+      if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
+        previousFocusRef.current.focus();
+      }
     };
   }, [shouldRender, exiting, onClose]);
 
@@ -39,8 +74,10 @@ const PaymentModal = ({ isOpen, onClose, title, children }) => {
 
         <div className="flex min-h-full items-center justify-center p-3 sm:p-4">
           <div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
+            tabIndex={-1}
             className={cn(
               'relative w-full max-w-lg overflow-hidden rounded-3xl',
               'border border-black/10 dark:border-white/10',
