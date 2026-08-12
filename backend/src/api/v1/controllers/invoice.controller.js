@@ -49,15 +49,22 @@ const getMonthlyInvoice = asyncHandler(async (req, res) => {
         targetUserId = req.query.userId;
     }
 
-    // Parallel: fetch invoice + mess-wide stats (independent queries)
-    const [invoice, messStats] = await Promise.all([
-        invoiceService.getInvoiceForMonth(targetUserId, y, m),
-        invoiceService.calculateMessStats(m, y),
-    ]);
+    // Reuse the PDF pipeline's invoice+user assembly so the modal receives the
+    // exact same data (payment attrs, mess-wide stats) the generated PDF uses.
+    // The resolved user doc is the authoritative identity for the invoice owner —
+    // critical when an admin previews another member's invoice (header must show
+    // the member, not the viewer).
+    const { invoice, user } = await _buildInvoiceForPdf(targetUserId, y, m);
 
-    // Attach mess-wide stats so the frontend can render the exact PDF stat cards
-    invoice._messGrandTotalMarket = messStats.totalMarketAmount;
-    invoice._messGrandTotalMeal = messStats.totalMealCount;
+    // Attach a lean identity block (no sensitive fields) so the frontend preview
+    // can render the invoice owner's name/email and per-guest charge correctly.
+    invoice.userDetails = {
+        id: String(user._id || user.id),
+        name: user.name,
+        email: user.email,
+        image: user.image || null,
+        chargePerGuestMeal: user.chargePerGuestMeal || null,
+    };
 
     sendSuccessResponse(res, 200, 'Invoice retrieved', invoice);
 });

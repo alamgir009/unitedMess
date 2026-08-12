@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useModalAnimation } from '@/shared/hooks/useModalAnimation';
@@ -24,6 +24,40 @@ const toPaymentStatus = (invoiceStatus) => {
         case 'unpaid':
         default:               return 'pending';
     }
+};
+
+/**
+ * Resolve the identity of the invoice owner (NOT the viewer).
+ *
+ * The backend attaches `invoice.userDetails` (name/email/image/chargePerGuestMeal)
+ * to the monthly invoice response, so an admin previewing another member's
+ * invoice sees that member's identity instead of their own.
+ *
+ * Resolution order:
+ *   1. invoice.userDetails        — authoritative owner identity from the API
+ *   2. paymentRecord.user         — populated member on the payment row (fallback)
+ *   3. authenticated viewer (user) — self-view / any residual path
+ */
+const resolveInvoiceOwner = (invoice, paymentRecord, authUser) => {
+    const details = invoice?.userDetails;
+    if (details?.name) {
+        return {
+            ...(details.id ? { _id: details.id, id: details.id } : {}),
+            name: details.name,
+            email: details.email ?? '',
+            ...(details.image ? { image: details.image } : {}),
+            ...(details.chargePerGuestMeal != null
+                ? { chargePerGuestMeal: details.chargePerGuestMeal }
+                : {}),
+        };
+    }
+
+    const paymentUser = paymentRecord?.user;
+    if (paymentUser && typeof paymentUser === 'object' && paymentUser.name) {
+        return paymentUser;
+    }
+
+    return authUser;
 };
 
 const InvoiceSkeleton = () => (
@@ -108,7 +142,7 @@ const MonthlyInvoiceModal = ({
 }) => {
     const dispatch = useDispatch();
     const { monthlyInvoice, isLoadingMonthly, error } = useSelector((state) => state.invoice);
-    const { user } = useSelector((state) => state.auth);
+    const authUser = useSelector((state) => state.auth.user);
     const { shouldRender, exiting } = useModalAnimation(isOpen, { exitTimeout: 120 });
 
     useBodyScrollLock(shouldRender && !exiting);
@@ -130,6 +164,13 @@ const MonthlyInvoiceModal = ({
     }, [shouldRender, exiting, year, month, userId, dispatch, onClose]);
 
     const handleClose = useCallback(() => onClose(), [onClose]);
+
+    // Invoice owner identity — the viewer when it's their own invoice, but the
+    // target member when an admin previews someone else's (bug fix).
+    const displayUser = useMemo(
+        () => resolveInvoiceOwner(monthlyInvoice, externalPaymentRecord, authUser),
+        [monthlyInvoice, externalPaymentRecord, authUser]
+    );
 
     if (!shouldRender) return null;
 
@@ -184,7 +225,7 @@ const MonthlyInvoiceModal = ({
             >
                 <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-primary/10">
+                        <div className="grid place-items-center w-9 h-9 rounded-xl bg-primary/10">
                             <HiOutlineDocumentText className="w-5 h-5 text-primary" />
                         </div>
                         <div>
@@ -201,7 +242,7 @@ const MonthlyInvoiceModal = ({
                         <button
                             id="monthly-invoice-modal-close"
                             onClick={handleClose}
-                            className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                            className="grid place-items-center touch-target rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                             aria-label="Close invoice modal"
                         >
                             <HiOutlineXMark className="w-5 h-5" />
@@ -247,7 +288,7 @@ const MonthlyInvoiceModal = ({
 
                             <InvoicePreview
                                 invoice={monthlyInvoice}
-                                user={user}
+                                user={displayUser}
                                 paymentRecord={invoicePaymentRecord}
                                 onPayNow={!isPartiallyPaid && paymentStatus !== 'success' ? onPayNow : undefined}
                                 isPaying={isPaying}

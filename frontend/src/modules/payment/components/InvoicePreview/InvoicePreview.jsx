@@ -193,45 +193,47 @@ const InvoicePreview = ({
                HEADER — Logo + Brand + Invoice Meta
                Matches pdf.service.js HEADER section exactly
                ═══════════════════════════════════════════════════ */}
-            <div className="px-6 md:px-10 pt-6 md:pt-8 pb-5">
+            <div className="p-[var(--um-space-5)] px-[var(--um-space-4)]">
                 <div className="flex items-start justify-between gap-4">
                     {/* Left: Logo + Brand + User */}
-                    <div className="flex items-start gap-3">
-                        <img
-                            src="/assets/icons/resize_logo.png"
-                            alt="United Mess"
-                            className="w-[26px] h-[26px] object-contain flex-shrink-0 mt-0.5"
-                        />
-                        <div>
-                            <p className="text-lg font-bold leading-tight">
-                                <span className="text-foreground">United</span>
-                                {' '}
-                                <span className="text-primary">Mess</span>
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-center -mt-px gap-[var(--um-space-3)]">
+                            <img
+                                src="/assets/icons/resize_logo.png"
+                                alt="United Mess"
+                                style={{ aspectRatio: '1 / 1' }}
+                                className="block w-[1.05em] h-[1.05em] object-contain flex-shrink-0 rounded-[var(--radius-md)]"
+                            />
+                            <p className="text-[length:var(--um-fs-brand)] font-bold leading-tight tracking-tight text-foreground">
+                                United
+                                <span className="text-primary"> Mess</span>
                             </p>
-                            <p className="text-[13px] text-muted-foreground mt-0.5">
+                        </div>
+                        <div className="mt-[var(--um-space-2)] space-y-[var(--um-space-1)]">
+                            <p className="text-[length:var(--um-fs-meta)] text-muted-foreground">
                                 Mess Management Platform
                             </p>
-                            <p className="text-[13px] text-foreground/80 mt-1 font-medium">
+                            <p className="text-[length:var(--um-fs-meta)] text-foreground/80 font-medium">
                                 {user?.name || '\u2014'}
                             </p>
-                            <p className="text-[13px] text-foreground/80">
+                            <p className="text-[length:var(--um-fs-meta)] text-foreground/80">
                                 {user?.email || ''}
                             </p>
                         </div>
                     </div>
 
                     {/* Right: Invoice meta (matches PDF right-aligned block) */}
-                    <div className="text-right flex-shrink-0">
-                        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                    <div className="text-right flex-shrink-0 space-y-[var(--um-space-1)]">
+                        <p className="text-[length:var(--um-fs-caption)] font-semibold uppercase tracking-widest text-muted-foreground/70">
                             Invoice
                         </p>
-                        <p className="text-[13px] text-primary font-semibold mt-0.5 font-mono">
+                        <p className="text-[length:var(--um-fs-meta)] text-primary font-semibold font-mono">
                             {meta.invoiceNo}
                         </p>
-                        <p className="text-[13px] text-foreground/80 font-semibold mt-1">
+                        <p className="text-[length:var(--um-fs-meta)] text-foreground/80 font-semibold">
                             {meta.monthName}
                         </p>
-                        <p className="text-[13px] text-foreground/80 mt-0.5">
+                        <p className="text-[length:var(--um-fs-meta)] text-foreground/80">
                             {meta.displayDate}
                         </p>
                     </div>
@@ -239,13 +241,15 @@ const InvoicePreview = ({
             </div>
 
             {/* ── Indigo divider (PDF: hRule with C.indigo, thick=2) ── */}
-            <div className="mx-6 md:mx-10 h-[2px] bg-primary" />
+            <div className="px-[var(--um-space-4)]">
+                <div className="h-[2px] bg-primary" />
+            </div>
 
             {/* ═══════════════════════════════════════════════════
                STAT CARDS — 3 horizontal cards
                Matches pdf.service.js STAT CARDS section exactly
                ═══════════════════════════════════════════════════ */}
-            <div className="px-6 md:px-10 pt-5">
+            <div className="px-[var(--um-space-4)] pt-5">
                 <div className="grid grid-cols-3 gap-2.5">
                     {/* Card 1: Market Total (All) */}
                     <div className="rounded-lg border border-border bg-muted/30 p-3.5">
