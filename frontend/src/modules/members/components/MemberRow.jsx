@@ -14,6 +14,7 @@ const STATUS_MAP = {
     denied: { bg: 'bg-danger-bg', text: 'text-danger', border: 'border-danger-border', icon: XCircle },
     pending: { bg: 'bg-warning-bg', text: 'text-warning', border: 'border-warning-border', icon: Clock },
     refund: { bg: 'bg-info-bg', text: 'text-info', border: 'border-info-border', icon: RotateCcw },
+    refunded: { bg: 'bg-info-bg', text: 'text-info', border: 'border-info-border', icon: RotateCcw },
 };
 
 const DEFAULT_STATUS = { bg: 'bg-muted', text: 'text-muted-foreground', border: 'border-border', icon: null };
@@ -176,7 +177,7 @@ const MemberRow = React.memo(({ user, index, isLast }) => {
 
                 {/* 4 ── Payment Status (col-span-3) ── */}
                 <div className="md:col-span-3 flex items-center justify-between md:block gap-2">
-                    <MobileLabel>Payment Status</MobileLabel>
+                    <MobileLabel>Mess Bill</MobileLabel>
                     <StatusBadge status={(user.paybleAmountforMeal ?? 0) < 0 ? 'refund' : user.payment} />
                 </div>
 

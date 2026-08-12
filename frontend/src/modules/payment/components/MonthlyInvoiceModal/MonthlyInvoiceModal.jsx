@@ -1,6 +1,8 @@
 import { useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useModalAnimation } from '@/shared/hooks/useModalAnimation';
+import useBodyScrollLock from '@/shared/hooks/useBodyScrollLock';
 import { cn } from '@/core/utils/helpers/string.helper';
 import {
     HiOutlineXMark,
@@ -134,11 +136,12 @@ const MonthlyInvoiceModal = ({
     const isAdmin = user?.role === 'admin';
     const { shouldRender, exiting } = useModalAnimation(isOpen, { exitTimeout: 120 });
 
+    useBodyScrollLock(shouldRender && !exiting);
+
     useEffect(() => {
         if (!shouldRender || exiting) return;
 
         const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
-        document.body.style.overflow = 'hidden';
         document.addEventListener('keydown', handleEsc);
 
         if (year && month) {
@@ -146,7 +149,6 @@ const MonthlyInvoiceModal = ({
         }
 
         return () => {
-            document.body.style.overflow = '';
             document.removeEventListener('keydown', handleEsc);
             dispatch(clearMonthlyInvoice());
         };
@@ -181,9 +183,9 @@ const MonthlyInvoiceModal = ({
         utr:            monthlyInvoice?._utr,
     };
 
-    return (
+    return createPortal(
         <div className={cn(
-            'fixed inset-0 z-50 flex items-center justify-center',
+            'fixed inset-0 z-modal flex items-center justify-center',
             fullScreenOnMobile ? 'p-0 sm:p-6 items-stretch sm:items-center' : 'p-4 sm:p-6 items-center',
             'modal-animate-backdrop',
             exiting ? 'modal-exit-backdrop' : 'modal-enter'
@@ -294,7 +296,8 @@ const MonthlyInvoiceModal = ({
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 };
 

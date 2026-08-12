@@ -235,7 +235,7 @@ GroupHeader.displayName = 'GroupHeader';
 ───────────────────────────────────────────── */
 const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
     const [showModal, setShowModal] = useState(false);
-    const outstanding = useMemo(() => invoice.totalPayable - invoice.paidAmount, [invoice.totalPayable, invoice.paidAmount]);
+    const outstanding = useMemo(() => Math.max(0, invoice.totalPayable - invoice.paidAmount), [invoice.totalPayable, invoice.paidAmount]);
     const refId = useMemo(() => shortRef(invoice._id), [invoice._id]);
 
     const handleCopyRef = useCallback(() => {
@@ -371,12 +371,13 @@ const AdminUnpaidPanel = React.memo(() => {
             const isRefund = delta !== undefined && delta < 0;
             await dispatch(resolveInvoicePayment({ invoiceId, paidAmount, delta })).unwrap();
             toast.success(isRefund ? 'Refund recorded successfully' : 'Payment recorded successfully');
+            dispatch(fetchAdminUnpaidInvoices({ month: selected.month, year: selected.year }));
         } catch (err) {
             toast.error(err?.message || 'Failed to update payment');
         } finally {
             setSavingId(null);
         }
-    }, [dispatch]);
+    }, [dispatch, selected]);
 
     const totalOutstanding = useMemo(
         () => unpaidInvoices.reduce((sum, inv) => {
@@ -396,9 +397,10 @@ const AdminUnpaidPanel = React.memo(() => {
     // user representations differ (string vs object, different ID fields, etc.)
     // ─────────────────────────────────────────────────────────────────────────
     const groupedInvoices = useMemo(() => {
-        const groupMap = new Map(); // key: normalized user identifier
+        const groupMap = new Map();
+        const eligible = unpaidInvoices.filter(inv => inv.totalPayable > 0 && inv.totalPayable > inv.paidAmount);
 
-        for (const inv of unpaidInvoices) {
+        for (const inv of eligible) {
             // 1. Extract a reliable user identifier from the invoice
             let rawUser = inv.user;
             let userId = null;
@@ -447,6 +449,11 @@ const AdminUnpaidPanel = React.memo(() => {
             (a.user?.name || '').localeCompare(b.user?.name || '')
         );
     }, [unpaidInvoices]);
+
+    const eligibleCount = useMemo(
+        () => groupedInvoices.reduce((sum, g) => sum + g.invoices.length, 0),
+        [groupedInvoices]
+    );
 
     return (
         <section className="w-full">
@@ -516,7 +523,7 @@ const AdminUnpaidPanel = React.memo(() => {
                 )}
 
                 {/* Empty States */}
-                {!unpaidInvoicesLoading && unpaidInvoices.length === 0 && isLastFinalizedPeriod && (
+                {!unpaidInvoicesLoading && eligibleCount === 0 && isLastFinalizedPeriod && (
                     <div className="flex flex-col items-center justify-center py-16 gap-3">
                         <div className="w-14 h-14 rounded-full bg-border dark:bg-muted flex items-center justify-center"><Calendar size={26} className="text-muted-foreground" /></div>
                         <p className="text-sm font-bold text-muted-foreground">Last finalized period: {selected.label}</p>
@@ -524,7 +531,7 @@ const AdminUnpaidPanel = React.memo(() => {
                     </div>
                 )}
 
-                {!unpaidInvoicesLoading && unpaidInvoices.length === 0 && !isLastFinalizedPeriod && (
+                {!unpaidInvoicesLoading && eligibleCount === 0 && !isLastFinalizedPeriod && (
                     <div className="flex flex-col items-center justify-center py-16 gap-3">
                         <div className="w-14 h-14 rounded-full bg-success-bg flex items-center justify-center"><CheckCircle2 size={26} className="text-success-text" /></div>
                         <p className="text-sm font-bold text-foreground">All clear for {selected.label}!</p>
@@ -546,12 +553,12 @@ const AdminUnpaidPanel = React.memo(() => {
                 )}
 
                 {/* Footer */}
-                {!unpaidInvoicesLoading && unpaidInvoices.length > 0 && (
+                {!unpaidInvoicesLoading && eligibleCount > 0 && (
                     <div className="flex flex-col md:flex-row gap-3 items-center justify-between px-4 md:px-6 py-3.5 bg-muted/60 dark:bg-muted/30 border-t border-border">
                         <div className="flex items-center gap-2">
                             <AlertTriangle size={13} className="text-warning-text" />
                             <span className="text-[11.5px] font-bold text-warning-text">
-                                {unpaidInvoices.length} unresolved invoice{unpaidInvoices.length !== 1 ? 's' : ''} across {groupedInvoices.length} member{groupedInvoices.length !== 1 ? 's' : ''}
+                                {eligibleCount} unresolved invoice{eligibleCount !== 1 ? 's' : ''} across {groupedInvoices.length} member{groupedInvoices.length !== 1 ? 's' : ''}
                             </span>
                         </div>
                         <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">

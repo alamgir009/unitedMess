@@ -40,10 +40,12 @@ const PayableWidget = ({
      */
     const mealPaid =
         mealPaymentStatus === 'success' ||
+        mealPaymentStatus === 'refund' ||
         (isLoaded && !isError && mealPayable === 0);
 
     const gasPaid =
         gasBillStatus === 'success' ||
+        gasBillStatus === 'refund' ||
         (isLoaded && !isError && gasBillPayable === 0);
 
     // Safe numeric totals (never NaN)

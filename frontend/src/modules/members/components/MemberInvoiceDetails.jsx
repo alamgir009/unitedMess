@@ -358,6 +358,8 @@ const PaymentStatusBanner = React.memo(({ user }) => {
     let state;
     if (payable < 0) {
         state = 'credit';
+    } else if (['refund', 'refunded'].includes(paymentStatus)) {
+        state = 'credit';
     } else if (['success', 'paid', 'approved'].includes(paymentStatus)) {
         state = 'paid';
     } else if (['failed', 'denied'].includes(paymentStatus)) {

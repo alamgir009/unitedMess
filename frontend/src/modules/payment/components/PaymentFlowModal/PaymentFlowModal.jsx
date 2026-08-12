@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo, memo, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'react-hot-toast';
+import useBodyScrollLock from '@/shared/hooks/useBodyScrollLock';
 import {
   HiOutlineXMark,
   HiOutlineCheckCircle,
@@ -550,25 +552,12 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
     }
   }, []);
 
+  useBodyScrollLock(shouldRender && !exiting);
+
   useEffect(() => {
     if (!shouldRender || exiting) return;
     if (!isGasBill) fetchMonths();
     fetchUpiDetails();
-
-    const scrollY = window.scrollY;
-    const html = document.documentElement;
-    html.style.overflow = 'hidden';
-    html.style.position = 'fixed';
-    html.style.width = '100%';
-    html.style.top = `-${scrollY}px`;
-
-    return () => {
-      html.style.overflow = '';
-      html.style.position = '';
-      html.style.width = '';
-      html.style.top = '';
-      window.scrollTo(0, scrollY);
-    };
   }, [shouldRender, exiting, fetchMonths, fetchUpiDetails, isGasBill]);
 
   const rebuildFocusable = useCallback(() => {
@@ -723,7 +712,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
 
   const title = isAdminUpiEdit ? 'Setup UPI Billing' : isGasBill ? 'Gas Bill Payment' : 'Mess Bill Payment';
 
-  return (
+  return createPortal(
     <div
       ref={dialogRef}
       role="dialog"
@@ -731,7 +720,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
       aria-labelledby="payment-dialog-title"
       tabIndex={-1}
       className={cn(
-        'fixed inset-0 z-50 flex items-end sm:items-center justify-center',
+        'fixed inset-0 z-modal flex items-end sm:items-center justify-center',
         'transition-opacity duration-100 ease-out motion-reduce:transition-none',
         exiting ? 'opacity-0' : 'opacity-100'
       )}
@@ -740,7 +729,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
       <div
         onClick={onClose}
         aria-hidden="true"
-          className={cn(
+        className={cn(
           'fixed inset-0 bg-black/40',
           'transition-opacity duration-100 motion-reduce:transition-none',
           exiting ? 'opacity-0' : 'opacity-100'
@@ -1152,7 +1141,8 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 

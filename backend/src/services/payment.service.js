@@ -159,7 +159,9 @@ const syncInvoiceAfterPayment = async (userId, monthStr) => {
         const invoice = await Invoice.findOne({ user: userId, month: parsed.month, year: parsed.year });
         if (invoice) {
             invoice.paidAmount = totalPaid;
-            if (invoice.paidAmount >= invoice.totalPayable && invoice.totalPayable > 0) {
+            if (invoice.totalPayable <= 0) {
+                invoice.status = 'paid';
+            } else if (invoice.paidAmount >= invoice.totalPayable) {
                 invoice.status = 'paid';
             } else if (invoice.paidAmount > 0) {
                 invoice.status = 'partially_paid';

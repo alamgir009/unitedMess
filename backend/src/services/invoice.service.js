@@ -12,14 +12,16 @@ const pdfService   = require('./pdf.service');
 /**
  * Determine invoice status from paidAmount and totalPayable.
  * Fintech-grade deterministic logic:
- *  - paidAmount < 0  → refunded (never unpaid)
- *  - paidAmount >= totalPayable && totalPayable > 0 → paid
- *  - paidAmount > 0  → partially_paid
- *  - otherwise       → unpaid
+ *  - paidAmount < 0        → refunded (never unpaid)
+ *  - totalPayable <= 0     → paid (user owes nothing — credit/zero-balance)
+ *  - paidAmount >= totalPayable → paid
+ *  - paidAmount > 0        → partially_paid
+ *  - otherwise             → unpaid
  */
 function determineInvoiceStatus(paidAmount, totalPayable) {
     if (paidAmount < 0) return 'refunded';
-    if (paidAmount >= totalPayable && totalPayable > 0) return 'paid';
+    if (totalPayable <= 0) return 'paid';
+    if (paidAmount >= totalPayable) return 'paid';
     if (paidAmount > 0) return 'partially_paid';
     return 'unpaid';
 }
@@ -570,8 +572,8 @@ const getAdminUnpaidInvoices = async (month, year) => {
         month: Number(month),
         year:  Number(year),
         status: { $nin: ['paid', 'refunded'] },
-        // EXCLUDE exempt invoices — these users were activated after billing period started
-        isExempt: { $ne: true }
+        isExempt: { $ne: true },
+        totalPayable: { $gt: 0 }
     })
     .populate('user', 'name email image role isActive activatedAt')
     .sort({ totalPayable: -1 })
