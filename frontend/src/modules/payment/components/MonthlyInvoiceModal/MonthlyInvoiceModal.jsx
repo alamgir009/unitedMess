@@ -13,7 +13,7 @@ import {
     HiOutlineClock,
 } from 'react-icons/hi2';
 
-import MessBillInvoice from '../MessBillInvoice/MessBillInvoice';
+import InvoicePreview from '../InvoicePreview/InvoicePreview';
 import { fetchMonthlyInvoice, clearMonthlyInvoice } from '../../store/invoice.slice';
 import { fmt } from '@/core/utils/helpers/currency.helper';
 
@@ -24,30 +24,6 @@ const toPaymentStatus = (invoiceStatus) => {
         case 'unpaid':
         default:               return 'pending';
     }
-};
-
-const toInvoiceDisplayData = (invoice) => {
-    if (!invoice) return null;
-    return {
-        grandTotalMarketAmount: invoice.marketAmountSpent  ?? 0,
-        grandTotalMeal:         invoice.mealCount          ?? 0,
-        totalGuestRevenue:      invoice.guestMealRevenue   ?? 0,
-        adjustedMealCharge:     invoice.mealRate            ?? 0,
-        payableAmount:          invoice.totalPayable       ?? 0,
-        monthName:              invoice.monthName,
-        userStats: {
-            totalMeal:           invoice.mealCount          ?? 0,
-            totalMarketAmount:   invoice.marketAmountSpent  ?? 0,
-            waterBill:           invoice.fixedCosts?.waterBill      ?? 0,
-            cookingCharge:       invoice.fixedCosts?.cookingCharge  ?? 0,
-            costOfMeals:         invoice.messCost            ?? 0,
-            guestMeal:           invoice.guestMealCount      ?? 0,
-            chargePerGuestMeal:  60,
-            guestMealAmount:     invoice.guestMealRevenue    ?? 0,
-            gasBillCharge:       invoice.fixedCosts?.gasBillCharge  ?? 0,
-        },
-        platformFee: invoice.fixedCosts?.platformFee ?? 0,
-    };
 };
 
 const InvoiceSkeleton = () => (
@@ -133,7 +109,6 @@ const MonthlyInvoiceModal = ({
     const dispatch = useDispatch();
     const { monthlyInvoice, isLoadingMonthly, error } = useSelector((state) => state.invoice);
     const { user } = useSelector((state) => state.auth);
-    const isAdmin = user?.role === 'admin';
     const { shouldRender, exiting } = useModalAnimation(isOpen, { exitTimeout: 120 });
 
     useBodyScrollLock(shouldRender && !exiting);
@@ -158,10 +133,8 @@ const MonthlyInvoiceModal = ({
 
     if (!shouldRender) return null;
 
-    const displayData      = toInvoiceDisplayData(monthlyInvoice);
     const invoiceStatus    = monthlyInvoice?.status ?? 'unpaid';
     const paymentStatus    = toPaymentStatus(invoiceStatus);
-    const isFinalized      = monthlyInvoice?.isFinalized ?? false;
     const isPartiallyPaid  = invoiceStatus === 'partially_paid';
     const paidAmount       = monthlyInvoice?.paidAmount    ?? 0;
     const totalPayable     = monthlyInvoice?.totalPayable  ?? 0;
@@ -259,7 +232,7 @@ const MonthlyInvoiceModal = ({
                         </div>
                     )}
 
-                    {!isLoadingMonthly && !error && displayData && (
+                    {!isLoadingMonthly && !error && monthlyInvoice && (
                         <>
                             {isPartiallyPaid && (
                                 <PartialPaymentBanner
@@ -272,21 +245,17 @@ const MonthlyInvoiceModal = ({
                                 />
                             )}
 
-                            <MessBillInvoice
-                                data={displayData}
-                                isAdmin={isAdmin}
+                            <InvoicePreview
+                                invoice={monthlyInvoice}
                                 user={user}
-                                platformFee={displayData.platformFee}
-                                paymentStatus={paymentStatus}
                                 paymentRecord={invoicePaymentRecord}
                                 onPayNow={!isPartiallyPaid && paymentStatus !== 'success' ? onPayNow : undefined}
                                 isPaying={isPaying}
-                                autoExpand
                             />
                         </>
                     )}
 
-                    {!isLoadingMonthly && !error && !displayData && (
+                    {!isLoadingMonthly && !error && !monthlyInvoice && (
                         <div className="py-16 text-center">
                             <HiOutlineDocumentText className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
                             <p className="text-sm font-medium text-muted-foreground">

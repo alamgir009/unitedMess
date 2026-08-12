@@ -49,7 +49,16 @@ const getMonthlyInvoice = asyncHandler(async (req, res) => {
         targetUserId = req.query.userId;
     }
 
-    const invoice = await invoiceService.getInvoiceForMonth(targetUserId, y, m);
+    // Parallel: fetch invoice + mess-wide stats (independent queries)
+    const [invoice, messStats] = await Promise.all([
+        invoiceService.getInvoiceForMonth(targetUserId, y, m),
+        invoiceService.calculateMessStats(m, y),
+    ]);
+
+    // Attach mess-wide stats so the frontend can render the exact PDF stat cards
+    invoice._messGrandTotalMarket = messStats.totalMarketAmount;
+    invoice._messGrandTotalMeal = messStats.totalMealCount;
+
     sendSuccessResponse(res, 200, 'Invoice retrieved', invoice);
 });
 
