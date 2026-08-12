@@ -132,7 +132,7 @@ const MemberPage = React.memo(() => {
                     Header
                 ════════════════════════════════ */}
                 <header className="relative z-10 animate-fade-in">
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                    <div className="flex flex-col items-start sm:flex-row sm:items-start justify-between gap-4">
                         
                         {/* Title block */}
                         <div className="space-y-1">
@@ -147,15 +147,15 @@ const MemberPage = React.memo(() => {
 
                         {/* Billing month badge */}
                         {billingStats.billingMonth && (
-                            <div className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-card border border-border shadow-sm self-start">
-                                <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary/10 flex-shrink-0">
-                                    <HiOutlineCalendarDays className="w-[18px] h-[18px] text-primary" />
+                            <div className="inline-flex items-center gap-2 sm:gap-2.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-card border border-border shadow-sm">
+                                <div className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-md sm:rounded-lg bg-primary/10 flex-shrink-0">
+                                    <HiOutlineCalendarDays className="w-4 h-4 sm:w-[18px] sm:h-[18px] text-primary" />
                                 </div>
                                 <div className="leading-none text-left">
-                                    <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground mb-1">
+                                    <p className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground mb-0.5 sm:mb-1">
                                         Billing Period
                                     </p>
-                                    <p className="text-sm font-bold text-foreground tabular-nums">
+                                    <p className="text-xs sm:text-sm font-bold text-foreground tabular-nums">
                                         {billingStats.billingMonth}
                                     </p>
                                 </div>
