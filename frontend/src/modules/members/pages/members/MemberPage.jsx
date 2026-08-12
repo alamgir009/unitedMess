@@ -147,11 +147,17 @@ const MemberPage = React.memo(() => {
 
                         {/* Billing month badge */}
                         {billingStats.billingMonth && (
-                            <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary/10 border border-primary/20 text-primary shadow-sm self-start">
-                                <HiOutlineCalendarDays className="w-4 h-4 text-primary flex-shrink-0" />
+                            <div className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-card border border-border shadow-sm self-start">
+                                <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary/10 flex-shrink-0">
+                                    <HiOutlineCalendarDays className="w-[18px] h-[18px] text-primary" />
+                                </div>
                                 <div className="leading-none text-left">
-                                    <p className="text-caption uppercase font-bold tracking-widest opacity-70">Billing Period</p>
-                                    <p className="text-sm font-bold mt-0.5">{billingStats.billingMonth}</p>
+                                    <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground mb-1">
+                                        Billing Period
+                                    </p>
+                                    <p className="text-sm font-bold text-foreground tabular-nums">
+                                        {billingStats.billingMonth}
+                                    </p>
                                 </div>
                             </div>
                         )}
