@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Pencil } from 'lucide-react';
+import { X, Pencil, Plus, Calendar } from 'lucide-react';
 import { cn } from '@/core/utils/helpers/string.helper';
 
 let lockCount = 0;
@@ -31,6 +31,8 @@ const DayDetailSheet = ({
   children,
   isEditMode = false,
   onEditToggle,
+  category,
+  onScheduleClick,
 }) => {
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
@@ -126,19 +128,21 @@ const DayDetailSheet = ({
               onMouseDown={handleDragStart}
               onTouchStart={handleDragStart}
             >
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-1.5 rounded-full bg-[var(--text-muted)]/40 ring-1 ring-[var(--border-muted)]" aria-hidden="true" />
-                <h2 className="text-base font-semibold text-[var(--text-primary)]">{title}</h2>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-12 h-1.5 rounded-full bg-[var(--text-muted)]/40 ring-1 ring-[var(--border-muted)] shrink-0" aria-hidden="true" />
+                <h2 className="text-sm sm:text-base font-semibold text-[var(--text-primary)] truncate">{title}</h2>
               </div>
-              <div className="flex items-center gap-1">
-                {!isEditMode && onEditToggle && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onEditToggle?.(); }}
-                    aria-label="Edit entries"
-                    className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
+              <div className="flex items-center gap-1 shrink-0 ml-3">
+                {category === 'markets' && !isEditMode && onEditToggle && onScheduleClick ? null : (
+                  !isEditMode && onEditToggle && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onEditToggle?.(); }}
+                      aria-label="Edit entries"
+                      className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                  )
                 )}
                 <button
                   onClick={onClose}
@@ -149,6 +153,26 @@ const DayDetailSheet = ({
                 </button>
               </div>
             </div>
+            {category === 'markets' && !isEditMode && onEditToggle && onScheduleClick && (
+              <div className="flex items-center gap-2 px-5 py-2.5 border-b border-[var(--border-default)] bg-[var(--bg-muted)]/20 shrink-0">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onEditToggle?.(); }}
+                  aria-label="Add market entry"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add your markets</span>
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onScheduleClick?.(); }}
+                  aria-label="Schedule market dates"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 border border-emerald-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>Schedule your market date</span>
+                </button>
+              </div>
+            )}
             <div className="flex-1 overflow-y-auto overscroll-contain custom-scrollbar p-4">
               {children}
             </div>

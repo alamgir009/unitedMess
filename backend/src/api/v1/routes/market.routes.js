@@ -6,10 +6,6 @@ const { protect, authorize } = require('../middlewares/auth.middleware');
 const authenticated = [protect];
 const adminOnly = [protect, authorize('admin')];
 
-// Authenticated user routes
-router.route('/schedule/:year/:month')
-    .get(...authenticated, marketController.getMarketSchedule);
-
 // ── Bulk market creation (must be before /:marketId wildcard) ────────────────────
 router.post('/bulk', ...authenticated, marketController.bulkCreateMarkets);
 

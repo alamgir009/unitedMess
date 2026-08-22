@@ -10,6 +10,8 @@ const paymentRoutes = require('./payment.routes');
 const settingsRoutes  = require('./setting.route');
 const notificationRoutes = require('./notification.routes');
 const invoiceRoutes = require('./invoice.routes');
+const marketScheduleRoutes = require('./marketSchedule.routes');
+const googleCalendarRoutes = require('./googleCalendar.routes');
 const versionController = require('../controllers/version.controller');
 // ...
 
@@ -17,11 +19,13 @@ const versionController = require('../controllers/version.controller');
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/meals', mealRoutes);
+router.use('/markets/schedule', marketScheduleRoutes);
 router.use('/markets', marketRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/setting', settingsRoutes );
 router.use('/notifications', notificationRoutes);
 router.use('/invoices', invoiceRoutes);
+router.use('/', googleCalendarRoutes);
 
 router.get('/version', versionController.getVersion);
 

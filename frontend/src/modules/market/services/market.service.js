@@ -15,7 +15,7 @@ const getMarkets = async (params = { page: 1, limit: 10 }) => {
 
 // Get monthly market schedule
 const getMarketSchedule = async (year, month) => {
-    const response = await apiClient.get(`${API_URL}/schedule/${year}/${month}`);
+    const response = await apiClient.get(`markets/schedule/month/${year}/${month}`);
     return response.data;
 };
 

@@ -8,6 +8,7 @@ import dashboardReducer from '@/modules/dashboard/store/dashboard.slice';
 import membersReducer from '@/modules/members/store/members.slice';
 import notificationReducer from '@/modules/notification/store/notification.slice';
 import eventsReducer from '@/modules/events/store/events.slice';
+import marketScheduleReducer from '@/modules/events/store/marketSchedule.slice';
 import paymentSyncMiddleware from '@/services/api/middleware/paymentSync.middleware';
 
 export const store = configureStore({
@@ -21,6 +22,7 @@ export const store = configureStore({
         members: membersReducer,
         notification: notificationReducer,
         events: eventsReducer,
+        marketSchedule: marketScheduleReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({

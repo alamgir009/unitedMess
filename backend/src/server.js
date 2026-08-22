@@ -7,6 +7,8 @@ const { registerInvoiceCron, registerReminderCron } = require('./jobs/cron/invoi
 const { registerNotificationCron } = require('./jobs/cron/notificationCron');
 const { registerPollCarryForwardCron } = require('./jobs/cron/pollCarryForwardCron');
 const { registerAutoCreateMealsCron } = require('./jobs/cron/autoCreateMealsCron');
+const { registerMarketReminderCron } = require('./jobs/cron/marketReminderCron');
+const { registerMarketScheduleResetCron } = require('./jobs/cron/marketScheduleResetCron');
 const { setupSocketIO, emitToAll } = require('./sockets');
 const pkg = require('../package.json');
 
@@ -23,6 +25,8 @@ connectDB().then(() => {
     registerNotificationCron();
     registerPollCarryForwardCron();
     registerAutoCreateMealsCron();
+    registerMarketReminderCron();
+    registerMarketScheduleResetCron();
 });
 
 // Start server

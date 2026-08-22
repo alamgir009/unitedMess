@@ -9,6 +9,8 @@ const paymentService = require('./payment.service');
 const razorpayService = require('./razorpay.service');
 const settingService = require('./settings.service');
 const notificationService = require('./notification.service');
+const marketScheduleService = require('./marketSchedule.service');
+const googleCalendarService = require('./googleCalendar.service');
 
 module.exports = {
     authService,
@@ -21,5 +23,7 @@ module.exports = {
     paymentService,
     razorpayService,
     settingService,
-    notificationService
+    notificationService,
+    marketScheduleService,
+    googleCalendarService,
 };

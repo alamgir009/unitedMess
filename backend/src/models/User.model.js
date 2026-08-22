@@ -122,7 +122,10 @@ const userSchema = new mongoose.Schema({
     lastLoginUA: String,
     loginAttempts: { type: Number, default: 0, select: false },
     lockUntil: { type: Date, select: false },
-    deleteIfNotApproved: { type: Date, default: null }
+    deleteIfNotApproved: { type: Date, default: null },
+    googleCalendarToken: { type: String, select: false, default: null },
+    googleCalendarRefreshToken: { type: String, select: false, default: null },
+    googleCalendarSyncEnabled: { type: Boolean, default: false },
 }, {
     timestamps: true,
     toObject: { virtuals: true },

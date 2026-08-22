@@ -29,8 +29,12 @@ const errorMiddleware = (err, req, res, next) => {
 
     // Mongoose duplicate key
     if (err.code === 11000) {
-        const message = 'Duplicate field value entered';
-        error = { statusCode: 400, message };
+        if (err.keyPattern?.date) {
+            error = { statusCode: 409, message: 'This date is already taken by another member' };
+        } else {
+            const message = 'Duplicate field value entered';
+            error = { statusCode: 400, message };
+        }
     }
 
     // Mongoose validation error

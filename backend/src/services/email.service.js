@@ -733,6 +733,114 @@ const sendInvoiceSummaryEmail = async (to, name, invoice) => {
     });
 };
 
+/**
+ * Send market duty confirmation email with .ics calendar invite.
+ * @param {string} to - Recipient email
+ * @param {string} name - Recipient name
+ * @param {Array<{date: Date|string}>} dates - Selected duty dates
+ * @param {Buffer} [icsBuffer] - Optional .ics file buffer to attach
+ */
+const sendMarketScheduleConfirmationEmail = async (to, name, dates, icsBuffer) => {
+    const sanitizedName = validator.escape(String(name));
+
+    const dateRows = dates
+        .map((d) => {
+            const dt = new Date(d.date);
+            const formatted = dt.toLocaleDateString('en-IN', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                timeZone: 'Asia/Kolkata',
+            });
+            return `<tr><td style="padding:10px;border:1px solid #ddd;">${validator.escape(formatted)}</td></tr>`;
+        })
+        .join('');
+
+    const content = `
+<p>Dear ${sanitizedName},</p>
+<p>Your market duty has been successfully scheduled. Here are the confirmed dates:</p>
+<table style="border-collapse:collapse;width:100%;margin:20px 0;font-family:Arial,sans-serif;">
+  <tr><td style="padding:10px;border:1px solid #ddd;background:#f8f9fa;"><strong>Scheduled Date</strong></td></tr>
+  ${dateRows}
+</table>
+<p>A calendar invite is attached to this email. Click it to add these dates to your calendar (Google Calendar, Apple Calendar, Outlook, or any calendar app).</p>
+<p><strong>Market hours:</strong> 9:00 AM – 6:00 PM IST</p>
+<p>If you need to reschedule, please update your selection from the Events section in the app before the scheduled date.</p>`;
+
+    const { html, text } = generateEmailTemplate({
+        title: 'Market Duty Scheduled',
+        previewText: `Your market duty dates for ${dates.length > 1 ? dates.length + ' days' : '1 day'} have been confirmed`,
+        content,
+        showButton: false,
+        footerText: 'If you did not schedule this, please contact your mess admin immediately.',
+    });
+
+    const attachments = [];
+    if (icsBuffer && Buffer.isBuffer(icsBuffer)) {
+        attachments.push({
+            filename: 'market-duty.ics',
+            content: icsBuffer,
+            contentType: 'text/calendar; method=PUBLISH',
+        });
+    }
+
+    return sendEmail({
+        to,
+        subject: `Market Duty Confirmed — ${dates.length} date${dates.length !== 1 ? 's' : ''} | United Mess`,
+        text,
+        html,
+        attachments,
+    });
+};
+
+/**
+ * Send admin notification email when a member selects market dates.
+ * @param {string} to - Admin email
+ * @param {string} adminName - Admin name
+ * @param {string} memberName - Member who selected dates
+ * @param {Array<{date: Date|string}>} dates - Selected dates
+ */
+const sendMarketScheduleAdminNotificationEmail = async (to, adminName, memberName, dates) => {
+    const sanitizedAdmin = validator.escape(String(adminName));
+    const sanitizedMember = validator.escape(String(memberName));
+
+    const dateList = dates
+        .map((d) => {
+            const dt = new Date(d.date);
+            const formatted = dt.toLocaleDateString('en-IN', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                timeZone: 'Asia/Kolkata',
+            });
+            return `<li style="padding:4px 0;">${validator.escape(formatted)}</li>`;
+        })
+        .join('');
+
+    const content = `
+<p>Dear ${sanitizedAdmin},</p>
+<p><strong>${sanitizedMember}</strong> has selected the following market duty dates:</p>
+<ul style="list-style:disc;padding-left:20px;margin:16px 0;">${dateList}</ul>
+<p>You can review all scheduled dates in the Events section of the admin panel.</p>`;
+
+    const { html, text } = generateEmailTemplate({
+        title: 'New Market Date Selection',
+        previewText: `${sanitizedMember} selected ${dates.length} market date${dates.length !== 1 ? 's' : ''}`,
+        content,
+        showButton: false,
+        footerText: 'This is an automated notification from United Mess.',
+    });
+
+    return sendEmail({
+        to,
+        subject: `Market Selection by ${sanitizedMember} — United Mess`,
+        text,
+        html,
+    });
+};
+
 module.exports = {
     transport,
     sendEmail,
@@ -747,4 +855,6 @@ module.exports = {
     sendPaymentStatusEmail,
     sendInvoiceEmail,
     sendInvoiceSummaryEmail,
+    sendMarketScheduleConfirmationEmail,
+    sendMarketScheduleAdminNotificationEmail,
 };

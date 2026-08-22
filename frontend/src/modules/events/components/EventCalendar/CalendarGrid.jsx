@@ -21,6 +21,7 @@ const CalendarGrid = memo(({
   onCellClick,
   onRetry,
   showMealCount = true,
+  scheduleMap = {},
 }) => {
   const isDesktop = useMediaQuery('(min-width: 1024px)');
 
@@ -97,6 +98,7 @@ const CalendarGrid = memo(({
               isLastRow={isLastRow}
               isFirstInRow={isFirstInRow}
               isLastInRow={isLastInRow}
+              scheduleData={scheduleMap[dateStr] || null}
             />
           );
         })}

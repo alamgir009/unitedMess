@@ -1,10 +1,10 @@
 import { memo, useMemo } from 'react';
-import { ShoppingBag } from 'lucide-react';
+import { ShoppingBag, Calendar } from 'lucide-react';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { fmt } from '@/core/utils/helpers/currency.helper';
 import AvatarCluster from './AvatarCluster';
 
-const MarketCellContent = memo(({ entries = [], loading, error, isCompact, onRetry, onCellClick }) => {
+const MarketCellContent = memo(({ entries = [], loading, error, isCompact, onRetry, onCellClick, scheduleData = null }) => {
   const total = useMemo(
     () => entries.reduce((sum, e) => sum + (e.amount || 0), 0),
     [entries],
@@ -33,7 +33,9 @@ const MarketCellContent = memo(({ entries = [], loading, error, isCompact, onRet
     );
   }
 
-  if (entries.length === 0) return null;
+  const hasDuty = scheduleData?.user;
+
+  if (entries.length === 0 && !hasDuty) return null;
 
   return (
     <div
@@ -43,17 +45,35 @@ const MarketCellContent = memo(({ entries = [], loading, error, isCompact, onRet
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onCellClick?.(); }}
     >
+      {hasDuty && (
+        <div className={cn(
+          'flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 rounded-full shrink-0',
+          'bg-emerald-500/15 text-emerald-500',
+          'ring-1 ring-emerald-500/20',
+        )}>
+          <Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+        </div>
+      )}
       {isCompact ? (
         <span className="text-xs font-bold tabular-nums tracking-tight text-[var(--market-accent)] drop-shadow-sm">
-          ₹{fmt(total)}
+          {entries.length > 0 ? `₹${fmt(total)}` : (hasDuty ? scheduleData.user.name?.split(' ')[0] : '')}
         </span>
       ) : (
         <>
-          <ShoppingBag className="w-[14px] h-[14px] text-[var(--market-accent)] shrink-0 drop-shadow-sm" aria-hidden="true" />
-          <AvatarCluster members={members} size="sm" maxAvatars={2} />
-          <span className="text-[11px] font-bold tabular-nums tracking-tight text-[var(--text-primary)] ml-auto leading-none">
-            ₹{fmt(total)}
-          </span>
+          {entries.length > 0 && (
+            <>
+              <ShoppingBag className="w-[14px] h-[14px] text-[var(--market-accent)] shrink-0 drop-shadow-sm" aria-hidden="true" />
+              <AvatarCluster members={members} size="sm" maxAvatars={2} />
+              <span className="text-[11px] font-bold tabular-nums tracking-tight text-[var(--text-primary)] ml-auto leading-none">
+                ₹{fmt(total)}
+              </span>
+            </>
+          )}
+          {entries.length === 0 && hasDuty && (
+            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 truncate">
+              {scheduleData.user.name?.split(' ')[0]}
+            </span>
+          )}
         </>
       )}
     </div>

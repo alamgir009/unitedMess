@@ -125,4 +125,4 @@ const getLastFinalizedPeriod = (date = new Date()) => {
  */
 const normalizeDate = (date) => normalizeToUTC(date);
 
-module.exports = { parseDate, normalizeDate, getVisibleBillingStartDate, getBillingPeriod, getLastFinalizedPeriod };
+module.exports = { parseDate, normalizeDate, normalizeToUTC, getVisibleBillingStartDate, getBillingPeriod, getLastFinalizedPeriod };

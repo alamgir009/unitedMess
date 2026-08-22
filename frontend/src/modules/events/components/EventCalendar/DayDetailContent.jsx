@@ -4,6 +4,7 @@ import { Avatar } from '@/shared/components/ui';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { fmt } from '@/core/utils/helpers/currency.helper';
 import { formatInIST } from '@/core/utils/helpers/date.helper';
+import { Calendar } from 'lucide-react';
 import SlotIcon from './cells/SlotIcon';
 
 const STATUS_BADGE = {
@@ -39,7 +40,7 @@ const VOTE_VALUE_BADGE_COLORS = {
 const ROW_HEIGHT = 44;
 const OVERSCAN = 4;
 
-const DayDetailContent = ({ entries = [], category, totalMealsCount = 0 }) => {
+const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, scheduleData = null }) => {
   const [scrollTop, setScrollTop] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const containerRef = useRef(null);
@@ -67,6 +68,14 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0 }) => {
   }, []);
 
   if (!entries || entries.length === 0) {
+    if (category === 'markets' && scheduleData?.user) {
+      return (
+        <div className="space-y-4">
+          <MarketDutyBanner scheduleData={scheduleData} />
+          <p className="text-sm text-[var(--text-muted)] py-4 text-center">No market entries for this day.</p>
+        </div>
+      );
+    }
     return <p className="text-sm text-[var(--text-muted)] py-8 text-center">No entries for this day.</p>;
   }
 
@@ -226,3 +235,29 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0 }) => {
 
 DayDetailContent.displayName = 'DayDetailContent';
 export default DayDetailContent;
+
+const MarketDutyBanner = ({ scheduleData }) => {
+  if (!scheduleData?.user) return null;
+
+  const userName = scheduleData.user.name || 'Member';
+  const firstName = userName.split(' ')[0];
+
+  return (
+    <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-emerald-500/8 border border-emerald-500/20">
+      <Avatar
+        src={scheduleData.user.image}
+        name={userName}
+        size="sm"
+        className="shrink-0 ring-2 ring-emerald-500/20"
+      />
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <Calendar className="w-4 h-4 text-emerald-500 shrink-0" />
+        <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 truncate">
+          {firstName} is on market duty today
+        </span>
+      </div>
+    </div>
+  );
+};
+
+MarketDutyBanner.displayName = 'MarketDutyBanner';

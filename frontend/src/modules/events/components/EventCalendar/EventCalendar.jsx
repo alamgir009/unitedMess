@@ -9,12 +9,14 @@ import MealLegend from './MealLegend';
 import DayDetailContent from './DayDetailContent';
 import DayDetailModal from './DayDetailModal';
 import DayDetailSheet from './DayDetailSheet';
+import MarketScheduleModal from './MarketScheduleModal';
 import SegmentedControl from '../SegmentedControl';
 
 import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
 import { formatInIST } from '@/core/utils/helpers/date.helper';
 import eventService from '../../services/event.service';
 import { setCurrentMonth, setLoading } from '../../store/events.slice';
+import { fetchMonthSchedule, fetchAvailableDates } from '../../store/marketSchedule.slice';
 import { createMeal, bulkCreateMeals, updateMeal, deleteMeal } from '../../../meal/store/meal.slice';
 import { createMarket, updateMarket, deleteMarket, bulkCreateMarkets } from '../../../market/store/market.slice';
 
@@ -101,6 +103,9 @@ const EventCalendar = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedEntryIds, setSelectedEntryIds] = useState(new Set());
   const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+
+  const { monthSchedule } = useSelector((state) => state.marketSchedule);
 
   // Derive entries from live dataMap so optimistic updates reflect immediately
   const currentDateEntries = useMemo(() => {
@@ -114,6 +119,23 @@ const EventCalendar = () => {
   const [selectedMemberId, setSelectedMemberId] = useState(null);
 
   const showMealCount = category === 'meals' && (isAdmin ? !!selectedMemberId : true);
+
+  const scheduleKey = `${currentMonthDate.getFullYear()}-${currentMonthDate.getMonth() + 1}`;
+  const scheduleMap = useMemo(() => {
+    const map = {};
+    const scheduleData = monthSchedule[scheduleKey] || [];
+    for (const item of scheduleData) {
+      if (!item?.user) continue;
+      const dateKey = format(new Date(item.date), 'yyyy-MM-dd');
+      map[dateKey] = item;
+    }
+    return map;
+  }, [monthSchedule, scheduleKey]);
+
+  const getScheduleForDate = useCallback((date) => {
+    const dateKey = format(new Date(date), 'yyyy-MM-dd');
+    return scheduleMap[dateKey] || null;
+  }, [scheduleMap]);
 
   const totalMealsForDate = useMemo(() => {
     if (category !== 'meals' || currentDateEntries.length === 0) return 0;
@@ -185,6 +207,15 @@ const EventCalendar = () => {
     return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [fetchData]);
 
+  // Fetch market schedule when category is markets
+  useEffect(() => {
+    if (category === 'markets') {
+      const year = currentMonthDate.getFullYear();
+      const month = currentMonthDate.getMonth() + 1;
+      dispatch(fetchMonthSchedule({ year, month }));
+    }
+  }, [category, currentMonthDate, dispatch]);
+
   const handlePrevMonth = useCallback(() => {
     dispatch(setCurrentMonth(subMonths(currentMonthDate, 1).toISOString()));
   }, [dispatch, currentMonthDate]);
@@ -213,6 +244,20 @@ const EventCalendar = () => {
     setDetailDate(null);
     setIsEditMode(false);
   }, []);
+
+  const handleScheduleClick = useCallback(() => {
+    setIsScheduleModalOpen(true);
+  }, []);
+
+  const handleCloseScheduleModal = useCallback(() => {
+    setIsScheduleModalOpen(false);
+    if (category === 'markets') {
+      const year = currentMonthDate.getFullYear();
+      const month = currentMonthDate.getMonth() + 1;
+      dispatch(fetchMonthSchedule({ year, month }));
+      dispatch(fetchAvailableDates({ year, month }));
+    }
+  }, [category, currentMonthDate, dispatch]);
 
   const handleEditToggle = useCallback(() => {
     setIsEditMode((prev) => !prev);
@@ -604,6 +649,7 @@ const EventCalendar = () => {
               onCellClick={handleCellClick}
               onRetry={handleRetry}
               showMealCount={showMealCount}
+              scheduleMap={category === 'markets' ? scheduleMap : {}}
             />
             {category === 'meals' && <MealLegend />}
           </div>
@@ -617,6 +663,8 @@ const EventCalendar = () => {
             title={`${formatInIST(detailDate, 'MMM d, yyyy')}${isEditMode ? ' — Edit' : ''} — ${category}`}
             isEditMode={isEditMode}
             onEditToggle={category !== 'votes' ? handleEditToggle : undefined}
+            category={category}
+            onScheduleClick={category === 'markets' ? handleScheduleClick : undefined}
           >
             {isEditMode ? (
               <Suspense fallback={<div className="flex items-center justify-center py-8"><div className="w-6 h-6 border-2 border-[var(--accent-primary)] border-t-transparent rounded-full animate-spin" /></div>}>
@@ -640,7 +688,7 @@ const EventCalendar = () => {
                 />
               </Suspense>
             ) : (
-              <DayDetailContent entries={currentDateEntries} category={category} totalMealsCount={totalMealsForDate} />
+              <DayDetailContent entries={currentDateEntries} category={category} totalMealsCount={totalMealsForDate} scheduleData={getScheduleForDate(detailDate)} />
             )}
           </DayDetailSheet>
         ) : (
@@ -650,6 +698,8 @@ const EventCalendar = () => {
             title={`${formatInIST(detailDate, 'MMM d, yyyy')}${isEditMode ? ' — Edit' : ''} — ${category}`}
             isEditMode={isEditMode}
             onEditToggle={category !== 'votes' ? handleEditToggle : undefined}
+            category={category}
+            onScheduleClick={category === 'markets' ? handleScheduleClick : undefined}
           >
             {isEditMode ? (
               <Suspense fallback={<div className="flex items-center justify-center py-8"><div className="w-6 h-6 border-2 border-[var(--accent-primary)] border-t-transparent rounded-full animate-spin" /></div>}>
@@ -673,10 +723,17 @@ const EventCalendar = () => {
                 />
               </Suspense>
             ) : (
-              <DayDetailContent entries={currentDateEntries} category={category} totalMealsCount={totalMealsForDate} />
+              <DayDetailContent entries={currentDateEntries} category={category} totalMealsCount={totalMealsForDate} scheduleData={getScheduleForDate(detailDate)} />
             )}
           </DayDetailModal>
         ))}
+
+      {/* Market Schedule Modal */}
+      <MarketScheduleModal
+        isOpen={isScheduleModalOpen}
+        onClose={handleCloseScheduleModal}
+        currentMonth={currentMonthDate}
+      />
     </div>
   );
 };
