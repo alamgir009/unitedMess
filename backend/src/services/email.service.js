@@ -182,8 +182,9 @@ const generateEmailTemplate = ({
     body{margin:0!important;padding:0!important;width:100%!important;background-color:#f4f4f7;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
     .gold-accent{height:2px;min-width:100%;background:#c9973a;background-image:linear-gradient(90deg,#c9973a 0%,#ffd27a 100%);line-height:0}
     @media only screen and (max-width:640px){
-      .wrap{width:100%!important;border-radius:12px!important}
-      .outer-pad{padding:16px 0px!important}
+      body{background-color:#ffffff!important}
+      .wrap{width:100%!important;border-radius:0!important;box-shadow:none!important;border:1px solid #e8e8ec!important}
+      .outer-pad{padding:0px!important}
       .h-cell{padding:24px 20px 20px!important}
       .b-cell{padding:24px 20px!important}
       .f-cell{padding:20px 20px 24px!important}
@@ -227,6 +228,10 @@ const generateEmailTemplate = ({
       .dm-eyebrow{color:rgba(255,255,255,0.22)!important}
       .dm-stamp{color:rgba(255,255,255,0.10)!important}
       .dm-preheader{color:#0a0a12!important}
+    }
+    @media (prefers-color-scheme:dark) and (max-width:640px){
+      body{background-color:#141420!important}
+      .wrap{box-shadow:none!important;border:1px solid #2a2a3c!important;border-radius:0!important}
     }
   </style>
 </head>
