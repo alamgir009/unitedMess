@@ -205,7 +205,7 @@ describe('selectDates', () => {
         status: 'active',
     });
 
-    const setupForInsert = (user = {}, admins = []) => {
+    const setupForInsert = (existingDates = [], user = {}, admins = []) => {
         const defaultUser = {
             _id: userId,
             name: 'Test User',
@@ -215,8 +215,9 @@ describe('selectDates', () => {
             ...user,
         };
         mockMarketSchedule.find.mockReset();
+        // First call: existing dates for user+month
         mockMarketSchedule.find
-            .mockReturnValueOnce(mockChain([]))
+            .mockReturnValueOnce(mockChain(existingDates))
             .mockReturnValueOnce(admins);
         mockUser.findById.mockReset();
         mockUser.findById.mockReturnValue({
@@ -236,15 +237,15 @@ describe('selectDates', () => {
             .rejects.toThrow('At least one date is required');
     });
 
-    it('throws when exceeding max 3 dates per month', async () => {
-        mockMarketSchedule.find.mockReturnValue(mockChain([
-            { date: new Date('2026-09-01T00:00:00.000Z') },
-            { date: new Date('2026-09-02T00:00:00.000Z') },
-            { date: new Date('2026-09-03T00:00:00.000Z') },
-        ]));
+    it('throws when adding a 4th date (final count exceeds max)', async () => {
+        setupForInsert([
+            { date: new Date('2026-09-01T00:00:00.000Z'), user: userId },
+            { date: new Date('2026-09-02T00:00:00.000Z'), user: userId },
+            { date: new Date('2026-09-03T00:00:00.000Z'), user: userId },
+        ]);
 
         await expect(marketScheduleService.selectDates(userId, ['2026-09-10'], year, month))
-            .rejects.toThrow('Maximum 3');
+            .rejects.toThrow('would result in 4 dates');
     });
 
     it('throws on past dates', async () => {
@@ -254,20 +255,21 @@ describe('selectDates', () => {
             .rejects.toThrow('Cannot select dates in the past');
     });
 
-    it('skips dates user already has selected', async () => {
-        mockMarketSchedule.find.mockReturnValue(mockChain([
+    it('skips dates user already has selected (idempotent)', async () => {
+        setupForInsert([
             { date: new Date('2026-09-10T00:00:00.000Z'), user: userId },
-        ]));
-        mockMarketSchedule.insertMany.mockResolvedValue([]);
+        ]);
 
         const result = await marketScheduleService.selectDates(userId, ['2026-09-10'], year, month);
         expect(result.inserted).toBe(0);
+        expect(result.removed).toBe(0);
         expect(result.skipped).toBe(1);
+        expect(mockMarketSchedule.insertMany).not.toHaveBeenCalled();
     });
 
     it('inserts new dates and sends confirmation email with .ics', async () => {
         const inserted = [mockInsertedDoc('2026-09-10T00:00:00.000Z')];
-        setupForInsert();
+        setupForInsert([]);
         mockMarketSchedule.insertMany.mockResolvedValue(inserted);
 
         const result = await marketScheduleService.selectDates(userId, ['2026-09-10'], year, month);
@@ -288,7 +290,7 @@ describe('selectDates', () => {
 
     it('sends in-app notification to member after insert', async () => {
         const inserted = [mockInsertedDoc('2026-09-10T00:00:00.000Z')];
-        setupForInsert();
+        setupForInsert([]);
         mockMarketSchedule.insertMany.mockResolvedValue(inserted);
 
         await marketScheduleService.selectDates(userId, ['2026-09-10'], year, month);
@@ -308,7 +310,7 @@ describe('selectDates', () => {
 
     it('skips email when notificationPreferences.email is false', async () => {
         const inserted = [mockInsertedDoc('2026-09-10T00:00:00.000Z')];
-        setupForInsert({ notificationPreferences: { email: false } });
+        setupForInsert([], { notificationPreferences: { email: false } });
         mockMarketSchedule.insertMany.mockResolvedValue(inserted);
 
         await marketScheduleService.selectDates(userId, ['2026-09-10'], year, month);
@@ -319,7 +321,7 @@ describe('selectDates', () => {
 
     it('skips email when notificationPreferences.types.SYSTEM is false', async () => {
         const inserted = [mockInsertedDoc('2026-09-10T00:00:00.000Z')];
-        setupForInsert({ notificationPreferences: { types: { SYSTEM: false } } });
+        setupForInsert([], { notificationPreferences: { types: { SYSTEM: false } } });
         mockMarketSchedule.insertMany.mockResolvedValue(inserted);
 
         await marketScheduleService.selectDates(userId, ['2026-09-10'], year, month);
@@ -328,10 +330,10 @@ describe('selectDates', () => {
         expect(emailService.sendMarketScheduleConfirmationEmail).not.toHaveBeenCalled();
     });
 
-    it('sends in-app notification to admins but no admin email after insert', async () => {
+    it('sends in-app notification to admins after insert', async () => {
         const inserted = [mockInsertedDoc('2026-09-10T00:00:00.000Z')];
         const adminId = new mongoose.Types.ObjectId();
-        setupForInsert({}, [{ _id: adminId, name: 'Admin', email: 'admin@example.com', isActive: true }]);
+        setupForInsert([], {}, [{ _id: adminId, name: 'Admin', email: 'admin@example.com', isActive: true }]);
         mockMarketSchedule.insertMany.mockResolvedValue(inserted);
 
         await marketScheduleService.selectDates(userId, ['2026-09-10'], year, month);
@@ -344,12 +346,10 @@ describe('selectDates', () => {
             expect.stringContaining('Test User'),
             expect.objectContaining({ priority: 'LOW' })
         );
-        expect(emailService.sendMarketScheduleAdminNotificationEmail).not.toHaveBeenCalled();
     });
 
     it('handles duplicate key error (11000) for date conflict', async () => {
-        mockMarketSchedule.find.mockReset();
-        mockMarketSchedule.find.mockReturnValue(mockChain([]));
+        setupForInsert([]);
 
         const dupError = new Error('Duplicate key');
         dupError.code = 11000;
@@ -362,7 +362,7 @@ describe('selectDates', () => {
 
     it('handles partial duplicate key error', async () => {
         const partialDoc = mockInsertedDoc('2026-09-10T00:00:00.000Z');
-        setupForInsert();
+        setupForInsert([]);
 
         const dupError = new Error('Duplicate key');
         dupError.code = 11000;
@@ -374,11 +374,86 @@ describe('selectDates', () => {
     });
 
     it('validates dates are in the correct month', async () => {
-        mockMarketSchedule.find.mockReset();
-        mockMarketSchedule.find.mockReturnValue(mockChain([]));
-
         await expect(marketScheduleService.selectDates(userId, ['2026-10-01'], year, month))
             .rejects.toThrow('All dates must be in the specified month and year');
+    });
+
+    it('removes deselected dates (sync pattern)', async () => {
+        const existingId = new mongoose.Types.ObjectId();
+        setupForInsert([
+            { _id: existingId, date: new Date('2026-09-10T00:00:00.000Z'), user: userId },
+        ]);
+
+        // Request only Sep 15, dropping Sep 10
+        const inserted = [mockInsertedDoc('2026-09-15T00:00:00.000Z')];
+        mockMarketSchedule.insertMany.mockResolvedValue(inserted);
+
+        const result = await marketScheduleService.selectDates(userId, ['2026-09-15'], year, month);
+        expect(result.removed).toBe(1);
+        expect(result.inserted).toBe(1);
+        expect(result.total).toBe(1);
+        expect(mockMarketSchedule.updateMany).toHaveBeenCalledWith(
+            { _id: { $in: [existingId] } },
+            { $set: { status: 'superseded' } }
+        );
+    });
+
+    it('swaps dates: removes old, inserts new', async () => {
+        const existingId1 = new mongoose.Types.ObjectId();
+        const existingId2 = new mongoose.Types.ObjectId();
+        setupForInsert([
+            { _id: existingId1, date: new Date('2026-09-10T00:00:00.000Z'), user: userId },
+            { _id: existingId2, date: new Date('2026-09-11T00:00:00.000Z'), user: userId },
+        ]);
+
+        const inserted = [mockInsertedDoc('2026-09-20T00:00:00.000Z')];
+        mockMarketSchedule.insertMany.mockResolvedValue(inserted);
+
+        // Drop both old dates, add one new → net -1
+        const result = await marketScheduleService.selectDates(userId, ['2026-09-20'], year, month);
+        expect(result.removed).toBe(2);
+        expect(result.inserted).toBe(1);
+        expect(result.total).toBe(1);
+    });
+
+    it('returns early with no-ops when selections are identical (idempotent)', async () => {
+        setupForInsert([
+            { date: new Date('2026-09-10T00:00:00.000Z'), user: userId },
+            { date: new Date('2026-09-15T00:00:00.000Z'), user: userId },
+        ]);
+
+        const result = await marketScheduleService.selectDates(
+            userId,
+            ['2026-09-10', '2026-09-15'],
+            year,
+            month
+        );
+        expect(result.inserted).toBe(0);
+        expect(result.removed).toBe(0);
+        expect(result.skipped).toBe(2);
+        expect(mockMarketSchedule.insertMany).not.toHaveBeenCalled();
+        expect(mockMarketSchedule.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('cleans up Google Calendar event when removing a date', async () => {
+        const existingId = new mongoose.Types.ObjectId();
+        setupForInsert([
+            {
+                _id: existingId,
+                date: new Date('2026-09-10T00:00:00.000Z'),
+                user: userId,
+                googleCalendarEventId: 'gcal-event-abc',
+            },
+        ]);
+
+        const inserted = [mockInsertedDoc('2026-09-20T00:00:00.000Z')];
+        mockMarketSchedule.insertMany.mockResolvedValue(inserted);
+
+        const googleCalendarService = require('../../src/services/googleCalendar.service');
+        await marketScheduleService.selectDates(userId, ['2026-09-20'], year, month);
+        await new Promise((r) => setTimeout(r, 50));
+
+        expect(googleCalendarService.removeEventFromCalendar).toHaveBeenCalledWith(userId, 'gcal-event-abc');
     });
 });
 

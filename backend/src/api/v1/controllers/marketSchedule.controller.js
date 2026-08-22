@@ -36,9 +36,11 @@ const selectDates = asyncHandler(async (req, res) => {
         source || 'user'
     );
 
-    const message = result.inserted > 0
-        ? `${result.inserted} date(s) selected successfully${result.skipped > 0 ? `, ${result.skipped} skipped` : ''}`
-        : 'All dates were already selected';
+    const parts = [];
+    if (result.inserted > 0) parts.push(`${result.inserted} date(s) selected`);
+    if (result.removed > 0) parts.push(`${result.removed} date(s) removed`);
+    if (result.skipped > 0) parts.push(`${result.skipped} date(s) unchanged`);
+    const message = parts.length > 0 ? parts.join(', ') : 'No changes made';
 
     sendSuccessResponse(res, 201, message, result);
 });

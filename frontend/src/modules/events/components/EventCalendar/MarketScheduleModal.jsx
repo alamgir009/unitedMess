@@ -127,15 +127,18 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
     if (isBefore(date, today) && !isToday(date)) return;
     if (unavailableDatesMap[dateKey] && !selectedDates.has(dateKey)) return;
 
+    const isRemoving = selectedDates.has(dateKey);
+
+    if (!isRemoving && selectedDates.size >= MAX_DATES) {
+      toast.error(`Maximum ${MAX_DATES} dates allowed`);
+      return;
+    }
+
     setSelectedDates((prev) => {
       const next = new Set(prev);
-      if (next.has(dateKey)) {
+      if (isRemoving) {
         next.delete(dateKey);
       } else {
-        if (next.size >= MAX_DATES) {
-          toast.error(`Maximum ${MAX_DATES} dates allowed`);
-          return prev;
-        }
         next.add(dateKey);
       }
       return next;

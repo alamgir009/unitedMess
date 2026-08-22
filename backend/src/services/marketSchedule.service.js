@@ -138,9 +138,15 @@ const shouldSendNotificationEmail = (user, notificationType) => {
 };
 
 /**
- * Member selects dates for market duty.
- * Uses DB unique index on `date` for concurrency safety — no check-then-write.
- * On duplicate key error (11000), returns 409 Conflict.
+ * Sync a user's market schedule selections for a month.
+ *
+ * Computes the diff between what the user currently has in the DB and what they
+ * request now. Removes deselected dates (soft-delete to 'superseded') and adds
+ * new ones. This allows users to change their selections without hitting the old
+ * "maximum dates exceeded" 400 error.
+ *
+ * Idempotent: calling with the same dates is a no-op.
+ * Race-safe: DB unique index on `date` prevents double-booking.
  */
 const selectDates = async (userId, dates, year, month, source = 'user') => {
     const y = parseInt(year, 10);
@@ -160,29 +166,14 @@ const selectDates = async (userId, dates, year, month, source = 'user') => {
 
     const monthKey = toMonthKey(y, m);
 
-    const existingDates = await MarketSchedule.find({
-        user: userId,
-        monthKey,
-        status: 'active',
-    }).lean();
-
-    const totalAfterSelection = existingDates.length + dates.length;
-    if (totalAfterSelection > MAX_DATES_PER_MONTH) {
-        throw new AppError(
-            `You already have ${existingDates.length} date(s) selected. Maximum ${MAX_DATES_PER_MONTH} allowed.`,
-            400
-        );
-    }
-
+    // ── 1. Normalize and validate requested dates ─────────────────────
     const normalizedDates = dates.map((d) => {
         const parsed = parseDate(d);
         return normalizeToUTC(parsed);
     });
 
     for (const d of normalizedDates) {
-        const monthOfDate = d.getUTCMonth() + 1;
-        const yearOfDate = d.getUTCFullYear();
-        if (monthOfDate !== m || yearOfDate !== y) {
+        if (d.getUTCMonth() + 1 !== m || d.getUTCFullYear() !== y) {
             throw new AppError('All dates must be in the specified month and year', 400);
         }
     }
@@ -194,155 +185,202 @@ const selectDates = async (userId, dates, year, month, source = 'user') => {
         }
     }
 
-    const existingDateKeys = new Set(
-        existingDates.map((s) => normalizeToUTC(s.date).toISOString().split('T')[0])
+    // ── 2. Fetch existing active dates for this user+month ────────────
+    const existingDates = await MarketSchedule.find({
+        user: userId,
+        monthKey,
+        status: 'active',
+    }).lean();
+
+    const existingDateMap = new Map();
+    for (const s of existingDates) {
+        existingDateMap.set(normalizeToUTC(s.date).toISOString().split('T')[0], s);
+    }
+
+    const requestedDateKeys = new Set(
+        normalizedDates.map((d) => d.toISOString().split('T')[0])
     );
 
-    const newSchedules = [];
-    for (const d of normalizedDates) {
-        const dateKey = d.toISOString().split('T')[0];
+    // ── 3. Compute the diff ──────────────────────────────────────────
+    // Dates user had but did not request this time → remove
+    const toRemove = existingDates.filter(
+        (s) => !requestedDateKeys.has(normalizeToUTC(s.date).toISOString().split('T')[0])
+    );
 
-        if (existingDateKeys.has(dateKey)) {
-            continue;
+    // Dates user requested but does not have yet → add
+    const toAdd = normalizedDates.filter(
+        (d) => !existingDateMap.has(d.toISOString().split('T')[0])
+    );
+
+    // No changes needed (idempotent)
+    if (toRemove.length === 0 && toAdd.length === 0) {
+        return { inserted: 0, removed: 0, skipped: dates.length, total: existingDates.length };
+    }
+
+    // ── 4. Validate final count ──────────────────────────────────────
+    const finalCount = existingDates.length - toRemove.length + toAdd.length;
+    if (finalCount > MAX_DATES_PER_MONTH) {
+        throw new AppError(
+            `Selection would result in ${finalCount} dates. Maximum ${MAX_DATES_PER_MONTH} allowed.`,
+            400
+        );
+    }
+
+    // ── 5. Soft-delete removed dates ─────────────────────────────────
+    let removedCount = 0;
+    if (toRemove.length > 0) {
+        const removeIds = toRemove.map((s) => s._id);
+
+        await MarketSchedule.updateMany(
+            { _id: { $in: removeIds } },
+            { $set: { status: 'superseded' } }
+        );
+
+        removedCount = toRemove.length;
+
+        // Google Calendar cleanup for removed dates (fire-and-forget)
+        for (const s of toRemove) {
+            if (s.googleCalendarEventId) {
+                googleCalendarService.removeEventFromCalendar(userId, s.googleCalendarEventId)
+                    .catch((err) => logger.error(`[MarketSchedule] GC cleanup failed: ${err.message}`));
+            }
         }
-
-        newSchedules.push({
-            date: d,
-            user: userId,
-            month: m,
-            year: y,
-            monthKey,
-            source,
-            status: 'active',
-            isManuallySelected: source === 'user',
-        });
     }
 
-    if (newSchedules.length === 0) {
-        return { inserted: 0, skipped: dates.length, total: existingDates.length };
-    }
+    // ── 6. Insert new dates ──────────────────────────────────────────
+    const newSchedules = toAdd.map((d) => ({
+        date: d,
+        user: userId,
+        month: m,
+        year: y,
+        monthKey,
+        source,
+        status: 'active',
+        isManuallySelected: source === 'user',
+    }));
 
     let inserted = [];
-    try {
-        inserted = await MarketSchedule.insertMany(newSchedules, { ordered: false });
-    } catch (err) {
-        if (err.code === 11000) {
-            const insertedDocs = err.insertedDocs || [];
-            const duplicateCount = newSchedules.length - insertedDocs.length;
-            if (insertedDocs.length === 0) {
-                throw new AppError(
-                    `Date(s) already taken by another member`,
-                    409
+    if (newSchedules.length > 0) {
+        try {
+            inserted = await MarketSchedule.insertMany(newSchedules, { ordered: false });
+        } catch (err) {
+            if (err.code === 11000) {
+                const insertedDocs = err.insertedDocs || [];
+                const duplicateCount = newSchedules.length - insertedDocs.length;
+                if (insertedDocs.length === 0) {
+                    throw new AppError('Date(s) already taken by another member', 409);
+                }
+                inserted = insertedDocs;
+                logger.warn(
+                    `[MarketSchedule] Partial insert: ${inserted.length} succeeded, ${duplicateCount} rejected (conflict)`
                 );
-            }
-            inserted = insertedDocs;
-            logger.warn(
-                `[MarketSchedule] Partial insert: ${inserted.length} succeeded, ${duplicateCount} rejected (conflict)`
-            );
-        } else {
-            throw err;
-        }
-    }
-
-    if (inserted.length === 0) {
-        return { inserted: 0, skipped: dates.length, total: existingDates.length };
-    }
-
-    // ── Post-insertion: email, calendar invite, notifications (fire-and-forget) ──
-    // Fetch user data once for all downstream operations
-    const user = await User.findById(userId).lean();
-
-    // 1. Send confirmation email with .ics calendar invite
-    if (user?.email) {
-        const shouldSendEmail = shouldSendNotificationEmail(user, 'SYSTEM');
-        if (shouldSendEmail) {
-            try {
-                const icsBuffer = generateMarketDutyICS({
-                    userName: user.name || 'Member',
-                    dates: inserted,
-                });
-                await emailService.sendMarketScheduleConfirmationEmail(
-                    user.email,
-                    user.name || 'Member',
-                    inserted,
-                    icsBuffer
-                );
-                logger.info(`[MarketSchedule] Confirmation email sent to ${user.email}`);
-            } catch (err) {
-                logger.error(`[MarketSchedule] Email send failed for ${userId}: ${err.message}`);
+            } else {
+                throw err;
             }
         }
     }
 
-    // 2. Send in-app notification to the member
-    try {
-        const dateLabels = inserted
-            .map((s) => new Date(s.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' }))
-            .join(', ');
-        await notificationService.createAndSend(
-            userId,
-            'SYSTEM',
-            'Market Duty Scheduled',
-            `You have scheduled market duty for ${dateLabels}.`,
-            {
-                priority: 'NORMAL',
-                actionUrl: '/events?view=markets',
-                metadata: { type: 'market_schedule_update', scheduleIds: inserted.map((s) => s._id) },
-                idempotencyKey: `market_selected_${userId}_${inserted.map((s) => s._id).sort().join('_')}`,
-            }
-        );
-    } catch (err) {
-        logger.error(`[MarketSchedule] In-app notification failed for ${userId}: ${err.message}`);
+    if (inserted.length === 0 && removedCount === 0) {
+        return { inserted: 0, removed: 0, skipped: dates.length, total: existingDates.length };
     }
 
-    // 3. Notify all admins (in-app only — no email to avoid fatigue at scale)
-    try {
-        const admins = await User.find({ role: 'admin', isActive: true }).lean();
-        const dateLabels = inserted
-            .map((s) => new Date(s.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' }))
-            .join(', ');
+    // ── 7. Post-change side-effects (fire-and-forget) ────────────────
+    if (inserted.length > 0) {
+        const user = await User.findById(userId).lean();
 
-        for (const admin of admins) {
+        // 1. Confirmation email with .ics calendar invite
+        if (user?.email) {
+            const shouldSendEmail = shouldSendNotificationEmail(user, 'SYSTEM');
+            if (shouldSendEmail) {
+                try {
+                    const icsBuffer = generateMarketDutyICS({
+                        userName: user.name || 'Member',
+                        dates: inserted,
+                    });
+                    await emailService.sendMarketScheduleConfirmationEmail(
+                        user.email,
+                        user.name || 'Member',
+                        inserted,
+                        icsBuffer
+                    );
+                    logger.info(`[MarketSchedule] Confirmation email sent to ${user.email}`);
+                } catch (err) {
+                    logger.error(`[MarketSchedule] Email send failed for ${userId}: ${err.message}`);
+                }
+            }
+        }
+
+        // 2. In-app notification to the member
+        try {
+            const dateLabels = inserted
+                .map((s) => new Date(s.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' }))
+                .join(', ');
             await notificationService.createAndSend(
-                admin._id,
+                userId,
                 'SYSTEM',
-                'Market Date Selection',
-                `${user.name || 'A member'} selected market duty for ${dateLabels}.`,
+                'Market Duty Scheduled',
+                `You have scheduled market duty for ${dateLabels}.`,
                 {
-                    priority: 'LOW',
+                    priority: 'NORMAL',
                     actionUrl: '/events?view=markets',
-                    metadata: { type: 'market_schedule_admin_notice', memberId: userId, scheduleIds: inserted.map((s) => s._id) },
+                    metadata: { type: 'market_schedule_update', scheduleIds: inserted.map((s) => s._id) },
+                    idempotencyKey: `market_selected_${userId}_${inserted.map((s) => s._id).sort().join('_')}`,
                 }
             );
+        } catch (err) {
+            logger.error(`[MarketSchedule] In-app notification failed for ${userId}: ${err.message}`);
         }
-    } catch (err) {
-        logger.error(`[MarketSchedule] Admin notification failed: ${err.message}`);
-    }
 
-    // 4. Google Calendar sync (if user has connected — legacy path, fire-and-forget)
-    if (user?.googleCalendarSyncEnabled) {
-        googleCalendarService.syncDatesToCalendar(userId, inserted).then(async (syncResults) => {
-            const syncedIds = syncResults.filter((r) => r.success).map((r) => r.scheduleId);
-            const failedIds = syncResults.filter((r) => !r.success).map((r) => r.scheduleId);
-            if (syncedIds.length > 0) {
-                await MarketSchedule.updateMany({ _id: { $in: syncedIds } }, { googleSyncStatus: 'synced' });
+        // 3. Notify all admins (in-app only)
+        try {
+            const admins = await User.find({ role: 'admin', isActive: true }).lean();
+            const dateLabels = inserted
+                .map((s) => new Date(s.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' }))
+                .join(', ');
+
+            for (const admin of admins) {
+                await notificationService.createAndSend(
+                    admin._id,
+                    'SYSTEM',
+                    'Market Date Selection',
+                    `${user.name || 'A member'} selected market duty for ${dateLabels}.`,
+                    {
+                        priority: 'LOW',
+                        actionUrl: '/events?view=markets',
+                        metadata: { type: 'market_schedule_admin_notice', memberId: userId, scheduleIds: inserted.map((s) => s._id) },
+                    }
+                );
             }
-            if (failedIds.length > 0) {
-                await MarketSchedule.updateMany({ _id: { $in: failedIds } }, { googleSyncStatus: 'failed' });
-            }
-        }).catch((err) => {
-            logger.error(`[MarketSchedule] Google Calendar sync failed for ${userId}: ${err.message}`);
-            MarketSchedule.updateMany(
-                { _id: { $in: inserted.map((s) => s._id) } },
-                { googleSyncStatus: 'failed' }
-            ).catch(() => {});
-        });
+        } catch (err) {
+            logger.error(`[MarketSchedule] Admin notification failed: ${err.message}`);
+        }
+
+        // 4. Google Calendar sync (fire-and-forget)
+        if (user?.googleCalendarSyncEnabled) {
+            googleCalendarService.syncDatesToCalendar(userId, inserted).then(async (syncResults) => {
+                const syncedIds = syncResults.filter((r) => r.success).map((r) => r.scheduleId);
+                const failedIds = syncResults.filter((r) => !r.success).map((r) => r.scheduleId);
+                if (syncedIds.length > 0) {
+                    await MarketSchedule.updateMany({ _id: { $in: syncedIds } }, { googleSyncStatus: 'synced' });
+                }
+                if (failedIds.length > 0) {
+                    await MarketSchedule.updateMany({ _id: { $in: failedIds } }, { googleSyncStatus: 'failed' });
+                }
+            }).catch((err) => {
+                logger.error(`[MarketSchedule] Google Calendar sync failed for ${userId}: ${err.message}`);
+                MarketSchedule.updateMany(
+                    { _id: { $in: inserted.map((s) => s._id) } },
+                    { googleSyncStatus: 'failed' }
+                ).catch(() => {});
+            });
+        }
     }
 
     return {
         inserted: inserted.length,
+        removed: removedCount,
         skipped: dates.length - inserted.length,
-        total: existingDates.length + inserted.length,
+        total: existingDates.length - removedCount + inserted.length,
     };
 };
 
