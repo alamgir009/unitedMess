@@ -160,11 +160,12 @@ const generateEmailTemplate = ({
     ].join('\n');
 
     const htmlTemplate = `<!DOCTYPE html>
-<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<html lang="en" style="color-scheme:light dark;" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="color-scheme" content="light dark">
   <meta name="x-apple-disable-message-reformatting">
   <title>${title}</title>
   <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
@@ -178,87 +179,87 @@ const generateEmailTemplate = ({
     *{box-sizing:border-box}
     table{border-collapse:separate!important}
     a[x-apple-data-detectors]{color:inherit!important;text-decoration:none!important}
-    body{margin:0!important;padding:0!important;width:100%!important;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+    body{margin:0!important;padding:0!important;width:100%!important;background-color:#f4f4f7;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
     .gold-accent{height:2px;min-width:100%;background:#c9973a;background-image:linear-gradient(90deg,#c9973a 0%,#ffd27a 100%);line-height:0}
     @media only screen and (max-width:640px){
-      .wrap{width:100%!important;border-radius:20px!important}
-      .eyebrow-table,.stamp-table{width:100%!important}
-      .outer-pad{padding:16px 8px!important}
-      .h-cell{padding:28px 22px 24px!important}
-      .b-cell{padding:32px 22px!important}
-      .f-cell{padding:24px 22px 28px!important}
+      .wrap{width:100%!important;border-radius:12px!important}
+      .outer-pad{padding:16px 0px!important}
+      .h-cell{padding:24px 20px 20px!important}
+      .b-cell{padding:24px 20px!important}
+      .f-cell{padding:20px 20px 24px!important}
       .title{font-size:21px!important;letter-spacing:-0.4px!important}
       .logo{font-size:20px!important}
       .btn-cta{display:block!important;width:100%!important;text-align:center!important;padding:16px 20px!important}
       .s-td{padding:0 4px!important}
-      .s-btn{width:38px!important;height:38px!important;border-radius:10px!important}
-      .s-btn img{margin:9px auto!important;width:16px!important;height:16px!important}
+      .s-btn{width:40px!important;height:40px!important;border-radius:10px!important}
+      .s-btn img{margin:12px auto!important;width:16px!important;height:16px!important}
       .pill{display:none!important}
       .ornament-line{display:none!important}
+    }
+    @media (prefers-color-scheme:dark){
+      body{background-color:#0a0a12!important}
+      .wrap{background:#141420!important;box-shadow:0 2px 16px rgba(0,0,0,0.40)!important;border-color:#2a2a3c!important}
+      .h-cell{background:#1a1a2c!important;border-color:#2a2a3c!important}
+      .b-cell{background:#141420!important}
+      .f-cell{background:#1a1a2c!important;border-color:#2a2a3c!important}
+      .dm-title{color:#f0f0f4!important}
+      .dm-text{color:#b0b0bc!important}
+      .dm-muted{color:#6a6a7a!important}
+      .dm-logo-u{color:rgba(255,255,255,0.92)!important}
+      .dm-logo-m{color:#e0b050!important}
+      .dm-tagline{color:rgba(255,200,100,0.60)!important}
+      .dm-pill{background:rgba(255,200,80,0.12)!important;border-color:rgba(255,200,80,0.25)!important;color:rgba(255,210,100,0.80)!important}
+      .dm-ornament{background:linear-gradient(90deg,rgba(255,200,80,0.30) 0%,rgba(255,200,80,0.10) 30%,rgba(180,140,255,0.08) 70%,transparent 100%)!important}
+      .dm-sbtn{background:#1e1e30!important;border-color:#2a2a3c!important;box-shadow:0 2px 8px rgba(0,0,0,0.30)!important}
+      .dm-sbtn img{opacity:0.70!important;filter:none!important}
+      .dm-copybox{background:#1a1a2c!important;border-color:#2a2a3c!important}
+      .dm-copybox-label{color:rgba(255,255,255,0.30)!important}
+      .dm-copybox-link{color:#c09040!important}
+      .dm-divider{background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.08) 20%,rgba(255,200,80,0.12) 50%,rgba(255,255,255,0.08) 80%,transparent 100%)!important}
+      .dm-footercopyright{color:rgba(255,255,255,0.50)!important}
+      .dm-footeraddress{color:rgba(255,255,255,0.30)!important}
+      .dm-footerlink{color:rgba(255,200,80,0.65)!important;border-color:rgba(255,200,80,0.25)!important}
+      .dm-footerdot{color:rgba(255,255,255,0.18)!important}
+      .dm-footnote-divider{background:linear-gradient(90deg,rgba(255,200,80,0.20) 0%,rgba(255,255,255,0.08) 40%,transparent 100%)!important}
+      .dm-footnote-box{background:linear-gradient(135deg,rgba(255,200,80,0.07) 0%,rgba(200,160,255,0.04) 100%)!important;border-color:rgba(255,200,80,0.15)!important;border-left-color:rgba(255,200,80,0.55)!important}
+      .dm-footnote-label{color:rgba(255,200,80,0.65)!important}
+      .dm-footnote-text{color:rgba(255,255,255,0.55)!important}
+      .dm-eyebrow{color:rgba(255,255,255,0.22)!important}
+      .dm-stamp{color:rgba(255,255,255,0.10)!important}
+      .dm-preheader{color:#0a0a12!important}
     }
   </style>
 </head>
 
 <body style="
   margin:0;padding:0;
-  background-color:#060608;
-  background-image:
-    radial-gradient(ellipse 100% 70% at 15% 0%, rgba(255,210,120,0.07) 0%, transparent 55%),
-    radial-gradient(ellipse 70% 60% at 88% 15%, rgba(180,140,255,0.08) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 50% at 50% 85%, rgba(100,180,255,0.05) 0%, transparent 55%),
-    radial-gradient(ellipse 40% 40% at 70% 50%, rgba(255,180,100,0.04) 0%, transparent 50%);
+  background-color:#f4f4f7;
   font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,sans-serif;
 ">
 
-  <!-- Gold accent bar (with MSO fallback) -->
-  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:0;padding:0;">
-    <tr>
-      <td style="padding:0;margin:0;line-height:0;">
-        <!--[if mso]>
-          <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:600px;height:2px;">
-            <v:fill color="#c9973a" />
-          </v:rect>
-        <![endif]-->
-        <div class="gold-accent" style="height:2px;min-width:100%;background:#c9973a;background-image:linear-gradient(90deg,#c9973a 0%,#ffd27a 100%);line-height:0;font-size:0;">&nbsp;</div>
-      </td>
-    </tr>
-  </table>
-
   <!-- Hidden preheader -->
-  <div style="display:none;font-size:1px;color:#060608;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${previewText || title}</div>
+  <div class="dm-preheader" style="display:none;font-size:1px;color:#f4f4f7;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${previewText || title}</div>
 
   <!-- Outer wrapper -->
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
     <tr>
-      <td align="center" class="outer-pad" style="padding:52px 20px 48px;">
-
-        <!-- Eyebrow -->
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" class="eyebrow-table" style="max-width:600px;width:100%;margin-bottom:14px;">
-          <tr>
-            <td align="left">
-              <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;font-weight:400;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.18);">unitedmess · transactional</span>
-            </td>
-            <td align="right">
-              <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;font-weight:400;letter-spacing:0.12em;color:rgba(255,255,255,0.12);">${year}</span>
-            </td>
-          </tr>
-        </table>
+      <td align="center" class="outer-pad" style="padding:36px 20px 40px;">
 
         <!-- Main card -->
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600"
           class="wrap"
           style="
             max-width:600px;width:100%;
-            border-radius:26px;
+            border-radius:16px;
             overflow:hidden;
-            background:linear-gradient(145deg,rgba(28,26,38,0.92) 0%,rgba(18,16,26,0.96) 40%,rgba(22,20,32,0.94) 100%);
-            box-shadow:0 0 0 1px rgba(255,255,255,0.07),inset 0 1px 0 rgba(255,255,255,0.10),0 32px 80px rgba(0,0,0,0.75),0 8px 24px rgba(0,0,0,0.50),0 0 60px rgba(255,200,80,0.04),0 -4px 40px rgba(160,120,255,0.06);
-            border:1px solid rgba(255,255,255,0.06);
+            background:#ffffff;
+            box-shadow:0 2px 12px rgba(0,0,0,0.08);
+            border:1px solid #e8e8ec;
           ">
 
           <!-- HEADER -->
           <tr>
-            <td class="h-cell" style="padding:36px 44px 30px;background:linear-gradient(135deg,rgba(255,255,255,0.055) 0%,rgba(255,220,140,0.03) 50%,rgba(180,140,255,0.025) 100%);border-bottom:1px solid rgba(255,255,255,0.07);box-sizing:border-box;">
+            <td class="h-cell" style="padding:36px 44px 30px;background:#fafbfc;border-bottom:1px solid #e8e8ec;box-sizing:border-box;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                 <tr>
                   <td valign="middle">
@@ -275,24 +276,24 @@ const generateEmailTemplate = ({
                                 />
                               </td>
                               <td valign="middle">
-                                <h1 class="logo" style="margin:0;padding:0;font-family:'Syne','Arial',sans-serif;font-size:22px;font-weight:700;letter-spacing:-0.6px;line-height:1;text-shadow:0 1px 8px rgba(255,200,80,0.12);">
-                                  <span style="color:rgba(255,255,255,0.92);">United</span>
-                                  <span style="color:rgba(255,200,100,0.90);">Mess</span>
+                                <h1 class="logo" style="margin:0;padding:0;font-family:'Syne','Arial',sans-serif;font-size:22px;font-weight:700;letter-spacing:-0.6px;line-height:1;">
+                                  <span class="dm-logo-u" style="color:#1a1a2e;">United</span>
+                                  <span class="dm-logo-m" style="color:#c9973a;">Mess</span>
                                 </h1>
-                                <p style="margin:3px 0 0 0;padding:0;font-family:'JetBrains Mono','Courier New',monospace;font-size:9.5px;font-weight:400;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,200,100,0.50);line-height:1;">where food meets community</p>
+                                <p class="dm-tagline" style="margin:3px 0 0 0;padding:0;font-family:'JetBrains Mono','Courier New',monospace;font-size:9.5px;font-weight:400;letter-spacing:0.14em;text-transform:uppercase;color:#b09050;line-height:1;">where food meets community</p>
                               </td>
                             </tr>
                           </table>
                         </td>
                         <td valign="middle" align="right">
-                          <span class="pill" style="display:inline-block;padding:5px 12px;background:rgba(255,200,80,0.08);border:1px solid rgba(255,200,80,0.18);border-radius:100px;font-family:'JetBrains Mono','Courier New',monospace;font-size:9.5px;font-weight:500;letter-spacing:0.10em;text-transform:uppercase;color:rgba(255,210,100,0.70);box-shadow:0 0 16px rgba(255,200,80,0.06);">Verified Send</span>
+                          <span class="pill dm-pill" style="display:inline-block;padding:5px 12px;background:rgba(201,151,58,0.08);border:1px solid rgba(201,151,58,0.18);border-radius:100px;font-family:'JetBrains Mono','Courier New',monospace;font-size:9.5px;font-weight:500;letter-spacing:0.10em;text-transform:uppercase;color:#a08030;">Verified Send</span>
                         </td>
                       </tr>
                     </table>
 
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="ornament-line">
                       <tr>
-                        <td style="height:1px;background:linear-gradient(90deg,rgba(255,200,80,0.25) 0%,rgba(255,200,80,0.08) 30%,rgba(180,140,255,0.06) 70%,transparent 100%);"></td>
+                        <td class="dm-ornament" style="height:1px;background:linear-gradient(90deg,rgba(201,151,58,0.25) 0%,rgba(201,151,58,0.08) 30%,rgba(180,140,255,0.06) 70%,transparent 100%);"></td>
                       </tr>
                     </table>
                   </td>
@@ -303,14 +304,14 @@ const generateEmailTemplate = ({
 
           <!-- BODY -->
           <tr>
-            <td class="b-cell" style="padding:44px 44px 40px;background:rgba(12,11,18,0.60);box-sizing:border-box;">
+            <td class="b-cell" style="padding:44px 44px 40px;background:#ffffff;box-sizing:border-box;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                 <tr>
                   <td>
 
-                    <h2 class="title" style="margin:0 0 22px 0;padding:0;font-family:'Syne','Arial',sans-serif;font-size:26px;font-weight:700;color:rgba(255,255,255,0.94);line-height:1.25;letter-spacing:-0.6px;text-shadow:0 2px 16px rgba(0,0,0,0.40);">${title}</h2>
+                    <h2 class="title dm-title" style="margin:0 0 22px 0;padding:0;font-family:'Syne','Arial',sans-serif;font-size:26px;font-weight:700;color:#1a1a2e;line-height:1.25;letter-spacing:-0.6px;">${title}</h2>
 
-                    <div style="font-family:'Instrument Sans',-apple-system,sans-serif;font-size:15px;font-weight:400;color:rgba(255,255,255,0.62);line-height:1.80;margin:0;">${content}</div>
+                    <div class="dm-text" style="font-family:'Instrument Sans',-apple-system,sans-serif;font-size:15px;font-weight:400;color:#4a4a5a;line-height:1.80;margin:0;">${content}</div>
 
                     ${showButton && buttonText ? `
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top:38px;">
@@ -326,7 +327,7 @@ const generateEmailTemplate = ({
                           </v:roundrect>
                           <![endif]-->
                           <!--[if !mso]><!-->
-                          <a href="${buttonLink}" class="btn-cta" style="display:inline-block;padding:16px 36px;font-family:'Syne','Arial',sans-serif;font-size:13.5px;font-weight:700;color:rgba(255,255,255,0.95);text-decoration:none;letter-spacing:0.04em;text-transform:uppercase;border-radius:14px;background:linear-gradient(135deg,rgba(200,155,50,0.75) 0%,rgba(180,130,40,0.65) 40%,rgba(160,110,200,0.45) 100%);box-shadow:inset 0 1px 0 rgba(255,255,200,0.22),inset 0 -1px 0 rgba(0,0,0,0.30),0 0 0 1px rgba(200,160,60,0.25),0 4px 24px rgba(200,150,40,0.20),0 12px 40px rgba(0,0,0,0.45),0 0 60px rgba(200,150,40,0.08);border:none;box-sizing:border-box;text-shadow:0 1px 4px rgba(0,0,0,0.40);">${buttonText}</a>
+                          <a href="${buttonLink}" class="btn-cta" style="display:inline-block;padding:16px 36px;font-family:'Syne','Arial',sans-serif;font-size:13.5px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.04em;text-transform:uppercase;border-radius:12px;background:#c9973a;background:linear-gradient(135deg,#c9973a 0%,#b08530 100%);box-shadow:0 2px 8px rgba(201,151,58,0.25);border:none;box-sizing:border-box;">${buttonText}</a>
                           <!--<![endif]-->
                         </td>
                       </tr>
@@ -334,9 +335,9 @@ const generateEmailTemplate = ({
                         <td style="padding-top:20px;">
                           <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                             <tr>
-                              <td style="padding:13px 18px;background:rgba(255,255,255,0.028);border:1px solid rgba(255,255,255,0.07);border-radius:10px;box-sizing:border-box;">
-                                <p style="margin:0 0 5px 0;font-family:'JetBrains Mono','Courier New',monospace;font-size:9.5px;font-weight:400;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.22);">if button fails · copy link</p>
-                                <a href="${buttonLink}" style="font-family:'JetBrains Mono','Courier New',monospace;font-size:11.5px;color:rgba(200,160,80,0.70);text-decoration:none;word-break:break-all;line-height:1.6;">${buttonLink}</a>
+                              <td class="dm-copybox" style="padding:13px 18px;background:#f8f9fa;border:1px solid #e8e8ec;border-radius:10px;box-sizing:border-box;">
+                                <p class="dm-copybox-label" style="margin:0 0 5px 0;font-family:'JetBrains Mono','Courier New',monospace;font-size:9.5px;font-weight:400;letter-spacing:0.12em;text-transform:uppercase;color:#8a8a9a;">if button fails · copy link</p>
+                                <a href="${buttonLink}" class="dm-copybox-link" style="font-family:'JetBrains Mono','Courier New',monospace;font-size:11.5px;color:#a08030;text-decoration:none;word-break:break-all;line-height:1.6;">${buttonLink}</a>
                               </td>
                             </tr>
                           </table>
@@ -348,14 +349,14 @@ const generateEmailTemplate = ({
                     ${footerText ? `
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:36px 0 0 0;">
                       <tr>
-                        <td style="height:1px;background:linear-gradient(90deg,rgba(255,200,80,0.15) 0%,rgba(255,255,255,0.07) 40%,transparent 100%);"></td>
+                        <td class="dm-footnote-divider" style="height:1px;background:linear-gradient(90deg,rgba(201,151,58,0.15) 0%,#e8e8ec 40%,transparent 100%);"></td>
                       </tr>
                     </table>
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top:22px;">
                       <tr>
-                        <td style="padding:18px 20px;background:linear-gradient(135deg,rgba(255,200,80,0.05) 0%,rgba(200,160,255,0.03) 100%);border-radius:12px;border:1px solid rgba(255,200,80,0.10);border-left:2px solid rgba(255,200,80,0.45);box-sizing:border-box;box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);">
-                          <p style="margin:0 0 6px 0;font-family:'JetBrains Mono','Courier New',monospace;font-size:9px;font-weight:500;letter-spacing:0.16em;text-transform:uppercase;color:rgba(255,200,80,0.55);">note</p>
-                          <p style="margin:0;font-family:'Instrument Sans',sans-serif;font-size:13.5px;font-weight:400;color:rgba(255,255,255,0.50);line-height:1.70;font-style:italic;">${footerText}</p>
+                        <td class="dm-footnote-box" style="padding:18px 20px;background:#f8f9fa;border-radius:12px;border:1px solid #e8e8ec;border-left:2px solid #c9973a;box-sizing:border-box;">
+                          <p class="dm-footnote-label" style="margin:0 0 6px 0;font-family:'JetBrains Mono','Courier New',monospace;font-size:9px;font-weight:500;letter-spacing:0.16em;text-transform:uppercase;color:#a08030;">note</p>
+                          <p class="dm-footnote-text" style="margin:0;font-family:'Instrument Sans',sans-serif;font-size:13.5px;font-weight:400;color:#6a6a7a;line-height:1.70;font-style:italic;">${footerText}</p>
                         </td>
                       </tr>
                     </table>
@@ -369,7 +370,7 @@ const generateEmailTemplate = ({
 
           <!-- FOOTER -->
           <tr>
-            <td class="f-cell" style="padding:28px 44px 36px;background:linear-gradient(160deg,rgba(255,255,255,0.03) 0%,rgba(255,220,120,0.02) 50%,rgba(160,120,255,0.02) 100%);border-top:1px solid rgba(255,255,255,0.06);box-sizing:border-box;">
+            <td class="f-cell" style="padding:28px 44px 36px;background:#f8f9fa;border-top:1px solid #e8e8ec;box-sizing:border-box;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
 
                 <tr>
@@ -377,23 +378,23 @@ const generateEmailTemplate = ({
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
                       <tr>
                         <td class="s-td" style="padding:0 5px;">
-                          <a href="https://github.com/alamgir009" class="s-btn" style="display:inline-block;width:42px;height:42px;background:linear-gradient(145deg,rgba(255,255,255,0.07),rgba(255,255,255,0.03));border:1px solid rgba(255,255,255,0.09);border-radius:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.10),0 4px 12px rgba(0,0,0,0.40);text-decoration:none;box-sizing:border-box;">
-                            <img src="https://cdn-icons-png.flaticon.com/512/25/25231.png" width="16" height="16" alt="GitHub" style="display:block;margin:13px auto;width:16px;height:16px;opacity:0.55;filter:invert(1);">
+                          <a href="https://github.com/alamgir009" class="s-btn dm-sbtn" style="display:inline-block;width:42px;height:42px;background:#f0f0f4;border:1px solid #e0e0e4;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.06);text-decoration:none;box-sizing:border-box;">
+                            <img src="https://cdn-icons-png.flaticon.com/512/25/25231.png" width="16" height="16" alt="GitHub" style="display:block;margin:13px auto;width:16px;height:16px;opacity:0.55;">
                           </a>
                         </td>
                         <td class="s-td" style="padding:0 5px;">
-                          <a href="https://linkedin.com" class="s-btn" style="display:inline-block;width:42px;height:42px;background:linear-gradient(145deg,rgba(255,255,255,0.07),rgba(255,255,255,0.03));border:1px solid rgba(255,255,255,0.09);border-radius:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.10),0 4px 12px rgba(0,0,0,0.40);text-decoration:none;box-sizing:border-box;">
-                            <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="16" height="16" alt="LinkedIn" style="display:block;margin:13px auto;width:16px;height:16px;opacity:0.55;filter:invert(1);">
+                          <a href="https://linkedin.com" class="s-btn dm-sbtn" style="display:inline-block;width:42px;height:42px;background:#f0f0f4;border:1px solid #e0e0e4;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.06);text-decoration:none;box-sizing:border-box;">
+                            <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="16" height="16" alt="LinkedIn" style="display:block;margin:13px auto;width:16px;height:16px;opacity:0.55;">
                           </a>
                         </td>
                         <td class="s-td" style="padding:0 5px;">
-                          <a href="https://twitter.com" class="s-btn" style="display:inline-block;width:42px;height:42px;background:linear-gradient(145deg,rgba(255,255,255,0.07),rgba(255,255,255,0.03));border:1px solid rgba(255,255,255,0.09);border-radius:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.10),0 4px 12px rgba(0,0,0,0.40);text-decoration:none;box-sizing:border-box;">
-                            <img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" width="16" height="16" alt="Twitter" style="display:block;margin:13px auto;width:16px;height:16px;opacity:0.55;filter:invert(1);">
+                          <a href="https://twitter.com" class="s-btn dm-sbtn" style="display:inline-block;width:42px;height:42px;background:#f0f0f4;border:1px solid #e0e0e4;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.06);text-decoration:none;box-sizing:border-box;">
+                            <img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" width="16" height="16" alt="Twitter" style="display:block;margin:13px auto;width:16px;height:16px;opacity:0.55;">
                           </a>
                         </td>
                         <td class="s-td" style="padding:0 5px;">
-                          <a href="https://instagram.com" class="s-btn" style="display:inline-block;width:42px;height:42px;background:linear-gradient(145deg,rgba(255,255,255,0.07),rgba(255,255,255,0.03));border:1px solid rgba(255,255,255,0.09);border-radius:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.10),0 4px 12px rgba(0,0,0,0.40);text-decoration:none;box-sizing:border-box;">
-                            <img src="https://cdn-icons-png.flaticon.com/512/174/174855.png" width="16" height="16" alt="Instagram" style="display:block;margin:13px auto;width:16px;height:16px;opacity:0.55;filter:invert(1);">
+                          <a href="https://instagram.com" class="s-btn dm-sbtn" style="display:inline-block;width:42px;height:42px;background:#f0f0f4;border:1px solid #e0e0e4;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.06);text-decoration:none;box-sizing:border-box;">
+                            <img src="https://cdn-icons-png.flaticon.com/512/174/174855.png" width="16" height="16" alt="Instagram" style="display:block;margin:13px auto;width:16px;height:16px;opacity:0.55;">
                           </a>
                         </td>
                       </tr>
@@ -403,20 +404,20 @@ const generateEmailTemplate = ({
 
                 <tr>
                   <td style="padding-bottom:18px;">
-                    <div style="height:1px;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.07) 20%,rgba(255,200,80,0.10) 50%,rgba(255,255,255,0.07) 80%,transparent 100%);"></div>
+                    <div class="dm-divider" style="height:1px;background:linear-gradient(90deg,transparent 0%,#e0e0e4 20%,rgba(201,151,58,0.15) 50%,#e0e0e4 80%,transparent 100%);"></div>
                   </td>
                 </tr>
 
                 <tr>
                   <td align="center">
-                    <p style="margin:0 0 5px 0;font-family:'Syne','Arial',sans-serif;font-size:13px;font-weight:600;color:rgba(255,255,255,0.45);letter-spacing:0.01em;">\u00A9 ${year} ${companyName}</p>
-                    <p style="margin:0 0 16px 0;font-family:'Instrument Sans',sans-serif;font-size:11.5px;color:rgba(255,255,255,0.22);line-height:1.7;">${companyAddress}</p>
-                    <p style="margin:0;font-family:'Instrument Sans',sans-serif;font-size:11.5px;color:rgba(255,255,255,0.22);line-height:1.9;">
+                    <p class="dm-footercopyright" style="margin:0 0 5px 0;font-family:'Syne','Arial',sans-serif;font-size:13px;font-weight:600;color:#6a6a7a;letter-spacing:0.01em;">\u00A9 ${year} ${companyName}</p>
+                    <p class="dm-footeraddress" style="margin:0 0 16px 0;font-family:'Instrument Sans',sans-serif;font-size:11.5px;color:#8a8a9a;line-height:1.7;">${companyAddress}</p>
+                    <p style="margin:0;font-family:'Instrument Sans',sans-serif;font-size:11.5px;color:#8a8a9a;line-height:1.9;">
                       You received this as a member of ${companyName}.
                       <br>
-                      <a href="#" style="color:rgba(255,200,80,0.55);text-decoration:none;font-weight:500;border-bottom:1px solid rgba(255,200,80,0.20);">Preferences</a>
-                      <span style="color:rgba(255,255,255,0.12);padding:0 7px;">\u00B7</span>
-                      <a href="#" style="color:rgba(255,200,80,0.55);text-decoration:none;font-weight:500;border-bottom:1px solid rgba(255,200,80,0.20);">Unsubscribe</a>
+                      <a href="#" class="dm-footerlink" style="color:#a08030;text-decoration:none;font-weight:500;border-bottom:1px solid rgba(201,151,58,0.30);">Preferences</a>
+                      <span class="dm-footerdot" style="color:#c0c0c4;padding:0 7px;">\u00B7</span>
+                      <a href="#" class="dm-footerlink" style="color:#a08030;text-decoration:none;font-weight:500;border-bottom:1px solid rgba(201,151,58,0.30);">Unsubscribe</a>
                     </p>
                   </td>
                 </tr>
@@ -425,15 +426,6 @@ const generateEmailTemplate = ({
             </td>
           </tr>
 
-        </table>
-
-        <!-- Below-card stamp -->
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" class="stamp-table" style="max-width:600px;width:100%;margin-top:18px;">
-          <tr>
-            <td align="center">
-              <p style="margin:0;font-family:'JetBrains Mono','Courier New',monospace;font-size:9.5px;letter-spacing:0.16em;color:rgba(255,255,255,0.08);text-transform:uppercase;">crafted with care · unitedmess.app</p>
-            </td>
-          </tr>
         </table>
 
       </td>
