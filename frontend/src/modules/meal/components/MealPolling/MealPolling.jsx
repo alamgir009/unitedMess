@@ -9,6 +9,7 @@ import {
     HiOutlineClock,
     HiOutlineUserGroup,
     HiOutlineChartBarSquare,
+    HiOutlineLockClosed,
 } from 'react-icons/hi2';
 import { format, isValid, parseISO } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
@@ -102,6 +103,7 @@ const VoteMetric = React.memo(function VoteMetric({ label, value, icon: Icon }) 
 
 const VotePill = React.memo(function VotePill({ vote }) {
     const initial = vote?.user?.name?.charAt(0)?.toUpperCase() ?? '?';
+    const isManual = vote?.isManualOverride;
     return (
         <div className="flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/30 py-0.5 pl-0.5 pr-2.5">
             {vote?.user?.image ? (
@@ -120,6 +122,11 @@ const VotePill = React.memo(function VotePill({ vote }) {
             <span className="max-w-[96px] truncate text-[11px] font-medium text-foreground/75">
                 {vote?.user?.name ?? 'Member'}
             </span>
+            {isManual && (
+                <span className="flex-shrink-0" title="Manual override — not affected by vote">
+                    <HiOutlineLockClosed className="h-2.5 w-2.5 text-muted-foreground/50" />
+                </span>
+            )}
         </div>
     );
 });
@@ -175,6 +182,14 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
             if (getUserId(votes[i].user) === uid) return votes[i].type;
         }
         return null;
+    }, [user, votes]);
+
+    const myIsManualOverride = useMemo(() => {
+        const uid = getUserId(user);
+        for (let i = 0; i < votes.length; i++) {
+            if (getUserId(votes[i].user) === uid) return !!votes[i].isManualOverride;
+        }
+        return false;
     }, [user, votes]);
 
     const handleVote = useCallback(
@@ -260,8 +275,8 @@ const MealPolling = ({ selectedDate = new Date().toISOString() }) => {
                         <VoteMetric label="Total Cast" value={totals.total} icon={HiOutlineChartBarSquare} />
                         <VoteMetric
                             label="Your Status"
-                            value={myVote ? 'Recorded' : 'Pending'}
-                            icon={HiOutlineClock}
+                            value={myVote ? (myIsManualOverride ? 'Manual' : 'Recorded') : 'Pending'}
+                            icon={myIsManualOverride ? HiOutlineLockClosed : HiOutlineClock}
                         />
                     </div>
                 </header>

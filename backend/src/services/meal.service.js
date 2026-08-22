@@ -112,6 +112,7 @@ const bulkCreateMeals = async ({ startDate, endDate, type, userIds, isGuestMeal,
                   isGuestMeal: isGuestMeal || false,
                   guestCount: guestAdd,
                   remarks: remarks || '',
+                  source: 'manual',
                 },
               },
             },
@@ -134,6 +135,7 @@ const bulkCreateMeals = async ({ startDate, endDate, type, userIds, isGuestMeal,
                   isGuestMeal: isGuestMeal || false,
                   guestCount: guestAdd,
                   remarks: remarks || '',
+                  source: 'manual',
                 },
               },
             },
@@ -143,18 +145,19 @@ const bulkCreateMeals = async ({ startDate, endDate, type, userIds, isGuestMeal,
           delta.guestMeal += guestAdd - oldGuest;
           updatedCount++;
         }
-      } else {
+        } else {
         // No existing record → insert new
         const mealId = new mongoose.Types.ObjectId();
         insertDocs.push({
-          _id: mealId,
-          user: uid,
-          date: d,
-          type,
-          mealCount: totalMealCount,
-          isGuestMeal: isGuestMeal || false,
-          guestCount: guestAdd,
-          remarks: remarks || '',
+            _id: mealId,
+            user: uid,
+            date: d,
+            type,
+            mealCount: totalMealCount,
+            isGuestMeal: isGuestMeal || false,
+            guestCount: guestAdd,
+            remarks: remarks || '',
+            source: 'manual',
         });
 
         delta.mealIds.push(mealId);
@@ -241,6 +244,7 @@ const createMeal = async (mealBody) => {
 
     const mealId = new mongoose.Types.ObjectId();
     mealBody._id = mealId;
+    mealBody.source = 'manual';
 
     const [newMeal] = await Promise.all([
         Meal.create(mealBody),
@@ -393,6 +397,7 @@ const updateMealById = async (mealId, updateBody) => {
         isGuestMeal: finalIsGuestMeal,
         guestCount: finalGuestCount,
         mealCount: finalMealCount,
+        source: 'manual',
     });
 
     await meal.save();
@@ -787,14 +792,31 @@ const getMealPollStatus = async (dateStr) => {
         voteMap.set(v._id.toString(), v);
     }
 
+    // 3a. Batch-fetch manual Meal overrides for the target date
+    const manualMeals = await Meal.find({
+        user: { $in: userIds },
+        date: targetDate,
+        source: 'manual',
+    }).select('user type').lean();
+
+    const manualOverrideMap = new Map();
+    for (const m of manualMeals) {
+        manualOverrideMap.set(m.user.toString(), m.type);
+    }
+
     // 4. Build result: merge users with their effective votes
+    //    Manual meals take precedence over votes for display purposes
     const pollData = users.map((user) => {
-        const vote = voteMap.get(user._id.toString());
+        const uidStr = user._id.toString();
+        const vote = voteMap.get(uidStr);
+        const manualType = manualOverrideMap.get(uidStr);
+
         return {
             user,
-            type: vote ? vote.type : 'off',
+            type: manualType || (vote ? vote.type : 'off'),
             lastUpdated: vote ? vote.updatedAt : null,
             voteDate: vote ? vote.date : null,
+            isManualOverride: !!manualType,
         };
     });
 
@@ -830,6 +852,8 @@ const autoCreateMealForUser = async (userId, date, type) => {
     const existing = await Meal.findOne({ user: userId, date: normalizedDate }).lean();
 
     if (existing) {
+        // Manual meals are user-intentional — never overwrite them
+        if (existing.source === 'manual') return;
         if (existing.type === type) return;
 
         const oldMealCount = existing.mealCount || 0;
@@ -837,7 +861,7 @@ const autoCreateMealForUser = async (userId, date, type) => {
 
         await Meal.updateOne(
             { _id: existing._id },
-            { $set: { type, mealCount, isGuestMeal: false, guestCount: 0, remarks: 'Auto-created from vote' } },
+            { $set: { type, mealCount, isGuestMeal: false, guestCount: 0, remarks: 'Auto-created from vote', source: 'auto' } },
         );
 
         if (mealCountDiff !== 0) {
@@ -859,6 +883,7 @@ const autoCreateMealForUser = async (userId, date, type) => {
             isGuestMeal: false,
             guestCount: 0,
             remarks: 'Auto-created from vote',
+            source: 'auto',
         }),
         User.findByIdAndUpdate(
             userId,
@@ -951,6 +976,12 @@ const autoCreateMealsFromVotes = async (targetDate) => {
         const mealCount = mealTypeCountMap[voteType] ?? 0;
         const existing = existingMap.get(uidStr);
 
+        // Manual meals are user-intentional — never overwrite them
+        if (existing && existing.source === 'manual') {
+            skippedCount++;
+            continue;
+        }
+
         if (existing && existing.type === voteType) {
             skippedCount++;
             continue;
@@ -970,6 +1001,7 @@ const autoCreateMealsFromVotes = async (targetDate) => {
                             isGuestMeal: false,
                             guestCount: 0,
                             remarks: 'Auto-created from vote',
+                            source: 'auto',
                         },
                     },
                 },
@@ -989,6 +1021,7 @@ const autoCreateMealsFromVotes = async (targetDate) => {
                 isGuestMeal: false,
                 guestCount: 0,
                 remarks: 'Auto-created from vote',
+                source: 'auto',
             });
 
             if (!userInsertDeltas[uidStr]) {

@@ -373,6 +373,9 @@ describe('getMealPollStatus', () => {
             { _id: uid2, type: 'both', date: JUN1, updatedAt: new Date() },
         ]);
 
+        // No manual overrides for this date
+        mockMeal.find.mockReturnValue(mockChain([]));
+
         const result = await getMealPollStatus('2026-06-03');
         expect(result.votes).toHaveLength(2);
         expect(result.stats.total).toBe(2);
@@ -386,6 +389,7 @@ describe('getMealPollStatus', () => {
     it('returns off for users with no vote', async () => {
         mockUser.find.mockReturnValue(mockChain([mockUserDoc(uid)]));
         mockMealPoll.aggregate.mockResolvedValue([]);
+        mockMeal.find.mockReturnValue(mockChain([]));
 
         const result = await getMealPollStatus('2026-06-01');
         expect(result.votes[0].type).toBe('off');
@@ -746,6 +750,7 @@ describe('autoCreateMealsFromVotes', () => {
         const bulkWriteCall = mockMeal.bulkWrite.mock.calls[0][0];
         expect(bulkWriteCall[0].insertOne.document.type).toBe('off');
         expect(bulkWriteCall[0].insertOne.document.mealCount).toBe(0);
+        expect(bulkWriteCall[0].insertOne.document.source).toBe('auto');
     });
 
     it('returns early for zero active users', async () => {
@@ -828,13 +833,14 @@ describe('autoCreateMealsFromVotes', () => {
 
         const bulkWriteCall = mockMeal.bulkWrite.mock.calls[0][0];
         expect(bulkWriteCall[0].insertOne.document.remarks).toBe('Auto-created from vote');
+        expect(bulkWriteCall[0].insertOne.document.source).toBe('auto');
     });
 
     it('updates remarks on existing meal when type changes', async () => {
         mockUser.find.mockReturnValue(mockChain([{ _id: uid }]));
         mockMealPoll.aggregate.mockResolvedValue([{ _id: uid, type: 'both' }]);
         mockMeal.find.mockReturnValue(mockChain([
-            { user: uid, type: 'day', mealCount: 1 },
+            { user: uid, type: 'day', mealCount: 1, source: 'auto' },
         ]));
         mockMeal.bulkWrite.mockResolvedValue({ modifiedCount: 1 });
         mockUser.bulkWrite.mockResolvedValue({});
@@ -843,6 +849,7 @@ describe('autoCreateMealsFromVotes', () => {
 
         const bulkWriteCall = mockMeal.bulkWrite.mock.calls[0][0];
         expect(bulkWriteCall[0].updateOne.update.$set.remarks).toBe('Auto-created from vote');
+        expect(bulkWriteCall[0].updateOne.update.$set.source).toBe('auto');
     });
 });
 
@@ -944,5 +951,205 @@ describe('autoCreateMealForUser', () => {
             uid,
             { $inc: { totalMeal: 1 } },
         );
+    });
+
+    it('sets source to auto on created meals', async () => {
+        mockMeal.findOne.mockReturnValue(mockChain(null));
+        mockMeal.create.mockResolvedValue({
+            _id: 'm8', user: uid, type: 'day', date: JUN1, mealCount: 1, source: 'auto',
+        });
+        mockUser.findByIdAndUpdate.mockResolvedValue({ _id: uid });
+
+        await autoCreateMealForUser(uid, JUN1, 'day');
+        expect(mockMeal.create).toHaveBeenCalledWith(
+            expect.objectContaining({ source: 'auto' }),
+        );
+    });
+
+    it('sets source to auto on updated meals', async () => {
+        mockMeal.findOne.mockReturnValue(mockChain({
+            _id: 'm9', user: uid, type: 'day', date: JUN1, mealCount: 1, source: 'auto',
+        }));
+        mockUser.findByIdAndUpdate.mockResolvedValue({ _id: uid });
+
+        await autoCreateMealForUser(uid, JUN1, 'both');
+        expect(mockMeal.updateOne).toHaveBeenCalledWith(
+            { _id: 'm9' },
+            expect.objectContaining({ $set: expect.objectContaining({ source: 'auto' }) }),
+        );
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Source-aware cron: manual meals are NEVER overwritten
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('Source-aware cron — autoCreateMealsFromVotes skips manual meals', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('skips manual meals even when vote type differs', async () => {
+        mockUser.find.mockReturnValue(mockChain([{ _id: uid }]));
+        mockMealPoll.aggregate.mockResolvedValue([
+            { _id: uid, type: 'both' },
+        ]);
+        mockMeal.find.mockReturnValue(mockChain([
+            { user: uid, type: 'off', mealCount: 0, source: 'manual' },
+        ]));
+
+        const r = await autoCreateMealsFromVotes(JUN1);
+        expect(r.created).toBe(0);
+        expect(r.updated).toBe(0);
+        expect(r.skipped).toBe(1);
+        expect(mockMeal.bulkWrite).not.toHaveBeenCalled();
+    });
+
+    it('does not skip auto meals when vote type differs', async () => {
+        mockUser.find.mockReturnValue(mockChain([{ _id: uid }]));
+        mockMealPoll.aggregate.mockResolvedValue([
+            { _id: uid, type: 'both' },
+        ]);
+        mockMeal.find.mockReturnValue(mockChain([
+            { user: uid, type: 'day', mealCount: 1, source: 'auto' },
+        ]));
+        mockMeal.bulkWrite.mockResolvedValue({ modifiedCount: 1 });
+        mockUser.bulkWrite.mockResolvedValue({ modifiedCount: 1 });
+
+        const r = await autoCreateMealsFromVotes(JUN1);
+        expect(r.updated).toBe(1);
+        expect(r.skipped).toBe(0);
+    });
+
+    it('still skips auto meals with matching type (idempotent)', async () => {
+        mockUser.find.mockReturnValue(mockChain([{ _id: uid }]));
+        mockMealPoll.aggregate.mockResolvedValue([
+            { _id: uid, type: 'day' },
+        ]);
+        mockMeal.find.mockReturnValue(mockChain([
+            { user: uid, type: 'day', mealCount: 1, source: 'auto' },
+        ]));
+
+        const r = await autoCreateMealsFromVotes(JUN1);
+        expect(r.skipped).toBe(1);
+        expect(mockMeal.bulkWrite).not.toHaveBeenCalled();
+    });
+
+    it('handles mixed manual and auto meals across users', async () => {
+        mockUser.find.mockReturnValue(mockChain([
+            { _id: uid },
+            { _id: uid2 },
+        ]));
+        mockMealPoll.aggregate.mockResolvedValue([
+            { _id: uid, type: 'both' },
+            { _id: uid2, type: 'both' },
+        ]);
+        mockMeal.find.mockReturnValue(mockChain([
+            { user: uid, type: 'off', mealCount: 0, source: 'manual' },
+            { user: uid2, type: 'day', mealCount: 1, source: 'auto' },
+        ]));
+        mockMeal.bulkWrite.mockResolvedValue({ modifiedCount: 1 });
+        mockUser.bulkWrite.mockResolvedValue({ modifiedCount: 1 });
+
+        const r = await autoCreateMealsFromVotes(JUN1);
+        expect(r.skipped).toBe(1); // uid (manual)
+        expect(r.updated).toBe(1);  // uid2 (auto, type changed)
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Source-aware cron — autoCreateMealForUser skips manual meals
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('Source-aware cron — autoCreateMealForUser skips manual meals', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('skips manual meal even when type differs', async () => {
+        mockMeal.findOne.mockReturnValue(mockChain({
+            _id: 'm10', user: uid, type: 'off', date: JUN1, mealCount: 0, source: 'manual',
+        }));
+
+        await autoCreateMealForUser(uid, JUN1, 'both');
+        expect(mockMeal.updateOne).not.toHaveBeenCalled();
+        expect(mockMeal.create).not.toHaveBeenCalled();
+    });
+
+    it('overwrites auto meal when type differs', async () => {
+        mockMeal.findOne.mockReturnValue(mockChain({
+            _id: 'm11', user: uid, type: 'day', date: JUN1, mealCount: 1, source: 'auto',
+        }));
+        mockUser.findByIdAndUpdate.mockResolvedValue({ _id: uid });
+
+        await autoCreateMealForUser(uid, JUN1, 'both');
+        expect(mockMeal.updateOne).toHaveBeenCalled();
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// getMealPollStatus — respects manual overrides
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('getMealPollStatus — manual overrides', () => {
+    const mockUserDoc = (id, overrides = {}) => ({
+        _id: id, name: `User ${id}`, email: `u${id}@t.com`, image: null,
+        isActive: true, userStatus: 'approved', ...overrides,
+    });
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('shows manual override type instead of vote type', async () => {
+        mockUser.find.mockReturnValue(mockChain([mockUserDoc(uid)]));
+        mockMealPoll.aggregate.mockResolvedValue([
+            { _id: uid, type: 'both', date: JUN1, updatedAt: new Date() },
+        ]);
+        mockMeal.find.mockReturnValue(mockChain([
+            { user: uid, type: 'off' },
+        ]));
+
+        const result = await getMealPollStatus('2026-06-01');
+        expect(result.votes[0].type).toBe('off');
+        expect(result.votes[0].isManualOverride).toBe(true);
+        expect(result.stats.off).toBe(1);
+    });
+
+    it('falls back to vote type when no manual meal exists', async () => {
+        mockUser.find.mockReturnValue(mockChain([mockUserDoc(uid)]));
+        mockMealPoll.aggregate.mockResolvedValue([
+            { _id: uid, type: 'day', date: JUN1, updatedAt: new Date() },
+        ]);
+        mockMeal.find.mockReturnValue(mockChain([]));
+
+        const result = await getMealPollStatus('2026-06-01');
+        expect(result.votes[0].type).toBe('day');
+        expect(result.votes[0].isManualOverride).toBe(false);
+    });
+
+    it('handles mix of manual overrides and regular votes', async () => {
+        mockUser.find.mockReturnValue(mockChain([
+            mockUserDoc(uid, { name: 'Alice' }),
+            mockUserDoc(uid2, { name: 'Bob' }),
+        ]));
+        mockMealPoll.aggregate.mockResolvedValue([
+            { _id: uid, type: 'both', date: JUN1, updatedAt: new Date() },
+            { _id: uid2, type: 'day', date: JUN1, updatedAt: new Date() },
+        ]);
+        mockMeal.find.mockReturnValue(mockChain([
+            { user: uid, type: 'off' },
+        ]));
+
+        const result = await getMealPollStatus('2026-06-01');
+        // Alice has manual override to off
+        expect(result.votes[0].type).toBe('off');
+        expect(result.votes[0].isManualOverride).toBe(true);
+        // Bob has regular vote of day
+        expect(result.votes[1].type).toBe('day');
+        expect(result.votes[1].isManualOverride).toBe(false);
+        // Stats reflect the actual displayed types
+        expect(result.stats.off).toBe(1);
+        expect(result.stats.day).toBe(1);
     });
 });

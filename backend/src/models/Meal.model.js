@@ -35,6 +35,11 @@ const mealSchema = new mongoose.Schema(
             type: String,
             trim: true,
         },
+        source: {
+            type: String,
+            enum: ['manual', 'auto'],
+            default: 'manual',
+        },
     },
     {
         timestamps: true,
