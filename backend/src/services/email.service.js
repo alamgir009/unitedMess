@@ -753,20 +753,20 @@ const sendMarketScheduleConfirmationEmail = async (to, name, dates, icsBuffer) =
                 day: 'numeric',
                 timeZone: 'Asia/Kolkata',
             });
-            return `<tr><td style="padding:10px;border:1px solid #ddd;">${validator.escape(formatted)}</td></tr>`;
+            return `<tr><td style="padding:12px 14px;border:1px solid rgba(255,255,255,0.10);color:rgba(255,255,255,0.90);font-family:'Instrument Sans',Arial,sans-serif;font-size:14px;">${validator.escape(formatted)}</td></tr>`;
         })
         .join('');
 
     const content = `
-<p>Dear ${sanitizedName},</p>
-<p>Your market duty has been successfully scheduled. Here are the confirmed dates:</p>
-<table style="border-collapse:collapse;width:100%;margin:20px 0;font-family:Arial,sans-serif;">
-  <tr><td style="padding:10px;border:1px solid #ddd;background:#f8f9fa;"><strong>Scheduled Date</strong></td></tr>
+<p style="color:rgba(255,255,255,0.62);">Dear ${sanitizedName},</p>
+<p style="color:rgba(255,255,255,0.62);">Your market duty has been successfully scheduled. Here are the confirmed dates:</p>
+<table style="border-collapse:collapse;width:100%;margin:20px 0;">
+  <tr><td style="padding:12px 14px;background:rgba(255,200,80,0.10);border:1px solid rgba(255,200,80,0.20);border-radius:6px 6px 0 0;color:rgba(255,200,80,0.85);font-family:'JetBrains Mono','Courier New',monospace;font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;">Scheduled Date</td></tr>
   ${dateRows}
 </table>
-<p>A calendar invite is attached to this email. Click it to add these dates to your calendar (Google Calendar, Apple Calendar, Outlook, or any calendar app).</p>
-<p><strong>Market hours:</strong> 9:00 AM – 6:00 PM IST</p>
-<p>If you need to reschedule, please update your selection from the Events section in the app before the scheduled date.</p>`;
+<p style="color:rgba(255,255,255,0.62);">A calendar invite is attached to this email. Click it to add these dates to your calendar (Google Calendar, Apple Calendar, Outlook, or any calendar app).</p>
+<p style="color:rgba(255,255,255,0.62);"><strong style="color:rgba(255,255,255,0.80);">Market hours:</strong> 9:00 AM – 6:00 PM IST</p>
+<p style="color:rgba(255,255,255,0.62);">If you need to reschedule, please update your selection from the Events section in the app before the scheduled date.</p>`;
 
     const { html, text } = generateEmailTemplate({
         title: 'Market Duty Scheduled',
