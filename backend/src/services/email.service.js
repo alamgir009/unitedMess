@@ -181,6 +181,9 @@ const generateEmailTemplate = ({
     a[x-apple-data-detectors]{color:inherit!important;text-decoration:none!important}
     body{margin:0!important;padding:0!important;width:100%!important;background-color:#f4f4f7;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
     .gold-accent{height:2px;min-width:100%;background:#c9973a;background-image:linear-gradient(90deg,#c9973a 0%,#ffd27a 100%);line-height:0}
+    .dm-date-header{background:#faf5e8;border:1px solid rgba(201,151,58,0.20);color:#a08030}
+    .dm-date-row{border:1px solid #e8e8ec;color:#1a1a2e}
+    .dm-strong{color:#1a1a2e}
     @media only screen and (max-width:640px){
       body{background-color:#ffffff!important}
       .wrap{width:100%!important;border-radius:0!important;box-shadow:none!important;border:1px solid #e8e8ec!important}
@@ -228,6 +231,9 @@ const generateEmailTemplate = ({
       .dm-eyebrow{color:rgba(255,255,255,0.22)!important}
       .dm-stamp{color:rgba(255,255,255,0.10)!important}
       .dm-preheader{color:#0a0a12!important}
+      .dm-date-header{background:rgba(255,200,80,0.10)!important;border:1px solid rgba(255,200,80,0.20)!important;color:rgba(255,200,80,0.85)!important}
+      .dm-date-row{border:1px solid rgba(255,255,255,0.10)!important;color:#f0f0f4!important}
+      .dm-strong{color:#f0f0f4!important}
     }
     @media (prefers-color-scheme:dark) and (max-width:640px){
       body{background-color:#141420!important}
@@ -750,20 +756,20 @@ const sendMarketScheduleConfirmationEmail = async (to, name, dates, icsBuffer) =
                 day: 'numeric',
                 timeZone: 'Asia/Kolkata',
             });
-            return `<tr><td style="padding:12px 14px;border:1px solid rgba(255,255,255,0.10);color:rgba(255,255,255,0.90);font-family:'Instrument Sans',Arial,sans-serif;font-size:14px;">${validator.escape(formatted)}</td></tr>`;
+            return `<tr><td class="dm-date-row" style="padding:12px 14px;font-family:'Instrument Sans',Arial,sans-serif;font-size:14px;">${validator.escape(formatted)}</td></tr>`;
         })
         .join('');
 
     const content = `
-<p style="color:rgba(255,255,255,0.62);">Dear ${sanitizedName},</p>
-<p style="color:rgba(255,255,255,0.62);">Your market duty has been successfully scheduled. Here are the confirmed dates:</p>
+<p>Dear ${sanitizedName},</p>
+<p>Your market duty has been successfully scheduled. Here are the confirmed dates:</p>
 <table style="border-collapse:collapse;width:100%;margin:20px 0;">
-  <tr><td style="padding:12px 14px;background:rgba(255,200,80,0.10);border:1px solid rgba(255,200,80,0.20);border-radius:6px 6px 0 0;color:rgba(255,200,80,0.85);font-family:'JetBrains Mono','Courier New',monospace;font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;">Scheduled Date</td></tr>
+  <tr><td class="dm-date-header" style="padding:12px 14px;border-radius:6px 6px 0 0;font-family:'JetBrains Mono','Courier New',monospace;font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;">Scheduled Date</td></tr>
   ${dateRows}
 </table>
-<p style="color:rgba(255,255,255,0.62);">A calendar invite is attached to this email. Click it to add these dates to your calendar (Google Calendar, Apple Calendar, Outlook, or any calendar app).</p>
-<p style="color:rgba(255,255,255,0.62);"><strong style="color:rgba(255,255,255,0.80);">Market hours:</strong> 9:00 AM – 6:00 PM IST</p>
-<p style="color:rgba(255,255,255,0.62);">If you need to reschedule, please update your selection from the Events section in the app before the scheduled date.</p>`;
+<p>A calendar invite is attached to this email. Click it to add these dates to your calendar (Google Calendar, Apple Calendar, Outlook, or any calendar app).</p>
+<p><strong class="dm-strong">Market hours:</strong> 9:00 AM – 6:00 PM IST</p>
+<p>If you need to reschedule, please update your selection from the Events section in the app before the scheduled date.</p>`;
 
     const { html, text } = generateEmailTemplate({
         title: 'Market Duty Scheduled',

@@ -83,7 +83,15 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
 
   useEffect(() => {
     if (mySelectedDates.length > 0) {
-      const myDates = new Set(mySelectedDates.map((d) => toUTCDateKey(d.date)));
+      const now = new Date();
+      const myDates = new Set(
+        mySelectedDates
+          .map((d) => toUTCDateKey(d.date))
+          .filter((dateKey) => {
+            const d = new Date(dateKey + 'T12:00:00');
+            return !isBefore(d, now) || isToday(d);
+          })
+      );
       setSelectedDates(myDates);
     }
   }, [mySelectedDates]);
@@ -159,7 +167,16 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
 
     const year = viewMonth.getFullYear();
     const month = viewMonth.getMonth() + 1;
-    const dates = Array.from(selectedDates);
+    const now = new Date();
+    const dates = Array.from(selectedDates).filter((dateKey) => {
+      const d = new Date(dateKey + 'T12:00:00');
+      return !isBefore(d, now) || isToday(d);
+    });
+
+    if (dates.length === 0) {
+      toast.error('Selected dates are no longer valid');
+      return;
+    }
 
     try {
       await dispatch(selectMarketDates({ dates, year, month })).unwrap();
@@ -175,10 +192,12 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
 
   const handlePrevMonth = useCallback(() => {
     setViewMonth((prev) => subMonths(prev, 1));
+    setSelectedDates(new Set());
   }, []);
 
   const handleNextMonth = useCallback(() => {
     setViewMonth((prev) => addMonths(prev, 1));
+    setSelectedDates(new Set());
   }, []);
 
   const getDateStatus = useCallback((date) => {

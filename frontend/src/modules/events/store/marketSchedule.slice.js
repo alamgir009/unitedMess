@@ -8,7 +8,7 @@ export const fetchMonthSchedule = createAsyncThunk(
             const response = await marketScheduleService.getMonthSchedule(year, month);
             return { year, month, data: response.data };
         } catch (error) {
-            const message = error.response?.data?.message || error.message || 'Failed to fetch schedule';
+            const message = error.response?.data?.error || error.response?.data?.message || error.message || 'Failed to fetch schedule';
             return thunkAPI.rejectWithValue(message);
         }
     }
@@ -21,7 +21,7 @@ export const fetchAvailableDates = createAsyncThunk(
             const response = await marketScheduleService.getAvailableDates(year, month);
             return { year, month, data: response.data };
         } catch (error) {
-            const message = error.response?.data?.message || error.message || 'Failed to fetch available dates';
+            const message = error.response?.data?.error || error.response?.data?.message || error.message || 'Failed to fetch available dates';
             return thunkAPI.rejectWithValue(message);
         }
     }
@@ -34,7 +34,7 @@ export const fetchMyScheduledDates = createAsyncThunk(
             const response = await marketScheduleService.getMyScheduledDates(year, month);
             return response.data;
         } catch (error) {
-            const message = error.response?.data?.message || error.message || 'Failed to fetch your dates';
+            const message = error.response?.data?.error || error.response?.data?.message || error.message || 'Failed to fetch your dates';
             return thunkAPI.rejectWithValue(message);
         }
     }
@@ -47,7 +47,7 @@ export const selectMarketDates = createAsyncThunk(
             const response = await marketScheduleService.selectDates(dates, year, month);
             return response.data;
         } catch (error) {
-            const message = error.response?.data?.message || error.message || 'Failed to select dates';
+            const message = error.response?.data?.error || error.response?.data?.message || error.message || 'Failed to select dates';
             return thunkAPI.rejectWithValue(message);
         }
     }
@@ -60,7 +60,7 @@ export const removeMarketScheduledDate = createAsyncThunk(
             await marketScheduleService.removeScheduledDate(scheduleId);
             return scheduleId;
         } catch (error) {
-            const message = error.response?.data?.message || error.message || 'Failed to remove date';
+            const message = error.response?.data?.error || error.response?.data?.message || error.message || 'Failed to remove date';
             return thunkAPI.rejectWithValue(message);
         }
     }
