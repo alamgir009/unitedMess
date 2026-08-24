@@ -60,6 +60,7 @@ const {
     resolveEffectiveVote,
     autoCreateMealsFromVotes,
     autoCreateMealForUser,
+    bulkCreateMeals,
 } = require('../../src/services/meal.service');
 
 // ── Test data ───────────────────────────────────────────────────────────────
@@ -1151,5 +1152,257 @@ describe('getMealPollStatus — manual overrides', () => {
         // Stats reflect the actual displayed types
         expect(result.stats.off).toBe(1);
         expect(result.stats.day).toBe(1);
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Source-aware cron — autoCreateMealsFromVotes skips bulk meals
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('Source-aware cron — autoCreateMealsFromVotes skips bulk meals', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('skips bulk meals even when vote type differs', async () => {
+        mockUser.find.mockReturnValue(mockChain([{ _id: uid }]));
+        mockMealPoll.aggregate.mockResolvedValue([
+            { _id: uid, type: 'both' },
+        ]);
+        mockMeal.find.mockReturnValue(mockChain([
+            { user: uid, type: 'off', mealCount: 0, source: 'bulk' },
+        ]));
+
+        const r = await autoCreateMealsFromVotes(JUN1);
+        expect(r.created).toBe(0);
+        expect(r.updated).toBe(0);
+        expect(r.skipped).toBe(1);
+        expect(mockMeal.bulkWrite).not.toHaveBeenCalled();
+    });
+
+    it('overwrites auto meals when vote type differs', async () => {
+        mockUser.find.mockReturnValue(mockChain([{ _id: uid }]));
+        mockMealPoll.aggregate.mockResolvedValue([
+            { _id: uid, type: 'both' },
+        ]);
+        mockMeal.find.mockReturnValue(mockChain([
+            { user: uid, type: 'day', mealCount: 1, source: 'auto' },
+        ]));
+        mockMeal.bulkWrite.mockResolvedValue({ modifiedCount: 1 });
+        mockUser.bulkWrite.mockResolvedValue({ modifiedCount: 1 });
+
+        const r = await autoCreateMealsFromVotes(JUN1);
+        expect(r.updated).toBe(1);
+        expect(r.skipped).toBe(0);
+    });
+
+    it('skips both manual and bulk meals in mixed scenario', async () => {
+        mockUser.find.mockReturnValue(mockChain([
+            { _id: uid },
+            { _id: uid2 },
+        ]));
+        mockMealPoll.aggregate.mockResolvedValue([
+            { _id: uid, type: 'both' },
+            { _id: uid2, type: 'both' },
+        ]);
+        mockMeal.find.mockReturnValue(mockChain([
+            { user: uid, type: 'off', mealCount: 0, source: 'manual' },
+            { user: uid2, type: 'day', mealCount: 1, source: 'bulk' },
+        ]));
+
+        const r = await autoCreateMealsFromVotes(JUN1);
+        expect(r.skipped).toBe(2);
+        expect(r.updated).toBe(0);
+        expect(mockMeal.bulkWrite).not.toHaveBeenCalled();
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Source-aware cron — autoCreateMealForUser skips bulk meals
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('Source-aware cron — autoCreateMealForUser skips bulk meals', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('skips bulk meal even when type differs', async () => {
+        mockMeal.findOne.mockReturnValue(mockChain({
+            _id: 'm12', user: uid, type: 'off', date: JUN1, mealCount: 0, source: 'bulk',
+        }));
+
+        await autoCreateMealForUser(uid, JUN1, 'both');
+        expect(mockMeal.updateOne).not.toHaveBeenCalled();
+        expect(mockMeal.create).not.toHaveBeenCalled();
+    });
+
+    it('overwrites auto meal when type differs', async () => {
+        mockMeal.findOne.mockReturnValue(mockChain({
+            _id: 'm13', user: uid, type: 'day', date: JUN1, mealCount: 1, source: 'auto',
+        }));
+        mockUser.findByIdAndUpdate.mockResolvedValue({ _id: uid });
+
+        await autoCreateMealForUser(uid, JUN1, 'both');
+        expect(mockMeal.updateOne).toHaveBeenCalled();
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// bulkCreateMeals — source precedence and tagging
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('bulkCreateMeals — source precedence', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('sets source to bulk on new inserts', async () => {
+        mockUser.find.mockReturnValue(mockChain([{ _id: uid, meals: [] }]));
+        mockMeal.find.mockReturnValue(mockChain([]));
+        mockMeal.bulkWrite.mockResolvedValue({ insertedCount: 1 });
+        mockUser.bulkWrite.mockResolvedValue({ modifiedCount: 1 });
+
+        await bulkCreateMeals({
+            startDate: '2026-06-01',
+            endDate: '2026-06-01',
+            type: 'off',
+            userIds: [toStr(uid)],
+            isGuestMeal: false,
+            guestCount: 0,
+            remarks: '',
+            createdBy: toStr(uid),
+        });
+
+        const insertCall = mockMeal.bulkWrite.mock.calls[0][0];
+        expect(insertCall[0].insertOne.document.source).toBe('bulk');
+    });
+
+    it('sets source to bulk on updates (type changed)', async () => {
+        mockUser.find.mockReturnValue(mockChain([{ _id: uid, meals: [] }]));
+        mockMeal.find.mockReturnValue(mockChain([
+            { _id: 'm14', user: uid, date: JUN1, type: 'day', mealCount: 1, isGuestMeal: false, guestCount: 0, source: 'auto' },
+        ]));
+        mockMeal.bulkWrite.mockResolvedValue({ modifiedCount: 1 });
+        mockUser.bulkWrite.mockResolvedValue({ modifiedCount: 1 });
+
+        await bulkCreateMeals({
+            startDate: '2026-06-01',
+            endDate: '2026-06-01',
+            type: 'off',
+            userIds: [toStr(uid)],
+            isGuestMeal: false,
+            guestCount: 0,
+            remarks: '',
+            createdBy: toStr(uid),
+        });
+
+        const updateCall = mockMeal.bulkWrite.mock.calls[0][0];
+        expect(updateCall[0].updateOne.update.$set.source).toBe('bulk');
+    });
+
+    it('skips manual meals — does not overwrite', async () => {
+        mockUser.find.mockReturnValue(mockChain([{ _id: uid, meals: [] }]));
+        mockMeal.find.mockReturnValue(mockChain([
+            { _id: 'm15', user: uid, date: JUN1, type: 'off', mealCount: 0, isGuestMeal: false, guestCount: 0, source: 'manual' },
+        ]));
+
+        const r = await bulkCreateMeals({
+            startDate: '2026-06-01',
+            endDate: '2026-06-01',
+            type: 'night',
+            userIds: [toStr(uid)],
+            isGuestMeal: false,
+            guestCount: 0,
+            remarks: '',
+            createdBy: toStr(uid),
+        });
+
+        expect(r.skipped).toBe(1);
+        expect(r.inserted).toBe(0);
+        expect(r.updated).toBe(0);
+        expect(mockMeal.bulkWrite).not.toHaveBeenCalled();
+    });
+
+    it('overwrites auto meals', async () => {
+        mockUser.find.mockReturnValue(mockChain([{ _id: uid, meals: [] }]));
+        mockMeal.find.mockReturnValue(mockChain([
+            { _id: 'm16', user: uid, date: JUN1, type: 'day', mealCount: 1, isGuestMeal: false, guestCount: 0, source: 'auto' },
+        ]));
+        mockMeal.bulkWrite.mockResolvedValue({ modifiedCount: 1 });
+        mockUser.bulkWrite.mockResolvedValue({ modifiedCount: 1 });
+
+        const r = await bulkCreateMeals({
+            startDate: '2026-06-01',
+            endDate: '2026-06-01',
+            type: 'night',
+            userIds: [toStr(uid)],
+            isGuestMeal: false,
+            guestCount: 0,
+            remarks: '',
+            createdBy: toStr(uid),
+        });
+
+        expect(r.updated).toBe(1);
+        expect(mockMeal.bulkWrite).toHaveBeenCalled();
+    });
+
+    it('is idempotent — re-running with same params produces same state', async () => {
+        mockUser.find.mockReturnValue(mockChain([{ _id: uid, meals: [] }]));
+        // First run: no existing meal
+        mockMeal.find
+            .mockReturnValueOnce(mockChain([]))
+            // Second run: meal exists with matching type and source
+            .mockReturnValueOnce(mockChain([
+                { _id: 'm17', user: uid, date: JUN1, type: 'off', mealCount: 0, isGuestMeal: false, guestCount: 0, source: 'bulk' },
+            ]));
+        mockMeal.bulkWrite.mockResolvedValue({ insertedCount: 1 });
+        mockUser.bulkWrite.mockResolvedValue({ modifiedCount: 1 });
+
+        const params = {
+            startDate: '2026-06-01',
+            endDate: '2026-06-01',
+            type: 'off',
+            userIds: [toStr(uid)],
+            isGuestMeal: false,
+            guestCount: 0,
+            remarks: '',
+            createdBy: toStr(uid),
+        };
+
+        const r1 = await bulkCreateMeals(params);
+        expect(r1.inserted).toBe(1);
+
+        const r2 = await bulkCreateMeals(params);
+        expect(r2.skipped).toBe(1);
+        expect(r2.inserted).toBe(0);
+        expect(r2.updated).toBe(0);
+    });
+
+    it('skips manual but processes auto in mixed user-date matrix', async () => {
+        mockUser.find.mockReturnValue(mockChain([
+            { _id: uid, meals: [] },
+            { _id: uid2, meals: [] },
+        ]));
+        mockMeal.find.mockReturnValue(mockChain([
+            { _id: 'm18', user: uid, date: JUN1, type: 'off', mealCount: 0, isGuestMeal: false, guestCount: 0, source: 'manual' },
+            { _id: 'm19', user: uid2, date: JUN1, type: 'day', mealCount: 1, isGuestMeal: false, guestCount: 0, source: 'auto' },
+        ]));
+        mockMeal.bulkWrite.mockResolvedValue({ modifiedCount: 1 });
+        mockUser.bulkWrite.mockResolvedValue({ modifiedCount: 1 });
+
+        const r = await bulkCreateMeals({
+            startDate: '2026-06-01',
+            endDate: '2026-06-01',
+            type: 'night',
+            userIds: [toStr(uid), toStr(uid2)],
+            isGuestMeal: false,
+            guestCount: 0,
+            remarks: '',
+            createdBy: toStr(uid),
+        });
+
+        // uid skipped (manual), uid2 updated (auto → bulk)
+        expect(r.skipped).toBe(1);
+        expect(r.updated).toBe(1);
     });
 });

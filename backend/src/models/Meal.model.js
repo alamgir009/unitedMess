@@ -37,7 +37,7 @@ const mealSchema = new mongoose.Schema(
         },
         source: {
             type: String,
-            enum: ['manual', 'auto'],
+            enum: ['manual', 'bulk', 'auto'],
             default: 'manual',
         },
     },

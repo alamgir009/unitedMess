@@ -56,7 +56,7 @@ const bulkCreateMeals = async ({ startDate, endDate, type, userIds, isGuestMeal,
   const existingMeals = await Meal.find({
     user: { $in: userIds },
     date: { $in: dates },
-  }).select('user date type mealCount isGuestMeal guestCount').lean();
+  }).select('user date type mealCount isGuestMeal guestCount source').lean();
 
   // Index existing meals by `${user}-${date.getTime()}`
   const existingMap = new Map();
@@ -90,6 +90,12 @@ const bulkCreateMeals = async ({ startDate, endDate, type, userIds, isGuestMeal,
       const existing = existingMap.get(key);
 
       if (existing) {
+        // Manual meals are user-intentional — bulk advance must not override them
+        if (existing.source === 'manual') {
+          skippedCount++;
+          continue;
+        }
+
         // Same type → skip (no change needed)
         if (existing.type === type) {
           // Check if other fields changed (guest count, remarks)
@@ -112,7 +118,7 @@ const bulkCreateMeals = async ({ startDate, endDate, type, userIds, isGuestMeal,
                   isGuestMeal: isGuestMeal || false,
                   guestCount: guestAdd,
                   remarks: remarks || '',
-                  source: 'manual',
+                  source: 'bulk',
                 },
               },
             },
@@ -135,7 +141,7 @@ const bulkCreateMeals = async ({ startDate, endDate, type, userIds, isGuestMeal,
                   isGuestMeal: isGuestMeal || false,
                   guestCount: guestAdd,
                   remarks: remarks || '',
-                  source: 'manual',
+                  source: 'bulk',
                 },
               },
             },
@@ -157,7 +163,7 @@ const bulkCreateMeals = async ({ startDate, endDate, type, userIds, isGuestMeal,
             isGuestMeal: isGuestMeal || false,
             guestCount: guestAdd,
             remarks: remarks || '',
-            source: 'manual',
+            source: 'bulk',
         });
 
         delta.mealIds.push(mealId);
@@ -852,8 +858,8 @@ const autoCreateMealForUser = async (userId, date, type) => {
     const existing = await Meal.findOne({ user: userId, date: normalizedDate }).lean();
 
     if (existing) {
-        // Manual meals are user-intentional — never overwrite them
-        if (existing.source === 'manual') return;
+        // Manual and bulk meals are user-intentional — never overwrite them
+        if (existing.source === 'manual' || existing.source === 'bulk') return;
         if (existing.type === type) return;
 
         const oldMealCount = existing.mealCount || 0;
@@ -956,7 +962,7 @@ const autoCreateMealsFromVotes = async (targetDate) => {
     const existingMeals = await Meal.find({
         user: { $in: userIds },
         date,
-    }).select('user type mealCount').lean();
+    }).select('user type mealCount source').lean();
 
     const existingMap = new Map();
     for (const m of existingMeals) {
@@ -976,8 +982,8 @@ const autoCreateMealsFromVotes = async (targetDate) => {
         const mealCount = mealTypeCountMap[voteType] ?? 0;
         const existing = existingMap.get(uidStr);
 
-        // Manual meals are user-intentional — never overwrite them
-        if (existing && existing.source === 'manual') {
+        // Manual and bulk meals are user-intentional — never overwrite them
+        if (existing && (existing.source === 'manual' || existing.source === 'bulk')) {
             skippedCount++;
             continue;
         }
