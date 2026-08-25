@@ -798,11 +798,11 @@ const getMealPollStatus = async (dateStr) => {
         voteMap.set(v._id.toString(), v);
     }
 
-    // 3a. Batch-fetch manual Meal overrides for the target date
+    // 3a. Batch-fetch manual/bulk Meal overrides for the target date
     const manualMeals = await Meal.find({
         user: { $in: userIds },
         date: targetDate,
-        source: 'manual',
+        source: { $in: ['manual', 'bulk'] },
     }).select('user type').lean();
 
     const manualOverrideMap = new Map();

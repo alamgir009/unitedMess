@@ -1153,6 +1153,35 @@ describe('getMealPollStatus — manual overrides', () => {
         expect(result.stats.off).toBe(1);
         expect(result.stats.day).toBe(1);
     });
+
+    it('shows bulk override type instead of vote type', async () => {
+        mockUser.find.mockReturnValue(mockChain([mockUserDoc(uid)]));
+        mockMealPoll.aggregate.mockResolvedValue([
+            { _id: uid, type: 'both', date: JUN1, updatedAt: new Date() },
+        ]);
+        mockMeal.find.mockReturnValue(mockChain([
+            { user: uid, type: 'off' },
+        ]));
+
+        const result = await getMealPollStatus('2026-06-01');
+        expect(result.votes[0].type).toBe('off');
+        expect(result.votes[0].isManualOverride).toBe(true);
+        expect(result.stats.off).toBe(1);
+    });
+
+    it('falls back to vote type when meal is source auto', async () => {
+        mockUser.find.mockReturnValue(mockChain([mockUserDoc(uid)]));
+        mockMealPoll.aggregate.mockResolvedValue([
+            { _id: uid, type: 'day', date: JUN1, updatedAt: new Date() },
+        ]);
+        // No manual/bulk overrides exist — only an auto meal (not in override query)
+        mockMeal.find.mockReturnValue(mockChain([]));
+
+        const result = await getMealPollStatus('2026-06-01');
+        // No override map entry, so vote type 'day' is used
+        expect(result.votes[0].type).toBe('day');
+        expect(result.votes[0].isManualOverride).toBe(false);
+    });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
