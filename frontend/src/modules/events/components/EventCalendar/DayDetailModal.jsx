@@ -117,7 +117,7 @@ const DayDetailModal = ({
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Add your markets</span>
+                  <span>Add Market</span>
                 </button>
                 <button
                   onClick={onScheduleClick}
@@ -125,7 +125,7 @@ const DayDetailModal = ({
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 border border-emerald-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <Calendar className="w-3.5 h-3.5" />
-                  <span>Schedule your market date</span>
+                  <span>Book Date</span>
                 </button>
               </div>
             )}
