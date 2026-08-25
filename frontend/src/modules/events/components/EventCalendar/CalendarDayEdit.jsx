@@ -710,7 +710,7 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
             <div className="flex items-center shrink-0 rounded-lg border border-amber-500/25 overflow-hidden">
               <button
                 type="button"
-                onClick={() => { if (!isSubmitting) { setGuestCount((c) => Math.max(1, c - 1)); setErrors((p) => ({ ...p, guestCount: undefined })); } }}
+                onClick={() => { if (!isSubmitting) { if (guestCount <= 1) { setIsGuestMeal(false); setGuestCount(1); } else { setGuestCount((c) => c - 1); } setErrors((p) => ({ ...p, guestCount: undefined })); } }}
                 disabled={isSubmitting}
                 className="w-9 h-9 flex items-center justify-center bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 active:bg-amber-500/30 transition-colors text-lg font-bold select-none disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Decrease guest count"
@@ -942,7 +942,7 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
             <div className="flex items-center shrink-0 rounded-lg border border-amber-500/25 overflow-hidden">
               <button
                 type="button"
-                onClick={() => { setGuestCount((c) => Math.max(1, c - 1)); setErrors((p) => ({ ...p, guestCount: undefined })); }}
+                onClick={() => { if (guestCount <= 1) { setIsGuestMeal(false); setGuestCount(1); } else { setGuestCount((c) => c - 1); } setErrors((p) => ({ ...p, guestCount: undefined })); }}
                 className="w-9 h-9 flex items-center justify-center bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 active:bg-amber-500/30 transition-colors text-lg font-bold select-none"
                 aria-label="Decrease guest count"
               >
