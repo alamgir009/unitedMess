@@ -8,11 +8,11 @@ import apiClient from '@/services/api/client/apiClient';
 import SlotIcon from './cells/SlotIcon';
 
 const MEAL_TYPES = [
-  /* selected state: border matches text exactly, bg uses same color at low opacity for hierarchy */
-  { value: 'day', label: 'Day', color: 'border-[var(--warning-text)] bg-[var(--warning-text)]/10 text-[var(--warning-text)]' },
-  { value: 'night', label: 'Night', color: 'border-[var(--info-text)] bg-[var(--info-text)]/10 text-[var(--info-text)]' },
-  { value: 'both', label: 'Both', color: 'border-[var(--slot-both)] bg-[var(--slot-both)]/10 text-[var(--slot-both)]' },
-  { value: 'off', label: 'Off', color: 'border-muted-foreground bg-muted-foreground/10 text-muted-foreground' },
+  /* Active: solid brand fill. Inactive: neutral bg. Off: ring outline (active) / muted chip (inactive). */
+  { value: 'day', label: 'Day', activeBg: 'bg-[var(--warning)]', activeText: 'text-[var(--text-on-brand)]', inactiveBg: 'bg-[var(--bg-elevated)]', inactiveText: 'text-[var(--text-secondary)]', offBg: 'bg-[var(--bg-muted)]', offText: 'text-[var(--text-secondary)]' },
+  { value: 'night', label: 'Night', activeBg: 'bg-[var(--info)]', activeText: 'text-[var(--text-on-brand)]', inactiveBg: 'bg-[var(--bg-elevated)]', inactiveText: 'text-[var(--text-secondary)]', offBg: 'bg-[var(--bg-muted)]', offText: 'text-[var(--text-secondary)]' },
+  { value: 'both', label: 'Both', activeBg: 'bg-[var(--slot-both)]', activeText: 'text-[var(--text-on-brand)]', inactiveBg: 'bg-[var(--bg-elevated)]', inactiveText: 'text-[var(--text-secondary)]', offBg: 'bg-[var(--bg-muted)]', offText: 'text-[var(--text-secondary)]' },
+  { value: 'off', label: 'Off', activeBg: 'bg-transparent', activeText: 'text-[var(--text-secondary)]', inactiveBg: 'bg-[var(--bg-muted)]', inactiveText: 'text-[var(--text-secondary)]', offBg: 'bg-[var(--bg-muted)]', offText: 'text-[var(--text-secondary)]' },
 ];
 
 const FintechCheckbox = React.memo(({ checked, onChange, indeterminate, ariaLabel, disabled }) => {
@@ -243,7 +243,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
                   </div>
 
                   {isConfirming ? (
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         onClick={async () => {
                           setIsSubmitting(true);
@@ -251,15 +251,30 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
                           finally { setConfirmDeleteId(null); setIsSubmitting(false); }
                         }}
                         disabled={isSubmitting || isBulkSubmitting}
-                        className="p-1 rounded-md text-[var(--danger)] hover:bg-[var(--danger-bg)]/30 transition-colors disabled:opacity-50"
+                        className={cn(
+                          'rounded-lg bg-[var(--danger)] text-[var(--text-on-brand)]',
+                          'hover:bg-[var(--danger)]/90 active:bg-[var(--danger)]/80 shadow-xs',
+                          'transition-colors duration-100',
+                          'min-h-[36px] px-2.5 flex items-center justify-center gap-1 text-[11px] font-semibold',
+                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
+                          'disabled:opacity-50 disabled:cursor-not-allowed',
+                        )}
                         aria-label="Confirm delete"
                       >
                         <Check className="w-3.5 h-3.5" />
+                        <span className="hidden min-[380px]:inline">Delete</span>
                       </button>
                       <button
                         onClick={() => setConfirmDeleteId(null)}
                         disabled={isSubmitting || isBulkSubmitting}
-                        className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors disabled:opacity-50"
+                        className={cn(
+                          'rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)]',
+                          'hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)]',
+                          'active:bg-[var(--bg-muted)]/80 transition-colors duration-100',
+                          'min-h-[36px] min-w-[36px] p-1.5 flex items-center justify-center',
+                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
+                          'disabled:opacity-50 disabled:cursor-not-allowed',
+                        )}
                         aria-label="Cancel delete"
                       >
                         <X className="w-3.5 h-3.5" />
@@ -270,22 +285,34 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
                       <button
                         onClick={() => setEditingId(entry._id)}
                         disabled={isBulkSubmitting}
-                        /* --text-secondary for icon UI contrast 3:1 AA (was 2.44:1 on light bg) */
-                        className="p-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 transition-colors disabled:opacity-50"
+                        className={cn(
+                          'rounded-lg text-[var(--text-secondary)]',
+                          'hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10',
+                          'active:bg-[var(--accent-primary)]/15 transition-colors duration-100',
+                          'min-h-[36px] min-w-[36px] p-1.5 flex items-center justify-center',
+                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
+                          'disabled:opacity-50 disabled:cursor-not-allowed',
+                        )}
                         aria-label="Edit entry"
                       >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
                         </svg>
                       </button>
                       <button
                         onClick={() => setConfirmDeleteId(entry._id)}
                         disabled={isBulkSubmitting}
-                        /* --text-secondary for icon UI contrast 3:1 AA (was 2.44:1 on light bg) */
-                        className="p-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--danger)] hover:bg-[var(--danger-bg)]/20 transition-colors disabled:opacity-50"
+                        className={cn(
+                          'rounded-lg text-[var(--text-secondary)]',
+                          'hover:text-[var(--danger)] hover:bg-[var(--danger-bg)]/30',
+                          'active:bg-[var(--danger-bg)]/50 transition-colors duration-100',
+                          'min-h-[36px] min-w-[36px] p-1.5 flex items-center justify-center',
+                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
+                          'disabled:opacity-50 disabled:cursor-not-allowed',
+                        )}
                         aria-label="Delete entry"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   ) : null}
@@ -361,6 +388,30 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
 
 const MAX_RANGE_DAYS = 31;
 const typeCountMap = { both: 2, day: 1, night: 1, off: 0 };
+
+const handleSegmentedKeyDown = (e, currentValue, onChange) => {
+  const values = MEAL_TYPES.map((t) => t.value);
+  const idx = values.indexOf(currentValue);
+  if (idx === -1) return;
+  let next = idx;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    e.preventDefault();
+    next = (idx + 1) % values.length;
+  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    next = (idx - 1 + values.length) % values.length;
+  } else if (e.key === 'Home') {
+    e.preventDefault();
+    next = 0;
+  } else if (e.key === 'End') {
+    e.preventDefault();
+    next = values.length - 1;
+  } else {
+    return;
+  }
+  onChange(values[next]);
+  document.getElementById(`seg-${values[next]}`)?.focus();
+};
 
 const ModeTab = ({ mode, current, onChange, label }) => (
   <button
@@ -567,22 +618,43 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
       )}
 
       {category === 'meals' ? (
-        <div className="grid grid-cols-4 gap-1.5">
-          {MEAL_TYPES.map((t) => (
-            <button
-              key={t.value}
-              type="button"
-              onClick={() => { if (!isSubmitting) { setType(t.value); setErrors((p) => ({ ...p, type: undefined })); } }}
-              disabled={isSubmitting}
-              className={cn(
-                'py-1.5 px-1 rounded-lg text-[11px] font-bold border transition-colors duration-100',
-                type === t.value ? `${t.color} shadow-xs` : 'border-[var(--border-default)] text-[var(--text-muted)] hover:bg-[var(--bg-muted)]',
-                isSubmitting && 'opacity-60 cursor-not-allowed',
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
+        <div
+          role="radiogroup"
+          aria-label="Meal type"
+          className="grid grid-cols-4 gap-0.5 p-0.5 rounded-lg bg-[var(--bg-muted)]/40 border border-[var(--border-default)] shadow-[var(--inset-shadow-deep)]"
+          onKeyDown={(e) => handleSegmentedKeyDown(e, type, (v) => { setType(v); setErrors((p) => ({ ...p, type: undefined })); })}
+        >
+          {MEAL_TYPES.map((t) => {
+            const isActive = type === t.value;
+            return (
+              <button
+                key={t.value}
+                id={`seg-${t.value}`}
+                type="button"
+                role="radio"
+                aria-checked={isActive}
+                tabIndex={isActive ? 0 : -1}
+                onClick={() => { if (!isSubmitting) { setType(t.value); setErrors((p) => ({ ...p, type: undefined })); } }}
+                disabled={isSubmitting}
+                className={cn(
+                  'rounded-md font-semibold border transition-colors duration-100',
+                  'min-h-[clamp(var(--btn-height-md),calc(36px+0.3vw),var(--btn-height-lg))] px-[clamp(var(--space-2),0.5vw+6px,var(--space-3))]',
+                  'text-[clamp(0.75rem,0.6875rem+0.3vw,0.8125rem)]',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
+                  isActive
+                    ? t.value === 'off'
+                      ? `${t.activeText} border-2 border-[var(--text-secondary)]`
+                      : `${t.activeBg} ${t.activeText} border-transparent shadow-xs`
+                    : t.value === 'off'
+                      ? `${t.offBg} ${t.offText} border-[var(--border-strong)]`
+                      : `${t.inactiveBg} ${t.inactiveText} border-[var(--border-default)] hover:bg-[var(--bg-muted)]`,
+                  isSubmitting && 'opacity-60 cursor-not-allowed',
+                )}
+              >
+                {t.label}
+              </button>
+            );
+          })}
         </div>
       ) : (
         <div className="flex items-center gap-2">
@@ -762,71 +834,106 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2 px-3 py-2.5 rounded-lg bg-[var(--bg-muted)]/50 border border-[var(--border-default)]">
-      <div className="flex items-center gap-2">
-        {category === 'meals' ? (
-          <div className="flex gap-1">
-            {MEAL_TYPES.map((t) => (
+      {/* Row 1: Segmented control (meals) or Amount+Items (markets) */}
+      {category === 'meals' ? (
+        <div
+          role="radiogroup"
+          aria-label="Meal type"
+          className="flex gap-0.5 p-0.5 rounded-lg bg-[var(--bg-muted)]/40 border border-[var(--border-default)] shadow-[var(--inset-shadow-deep)]"
+          onKeyDown={(e) => handleSegmentedKeyDown(e, type, (v) => { setType(v); setErrors((p) => ({ ...p, type: undefined })); })}
+        >
+          {MEAL_TYPES.map((t) => {
+            const isActive = type === t.value;
+            return (
               <button
                 key={t.value}
+                id={`seg-${t.value}`}
                 type="button"
+                role="radio"
+                aria-checked={isActive}
+                tabIndex={isActive ? 0 : -1}
                 onClick={() => { setType(t.value); setErrors((p) => ({ ...p, type: undefined })); }}
                 className={cn(
-                  'px-2 py-1 rounded-md text-[10px] font-bold border transition-colors duration-100',
-                  type === t.value ? `${t.color} shadow-xs` : 'border-[var(--border-default)] text-[var(--text-muted)]',
+                  'flex-1 rounded-md font-semibold border transition-colors duration-100',
+                  'min-h-[clamp(var(--btn-height-md),calc(36px+0.3vw),var(--btn-height-lg))] px-[clamp(var(--space-2),0.5vw+6px,var(--space-3))]',
+                  'text-[clamp(0.75rem,0.6875rem+0.3vw,0.8125rem)]',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
+                  isActive
+                    ? t.value === 'off'
+                      ? `${t.activeText} border-2 border-[var(--text-secondary)]`
+                      : `${t.activeBg} ${t.activeText} border-transparent shadow-xs`
+                    : t.value === 'off'
+                      ? `${t.offBg} ${t.offText} border-[var(--border-strong)]`
+                      : `${t.inactiveBg} ${t.inactiveText} border-[var(--border-default)] hover:bg-[var(--bg-muted)]`,
                 )}
               >
                 {t.label}
               </button>
-            ))}
-          </div>
-        ) : (
-          <div className="flex items-center gap-1.5 flex-1">
-            <div className="relative w-20">
-              <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-[var(--text-muted)]">₹</span>
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => { setAmount(e.target.value); setErrors((p) => ({ ...p, amount: undefined })); }}
-                min="0"
-                step="0.01"
-                className={cn(inputBase, 'pl-4 py-1 text-xs', errors.amount && 'ring-2 ring-[var(--danger)]/50')}
-              />
-            </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="flex items-center gap-2">
+          <div className="relative w-20">
+            <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-[var(--text-muted)]">₹</span>
             <input
-              type="text"
-              value={items}
-              onChange={(e) => setItems(e.target.value)}
-              placeholder="Items"
-              className={cn(inputBase, 'flex-1 py-1 text-xs')}
+              type="number"
+              value={amount}
+              onChange={(e) => { setAmount(e.target.value); setErrors((p) => ({ ...p, amount: undefined })); }}
+              min="0"
+              step="0.01"
+              className={cn(inputBase, 'pl-4 py-1 text-xs', errors.amount && 'ring-2 ring-[var(--danger)]/50')}
             />
           </div>
-        )}
+          <input
+            type="text"
+            value={items}
+            onChange={(e) => setItems(e.target.value)}
+            placeholder="Items"
+            className={cn(inputBase, 'flex-1 py-1 text-xs')}
+          />
+        </div>
+      )}
 
+      {/* Row 2: Notes input + Cancel/Save buttons */}
+      <div className="flex items-center gap-2">
         <input
           type="text"
           value={remarks}
           onChange={(e) => setRemarks(e.target.value)}
           placeholder="Notes"
-          className={cn(inputBase, 'w-24 py-1 text-xs')}
+          className={cn(inputBase, 'flex-1 py-1.5 text-xs min-h-[clamp(var(--btn-height-md),calc(36px+0.3vw),var(--btn-height-lg))]')}
         />
 
-        <div className="flex items-center gap-1 shrink-0">
-          <button
-            type="submit"
-            className="p-1.5 rounded-md text-[var(--btn-success-label)] bg-[var(--btn-success-from)] hover:opacity-90 active:opacity-80 shadow-xs transition-opacity duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50"
-            aria-label="Save changes"
-          >
-            <Check className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={onCancel}
-            className="p-1.5 rounded-md border border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)] active:bg-[var(--bg-muted)]/80 transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30"
-            aria-label="Cancel edit"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onCancel}
+          className={cn(
+            'rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)]',
+            'hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)]',
+            'active:bg-[var(--bg-muted)]/80 transition-colors duration-100',
+            'min-h-[clamp(var(--btn-height-md),calc(36px+0.3vw),var(--btn-height-lg))] px-3 flex items-center justify-center gap-1.5 text-xs font-semibold shrink-0',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
+          )}
+          aria-label="Cancel edit"
+        >
+          <X className="w-[clamp(0.875rem,0.8125rem+0.3vw,1rem)] h-[clamp(0.875rem,0.8125rem+0.3vw,1rem)]" />
+          <span className="hidden min-[380px]:inline">Cancel</span>
+        </button>
+
+        <button
+          type="submit"
+          className={cn(
+            'rounded-lg font-semibold shadow-xs transition-[background-color,box-shadow] duration-150',
+            'bg-[var(--success)] text-[var(--text-on-brand)] hover:shadow-sm active:shadow-xs',
+            'min-h-[clamp(var(--btn-height-md),calc(36px+0.3vw),var(--btn-height-lg))] px-3 flex items-center justify-center gap-1.5 text-xs shrink-0',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
+          )}
+          aria-label="Save changes"
+        >
+          <Check className="w-[clamp(0.875rem,0.8125rem+0.3vw,1rem)] h-[clamp(0.875rem,0.8125rem+0.3vw,1rem)]" />
+          <span className="hidden min-[380px]:inline">Save</span>
+        </button>
       </div>
 
       {category === 'meals' && (
@@ -921,20 +1028,41 @@ const BulkUpdateForm = ({ category, selectedCount, onSubmit, onCancel, isBulkSub
       </p>
 
       {category === 'meals' ? (
-        <div className="grid grid-cols-4 gap-1.5">
-          {MEAL_TYPES.map((t) => (
-            <button
-              key={t.value}
-              type="button"
-              onClick={() => { setType(t.value); setErrors((p) => ({ ...p, type: undefined, empty: undefined })); }}
-              className={cn(
-                'py-1.5 px-1 rounded-lg text-[11px] font-bold border transition-colors duration-100',
-                type === t.value ? `${t.color} shadow-xs` : 'border-[var(--border-default)] text-[var(--text-muted)] hover:bg-[var(--bg-muted)]',
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
+        <div
+          role="radiogroup"
+          aria-label="Meal type"
+          className="grid grid-cols-4 gap-0.5 p-0.5 rounded-lg bg-[var(--bg-muted)]/40 border border-[var(--border-default)] shadow-[var(--inset-shadow-deep)]"
+          onKeyDown={(e) => handleSegmentedKeyDown(e, type, (v) => { setType(v); setErrors((p) => ({ ...p, type: undefined, empty: undefined })); })}
+        >
+          {MEAL_TYPES.map((t) => {
+            const isActive = type === t.value;
+            return (
+              <button
+                key={t.value}
+                id={`seg-${t.value}`}
+                type="button"
+                role="radio"
+                aria-checked={isActive}
+                tabIndex={isActive ? 0 : -1}
+                onClick={() => { setType(t.value); setErrors((p) => ({ ...p, type: undefined, empty: undefined })); }}
+                className={cn(
+                  'rounded-md font-semibold border transition-colors duration-100',
+                  'min-h-[clamp(var(--btn-height-md),calc(36px+0.3vw),var(--btn-height-lg))] px-[clamp(var(--space-2),0.5vw+6px,var(--space-3))]',
+                  'text-[clamp(0.75rem,0.6875rem+0.3vw,0.8125rem)]',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
+                  isActive
+                    ? t.value === 'off'
+                      ? `${t.activeText} border-2 border-[var(--text-secondary)]`
+                      : `${t.activeBg} ${t.activeText} border-transparent shadow-xs`
+                    : t.value === 'off'
+                      ? `${t.offBg} ${t.offText} border-[var(--border-strong)]`
+                      : `${t.inactiveBg} ${t.inactiveText} border-[var(--border-default)] hover:bg-[var(--bg-muted)]`,
+                )}
+              >
+                {t.label}
+              </button>
+            );
+          })}
         </div>
       ) : (
         <div className="flex items-center gap-2">
