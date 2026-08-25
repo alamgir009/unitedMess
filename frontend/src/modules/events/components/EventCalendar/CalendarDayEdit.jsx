@@ -682,51 +682,63 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
         </div>
       )}
 
-      {/* Guest meal toggle — meals only */}
+      {/* Guest Meals — Blinkit-style stepper (meals only) */}
       {category === 'meals' && (
-        <div className="flex items-stretch gap-2">
-          <label className={cn(
-            'flex items-center gap-2.5 flex-1 px-2.5 py-2 rounded-lg border transition-colors',
-            isGuestMeal
-              ? 'border-amber-500/30 bg-amber-500/5'
-              : 'border-[var(--border-default)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-muted)]',
-            isSubmitting && 'opacity-60 cursor-not-allowed',
-          )}>
-            <div className="relative flex items-center flex-shrink-0">
-              <input
-                type="checkbox"
-                checked={isGuestMeal}
-                onChange={() => { if (!isSubmitting) { setIsGuestMeal((p) => { if (p) setGuestCount(1); return !p; }); setErrors((p) => ({ ...p, guestCount: undefined })); } }}
+        <div className={cn(
+          'flex items-center gap-2 px-2.5 py-2 rounded-lg border transition-colors',
+          isGuestMeal
+            ? 'border-amber-500/25 bg-amber-500/5'
+            : 'border-[var(--border-default)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-muted)]',
+          isSubmitting && 'opacity-60 cursor-not-allowed',
+        )}>
+          <button
+            type="button"
+            onClick={() => { if (!isSubmitting) { setIsGuestMeal((p) => { if (p) setGuestCount(1); return !p; }); setErrors((p) => ({ ...p, guestCount: undefined })); } }}
+            disabled={isSubmitting}
+            className="flex items-center gap-1.5 flex-1 min-w-0 text-left"
+          >
+            <Users className="w-4 h-4 text-amber-500 shrink-0" />
+            <span className="text-xs font-semibold text-[var(--text-primary)]">Guest Meals</span>
+            {isGuestMeal && guestCount > 0 && (
+              <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded-full">
+                +{guestCount}
+              </span>
+            )}
+          </button>
+
+          {isGuestMeal ? (
+            <div className="flex items-center shrink-0 rounded-lg border border-amber-500/25 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => { if (!isSubmitting) { setGuestCount((c) => Math.max(1, c - 1)); setErrors((p) => ({ ...p, guestCount: undefined })); } }}
                 disabled={isSubmitting}
-                className="peer sr-only"
-              />
-              <div className="w-9 h-5 bg-muted-foreground/25 peer-focus:ring-2 peer-focus:ring-amber-500/40 rounded-full transition-colors peer-checked:bg-amber-500" />
-              <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-all peer-checked:translate-x-4" />
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5 text-amber-500" />
-              <span className="text-[11px] font-bold text-[var(--text-primary)]">Guest Meals</span>
-            </div>
-          </label>
-          {isGuestMeal && (
-            <div className="relative w-20 flex items-center">
-              <input
-                type="number"
-                min="1"
-                max="20"
-                value={guestCount}
-                onChange={(e) => { setGuestCount(Math.max(1, parseInt(e.target.value) || 1)); setErrors((p) => ({ ...p, guestCount: undefined })); }}
+                className="w-9 h-9 flex items-center justify-center bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 active:bg-amber-500/30 transition-colors text-lg font-bold select-none disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Decrease guest count"
+              >
+                −
+              </button>
+              <div className="w-10 h-9 flex items-center justify-center bg-amber-500/5 text-sm font-bold text-amber-600 dark:text-amber-400 border-x border-amber-500/25 tabular-nums select-none">
+                {guestCount}
+              </div>
+              <button
+                type="button"
+                onClick={() => { if (!isSubmitting) { setGuestCount((c) => Math.min(20, c + 1)); setErrors((p) => ({ ...p, guestCount: undefined })); } }}
                 disabled={isSubmitting}
-                className={cn(
-                  'w-full px-2 py-2 rounded-lg border border-amber-500/30 bg-amber-500/5 text-center text-sm font-bold text-amber-600 dark:text-amber-300',
-                  'focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500/50 transition-all',
-                  errors.guestCount && 'ring-2 ring-[var(--danger)]/50',
-                  isSubmitting && 'opacity-60 cursor-not-allowed',
-                )}
-                placeholder="#"
-              />
-              <span className="absolute -top-2 left-1.5 px-1 text-[9px] font-bold text-amber-500/70 bg-[var(--bg-muted)]/30 rounded">guests</span>
+                className="w-9 h-9 flex items-center justify-center bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 active:bg-amber-500/30 transition-colors text-lg font-bold select-none disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Increase guest count"
+              >
+                +
+              </button>
             </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => { if (!isSubmitting) { setIsGuestMeal(true); setGuestCount(1); setErrors((p) => ({ ...p, guestCount: undefined })); } }}
+              disabled={isSubmitting}
+              className="px-3 h-9 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-semibold shrink-0 hover:bg-amber-500/20 active:bg-amber-500/30 transition-colors border border-amber-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              + Add
+            </button>
           )}
         </div>
       )}
@@ -754,13 +766,13 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
         </div>
       )}
 
-      <div className="flex gap-2">
+      {/* ─── Fintech Footer: Cancel + Save ─── */}
+      <div className="flex items-center gap-2 pt-2 mt-1 border-t border-[var(--border-default)]">
         <button
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          /* neutral gray outline/ghost — no color competing with Save */
-          className="flex-1 py-1.5 rounded-lg text-xs font-semibold border border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)] active:bg-[var(--bg-muted)]/80 transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 h-10 rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)] font-semibold text-sm hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] active:bg-[var(--bg-muted)]/80 transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Cancel
         </button>
@@ -768,16 +780,15 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
           type="submit"
           disabled={isSubmitting || (isRangeMode && (rangeInvalid || daysCount === 0))}
           className={cn(
-            /* --btn-success-* for fintech confirm; brightness → opacity for composited perf */
-            'flex-[2] py-1.5 rounded-lg text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 transition-[opacity,box-shadow] duration-150',
+            'flex-[2] h-10 rounded-lg font-semibold text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)] transition-[background-color,box-shadow,opacity] duration-150',
             isSubmitting || (isRangeMode && (rangeInvalid || daysCount === 0))
               ? 'bg-[var(--bg-muted)] text-[var(--text-muted)] border border-[var(--border-default)] cursor-not-allowed'
-              : 'bg-[var(--btn-success-from)] text-[var(--btn-success-label)] hover:opacity-90 active:opacity-80 shadow-sm hover:shadow-md',
+              : 'bg-[var(--success)] text-[var(--text-on-brand)] hover:shadow-md active:shadow-xs',
           )}
         >
           {isSubmitting ? (
             <span className="flex items-center justify-center gap-1.5">
-              <Loader2 className="w-3 h-3 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
               Saving…
             </span>
           ) : isRangeMode ? (
@@ -895,91 +906,103 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
         </div>
       )}
 
-      {/* Row 2: Notes input + Cancel/Save buttons */}
-      <div className="flex items-center gap-2">
-        <input
-          type="text"
-          value={remarks}
-          onChange={(e) => setRemarks(e.target.value)}
-          placeholder="Notes"
-          className={cn(inputBase, 'flex-1 py-1.5 text-xs min-h-[clamp(var(--btn-height-md),calc(36px+0.3vw),var(--btn-height-lg))]')}
-        />
+      {/* Row 2: Notes input (full width) */}
+      <input
+        type="text"
+        value={remarks}
+        onChange={(e) => setRemarks(e.target.value)}
+        placeholder="Notes"
+        className={cn(inputBase, 'w-full py-1.5 text-xs min-h-[clamp(var(--btn-height-md),calc(36px+0.3vw),var(--btn-height-lg))]',
+          '[&:not(:placeholder-shown)]:border-[var(--border-strong)]')}
+      />
 
-        <button
-          type="button"
-          onClick={onCancel}
-          className={cn(
-            'rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)]',
-            'hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)]',
-            'active:bg-[var(--bg-muted)]/80 transition-colors duration-100',
-            'min-h-[clamp(var(--btn-height-md),calc(36px+0.3vw),var(--btn-height-lg))] px-3 flex items-center justify-center gap-1.5 text-xs font-semibold shrink-0',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
-          )}
-          aria-label="Cancel edit"
-        >
-          <X className="w-[clamp(0.875rem,0.8125rem+0.3vw,1rem)] h-[clamp(0.875rem,0.8125rem+0.3vw,1rem)]" />
-          <span className="hidden min-[380px]:inline">Cancel</span>
-        </button>
-
-        <button
-          type="submit"
-          className={cn(
-            'rounded-lg font-semibold shadow-xs transition-[background-color,box-shadow] duration-150',
-            'bg-[var(--success)] text-[var(--text-on-brand)] hover:shadow-sm active:shadow-xs',
-            'min-h-[clamp(var(--btn-height-md),calc(36px+0.3vw),var(--btn-height-lg))] px-3 flex items-center justify-center gap-1.5 text-xs shrink-0',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
-          )}
-          aria-label="Save changes"
-        >
-          <Check className="w-[clamp(0.875rem,0.8125rem+0.3vw,1rem)] h-[clamp(0.875rem,0.8125rem+0.3vw,1rem)]" />
-          <span className="hidden min-[380px]:inline">Save</span>
-        </button>
-      </div>
-
+      {/* Row 3: Guest Meals — Blinkit-style stepper (meals only) */}
       {category === 'meals' && (
-        <div className="flex items-stretch gap-2">
-          <label className={cn(
-            'flex items-center gap-2.5 flex-1 px-2.5 py-1.5 rounded-lg border transition-colors cursor-pointer',
-            isGuestMeal
-              ? 'border-amber-500/30 bg-amber-500/5'
-              : 'border-[var(--border-default)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-muted)]',
-          )}>
-            <div className="relative flex items-center flex-shrink-0">
-              <input
-                type="checkbox"
-                checked={isGuestMeal}
-                onChange={() => { setIsGuestMeal((p) => { if (p) setGuestCount(1); return !p; }); setErrors((prev) => ({ ...prev, guestCount: undefined })); }}
-                className="peer sr-only"
-              />
-              <div className="w-9 h-5 bg-muted-foreground/25 peer-focus:ring-2 peer-focus:ring-amber-500/40 rounded-full transition-colors peer-checked:bg-amber-500" />
-              <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 peer-checked:translate-x-4" />
+        <div className={cn(
+          'flex items-center gap-2 px-2.5 py-2 rounded-lg border transition-colors',
+          isGuestMeal
+            ? 'border-amber-500/25 bg-amber-500/5'
+            : 'border-[var(--border-default)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-muted)]',
+        )}>
+          <button
+            type="button"
+            onClick={() => { setIsGuestMeal((p) => { if (p) setGuestCount(1); return !p; }); setErrors((p) => ({ ...p, guestCount: undefined })); }}
+            className="flex items-center gap-1.5 flex-1 min-w-0 text-left"
+          >
+            <Users className="w-4 h-4 text-amber-500 shrink-0" />
+            <span className="text-xs font-semibold text-[var(--text-primary)]">Guest Meals</span>
+            {isGuestMeal && guestCount > 0 && (
+              <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded-full">
+                +{guestCount}
+              </span>
+            )}
+          </button>
+
+          {isGuestMeal ? (
+            <div className="flex items-center shrink-0 rounded-lg border border-amber-500/25 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => { setGuestCount((c) => Math.max(1, c - 1)); setErrors((p) => ({ ...p, guestCount: undefined })); }}
+                className="w-9 h-9 flex items-center justify-center bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 active:bg-amber-500/30 transition-colors text-lg font-bold select-none"
+                aria-label="Decrease guest count"
+              >
+                −
+              </button>
+              <div className="w-10 h-9 flex items-center justify-center bg-amber-500/5 text-sm font-bold text-amber-600 dark:text-amber-400 border-x border-amber-500/25 tabular-nums select-none">
+                {guestCount}
+              </div>
+              <button
+                type="button"
+                onClick={() => { setGuestCount((c) => Math.min(20, c + 1)); setErrors((p) => ({ ...p, guestCount: undefined })); }}
+                className="w-9 h-9 flex items-center justify-center bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 active:bg-amber-500/30 transition-colors text-lg font-bold select-none"
+                aria-label="Increase guest count"
+              >
+                +
+              </button>
             </div>
-            <div className="flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5 text-amber-500" />
-              <span className="text-[11px] font-bold text-[var(--text-primary)]">Guest Meals</span>
-            </div>
-          </label>
-          {isGuestMeal && (
-            <div className="relative w-20 flex items-center">
-              <input
-                type="number"
-                min="1"
-                max="20"
-                value={guestCount}
-                onChange={(e) => { setGuestCount(Math.max(1, parseInt(e.target.value) || 1)); setErrors((prev) => ({ ...prev, guestCount: undefined })); }}
-                className={cn(
-                  'w-full px-2 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/5 text-center text-sm font-bold text-amber-600 dark:text-amber-300',
-                  'focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500/50 transition-all',
-                  errors.guestCount && 'ring-2 ring-[var(--danger)]/50',
-                )}
-                placeholder="#"
-              />
-              <span className="absolute -top-2 left-1.5 px-1 text-[9px] font-bold text-amber-500/70 bg-[var(--bg-muted)]/30 rounded">guests</span>
-            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => { setIsGuestMeal(true); setGuestCount(1); setErrors((p) => ({ ...p, guestCount: undefined })); }}
+              className="px-3 h-9 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-semibold shrink-0 hover:bg-amber-500/20 active:bg-amber-500/30 transition-colors border border-amber-500/25"
+            >
+              + Add
+            </button>
           )}
         </div>
       )}
       {errors.guestCount && <p className="text-[10px] text-[var(--danger)]">{errors.guestCount}</p>}
+
+      {/* ─── Fintech Footer: Cancel + Save ─── */}
+      <div className={cn(
+        'flex items-center gap-2 pt-2 mt-1 border-t border-[var(--border-default)]',
+      )}>
+        <button
+          type="button"
+          onClick={onCancel}
+          className={cn(
+            'flex-1 h-10 rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)] font-semibold text-sm',
+            'hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]',
+            'active:bg-[var(--bg-muted)]/80 transition-colors duration-100',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
+          )}
+          aria-label="Cancel edit"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className={cn(
+            'flex-[2] h-10 rounded-lg font-semibold text-sm shadow-xs',
+            'bg-[var(--success)] text-[var(--text-on-brand)]',
+            'hover:shadow-md active:shadow-xs transition-[background-color,box-shadow] duration-150',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
+          )}
+          aria-label="Save changes"
+        >
+          Save
+        </button>
+      </div>
     </form>
   );
 };
