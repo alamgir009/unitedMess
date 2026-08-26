@@ -723,7 +723,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                                 {initialData ? 'Updating…' : 'Recording…'}
                             </span>
                         ) : (
-                            initialData ? 'Update Payment' : 'Record Payment'
+                            initialData ? 'Update' : 'Save'
                         )}
                     </Button>
                 )}
