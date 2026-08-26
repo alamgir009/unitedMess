@@ -119,7 +119,7 @@ const DayDetailSheet = ({
             role="dialog"
             aria-modal="true"
             aria-label={title}
-            style={{ height: `${heightPct}vh` }}
+            style={{ height: `${heightPct}vh`, boxShadow: 'var(--shadow-xl), var(--inset-top-glow)' }}
             className={cn(
               'w-full flex flex-col',
               'bg-[var(--bg-elevated)] border border-[var(--border-muted)]',
@@ -128,7 +128,6 @@ const DayDetailSheet = ({
               'focus:outline-none',
               'animate-fade-in-up',
             )}
-            style={{ boxShadow: 'var(--shadow-xl), var(--inset-top-glow)' }}
           >
             <div
               className="flex items-center justify-between px-5 pt-3 pb-2 border-b border-[var(--border-muted)] shrink-0 cursor-grab active:cursor-grabbing"
