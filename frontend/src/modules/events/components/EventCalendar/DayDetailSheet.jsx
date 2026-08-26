@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Pencil, Plus, Calendar } from 'lucide-react';
+import { X, Pencil, Plus, Calendar, CreditCard } from 'lucide-react';
 import { cn } from '@/core/utils/helpers/string.helper';
 
 let lockCount = 0;
@@ -33,6 +33,7 @@ const DayDetailSheet = ({
   onEditToggle,
   category,
   onScheduleClick,
+  onPaymentAdd,
 }) => {
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
@@ -134,14 +135,16 @@ const DayDetailSheet = ({
               </div>
               <div className="flex items-center gap-1 shrink-0 ml-3">
                 {category === 'markets' && !isEditMode && onEditToggle && onScheduleClick ? null : (
-                  !isEditMode && onEditToggle && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onEditToggle?.(); }}
-                      aria-label="Edit entries"
-                      className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
+                  category === 'payments' && !isEditMode && onPaymentAdd ? null : (
+                    !isEditMode && onEditToggle && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onEditToggle?.(); }}
+                        aria-label="Edit entries"
+                        className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                    )
                   )
                 )}
                 <button
@@ -170,6 +173,18 @@ const DayDetailSheet = ({
                 >
                   <Calendar className="w-3.5 h-3.5" />
                   <span>Book Date</span>
+                </button>
+              </div>
+            )}
+            {category === 'payments' && !isEditMode && onPaymentAdd && (
+              <div className="flex items-center gap-2 px-5 py-2.5 border-b border-[var(--border-default)] bg-[var(--bg-muted)]/20 shrink-0">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onPaymentAdd(); }}
+                  aria-label="Add payment"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <CreditCard className="w-3.5 h-3.5" />
+                  <span>Add Payment</span>
                 </button>
               </div>
             )}

@@ -4,49 +4,49 @@ import Avatar from '../Avatar/Avatar.jsx';
 
 const accentMap = {
     indigo: {
-        ring:         'focus:ring-indigo-500/30 focus:border-indigo-500/60',
-        selected:     'bg-indigo-500/10 text-indigo-500',
-        checkbox:     'border-indigo-500 bg-indigo-500',
-        text:         'text-indigo-500 hover:text-indigo-400',
-        badge:        'bg-indigo-500/20 text-indigo-500',
-        hoverCheck:   'hover:border-indigo-500/50',
-        checkIcon:    'text-white',
+        ring:         'focus:ring-[var(--accent-primary)]/30 focus:border-[var(--accent-primary)]/60',
+        selected:     'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]',
+        checkbox:     'border-[var(--accent-primary)] bg-[var(--accent-primary)]',
+        text:         'text-[var(--accent-primary)] hover:text-[var(--accent-primary)]',
+        badge:        'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)]',
+        hoverCheck:   'hover:border-[var(--accent-primary)]/50',
+        checkIcon:    'text-[var(--text-on-brand)]',
     },
     emerald: {
-        ring:         'focus:ring-emerald-500/30 focus:border-emerald-500/60',
-        selected:     'bg-emerald-500/10 text-emerald-500',
-        checkbox:     'border-emerald-500 bg-emerald-500',
-        text:         'text-emerald-500 hover:text-emerald-400',
-        badge:        'bg-emerald-500/20 text-emerald-500',
-        hoverCheck:   'hover:border-emerald-500/50',
-        checkIcon:    'text-white',
+        ring:         'focus:ring-[var(--success)]/30 focus:border-[var(--success)]/60',
+        selected:     'bg-[var(--success)]/10 text-[var(--success)]',
+        checkbox:     'border-[var(--success)] bg-[var(--success)]',
+        text:         'text-[var(--success)] hover:text-[var(--success)]',
+        badge:        'bg-[var(--success)]/20 text-[var(--success)]',
+        hoverCheck:   'hover:border-[var(--success)]/50',
+        checkIcon:    'text-[var(--text-on-brand)]',
     },
     primary: {
-        ring:         'focus:ring-primary/30 focus:border-primary/60',
-        selected:     'bg-primary/10 text-primary',
-        checkbox:     'border-primary bg-primary',
-        text:         'text-primary hover:text-primary',
-        badge:        'bg-primary/20 text-primary',
-        hoverCheck:   'hover:border-primary/50',
-        checkIcon:    'text-white',
+        ring:         'focus:ring-[var(--accent-primary)]/30 focus:border-[var(--accent-primary)]/60',
+        selected:     'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]',
+        checkbox:     'border-[var(--accent-primary)] bg-[var(--accent-primary)]',
+        text:         'text-[var(--accent-primary)] hover:text-[var(--accent-primary)]',
+        badge:        'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)]',
+        hoverCheck:   'hover:border-[var(--accent-primary)]/50',
+        checkIcon:    'text-[var(--text-on-brand)]',
     },
     slate: {
-        ring:         'focus:ring-slate-500/30 focus:border-slate-500/60',
-        selected:     'bg-slate-500/10 text-slate-500',
-        checkbox:     'border-slate-500 bg-slate-500',
-        text:         'text-slate-500 hover:text-slate-400',
-        badge:        'bg-slate-500/20 text-slate-500',
-        hoverCheck:   'hover:border-slate-500/50',
-        checkIcon:    'text-white',
+        ring:         'focus:ring-[var(--text-muted)]/30 focus:border-[var(--text-muted)]/60',
+        selected:     'bg-[var(--text-muted)]/10 text-[var(--text-muted)]',
+        checkbox:     'border-[var(--text-muted)] bg-[var(--text-muted)]',
+        text:         'text-[var(--text-muted)] hover:text-[var(--text-muted)]',
+        badge:        'bg-[var(--text-muted)]/20 text-[var(--text-muted)]',
+        hoverCheck:   'hover:border-[var(--text-muted)]/50',
+        checkIcon:    'text-[var(--text-on-brand)]',
     },
 };
 
 const inputBase =
-    'w-full px-3 py-2 rounded-xl border border-border/60 ' +
-    'bg-background/70 backdrop-blur-sm ' +
+    'w-full px-3 py-2 rounded-xl border border-[var(--border-default)] ' +
+    'bg-[var(--bg-elevated)] ' +
     'outline-none transition-all duration-200 ' +
-    'text-sm text-foreground placeholder:text-muted-foreground/50 ' +
-    'shadow-sm hover:border-border';
+    'text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/50 ' +
+    'shadow-sm hover:border-[var(--border-strong)]';
 
 const MemberSelect = ({
     users = [],

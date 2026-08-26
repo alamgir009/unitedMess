@@ -40,7 +40,7 @@ const VOTE_VALUE_BADGE_COLORS = {
 const ROW_HEIGHT = 44;
 const OVERSCAN = 4;
 
-const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, scheduleData = null }) => {
+const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, scheduleData = null, onPaymentEdit }) => {
   const [scrollTop, setScrollTop] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const containerRef = useRef(null);
@@ -167,9 +167,11 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
             return (
               <div
                 key={entry._id || idx}
+                onClick={category === 'payments' && onPaymentEdit ? () => onPaymentEdit(entry) : undefined}
                 className={cn(
                   'flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-100',
                   'hover:bg-[var(--bg-muted)] hover:shadow-xs',
+                  category === 'payments' && onPaymentEdit && 'cursor-pointer',
                   isFailed && 'bg-[var(--danger-bg)]/40 border-l-[3px] border-[var(--payment-failed)] pl-2.5',
                 )}
                 style={{ height: ROW_HEIGHT }}

@@ -19,7 +19,6 @@ const PaymentModal = ({ isOpen, onClose, title, children }) => {
     const focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
     const getFocusable = () => dialog ? Array.from(dialog.querySelectorAll(focusableSelector)) : [];
 
-    // Focus first element
     requestAnimationFrame(() => {
       const focusable = getFocusable();
       if (focusable.length > 0) focusable[0]?.focus();
@@ -69,7 +68,7 @@ const PaymentModal = ({ isOpen, onClose, title, children }) => {
         <button
           aria-label="Close modal"
           onClick={onClose}
-          className="absolute inset-0 w-full h-full bg-black/60 md:bg-black/50"
+          className="absolute inset-0 w-full h-full bg-[var(--bg-overlay)]"
         />
 
         <div className="flex min-h-full items-center justify-center p-3 sm:p-4">
@@ -79,29 +78,31 @@ const PaymentModal = ({ isOpen, onClose, title, children }) => {
             aria-modal="true"
             tabIndex={-1}
             className={cn(
-              'relative w-full max-w-lg overflow-hidden rounded-3xl',
-              'border border-black/10 dark:border-white/10',
-              'bg-white dark:bg-slate-900 text-slate-900 dark:text-white',
-              'shadow-2xl',
-              'md:bg-white/95 md:dark:bg-slate-900/95',
-              'modal-animate modal-gpu',
+              'relative w-full max-w-lg overflow-hidden rounded-2xl',
+              'bg-[var(--bg-elevated)] border border-[var(--border-muted)]',
+              'text-[var(--text-primary)]',
+              'focus:outline-none',
+              'animate-fade-in-up',
+              'max-h-[85vh]',
+              'modal-gpu',
               exiting ? 'modal-exit' : 'modal-enter'
             )}
+            style={{ boxShadow: 'var(--shadow-xl), var(--inset-top-glow)' }}
           >
             <div className="
               relative z-10 flex items-center justify-between
               px-4 py-4 sm:px-6 sm:py-5
-              border-b border-black/10 dark:border-white/10
+              border-b border-[var(--border-muted)]
             ">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-1 h-6 rounded-full bg-gradient-to-b from-sky-500 to-violet-600" />
-                <h2 className="truncate text-lg font-semibold">
+                <div className="w-1 h-6 rounded-full bg-gradient-to-b from-[var(--accent-primary)] to-[var(--brand)]" />
+                <h2 className="truncate text-lg font-semibold text-[var(--text-primary)]">
                   {title}
                 </h2>
               </div>
               <button
                 onClick={onClose}
-                className="flex items-center justify-center w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                className="flex items-center justify-center w-8 h-8 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors"
                 aria-label="Close modal"
               >
                 <HiOutlineXMark className="w-5 h-5" />
@@ -111,6 +112,11 @@ const PaymentModal = ({ isOpen, onClose, title, children }) => {
             <div className="
               relative z-10 px-4 py-4 sm:px-6 sm:py-5
               max-h-[82dvh] overflow-y-auto
+              [scrollbar-width:thin] [scrollbar-color:var(--border-strong)_transparent]
+              [&::-webkit-scrollbar]:w-1.5
+              [&::-webkit-scrollbar-track]:bg-transparent
+              [&::-webkit-scrollbar-thumb]:bg-[var(--border-strong)] [&::-webkit-scrollbar-thumb]:rounded-full
+              [&::-webkit-scrollbar-thumb:hover]:bg-[var(--text-muted)]
             ">
               {children}
             </div>

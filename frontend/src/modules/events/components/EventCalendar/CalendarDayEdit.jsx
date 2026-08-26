@@ -135,7 +135,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
-          {visibleEntries.length} {category === 'meals' ? 'meal' : 'market'} entr{visibleEntries.length === 1 ? 'y' : 'ies'}
+          {visibleEntries.length} {category === 'meals' ? 'meal' : category === 'payments' ? 'payment' : 'market'} entr{visibleEntries.length === 1 ? 'y' : 'ies'}
           {!isAdmin && entries.length > visibleEntries.length && (
             <span className="ml-1 text-[var(--text-muted)]">
               ({entries.length} total)

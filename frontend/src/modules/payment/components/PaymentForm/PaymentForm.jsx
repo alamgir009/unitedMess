@@ -40,9 +40,9 @@ const monthYearFromDate = (dateStr) => {
 };
 
 const PAYMENT_TYPES = [
-    { value: 'mess_bill', label: 'Mess Bill', color: 'border-indigo-500/60 bg-indigo-500/10 text-indigo-500' },
-    { value: 'gas_bill',  label: 'Gas Bill',  color: 'border-amber-500/60 bg-amber-500/10 text-amber-500'   },
-    { value: 'other',     label: 'Other',     color: 'border-slate-400/60 bg-slate-400/10 text-muted-foreground' },
+    { value: 'mess_bill', label: 'Mess Bill', color: 'bg-[var(--accent-primary)] text-[var(--text-on-brand)]' },
+    { value: 'gas_bill',  label: 'Gas Bill',  color: 'bg-[var(--warning)] text-[#1A1A1A]' },
+    { value: 'other',     label: 'Other',     color: 'bg-[var(--bg-muted)] text-[var(--text-primary)]' },
 ];
 
 // Single source of truth: paymentType → payable-batch cache key.
@@ -53,36 +53,37 @@ const PAYABLE_KEY_FOR_TYPE = {
 };
 
 const PAYMENT_METHODS = [
-    { value: 'cash',       label: 'Cash',       Icon: BsCashCoin,           iconClass: 'text-emerald-500' },
-    { value: 'online',     label: 'Online',     Icon: BsGlobe2,             iconClass: 'text-sky-500'     },
-    { value: 'razorpay',   label: 'Razorpay',   Icon: SiRazorpay,           iconClass: 'text-violet-500'  },
-    { value: 'upi_manual', label: 'Manual UPI', Icon: HiOutlineIdentification, iconClass: 'text-blue-500' },
+    { value: 'cash',       label: 'Cash',       Icon: BsCashCoin,           iconClass: 'text-[var(--success)]' },
+    { value: 'online',     label: 'Online',     Icon: BsGlobe2,             iconClass: 'text-[var(--info)]'     },
+    { value: 'razorpay',   label: 'Razorpay',   Icon: SiRazorpay,           iconClass: 'text-[var(--accent-primary)]'  },
+    { value: 'upi_manual', label: 'Manual UPI', Icon: HiOutlineIdentification, iconClass: 'text-[var(--info)]' },
 ];
 
 const STATUS_OPTIONS = [
-    { value: 'pending',   label: 'Pending',   Icon: MdPendingActions,     iconClass: 'text-amber-500'   },
-    { value: 'completed', label: 'Completed', Icon: MdCheckCircleOutline, iconClass: 'text-emerald-500' },
-    { value: 'failed',    label: 'Failed',    Icon: MdErrorOutline,       iconClass: 'text-rose-500'    },
-    { value: 'refunded',  label: 'Refunded',  Icon: MdRefresh,            iconClass: 'text-sky-500'     },
+    { value: 'pending',   label: 'Pending',   Icon: MdPendingActions,     iconClass: 'text-[var(--warning)]'   },
+    { value: 'completed', label: 'Completed', Icon: MdCheckCircleOutline, iconClass: 'text-[var(--success)]' },
+    { value: 'failed',    label: 'Failed',    Icon: MdErrorOutline,       iconClass: 'text-[var(--danger)]'    },
+    { value: 'refunded',  label: 'Refunded',  Icon: MdRefresh,            iconClass: 'text-[var(--info)]'     },
 ];
 
 /* ─── Design tokens ─────────────────────────────────────────── */
 
 const inputBase =
-    'w-full px-3 py-2 rounded-xl border border-border/60 ' +
-    'bg-background/70 backdrop-blur-md ' +
-    'focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/60 ' +
+    'w-full px-3 py-2 rounded-xl border border-[var(--input-border)] ' +
+    'bg-[var(--input-bg)] ' +
+    'focus:ring-0 focus:border-[var(--input-border-focus)] ' +
     'outline-none transition-all duration-200 ' +
-    'text-sm text-foreground placeholder:text-muted-foreground/50 ' +
-    'shadow-sm hover:border-border';
+    'text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] ' +
+    'hover:border-[var(--input-border-hover)] ' +
+    'dark:shadow-[var(--inset-top-glow),var(--shadow-xs)] dark:focus:shadow-[var(--inset-top-glow),var(--shadow-xs),0_0_0_3px_rgba(var(--brand-rgb),0.15)]';
 
 const inputDisabled = 'opacity-60 cursor-not-allowed pointer-events-none select-none';
 
 /* ─── Field wrapper ─────────────────────────────────────────── */
 const Field = ({ label, icon: Icon, children, className = '' }) => (
-    <div className={`flex flex-col gap-1 ${className}`}>
-        <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground select-none">
-            {Icon && <Icon className="w-3 h-3 shrink-0 opacity-70" />}
+    <div className={`flex flex-col gap-1.5 ${className}`}>
+        <label className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-[var(--text-muted)] select-none">
+            {Icon && <Icon className="w-3 h-3 shrink-0 opacity-60" />}
             {label}
         </label>
         {children}
@@ -173,7 +174,7 @@ const IconDropdown = ({ name, value, onChange, options, disabled = false }) => {
                 </span>
                 {!disabled && (
                     <HiOutlineChevronDown
-                        className={`w-4 h-4 shrink-0 text-muted-foreground/60 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+                        className={`w-4 h-4 shrink-0 text-[var(--text-tertiary)] transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
                     />
                 )}
             </button>
@@ -183,7 +184,8 @@ const IconDropdown = ({ name, value, onChange, options, disabled = false }) => {
                     ref={listRef}
                     role="listbox"
                     aria-label={`${name} options`}
-                    className="absolute z-50 top-full mt-1.5 w-full rounded-xl border border-border/60 bg-white dark:bg-slate-900 shadow-lg overflow-hidden max-h-[200px] overflow-y-auto"
+                    className="absolute z-50 top-full mt-1.5 w-full rounded-xl border border-[var(--border-muted)] bg-[var(--bg-elevated)] overflow-hidden max-h-[200px] overflow-y-auto [scrollbar-width:thin] [scrollbar-color:var(--border-strong)_transparent]"
+                    style={{ boxShadow: 'var(--shadow-lg), var(--inset-top-glow)' }}
                 >
                     {options.map((opt, idx) => (
                         <button
@@ -195,16 +197,16 @@ const IconDropdown = ({ name, value, onChange, options, disabled = false }) => {
                             onMouseEnter={() => setHighlightedIndex(idx)}
                             className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors duration-100
                                 ${value === opt.value
-                                    ? 'bg-indigo-500/10 text-indigo-500 font-medium'
+                                    ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-medium'
                                     : idx === highlightedIndex
-                                        ? 'bg-muted/60 text-foreground'
-                                        : 'hover:bg-muted/40 text-foreground'
+                                        ? 'bg-[var(--bg-muted)] text-[var(--text-primary)]'
+                                        : 'hover:bg-[var(--bg-muted)] text-[var(--text-primary)]'
                                 }`}
                         >
                             <opt.Icon className={`w-4 h-4 shrink-0 ${opt.iconClass}`} />
                             <span>{opt.label}</span>
                             {value === opt.value && (
-                                <HiOutlineCheckCircle className="ml-auto w-4 h-4 text-indigo-500/70" />
+                                <HiOutlineCheckCircle className="ml-auto w-4 h-4 text-[var(--accent-primary)]" />
                             )}
                         </button>
                     ))}
@@ -214,20 +216,20 @@ const IconDropdown = ({ name, value, onChange, options, disabled = false }) => {
     );
 };
 
-/* ─── Payment type toggle button ────────────────────────────── */
+/* ─── Payment type toggle button (segmented pill control) ───── */
 const TypeBtn = ({ value, current, onClick, label, color, disabled = false }) => (
     <button
         type="button"
         onClick={() => !disabled && onClick(value)}
         disabled={disabled}
-        className={`flex-1 min-w-0 py-2 px-2 rounded-xl border-2 text-xs font-semibold
+        className={`flex-1 min-w-0 py-2.5 px-2 rounded-full text-xs font-semibold
             tracking-wide transition-all duration-200 text-center truncate
-            ${disabled ? 'opacity-60 cursor-not-allowed' : ''}
+            ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
             ${current === value
                 ? `${color} shadow-sm`
                 : disabled
-                    ? 'border-border/40 bg-muted/20 text-muted-foreground'
-                    : 'border-border/40 bg-muted/20 hover:bg-muted/50 text-muted-foreground hover:text-foreground'
+                    ? 'bg-[var(--bg-muted)] text-[var(--text-tertiary)]'
+                    : 'bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:bg-[var(--border-strong)] hover:text-[var(--text-primary)]'
             }`}
     >
         {label}
@@ -236,9 +238,12 @@ const TypeBtn = ({ value, current, onClick, label, color, disabled = false }) =>
 
 /* ─── ReadOnly banner ───────────────────────────────────────── */
 const ReadOnlyBanner = () => (
-    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">
-        <HiOutlineLockClosed className="w-3.5 h-3.5 flex-shrink-0" />
-        <p className="text-xs font-semibold">View only — only admins can edit payment records</p>
+    <div
+        className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--warning-bg)] border border-[var(--warning-border)] text-[var(--warning-text)]"
+        style={{ boxShadow: 'var(--inset-top-glow)' }}
+    >
+        <HiOutlineLockClosed className="w-3.5 h-3.5 flex-shrink-0 opacity-80" />
+        <p className="text-xs font-medium">View only — only admins can edit payment records</p>
     </div>
 );
 
@@ -490,46 +495,49 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
     const showTxn    = formData.paymentMethod === 'online' || formData.paymentMethod === 'razorpay' || formData.paymentMethod === 'upi_manual';
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full">
 
             {/* Read-only notice */}
             {readOnly && <ReadOnlyBanner />}
 
             {/* ── Amount preview banner ── */}
-            <div className={`relative flex items-center justify-center py-3 rounded-2xl border overflow-hidden shrink-0 ${
-                formData.status === 'refunded' && parseFloat(formData.amount) < 0
-                    ? 'border-rose-500/20 bg-gradient-to-r from-rose-500/5 via-pink-500/5 to-red-500/5'
-                    : 'border-indigo-500/20 bg-gradient-to-r from-indigo-500/5 via-violet-500/5 to-purple-500/5'
-            }`}>
-                <div className="flex items-baseline gap-2">
-                    <span className={`text-[28px] font-black leading-none tracking-tight ${
+            <div
+                className={`relative flex items-center justify-center py-4 rounded-2xl border overflow-hidden shrink-0 ${
+                    formData.status === 'refunded' && parseFloat(formData.amount) < 0
+                        ? 'border-[var(--danger)]/30 bg-[var(--danger-bg)]'
+                        : 'border-[var(--accent-primary)]/30 bg-[var(--accent-subtle)]'
+                }`}
+                style={{ boxShadow: 'var(--inset-top-glow), var(--shadow-xs)' }}
+            >
+                <div className="flex items-baseline gap-2.5">
+                    <span className={`text-[36px] font-black leading-none tracking-[-0.03em] ${
                         formData.status === 'refunded' && parseFloat(formData.amount) < 0
-                            ? 'text-rose-500'
-                            : 'text-foreground'
+                            ? 'text-[var(--danger)]'
+                            : 'text-[var(--text-primary)]'
                     }`}>
                         {formData.status === 'refunded' && Number(formData.amount) < 0 ? '-₹' : '₹'}
                         {formData.amount === '' ? '—' : Math.abs(Number(formData.amount)).toLocaleString('en-IN')}
                     </span>
-                    <span className="text-xs font-medium text-muted-foreground">
+                    <span className="text-xs font-medium text-[var(--text-muted)]">
                         {formData.status === 'refunded' && parseFloat(formData.amount) < 0 ? 'refund amount' : 'payment amount'}
                     </span>
                 </div>
                 {isPayableLoading && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <HiOutlineArrowPath className="w-3.5 h-3.5 animate-spin text-muted-foreground/50" />
+                        <HiOutlineArrowPath className="w-3.5 h-3.5 animate-spin text-[var(--text-muted)]" />
                     </div>
                 )}
             </div>
 
             {/* ── Form fields ── */}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-4">
 
                 {/* Admin: member selector */}
                 {isAdmin && (
                     <Field label="Member" icon={HiOutlineUser}>
                         {initialData ? (
                             /* Edit/View mode — show single member as read-only tag */
-                            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-border/60 bg-background/70 backdrop-blur-md text-sm">
+                            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-[var(--input-border)] bg-[var(--input-bg)] text-sm dark:shadow-[var(--inset-top-glow),var(--shadow-xs)]">
                                 <Avatar
                                     name={typeof initialData.user === 'object' ? initialData.user?.name : ''}
                                     size="xs"
@@ -541,7 +549,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                                     }
                                 </span>
                                 {typeof initialData.user === 'object' && initialData.user?.email && (
-                                    <span className="text-[11px] text-muted-foreground/60 truncate hidden sm:inline">
+                                    <span className="text-[11px] text-[var(--text-tertiary)] truncate hidden sm:inline">
                                         {initialData.user.email}
                                     </span>
                                 )}
@@ -560,7 +568,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                                 }))}
                                 loading={isUsersLoading}
                                 disabled={readOnly || isSubmitting}
-                                accentColor="indigo"
+                                accentColor="primary"
                                 filterUser={filterUser}
                             />
                         )}
@@ -570,8 +578,8 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                 {/* Amount */}
                 <Field label="Amount (₹)" icon={HiOutlineCurrencyRupee}>
                     <div className="relative">
-                        <span className={`absolute left-3.5 top-1/2 -translate-y-1/2 font-semibold text-sm pointer-events-none select-none ${
-                            formData.status === 'refunded' ? 'text-rose-500' : 'text-indigo-500'
+                        <span className={`absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-sm pointer-events-none select-none ${
+                            formData.status === 'refunded' ? 'text-[var(--danger)]' : 'text-[var(--text-muted)]'
                         }`}>
                             ₹
                         </span>
@@ -583,7 +591,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                             disabled={readOnly || isSubmitting}
                             className={`${inputBase} pl-7 ${
                                 formData.status === 'refunded' && parseFloat(formData.amount) < 0
-                                    ? 'border-rose-500/40 focus:ring-rose-500/30 focus:border-rose-500/60'
+                                    ? 'border-[var(--danger)]/40 focus:ring-[var(--danger)]/30 focus:border-[var(--danger)]/50'
                                     : ''
                             } ${readOnly || isSubmitting ? inputDisabled : ''}`}
                         />
@@ -613,7 +621,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                                 ))}
                             </select>
                             {!readOnly && !isSubmitting && (
-                                <HiOutlineChevronDown className="absolute inset-y-0 right-3 my-auto w-4 h-4 pointer-events-none text-muted-foreground/60" />
+                                <HiOutlineChevronDown className="absolute inset-y-0 right-3 my-auto w-4 h-4 pointer-events-none text-[var(--text-tertiary)]" />
                             )}
                         </div>
                     </Field>
@@ -692,9 +700,9 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
             </div>
 
             {/* ── Action buttons ── */}
-            <div className="flex gap-2.5 pt-3 border-t border-border/30 shrink-0">
+            <div className="flex gap-3 pt-4 border-t border-[var(--border-muted)] shrink-0">
                 <Button
-                    type="button" variant="secondary" size="sm"
+                    type="button" variant="ghost" size="sm"
                     onClick={onCancel} disabled={isSubmitting}
                     className={readOnly ? 'flex-1' : 'flex-1'}
                 >

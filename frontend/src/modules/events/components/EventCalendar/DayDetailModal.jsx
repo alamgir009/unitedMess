@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Pencil, Plus, Calendar } from 'lucide-react';
+import { X, Pencil, Plus, Calendar, CreditCard } from 'lucide-react';
 import { cn } from '@/core/utils/helpers/string.helper';
 
 let lockCount = 0;
@@ -30,6 +30,7 @@ const DayDetailModal = ({
   onEditToggle,
   category,
   onScheduleClick,
+  onPaymentAdd,
 }) => {
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
@@ -58,6 +59,7 @@ const DayDetailModal = ({
   if (typeof document === 'undefined') return null;
 
   const showMarketActions = category === 'markets' && !isEditMode && onEditToggle && onScheduleClick;
+  const showPaymentActions = category === 'payments' && !isEditMode && onPaymentAdd;
 
   return createPortal(
     isOpen ? (
@@ -91,7 +93,7 @@ const DayDetailModal = ({
             <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[var(--border-default)] shrink-0">
               <h2 className="text-sm sm:text-base font-semibold text-[var(--text-primary)] truncate min-w-0">{title}</h2>
               <div className="flex items-center gap-1 shrink-0 ml-3">
-                {!isEditMode && onEditToggle && !showMarketActions && (
+                {!isEditMode && onEditToggle && !showMarketActions && !showPaymentActions && (
                   <button
                     onClick={onEditToggle}
                     aria-label="Edit entries"
@@ -126,6 +128,18 @@ const DayDetailModal = ({
                 >
                   <Calendar className="w-3.5 h-3.5" />
                   <span>Book Date</span>
+                </button>
+              </div>
+            )}
+            {showPaymentActions && (
+              <div className="flex items-center gap-2 px-5 py-2.5 border-b border-[var(--border-default)] bg-[var(--bg-muted)]/20 shrink-0">
+                <button
+                  onClick={onPaymentAdd}
+                  aria-label="Add payment"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <CreditCard className="w-3.5 h-3.5" />
+                  <span>Add Payment</span>
                 </button>
               </div>
             )}

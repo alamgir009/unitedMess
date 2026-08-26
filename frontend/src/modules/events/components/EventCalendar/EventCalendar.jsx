@@ -19,8 +19,11 @@ import { setCurrentMonth, setLoading } from '../../store/events.slice';
 import { fetchMonthSchedule, fetchAvailableDates } from '../../store/marketSchedule.slice';
 import { createMeal, bulkCreateMeals, updateMeal, deleteMeal } from '../../../meal/store/meal.slice';
 import { createMarket, updateMarket, deleteMarket, bulkCreateMarkets } from '../../../market/store/market.slice';
+import { createPayment, createBulkPayments, updatePayment, deletePayment } from '../../../payment/store/payment.slice';
 
 const CalendarDayEdit = lazy(() => import('./CalendarDayEdit'));
+const PaymentModal = lazy(() => import('../../../payment/components/PaymentModal/PaymentModal'));
+const PaymentForm = lazy(() => import('../../../payment/components/PaymentForm/PaymentForm'));
 
 const CATEGORY_ENDPOINTS = {
   meals: eventService.getMeals,
@@ -29,10 +32,6 @@ const CATEGORY_ENDPOINTS = {
   votes: eventService.getAuditLogs,
 };
 
-// Backend response shape varies by category:
-// meals:   { success, message, data: { meals, pagination } }
-// markets: { success, message, data: { markets, pagination } }
-// payments:{ success, message, data: { results, totalResults, totalPages, page, limit } }
 const DATA_KEY = {
   meals: 'meals',
   markets: 'markets',
@@ -44,7 +43,6 @@ const extractItems = (envelope, category) => {
   if (!envelope) return [];
   const inner = envelope.data;
   if (!inner) return [];
-  // Backend may return array directly under `data` when limit=all bypasses pagination
   if (Array.isArray(inner)) return inner;
   const key = DATA_KEY[category];
   if (!key) return [];
@@ -52,8 +50,6 @@ const extractItems = (envelope, category) => {
   return Array.isArray(items) ? items : [];
 };
 
-// Day-bucketing is server-authoritative via IST.
-// Parse date in IST to determine which day an entry belongs to.
 const getISTDateKey = (dateStr) => {
   try {
     const ms = Date.parse(
@@ -105,9 +101,12 @@ const EventCalendar = () => {
   const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [editingPayment, setEditingPayment] = useState(null);
+  const [isPaymentSubmitting, setIsPaymentSubmitting] = useState(false);
+
   const { monthSchedule } = useSelector((state) => state.marketSchedule);
 
-  // Derive entries from live dataMap so optimistic updates reflect immediately
   const currentDateEntries = useMemo(() => {
     if (!detailDate) return [];
     const key = format(new Date(detailDate), 'yyyy-MM-dd');
@@ -194,7 +193,6 @@ const EventCalendar = () => {
     return () => controller.abort();
   }, [fetchData]);
 
-  // Stale cache reconciliation: refetch on tab focus (visibilitychange)
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState !== 'visible') return;
@@ -207,7 +205,6 @@ const EventCalendar = () => {
     return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [fetchData]);
 
-  // Fetch market schedule when category is markets
   useEffect(() => {
     if (category === 'markets') {
       const year = currentMonthDate.getFullYear();
@@ -263,17 +260,14 @@ const EventCalendar = () => {
     setIsEditMode((prev) => !prev);
   }, []);
 
-  // Snapshot dataMap before mutation for rollback
   const snapshotRef = useRef(null);
 
   const handleSaveEntry = useCallback(async (entryData) => {
-    // ── Guard: admin entry for others must have explicit target members ──
     if (isAdmin && !entryData.startDate && 'userIds' in entryData && (!entryData.userIds || entryData.userIds.length === 0)) {
       toast.error('Select at least one member');
       return;
     }
 
-    // ── Bulk range mode (meals only) ──
     if (entryData.startDate && entryData.endDate) {
       try {
         const res = await dispatch(bulkCreateMeals(entryData)).unwrap();
@@ -302,7 +296,6 @@ const EventCalendar = () => {
 
     snapshotRef.current = { ...dataMap };
 
-    // Optimistic insert
     const tempId = `temp_${Date.now()}`;
     const optimisticEntry = { ...entryData, _id: tempId, __optimistic: true };
     setDataMap((prevMap) => ({
@@ -391,7 +384,6 @@ const EventCalendar = () => {
 
     snapshotRef.current = { ...dataMap };
 
-    // Optimistic update
     setDataMap((prevMap) => ({
       ...prevMap,
       [dateKey]: (prevMap[dateKey] || []).map((e) =>
@@ -438,7 +430,6 @@ const EventCalendar = () => {
 
     snapshotRef.current = { ...dataMap };
 
-    // Optimistic remove
     setDataMap((prevMap) => ({
       ...prevMap,
       [dateKey]: (prevMap[dateKey] || []).filter((e) => e._id !== entryId),
@@ -462,6 +453,62 @@ const EventCalendar = () => {
       toast.error(msg);
     }
   }, [detailDate, dataMap, category, dispatch, fetchData]);
+
+  // ── Payment CRUD ──────────────────────────────────────────────
+  const handlePaymentAdd = useCallback(() => {
+    setEditingPayment(null);
+    setIsPaymentModalOpen(true);
+  }, []);
+
+  const handlePaymentEdit = useCallback((payment) => {
+    setEditingPayment(payment);
+    setIsPaymentModalOpen(true);
+  }, []);
+
+  const handlePaymentSave = useCallback(async (formData) => {
+    if (!isAdmin) {
+      toast.error('Only administrators can manage payment records');
+      return;
+    }
+    setIsPaymentSubmitting(true);
+    try {
+      if (editingPayment) {
+        await dispatch(updatePayment({
+          paymentId: editingPayment._id,
+          paymentData: formData,
+        })).unwrap();
+        toast.success('Payment updated');
+      } else if (formData.userIds && formData.userIds.length > 1) {
+        await dispatch(createBulkPayments(formData)).unwrap();
+        toast.success(`Payments recorded for ${formData.userIds.length} members`);
+      } else {
+        const singleData = { ...formData, userId: formData.userIds?.[0] || '' };
+        delete singleData.userIds;
+        await dispatch(createPayment(singleData)).unwrap();
+        toast.success('Payment recorded');
+      }
+      setIsPaymentModalOpen(false);
+      setEditingPayment(null);
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      fetchData(controller.signal);
+    } catch (err) {
+      toast.error(typeof err === 'string' ? err : err?.message ?? 'Failed to save payment');
+    } finally {
+      setIsPaymentSubmitting(false);
+    }
+  }, [editingPayment, isAdmin, dispatch, fetchData]);
+
+  const handlePaymentClose = useCallback(() => {
+    setIsPaymentModalOpen(false);
+    setEditingPayment(null);
+  }, []);
+
+  const paymentModalTitle = useMemo(() => {
+    if (editingPayment) return 'Edit Payment';
+    return 'Record Payment';
+  }, [editingPayment]);
 
   // ── Bulk selection ──────────────────────────────────────────────
   const handleToggleSelect = useCallback((entryId) => {
@@ -612,6 +659,12 @@ const EventCalendar = () => {
     return result;
   }, [dataMap, selectedMemberId]);
 
+  const calendarSuspenseFallback = (
+    <div className="flex items-center justify-center py-8">
+      <div className="w-6 h-6 border-2 border-[var(--accent-primary)] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
   return (
     <div className="space-y-6">
 
@@ -662,12 +715,13 @@ const EventCalendar = () => {
             onClose={handleCloseDetail}
             title={`${formatInIST(detailDate, 'MMM d, yyyy')}${isEditMode ? ' — Edit' : ''} — ${category}`}
             isEditMode={isEditMode}
-            onEditToggle={category !== 'votes' ? handleEditToggle : undefined}
+            onEditToggle={!['votes', 'payments'].includes(category) ? handleEditToggle : undefined}
             category={category}
             onScheduleClick={category === 'markets' ? handleScheduleClick : undefined}
+            onPaymentAdd={category === 'payments' ? handlePaymentAdd : undefined}
           >
             {isEditMode ? (
-              <Suspense fallback={<div className="flex items-center justify-center py-8"><div className="w-6 h-6 border-2 border-[var(--accent-primary)] border-t-transparent rounded-full animate-spin" /></div>}>
+              <Suspense fallback={calendarSuspenseFallback}>
                 <CalendarDayEdit
                   entries={currentDateEntries}
                   category={category}
@@ -688,7 +742,13 @@ const EventCalendar = () => {
                 />
               </Suspense>
             ) : (
-              <DayDetailContent entries={currentDateEntries} category={category} totalMealsCount={totalMealsForDate} scheduleData={getScheduleForDate(detailDate)} />
+              <DayDetailContent
+                entries={currentDateEntries}
+                category={category}
+                totalMealsCount={totalMealsForDate}
+                scheduleData={getScheduleForDate(detailDate)}
+                onPaymentEdit={category === 'payments' ? handlePaymentEdit : undefined}
+              />
             )}
           </DayDetailSheet>
         ) : (
@@ -697,12 +757,13 @@ const EventCalendar = () => {
             onClose={handleCloseDetail}
             title={`${formatInIST(detailDate, 'MMM d, yyyy')}${isEditMode ? ' — Edit' : ''} — ${category}`}
             isEditMode={isEditMode}
-            onEditToggle={category !== 'votes' ? handleEditToggle : undefined}
+            onEditToggle={!['votes', 'payments'].includes(category) ? handleEditToggle : undefined}
             category={category}
             onScheduleClick={category === 'markets' ? handleScheduleClick : undefined}
+            onPaymentAdd={category === 'payments' ? handlePaymentAdd : undefined}
           >
             {isEditMode ? (
-              <Suspense fallback={<div className="flex items-center justify-center py-8"><div className="w-6 h-6 border-2 border-[var(--accent-primary)] border-t-transparent rounded-full animate-spin" /></div>}>
+              <Suspense fallback={calendarSuspenseFallback}>
                 <CalendarDayEdit
                   entries={currentDateEntries}
                   category={category}
@@ -723,10 +784,30 @@ const EventCalendar = () => {
                 />
               </Suspense>
             ) : (
-              <DayDetailContent entries={currentDateEntries} category={category} totalMealsCount={totalMealsForDate} scheduleData={getScheduleForDate(detailDate)} />
+              <DayDetailContent
+                entries={currentDateEntries}
+                category={category}
+                totalMealsCount={totalMealsForDate}
+                scheduleData={getScheduleForDate(detailDate)}
+                onPaymentEdit={category === 'payments' ? handlePaymentEdit : undefined}
+              />
             )}
           </DayDetailModal>
         ))}
+
+      {/* Payment Modal (admin only) */}
+      <Suspense fallback={null}>
+        <PaymentModal isOpen={isPaymentModalOpen} onClose={handlePaymentClose} title={paymentModalTitle}>
+          <PaymentForm
+            initialData={editingPayment}
+            onSubmit={handlePaymentSave}
+            onCancel={handlePaymentClose}
+            isAdmin={isAdmin}
+            currentUser={user}
+            isSubmitting={isPaymentSubmitting}
+          />
+        </PaymentModal>
+      </Suspense>
 
       {/* Market Schedule Modal */}
       <MarketScheduleModal
