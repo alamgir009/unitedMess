@@ -233,6 +233,12 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
       )}
       style={{ boxShadow: 'var(--shadow-xl), var(--inset-top-glow)' }}
     >
+      {/* Mobile drag handle */}
+      {isMobile && (
+        <div className="flex justify-center pt-2.5 pb-1">
+          <div className="w-10 h-1 rounded-full bg-[var(--border-strong)]" />
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[var(--border-muted)] shrink-0">
         <div className="flex items-center gap-2">
