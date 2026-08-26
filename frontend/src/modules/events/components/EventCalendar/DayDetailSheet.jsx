@@ -34,6 +34,9 @@ const DayDetailSheet = ({
   category,
   onScheduleClick,
   onPaymentAdd,
+  isAdding = false,
+  editingId = null,
+  confirmDeleteId = null,
 }) => {
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
@@ -94,6 +97,8 @@ const DayDetailSheet = ({
 
   if (typeof document === 'undefined') return null;
 
+  const anyActionActive = isAdding || !!editingId || !!confirmDeleteId;
+
   return createPortal(
     isOpen ? (
       <div
@@ -117,20 +122,21 @@ const DayDetailSheet = ({
             style={{ height: `${heightPct}vh` }}
             className={cn(
               'w-full flex flex-col',
-              'bg-[var(--bg-elevated)] border border-[var(--border-default)]',
-              'rounded-t-2xl shadow-xl shadow-black/10 dark:shadow-black/40',
+              'bg-[var(--bg-elevated)] border border-[var(--border-muted)]',
+              'rounded-t-2xl shadow-[var(--shadow-xl)]',
               'transition-[height] duration-100 ease-out',
               'focus:outline-none',
               'animate-fade-in-up',
             )}
+            style={{ boxShadow: 'var(--shadow-xl), var(--inset-top-glow)' }}
           >
             <div
-              className="flex items-center justify-between px-5 pt-3 pb-2 border-b border-[var(--border-default)] shrink-0 cursor-grab active:cursor-grabbing"
+              className="flex items-center justify-between px-5 pt-3 pb-2 border-b border-[var(--border-muted)] shrink-0 cursor-grab active:cursor-grabbing"
               onMouseDown={handleDragStart}
               onTouchStart={handleDragStart}
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-12 h-1.5 rounded-full bg-[var(--text-muted)]/40 ring-1 ring-[var(--border-muted)] shrink-0" aria-hidden="true" />
+                <div className="w-12 h-1.5 rounded-full bg-[var(--border-strong)] shrink-0" aria-hidden="true" />
                 <h2 className="text-sm sm:text-base font-semibold text-[var(--text-primary)] truncate">{title}</h2>
               </div>
               <div className="flex items-center gap-1 shrink-0 ml-3">
@@ -139,8 +145,14 @@ const DayDetailSheet = ({
                     !isEditMode && onEditToggle && (
                       <button
                         onClick={(e) => { e.stopPropagation(); onEditToggle?.(); }}
+                        disabled={anyActionActive}
                         aria-label="Edit entries"
-                        className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className={cn(
+                          'p-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                          anyActionActive
+                            ? 'text-[var(--text-muted)] opacity-40 cursor-not-allowed'
+                            : 'text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10',
+                        )}
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
@@ -150,7 +162,7 @@ const DayDetailSheet = ({
                 <button
                   onClick={onClose}
                   aria-label="Close"
-                  className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -169,7 +181,7 @@ const DayDetailSheet = ({
                 <button
                   onClick={(e) => { e.stopPropagation(); onScheduleClick?.(); }}
                   aria-label="Schedule market dates"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 border border-emerald-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--success-text)] hover:bg-[var(--success-bg)] border border-[var(--success-border)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <Calendar className="w-3.5 h-3.5" />
                   <span>Book Date</span>
@@ -188,7 +200,13 @@ const DayDetailSheet = ({
                 </button>
               </div>
             )}
-            <div className="flex-1 overflow-y-auto overscroll-contain custom-scrollbar p-4">
+            <div className="flex-1 overflow-y-auto overscroll-contain p-4
+              [scrollbar-width:thin] [scrollbar-color:var(--border-strong)_transparent]
+              [&::-webkit-scrollbar]:w-1.5
+              [&::-webkit-scrollbar-track]:bg-transparent
+              [&::-webkit-scrollbar-thumb]:bg-[var(--border-strong)] [&::-webkit-scrollbar-thumb]:rounded-full
+              [&::-webkit-scrollbar-thumb:hover]:bg-[var(--text-muted)]
+            ">
               {children}
             </div>
           </div>

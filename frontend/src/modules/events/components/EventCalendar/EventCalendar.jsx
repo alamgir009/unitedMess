@@ -97,6 +97,9 @@ const EventCalendar = () => {
   const [errorMap, setErrorMap] = useState({});
   const [detailDate, setDetailDate] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [selectedEntryIds, setSelectedEntryIds] = useState(new Set());
   const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -228,6 +231,9 @@ const EventCalendar = () => {
   const handleCellClick = useCallback((date) => {
     setDetailDate(date);
     setIsEditMode(false);
+    setIsAdding(false);
+    setEditingId(null);
+    setConfirmDeleteId(null);
   }, []);
 
   const handleRetry = useCallback(() => {
@@ -240,6 +246,9 @@ const EventCalendar = () => {
   const handleCloseDetail = useCallback(() => {
     setDetailDate(null);
     setIsEditMode(false);
+    setIsAdding(false);
+    setEditingId(null);
+    setConfirmDeleteId(null);
   }, []);
 
   const handleScheduleClick = useCallback(() => {
@@ -257,7 +266,14 @@ const EventCalendar = () => {
   }, [category, currentMonthDate, dispatch]);
 
   const handleEditToggle = useCallback(() => {
-    setIsEditMode((prev) => !prev);
+    setIsEditMode((prev) => {
+      if (!prev) {
+        setIsAdding(false);
+        setEditingId(null);
+        setConfirmDeleteId(null);
+      }
+      return !prev;
+    });
   }, []);
 
   const snapshotRef = useRef(null);
@@ -719,6 +735,9 @@ const EventCalendar = () => {
             category={category}
             onScheduleClick={category === 'markets' ? handleScheduleClick : undefined}
             onPaymentAdd={category === 'payments' ? handlePaymentAdd : undefined}
+            isAdding={isAdding}
+            editingId={editingId}
+            confirmDeleteId={confirmDeleteId}
           >
             {isEditMode ? (
               <Suspense fallback={calendarSuspenseFallback}>
@@ -739,6 +758,13 @@ const EventCalendar = () => {
                   onBulkUpdate={handleBulkUpdate}
                   onExitSelectMode={handleExitSelectMode}
                   isBulkSubmitting={isBulkSubmitting}
+                  isEditMode={isEditMode}
+                  isAdding={isAdding}
+                  setIsAdding={setIsAdding}
+                  editingId={editingId}
+                  setEditingId={setEditingId}
+                  confirmDeleteId={confirmDeleteId}
+                  setConfirmDeleteId={setConfirmDeleteId}
                 />
               </Suspense>
             ) : (
@@ -761,6 +787,9 @@ const EventCalendar = () => {
             category={category}
             onScheduleClick={category === 'markets' ? handleScheduleClick : undefined}
             onPaymentAdd={category === 'payments' ? handlePaymentAdd : undefined}
+            isAdding={isAdding}
+            editingId={editingId}
+            confirmDeleteId={confirmDeleteId}
           >
             {isEditMode ? (
               <Suspense fallback={calendarSuspenseFallback}>
@@ -781,6 +810,13 @@ const EventCalendar = () => {
                   onBulkUpdate={handleBulkUpdate}
                   onExitSelectMode={handleExitSelectMode}
                   isBulkSubmitting={isBulkSubmitting}
+                  isEditMode={isEditMode}
+                  isAdding={isAdding}
+                  setIsAdding={setIsAdding}
+                  editingId={editingId}
+                  setEditingId={setEditingId}
+                  confirmDeleteId={confirmDeleteId}
+                  setConfirmDeleteId={setConfirmDeleteId}
                 />
               </Suspense>
             ) : (

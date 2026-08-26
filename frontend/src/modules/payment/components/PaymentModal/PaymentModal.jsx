@@ -62,7 +62,7 @@ const PaymentModal = ({ isOpen, onClose, title, children }) => {
       aria-modal="true"
       tabIndex={-1}
       className={cn(
-        'relative w-full overflow-hidden rounded-2xl',
+        'relative w-full max-w-lg overflow-hidden rounded-2xl',
         'bg-[var(--bg-elevated)] border border-[var(--border-muted)]',
         'text-[var(--text-primary)]',
         'shadow-[var(--shadow-xl)]',

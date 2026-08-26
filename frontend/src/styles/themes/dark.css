@@ -24,7 +24,7 @@ html.dark {
   --bg-subtle: hsl(222 16% 8%);              /* #13161B */
   --bg-muted: hsl(220 14% 11%);              /* #181C24 */
   --bg-elevated: hsl(220 12% 14%);           /* #1A1E26 — cards, elevated */
-  --bg-overlay: hsl(0 0% 0% / 0.6);          /* #000 @ 60% */
+  --bg-overlay: hsl(0 0% 0% / 0.8);          /* #000 @ 80% */
 
   /* ── Borders ── */
   --border-default: hsl(224 12% 16%);        /* #1F2430 */

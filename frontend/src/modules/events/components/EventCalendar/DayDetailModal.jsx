@@ -31,6 +31,9 @@ const DayDetailModal = ({
   category,
   onScheduleClick,
   onPaymentAdd,
+  isAdding = false,
+  editingId = null,
+  confirmDeleteId = null,
 }) => {
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
@@ -60,6 +63,7 @@ const DayDetailModal = ({
 
   const showMarketActions = category === 'markets' && !isEditMode && onEditToggle && onScheduleClick;
   const showPaymentActions = category === 'payments' && !isEditMode && onPaymentAdd;
+  const anyActionActive = isAdding || !!editingId || !!confirmDeleteId;
 
   return createPortal(
     isOpen ? (
@@ -83,21 +87,28 @@ const DayDetailModal = ({
             aria-label={title}
             className={cn(
               'w-full max-w-lg flex flex-col',
-              'bg-[var(--bg-elevated)] border border-[var(--border-default)]',
-              'rounded-2xl shadow-xl shadow-black/10 dark:shadow-black/40',
+              'bg-[var(--bg-elevated)] border border-[var(--border-muted)]',
+              'rounded-2xl shadow-[var(--shadow-xl)]',
               'focus:outline-none',
               'animate-fade-in-up',
               'max-h-[85vh]',
             )}
+            style={{ boxShadow: 'var(--shadow-xl), var(--inset-top-glow)' }}
           >
-            <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[var(--border-default)] shrink-0">
+            <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[var(--border-muted)] shrink-0">
               <h2 className="text-sm sm:text-base font-semibold text-[var(--text-primary)] truncate min-w-0">{title}</h2>
               <div className="flex items-center gap-1 shrink-0 ml-3">
                 {!isEditMode && onEditToggle && !showMarketActions && !showPaymentActions && (
                   <button
                     onClick={onEditToggle}
+                    disabled={anyActionActive}
                     aria-label="Edit entries"
-                    className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className={cn(
+                      'p-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                      anyActionActive
+                        ? 'text-[var(--text-muted)] opacity-40 cursor-not-allowed'
+                        : 'text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10',
+                    )}
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
@@ -105,7 +116,7 @@ const DayDetailModal = ({
                 <button
                   onClick={onClose}
                   aria-label="Close"
-                  className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -124,7 +135,7 @@ const DayDetailModal = ({
                 <button
                   onClick={onScheduleClick}
                   aria-label="Schedule market dates"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 border border-emerald-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--success-text)] hover:bg-[var(--success-bg)] border border-[var(--success-border)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <Calendar className="w-3.5 h-3.5" />
                   <span>Book Date</span>
@@ -143,7 +154,13 @@ const DayDetailModal = ({
                 </button>
               </div>
             )}
-            <div className="flex-1 overflow-y-auto overscroll-contain custom-scrollbar p-4">
+            <div className="flex-1 overflow-y-auto overscroll-contain p-4
+              [scrollbar-width:thin] [scrollbar-color:var(--border-strong)_transparent]
+              [&::-webkit-scrollbar]:w-1.5
+              [&::-webkit-scrollbar-track]:bg-transparent
+              [&::-webkit-scrollbar-thumb]:bg-[var(--border-strong)] [&::-webkit-scrollbar-thumb]:rounded-full
+              [&::-webkit-scrollbar-thumb:hover]:bg-[var(--text-muted)]
+            ">
               {children}
             </div>
           </div>

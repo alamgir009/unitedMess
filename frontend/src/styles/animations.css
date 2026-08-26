@@ -14,7 +14,7 @@
 }
 
 .modal-animate-backdrop {
-  transition: opacity 80ms ease-out;
+  transition: opacity 200ms ease-out;
   will-change: opacity;
 }
 

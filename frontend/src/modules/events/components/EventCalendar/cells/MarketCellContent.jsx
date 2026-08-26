@@ -48,8 +48,8 @@ const MarketCellContent = memo(({ entries = [], loading, error, isCompact, onRet
       {hasDuty && (
         <div className={cn(
           'flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 rounded-full shrink-0',
-          'bg-emerald-500/15 text-emerald-500',
-          'ring-1 ring-emerald-500/20',
+          'bg-[var(--success-bg)] text-[var(--success)]',
+          'ring-1 ring-[var(--success-border)]',
         )}>
           <Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
         </div>
@@ -70,7 +70,7 @@ const MarketCellContent = memo(({ entries = [], loading, error, isCompact, onRet
             </>
           )}
           {entries.length === 0 && hasDuty && (
-            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 truncate">
+            <span className="text-[10px] font-semibold text-[var(--success-text)] truncate">
               {scheduleData.user.name?.split(' ')[0]}
             </span>
           )}

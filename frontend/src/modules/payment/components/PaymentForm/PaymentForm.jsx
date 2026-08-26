@@ -495,7 +495,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
     const showTxn    = formData.paymentMethod === 'online' || formData.paymentMethod === 'razorpay' || formData.paymentMethod === 'upi_manual';
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-lg mx-auto">
 
             {/* Read-only notice */}
             {readOnly && <ReadOnlyBanner />}

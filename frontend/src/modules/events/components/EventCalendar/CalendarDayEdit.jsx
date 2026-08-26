@@ -3,7 +3,7 @@ import { Plus, Trash2, X, Check, Users, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { fmt } from '@/core/utils/helpers/currency.helper';
-import { MemberSelect } from '@/shared/components/ui';
+import { MemberSelect, Button } from '@/shared/components/ui';
 import apiClient from '@/services/api/client/apiClient';
 import SlotIcon from './cells/SlotIcon';
 
@@ -105,10 +105,7 @@ const SelectAllCheckbox = ({ checked, indeterminate, onChange, count, disabled }
   );
 };
 
-const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, currentUser, onSave, onUpdate, onDelete, selectedEntryIds, onToggleSelect, onSelectAll, onBulkDelete, onBulkUpdate, onExitSelectMode, isBulkSubmitting = false }) => {
-  const [isAdding, setIsAdding] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, currentUser, onSave, onUpdate, onDelete, selectedEntryIds, onToggleSelect, onSelectAll, onBulkDelete, onBulkUpdate, onExitSelectMode, isBulkSubmitting = false, isEditMode = false, isAdding, setIsAdding, editingId, setEditingId, confirmDeleteId, setConfirmDeleteId }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showBulkUpdateForm, setShowBulkUpdateForm] = useState(false);
 
@@ -145,7 +142,13 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
         {!isAdding && !isBulkSubmitting && (
           <button
             onClick={() => setIsAdding(true)}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            disabled={!!editingId || !!confirmDeleteId || selectedEntryIds?.size > 0}
+            className={cn(
+              'flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              editingId || confirmDeleteId || selectedEntryIds?.size > 0
+                ? 'text-[var(--text-muted)] opacity-40 cursor-not-allowed'
+                : 'text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10',
+            )}
           >
             <Plus className="w-3.5 h-3.5" />
             Add
@@ -160,7 +163,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
             indeterminate={selectedEntryIds?.size > 0 && selectedEntryIds?.size < visibleEntries.length}
             onChange={onSelectAll}
             count={selectedEntryIds?.size || 0}
-            disabled={isBulkSubmitting}
+            disabled={isBulkSubmitting || !!isAdding || !!editingId || !!confirmDeleteId}
           />
           <div className="flex-1" />
           {selectedEntryIds?.size > 0 && (
@@ -218,7 +221,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
                     <FintechCheckbox
                       checked={selectedEntryIds.has(entry._id)}
                       onChange={() => onToggleSelect(entry._id)}
-                      disabled={isBulkSubmitting}
+                      disabled={isBulkSubmitting || !!isAdding || !!editingId || !!confirmDeleteId}
                       ariaLabel={`Select ${displayName}`}
                     />
                   )}
@@ -230,7 +233,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
                       <SlotIcon slot={entry.type} status={entry.status} size={12} />
                     )}
                     {category === 'meals' && entry.isGuestMeal && entry.guestCount > 0 && (
-                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-[var(--warning-bg)] text-[var(--warning-text)] border border-[var(--warning-border)]">
                         <Users className="w-2.5 h-2.5" />
                         +{entry.guestCount}
                       </span>
@@ -284,14 +287,14 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => setEditingId(entry._id)}
-                        disabled={isBulkSubmitting}
+                        disabled={isBulkSubmitting || !!isAdding || !!confirmDeleteId || selectedEntryIds?.size > 0}
                         className={cn(
                           'rounded-lg text-[var(--text-secondary)]',
                           'hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10',
                           'active:bg-[var(--accent-primary)]/15 transition-colors duration-100',
                           'min-h-[36px] min-w-[36px] p-1.5 flex items-center justify-center',
                           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
-                          'disabled:opacity-50 disabled:cursor-not-allowed',
+                          'disabled:opacity-40 disabled:cursor-not-allowed',
                         )}
                         aria-label="Edit entry"
                       >
@@ -301,14 +304,14 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
                       </button>
                       <button
                         onClick={() => setConfirmDeleteId(entry._id)}
-                        disabled={isBulkSubmitting}
+                        disabled={isBulkSubmitting || !!isAdding || !!editingId || selectedEntryIds?.size > 0}
                         className={cn(
                           'rounded-lg text-[var(--text-secondary)]',
                           'hover:text-[var(--danger)] hover:bg-[var(--danger-bg)]/30',
                           'active:bg-[var(--danger-bg)]/50 transition-colors duration-100',
                           'min-h-[36px] min-w-[36px] p-1.5 flex items-center justify-center',
                           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
-                          'disabled:opacity-50 disabled:cursor-not-allowed',
+                          'disabled:opacity-40 disabled:cursor-not-allowed',
                         )}
                         aria-label="Delete entry"
                       >
@@ -338,7 +341,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
           <div className="flex-1" />
           <button
             onClick={() => setShowBulkUpdateForm(true)}
-            disabled={!!isBulkSubmitting}
+            disabled={!!isBulkSubmitting || !!isAdding || !!editingId || !!confirmDeleteId}
             className="px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isBulkSubmitting === 'updating' ? (
@@ -350,7 +353,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
           </button>
           <button
             onClick={onBulkDelete}
-            disabled={!!isBulkSubmitting}
+            disabled={!!isBulkSubmitting || !!isAdding || !!editingId || !!confirmDeleteId}
             className="px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--danger)] hover:bg-[var(--danger-bg)]/20 border border-[var(--danger)]/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--danger)]/30 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isBulkSubmitting === 'deleting' ? (
@@ -362,7 +365,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
           </button>
           <button
             onClick={onExitSelectMode}
-            disabled={!!isBulkSubmitting}
+            disabled={!!isBulkSubmitting || !!isAdding || !!editingId || !!confirmDeleteId}
             className="px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] border border-[var(--border-default)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
@@ -687,7 +690,7 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
         <div className={cn(
           'flex items-center gap-2 px-2.5 py-2 rounded-lg border transition-colors',
           isGuestMeal
-            ? 'border-amber-500/25 bg-amber-500/5'
+            ? 'border-[var(--warning-border)] bg-[var(--warning-bg)]/50'
             : 'border-[var(--border-default)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-muted)]',
           isSubmitting && 'opacity-60 cursor-not-allowed',
         )}>
@@ -697,34 +700,34 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
             disabled={isSubmitting}
             className="flex items-center gap-1.5 flex-1 min-w-0 text-left"
           >
-            <Users className="w-4 h-4 text-amber-500 shrink-0" />
+            <Users className="w-4 h-4 text-[var(--warning)] shrink-0" />
             <span className="text-xs font-semibold text-[var(--text-primary)]">Guest Meals</span>
             {isGuestMeal && guestCount > 0 && (
-              <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded-full">
+              <span className="text-[10px] font-bold text-[var(--warning-text)] bg-[var(--warning-bg)] px-1.5 py-0.5 rounded-full">
                 +{guestCount}
               </span>
             )}
           </button>
 
           {isGuestMeal ? (
-            <div className="flex items-center shrink-0 rounded-lg border border-amber-500/25 overflow-hidden">
+            <div className="flex items-center shrink-0 rounded-lg border border-[var(--warning-border)] overflow-hidden">
               <button
                 type="button"
                 onClick={() => { if (!isSubmitting) { if (guestCount <= 1) { setIsGuestMeal(false); setGuestCount(1); } else { setGuestCount((c) => c - 1); } setErrors((p) => ({ ...p, guestCount: undefined })); } }}
                 disabled={isSubmitting}
-                className="w-9 h-9 flex items-center justify-center bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 active:bg-amber-500/30 transition-colors text-lg font-bold select-none disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-9 h-9 flex items-center justify-center bg-[var(--warning-bg)] text-[var(--warning-text)] hover:bg-[var(--warning-bg)]/80 active:bg-[var(--warning-bg)]/60 transition-colors text-lg font-bold select-none disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Decrease guest count"
               >
                 −
               </button>
-              <div className="w-10 h-9 flex items-center justify-center bg-amber-500/5 text-sm font-bold text-amber-600 dark:text-amber-400 border-x border-amber-500/25 tabular-nums select-none">
+              <div className="w-10 h-9 flex items-center justify-center bg-[var(--warning-bg)]/50 text-sm font-bold text-[var(--warning-text)] border-x border-[var(--warning-border)] tabular-nums select-none">
                 {guestCount}
               </div>
               <button
                 type="button"
                 onClick={() => { if (!isSubmitting) { setGuestCount((c) => Math.min(20, c + 1)); setErrors((p) => ({ ...p, guestCount: undefined })); } }}
                 disabled={isSubmitting}
-                className="w-9 h-9 flex items-center justify-center bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 active:bg-amber-500/30 transition-colors text-lg font-bold select-none disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-9 h-9 flex items-center justify-center bg-[var(--warning-bg)] text-[var(--warning-text)] hover:bg-[var(--warning-bg)]/80 active:bg-[var(--warning-bg)]/60 transition-colors text-lg font-bold select-none disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Increase guest count"
               >
                 +
@@ -735,7 +738,7 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
               type="button"
               onClick={() => { if (!isSubmitting) { setIsGuestMeal(true); setGuestCount(1); setErrors((p) => ({ ...p, guestCount: undefined })); } }}
               disabled={isSubmitting}
-              className="px-3 h-9 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-semibold shrink-0 hover:bg-amber-500/20 active:bg-amber-500/30 transition-colors border border-amber-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 h-9 rounded-lg bg-[var(--warning-bg)] text-[var(--warning-text)] text-xs font-semibold shrink-0 hover:bg-[var(--warning-bg)]/80 active:bg-[var(--warning-bg)]/60 transition-colors border border-[var(--warning-border)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               + Add
             </button>
@@ -768,23 +771,22 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
 
       {/* ─── Fintech Footer: Cancel + Save ─── */}
       <div className="flex items-center gap-2 pt-2 mt-1 border-t border-[var(--border-default)]">
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="flex-1 h-10 rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)] font-semibold text-sm hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] active:bg-[var(--bg-muted)]/80 transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 rounded-lg"
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           type="submit"
+          variant="success"
+          size="sm"
           disabled={isSubmitting || (isRangeMode && (rangeInvalid || daysCount === 0))}
-          className={cn(
-            'flex-[2] h-10 rounded-lg font-semibold text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)] transition-[background-color,box-shadow,opacity] duration-150',
-            isSubmitting || (isRangeMode && (rangeInvalid || daysCount === 0))
-              ? 'bg-[var(--bg-muted)] text-[var(--text-muted)] border border-[var(--border-default)] cursor-not-allowed'
-              : 'bg-[var(--success)] text-[var(--text-on-brand)] hover:shadow-md active:shadow-xs',
-          )}
+          className="flex-[2] rounded-lg"
         >
           {isSubmitting ? (
             <span className="flex items-center justify-center gap-1.5">
@@ -794,7 +796,7 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
           ) : isRangeMode ? (
             `Save ${daysCount > 0 ? daysCount : ''} day${daysCount !== 1 ? 's' : ''}`
           ) : 'Save'}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -921,7 +923,7 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
         <div className={cn(
           'flex items-center gap-2 px-2.5 py-2 rounded-lg border transition-colors',
           isGuestMeal
-            ? 'border-amber-500/25 bg-amber-500/5'
+            ? 'border-[var(--warning-border)] bg-[var(--warning-bg)]/50'
             : 'border-[var(--border-default)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-muted)]',
         )}>
           <button
@@ -929,32 +931,32 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
             onClick={() => { setIsGuestMeal((p) => { if (p) setGuestCount(1); return !p; }); setErrors((p) => ({ ...p, guestCount: undefined })); }}
             className="flex items-center gap-1.5 flex-1 min-w-0 text-left"
           >
-            <Users className="w-4 h-4 text-amber-500 shrink-0" />
+            <Users className="w-4 h-4 text-[var(--warning)] shrink-0" />
             <span className="text-xs font-semibold text-[var(--text-primary)]">Guest Meals</span>
             {isGuestMeal && guestCount > 0 && (
-              <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded-full">
+              <span className="text-[10px] font-bold text-[var(--warning-text)] bg-[var(--warning-bg)] px-1.5 py-0.5 rounded-full">
                 +{guestCount}
               </span>
             )}
           </button>
 
           {isGuestMeal ? (
-            <div className="flex items-center shrink-0 rounded-lg border border-amber-500/25 overflow-hidden">
+            <div className="flex items-center shrink-0 rounded-lg border border-[var(--warning-border)] overflow-hidden">
               <button
                 type="button"
                 onClick={() => { if (guestCount <= 1) { setIsGuestMeal(false); setGuestCount(1); } else { setGuestCount((c) => c - 1); } setErrors((p) => ({ ...p, guestCount: undefined })); }}
-                className="w-9 h-9 flex items-center justify-center bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 active:bg-amber-500/30 transition-colors text-lg font-bold select-none"
+                className="w-9 h-9 flex items-center justify-center bg-[var(--warning-bg)] text-[var(--warning-text)] hover:bg-[var(--warning-bg)]/80 active:bg-[var(--warning-bg)]/60 transition-colors text-lg font-bold select-none"
                 aria-label="Decrease guest count"
               >
                 −
               </button>
-              <div className="w-10 h-9 flex items-center justify-center bg-amber-500/5 text-sm font-bold text-amber-600 dark:text-amber-400 border-x border-amber-500/25 tabular-nums select-none">
+              <div className="w-10 h-9 flex items-center justify-center bg-[var(--warning-bg)]/50 text-sm font-bold text-[var(--warning-text)] border-x border-[var(--warning-border)] tabular-nums select-none">
                 {guestCount}
               </div>
               <button
                 type="button"
                 onClick={() => { setGuestCount((c) => Math.min(20, c + 1)); setErrors((p) => ({ ...p, guestCount: undefined })); }}
-                className="w-9 h-9 flex items-center justify-center bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 active:bg-amber-500/30 transition-colors text-lg font-bold select-none"
+                className="w-9 h-9 flex items-center justify-center bg-[var(--warning-bg)] text-[var(--warning-text)] hover:bg-[var(--warning-bg)]/80 active:bg-[var(--warning-bg)]/60 transition-colors text-lg font-bold select-none"
                 aria-label="Increase guest count"
               >
                 +
@@ -964,7 +966,7 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
             <button
               type="button"
               onClick={() => { setIsGuestMeal(true); setGuestCount(1); setErrors((p) => ({ ...p, guestCount: undefined })); }}
-              className="px-3 h-9 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-semibold shrink-0 hover:bg-amber-500/20 active:bg-amber-500/30 transition-colors border border-amber-500/25"
+              className="px-3 h-9 rounded-lg bg-[var(--warning-bg)] text-[var(--warning-text)] text-xs font-semibold shrink-0 hover:bg-[var(--warning-bg)]/80 active:bg-[var(--warning-bg)]/60 transition-colors border border-[var(--warning-border)]"
             >
               + Add
             </button>
@@ -977,31 +979,25 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
       <div className={cn(
         'flex items-center gap-2 pt-2 mt-1 border-t border-[var(--border-default)]',
       )}>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={onCancel}
-          className={cn(
-            'flex-1 h-10 rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)] font-semibold text-sm',
-            'hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]',
-            'active:bg-[var(--bg-muted)]/80 transition-colors duration-100',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
-          )}
+          className="flex-1 rounded-lg"
           aria-label="Cancel edit"
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           type="submit"
-          className={cn(
-            'flex-[2] h-10 rounded-lg font-semibold text-sm shadow-xs',
-            'bg-[var(--success)] text-[var(--text-on-brand)]',
-            'hover:shadow-md active:shadow-xs transition-[background-color,box-shadow] duration-150',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
-          )}
+          variant="success"
+          size="sm"
+          className="flex-[2] rounded-lg"
           aria-label="Save changes"
         >
-          Save
-        </button>
+          Update
+        </Button>
       </div>
     </form>
   );
@@ -1124,18 +1120,22 @@ const BulkUpdateForm = ({ category, selectedCount, onSubmit, onCancel, isBulkSub
       )}
 
       <div className="flex gap-2">
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={onCancel}
           disabled={!!isBulkSubmitting}
-          className="flex-1 py-1.5 rounded-lg text-xs font-semibold border border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)] active:bg-[var(--bg-muted)]/80 transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 rounded-lg"
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           type="submit"
+          variant="success"
+          size="sm"
           disabled={!!isBulkSubmitting}
-          className="flex-[2] py-1.5 rounded-lg text-xs font-semibold bg-[var(--btn-success-from)] text-[var(--btn-success-label)] hover:opacity-90 active:opacity-80 shadow-sm hover:shadow-md transition-[opacity,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-[2] rounded-lg"
         >
           {isBulkSubmitting === 'updating' ? (
             <span className="flex items-center justify-center gap-1.5">
@@ -1145,7 +1145,7 @@ const BulkUpdateForm = ({ category, selectedCount, onSubmit, onCancel, isBulkSub
           ) : (
             `Apply to ${selectedCount}`
           )}
-        </button>
+        </Button>
       </div>
     </form>
   );

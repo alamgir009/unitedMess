@@ -5,7 +5,7 @@ import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInte
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { cn } from '@/core/utils/helpers/string.helper';
-import { Avatar } from '@/shared/components/ui';
+import { Avatar, Button } from '@/shared/components/ui';
 import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
 import {
   fetchMonthSchedule,
@@ -224,16 +224,17 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
       aria-label="Schedule Market Dates"
       className={cn(
         'flex flex-col',
-        'bg-[var(--bg-elevated)] border border-[var(--border-default)]',
-        'rounded-2xl shadow-xl shadow-black/10 dark:shadow-black/40',
+        'bg-[var(--bg-elevated)] border border-[var(--border-muted)]',
+        'rounded-2xl shadow-[var(--shadow-xl)]',
         'focus:outline-none animate-fade-in-up',
         isMobile
-          ? 'fixed inset-x-0 bottom-0 rounded-t-2xl max-h-[90vh]'
+          ? 'fixed inset-x-0 bottom-0 rounded-t-2xl rounded-b-none max-h-[90vh]'
           : 'w-full max-w-lg max-h-[85vh]',
       )}
+      style={{ boxShadow: 'var(--shadow-xl), var(--inset-top-glow)' }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[var(--border-default)] shrink-0">
+      <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[var(--border-muted)] shrink-0">
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-[var(--accent-primary)]" />
           <h2 className="text-base font-semibold text-[var(--text-primary)]">Schedule Market Dates</h2>
@@ -241,14 +242,20 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
         <button
           onClick={onClose}
           aria-label="Close"
-          className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto overscroll-contain custom-scrollbar p-4">
+      <div className="flex-1 overflow-y-auto overscroll-contain p-4
+        [scrollbar-width:thin] [scrollbar-color:var(--border-strong)_transparent]
+        [&::-webkit-scrollbar]:w-1.5
+        [&::-webkit-scrollbar-track]:bg-transparent
+        [&::-webkit-scrollbar-thumb]:bg-[var(--border-strong)] [&::-webkit-scrollbar-thumb]:rounded-full
+        [&::-webkit-scrollbar-thumb:hover]:bg-[var(--text-muted)]
+      ">
         {/* Selection Counter */}
         <div className={cn(
           'flex items-center justify-center gap-2 py-2 px-3 rounded-lg mb-4 border transition-colors',
@@ -347,7 +354,7 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-[var(--border-default)]">
+        <div className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-[var(--border-muted)]">
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded bg-[var(--accent-primary)]/15 border-2 border-[var(--accent-primary)]" />
             <span className="text-[10px] text-[var(--text-muted)]">Your selection</span>
@@ -372,23 +379,24 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
       </div>
 
       {/* Footer */}
-      <div className="flex gap-2 px-4 py-3 border-t border-[var(--border-default)] shrink-0">
-        <button
+      <div className="flex gap-2 px-4 py-3 border-t border-[var(--border-muted)] shrink-0">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
           onClick={onClose}
           disabled={isSelecting}
-          className="flex-1 py-2 rounded-lg text-xs font-semibold border border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30 disabled:opacity-50"
+          className="flex-1 rounded-lg"
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
+          type="button"
+          variant="success"
+          size="sm"
           onClick={handleConfirm}
           disabled={isSelecting || selectedDates.size === 0}
-          className={cn(
-            'flex-[2] py-2 rounded-lg text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50',
-            isSelecting || selectedDates.size === 0
-              ? 'bg-[var(--bg-muted)] text-[var(--text-muted)] border border-[var(--border-default)] cursor-not-allowed'
-              : 'bg-[var(--btn-success-from)] text-[var(--btn-success-label)] hover:opacity-90 active:opacity-80 shadow-sm',
-          )}
+          className="flex-[2] rounded-lg"
         >
           {isSelecting ? (
             <span className="flex items-center justify-center gap-1.5">
@@ -398,7 +406,7 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
           ) : (
             `Confirm ${selectedDates.size}/${MAX_DATES} dates`
           )}
-        </button>
+        </Button>
       </div>
     </div>
   );

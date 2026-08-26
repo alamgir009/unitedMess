@@ -16,11 +16,11 @@ const STATUS_BADGE = {
 };
 
 const VOTE_EVENT_LABELS = {
-  vote_created: { text: 'Created', color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' },
-  vote_updated: { text: 'Edited', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
-  vote_unchanged: { text: 'No Change', color: 'bg-muted/40 text-muted-foreground border-border/40' },
-  vote_carried_forward: { text: 'Moved', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' },
-  vote_preference_closed: { text: 'Closed', color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20' },
+  vote_created: { text: 'Created', color: 'bg-[var(--success-bg)] text-[var(--success-text)] border-[var(--success-border)]' },
+  vote_updated: { text: 'Edited', color: 'bg-[var(--warning-bg)] text-[var(--warning-text)] border-[var(--warning-border)]' },
+  vote_unchanged: { text: 'No Change', color: 'bg-[var(--bg-muted)] text-[var(--text-secondary)] border-[var(--border-default)]' },
+  vote_carried_forward: { text: 'Moved', color: 'bg-[var(--info-bg)] text-[var(--info-text)] border-[var(--info-border)]' },
+  vote_preference_closed: { text: 'Closed', color: 'bg-[var(--warning-bg)] text-[var(--warning-text)] border-[var(--warning-border)]' },
 };
 
 const VOTE_TYPE_LABELS = {
@@ -31,10 +31,10 @@ const VOTE_TYPE_LABELS = {
 };
 
 const VOTE_VALUE_BADGE_COLORS = {
-  night: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20',
-  day: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-  both: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20',
-  off: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
+  night: 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] border-[var(--accent-primary)]/20',
+  day: 'bg-[var(--warning-bg)] text-[var(--warning-text)] border-[var(--warning-border)]',
+  both: 'bg-[var(--tint-bg)] text-[var(--tint-text)] border-[var(--tint-text)]/20',
+  off: 'bg-[var(--bg-muted)] text-[var(--text-secondary)] border-[var(--border-default)]',
 };
 
 const ROW_HEIGHT = 44;
@@ -190,7 +190,7 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
                     <SlotIcon slot={entry.type} status={entry.status} size={12} />
                   )}
                   {category === 'meals' && entry.guestCount > 0 && (
-                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 shrink-0">
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-[var(--warning-bg)] text-[var(--warning-text)] border border-[var(--warning-border)] shrink-0">
                       +{entry.guestCount} guest{entry.guestCount !== 1 ? 's' : ''}
                     </span>
                   )}
@@ -245,16 +245,16 @@ const MarketDutyBanner = ({ scheduleData }) => {
   const firstName = userName.split(' ')[0];
 
   return (
-    <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-emerald-500/8 border border-emerald-500/20">
+    <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[var(--success-bg)]/50 border border-[var(--success-border)]">
       <Avatar
         src={scheduleData.user.image}
         name={userName}
         size="sm"
-        className="shrink-0 ring-2 ring-emerald-500/20"
+        className="shrink-0 ring-2 ring-[var(--success-border)]"
       />
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        <Calendar className="w-4 h-4 text-emerald-500 shrink-0" />
-        <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 truncate">
+        <Calendar className="w-4 h-4 text-[var(--success)] shrink-0" />
+        <span className="text-sm font-semibold text-[var(--success-text)] truncate">
           {firstName} is on market duty today
         </span>
       </div>

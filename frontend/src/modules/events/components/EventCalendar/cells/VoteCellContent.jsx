@@ -4,9 +4,9 @@ import { HiOutlineCheckBadge, HiOutlineArrowPath, HiOutlineMinus } from 'react-i
 import AvatarCluster from './AvatarCluster';
 
 const EVENT_ICONS = {
-  vote_created: { icon: HiOutlineCheckBadge, color: 'text-emerald-500' },
-  vote_updated: { icon: HiOutlineArrowPath, color: 'text-amber-500' },
-  vote_unchanged: { icon: HiOutlineMinus, color: 'text-muted-foreground/50' },
+  vote_created: { icon: HiOutlineCheckBadge, color: 'text-[var(--success)]' },
+  vote_updated: { icon: HiOutlineArrowPath, color: 'text-[var(--warning)]' },
+  vote_unchanged: { icon: HiOutlineMinus, color: 'text-[var(--text-muted)]' },
 };
 
 const groupByEventType = (entries) => {
@@ -56,7 +56,7 @@ const VoteCellContent = memo(({ entries = [], loading, error, isCompact, onRetry
               key={eventType}
               className={cn(
                 'inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold shadow-xs',
-                'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+                'bg-[var(--success-bg)] text-[var(--success-text)]',
               )}
             >
               <meta.icon className={cn('w-2.5 h-2.5', meta.color)} aria-hidden="true" />
