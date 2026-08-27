@@ -2,6 +2,7 @@ const MarketSchedule = require('../models/MarketSchedule.model');
 const User = require('../models/User.model');
 const AppError = require('../utils/errors/AppError');
 const { parseDate, normalizeToUTC } = require('../utils/helpers/date.helper');
+const { validateMarketSchedule } = require('../utils/validators/marketSchedule.validator');
 const { generateMarketDutyICS } = require('../utils/ics');
 const emailService = require('./email.service');
 const notificationService = require('./notification.service');
@@ -162,6 +163,12 @@ const selectDates = async (userId, dates, year, month, source = 'user') => {
 
     if (dates.length > MAX_DATES_PER_MONTH) {
         throw new AppError(`Maximum ${MAX_DATES_PER_MONTH} dates allowed per month`, 400);
+    }
+
+    // ── Pure validation (weekend-only, consecutive-day, hygiene) ───────
+    const validation = validateMarketSchedule(dates, userId, { year: y, month: m });
+    if (!validation.valid) {
+        throw new AppError(validation.details, 400);
     }
 
     const monthKey = toMonthKey(y, m);

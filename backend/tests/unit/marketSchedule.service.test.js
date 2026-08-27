@@ -237,22 +237,22 @@ describe('selectDates', () => {
             .rejects.toThrow('At least one date is required');
     });
 
-    it('throws when adding a 4th date (final count exceeds max)', async () => {
+    it('throws when adding a 4th date (input length exceeds max)', async () => {
         setupForInsert([
             { date: new Date('2026-09-01T00:00:00.000Z'), user: userId },
             { date: new Date('2026-09-02T00:00:00.000Z'), user: userId },
             { date: new Date('2026-09-03T00:00:00.000Z'), user: userId },
         ]);
 
-        await expect(marketScheduleService.selectDates(userId, ['2026-09-10'], year, month))
-            .rejects.toThrow('would result in 4 dates');
+        await expect(marketScheduleService.selectDates(userId, ['2026-09-01', '2026-09-02', '2026-09-03', '2026-09-10'], year, month))
+            .rejects.toThrow('Maximum 3 dates allowed per month');
     });
 
     it('throws on past dates', async () => {
         mockMarketSchedule.find.mockReturnValue(mockChain([]));
 
         await expect(marketScheduleService.selectDates(userId, ['2026-08-15'], 2026, 8))
-            .rejects.toThrow('Cannot select dates in the past');
+            .rejects.toThrow('is in the past');
     });
 
     it('skips dates user already has selected (idempotent)', async () => {
@@ -406,11 +406,11 @@ describe('selectDates', () => {
             { _id: existingId2, date: new Date('2026-09-11T00:00:00.000Z'), user: userId },
         ]);
 
-        const inserted = [mockInsertedDoc('2026-09-20T00:00:00.000Z')];
+        const inserted = [mockInsertedDoc('2026-09-15T00:00:00.000Z')];
         mockMarketSchedule.insertMany.mockResolvedValue(inserted);
 
         // Drop both old dates, add one new → net -1
-        const result = await marketScheduleService.selectDates(userId, ['2026-09-20'], year, month);
+        const result = await marketScheduleService.selectDates(userId, ['2026-09-15'], year, month);
         expect(result.removed).toBe(2);
         expect(result.inserted).toBe(1);
         expect(result.total).toBe(1);
@@ -446,11 +446,11 @@ describe('selectDates', () => {
             },
         ]);
 
-        const inserted = [mockInsertedDoc('2026-09-20T00:00:00.000Z')];
+        const inserted = [mockInsertedDoc('2026-09-15T00:00:00.000Z')];
         mockMarketSchedule.insertMany.mockResolvedValue(inserted);
 
         const googleCalendarService = require('../../src/services/googleCalendar.service');
-        await marketScheduleService.selectDates(userId, ['2026-09-20'], year, month);
+        await marketScheduleService.selectDates(userId, ['2026-09-15'], year, month);
         await new Promise((r) => setTimeout(r, 50));
 
         expect(googleCalendarService.removeEventFromCalendar).toHaveBeenCalledWith(userId, 'gcal-event-abc');
