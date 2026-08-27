@@ -148,6 +148,14 @@ const EventCalendar = () => {
     }, 0);
   }, [currentDateEntries, category]);
 
+  const filteredCurrentDateEntries = useMemo(() => {
+    if (!selectedMemberId) return currentDateEntries;
+    return currentDateEntries.filter((entry) => {
+      const userId = typeof entry.user === 'object' ? entry.user?._id : entry.user;
+      return userId === selectedMemberId;
+    });
+  }, [currentDateEntries, selectedMemberId]);
+
   const abortRef = useRef(null);
   const isMobile = useMediaQuery('(max-width: 639px)');
 
@@ -701,6 +709,30 @@ const EventCalendar = () => {
     return result;
   }, [dataMap, selectedMemberId]);
 
+  const filteredScheduleMap = useMemo(() => {
+    if (!selectedMemberId) return scheduleMap;
+    const result = {};
+    for (const [dateKey, item] of Object.entries(scheduleMap)) {
+      const userId = typeof item.user === 'object' ? item.user?._id : item.user;
+      if (userId === selectedMemberId) {
+        result[dateKey] = item;
+      }
+    }
+    return result;
+  }, [scheduleMap, selectedMemberId]);
+
+  const ownDutyMap = useMemo(() => {
+    if (!user?._id) return {};
+    const result = {};
+    for (const [dateKey, item] of Object.entries(scheduleMap)) {
+      const userId = typeof item.user === 'object' ? item.user?._id : item.user;
+      if (userId === user._id) {
+        result[dateKey] = true;
+      }
+    }
+    return result;
+  }, [scheduleMap, user?._id]);
+
   const calendarSuspenseFallback = (
     <div className="flex items-center justify-center py-8">
       <div className="w-6 h-6 border-2 border-[var(--accent-primary)] border-t-transparent rounded-full animate-spin" />
@@ -744,7 +776,8 @@ const EventCalendar = () => {
               onCellClick={handleCellClick}
               onRetry={handleRetry}
               showMealCount={showMealCount}
-              scheduleMap={category === 'markets' ? scheduleMap : {}}
+              scheduleMap={category === 'markets' ? filteredScheduleMap : {}}
+              ownDutyMap={category === 'markets' ? ownDutyMap : {}}
             />
             {category === 'meals' && <MealLegend />}
           </div>
@@ -770,7 +803,7 @@ const EventCalendar = () => {
             {isEditMode ? (
               <Suspense fallback={calendarSuspenseFallback}>
                 <CalendarDayEdit
-                  entries={currentDateEntries}
+                  entries={filteredCurrentDateEntries}
                   category={category}
                   date={detailDate}
                   isAdmin={isAdmin}
@@ -797,7 +830,7 @@ const EventCalendar = () => {
               </Suspense>
             ) : (
               <DayDetailContent
-                entries={currentDateEntries}
+                entries={filteredCurrentDateEntries}
                 category={category}
                 totalMealsCount={totalMealsForDate}
                 scheduleData={getScheduleForDate(detailDate)}
@@ -824,7 +857,7 @@ const EventCalendar = () => {
             {isEditMode ? (
               <Suspense fallback={calendarSuspenseFallback}>
                 <CalendarDayEdit
-                  entries={currentDateEntries}
+                  entries={filteredCurrentDateEntries}
                   category={category}
                   date={detailDate}
                   isAdmin={isAdmin}
@@ -851,7 +884,7 @@ const EventCalendar = () => {
               </Suspense>
             ) : (
               <DayDetailContent
-                entries={currentDateEntries}
+                entries={filteredCurrentDateEntries}
                 category={category}
                 totalMealsCount={totalMealsForDate}
                 scheduleData={getScheduleForDate(detailDate)}

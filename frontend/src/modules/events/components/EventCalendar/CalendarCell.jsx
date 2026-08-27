@@ -38,6 +38,7 @@ const CalendarCell = ({
   isFirstInRow = false,
   isLastInRow = false,
   scheduleData = null,
+  isOwnDuty = false,
 }) => {
   const today = isToday(date);
   const inMonth = isSameMonth(date, currentMonth);
@@ -103,6 +104,7 @@ const CalendarCell = ({
         onCellClick={(e) => onCellClick?.(date, data)}
         showMealCount={showMealCount}
         scheduleData={scheduleData}
+        isOwnDuty={isOwnDuty}
       />
     </div>
   );
@@ -130,6 +132,7 @@ export default memo(CalendarCell, (prev, next) => {
     prev.isFirstInRow === next.isFirstInRow &&
     prev.isLastInRow === next.isLastInRow &&
     prev.scheduleData === next.scheduleData &&
+    prev.isOwnDuty === next.isOwnDuty &&
     isSameData(prev.data, next.data)
   );
 });

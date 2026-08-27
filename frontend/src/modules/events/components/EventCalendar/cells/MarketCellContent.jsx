@@ -4,7 +4,7 @@ import { cn } from '@/core/utils/helpers/string.helper';
 import { fmt } from '@/core/utils/helpers/currency.helper';
 import AvatarCluster from './AvatarCluster';
 
-const MarketCellContent = memo(({ entries = [], loading, error, isCompact, onRetry, onCellClick, scheduleData = null }) => {
+const MarketCellContent = memo(({ entries = [], loading, error, isCompact, onRetry, onCellClick, scheduleData = null, isOwnDuty = false }) => {
   const total = useMemo(
     () => entries.reduce((sum, e) => sum + (e.amount || 0), 0),
     [entries],
@@ -48,14 +48,20 @@ const MarketCellContent = memo(({ entries = [], loading, error, isCompact, onRet
       {hasDuty && (
         <div className={cn(
           'flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 rounded-full shrink-0',
-          'bg-[var(--success-bg)] text-[var(--success)]',
-          'ring-1 ring-[var(--success-border)]',
+          isOwnDuty
+            ? 'bg-[var(--duty-own-bg)] text-[var(--duty-own)] ring-1 ring-[var(--duty-own-border)]'
+            : 'bg-[var(--duty-other-bg)] text-[var(--duty-other)] ring-1 ring-[var(--duty-other-border)]',
         )}>
           <Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
         </div>
       )}
       {isCompact ? (
-        <span className="text-xs font-bold tabular-nums tracking-tight text-[var(--market-accent)] drop-shadow-sm">
+        <span className={cn(
+          'text-xs font-bold tabular-nums tracking-tight drop-shadow-sm',
+          hasDuty
+            ? (isOwnDuty ? 'text-[var(--duty-own-text)]' : 'text-[var(--duty-other-text)]')
+            : 'text-[var(--market-accent)]',
+        )}>
           {entries.length > 0 ? `₹${fmt(total)}` : (hasDuty ? scheduleData.user.name?.split(' ')[0] : '')}
         </span>
       ) : (
@@ -70,7 +76,10 @@ const MarketCellContent = memo(({ entries = [], loading, error, isCompact, onRet
             </>
           )}
           {entries.length === 0 && hasDuty && (
-            <span className="text-[10px] font-semibold text-[var(--success-text)] truncate">
+            <span className={cn(
+              'text-[10px] font-semibold truncate',
+              isOwnDuty ? 'text-[var(--duty-own-text)]' : 'text-[var(--duty-other-text)]',
+            )}>
               {scheduleData.user.name?.split(' ')[0]}
             </span>
           )}

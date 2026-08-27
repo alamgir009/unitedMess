@@ -158,6 +158,16 @@ html.light {
   --payment-pending: var(--warning);
   --payment-failed: var(--danger);
 
+  /* ── Market duty: own vs other — WCAG AAA ── */
+  --duty-own: hsl(160 84% 30%);
+  --duty-own-bg: hsl(152 76% 95%);
+  --duty-own-border: hsl(156 72% 82%);
+  --duty-own-text: hsl(160 72% 24%);
+  --duty-other: hsl(215 25% 45%);
+  --duty-other-bg: hsl(210 20% 96%);
+  --duty-other-border: hsl(210 16% 88%);
+  --duty-other-text: hsl(215 25% 35%);
+
   /* ── Status glass backgrounds ── */
   --success-glass: hsl(138.5 76.5% 96.7%);
   --warning-glass: hsl(48 100% 96.1%);

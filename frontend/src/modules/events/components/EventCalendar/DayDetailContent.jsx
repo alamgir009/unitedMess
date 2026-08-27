@@ -71,7 +71,7 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
     if (category === 'markets' && scheduleData?.user) {
       return (
         <div className="space-y-4">
-          <MarketDutyBanner scheduleData={scheduleData} />
+          <MarketDutyBanner scheduleData={scheduleData} currentUser={currentUser} />
           <p className="text-sm text-[var(--text-muted)] py-4 text-center">No market entries for this day.</p>
         </div>
       );
@@ -238,24 +238,39 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
 DayDetailContent.displayName = 'DayDetailContent';
 export default DayDetailContent;
 
-const MarketDutyBanner = ({ scheduleData }) => {
+const MarketDutyBanner = ({ scheduleData, currentUser }) => {
   if (!scheduleData?.user) return null;
 
   const userName = scheduleData.user.name || 'Member';
   const firstName = userName.split(' ')[0];
+  const isOwnDuty = currentUser?._id === scheduleData?.user?._id;
 
   return (
-    <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[var(--success-bg)]/50 border border-[var(--success-border)]">
+    <div className={cn(
+      'flex items-center gap-3 px-3 py-2.5 rounded-lg border',
+      isOwnDuty
+        ? 'bg-[var(--duty-own-bg)] border-[var(--duty-own-border)]'
+        : 'bg-[var(--duty-other-bg)] border-[var(--duty-other-border)]',
+    )}>
       <Avatar
         src={scheduleData.user.image}
         name={userName}
         size="sm"
-        className="shrink-0 ring-2 ring-[var(--success-border)]"
+        className={cn(
+          'shrink-0 ring-2',
+          isOwnDuty ? 'ring-[var(--duty-own-border)]' : 'ring-[var(--duty-other-border)]',
+        )}
       />
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        <Calendar className="w-4 h-4 text-[var(--success)] shrink-0" />
-        <span className="text-sm font-semibold text-[var(--success-text)] truncate">
-          {firstName} is on market duty today
+        <Calendar className={cn(
+          'w-4 h-4 shrink-0',
+          isOwnDuty ? 'text-[var(--duty-own)]' : 'text-[var(--duty-other)]',
+        )} />
+        <span className={cn(
+          'text-sm font-semibold truncate',
+          isOwnDuty ? 'text-[var(--duty-own-text)]' : 'text-[var(--duty-other-text)]',
+        )}>
+          {isOwnDuty ? `You are on market duty today` : `${firstName} is on market duty today`}
         </span>
       </div>
     </div>

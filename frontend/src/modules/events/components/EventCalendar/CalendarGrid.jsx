@@ -22,6 +22,7 @@ const CalendarGrid = memo(({
   onRetry,
   showMealCount = true,
   scheduleMap = {},
+  ownDutyMap = {},
 }) => {
   const isDesktop = useMediaQuery('(min-width: 1024px)');
 
@@ -99,6 +100,7 @@ const CalendarGrid = memo(({
               isFirstInRow={isFirstInRow}
               isLastInRow={isLastInRow}
               scheduleData={scheduleMap[dateStr] || null}
+              isOwnDuty={!!ownDutyMap[dateStr]}
             />
           );
         })}
