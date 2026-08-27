@@ -123,6 +123,9 @@ const userSchema = new mongoose.Schema({
     loginAttempts: { type: Number, default: 0, select: false },
     lockUntil: { type: Date, select: false },
     deleteIfNotApproved: { type: Date, default: null },
+    deniedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    deniedAt: { type: Date, default: null },
+    denialReason: { type: String, default: null, maxlength: 500 },
     googleCalendarToken: { type: String, select: false, default: null },
     googleCalendarRefreshToken: { type: String, select: false, default: null },
     googleCalendarSyncEnabled: { type: Boolean, default: false },
@@ -156,7 +159,7 @@ userSchema.index(
     {
         expireAfterSeconds: 0,
         partialFilterExpression: {
-            userStatus: { $in: ['denied', 'pending'] },
+            userStatus: 'denied',
             deleteIfNotApproved: { $ne: null }
         }
     }
