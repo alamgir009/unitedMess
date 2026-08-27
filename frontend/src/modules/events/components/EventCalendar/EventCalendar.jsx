@@ -17,7 +17,7 @@ import { formatInIST } from '@/core/utils/helpers/date.helper';
 import eventService from '../../services/event.service';
 import { setCurrentMonth, setLoading } from '../../store/events.slice';
 import { fetchMonthSchedule, fetchAvailableDates } from '../../store/marketSchedule.slice';
-import { createMeal, bulkCreateMeals, updateMeal, deleteMeal } from '../../../meal/store/meal.slice';
+import { createMeal, bulkCreateMeals, updateMeal, deleteMeal, bulkDeleteMeals } from '../../../meal/store/meal.slice';
 import { createMarket, updateMarket, deleteMarket, bulkCreateMarkets } from '../../../market/store/market.slice';
 import { createPayment, createBulkPayments, updatePayment, deletePayment } from '../../../payment/store/payment.slice';
 
@@ -252,6 +252,11 @@ const EventCalendar = () => {
   }, []);
 
   const handleScheduleClick = useCallback(() => {
+    setDetailDate(null);
+    setIsEditMode(false);
+    setIsAdding(false);
+    setEditingId(null);
+    setConfirmDeleteId(null);
     setIsScheduleModalOpen(true);
   }, []);
 
@@ -268,12 +273,28 @@ const EventCalendar = () => {
   const handleEditToggle = useCallback(() => {
     setIsEditMode((prev) => {
       if (!prev) {
-        setIsAdding(false);
         setEditingId(null);
         setConfirmDeleteId(null);
+        setIsAdding(currentDateEntries.length === 0);
+      } else {
+        setIsAdding(false);
       }
       return !prev;
     });
+  }, [currentDateEntries.length]);
+
+  const handleAddMarket = useCallback(() => {
+    setIsEditMode(true);
+    setIsAdding(true);
+    setEditingId(null);
+    setConfirmDeleteId(null);
+  }, []);
+
+  const handleMealAdd = useCallback(() => {
+    setIsEditMode(true);
+    setIsAdding(true);
+    setEditingId(null);
+    setConfirmDeleteId(null);
   }, []);
 
   const snapshotRef = useRef(null);
@@ -472,6 +493,11 @@ const EventCalendar = () => {
 
   // ── Payment CRUD ──────────────────────────────────────────────
   const handlePaymentAdd = useCallback(() => {
+    setDetailDate(null);
+    setIsEditMode(false);
+    setIsAdding(false);
+    setEditingId(null);
+    setConfirmDeleteId(null);
     setEditingPayment(null);
     setIsPaymentModalOpen(true);
   }, []);
@@ -560,9 +586,6 @@ const EventCalendar = () => {
     if (!detailDate) return;
     const dateKey = format(new Date(detailDate), 'yyyy-MM-dd');
 
-    const confirmMsg = `Delete ${selectedEntryIds.size} selected entr${selectedEntryIds.size === 1 ? 'y' : 'ies'}?`;
-    if (!window.confirm(confirmMsg)) return;
-
     setIsBulkSubmitting('deleting');
     snapshotRef.current = { ...dataMap };
 
@@ -573,12 +596,15 @@ const EventCalendar = () => {
     }));
 
     try {
-      const results = await Promise.allSettled(
-        [...idsToRemove].map((entryId) => {
-          if (category === 'meals') return dispatch(deleteMeal(entryId)).unwrap();
-          return dispatch(deleteMarket(entryId)).unwrap();
-        }),
-      );
+      let results;
+      if (category === 'meals') {
+        await dispatch(bulkDeleteMeals({ mealIds: [...idsToRemove] })).unwrap();
+        results = [{ status: 'fulfilled' }];
+      } else {
+        results = await Promise.allSettled(
+          [...idsToRemove].map((entryId) => dispatch(deleteMarket(entryId)).unwrap()),
+        );
+      }
 
       const failed = results.filter((r) => r.status === 'rejected');
       if (failed.length > 0) {
@@ -735,6 +761,8 @@ const EventCalendar = () => {
             category={category}
             onScheduleClick={category === 'markets' ? handleScheduleClick : undefined}
             onPaymentAdd={category === 'payments' && isAdmin ? handlePaymentAdd : undefined}
+            onAddMarket={category === 'markets' && isAdmin ? handleAddMarket : undefined}
+            onMealAdd={category === 'meals' && isAdmin ? handleMealAdd : undefined}
             isAdding={isAdding}
             editingId={editingId}
             confirmDeleteId={confirmDeleteId}
@@ -787,6 +815,8 @@ const EventCalendar = () => {
             category={category}
             onScheduleClick={category === 'markets' ? handleScheduleClick : undefined}
             onPaymentAdd={category === 'payments' && isAdmin ? handlePaymentAdd : undefined}
+            onAddMarket={category === 'markets' && isAdmin ? handleAddMarket : undefined}
+            onMealAdd={category === 'meals' && isAdmin ? handleMealAdd : undefined}
             isAdding={isAdding}
             editingId={editingId}
             confirmDeleteId={confirmDeleteId}

@@ -181,8 +181,6 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
     try {
       await dispatch(selectMarketDates({ dates, year, month })).unwrap();
       toast.success(`${dates.length} market date${dates.length !== 1 ? 's' : ''} selected successfully`);
-      dispatch(fetchMonthSchedule({ year, month }));
-      dispatch(fetchAvailableDates({ year, month }));
       dispatch(fetchMyScheduledDates({ year, month }));
       onClose?.();
     } catch (err) {

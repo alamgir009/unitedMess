@@ -95,7 +95,7 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
       style={{ height: '100%', minHeight: 200 }}
     >
       {showMealSummary && (
-        <div className="flex items-center justify-center gap-1.5 mb-3 py-1.5 px-3 rounded-lg bg-[var(--slot-both)]/8 border border-[var(--slot-both)]/15">
+        <div className="flex items-center justify-center gap-1.5 mb-3 py-1.5 px-3 rounded-full bg-[var(--slot-both)]/8">
           <span className="text-xs font-semibold text-[var(--slot-both)]">
             {totalMealsCount} meal{totalMealsCount !== 1 ? 's' : ''} total
           </span>

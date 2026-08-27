@@ -31,6 +31,8 @@ const DayDetailModal = ({
   category,
   onScheduleClick,
   onPaymentAdd,
+  onAddMarket,
+  onMealAdd,
   isAdding = false,
   editingId = null,
   confirmDeleteId = null,
@@ -61,6 +63,7 @@ const DayDetailModal = ({
 
   if (typeof document === 'undefined') return null;
 
+  const showMealActions = category === 'meals' && !isEditMode && onMealAdd;
   const showMarketActions = category === 'markets' && !isEditMode && onEditToggle && onScheduleClick;
   const showPaymentActions = category === 'payments' && !isEditMode && onPaymentAdd;
   const anyActionActive = isAdding || !!editingId || !!confirmDeleteId;
@@ -98,7 +101,7 @@ const DayDetailModal = ({
             <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[var(--border-muted)] shrink-0">
               <h2 className="text-sm sm:text-base font-semibold text-[var(--text-primary)] truncate min-w-0">{title}</h2>
               <div className="flex items-center gap-1 shrink-0 ml-3">
-                {!isEditMode && onEditToggle && !showMarketActions && !showPaymentActions && (
+                {!isEditMode && onEditToggle && !showMealActions && !showMarketActions && !showPaymentActions && (
                   <button
                     onClick={onEditToggle}
                     disabled={anyActionActive}
@@ -122,10 +125,21 @@ const DayDetailModal = ({
                 </button>
               </div>
             </div>
+            {showMealActions && (
+              <div className="flex items-center gap-2 px-5 py-2.5 border-b border-[var(--border-default)] bg-[var(--bg-muted)]/20 shrink-0">
+                <button
+                  onClick={onMealAdd}
+                  aria-label="Add meal entry"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  Add Meal
+                </button>
+              </div>
+            )}
             {showMarketActions && (
               <div className="flex items-center gap-2 px-5 py-2.5 border-b border-[var(--border-default)] bg-[var(--bg-muted)]/20 shrink-0">
                 <button
-                  onClick={onEditToggle}
+                  onClick={onAddMarket || onEditToggle}
                   aria-label="Add market entry"
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
