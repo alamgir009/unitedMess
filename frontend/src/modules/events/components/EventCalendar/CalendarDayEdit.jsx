@@ -139,7 +139,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
             </span>
           )}
         </p>
-        {!isAdding && !isBulkSubmitting && (
+        {!isAdding && !isBulkSubmitting && !(category === 'meals' && !isAdmin && visibleEntries.length > 0) && (
           <button
             onClick={() => setIsAdding(true)}
             disabled={!!editingId || !!confirmDeleteId || selectedEntryIds?.size > 0}

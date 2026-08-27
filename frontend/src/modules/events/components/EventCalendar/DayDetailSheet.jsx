@@ -36,6 +36,7 @@ const DayDetailSheet = ({
   onPaymentAdd,
   onAddMarket,
   onMealAdd,
+  mealActionLabel = 'Add Meal',
   isAdding = false,
   editingId = null,
   confirmDeleteId = null,
@@ -178,10 +179,10 @@ const DayDetailSheet = ({
               <div className="flex items-center gap-2 px-5 py-2.5 border-b border-[var(--border-default)] bg-[var(--bg-muted)]/20 shrink-0">
                 <button
                   onClick={(e) => { e.stopPropagation(); onMealAdd(); }}
-                  aria-label="Add meal entry"
+                  aria-label={mealActionLabel}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  Add Meal
+                  {mealActionLabel}
                 </button>
               </div>
             )}

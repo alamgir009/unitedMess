@@ -156,6 +156,15 @@ const EventCalendar = () => {
     });
   }, [currentDateEntries, selectedMemberId]);
 
+  const userOwnMealEntry = useMemo(() => {
+    if (category !== 'meals' || isAdmin || !detailDate) return null;
+    const uid = user?._id || user?.id;
+    return currentDateEntries.find((e) => {
+      const euid = typeof e.user === 'object' ? e.user?._id : e.user;
+      return euid === uid;
+    }) || null;
+  }, [currentDateEntries, category, isAdmin, detailDate, user]);
+
   const abortRef = useRef(null);
   const isMobile = useMediaQuery('(max-width: 639px)');
 
@@ -302,6 +311,21 @@ const EventCalendar = () => {
     setIsEditMode(true);
     setIsAdding(true);
     setEditingId(null);
+    setConfirmDeleteId(null);
+  }, []);
+
+  const handleMealUpdate = useCallback(() => {
+    if (!userOwnMealEntry) return;
+    setIsEditMode(true);
+    setIsAdding(false);
+    setEditingId(userOwnMealEntry._id);
+    setConfirmDeleteId(null);
+  }, [userOwnMealEntry]);
+
+  const handleEntryClick = useCallback((entry) => {
+    setIsEditMode(true);
+    setEditingId(entry._id);
+    setIsAdding(false);
     setConfirmDeleteId(null);
   }, []);
 
@@ -795,7 +819,8 @@ const EventCalendar = () => {
             onScheduleClick={category === 'markets' ? handleScheduleClick : undefined}
             onPaymentAdd={category === 'payments' && isAdmin ? handlePaymentAdd : undefined}
             onAddMarket={category === 'markets' && isAdmin ? handleAddMarket : undefined}
-            onMealAdd={category === 'meals' && isAdmin ? handleMealAdd : undefined}
+            onMealAdd={category === 'meals' ? (userOwnMealEntry ? handleMealUpdate : handleMealAdd) : undefined}
+            mealActionLabel={category === 'meals' ? (userOwnMealEntry ? 'Update Meal' : 'Add Meal') : undefined}
             isAdding={isAdding}
             editingId={editingId}
             confirmDeleteId={confirmDeleteId}
@@ -835,6 +860,7 @@ const EventCalendar = () => {
                 totalMealsCount={totalMealsForDate}
                 scheduleData={getScheduleForDate(detailDate)}
                 onPaymentEdit={category === 'payments' && isAdmin ? handlePaymentEdit : undefined}
+                onEntryClick={category === 'meals' && !isAdmin ? handleEntryClick : undefined}
               />
             )}
           </DayDetailSheet>
@@ -849,7 +875,8 @@ const EventCalendar = () => {
             onScheduleClick={category === 'markets' ? handleScheduleClick : undefined}
             onPaymentAdd={category === 'payments' && isAdmin ? handlePaymentAdd : undefined}
             onAddMarket={category === 'markets' && isAdmin ? handleAddMarket : undefined}
-            onMealAdd={category === 'meals' && isAdmin ? handleMealAdd : undefined}
+            onMealAdd={category === 'meals' ? (userOwnMealEntry ? handleMealUpdate : handleMealAdd) : undefined}
+            mealActionLabel={category === 'meals' ? (userOwnMealEntry ? 'Update Meal' : 'Add Meal') : undefined}
             isAdding={isAdding}
             editingId={editingId}
             confirmDeleteId={confirmDeleteId}
@@ -889,6 +916,7 @@ const EventCalendar = () => {
                 totalMealsCount={totalMealsForDate}
                 scheduleData={getScheduleForDate(detailDate)}
                 onPaymentEdit={category === 'payments' && isAdmin ? handlePaymentEdit : undefined}
+                onEntryClick={category === 'meals' && !isAdmin ? handleEntryClick : undefined}
               />
             )}
           </DayDetailModal>
