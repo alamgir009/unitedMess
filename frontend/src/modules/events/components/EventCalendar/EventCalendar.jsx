@@ -734,7 +734,7 @@ const EventCalendar = () => {
             onEditToggle={!['votes', 'payments'].includes(category) ? handleEditToggle : undefined}
             category={category}
             onScheduleClick={category === 'markets' ? handleScheduleClick : undefined}
-            onPaymentAdd={category === 'payments' ? handlePaymentAdd : undefined}
+            onPaymentAdd={category === 'payments' && isAdmin ? handlePaymentAdd : undefined}
             isAdding={isAdding}
             editingId={editingId}
             confirmDeleteId={confirmDeleteId}
@@ -752,8 +752,8 @@ const EventCalendar = () => {
                   onDelete={handleDeleteEntry}
                   onDone={() => setIsEditMode(false)}
                   selectedEntryIds={selectedEntryIds}
-                  onToggleSelect={handleToggleSelect}
-                  onSelectAll={handleSelectAll}
+                  onToggleSelect={isAdmin ? handleToggleSelect : undefined}
+                  onSelectAll={isAdmin ? handleSelectAll : undefined}
                   onBulkDelete={handleBulkDelete}
                   onBulkUpdate={handleBulkUpdate}
                   onExitSelectMode={handleExitSelectMode}
@@ -773,7 +773,7 @@ const EventCalendar = () => {
                 category={category}
                 totalMealsCount={totalMealsForDate}
                 scheduleData={getScheduleForDate(detailDate)}
-                onPaymentEdit={category === 'payments' ? handlePaymentEdit : undefined}
+                onPaymentEdit={category === 'payments' && isAdmin ? handlePaymentEdit : undefined}
               />
             )}
           </DayDetailSheet>
@@ -786,7 +786,7 @@ const EventCalendar = () => {
             onEditToggle={!['votes', 'payments'].includes(category) ? handleEditToggle : undefined}
             category={category}
             onScheduleClick={category === 'markets' ? handleScheduleClick : undefined}
-            onPaymentAdd={category === 'payments' ? handlePaymentAdd : undefined}
+            onPaymentAdd={category === 'payments' && isAdmin ? handlePaymentAdd : undefined}
             isAdding={isAdding}
             editingId={editingId}
             confirmDeleteId={confirmDeleteId}
@@ -804,8 +804,8 @@ const EventCalendar = () => {
                   onDelete={handleDeleteEntry}
                   onDone={() => setIsEditMode(false)}
                   selectedEntryIds={selectedEntryIds}
-                  onToggleSelect={handleToggleSelect}
-                  onSelectAll={handleSelectAll}
+                  onToggleSelect={isAdmin ? handleToggleSelect : undefined}
+                  onSelectAll={isAdmin ? handleSelectAll : undefined}
                   onBulkDelete={handleBulkDelete}
                   onBulkUpdate={handleBulkUpdate}
                   onExitSelectMode={handleExitSelectMode}
@@ -825,7 +825,7 @@ const EventCalendar = () => {
                 category={category}
                 totalMealsCount={totalMealsForDate}
                 scheduleData={getScheduleForDate(detailDate)}
-                onPaymentEdit={category === 'payments' ? handlePaymentEdit : undefined}
+                onPaymentEdit={category === 'payments' && isAdmin ? handlePaymentEdit : undefined}
               />
             )}
           </DayDetailModal>
@@ -841,6 +841,7 @@ const EventCalendar = () => {
             isAdmin={isAdmin}
             currentUser={user}
             isSubmitting={isPaymentSubmitting}
+            readOnly={!isAdmin}
           />
         </PaymentModal>
       </Suspense>
