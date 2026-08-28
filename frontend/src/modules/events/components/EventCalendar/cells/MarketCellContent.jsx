@@ -39,7 +39,7 @@ const MarketCellContent = memo(({ entries = [], loading, error, isCompact, onRet
 
   return (
     <div
-      className="flex items-center gap-1 min-w-0 cursor-pointer"
+      className="flex items-center gap-1 min-w-0 overflow-hidden cursor-pointer"
       onClick={onCellClick}
       role="button"
       tabIndex={0}
@@ -57,7 +57,7 @@ const MarketCellContent = memo(({ entries = [], loading, error, isCompact, onRet
       )}
       {isCompact ? (
         <span className={cn(
-          'text-xs font-bold tabular-nums tracking-tight drop-shadow-sm',
+          'text-xs font-bold tabular-nums tracking-tight drop-shadow-sm truncate min-w-0',
           hasDuty
             ? (isOwnDuty ? 'text-[var(--duty-own-text)]' : 'text-[var(--duty-other-text)]')
             : 'text-[var(--market-accent)]',
@@ -70,7 +70,7 @@ const MarketCellContent = memo(({ entries = [], loading, error, isCompact, onRet
             <>
               <ShoppingBag className="w-[14px] h-[14px] text-[var(--market-accent)] shrink-0 drop-shadow-sm" aria-hidden="true" />
               <AvatarCluster members={members} size="sm" maxAvatars={2} />
-              <span className="text-[11px] font-bold tabular-nums tracking-tight text-[var(--text-primary)] ml-auto leading-none">
+              <span className="text-[11px] font-bold tabular-nums tracking-tight text-[var(--text-primary)] ml-auto leading-none whitespace-nowrap shrink-0">
                 ₹{fmt(total)}
               </span>
             </>

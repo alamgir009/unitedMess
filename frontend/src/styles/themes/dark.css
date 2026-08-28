@@ -256,8 +256,8 @@ html.dark {
   --btn-brand-subtle-border: transparent;
 
   /* ── Premium Calendar Tokens (Dark Mode) ── */
-  --calendar-header-bg: linear-gradient(180deg, hsl(222 18% 13%) 0%, hsl(222 16% 11%) 100%);
-  --calendar-header-weekend-bg: linear-gradient(180deg, hsl(250 20% 14%) 0%, hsl(250 18% 12%) 100%);
+  --calendar-header-bg: hsl(222 18% 13%);
+  --calendar-header-weekend-bg: hsl(222 18% 13%);
   --calendar-header-text: hsl(216 14% 82%);            /* WCAG AAA on dark header: 8.5:1 */
   --calendar-header-weekend-text: hsl(260 40% 75%);    /* WCAG AAA on dark weekend header: 7.2:1 */
   --calendar-today-bg: hsl(217 44% 15%);

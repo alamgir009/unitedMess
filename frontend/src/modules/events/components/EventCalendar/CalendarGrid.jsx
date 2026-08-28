@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   startOfMonth,
   endOfMonth,
@@ -20,6 +21,8 @@ const CalendarGrid = memo(({
   errorMap = {},
   onCellClick,
   onRetry,
+  onPrevMonth,
+  onNextMonth,
   showMealCount = true,
   scheduleMap = {},
   ownDutyMap = {},
@@ -39,32 +42,47 @@ const CalendarGrid = memo(({
 
   return (
     <div>
-      {/* Header row */}
+      {/* Month navigation bar */}
+      <div
+        className="flex items-center justify-between sm:justify-center gap-0 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3"
+        style={{ background: 'var(--calendar-header-bg)' }}
+      >
+        <button
+          onClick={onPrevMonth}
+          className="flex items-center justify-center w-8 h-8 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-all duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+          aria-label="Previous month"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <h2 className="text-sm sm:text-base font-bold tracking-tight select-none whitespace-nowrap">
+          <span className="text-[var(--text-primary)]">
+            {format(currentMonth, 'MMMM')}
+          </span>
+          <span className="text-[var(--text-secondary)] font-semibold ml-1.5 tabular-nums">
+            {format(currentMonth, 'yyyy')}
+          </span>
+        </h2>
+        <button
+          onClick={onNextMonth}
+          className="flex items-center justify-center w-8 h-8 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-all duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+          aria-label="Next month"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Day-name header row */}
       <div className="grid grid-cols-7">
-        {DAY_HEADERS.map((day, idx) => (
+        {DAY_HEADERS.map((day) => (
           <div
             key={day}
-            className={`
-              text-center py-2.5 sm:py-3
-              ${idx === 0 ? 'rounded-tl-xl' : ''}
-              ${idx === 6 ? 'rounded-tr-xl' : ''}
-            `}
+            className="text-center py-2.5 sm:py-3"
             style={{
-              background: (day === 'Sun' || day === 'Sat')
-                ? 'var(--calendar-header-weekend-bg)'
-                : 'var(--calendar-header-bg)',
+              background: 'var(--calendar-header-bg)',
               borderBottom: '1px solid var(--calendar-border)',
             }}
           >
-            <span
-              className={`
-                text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.08em]
-                ${(day === 'Sun' || day === 'Sat')
-                  ? 'text-[var(--calendar-header-weekend-text)]'
-                  : 'text-[var(--calendar-header-text)]'
-                }
-              `}
-            >
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--calendar-header-text)]">
               {day}
             </span>
           </div>

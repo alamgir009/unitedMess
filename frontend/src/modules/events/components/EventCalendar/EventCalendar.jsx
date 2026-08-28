@@ -781,15 +781,13 @@ const EventCalendar = () => {
 
       {/* Calendar section */}
       <div className="relative">
-          <CalendarHeader
-            currentMonth={currentMonthDate}
-            onPrevMonth={handlePrevMonth}
-            onNextMonth={handleNextMonth}
-            onToday={handleToday}
-            isAdmin={isAdmin}
-            selectedMemberId={selectedMemberId}
-            onMemberFilter={handleMemberFilter}
-          />
+          <div className="flex justify-end">
+            <CalendarHeader
+              isAdmin={isAdmin}
+              selectedMemberId={selectedMemberId}
+              onMemberFilter={handleMemberFilter}
+            />
+          </div>
           <div className="rounded-xl border border-[var(--calendar-border)] shadow-sm overflow-hidden bg-[var(--bg-elevated)]">
             <CalendarGrid
               currentMonth={currentMonthDate}
@@ -799,6 +797,8 @@ const EventCalendar = () => {
               errorMap={errorMap}
               onCellClick={handleCellClick}
               onRetry={handleRetry}
+              onPrevMonth={handlePrevMonth}
+              onNextMonth={handleNextMonth}
               showMealCount={showMealCount}
               scheduleMap={category === 'markets' ? filteredScheduleMap : {}}
               ownDutyMap={category === 'markets' ? ownDutyMap : {}}

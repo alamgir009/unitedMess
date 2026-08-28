@@ -186,7 +186,7 @@ const MemberFilterDropdown = ({ selectedMemberId, onSelect, disabled = false }) 
             : 'Filter by member: All members'
         }
         className={
-          `${inputBase} flex items-center gap-2 text-left sm:min-w-[180px] ` +
+          `${inputBase} flex items-center gap-2 text-left max-w-[180px] shrink ` +
           `${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'} ` +
           `${open ? 'border-primary/40 shadow-sm shadow-primary/5' : 'hover:border-border-strong'}`
         }

@@ -65,7 +65,7 @@ const CalendarCell = ({
         borderRight: !isLastInRow ? '1px solid var(--calendar-border)' : 'none',
       }}
       className={cn(
-        'relative flex flex-col p-1 sm:p-1.5 lg:p-2.5',
+        'relative flex flex-col p-1 sm:p-1.5 lg:p-2.5 overflow-hidden',
         'min-h-[72px] sm:min-h-[clamp(80px,11vw,110px)] lg:min-h-[clamp(88px,12vw,120px)]',
         'transition-all duration-150 ease-out',
         'cursor-pointer select-none',
