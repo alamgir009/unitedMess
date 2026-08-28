@@ -160,9 +160,9 @@ html.light {
 
   /* ── Market duty: own vs other — WCAG AAA ── */
   --duty-own: hsl(160 84% 30%);
-  --duty-own-bg: hsl(152 76% 95%);
-  --duty-own-border: hsl(156 72% 82%);
-  --duty-own-text: hsl(160 72% 24%);
+  --duty-own-bg: hsl(152 60% 96%);
+  --duty-own-border: hsl(156 50% 78%);
+  --duty-own-text: hsl(160 80% 20%);
   --duty-other: hsl(215 25% 45%);
   --duty-other-bg: hsl(210 20% 96%);
   --duty-other-border: hsl(210 16% 88%);

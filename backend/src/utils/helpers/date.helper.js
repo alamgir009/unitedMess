@@ -26,9 +26,15 @@ const parseDate = (dateInput) => {
 
 /**
  * Normalize a Date to midnight UTC (00:00:00.000Z).
- * FIX: Uses getUTCFullYear/getUTCMonth/getUTCDate — always UTC,
- * no local-timezone inconsistency. Previously getDate() varied
- * by server/browser timezone.
+ *
+ * IMPORTANT: Input Date objects MUST be UTC-based (constructed via Date.UTC()
+ * or parseDate()). Locally-constructed Dates (e.g. new Date("Dec 25, 2026"))
+ * will produce incorrect results because getUTCFullYear/getUTCMonth/getUTCDate
+ * read the UTC representation of a local timestamp.
+ *
+ * All callers in this codebase pass UTC-based Dates (from parseDate or
+ * Date.UTC), so this is safe. If you have a raw local-time Date, pass it
+ * through parseDate() first.
  */
 const normalizeToUTC = (date) => {
   const d = date instanceof Date ? date : new Date(date);
@@ -36,6 +42,24 @@ const normalizeToUTC = (date) => {
     throw new AppError('Invalid date', 400);
   }
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+};
+
+/**
+ * Convert any Date to a canonical 'YYYY-MM-DD' string using UTC components.
+ * This is the single source of truth for date keys across the entire codebase.
+ * Use this instead of toISOString().split('T')[0] or date-fns format().
+ *
+ * IMPORTANT: Input Date MUST be UTC-based (see normalizeToUTC docs).
+ */
+const toDateKey = (date) => {
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) {
+    throw new AppError('Invalid date', 400);
+  }
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 };
 
 /**
@@ -118,11 +142,16 @@ const getLastFinalizedPeriod = (date = new Date()) => {
 
 /**
  * Normalize a Date to midnight UTC (00:00:00.000Z).
- * This ensures all dates stored in MongoDB are comparable regardless
- * of how they were constructed.
- * 
- * FIX: Now delegates to normalizeToUTC for consistent UTC handling.
+ * Delegates to normalizeToUTC for consistent UTC handling.
  */
 const normalizeDate = (date) => normalizeToUTC(date);
 
-module.exports = { parseDate, normalizeDate, normalizeToUTC, getVisibleBillingStartDate, getBillingPeriod, getLastFinalizedPeriod };
+module.exports = {
+  parseDate,
+  normalizeDate,
+  normalizeToUTC,
+  toDateKey,
+  getVisibleBillingStartDate,
+  getBillingPeriod,
+  getLastFinalizedPeriod,
+};

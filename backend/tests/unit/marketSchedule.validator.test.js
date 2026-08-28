@@ -313,4 +313,65 @@ describe('validateMarketSchedule', () => {
         );
         expect(result).toEqual({ valid: true });
     });
+
+    // ── IST timezone boundary tests ────────────────────────────────────
+    describe('IST timezone boundary handling', () => {
+        // IST = UTC+5:30. A date "2026-09-05T00:00:00+05:30" is actually
+        // 2026-09-04T18:30:00Z in UTC — different calendar day!
+        // Our parseDate uses Date.UTC for DD/MM/YYYY and Date.parse for ISO,
+        // so the string "2026-09-05" is parsed as UTC midnight, not IST midnight.
+        //
+        // September 2026: 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun, 7=Mon
+
+        it('parses YYYY-MM-DD as UTC midnight regardless of server timezone', () => {
+            // Sep 7 = Monday (weekday)
+            const result = validateMarketSchedule(['2026-09-07'], MEMBER_ID, MONTH_CTX);
+            expect(result).toEqual({ valid: true });
+        });
+
+        it('parses DD/MM/YYYY as UTC midnight via Date.UTC', () => {
+            // 07/09/2026 = Sep 7 = Monday (weekday)
+            const result = validateMarketSchedule(['07/09/2026'], MEMBER_ID, MONTH_CTX);
+            expect(result).toEqual({ valid: true });
+        });
+
+        it('handles ISO string with IST offset (boundary shift detection)', () => {
+            // "2026-09-07T00:00:00+05:30" in UTC is 2026-09-06T18:30:00Z
+            // Sep 6 = Sunday — weekend. But Date.parse respects the offset,
+            // so the resulting Date's UTC day is Sep 6 (Sunday).
+            // After normalizeToUTC, it becomes Sep 6 which is weekend.
+            const result = validateMarketSchedule(
+                ['2026-09-07T00:00:00+05:30'],
+                MEMBER_ID,
+                MONTH_CTX,
+            );
+            // Sep 6 (Sun) is weekend — should be rejected for single-date selection
+            expect(result).toEqual({
+                valid: false,
+                errorCode: 'WEEKEND_ONLY_NOT_ALLOWED',
+                details: expect.stringContaining('weekday'),
+            });
+        });
+
+        it('handles midnight UTC date that is previous evening in IST', () => {
+            // Sep 2 = Wed (weekday)
+            const result = validateMarketSchedule(
+                ['2026-09-02T00:00:00.000Z'],
+                MEMBER_ID,
+                MONTH_CTX,
+            );
+            expect(result).toEqual({ valid: true });
+        });
+
+        it('deduplicates same calendar day from different timezone representations', () => {
+            // "2026-09-07" (UTC midnight Sep 7 Mon) and "07/09/2026" (same)
+            // should be treated as the same date after normalization
+            const result = validateMarketSchedule(
+                ['2026-09-07', '07/09/2026'],
+                MEMBER_ID,
+                MONTH_CTX,
+            );
+            expect(result).toEqual({ valid: true });
+        });
+    });
 });

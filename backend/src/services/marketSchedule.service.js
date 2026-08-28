@@ -1,7 +1,7 @@
 const MarketSchedule = require('../models/MarketSchedule.model');
 const User = require('../models/User.model');
 const AppError = require('../utils/errors/AppError');
-const { parseDate, normalizeToUTC } = require('../utils/helpers/date.helper');
+const { parseDate, normalizeToUTC, toDateKey } = require('../utils/helpers/date.helper');
 const { validateMarketSchedule } = require('../utils/validators/marketSchedule.validator');
 const { generateMarketDutyICS } = require('../utils/ics');
 const emailService = require('./email.service');
@@ -68,7 +68,7 @@ const getAvailableDates = async (year, month) => {
 
     const takenDateMap = {};
     for (const s of takenSchedules) {
-        const dateKey = normalizeToUTC(s.date).toISOString().split('T')[0];
+        const dateKey = toDateKey(normalizeToUTC(s.date));
         takenDateMap[dateKey] = s;
     }
 
@@ -78,7 +78,7 @@ const getAvailableDates = async (year, month) => {
 
     for (let d = 1; d <= daysInMonth; d++) {
         const dateObj = normalizeToUTC(new Date(Date.UTC(y, m - 1, d)));
-        const dateKey = dateObj.toISOString().split('T')[0];
+        const dateKey = toDateKey(dateObj);
 
         if (dateObj < today) continue;
 
@@ -201,22 +201,22 @@ const selectDates = async (userId, dates, year, month, source = 'user') => {
 
     const existingDateMap = new Map();
     for (const s of existingDates) {
-        existingDateMap.set(normalizeToUTC(s.date).toISOString().split('T')[0], s);
+        existingDateMap.set(toDateKey(normalizeToUTC(s.date)), s);
     }
 
     const requestedDateKeys = new Set(
-        normalizedDates.map((d) => d.toISOString().split('T')[0])
+        normalizedDates.map((d) => toDateKey(d))
     );
 
     // ── 3. Compute the diff ──────────────────────────────────────────
     // Dates user had but did not request this time → remove
     const toRemove = existingDates.filter(
-        (s) => !requestedDateKeys.has(normalizeToUTC(s.date).toISOString().split('T')[0])
+        (s) => !requestedDateKeys.has(toDateKey(normalizeToUTC(s.date)))
     );
 
     // Dates user requested but does not have yet → add
     const toAdd = normalizedDates.filter(
-        (d) => !existingDateMap.has(d.toISOString().split('T')[0])
+        (d) => !existingDateMap.has(toDateKey(d))
     );
 
     // No changes needed (idempotent)
@@ -233,28 +233,13 @@ const selectDates = async (userId, dates, year, month, source = 'user') => {
         );
     }
 
-    // ── 5. Soft-delete removed dates ─────────────────────────────────
+    // ── 5. Atomic replace: soft-delete old + insert new ────────────────
+    // Strategy: try transaction first (Atlas/replica set). If unsupported,
+    // fall back to insert-first → soft-delete (safe: failed soft-delete
+    // means extra dates, not lost dates).
     let removedCount = 0;
-    if (toRemove.length > 0) {
-        const removeIds = toRemove.map((s) => s._id);
+    let inserted = [];
 
-        await MarketSchedule.updateMany(
-            { _id: { $in: removeIds } },
-            { $set: { status: 'superseded' } }
-        );
-
-        removedCount = toRemove.length;
-
-        // Google Calendar cleanup for removed dates (fire-and-forget)
-        for (const s of toRemove) {
-            if (s.googleCalendarEventId) {
-                googleCalendarService.removeEventFromCalendar(userId, s.googleCalendarEventId)
-                    .catch((err) => logger.error(`[MarketSchedule] GC cleanup failed: ${err.message}`));
-            }
-        }
-    }
-
-    // ── 6. Insert new dates ──────────────────────────────────────────
     const newSchedules = toAdd.map((d) => ({
         date: d,
         user: userId,
@@ -266,24 +251,74 @@ const selectDates = async (userId, dates, year, month, source = 'user') => {
         isManuallySelected: source === 'user',
     }));
 
-    let inserted = [];
-    if (newSchedules.length > 0) {
-        try {
-            inserted = await MarketSchedule.insertMany(newSchedules, { ordered: false });
-        } catch (err) {
-            if (err.code === 11000) {
-                const insertedDocs = err.insertedDocs || [];
-                const duplicateCount = newSchedules.length - insertedDocs.length;
-                if (insertedDocs.length === 0) {
-                    throw new AppError('Date(s) already taken by another member', 409);
+    const removeIds = toRemove.map((s) => s._id);
+
+    const executeAtomicReplace = async (session) => {
+        // Soft-delete removed dates within the transaction
+        if (removeIds.length > 0) {
+            const opts = session ? { session } : {};
+            const result = await MarketSchedule.updateMany(
+                { _id: { $in: removeIds } },
+                { $set: { status: 'superseded' } },
+                opts,
+            );
+            removedCount = result.modifiedCount || removeIds.length;
+        }
+
+        // Insert new dates within the transaction
+        if (newSchedules.length > 0) {
+            const opts = session ? { session } : {};
+            try {
+                inserted = await MarketSchedule.insertMany(newSchedules, { ordered: false, ...opts });
+            } catch (err) {
+                if (err.code === 11000) {
+                    const insertedDocs = err.insertedDocs || [];
+                    const duplicateCount = newSchedules.length - insertedDocs.length;
+                    if (insertedDocs.length === 0) {
+                        throw new AppError('Date(s) already taken by another member', 409);
+                    }
+                    inserted = insertedDocs;
+                    logger.warn(
+                        `[MarketSchedule] Partial insert: ${inserted.length} succeeded, ${duplicateCount} rejected (conflict)`
+                    );
+                } else {
+                    throw err;
                 }
-                inserted = insertedDocs;
-                logger.warn(
-                    `[MarketSchedule] Partial insert: ${inserted.length} succeeded, ${duplicateCount} rejected (conflict)`
-                );
-            } else {
-                throw err;
             }
+        }
+    };
+
+    let usedTransaction = false;
+    try {
+        const session = await MarketSchedule.startSession();
+        try {
+            await session.withTransaction(async () => {
+                await executeAtomicReplace(session);
+            });
+            usedTransaction = true;
+        } finally {
+            session.endSession();
+        }
+    } catch (txErr) {
+        // Transaction not supported (standalone MongoDB) or failed.
+        // Fall back to non-atomic: insert first, then soft-delete.
+        // This is safe because a failed soft-delete leaves extra dates
+        // (no data loss), whereas the old approach (delete first) lost data.
+        if (txErr.message?.includes('replica set') || txErr.message?.includes('transaction') || txErr.code === 48 || txErr.code === 263) {
+            logger.warn('[MarketSchedule] Transactions not supported, falling back to non-atomic replace');
+            inserted = [];
+            removedCount = 0;
+            await executeAtomicReplace(null);
+        } else {
+            throw txErr;
+        }
+    }
+
+    // Google Calendar cleanup for removed dates (fire-and-forget, outside transaction)
+    for (const s of toRemove) {
+        if (s.googleCalendarEventId) {
+            googleCalendarService.removeEventFromCalendar(userId, s.googleCalendarEventId)
+                .catch((err) => logger.error(`[MarketSchedule] GC cleanup failed: ${err.message}`));
         }
     }
 

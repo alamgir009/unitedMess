@@ -159,9 +159,9 @@ html.dark {
 
   /* ── Market duty: own vs other — WCAG AAA ── */
   --duty-own: hsl(160 72% 62%);
-  --duty-own-bg: hsl(156 80% 12%);
-  --duty-own-border: hsl(156 60% 24%);
-  --duty-own-text: hsl(160 65% 55%);
+  --duty-own-bg: hsl(156 50% 16%);
+  --duty-own-border: hsl(156 45% 28%);
+  --duty-own-text: hsl(160 70% 65%);
   --duty-other: hsl(215 20% 58%);
   --duty-other-bg: hsl(215 25% 13%);
   --duty-other-border: hsl(215 18% 24%);

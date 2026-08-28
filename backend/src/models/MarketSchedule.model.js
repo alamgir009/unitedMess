@@ -54,9 +54,14 @@ const marketScheduleSchema = new mongoose.Schema(
     }
 );
 
-marketScheduleSchema.index({ date: 1 }, { unique: true });
+// Partial unique index: only one ACTIVE record per date.
+// Allows re-selection after soft-delete (superseded) or reset.
+marketScheduleSchema.index(
+    { date: 1 },
+    { unique: true, partialFilterExpression: { status: 'active' } }
+);
 marketScheduleSchema.index({ monthKey: 1, date: 1 });
-marketScheduleSchema.index({ user: 1, monthKey: 1 });
+marketScheduleSchema.index({ user: 1, monthKey: 1, status: 1 });
 marketScheduleSchema.index(
     { status: 1, monthKey: 1 },
     { partialFilterExpression: { status: 'active' } }

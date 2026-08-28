@@ -1,4 +1,4 @@
-const { normalizeToUTC } = require('../helpers/date.helper');
+const { parseDate, normalizeToUTC, toDateKey } = require('../helpers/date.helper');
 
 const MAX_CONSECUTIVE_DAYS = 2;
 const MIN_WEEKDAYS_PER_MONTH = 1;
@@ -49,11 +49,12 @@ const validateMarketSchedule = (dates, memberId, monthContext) => {
     for (const raw of dates) {
         let d;
         try {
-            d = normalizeToUTC(raw instanceof Date ? raw : new Date(raw));
+            const parsed = parseDate(raw);
+            d = normalizeToUTC(parsed);
         } catch {
             return { valid: false, errorCode: 'INVALID_DATE', details: `Invalid date: ${raw}` };
         }
-        const key = d.toISOString().split('T')[0];
+        const key = toDateKey(d);
         if (!seen.has(key)) {
             seen.add(key);
             normalized.push(d);
@@ -67,7 +68,7 @@ const validateMarketSchedule = (dates, memberId, monthContext) => {
             return {
                 valid: false,
                 errorCode: 'PAST_DATE_NOT_ALLOWED',
-                details: `Date ${d.toISOString().split('T')[0]} is in the past`,
+                details: `Date ${toDateKey(d)} is in the past`,
             };
         }
     }

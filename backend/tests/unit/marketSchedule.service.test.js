@@ -20,7 +20,8 @@ const mockMarketSchedule = {
     findByIdAndUpdate: jest.fn(),
     findByIdAndDelete: jest.fn(),
     insertMany: jest.fn(),
-    updateMany: jest.fn(),
+    updateMany: jest.fn().mockResolvedValue({ modifiedCount: 0 }),
+    startSession: jest.fn(),
 };
 
 const mockUser = {
@@ -225,6 +226,18 @@ describe('selectDates', () => {
         });
         mockUser.find.mockReset();
         mockUser.find.mockReturnValue(mockChain(admins));
+
+        // Reset updateMany to return proper result
+        mockMarketSchedule.updateMany.mockReset();
+        mockMarketSchedule.updateMany.mockResolvedValue({ modifiedCount: 0 });
+
+        // Mock startSession for transaction support
+        const mockSession = {
+            withTransaction: jest.fn().mockImplementation(async (fn) => fn()),
+            endSession: jest.fn(),
+        };
+        mockMarketSchedule.startSession.mockReset();
+        mockMarketSchedule.startSession.mockResolvedValue(mockSession);
     };
 
     it('throws on invalid year/month', async () => {
@@ -394,7 +407,8 @@ describe('selectDates', () => {
         expect(result.total).toBe(1);
         expect(mockMarketSchedule.updateMany).toHaveBeenCalledWith(
             { _id: { $in: [existingId] } },
-            { $set: { status: 'superseded' } }
+            { $set: { status: 'superseded' } },
+            expect.any(Object)
         );
     });
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Check, Calendar, Loader2, AlertCircle } from 'lucide-react';
+import { X, Check, Calendar, Loader2, AlertCircle, Trash2 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isToday, isBefore, addMonths, subMonths } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
@@ -12,15 +12,13 @@ import {
   fetchAvailableDates,
   fetchMyScheduledDates,
   selectMarketDates,
+  removeMarketScheduledDate,
   clearMySelectedDates,
 } from '../../store/marketSchedule.slice';
 
 const MAX_DATES = 3;
 
-const toUTCDateKey = (date) => {
-  const d = new Date(date);
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
-};
+const toUTCDateKey = (date) => format(new Date(date), 'yyyy-MM-dd');
 
 let lockCount = 0;
 function lockBodyScroll() {
@@ -114,7 +112,8 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
     const map = {};
     for (const item of currentAvailable) {
       if (!item.available && item.date) {
-        map[item.date] = item;
+        const key = toUTCDateKey(item.date);
+        map[key] = item;
       }
     }
     return map;
@@ -131,7 +130,7 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
   }, [currentSchedule]);
 
   const handleDateClick = useCallback((date) => {
-    const dateKey = format(date, 'yyyy-MM-dd');
+    const dateKey = toUTCDateKey(date);
     if (isBefore(date, today) && !isToday(date)) return;
     if (unavailableDatesMap[dateKey] && !selectedDates.has(dateKey)) return;
 
@@ -188,6 +187,20 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
     }
   }, [selectedDates, viewMonth, dispatch, onClose]);
 
+  const handleRemoveDate = useCallback(async (scheduleId) => {
+    try {
+      await dispatch(removeMarketScheduledDate(scheduleId)).unwrap();
+      toast.success('Date removed');
+      const year = viewMonth.getFullYear();
+      const month = viewMonth.getMonth() + 1;
+      dispatch(fetchMyScheduledDates({ year, month }));
+      dispatch(fetchMonthSchedule({ year, month }));
+      dispatch(fetchAvailableDates({ year, month }));
+    } catch (err) {
+      toast.error(err || 'Failed to remove date');
+    }
+  }, [viewMonth, dispatch]);
+
   const handlePrevMonth = useCallback(() => {
     setViewMonth((prev) => subMonths(prev, 1));
     setSelectedDates(new Set());
@@ -199,7 +212,7 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
   }, []);
 
   const getDateStatus = useCallback((date) => {
-    const dateKey = format(date, 'yyyy-MM-dd');
+    const dateKey = toUTCDateKey(date);
     const inMonth = isSameMonth(date, viewMonth);
     const isPast = isBefore(date, today) && !isToday(date);
     const isSelected = selectedDates.has(dateKey);
@@ -309,7 +322,7 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
         {/* Calendar Grid */}
         <div className="grid grid-cols-7 gap-0.5">
           {days.map((day) => {
-            const { dateKey, inMonth, isPast, isSelected, isTakenByOther, takenItem } = getDateStatus(day);
+            const { dateKey, inMonth, isPast, isSelected, isTakenByOther, takenItem, isMyDate } = getDateStatus(day);
             const isCurrentDay = isToday(day);
             const canClick = inMonth && !isPast && !isTakenByOther;
 
@@ -318,26 +331,26 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
                 key={dateKey}
                 onClick={() => canClick && handleDateClick(day)}
                 disabled={!canClick}
-                aria-label={`${format(day, 'MMM d')}${isSelected ? ', selected' : ''}${isTakenByOther ? ', taken' : ''}`}
+                aria-label={`${format(day, 'MMM d')}${isSelected ? ', selected' : ''}${isTakenByOther ? ', taken' : ''}${isMyDate ? ', your duty' : ''}`}
                 className={cn(
-                  'relative flex flex-col items-center justify-center p-1 sm:p-1.5 rounded-lg transition-all duration-100',
-                  'min-h-[40px] sm:min-h-[48px]',
+                  'relative aspect-square min-w-0 flex flex-col items-center justify-center p-1 sm:p-1.5 rounded-lg transition-all duration-100',
                   !inMonth && 'opacity-30',
                   inMonth && isPast && 'opacity-50 cursor-not-allowed',
-                  canClick && !isSelected && 'hover:bg-[var(--accent-primary)]/10 cursor-pointer',
+                  canClick && !isSelected && !isMyDate && 'hover:bg-[var(--accent-primary)]/10 cursor-pointer',
                   isSelected && 'bg-[var(--accent-primary)]/15 border-2 border-[var(--accent-primary)] shadow-sm',
-                  isTakenByOther && !isSelected && 'bg-[var(--danger-bg)]/20 border border-[var(--danger)]/20',
-                  isCurrentDay && !isSelected && 'ring-1 ring-[var(--accent-primary)]/40',
+                  isMyDate && !isSelected && 'bg-[var(--duty-own-bg)] border border-[var(--duty-own-border)]',
+                  isTakenByOther && !isSelected && !isMyDate && 'bg-[var(--danger-bg)]/20 border border-[var(--danger)]/20',
+                  isCurrentDay && !isSelected && !isMyDate && 'ring-1 ring-[var(--accent-primary)]/40',
                 )}
               >
                 <span className={cn(
                   'text-xs sm:text-sm font-semibold',
-                  isSelected ? 'text-[var(--accent-primary)]' : 'text-[var(--text-primary)]',
-                  isTakenByOther && !isSelected && 'text-[var(--danger)]',
+                  isSelected ? 'text-[var(--accent-primary)]' : isMyDate ? 'text-[var(--duty-own-text)]' : 'text-[var(--text-primary)]',
+                  isTakenByOther && !isSelected && !isMyDate && 'text-[var(--danger)]',
                 )}>
                   {format(day, 'd')}
                 </span>
-                {isTakenByOther && takenItem?.user && (
+                {isTakenByOther && takenItem?.user && !isMyDate && (
                   <div className="mt-0.5">
                     <Avatar
                       src={takenItem.user.image}
@@ -345,6 +358,11 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
                       size="xs"
                       className="w-4 h-4 sm:w-5 sm:h-5"
                     />
+                  </div>
+                )}
+                {isMyDate && !isSelected && (
+                  <div className="mt-0.5">
+                    <div className="w-2 h-2 rounded-full bg-[var(--duty-own)]" />
                   </div>
                 )}
                 {isSelected && (
@@ -364,6 +382,10 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
             <span className="text-[10px] text-[var(--text-muted)]">Your selection</span>
           </div>
           <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded bg-[var(--duty-own-bg)] border border-[var(--duty-own-border)]" />
+            <span className="text-[10px] text-[var(--text-muted)]">Your duty</span>
+          </div>
+          <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded bg-[var(--danger-bg)]/20 border border-[var(--danger)]/20" />
             <span className="text-[10px] text-[var(--text-muted)]">Taken by others</span>
           </div>
@@ -372,6 +394,37 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
             <span className="text-[10px] text-[var(--text-muted)]">Available</span>
           </div>
         </div>
+
+        {/* My Scheduled Dates — remove-date UI */}
+        {mySelectedDates.length > 0 && (
+          <div className="mt-4 pt-3 border-t border-[var(--border-muted)]">
+            <h3 className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2">
+              Your Scheduled Dates
+            </h3>
+            <div className="space-y-1.5">
+              {mySelectedDates.map((item) => {
+                const dateLabel = format(new Date(item.date), 'EEE, MMM d');
+                return (
+                  <div
+                    key={item._id}
+                    className="flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--duty-own-bg)] border border-[var(--duty-own-border)] shadow-xs"
+                  >
+                    <span className="text-sm font-medium text-[var(--duty-own-text)]">
+                      {dateLabel}
+                    </span>
+                    <button
+                      onClick={() => handleRemoveDate(item._id)}
+                      aria-label={`Remove ${dateLabel}`}
+                      className="p-1 rounded-md text-[var(--danger)] hover:bg-[var(--danger-bg)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Error */}
         {error && (

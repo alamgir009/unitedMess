@@ -1,10 +1,12 @@
 import { useMemo, useRef, useCallback, useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { Avatar } from '@/shared/components/ui';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { fmt } from '@/core/utils/helpers/currency.helper';
 import { formatInIST } from '@/core/utils/helpers/date.helper';
-import { Calendar } from 'lucide-react';
+import { Calendar, Trash2, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { removeMarketScheduledDate } from '../../store/marketSchedule.slice';
 import SlotIcon from './cells/SlotIcon';
 
 const STATUS_BADGE = {
@@ -244,11 +246,27 @@ DayDetailContent.displayName = 'DayDetailContent';
 export default DayDetailContent;
 
 const MarketDutyBanner = ({ scheduleData, currentUser }) => {
+  const dispatch = useDispatch();
+  const [removing, setRemoving] = useState(false);
+
   if (!scheduleData?.user) return null;
 
   const userName = scheduleData.user.name || 'Member';
   const firstName = userName.split(' ')[0];
   const isOwnDuty = currentUser?._id === scheduleData?.user?._id;
+
+  const handleRemove = async () => {
+    if (!scheduleData?._id || removing) return;
+    setRemoving(true);
+    try {
+      await dispatch(removeMarketScheduledDate(scheduleData._id)).unwrap();
+      toast.success('Market duty removed');
+    } catch (err) {
+      toast.error(err || 'Failed to remove market duty');
+    } finally {
+      setRemoving(false);
+    }
+  };
 
   return (
     <div className={cn(
@@ -278,6 +296,25 @@ const MarketDutyBanner = ({ scheduleData, currentUser }) => {
           {isOwnDuty ? `You are on market duty today` : `${firstName} is on market duty today`}
         </span>
       </div>
+      {isOwnDuty && (
+        <button
+          onClick={handleRemove}
+          disabled={removing}
+          aria-label="Remove your market duty"
+          className={cn(
+            'p-1.5 rounded-lg transition-colors shrink-0',
+            'text-[var(--danger)] hover:bg-[var(--danger-bg)]',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            removing && 'opacity-50 cursor-not-allowed',
+          )}
+        >
+          {removing ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Trash2 className="w-4 h-4" />
+          )}
+        </button>
+      )}
     </div>
   );
 };
