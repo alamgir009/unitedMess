@@ -43,7 +43,7 @@ jest.mock('../../src/services/googleCalendar.service', () => ({
     removeEventFromCalendar: jest.fn().mockResolvedValue({ success: true }),
 }));
 jest.mock('../../src/utils/ics', () => ({
-    generateMarketDutyICS: jest.fn().mockReturnValue(Buffer.from('BEGIN:VCALENDAR')),
+    generateMarketDutyICS: jest.fn().mockResolvedValue(Buffer.from('BEGIN:VCALENDAR')),
 }));
 jest.mock('../../src/services/email.service', () => ({
     sendMarketScheduleConfirmationEmail: jest.fn().mockResolvedValue(true),
@@ -217,8 +217,11 @@ describe('selectDates', () => {
         };
         mockMarketSchedule.find.mockReset();
         // First call: existing dates for user+month
+        // Second call: all active records for requested dates (cross-user conflict check)
+        // Third call: admin query in side-effects
         mockMarketSchedule.find
             .mockReturnValueOnce(mockChain(existingDates))
+            .mockReturnValueOnce(mockChain([]))
             .mockReturnValueOnce(admins);
         mockUser.findById.mockReset();
         mockUser.findById.mockReturnValue({
@@ -288,7 +291,7 @@ describe('selectDates', () => {
         const result = await marketScheduleService.selectDates(userId, ['2026-09-10'], year, month);
         expect(result.inserted).toBe(1);
 
-        await new Promise((r) => setTimeout(r, 50));
+        await new Promise((r) => setTimeout(r, 200));
 
         expect(generateMarketDutyICS).toHaveBeenCalledWith(
             expect.objectContaining({ userName: 'Test User' })
@@ -307,7 +310,7 @@ describe('selectDates', () => {
         mockMarketSchedule.insertMany.mockResolvedValue(inserted);
 
         await marketScheduleService.selectDates(userId, ['2026-09-10'], year, month);
-        await new Promise((r) => setTimeout(r, 50));
+        await new Promise((r) => setTimeout(r, 200));
 
         expect(notificationService.createAndSend).toHaveBeenCalledWith(
             userId,
@@ -350,7 +353,7 @@ describe('selectDates', () => {
         mockMarketSchedule.insertMany.mockResolvedValue(inserted);
 
         await marketScheduleService.selectDates(userId, ['2026-09-10'], year, month);
-        await new Promise((r) => setTimeout(r, 50));
+        await new Promise((r) => setTimeout(r, 200));
 
         expect(notificationService.createAndSend).toHaveBeenCalledWith(
             adminId,
@@ -537,5 +540,93 @@ describe('removeScheduledDate', () => {
         const googleCalendarService = require('../../src/services/googleCalendar.service');
         await marketScheduleService.removeScheduledDate('id1', ownerUserId);
         expect(googleCalendarService.removeEventFromCalendar).toHaveBeenCalledWith(ownerUserId, 'gcal-event-123');
+    });
+});
+
+describe('Transaction fallback', () => {
+    const userId = new mongoose.Types.ObjectId();
+    const year = 2026;
+    const month = 9;
+
+    const mockInsertedDoc = (dateStr) => ({
+        _id: new mongoose.Types.ObjectId(),
+        date: new Date(dateStr),
+        user: userId,
+        month: 9,
+        year: 2026,
+        monthKey: '2026-09',
+        source: 'user',
+        status: 'active',
+    });
+
+    const setupForInsert = (existingDates = []) => {
+        const defaultUser = {
+            _id: userId,
+            name: 'Test User',
+            email: 'test@example.com',
+            googleCalendarSyncEnabled: false,
+            notificationPreferences: null,
+        };
+        mockMarketSchedule.find.mockReset();
+        mockMarketSchedule.find
+            .mockReturnValueOnce(mockChain(existingDates))
+            .mockReturnValueOnce(mockChain([]))
+            .mockReturnValueOnce([]);
+        mockUser.findById.mockReset();
+        mockUser.findById.mockReturnValue({
+            lean: jest.fn().mockResolvedValue(defaultUser),
+        });
+        mockUser.find.mockReset();
+        mockUser.find.mockReturnValue(mockChain([]));
+
+        mockMarketSchedule.updateMany.mockReset();
+        mockMarketSchedule.updateMany.mockResolvedValue({ modifiedCount: 0 });
+    };
+
+    it('falls back to non-atomic replace when transactions unsupported', async () => {
+        setupForInsert([]);
+        const inserted = [mockInsertedDoc('2026-09-10T00:00:00.000Z')];
+        mockMarketSchedule.insertMany.mockResolvedValue(inserted);
+
+        const txError = new Error('transaction numbers not enabled');
+
+        const mockSession = {
+            withTransaction: jest.fn().mockRejectedValue(txError),
+            endSession: jest.fn(),
+        };
+        mockMarketSchedule.startSession.mockReset();
+        mockMarketSchedule.startSession.mockResolvedValue(mockSession);
+
+        const result = await marketScheduleService.selectDates(userId, ['2026-09-10'], year, month);
+        expect(result.inserted).toBe(1);
+        expect(mockSession.endSession).toHaveBeenCalledTimes(1);
+    });
+
+    it('propagates non-transaction errors from startSession', async () => {
+        setupForInsert([]);
+
+        const dbError = new Error('MongoNetworkError: connection refused');
+        mockMarketSchedule.startSession.mockReset();
+        mockMarketSchedule.startSession.mockRejectedValue(dbError);
+
+        await expect(
+            marketScheduleService.selectDates(userId, ['2026-09-10'], year, month)
+        ).rejects.toThrow('MongoNetworkError');
+    });
+
+    it('endSession is always called even when transaction fails', async () => {
+        setupForInsert([]);
+        const inserted = [mockInsertedDoc('2026-09-10T00:00:00.000Z')];
+        mockMarketSchedule.insertMany.mockResolvedValue(inserted);
+
+        const txError = new Error('transaction not supported');
+        const mockSession = {
+            withTransaction: jest.fn().mockRejectedValue(txError),
+            endSession: jest.fn(),
+        };
+        mockMarketSchedule.startSession.mockResolvedValue(mockSession);
+
+        await marketScheduleService.selectDates(userId, ['2026-09-10'], year, month);
+        expect(mockSession.endSession).toHaveBeenCalledTimes(1);
     });
 });

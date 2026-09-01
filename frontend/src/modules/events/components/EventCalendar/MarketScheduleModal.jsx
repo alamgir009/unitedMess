@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { Avatar, Button } from '@/shared/components/ui';
 import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
+import { getISTDateKey } from '@/core/utils/helpers/date.helper';
 import {
   fetchMonthSchedule,
   fetchAvailableDates,
@@ -17,8 +18,6 @@ import {
 } from '../../store/marketSchedule.slice';
 
 const MAX_DATES = 3;
-
-const toUTCDateKey = (date) => format(new Date(date), 'yyyy-MM-dd');
 
 let lockCount = 0;
 function lockBodyScroll() {
@@ -84,7 +83,7 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
       const now = new Date();
       const myDates = new Set(
         mySelectedDates
-          .map((d) => toUTCDateKey(d.date))
+          .map((d) => getISTDateKey(d.date))
           .filter((dateKey) => {
             const d = new Date(dateKey + 'T12:00:00');
             return !isBefore(d, now) || isToday(d);
@@ -112,7 +111,7 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
     const map = {};
     for (const item of currentAvailable) {
       if (!item.available && item.date) {
-        const key = toUTCDateKey(item.date);
+        const key = getISTDateKey(item.date);
         map[key] = item;
       }
     }
@@ -123,14 +122,14 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
     const map = {};
     for (const item of currentSchedule) {
       if (!item.user) continue;
-      const dateKey = toUTCDateKey(item.date);
+      const dateKey = getISTDateKey(item.date);
       map[dateKey] = item;
     }
     return map;
   }, [currentSchedule]);
 
   const handleDateClick = useCallback((date) => {
-    const dateKey = toUTCDateKey(date);
+    const dateKey = getISTDateKey(date);
     if (isBefore(date, today) && !isToday(date)) return;
     if (unavailableDatesMap[dateKey] && !selectedDates.has(dateKey)) return;
 
@@ -166,11 +165,7 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
 
     const year = viewMonth.getFullYear();
     const month = viewMonth.getMonth() + 1;
-    const now = new Date();
-    const dates = Array.from(selectedDates).filter((dateKey) => {
-      const d = new Date(dateKey + 'T12:00:00');
-      return !isBefore(d, now) || isToday(d);
-    });
+    const dates = Array.from(selectedDates);
 
     if (dates.length === 0) {
       toast.error('Selected dates are no longer valid');
@@ -178,9 +173,19 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
     }
 
     try {
-      await dispatch(selectMarketDates({ dates, year, month })).unwrap();
-      toast.success(`${dates.length} market date${dates.length !== 1 ? 's' : ''} selected successfully`);
-      dispatch(fetchMyScheduledDates({ year, month }));
+      const result = await dispatch(selectMarketDates({ dates, year, month })).unwrap();
+      if (result && result.inserted === 0 && result.removed === 0) {
+        if (result.conflicts > 0) {
+          toast.error(`${result.conflicts} date${result.conflicts !== 1 ? 's' : ''} already taken by others`);
+        } else {
+          toast('No changes — dates already saved', { icon: 'ℹ️' });
+        }
+      } else if (result && result.conflicts > 0) {
+        toast.success(`${result.inserted} date${result.inserted !== 1 ? 's' : ''} saved (${result.conflicts} skipped — taken by others)`);
+      } else {
+        toast.success(`${dates.length} market date${dates.length !== 1 ? 's' : ''} selected successfully`);
+      }
+      await dispatch(fetchMyScheduledDates({ year, month })).unwrap();
       onClose?.();
     } catch (err) {
       toast.error(err || 'Failed to select dates');
@@ -212,14 +217,14 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
   }, []);
 
   const getDateStatus = useCallback((date) => {
-    const dateKey = toUTCDateKey(date);
+    const dateKey = getISTDateKey(date);
     const inMonth = isSameMonth(date, viewMonth);
     const isPast = isBefore(date, today) && !isToday(date);
     const isSelected = selectedDates.has(dateKey);
     const unavailableItem = unavailableDatesMap[dateKey];
     const isTakenByOther = unavailableItem && !isSelected;
     const takenItem = takenDatesMap[dateKey];
-    const isMyDate = mySelectedDates.some((d) => toUTCDateKey(d.date) === dateKey);
+    const isMyDate = mySelectedDates.some((d) => getISTDateKey(d.date) === dateKey);
 
     return { dateKey, inMonth, isPast, isSelected, isTakenByOther, takenItem, isMyDate };
   }, [viewMonth, today, selectedDates, unavailableDatesMap, takenDatesMap, mySelectedDates]);

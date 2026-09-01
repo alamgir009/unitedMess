@@ -10,6 +10,7 @@ const { registerAutoCreateMealsCron } = require('./jobs/cron/autoCreateMealsCron
 const { registerMarketReminderCron } = require('./jobs/cron/marketReminderCron');
 const { registerMarketScheduleResetCron } = require('./jobs/cron/marketScheduleResetCron');
 const { setupSocketIO, emitToAll } = require('./sockets');
+const MarketSchedule = require('./models/MarketSchedule.model');
 const pkg = require('../package.json');
 
 // Create HTTP server
@@ -19,7 +20,12 @@ const server = http.createServer(app);
 setupSocketIO(server);
 
 // Connect to MongoDB
-connectDB().then(() => {
+connectDB().then(async () => {
+    // Sync MarketSchedule indexes to ensure partial unique index is correct.
+    // This fixes stale indexes that may have been created without partialFilterExpression.
+    await MarketSchedule.syncIndexes();
+    logger.info('✅ MarketSchedule indexes synced');
+
     registerInvoiceCron();
     registerReminderCron();
     registerNotificationCron();

@@ -162,6 +162,17 @@ const marketScheduleSlice = createSlice({
             })
             .addCase(selectMarketDates.fulfilled, (state, action) => {
                 state.isSelecting = false;
+                const result = action.payload;
+                if (result && result.inserted > 0 && action.meta?.arg?.dates) {
+                    const { dates } = action.meta.arg;
+                    const newEntries = dates.map((dateKey) => ({
+                        _id: `optimistic_${dateKey}_${Date.now()}`,
+                        date: new Date(dateKey + 'T00:00:00.000Z'),
+                        status: 'active',
+                        isPendingRefetch: true,
+                    }));
+                    state.mySelectedDates = [...state.mySelectedDates, ...newEntries];
+                }
             })
             .addCase(selectMarketDates.rejected, (state, action) => {
                 state.isSelecting = false;

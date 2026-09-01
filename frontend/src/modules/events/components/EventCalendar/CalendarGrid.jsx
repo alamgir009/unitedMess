@@ -10,6 +10,7 @@ import {
 } from 'date-fns';
 import CalendarCell from './CalendarCell';
 import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
+import { getISTDateKey } from '@/core/utils/helpers/date.helper';
 
 const DAY_HEADERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -92,7 +93,7 @@ const CalendarGrid = memo(({
       {/* Body grid */}
       <div className="grid grid-cols-7">
         {days.map((day, idx) => {
-          const dateStr = format(day, 'yyyy-MM-dd');
+          const dateStr = getISTDateKey(day);
           const weekRow = Math.floor(idx / 7);
           const colIdx = idx % 7;
           const isLastRow = weekRow === lastRowIndex;

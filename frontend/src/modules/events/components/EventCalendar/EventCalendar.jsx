@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { addMonths, subMonths, format, startOfMonth, endOfMonth } from 'date-fns';
+import { addMonths, subMonths, format, startOfMonth, endOfMonth, addDays } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import CalendarHeader from './CalendarHeader';
@@ -13,7 +13,7 @@ import MarketScheduleModal from './MarketScheduleModal';
 import SegmentedControl from '../SegmentedControl';
 
 import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
-import { formatInIST } from '@/core/utils/helpers/date.helper';
+import { formatInIST, formatDateKey, getISTDateKey } from '@/core/utils/helpers/date.helper';
 import eventService from '../../services/event.service';
 import { setCurrentMonth, setLoading } from '../../store/events.slice';
 import { fetchMonthSchedule, fetchAvailableDates } from '../../store/marketSchedule.slice';
@@ -50,17 +50,6 @@ const extractItems = (envelope, category) => {
   return Array.isArray(items) ? items : [];
 };
 
-const getISTDateKey = (dateStr) => {
-  try {
-    const ms = Date.parse(
-      new Date(dateStr).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }),
-    );
-    return format(new Date(ms), 'yyyy-MM-dd');
-  } catch {
-    return 'unknown';
-  }
-};
-
 const groupByDateIST = (items) => {
   const map = {};
   if (!items || !Array.isArray(items)) return map;
@@ -80,7 +69,7 @@ const getDaysInMonth = (date) => {
   let d = new Date(start);
   while (d <= end) {
     days.push(format(d, 'yyyy-MM-dd'));
-    d = new Date(d.getTime() + 86400000);
+    d = addDays(d, 1);
   }
   return days;
 };
@@ -128,14 +117,14 @@ const EventCalendar = () => {
     const scheduleData = monthSchedule[scheduleKey] || [];
     for (const item of scheduleData) {
       if (!item?.user) continue;
-      const dateKey = format(new Date(item.date), 'yyyy-MM-dd');
+      const dateKey = getISTDateKey(item.date);
       map[dateKey] = item;
     }
     return map;
   }, [monthSchedule, scheduleKey]);
 
   const getScheduleForDate = useCallback((date) => {
-    const dateKey = format(new Date(date), 'yyyy-MM-dd');
+    const dateKey = getISTDateKey(date);
     return scheduleMap[dateKey] || null;
   }, [scheduleMap]);
 

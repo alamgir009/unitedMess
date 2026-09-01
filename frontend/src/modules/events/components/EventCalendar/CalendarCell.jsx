@@ -133,6 +133,8 @@ export default memo(CalendarCell, (prev, next) => {
     prev.isLastInRow === next.isLastInRow &&
     prev.scheduleData === next.scheduleData &&
     prev.isOwnDuty === next.isOwnDuty &&
+    prev.onCellClick === next.onCellClick &&
+    prev.onRetry === next.onRetry &&
     isSameData(prev.data, next.data)
   );
 });

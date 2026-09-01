@@ -1,5 +1,27 @@
 import { format, isToday, isYesterday, differenceInDays } from 'date-fns';
 
+export const formatDateKey = (date) => {
+    const d = date instanceof Date ? date : new Date(date);
+    if (isNaN(d.getTime())) return '';
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+export const getISTDateKey = (date) => {
+    try {
+        const d = date instanceof Date ? date : new Date(date);
+        if (isNaN(d.getTime())) return '';
+        const ms = Date.parse(
+            d.toLocaleString('en-US', { timeZone: IST_TIMEZONE }),
+        );
+        return format(new Date(ms), 'yyyy-MM-dd');
+    } catch {
+        return '';
+    }
+};
+
 const IST_TIMEZONE = 'Asia/Kolkata';
 const SEC_MS = 1000;
 const MIN_MS = 60000;

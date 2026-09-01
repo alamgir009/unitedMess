@@ -51,10 +51,20 @@ const removeScheduledDate = asyncHandler(async (req, res) => {
     res.status(204).send();
 });
 
+const restoreMonthSchedules = asyncHandler(async (req, res) => {
+    const { year, month } = req.params;
+    const result = await marketScheduleService.restoreMonthSchedules(year, month);
+    const message = result.restored > 0
+        ? `Restored ${result.restored} schedule(s) for ${result.monthKey}`
+        : `No reset schedules found for ${result.monthKey}`;
+    sendSuccessResponse(res, 200, message, result);
+});
+
 module.exports = {
     getMonthSchedule,
     getAvailableDates,
     getMyScheduledDates,
     selectDates,
     removeScheduledDate,
+    restoreMonthSchedules,
 };
