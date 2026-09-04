@@ -77,6 +77,7 @@ const CalendarCell = ({
         !inMonth && 'bg-[var(--calendar-out-of-month-bg)] opacity-40',
         !inMonth && 'hover:opacity-60',
         !today && 'hover:bg-[var(--calendar-cell-hover-bg)] hover:shadow-sm hover:shadow-[var(--calendar-cell-hover-shadow)] hover:-translate-y-px',
+        isOwnDuty && category === 'markets' && 'border-l-2 lg:border-l-[3px] border-l-[var(--duty-own)] bg-[var(--duty-own-bg)]',
       )}
       tabIndex={0}
       onClick={() => onCellClick?.(date, data)}

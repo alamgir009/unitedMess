@@ -55,20 +55,16 @@ const MarketCellContent = memo(({ entries = [], loading, error, isCompact, onRet
           </span>
         ) : hasDuty ? (
           <span className={cn(
-            'inline-flex items-center gap-0.5 leading-none',
+            'leading-none',
             isOwnDuty ? 'text-[var(--duty-own-text)]' : 'text-[var(--duty-other-text)]',
           )}>
-            <span className={cn(
-              'w-1 h-1 rounded-full shrink-0',
-              isOwnDuty ? 'bg-[var(--duty-own)]' : 'bg-[var(--duty-other)]',
-            )} />
             <span className="text-[10px] sm:text-[11px] font-semibold truncate">
               {scheduleData.user.name?.split(' ')[0]}
             </span>
           </span>
         ) : null
       ) : (
-        <>
+        <div className="flex items-center gap-1.5 min-w-0">
           {entries.length > 0 && (
             <>
               <ShoppingBag className="w-[14px] h-[14px] text-[var(--market-accent)] shrink-0 drop-shadow-sm" aria-hidden="true" />
@@ -86,7 +82,7 @@ const MarketCellContent = memo(({ entries = [], loading, error, isCompact, onRet
               {scheduleData.user.name?.split(' ')[0]}
             </span>
           )}
-        </>
+        </div>
       )}
     </div>
   );
