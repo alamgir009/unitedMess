@@ -1,18 +1,14 @@
 import { useEffect, useCallback, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { useModalAnimation } from '@/shared/hooks/useModalAnimation';
-import useBodyScrollLock from '@/shared/hooks/useBodyScrollLock';
-import { cn } from '@/core/utils/helpers/string.helper';
 import {
-    HiOutlineXMark,
-    HiOutlineDocumentText,
     HiOutlineExclamationTriangle,
     HiOutlineCurrencyRupee,
     HiOutlineArrowPath,
     HiOutlineClock,
+    HiOutlineDocumentText,
 } from 'react-icons/hi2';
 
+import { Modal, Button } from '@/shared/components/ui';
 import InvoicePreview from '../InvoicePreview/InvoicePreview';
 import { fetchMonthlyInvoice, clearMonthlyInvoice } from '../../store/invoice.slice';
 import { fmt } from '@/core/utils/helpers/currency.helper';
@@ -26,18 +22,6 @@ const toPaymentStatus = (invoiceStatus) => {
     }
 };
 
-/**
- * Resolve the identity of the invoice owner (NOT the viewer).
- *
- * The backend attaches `invoice.userDetails` (name/email/image/chargePerGuestMeal)
- * to the monthly invoice response, so an admin previewing another member's
- * invoice sees that member's identity instead of their own.
- *
- * Resolution order:
- *   1. invoice.userDetails        — authoritative owner identity from the API
- *   2. paymentRecord.user         — populated member on the payment row (fallback)
- *   3. authenticated viewer (user) — self-view / any residual path
- */
 const resolveInvoiceOwner = (invoice, paymentRecord, authUser) => {
     const details = invoice?.userDetails;
     if (details?.name) {
@@ -62,10 +46,10 @@ const resolveInvoiceOwner = (invoice, paymentRecord, authUser) => {
 
 const InvoiceSkeleton = () => (
     <div className="space-y-4 animate-pulse">
-        <div className="h-28 bg-muted rounded-2xl w-full" />
-        <div className="h-16 bg-muted rounded-2xl w-full" />
-        <div className="h-56 bg-muted rounded-2xl w-full" />
-        <div className="h-20 bg-muted rounded-2xl w-full" />
+        <div className="h-28 bg-muted rounded-xl w-full" />
+        <div className="h-16 bg-muted rounded-xl w-full" />
+        <div className="h-56 bg-muted rounded-xl w-full" />
+        <div className="h-20 bg-muted rounded-xl w-full" />
     </div>
 );
 
@@ -105,23 +89,18 @@ const PartialPaymentBanner = ({ remainingAmount, paidAmount, totalPayable, onPay
                 </div>
 
                 {onPayNow && (
-                    <button
-                        type="button"
+                    <Button
+                        variant="warning"
+                        size="sm"
+                        fullWidth
                         disabled={!!isPaying}
+                        isLoading={!!isPaying}
                         onClick={() => onPayNow(monthName)}
-                        className="touch-target mt-3 w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg
-                            bg-warning hover:brightness-90 text-white text-sm font-bold
-                            shadow-md hover:shadow-lg
-                            disabled:opacity-60 disabled:cursor-not-allowed transition-[transform,opacity] duration-100 ease-out
-                            active:scale-[0.98]"
+                        className="mt-3"
                     >
-                        {isPaying ? (
-                            <HiOutlineArrowPath className="w-4 h-4 animate-spin" />
-                        ) : (
-                            <HiOutlineCurrencyRupee className="w-4 h-4" />
-                        )}
-                        <span>{isPaying ? 'Processing…' : `Pay Remaining ₹${fmt(remainingAmount)}`}</span>
-                    </button>
+                        <HiOutlineCurrencyRupee className="w-4 h-4" />
+                        {isPaying ? 'Processing…' : `Pay Remaining ₹${fmt(remainingAmount)}`}
+                    </Button>
                 )}
             </div>
         </div>
@@ -138,41 +117,29 @@ const MonthlyInvoiceModal = ({
     isPaying,
     paymentRecord: externalPaymentRecord,
     userId,
-    fullScreenOnMobile = false,
 }) => {
     const dispatch = useDispatch();
     const { monthlyInvoice, isLoadingMonthly, error } = useSelector((state) => state.invoice);
     const authUser = useSelector((state) => state.auth.user);
-    const { shouldRender, exiting } = useModalAnimation(isOpen, { exitTimeout: 120 });
-
-    useBodyScrollLock(shouldRender && !exiting);
 
     useEffect(() => {
-        if (!shouldRender || exiting) return;
-
-        const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
-        document.addEventListener('keydown', handleEsc);
+        if (!isOpen) return;
 
         if (year && month) {
             dispatch(fetchMonthlyInvoice({ year, month, userId }));
         }
 
         return () => {
-            document.removeEventListener('keydown', handleEsc);
             dispatch(clearMonthlyInvoice());
         };
-    }, [shouldRender, exiting, year, month, userId, dispatch, onClose]);
+    }, [isOpen, year, month, userId, dispatch]);
 
     const handleClose = useCallback(() => onClose(), [onClose]);
 
-    // Invoice owner identity — the viewer when it's their own invoice, but the
-    // target member when an admin previews someone else's (bug fix).
     const displayUser = useMemo(
         () => resolveInvoiceOwner(monthlyInvoice, externalPaymentRecord, authUser),
         [monthlyInvoice, externalPaymentRecord, authUser]
     );
-
-    if (!shouldRender) return null;
 
     const invoiceStatus    = monthlyInvoice?.status ?? 'unpaid';
     const paymentStatus    = toPaymentStatus(invoiceStatus);
@@ -183,10 +150,7 @@ const MonthlyInvoiceModal = ({
         ?? Math.max(0, totalPayable - paidAmount);
 
     const invoicePaymentRecord = {
-        // externalPaymentRecord as fallback (for pending/unverified payments
-        // where no backend completed-payment record exists yet)
         ...(externalPaymentRecord || {}),
-        // Override with backend-scoped payment data (authoritative per user+month)
         month:          monthlyInvoice?.monthName,
         paymentDate:    monthlyInvoice?._paymentDate || monthlyInvoice?.createdAt,
         paidAmount,
@@ -197,117 +161,71 @@ const MonthlyInvoiceModal = ({
         utr:            monthlyInvoice?._utr,
     };
 
-    return createPortal(
-        <div className={cn(
-            'fixed inset-0 z-modal flex items-center justify-center',
-            fullScreenOnMobile ? 'p-0 sm:p-6 items-stretch sm:items-center' : 'p-4 sm:p-6 items-center',
-            'modal-animate-backdrop',
-            exiting ? 'modal-exit-backdrop' : 'modal-enter'
-        )}>
-            <div
-                className="absolute inset-0 bg-overlay"
-                onClick={handleClose}
-                aria-hidden="true"
-            />
+    return (
+        <Modal
+            isOpen={isOpen}
+            onClose={handleClose}
+            title="Invoice Details"
+            description={monthName || monthlyInvoice?.monthName || ''}
+            size="2xl"
+            mobileSheet
+            accentColor="blue"
+        >
+            <div className="space-y-4">
+                {isLoadingMonthly && <InvoiceSkeleton />}
 
-            <div
-                className={cn(
-                    'relative w-full max-w-2xl flex flex-col',
-                    fullScreenOnMobile ? 'h-full sm:h-auto sm:max-h-[90vh]' : 'max-h-[90vh]',
-                    fullScreenOnMobile ? 'rounded-none sm:rounded-3xl' : 'rounded-3xl',
-                    'bg-card border border-border shadow-2xl overflow-hidden',
-                    'modal-animate modal-gpu',
-                    exiting ? 'modal-exit' : 'modal-enter'
-                )}
-                role="dialog"
-                aria-modal="true"
-                aria-label="Invoice Details"
-            >
-                <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
-                    <div className="flex items-center gap-3">
-                        <div className="grid place-items-center w-9 h-9 rounded-xl bg-primary/10">
-                            <HiOutlineDocumentText className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-bold text-foreground">
-                                Invoice Details
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                                {monthName || monthlyInvoice?.monthName || ''}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <button
-                            id="monthly-invoice-modal-close"
-                            onClick={handleClose}
-                            className="grid place-items-center touch-target rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                            aria-label="Close invoice modal"
+                {!isLoadingMonthly && error && (
+                    <div className="p-6 text-center bg-destructive/10 rounded-xl border border-destructive/20">
+                        <HiOutlineExclamationTriangle className="w-10 h-10 text-destructive mx-auto mb-3" />
+                        <p className="font-semibold text-destructive mb-1">
+                            Failed to load invoice
+                        </p>
+                        <p className="text-sm text-destructive/80">{error}</p>
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => dispatch(fetchMonthlyInvoice({ year, month }))}
+                            className="mt-4"
                         >
-                            <HiOutlineXMark className="w-5 h-5" />
-                        </button>
+                            <HiOutlineArrowPath className="w-4 h-4" />
+                            Try Again
+                        </Button>
                     </div>
-                </div>
+                )}
 
-                <div className={cn(
-                    'overflow-y-auto flex-1 space-y-4 custom-scrollbar bg-muted/50',
-                    fullScreenOnMobile ? 'p-0 sm:p-6' : 'p-4 sm:p-6'
-                )}>
-                    {isLoadingMonthly && <InvoiceSkeleton />}
-
-                    {!isLoadingMonthly && error && (
-                        <div className="p-6 text-center bg-destructive/10 rounded-2xl border border-destructive/20">
-                            <HiOutlineExclamationTriangle className="w-10 h-10 text-destructive mx-auto mb-3" />
-                            <p className="font-semibold text-destructive mb-1">
-                                Failed to load invoice
-                            </p>
-                            <p className="text-sm text-destructive/80">{error}</p>
-                            <button
-                                onClick={() => dispatch(fetchMonthlyInvoice({ year, month }))}
-                                className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-destructive/10 text-destructive text-sm font-medium hover:bg-destructive/20 transition-colors"
-                            >
-                                <HiOutlineArrowPath className="w-4 h-4" />
-                                Try Again
-                            </button>
-                        </div>
-                    )}
-
-                    {!isLoadingMonthly && !error && monthlyInvoice && (
-                        <>
-                            {isPartiallyPaid && (
-                                <PartialPaymentBanner
-                                    remainingAmount={remainingAmount}
-                                    paidAmount={paidAmount}
-                                    totalPayable={totalPayable}
-                                    onPayNow={onPayNow}
-                                    isPaying={isPaying}
-                                    monthName={monthlyInvoice?.monthName || monthName}
-                                />
-                            )}
-
-                            <InvoicePreview
-                                invoice={monthlyInvoice}
-                                user={displayUser}
-                                paymentRecord={invoicePaymentRecord}
-                                onPayNow={!isPartiallyPaid && paymentStatus !== 'success' ? onPayNow : undefined}
+                {!isLoadingMonthly && !error && monthlyInvoice && (
+                    <>
+                        {isPartiallyPaid && (
+                            <PartialPaymentBanner
+                                remainingAmount={remainingAmount}
+                                paidAmount={paidAmount}
+                                totalPayable={totalPayable}
+                                onPayNow={onPayNow}
                                 isPaying={isPaying}
+                                monthName={monthlyInvoice?.monthName || monthName}
                             />
-                        </>
-                    )}
+                        )}
 
-                    {!isLoadingMonthly && !error && !monthlyInvoice && (
-                        <div className="py-16 text-center">
-                            <HiOutlineDocumentText className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
-                            <p className="text-sm font-medium text-muted-foreground">
-                                No invoice data found for this period.
-                            </p>
-                        </div>
-                    )}
-                </div>
+                        <InvoicePreview
+                            invoice={monthlyInvoice}
+                            user={displayUser}
+                            paymentRecord={invoicePaymentRecord}
+                            onPayNow={!isPartiallyPaid && paymentStatus !== 'success' ? onPayNow : undefined}
+                            isPaying={isPaying}
+                        />
+                    </>
+                )}
+
+                {!isLoadingMonthly && !error && !monthlyInvoice && (
+                    <div className="py-16 text-center">
+                        <HiOutlineDocumentText className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
+                        <p className="text-sm font-medium text-muted-foreground">
+                            No invoice data found for this period.
+                        </p>
+                    </div>
+                )}
             </div>
-        </div>,
-        document.body,
+        </Modal>
     );
 };
 

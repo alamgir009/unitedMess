@@ -42,11 +42,11 @@ const accentMap = {
 };
 
 const inputBase =
-    'w-full px-3 py-2 rounded-xl border border-[var(--border-default)] ' +
-    'bg-[var(--bg-elevated)] ' +
+    'w-full px-3 py-2 rounded-xl border border-[var(--input-border)] ' +
+    'bg-[var(--input-bg)] ' +
     'outline-none transition-all duration-200 ' +
-    'text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/50 ' +
-    'shadow-sm hover:border-[var(--border-strong)]';
+    'text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] ' +
+    'shadow-[var(--inset-inner)] hover:border-[var(--input-border-hover)]';
 
 const MemberSelect = ({
     users = [],
@@ -169,24 +169,24 @@ const MemberSelect = ({
             </button>
 
             {open && !disabled && (
-                <div className="absolute z-50 top-full mt-1.5 w-full rounded-xl border border-border/60 bg-card shadow-lg overflow-hidden">
+                <div className="absolute z-50 top-full mt-1.5 w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-elevated)] shadow-xl overflow-hidden">
                     {/* Search */}
                     <div className="px-2 pt-2 pb-1">
                         <div className="relative">
-                            <HiOutlineMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 pointer-events-none" />
+                            <HiOutlineMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
                             <input
                                 ref={searchRef}
                                 type="text"
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
                                 placeholder="Search members…"
-                                className={`${inputBase} ${ac.ring} pl-9 h-10 text-xs`}
+                                className={`${inputBase} pl-9 h-10 text-xs`}
                             />
                             {search && (
                                 <button
                                     type="button"
                                     onClick={() => setSearch('')}
-                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted/50 text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-[var(--bg-muted)] text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
                                 >
                                     <HiOutlineXMark className="w-3.5 h-3.5" />
                                 </button>
@@ -196,7 +196,7 @@ const MemberSelect = ({
 
                     {/* Batch actions */}
                     {filtered.length > 0 && (
-                        <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border/30">
+                        <div className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border-muted)]">
                             <button
                                 type="button"
                                 onClick={selectAll}
@@ -205,12 +205,12 @@ const MemberSelect = ({
                             >
                                 Select All
                             </button>
-                            <span className="text-muted-foreground/30">|</span>
+                            <span className="text-[var(--text-muted)]/30">|</span>
                             <button
                                 type="button"
                                 onClick={clearAll}
                                 disabled={selectedCount === 0}
-                                className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60 hover:text-foreground transition-colors duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
+                                className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
                             >
                                 Clear All
                             </button>
@@ -222,17 +222,17 @@ const MemberSelect = ({
                         <div className="p-3 space-y-2">
                             {[1, 2, 3].map(n => (
                                 <div key={n} className="flex items-center gap-3 animate-pulse">
-                                    <div className="w-4 h-4 rounded bg-muted/40" />
-                                    <div className="w-8 h-8 rounded-full bg-muted/40" />
+                                    <div className="w-4 h-4 rounded bg-[var(--bg-muted)]" />
+                                    <div className="w-8 h-8 rounded-full bg-[var(--bg-muted)]" />
                                     <div className="flex-1 space-y-1">
-                                        <div className="h-3 w-28 bg-muted/40 rounded" />
-                                        <div className="h-2.5 w-36 bg-muted/20 rounded" />
+                                        <div className="h-3 w-28 bg-[var(--bg-muted)] rounded" />
+                                        <div className="h-2.5 w-36 bg-[var(--bg-subtle)] rounded" />
                                     </div>
                                 </div>
                             ))}
                         </div>
                     ) : filtered.length === 0 ? (
-                        <div className="px-4 py-6 text-center text-muted-foreground/60 text-sm">
+                        <div className="px-4 py-6 text-center text-[var(--text-muted)] text-sm">
                             {search ? 'No members match your search' : 'No members available'}
                         </div>
                     ) : (
@@ -250,25 +250,25 @@ const MemberSelect = ({
                                         className={`
                                             w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-all duration-100
                                             ${blocked
-                                                ? 'bg-success/10 text-success cursor-not-allowed'
+                                                ? 'bg-[var(--success-bg)] text-[var(--success-text)] cursor-not-allowed'
                                                 : selected
                                                     ? `${ac.selected} font-medium`
-                                                    : 'hover:bg-muted/40 text-foreground'
+                                                    : 'hover:bg-[var(--bg-muted)] text-[var(--text-primary)]'
                                             }
                                         `}
                                     >
                                         {/* Checkbox */}
                                         <span className={`
-                                            relative flex items-center justify-center w-4 h-4 shrink-0 rounded border-2 transition-all duration-100
+                                            relative flex items-center justify-center w-5 h-5 shrink-0 rounded border-2 transition-all duration-100
                                             ${blocked
-                                                ? 'border-success/60 bg-success/20'
+                                                ? 'border-[var(--success)] bg-[var(--success)]'
                                                 : selected
                                                     ? ac.checkbox
-                                                    : `border-muted-foreground/30 ${ac.hoverCheck}`
+                                                    : `border-[var(--text-muted)]/40 ${ac.hoverCheck}`
                                             }
                                         `}>
                                             {(blocked || selected) && (
-                                                <HiOutlineCheck className={`w-3 h-3 ${blocked ? 'text-success' : ac.checkIcon}`} strokeWidth={3} />
+                                                <HiOutlineCheck className={`w-3.5 h-3.5 ${blocked ? 'text-[var(--text-on-brand)]' : ac.checkIcon}`} strokeWidth={3} />
                                             )}
                                         </span>
 
@@ -277,17 +277,17 @@ const MemberSelect = ({
 
                                         {/* Name + Email */}
                                         <span className="flex-1 min-w-0 text-left">
-                                            <span className="block truncate text-xs font-medium leading-tight">
+                                            <span className="block truncate text-xs font-medium leading-tight text-[var(--text-primary)]">
                                                 {u.name}
                                             </span>
-                                            <span className="block truncate text-[11px] text-muted-foreground/60 leading-tight">
+                                            <span className="block truncate text-[11px] text-[var(--text-muted)] leading-tight">
                                                 {u.email || ''}
                                             </span>
                                         </span>
 
                                         {/* Blocked badge */}
                                         {blocked && (
-                                            <span className="flex items-center gap-1 shrink-0 text-[11px] font-semibold text-success">
+                                            <span className="flex items-center gap-1 shrink-0 text-[11px] font-semibold text-[var(--success-text)]">
                                                 <HiOutlineCheck className="w-3.5 h-3.5" />
                                                 All paid
                                             </span>

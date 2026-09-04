@@ -56,6 +56,7 @@ const MealPage = () => {
     const [selectedIds, setSelectedIds] = useState(new Set());
     const [bulkDeleteTarget, setBulkDeleteTarget] = useState(null);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+    const [modalFooter, setModalFooter] = useState(null);
 
     const fetchParams = useMemo(() =>
         isAdmin ? { page: 1, limit: 'all' } : { page, limit },
@@ -475,13 +476,15 @@ const MealPage = () => {
 
                 {/* Meal create/edit modal */}
                 <MealModal isOpen={isModalOpen} onClose={closeModal}
-                    title={editingMeal ? 'Edit Meal Record' : (isAdmin ? 'Add Meal Record' : 'Track New Meal')}>
+                    title={editingMeal ? 'Edit Meal Record' : (isAdmin ? 'Add Meal Record' : 'Track New Meal')}
+                    footer={modalFooter}>
                     <MealForm
                         initialData={editingMeal}
                         onSubmit={handleSubmit}
                         onCancel={closeModal}
                         isAdmin={isAdmin}
                         currentUser={user}
+                        renderFooter={setModalFooter}
                     />
                 </MealModal>
 

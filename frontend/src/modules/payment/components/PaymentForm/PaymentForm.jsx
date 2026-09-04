@@ -82,7 +82,7 @@ const inputDisabled = 'opacity-60 cursor-not-allowed pointer-events-none select-
 /* ─── Field wrapper ─────────────────────────────────────────── */
 const Field = ({ label, icon: Icon, children, className = '' }) => (
     <div className={`flex flex-col gap-1.5 ${className}`}>
-        <label className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-[var(--text-muted)] select-none">
+        <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)] select-none">
             {Icon && <Icon className="w-3 h-3 shrink-0 opacity-60" />}
             {label}
         </label>
@@ -222,7 +222,7 @@ const TypeBtn = ({ value, current, onClick, label, color, disabled = false }) =>
         type="button"
         onClick={() => !disabled && onClick(value)}
         disabled={disabled}
-        className={`flex-1 min-w-0 py-2.5 px-2 rounded-full text-xs font-semibold
+        className={`flex-1 min-w-0 py-2.5 px-2 rounded-xl border-2 text-xs font-semibold
             tracking-wide transition-all duration-200 text-center truncate
             ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
             ${current === value
@@ -239,11 +239,10 @@ const TypeBtn = ({ value, current, onClick, label, color, disabled = false }) =>
 /* ─── ReadOnly banner ───────────────────────────────────────── */
 const ReadOnlyBanner = () => (
     <div
-        className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--warning-bg)] border border-[var(--warning-border)] text-[var(--warning-text)]"
-        style={{ boxShadow: 'var(--inset-top-glow)' }}
+        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--warning-bg)] border border-[var(--warning-border)] text-[var(--warning-text)]"
     >
-        <HiOutlineLockClosed className="w-3.5 h-3.5 flex-shrink-0 opacity-80" />
-        <p className="text-xs font-medium">View only — only admins can edit payment records</p>
+        <HiOutlineLockClosed className="w-3.5 h-3.5 flex-shrink-0" />
+        <p className="text-xs font-semibold">View only — only admins can edit payment records</p>
     </div>
 );
 
@@ -258,7 +257,7 @@ const ReadOnlyBanner = () => (
  * @param {boolean}  isSubmitting       - disable form while submitting
  * @param {string}   preselectedUserId  - pre-select member in MemberSelect (create mode only)
  */
-const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentUser, readOnly = false, isSubmitting = false, preselectedUserId = null }) => {
+const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentUser, readOnly = false, isSubmitting = false, preselectedUserId = null, renderFooter }) => {
 
     const [formData, setFormData] = useState({
         amount:        '',
@@ -494,15 +493,51 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
     const showStatus = isAdmin;
     const showTxn    = formData.paymentMethod === 'online' || formData.paymentMethod === 'razorpay' || formData.paymentMethod === 'upi_manual';
 
+    useEffect(() => {
+        if (!renderFooter) return;
+
+        renderFooter(
+            <div className="flex gap-2.5 w-full">
+                <Button
+                    type="button" variant="ghost" size="sm"
+                    onClick={onCancel} disabled={isSubmitting}
+                    className="flex-1"
+                >
+                    {readOnly ? 'Close' : 'Cancel'}
+                </Button>
+                {!readOnly && (
+                    <Button
+                        type="submit" form="payment-form" variant="success" size="sm"
+                        disabled={isSubmitting}
+                        className="flex-[2]"
+                    >
+                        {isSubmitting ? (
+                            <span className="flex items-center justify-center gap-2">
+                                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                </svg>
+                                {initialData ? 'Updating…' : 'Recording…'}
+                            </span>
+                        ) : (
+                            initialData ? 'Update' : 'Save'
+                        )}
+                    </Button>
+                )}
+            </div>
+        );
+    }, [isSubmitting, readOnly, initialData, onCancel, renderFooter]);
+
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-lg mx-auto">
+        <form id="payment-form" onSubmit={handleSubmit} className="flex flex-col gap-3 w-full max-w-lg mx-auto">
+            <button type="submit" className="sr-only" tabIndex={-1} aria-hidden="true" />
 
             {/* Read-only notice */}
             {readOnly && <ReadOnlyBanner />}
 
             {/* ── Amount preview banner ── */}
             <div
-                className={`relative flex items-center justify-center py-4 rounded-2xl border overflow-hidden shrink-0 ${
+                className={`relative flex items-center justify-center py-3 rounded-xl border overflow-hidden shrink-0 ${
                     formData.status === 'refunded' && parseFloat(formData.amount) < 0
                         ? 'border-[var(--danger)]/30 bg-[var(--danger-bg)]'
                         : 'border-[var(--accent-primary)]/30 bg-[var(--accent-subtle)]'
@@ -510,7 +545,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                 style={{ boxShadow: 'var(--inset-top-glow), var(--shadow-xs)' }}
             >
                 <div className="flex items-baseline gap-2.5">
-                    <span className={`text-[36px] font-black leading-none tracking-[-0.03em] ${
+                    <span className={`text-2xl font-bold leading-none tracking-tight ${
                         formData.status === 'refunded' && parseFloat(formData.amount) < 0
                             ? 'text-[var(--danger)]'
                             : 'text-[var(--text-primary)]'
@@ -530,7 +565,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
             </div>
 
             {/* ── Form fields ── */}
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
 
                 {/* Admin: member selector */}
                 {isAdmin && (
@@ -697,36 +732,6 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                         placeholder={readOnly ? '' : 'Add any notes about this payment…'}
                     />
                 </Field>
-            </div>
-
-            {/* ── Action buttons ── */}
-            <div className="flex gap-3 pt-4 border-t border-[var(--border-muted)] shrink-0">
-                <Button
-                    type="button" variant="ghost" size="sm"
-                    onClick={onCancel} disabled={isSubmitting}
-                    className={readOnly ? 'flex-1' : 'flex-1'}
-                >
-                    {readOnly ? 'Close' : 'Cancel'}
-                </Button>
-                {!readOnly && (
-                    <Button
-                        type="submit" variant="success" size="sm"
-                        disabled={isSubmitting}
-                        className="flex-[2]"
-                    >
-                        {isSubmitting ? (
-                            <span className="flex items-center justify-center gap-2">
-                                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                </svg>
-                                {initialData ? 'Updating…' : 'Recording…'}
-                            </span>
-                        ) : (
-                            initialData ? 'Update' : 'Save'
-                        )}
-                    </Button>
-                )}
             </div>
         </form>
     );

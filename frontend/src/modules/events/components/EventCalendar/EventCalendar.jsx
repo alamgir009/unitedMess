@@ -7,12 +7,11 @@ import CalendarHeader from './CalendarHeader';
 import CalendarGrid from './CalendarGrid';
 import MealLegend from './MealLegend';
 import DayDetailContent from './DayDetailContent';
-import DayDetailModal from './DayDetailModal';
-import DayDetailSheet from './DayDetailSheet';
+import DayDetailDialog from './DayDetailDialog';
 import MarketScheduleModal from './MarketScheduleModal';
 import SegmentedControl from '../SegmentedControl';
 
-import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
+
 import { formatInIST, formatDateKey, getISTDateKey } from '@/core/utils/helpers/date.helper';
 import eventService from '../../services/event.service';
 import { setCurrentMonth, setLoading } from '../../store/events.slice';
@@ -155,7 +154,6 @@ const EventCalendar = () => {
   }, [currentDateEntries, category, isAdmin, detailDate, user]);
 
   const abortRef = useRef(null);
-  const isMobile = useMediaQuery('(max-width: 639px)');
 
   const fetchData = useCallback(async (signal) => {
     const monthStart = format(startOfMonth(currentMonthDate), 'yyyy-MM-dd');
@@ -797,119 +795,62 @@ const EventCalendar = () => {
       </div>
 
       {detailDate && (
-        isMobile ? (
-          <DayDetailSheet
-            isOpen={!!detailDate}
-            onClose={handleCloseDetail}
-            title={`${formatInIST(detailDate, 'MMM d, yyyy')}${isEditMode ? ' — Edit' : ''} — ${category}`}
-            isEditMode={isEditMode}
-            onEditToggle={!['votes', 'payments'].includes(category) ? handleEditToggle : undefined}
-            category={category}
-            onScheduleClick={category === 'markets' ? handleScheduleClick : undefined}
-            onPaymentAdd={category === 'payments' && isAdmin ? handlePaymentAdd : undefined}
-            onAddMarket={category === 'markets' && isAdmin ? handleAddMarket : undefined}
-            onMealAdd={category === 'meals' ? (userOwnMealEntry ? handleMealUpdate : handleMealAdd) : undefined}
-            mealActionLabel={category === 'meals' ? (userOwnMealEntry ? 'Update Meal' : 'Add Meal') : undefined}
-            isAdding={isAdding}
-            editingId={editingId}
-            confirmDeleteId={confirmDeleteId}
-          >
-            {isEditMode ? (
-              <Suspense fallback={calendarSuspenseFallback}>
-                <CalendarDayEdit
-                  entries={filteredCurrentDateEntries}
-                  category={category}
-                  date={detailDate}
-                  isAdmin={isAdmin}
-                  currentUser={user}
-                  onSave={handleSaveEntry}
-                  onUpdate={handleUpdateEntry}
-                  onDelete={handleDeleteEntry}
-                  onDone={() => setIsEditMode(false)}
-                  selectedEntryIds={selectedEntryIds}
-                  onToggleSelect={isAdmin ? handleToggleSelect : undefined}
-                  onSelectAll={isAdmin ? handleSelectAll : undefined}
-                  onBulkDelete={handleBulkDelete}
-                  onBulkUpdate={handleBulkUpdate}
-                  onExitSelectMode={handleExitSelectMode}
-                  isBulkSubmitting={isBulkSubmitting}
-                  isEditMode={isEditMode}
-                  isAdding={isAdding}
-                  setIsAdding={setIsAdding}
-                  editingId={editingId}
-                  setEditingId={setEditingId}
-                  confirmDeleteId={confirmDeleteId}
-                  setConfirmDeleteId={setConfirmDeleteId}
-                />
-              </Suspense>
-            ) : (
-              <DayDetailContent
+        <DayDetailDialog
+          isOpen={!!detailDate}
+          onClose={handleCloseDetail}
+          title={`${formatInIST(detailDate, 'MMM d, yyyy')}${isEditMode ? ' — Edit' : ''} — ${category}`}
+          isEditMode={isEditMode}
+          onEditToggle={!['votes', 'payments'].includes(category) ? handleEditToggle : undefined}
+          category={category}
+          onScheduleClick={category === 'markets' ? handleScheduleClick : undefined}
+          onPaymentAdd={category === 'payments' && isAdmin ? handlePaymentAdd : undefined}
+          onAddMarket={category === 'markets' && isAdmin ? handleAddMarket : undefined}
+          onMealAdd={category === 'meals' ? (userOwnMealEntry ? handleMealUpdate : handleMealAdd) : undefined}
+          mealActionLabel={category === 'meals' ? (userOwnMealEntry ? 'Update Meal' : 'Add Meal') : undefined}
+          isAdding={isAdding}
+          editingId={editingId}
+          confirmDeleteId={confirmDeleteId}
+        >
+          {isEditMode ? (
+            <Suspense fallback={calendarSuspenseFallback}>
+              <CalendarDayEdit
                 entries={filteredCurrentDateEntries}
                 category={category}
-                totalMealsCount={totalMealsForDate}
-                scheduleData={getScheduleForDate(detailDate)}
-                onPaymentEdit={category === 'payments' && isAdmin ? handlePaymentEdit : undefined}
-                onEntryClick={category === 'meals' && !isAdmin ? handleEntryClick : undefined}
+                date={detailDate}
+                isAdmin={isAdmin}
+                currentUser={user}
+                onSave={handleSaveEntry}
+                onUpdate={handleUpdateEntry}
+                onDelete={handleDeleteEntry}
+                onDone={() => setIsEditMode(false)}
+                selectedEntryIds={selectedEntryIds}
+                onToggleSelect={isAdmin ? handleToggleSelect : undefined}
+                onSelectAll={isAdmin ? handleSelectAll : undefined}
+                onBulkDelete={handleBulkDelete}
+                onBulkUpdate={handleBulkUpdate}
+                onExitSelectMode={handleExitSelectMode}
+                isBulkSubmitting={isBulkSubmitting}
+                isEditMode={isEditMode}
+                isAdding={isAdding}
+                setIsAdding={setIsAdding}
+                editingId={editingId}
+                setEditingId={setEditingId}
+                confirmDeleteId={confirmDeleteId}
+                setConfirmDeleteId={setConfirmDeleteId}
               />
-            )}
-          </DayDetailSheet>
-        ) : (
-          <DayDetailModal
-            isOpen={!!detailDate}
-            onClose={handleCloseDetail}
-            title={`${formatInIST(detailDate, 'MMM d, yyyy')}${isEditMode ? ' — Edit' : ''} — ${category}`}
-            isEditMode={isEditMode}
-            onEditToggle={!['votes', 'payments'].includes(category) ? handleEditToggle : undefined}
-            category={category}
-            onScheduleClick={category === 'markets' ? handleScheduleClick : undefined}
-            onPaymentAdd={category === 'payments' && isAdmin ? handlePaymentAdd : undefined}
-            onAddMarket={category === 'markets' && isAdmin ? handleAddMarket : undefined}
-            onMealAdd={category === 'meals' ? (userOwnMealEntry ? handleMealUpdate : handleMealAdd) : undefined}
-            mealActionLabel={category === 'meals' ? (userOwnMealEntry ? 'Update Meal' : 'Add Meal') : undefined}
-            isAdding={isAdding}
-            editingId={editingId}
-            confirmDeleteId={confirmDeleteId}
-          >
-            {isEditMode ? (
-              <Suspense fallback={calendarSuspenseFallback}>
-                <CalendarDayEdit
-                  entries={filteredCurrentDateEntries}
-                  category={category}
-                  date={detailDate}
-                  isAdmin={isAdmin}
-                  currentUser={user}
-                  onSave={handleSaveEntry}
-                  onUpdate={handleUpdateEntry}
-                  onDelete={handleDeleteEntry}
-                  onDone={() => setIsEditMode(false)}
-                  selectedEntryIds={selectedEntryIds}
-                  onToggleSelect={isAdmin ? handleToggleSelect : undefined}
-                  onSelectAll={isAdmin ? handleSelectAll : undefined}
-                  onBulkDelete={handleBulkDelete}
-                  onBulkUpdate={handleBulkUpdate}
-                  onExitSelectMode={handleExitSelectMode}
-                  isBulkSubmitting={isBulkSubmitting}
-                  isEditMode={isEditMode}
-                  isAdding={isAdding}
-                  setIsAdding={setIsAdding}
-                  editingId={editingId}
-                  setEditingId={setEditingId}
-                  confirmDeleteId={confirmDeleteId}
-                  setConfirmDeleteId={setConfirmDeleteId}
-                />
-              </Suspense>
-            ) : (
-              <DayDetailContent
-                entries={filteredCurrentDateEntries}
-                category={category}
-                totalMealsCount={totalMealsForDate}
-                scheduleData={getScheduleForDate(detailDate)}
-                onPaymentEdit={category === 'payments' && isAdmin ? handlePaymentEdit : undefined}
-                onEntryClick={category === 'meals' && !isAdmin ? handleEntryClick : undefined}
-              />
-            )}
-          </DayDetailModal>
-        ))}
+            </Suspense>
+          ) : (
+            <DayDetailContent
+              entries={filteredCurrentDateEntries}
+              category={category}
+              totalMealsCount={totalMealsForDate}
+              scheduleData={getScheduleForDate(detailDate)}
+              onPaymentEdit={category === 'payments' && isAdmin ? handlePaymentEdit : undefined}
+              onEntryClick={category === 'meals' && !isAdmin ? handleEntryClick : undefined}
+            />
+          )}
+        </DayDetailDialog>
+      )}
 
       {/* Payment Modal (admin only) */}
       <Suspense fallback={null}>

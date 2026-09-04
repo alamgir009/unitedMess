@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 /* ── Field wrapper ── */
 const Field = ({ label, icon: Icon, children, className = '' }) => (
     <div className={`space-y-1.5 sm:space-y-2 ${className}`}>
-        <label className="flex items-center gap-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-muted-foreground">
+        <label className="flex items-center gap-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)]">
             {Icon && <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
             {label}
         </label>
@@ -17,7 +17,12 @@ const Field = ({ label, icon: Icon, children, className = '' }) => (
 );
 
 const inputBase =
-    'w-full px-3 py-2 sm:px-4 sm:py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50 outline-none transition-all duration-200 text-xs sm:text-sm text-slate-800 dark:text-slate-105 placeholder:text-slate-400 dark:placeholder:text-slate-600 shadow-sm';
+    'w-full px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl border border-[var(--input-border)] ' +
+    'bg-[var(--input-bg)] shadow-[var(--inset-inner)] ' +
+    'focus:ring-2 focus:ring-[var(--brand)]/25 focus:border-[var(--brand)] ' +
+    'outline-none transition-all duration-150 ' +
+    'text-xs sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] ' +
+    'hover:border-[var(--input-border-hover)]';
 
 export const EditForm = ({ handleClose, initialData }) => {
   const dispatch = useDispatch();
@@ -100,7 +105,7 @@ export const EditForm = ({ handleClose, initialData }) => {
         </Field>
       </div>
 
-      <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 sm:pt-6 border-t border-white/10 dark:border-white/5">
+      <div className="flex gap-2.5 pt-3 shrink-0">
         <Button 
           type="button" 
           variant="secondary" 

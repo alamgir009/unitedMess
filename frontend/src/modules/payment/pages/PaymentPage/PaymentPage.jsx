@@ -401,6 +401,7 @@ const PaymentPage = () => {
 
     /* ── member preselection ── */
     const [preselectedUserId, setPreselectedUserId] = useState(null);
+    const [modalFooter, setModalFooter] = useState(null);
 
     /* ── modal handlers ── */
     const openCreate = useCallback((memberId) => {
@@ -742,7 +743,7 @@ const PaymentPage = () => {
                 </div>
 
                 {/* Modal */}
-                <PaymentModal isOpen={isModalOpen} onClose={closeModal} title={modalTitle}>
+                <PaymentModal isOpen={isModalOpen} onClose={closeModal} title={modalTitle} footer={modalFooter}>
                     <PaymentForm
                         initialData={editingPayment}
                         onSubmit={handleSubmit}
@@ -752,6 +753,7 @@ const PaymentPage = () => {
                         readOnly={isReadOnly}
                         isSubmitting={isSubmitting}
                         preselectedUserId={preselectedUserId}
+                        renderFooter={setModalFooter}
                     />
                 </PaymentModal>
 

@@ -272,14 +272,17 @@ export default {
           backgroundImage: `linear-gradient(135deg, var(--btn-${v}-from)${v === 'premium' ? ', var(--btn-' + v + '-via)' : ''}, var(--btn-${v}-to))`,
           color: `var(--btn-${v}-label)`,
           borderColor: `var(--btn-${v}-border, transparent)`,
+          boxShadow: '0 1px 2px rgba(0,0,0,0.15), 0 1px 1px rgba(0,0,0,0.10)',
         };
         btnHover[`${className}:hover`] = {
-          backgroundImage: `linear-gradient(315deg, var(--btn-${v}-from)${v === 'premium' ? ', var(--btn-' + v + '-via)' : ''}, var(--btn-${v}-to))`,
-          filter: 'brightness(0.95)',
+          backgroundImage: `linear-gradient(135deg, var(--btn-${v}-from)${v === 'premium' ? ', var(--btn-' + v + '-via)' : ''}, var(--btn-${v}-to))`,
+          boxShadow: '0 2px 6px rgba(0,0,0,0.20), 0 1px 3px rgba(0,0,0,0.12)',
+          transform: 'translateY(-0.5px)',
         };
         btnActive[`${className}:active`] = {
           backgroundImage: `linear-gradient(135deg, var(--btn-${v}-from)${v === 'premium' ? ', var(--btn-' + v + '-via)' : ''}, var(--btn-${v}-to))`,
-          filter: 'brightness(0.88)',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.20)',
+          transform: 'translateY(0)',
         };
       });
 
@@ -288,13 +291,18 @@ export default {
         color: 'var(--btn-ghost-label)',
         border: '1px solid transparent',
         borderImage: 'linear-gradient(135deg, var(--btn-ghost-border-from), var(--btn-ghost-border-to)) 1',
+        boxShadow: 'none',
       };
       btnHover['.btn-ghost:hover'] = {
         background: 'var(--btn-ghost-hover-fill)',
         borderImage: 'linear-gradient(315deg, var(--btn-ghost-border-from), var(--btn-ghost-border-to)) 1',
+        boxShadow: 'none',
+        transform: 'none',
       };
       btnActive['.btn-ghost:active'] = {
         background: 'var(--btn-ghost-active-fill)',
+        boxShadow: 'none',
+        transform: 'none',
       };
 
       btnGlass['.btn-glass'] = {
@@ -303,12 +311,17 @@ export default {
         borderColor: 'var(--btn-glass-border)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
       };
       btnHover['.btn-glass:hover'] = {
-        filter: 'brightness(var(--btn-glass-hover-brightness))',
+        filter: 'brightness(1.06)',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.20)',
+        transform: 'translateY(-0.5px)',
       };
       btnActive['.btn-glass:active'] = {
-        filter: 'brightness(var(--btn-glass-active-brightness))',
+        filter: 'brightness(1.10)',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.20)',
+        transform: 'translateY(0)',
       };
 
       btnLink['.btn-link'] = {
@@ -318,11 +331,14 @@ export default {
         WebkitTextFillColor: 'transparent',
         color: 'transparent',
         border: 'none',
+        boxShadow: 'none',
       };
       btnLinkHover['.btn-link:hover'] = {
         textDecoration: 'underline',
         textDecorationColor: 'var(--btn-link-to)',
         filter: 'saturate(1.05)',
+        boxShadow: 'none',
+        transform: 'none',
       };
 
       addUtilities({

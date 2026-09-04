@@ -72,6 +72,7 @@ const MarketPage = () => {
 
     // ── Error banner
     const [errorMsg, setErrorMsg] = useState('');
+    const [modalFooter, setModalFooter] = useState(null);
 
     const fetchParams = useMemo(() =>
         isAdmin ? { page: 1, limit: 'all' } : { page, limit },
@@ -354,6 +355,7 @@ const MarketPage = () => {
                     title={editingMarket
                         ? 'Edit Market Entry'
                         : isAdmin ? 'Add Market Entry' : 'Log New Purchase'}
+                    footer={modalFooter}
                 >
                     {isModalOpen && (
                         <Suspense fallback={<div className="flex items-center justify-center py-8"><div className="animate-spin w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full" /></div>}>
@@ -363,6 +365,7 @@ const MarketPage = () => {
                                 onCancel={closeModal}
                                 isAdmin={isAdmin}
                                 currentUser={user}
+                                renderFooter={setModalFooter}
                             />
                         </Suspense>
                     )}

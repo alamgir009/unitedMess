@@ -3,103 +3,103 @@ html.light {
   color-scheme: light;
 
   /* ── Brand ── */
-  --brand: hsl(221.2 83.3% 53.3%);           /* #2563EB (blue-600) */
+  --brand: hsl(221 83% 53%);              /* #2563EB (blue-600) */
   --brand-rgb: 37, 99, 235;
-  --brand-hover: hsl(224.3 76.3% 48%);        /* #1D4ED8 (blue-700) */
-  --brand-active: hsl(225.9 70.7% 40.2%);     /* #1E40AF (blue-800) */
-  --brand-subtle: hsl(213.8 100% 96.9%);       /* #EFF6FF (blue-50) */
-  --brand-foreground: hsl(0 0% 100%);          /* #FFFFFF */
+  --brand-hover: hsl(224 76% 48%);        /* #1D4ED8 (blue-700) */
+  --brand-active: hsl(226 71% 40%);       /* #1E40AF (blue-800) */
+  --brand-subtle: hsl(214 100% 97%);      /* #EFF6FF (blue-50) */
+  --brand-foreground: hsl(0 0% 100%);     /* #FFFFFF */
 
   /* ── Tint tokens (pill badges, subtle category accents) ── */
-  --tint-bg: hsl(213.8 100% 96.9%);            /* #EFF6FF — blue-50 */
-  --tint-text: hsl(221.2 83.3% 53.3%);         /* #2563EB — blue-600 */
+  --tint-bg: hsl(214 100% 97%);           /* #EFF6FF — blue-50 */
+  --tint-text: hsl(221 83% 53%);          /* #2563EB — blue-600 */
 
   /* ── Fintech accent palette ── */
-  --accent-primary: #0052CC;                   /* CTA, active indicators */
-  --accent-subtle: hsl(210 100% 96%);          /* #E8F0FE — tinted bg */
+  --accent-primary: #0052CC;              /* CTA, active indicators */
+  --accent-subtle: hsl(210 100% 96%);     /* #E8F0FE — tinted bg */
 
   /* ── Surface hierarchy (fintech spec: page → section → card → floating) ── */
-  --bg-base: hsl(216 12% 95%);                /* #F0F2F5 — page bg */
-  --bg-surface: hsl(220 14% 97%);             /* #F7F8FA — sidebar/nav */
-  --bg-raised: hsl(216 12% 95%);              /* #F0F2F5 */
-  --bg-subtle: hsl(220 14% 97%);              /* #F7F8FA */
-  --bg-muted: hsl(216 12% 93%);               /* #EAECF0 */
-  --bg-elevated: hsl(0 0% 100%);              /* #FFFFFF — cards, modals */
-  --bg-overlay: hsl(222.2 47.4% 11.2% / 0.7); /* #0F172A @ 70% */
+  --bg-base: hsl(216 12% 95%);            /* #F0F2F5 — page bg */
+  --bg-surface: hsl(220 14% 97%);         /* #F7F8FA — sidebar/nav */
+  --bg-raised: hsl(216 12% 95%);          /* #F0F2F5 */
+  --bg-subtle: hsl(220 14% 97%);          /* #F7F8FA */
+  --bg-muted: hsl(216 12% 93%);           /* #EAECF0 */
+  --bg-elevated: hsl(0 0% 100%);          /* #FFFFFF — cards, modals */
+  --bg-overlay: hsl(222 47% 11% / 0.65);  /* #0F172A @ 65% */
 
   /* ── Borders ── */
-  --border-default: hsl(220 11% 91%);         /* #E4E7EC */
-  --border-muted: hsl(220 11% 91%);           /* #E4E7EC */
-  --border-strong: hsl(216 10% 84%);          /* #D0D5DD */
-  --border-brand: hsl(221.2 83.3% 53.3%);     /* #2563EB (blue-600) */
+  --border-default: hsl(220 11% 88%);     /* #DDE1E8 — stronger */
+  --border-muted: hsl(220 11% 91%);       /* #E4E7EC */
+  --border-strong: hsl(216 10% 82%);      /* #C8CDD6 — stronger */
+  --border-brand: hsl(221 83% 53%);       /* #2563EB (blue-600) */
 
   /* ── Text hierarchy ── */
-  --text-primary: hsl(0 0% 5%);               /* #0D1117 */
-  --text-secondary: hsl(216 10% 37%);         /* #4B5563 */
-  --text-tertiary: hsl(216 10% 58%);          /* #9CA3AF */
-  --text-muted: hsl(216 10% 58%);             /* #9CA3AF */
-  --text-disabled: hsl(216 10% 84%);          /* #D0D5DD */
-  --text-on-brand: hsl(0 0% 100%);            /* #FFFFFF */
-  --text-inverse: hsl(210 40% 98%);           /* #F8FAFC */
+  --text-primary: hsl(0 0% 7%);           /* #111827 — 16.1:1 on white */
+  --text-secondary: hsl(216 10% 35%);     /* #475569 — 8.6:1 on white */
+  --text-tertiary: hsl(216 10% 50%);      /* #707A8A — 4.8:1 decorative */
+  --text-muted: hsl(216 10% 46%);         /* #667085 — 5.5:1 labels */
+  --text-disabled: hsl(216 10% 82%);      /* #C8CDD6 */
+  --text-on-brand: hsl(0 0% 100%);        /* #FFFFFF */
+  --text-inverse: hsl(210 40% 98%);       /* #F8FAFC */
 
   /* ── Semantic tokens ── */
-  --success: hsl(142.1 76.2% 36.3%);          /* #16A34A (green-600) */
-  --success-bg: hsl(138.5 76.5% 96.7%);       /* #F0FDF4 (green-50) */
-  --success-border: hsl(141 79.2% 85.1%);     /* #BBF7D0 (green-200) */
-  --success-text: hsl(142.4 71.8% 29.2%);     /* #15803D (green-700) */
+  --success: hsl(142 76% 36%);            /* #16A34A (green-600) */
+  --success-bg: hsl(139 77% 97%);         /* #F0FDF4 (green-50) */
+  --success-border: hsl(141 79% 85%);     /* #BBF7D0 (green-200) */
+  --success-text: hsl(142 72% 29%);       /* #15803D (green-700) */
 
-  --warning: hsl(37.7 92.1% 42.2%);           /* #D97706 (amber-600) */
-  --warning-bg: hsl(48 100% 96.1%);            /* #FFFBEB (amber-50) */
-  --warning-border: hsl(48 96.5% 76.7%);      /* #FDE68A (amber-200) */
-  --warning-text: hsl(31.8 94.6% 36.7%);      /* #B45309 (amber-700) */
+  --warning: hsl(38 92% 42%);             /* #D97706 (amber-600) */
+  --warning-bg: hsl(48 100% 96%);         /* #FFFBEB (amber-50) */
+  --warning-border: hsl(48 97% 77%);      /* #FDE68A (amber-200) */
+  --warning-text: hsl(32 95% 37%);        /* #B45309 (amber-700) */
 
-  --danger: hsl(0 72.2% 50.6%);               /* #DC2626 (red-600) */
-  --danger-bg: hsl(0 85.7% 97.3%);            /* #FEF2F2 (red-50) */
-  --danger-border: hsl(0 96% 89%);            /* #FECACA (red-200) */
-  --danger-text: hsl(0 73.7% 41.8%);          /* #B91C1C (red-700) */
+  --danger: hsl(0 72% 51%);               /* #DC2626 (red-600) */
+  --danger-bg: hsl(0 86% 97%);            /* #FEF2F2 (red-50) */
+  --danger-border: hsl(0 96% 89%);        /* #FECACA (red-200) */
+  --danger-text: hsl(0 74% 42%);          /* #B91C1C (red-700) */
 
-  --error: hsl(0 72.2% 50.6%);
-  --error-bg: hsl(0 85.7% 97.3%);
+  --error: hsl(0 72% 51%);
+  --error-bg: hsl(0 86% 97%);
   --error-border: hsl(0 96% 89%);
-  --error-text: hsl(0 73.7% 41.8%);
+  --error-text: hsl(0 74% 42%);
 
-  --info: hsl(200.4 98% 39.4%);               /* #0284C7 (sky-600) */
-  --info-bg: hsl(204 100% 97.1%);              /* #F0F9FF (sky-50) */
-  --info-border: hsl(201.3 94.4% 86.1%);      /* #BAE6FD (sky-200) */
-  --info-text: hsl(201.3 96.3% 32.2%);        /* #0369A1 (sky-700) */
+  --info: hsl(200 98% 39%);               /* #0284C7 (sky-600) */
+  --info-bg: hsl(204 100% 97%);           /* #F0F9FF (sky-50) */
+  --info-border: hsl(201 94% 86%);        /* #BAE6FD (sky-200) */
+  --info-text: hsl(201 96% 32%);          /* #0369A1 (sky-700) */
 
   /* ── Financial tokens (aliases) ── */
-  --profit: hsl(142.1 76.2% 36.3%);
-  --profit-bg: hsl(138.5 76.5% 96.7%);
-  --profit-text: hsl(142.4 71.8% 29.2%);
+  --profit: hsl(142 76% 36%);
+  --profit-bg: hsl(139 77% 97%);
+  --profit-text: hsl(142 72% 29%);
 
-  --loss: hsl(0 72.2% 50.6%);
-  --loss-bg: hsl(0 85.7% 97.3%);
-  --loss-text: hsl(0 73.7% 41.8%);
+  --loss: hsl(0 72% 51%);
+  --loss-bg: hsl(0 86% 97%);
+  --loss-text: hsl(0 74% 42%);
 
-  --neutral: hsl(220 9% 46%);                 /* #6B7280 (gray-500) */
-  --neutral-bg: hsl(220 14.3% 95.9%);          /* #F3F4F6 (gray-100) */
-  --neutral-text: hsl(215 14.3% 34.1%);        /* #475569 (slate-600) */
+  --neutral: hsl(220 9% 46%);             /* #6B7280 (gray-500) */
+  --neutral-bg: hsl(220 14% 96%);         /* #F3F4F6 (gray-100) */
+  --neutral-text: hsl(215 14% 34%);       /* #475569 (slate-600) */
 
   /* ── Component inputs ── */
-  --input-bg: hsl(0 0% 100%);                 /* #FFFFFF */
-  --input-bg-disabled: hsl(220 14% 97%);      /* #F7F8FA */
-  --input-border: hsl(216 10% 84%);           /* #D0D5DD */
-  --input-border-hover: hsl(216 10% 58%);     /* #9CA3AF */
-  --input-border-focus: hsl(221.2 83.3% 53.3%); /* #2563EB */
-  --input-border-error: hsl(0 72.2% 50.6%);   /* #DC2626 */
+  --input-bg: hsl(0 0% 100%);             /* #FFFFFF */
+  --input-bg-disabled: hsl(220 14% 97%);  /* #F7F8FA */
+  --input-border: hsl(216 10% 82%);       /* #C8CDD6 — stronger */
+  --input-border-hover: hsl(216 10% 55%); /* #8896A6 */
+  --input-border-focus: hsl(221 83% 53%); /* #2563EB */
+  --input-border-error: hsl(0 72% 51%);   /* #DC2626 */
 
   /* ── Shadows ── */
   --shadow-xs: 0 1px 2px hsl(0 0% 0% / 0.05);
-  --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.06), 0 1px 1px hsl(0 0% 0% / 0.04);
-  --shadow-md: 0 4px 12px hsl(0 0% 0% / 0.07), 0 1px 3px hsl(0 0% 0% / 0.05);
-  --shadow-lg: 0 10px 28px hsl(0 0% 0% / 0.09), 0 2px 6px hsl(0 0% 0% / 0.05);
-  --shadow-xl: 0 24px 48px hsl(0 0% 0% / 0.08), 0 8px 12px hsl(0 0% 0% / 0.04);
+  --shadow-sm: 0 1px 3px hsl(0 0% 0% / 0.07), 0 1px 2px hsl(0 0% 0% / 0.04);
+  --shadow-md: 0 4px 14px hsl(0 0% 0% / 0.08), 0 2px 4px hsl(0 0% 0% / 0.05);
+  --shadow-lg: 0 12px 32px hsl(0 0% 0% / 0.10), 0 4px 8px hsl(0 0% 0% / 0.05);
+  --shadow-xl: 0 24px 56px hsl(0 0% 0% / 0.10), 0 8px 16px hsl(0 0% 0% / 0.04);
 
   /* ── Depth Insets (light mode — soft pressed feel) ── */
-  --inset-top-light: inset 0 1px 0 rgba(255,255,255,0.85);  /* card header edge   */
-  --inset-top-glow: none;                                     /* no glow in light   */
-  --inset-inner: inset 0 1px 3px rgba(0,0,0,0.06);           /* inputs, data cells */
+  --inset-top-light: inset 0 1px 0 rgba(255,255,255,0.90);  /* card header edge */
+  --inset-top-glow: none;                                     /* no glow in light */
+  --inset-inner: inset 0 1px 3px rgba(0,0,0,0.08), inset 0 0 0 1px rgba(0,0,0,0.03); /* inputs */
 
   /* Legacy alias overrides for light mode */
   --inset-highlight: var(--inset-top-light);
@@ -120,23 +120,23 @@ html.light {
 
   /* ── Tailwind-compatible HSL tokens ── */
   --background: 216 12% 95%;
-  --foreground: 0 0% 5%;
+  --foreground: 0 0% 7%;
   --card: 0 0% 100%;
-  --card-foreground: 0 0% 5%;
+  --card-foreground: 0 0% 7%;
   --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 5%;
+  --popover-foreground: 0 0% 7%;
   --primary: 221 83% 53%;
   --primary-foreground: 0 0% 100%;
   --secondary: 220 14% 93%;
   --secondary-foreground: 216 10% 20%;
   --muted: 216 12% 93%;
-  --muted-foreground: 216 10% 58%;
+  --muted-foreground: 216 10% 46%;
   --accent: 210 100% 96%;
   --accent-foreground: 221 83% 53%;
   --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 100%;
-  --border: 220 11% 91%;
-  --input: 220 11% 91%;
+  --border: 220 11% 88%;
+  --input: 220 11% 88%;
   --ring: 221 83% 53%;
   --radius: 0.75rem;
 
@@ -175,58 +175,58 @@ html.light {
   --duty-completed-icon: hsl(142 60% 32%);
 
   /* ── Status glass backgrounds ── */
-  --success-glass: hsl(138.5 76.5% 96.7%);
-  --warning-glass: hsl(48 100% 96.1%);
-  --error-glass: hsl(0 85.7% 97.3%);
-  --info-glass: hsl(204 100% 97.1%);
+  --success-glass: hsl(139 77% 97%);
+  --warning-glass: hsl(48 100% 96%);
+  --error-glass: hsl(0 86% 97%);
+  --info-glass: hsl(204 100% 97%);
 
   /* ── Gradients ── */
   --gradient-primary: linear-gradient(135deg, hsl(226 70% 43%) 0%, hsl(252 75% 50%) 100%);
   --gradient-secondary: linear-gradient(135deg, hsl(210 20% 94%) 0%, hsl(215 25% 88%) 100%);
   --gradient-destructive: linear-gradient(135deg, hsl(350 65% 44%) 0%, hsl(0 72% 52%) 100%);
   --gradient-hero: linear-gradient(135deg, hsl(210 100% 97%) 0%, hsl(260 100% 97%) 60%, hsl(160 64% 97%) 100%);
-  --gradient-text: linear-gradient(135deg, hsl(221.2 83.3% 53.3%) 0%, hsl(271 76% 53%) 100%);
+  --gradient-text: linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(271 76% 53%) 100%);
 
-  /* ── Button gradient tokens (light mode) ── */
-  --btn-primary-from: #1D4ED8;
-  --btn-primary-to: #06B6D4;
+  /* ── Button gradient tokens (light mode — modern flat) ── */
+  --btn-primary-from: #2563EB;
+  --btn-primary-to: #1D4ED8;
   --btn-primary-label: #FFFFFF;
   --btn-primary-border: transparent;
 
-  --btn-secondary-from: #C9D5E8;
-  --btn-secondary-to: #B0C0D8;
-  --btn-secondary-label: #1A2D5E;
-  --btn-secondary-border: #9AACC4;
+  --btn-secondary-from: #F1F5F9;
+  --btn-secondary-to: #E2E8F0;
+  --btn-secondary-label: #334155;
+  --btn-secondary-border: #CBD5E1;
 
-  --btn-ghost-label: #1A2D5E;
-  --btn-ghost-border-from: #1A2D5E;
-  --btn-ghost-border-to: #2D4A7A;
-  --btn-ghost-hover-fill: rgba(26, 45, 94, 0.04);
-  --btn-ghost-active-fill: rgba(26, 45, 94, 0.10);
+  --btn-ghost-label: #334155;
+  --btn-ghost-border-from: #64748B;
+  --btn-ghost-border-to: #94A3B8;
+  --btn-ghost-hover-fill: rgba(100, 116, 139, 0.06);
+  --btn-ghost-active-fill: rgba(100, 116, 139, 0.12);
 
-  --btn-destructive-from: #7A2E3E;
-  --btn-destructive-to: #5C1F2B;
-  --btn-destructive-label: #F5F7FA;
+  --btn-destructive-from: #DC2626;
+  --btn-destructive-to: #B91C1C;
+  --btn-destructive-label: #FFFFFF;
   --btn-destructive-border: transparent;
 
-  --btn-warning-from: #7A5E32;
-  --btn-warning-to: #5E4624;
-  --btn-warning-label: #F5F7FA;
+  --btn-warning-from: #D97706;
+  --btn-warning-to: #B45309;
+  --btn-warning-label: #FFFFFF;
   --btn-warning-border: transparent;
 
-  --btn-success-from: #1B6B4A;
-  --btn-success-to: #217A55;
-  --btn-success-label: #F5F7FA;
+  --btn-success-from: #16A34A;
+  --btn-success-to: #15803D;
+  --btn-success-label: #FFFFFF;
   --btn-success-border: transparent;
 
-  --btn-icon-from: #D8E0EC;
-  --btn-icon-to: #C2CDDC;
-  --btn-icon-label: #1A2D5E;
+  --btn-icon-from: #F1F5F9;
+  --btn-icon-to: #E2E8F0;
+  --btn-icon-label: #334155;
   --btn-icon-border: transparent;
 
-  --btn-loading-from: #6B7FA0;
-  --btn-loading-to: #55678A;
-  --btn-loading-label: #D5E0EE;
+  --btn-loading-from: #94A3B8;
+  --btn-loading-to: #64748B;
+  --btn-loading-label: #E2E8F0;
   --btn-loading-border: transparent;
 
   --btn-premium-from: #C59B4E;
@@ -247,22 +247,22 @@ html.light {
   --btn-glass-hover-brightness: 1.06;
   --btn-glass-active-brightness: 1.12;
 
-  --btn-neutral-from: #D5DBE3;
-  --btn-neutral-to: #C2C9D4;
-  --btn-neutral-label: #1A1E2E;
+  --btn-neutral-from: #E2E8F0;
+  --btn-neutral-to: #CBD5E1;
+  --btn-neutral-label: #334155;
   --btn-neutral-border: transparent;
 
   --btn-link-from: #1A2D5E;
   --btn-link-to: #2D4A7A;
 
-  --btn-elevated-from: #115E59;
-  --btn-elevated-to: #0D9488;
+  --btn-elevated-from: #0D9488;
+  --btn-elevated-to: #0F766E;
   --btn-elevated-label: #FFFFFF;
   --btn-elevated-border: transparent;
 
-  --btn-brand-subtle-from: #D1DBEA;
-  --btn-brand-subtle-to: #B8C8DE;
-  --btn-brand-subtle-label: #1A2D5E;
+  --btn-brand-subtle-from: #DBEAFE;
+  --btn-brand-subtle-to: #BFDBFE;
+  --btn-brand-subtle-label: #1E40AF;
   --btn-brand-subtle-border: transparent;
 
   /* ── Premium Calendar Tokens ── */
@@ -275,7 +275,7 @@ html.light {
   --calendar-today-glow: hsla(221, 83%, 53%, 0.12);
   --calendar-cell-hover-bg: hsl(216 16% 97%);
   --calendar-cell-hover-shadow: hsla(216, 12%, 50%, 0.08);
-  --calendar-border: hsl(216 12% 90%);
+  --calendar-border: hsl(216 12% 88%);
   --calendar-weekend-bg: hsl(225 20% 98%);
   --calendar-out-of-month-bg: hsl(216 12% 96%);
 

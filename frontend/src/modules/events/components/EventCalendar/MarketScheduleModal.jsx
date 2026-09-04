@@ -1,12 +1,10 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { X, Check, Calendar, Loader2, AlertCircle, Trash2 } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Check, AlertCircle, Trash2 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isToday, isBefore, addMonths, subMonths } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { cn } from '@/core/utils/helpers/string.helper';
-import { Avatar, Button } from '@/shared/components/ui';
-import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
+import { Modal, Avatar, Button } from '@/shared/components/ui';
 import { getISTDateKey } from '@/core/utils/helpers/date.helper';
 import {
   fetchMonthSchedule,
@@ -19,23 +17,8 @@ import {
 
 const MAX_DATES = 3;
 
-let lockCount = 0;
-function lockBodyScroll() {
-  if (typeof document === 'undefined') return;
-  if (lockCount === 0) document.body.style.overflow = 'hidden';
-  lockCount++;
-}
-function unlockBodyScroll() {
-  if (typeof document === 'undefined') return;
-  lockCount = Math.max(0, lockCount - 1);
-  if (lockCount === 0) document.body.style.overflow = '';
-}
-
 const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
   const dispatch = useDispatch();
-  const isMobile = useMediaQuery('(max-width: 639px)');
-  const dialogRef = useRef(null);
-  const previousFocusRef = useRef(null);
 
   const [selectedDates, setSelectedDates] = useState(new Set());
   const [viewMonth, setViewMonth] = useState(currentMonth || new Date());
@@ -50,23 +33,12 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
 
   useEffect(() => {
     if (!isOpen) {
-      previousFocusRef.current?.focus?.();
-      unlockBodyScroll();
       setSelectedDates(new Set());
       return;
     }
     setViewMonth(currentMonth || new Date());
-    previousFocusRef.current = document.activeElement;
-    lockBodyScroll();
     dispatch(clearMySelectedDates());
-    document.addEventListener('keydown', handleKeyDown);
-    const raf = requestAnimationFrame(() => dialogRef.current?.focus());
-    return () => {
-      cancelAnimationFrame(raf);
-      unlockBodyScroll();
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isOpen]);
+  }, [isOpen, currentMonth, dispatch]);
 
   useEffect(() => {
     if (isOpen && viewMonth) {
@@ -92,10 +64,6 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
       setSelectedDates(myDates);
     }
   }, [mySelectedDates]);
-
-  const handleKeyDown = useCallback((e) => {
-    if (e.key === 'Escape') onClose?.();
-  }, [onClose]);
 
   const days = useMemo(() => {
     const monthStart = startOfMonth(viewMonth);
@@ -229,61 +197,47 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
     return { dateKey, inMonth, isPast, isSelected, isTakenByOther, takenItem, isMyDate };
   }, [viewMonth, today, selectedDates, unavailableDatesMap, takenDatesMap, mySelectedDates]);
 
-  if (typeof document === 'undefined') return null;
-
-  const modalContent = (
-    <div
-      ref={dialogRef}
-      tabIndex={-1}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Schedule Market Dates"
-      className={cn(
-        'flex flex-col',
-        'bg-[var(--bg-elevated)] border border-[var(--border-muted)]',
-        'rounded-2xl shadow-[var(--shadow-xl)]',
-        'focus:outline-none animate-fade-in-up',
-        isMobile
-          ? 'fixed inset-x-0 bottom-0 rounded-t-2xl rounded-b-none max-h-[90vh]'
-          : 'w-full max-w-lg max-h-[85vh]',
-      )}
-      style={{ boxShadow: 'var(--shadow-xl), var(--inset-top-glow)' }}
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={isSelecting ? undefined : onClose}
+      title="Schedule Market Dates"
+      size="lg"
+      mobileSheet
+      accentColor="emerald"
+      closeOnOverlayClick={!isSelecting}
+      footer={
+        <div className="flex gap-2.5 w-full">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            disabled={isSelecting}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="success"
+            size="sm"
+            onClick={handleConfirm}
+            disabled={isSelecting || selectedDates.size === 0}
+            isLoading={isSelecting}
+            className="flex-[2]"
+          >
+            Confirm {selectedDates.size}/{MAX_DATES} dates
+          </Button>
+        </div>
+      }
     >
-      {/* Mobile drag handle */}
-      {isMobile && (
-        <div className="flex justify-center pt-2.5 pb-1">
-          <div className="w-10 h-1 rounded-full bg-[var(--border-strong)]" />
-        </div>
-      )}
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[var(--border-muted)] shrink-0">
-        <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-[var(--accent-primary)]" />
-          <h2 className="text-base font-semibold text-[var(--text-primary)]">Schedule Market Dates</h2>
-        </div>
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* Body */}
-      <div className="flex-1 overflow-y-auto overscroll-contain p-4
-        [scrollbar-width:thin] [scrollbar-color:var(--border-strong)_transparent]
-        [&::-webkit-scrollbar]:w-1.5
-        [&::-webkit-scrollbar-track]:bg-transparent
-        [&::-webkit-scrollbar-thumb]:bg-[var(--border-strong)] [&::-webkit-scrollbar-thumb]:rounded-full
-        [&::-webkit-scrollbar-thumb:hover]:bg-[var(--text-muted)]
-      ">
-        {/* Selection Counter */}
+      <div className="space-y-4">
         <div className={cn(
-          'flex items-center justify-center gap-2 py-2 px-3 rounded-lg mb-4 border transition-colors',
+          'flex items-center justify-center gap-2 py-2 px-3 rounded-lg border transition-colors',
           selectedDates.size > 0
-            ? 'bg-[var(--accent-primary)]/10 border-[var(--accent-primary)]/30 text-[var(--accent-primary)]'
-            : 'bg-[var(--bg-muted)]/30 border-[var(--border-default)] text-[var(--text-secondary)]',
+            ? 'bg-primary/10 border-primary/30 text-primary'
+            : 'bg-muted/30 border-border text-muted-foreground',
         )}>
           <span className="text-sm font-bold">{selectedDates.size}/{MAX_DATES}</span>
           <span className="text-xs">
@@ -291,23 +245,22 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
           </span>
         </div>
 
-        {/* Month Navigation */}
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between">
           <button
             onClick={handlePrevMonth}
             disabled={!canGoPrev}
-            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <span className="text-sm font-semibold text-[var(--text-primary)]">
+          <span className="text-sm font-semibold text-foreground">
             {format(viewMonth, 'MMMM yyyy')}
           </span>
           <button
             onClick={handleNextMonth}
-            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -315,16 +268,14 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
           </button>
         </div>
 
-        {/* Day Headers */}
         <div className="grid grid-cols-7 mb-1">
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-            <div key={i} className="text-center py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+            <div key={i} className="text-center py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
               {day}
             </div>
           ))}
         </div>
 
-        {/* Calendar Grid */}
         <div className="grid grid-cols-7 gap-0.5">
           {days.map((day) => {
             const { dateKey, inMonth, isPast, isSelected, isTakenByOther, takenItem, isMyDate } = getDateStatus(day);
@@ -341,17 +292,17 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
                   'relative aspect-square min-w-0 flex flex-col items-center justify-center p-1 sm:p-1.5 rounded-lg transition-all duration-100',
                   !inMonth && 'opacity-30',
                   inMonth && isPast && 'opacity-50 cursor-not-allowed',
-                  canClick && !isSelected && !isMyDate && 'hover:bg-[var(--accent-primary)]/10 cursor-pointer',
-                  isSelected && 'bg-[var(--accent-primary)]/15 border-2 border-[var(--accent-primary)] shadow-sm',
-                  isMyDate && !isSelected && 'bg-[var(--duty-own-bg)] border border-[var(--duty-own-border)]',
-                  isTakenByOther && !isSelected && !isMyDate && 'bg-[var(--danger-bg)]/20 border border-[var(--danger)]/20',
-                  isCurrentDay && !isSelected && !isMyDate && 'ring-1 ring-[var(--accent-primary)]/40',
+                  canClick && !isSelected && !isMyDate && 'hover:bg-primary/10 cursor-pointer',
+                  isSelected && 'bg-primary/15 border-2 border-primary shadow-sm',
+                  isMyDate && !isSelected && 'bg-success-bg border border-success-border',
+                  isTakenByOther && !isSelected && !isMyDate && 'bg-danger-bg/20 border border-danger/20',
+                  isCurrentDay && !isSelected && !isMyDate && 'ring-1 ring-primary/40',
                 )}
               >
                 <span className={cn(
                   'text-xs sm:text-sm font-semibold',
-                  isSelected ? 'text-[var(--accent-primary)]' : isMyDate ? 'text-[var(--duty-own-text)]' : 'text-[var(--text-primary)]',
-                  isTakenByOther && !isSelected && !isMyDate && 'text-[var(--danger)]',
+                  isSelected ? 'text-primary' : isMyDate ? 'text-success-text' : 'text-foreground',
+                  isTakenByOther && !isSelected && !isMyDate && 'text-danger',
                 )}>
                   {format(day, 'd')}
                 </span>
@@ -367,12 +318,12 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
                 )}
                 {isMyDate && !isSelected && (
                   <div className="mt-0.5">
-                    <div className="w-2 h-2 rounded-full bg-[var(--duty-own)]" />
+                    <div className="w-2 h-2 rounded-full bg-success" />
                   </div>
                 )}
                 {isSelected && (
                   <div className="absolute top-0.5 right-0.5">
-                    <Check className="w-3 h-3 text-[var(--accent-primary)]" />
+                    <Check className="w-3 h-3 text-primary" />
                   </div>
                 )}
               </button>
@@ -380,30 +331,28 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
           })}
         </div>
 
-        {/* Legend */}
-        <div className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-[var(--border-muted)]">
+        <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-border">
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded bg-[var(--accent-primary)]/15 border-2 border-[var(--accent-primary)]" />
-            <span className="text-[10px] text-[var(--text-muted)]">Your selection</span>
+            <div className="w-3 h-3 rounded-sm bg-primary/15 border-2 border-primary" />
+            <span className="text-[10px] text-muted-foreground">Your selection</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded bg-[var(--duty-own-bg)] border border-[var(--duty-own-border)]" />
-            <span className="text-[10px] text-[var(--text-muted)]">Your duty</span>
+            <div className="w-3 h-3 rounded-sm bg-success-bg border border-success-border" />
+            <span className="text-[10px] text-muted-foreground">Your duty</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded bg-[var(--danger-bg)]/20 border border-[var(--danger)]/20" />
-            <span className="text-[10px] text-[var(--text-muted)]">Taken by others</span>
+            <div className="w-3 h-3 rounded-sm bg-danger-bg/20 border border-danger/20" />
+            <span className="text-[10px] text-muted-foreground">Taken by others</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded bg-[var(--bg-muted)]" />
-            <span className="text-[10px] text-[var(--text-muted)]">Available</span>
+            <div className="w-3 h-3 rounded-sm bg-muted" />
+            <span className="text-[10px] text-muted-foreground">Available</span>
           </div>
         </div>
 
-        {/* My Scheduled Dates — remove-date UI */}
         {mySelectedDates.length > 0 && (
-          <div className="mt-4 pt-3 border-t border-[var(--border-muted)]">
-            <h3 className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2">
+          <div className="pt-3 border-t border-border">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
               Your Scheduled Dates
             </h3>
             <div className="space-y-1.5">
@@ -412,15 +361,15 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
                 return (
                   <div
                     key={item._id}
-                    className="flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--duty-own-bg)] border border-[var(--duty-own-border)] shadow-xs"
+                    className="flex items-center justify-between px-3 py-2 rounded-xl bg-success-bg border border-success-border shadow-xs"
                   >
-                    <span className="text-sm font-medium text-[var(--duty-own-text)]">
+                    <span className="text-sm font-medium text-success-text">
                       {dateLabel}
                     </span>
                     <button
                       onClick={() => handleRemoveDate(item._id)}
                       aria-label={`Remove ${dateLabel}`}
-                      className="p-1 rounded-md text-[var(--danger)] hover:bg-[var(--danger-bg)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="p-1 rounded-md text-danger hover:bg-danger-bg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -431,72 +380,14 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
           </div>
         )}
 
-        {/* Error */}
         {error && (
-          <div className="flex items-center gap-2 mt-3 p-2 rounded-lg bg-[var(--danger-bg)]/20 border border-[var(--danger)]/20">
-            <AlertCircle className="w-4 h-4 text-[var(--danger)] shrink-0" />
-            <span className="text-xs text-[var(--danger)]">{error}</span>
+          <div className="flex items-center gap-2 p-2 rounded-xl bg-danger-bg/20 border border-danger/20">
+            <AlertCircle className="w-4 h-4 text-danger shrink-0" />
+            <span className="text-xs text-danger">{error}</span>
           </div>
         )}
       </div>
-
-      {/* Footer */}
-      <div className="flex gap-2 px-4 py-3 border-t border-[var(--border-muted)] shrink-0">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={onClose}
-          disabled={isSelecting}
-          className="flex-1 rounded-lg"
-        >
-          Cancel
-        </Button>
-        <Button
-          type="button"
-          variant="success"
-          size="sm"
-          onClick={handleConfirm}
-          disabled={isSelecting || selectedDates.size === 0}
-          className="flex-[2] rounded-lg"
-        >
-          {isSelecting ? (
-            <span className="flex items-center justify-center gap-1.5">
-              <Loader2 className="w-3 h-3 animate-spin" />
-              Saving...
-            </span>
-          ) : (
-            `Confirm ${selectedDates.size}/${MAX_DATES} dates`
-          )}
-        </Button>
-      </div>
-    </div>
-  );
-
-  if (isMobile) {
-    return createPortal(
-      isOpen ? (
-        <div className={cn('fixed inset-0 z-modal', 'bg-[var(--bg-overlay)]')}>
-          <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
-          <div className="fixed inset-x-0 bottom-0 z-10 flex items-end justify-center" onClick={(e) => e.stopPropagation()}>
-            {modalContent}
-          </div>
-        </div>
-      ) : null,
-      document.body
-    );
-  }
-
-  return createPortal(
-    isOpen ? (
-      <div className={cn('fixed inset-0 z-modal', 'bg-[var(--bg-overlay)]')}>
-        <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
-        <div className="fixed inset-0 z-10 flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()}>
-          {modalContent}
-        </div>
-      </div>
-    ) : null,
-    document.body
+    </Modal>
   );
 };
 

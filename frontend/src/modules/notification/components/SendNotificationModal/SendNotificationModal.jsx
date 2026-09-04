@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useModalAnimation } from '@/shared/hooks/useModalAnimation';
-import { cn } from '@/core/utils/helpers/string.helper';
-import { X, Send, AlertTriangle, Eye, EyeOff } from 'lucide-react';
+import { Send, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import NotificationService from '../../services/notification.service';
-import { Spinner } from '@/shared/components/ui';
+import { Modal, Button } from '@/shared/components/ui';
 import toast from 'react-hot-toast';
 
 const TYPES = [
@@ -20,9 +18,10 @@ const targetTypes = [
     { value: 'ROLE', label: 'By Role' },
 ];
 
+const inputClasses = 'w-full h-11 px-3 py-2.5 rounded-xl surface-elevated border border-border text-sm text-foreground placeholder:text-muted-foreground caret-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring transition-[border-color,box-shadow] duration-150';
+
 const SendNotificationModal = ({ isOpen, onClose }) => {
     const { user } = useSelector((state) => state.auth);
-    const { shouldRender, exiting } = useModalAnimation(isOpen, { exitTimeout: 120 });
 
     const [title, setTitle] = useState('');
     const [message, setMessage] = useState('');
@@ -38,14 +37,14 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
     const [estimatedRecipients, setEstimatedRecipients] = useState(0);
 
     useEffect(() => {
-        if (targetType === 'ALL' && shouldRender && !exiting) {
+        if (targetType === 'ALL' && isOpen) {
             import('@/services/api/client/apiClient').then(({ default: api }) => {
                 api.get('/users/count/active').then((res) => {
                     setEstimatedRecipients(res.data?.data?.count || 0);
                 }).catch(() => setEstimatedRecipients(0));
             });
         }
-    }, [targetType, shouldRender, exiting]);
+    }, [targetType, isOpen]);
 
     const reset = useCallback(() => {
         setTitle('');
@@ -60,6 +59,11 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
         setConfirmBroadcast(false);
         setSubmitting(false);
     }, []);
+
+    const handleClose = useCallback(() => {
+        reset();
+        onClose();
+    }, [reset, onClose]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -103,7 +107,7 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
         }
     };
 
-    if (!shouldRender || user?.role !== 'admin') return null;
+    if (user?.role !== 'admin') return null;
 
     const previewNotification = {
         type,
@@ -115,261 +119,216 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
         actionRequired,
     };
 
+    const footer = confirmBroadcast ? (
+        <div className="flex gap-2.5 w-full">
+            <Button variant="ghost" size="sm" className="flex-1" onClick={() => setConfirmBroadcast(false)}>
+                Edit
+            </Button>
+            <Button variant="warning" size="sm" className="flex-[2]" onClick={handleSubmit} disabled={submitting} isLoading={submitting}>
+                Send to {estimatedRecipients} users
+            </Button>
+        </div>
+    ) : (
+        <div className="flex gap-2.5 w-full">
+            <Button variant="ghost" size="sm" className="flex-1" onClick={handleClose}>
+                Cancel
+            </Button>
+            <Button variant="primary" size="sm" className="flex-[2]" type="submit" disabled={submitting || !title.trim() || !message.trim()} isLoading={submitting}>
+                <Send className="w-4 h-4" />
+                {targetType === 'ALL' ? 'Broadcast' : 'Send'}
+            </Button>
+        </div>
+    );
+
     return (
-        <div className={cn(
-            'fixed inset-0 z-50 flex items-center justify-center p-4',
-            'modal-animate-backdrop',
-            exiting ? 'modal-exit-backdrop' : 'modal-enter'
-        )}>
-            <div
-                onClick={() => { reset(); onClose(); }}
-                className="absolute inset-0 bg-black/40"
-            />
-
-            <div
-                className={cn(
-                    'relative w-full max-w-lg bg-card rounded-2xl shadow-2xl border border-border overflow-hidden',
-                    'modal-animate modal-gpu',
-                    exiting ? 'modal-exit' : 'modal-enter'
-                )}
-            >
-                <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-                    <h2 className="text-lg font-semibold text-foreground">
-                        {confirmBroadcast ? 'Confirm Broadcast' : 'Send Notification'}
-                    </h2>
-                    <button
-                        onClick={() => { reset(); onClose(); }}
-                        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
-
-                {confirmBroadcast ? (
-                    <div className="p-6 space-y-4">
-                        <div className="flex items-start gap-3 p-4 bg-warning-bg border border-warning-border rounded-xl">
-                            <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
-                            <div>
-                                <p className="text-sm font-semibold text-warning">
-                                    Broadcast to all {estimatedRecipients} active users
-                                </p>
-                                <p className="text-xs text-warning mt-1">
-                                    This will send a notification to every active user in the system. This action is logged for audit purposes.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 pt-2">
-                            <button
-                                onClick={() => setConfirmBroadcast(false)}
-                                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium border border-border text-muted-foreground hover:bg-muted transition-all"
-                            >
-                                Edit
-                            </button>
-                            <button
-                                onClick={handleSubmit}
-                                disabled={submitting}
-                                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium bg-warning text-white hover:bg-warning/90 disabled:opacity-50 transition-all"
-                            >
-                                {submitting ? 'Sending...' : `Send to ${estimatedRecipients} users`}
-                            </button>
+        <Modal
+            isOpen={isOpen}
+            onClose={submitting ? undefined : handleClose}
+            title={confirmBroadcast ? 'Confirm Broadcast' : 'Send Notification'}
+            size="lg"
+            mobileSheet
+            closeOnOverlayClick={!submitting}
+            footer={footer}
+        >
+            {confirmBroadcast ? (
+                <div className="space-y-4">
+                    <div className="flex items-start gap-3 p-4 rounded-xl bg-warning-bg border border-warning-border">
+                        <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+                        <div>
+                            <p className="text-sm font-semibold text-warning">
+                                Broadcast to all {estimatedRecipients} active users
+                            </p>
+                            <p className="text-xs text-warning mt-1">
+                                This will send a notification to every active user in the system. This action is logged for audit purposes.
+                            </p>
                         </div>
                     </div>
-                ) : (
-                    <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-foreground mb-1.5">
-                                Send to
-                            </label>
-                            <div className="flex gap-2">
-                                {targetTypes.map((t) => (
-                                    <button
-                                        key={t.value}
-                                        type="button"
-                                        onClick={() => setTargetType(t.value)}
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                                            targetType === t.value
-                                                ? 'bg-primary text-white'
-                                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                        }`}
-                                    >
-                                        {t.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {(targetType === 'USER' || targetType === 'ROLE') && (
-                            <div>
-                                <label className="block text-sm font-medium text-foreground mb-1.5">
-                                    {targetType === 'USER' ? 'User ID' : 'Role'}
-                                </label>
-                                {targetType === 'USER' ? (
-                                    <input
-                                        type="text"
-                                        value={userId}
-                                        onChange={(e) => setUserId(e.target.value)}
-                                        placeholder="Enter user ID"
-                                        className="w-full px-3 py-2 rounded-xl border border-border bg-card text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                                    />
-                                ) : (
-                                    <select
-                                        value={userId}
-                                        onChange={(e) => setUserId(e.target.value)}
-                                        className="w-full px-3 py-2 rounded-xl border border-border bg-card text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                                    >
-                                        <option value="">Select role</option>
-                                        <option value="admin">Admin</option>
-                                        <option value="user">User</option>
-                                    </select>
-                                )}
-                            </div>
-                        )}
-
-                        <div>
-                            <label className="block text-sm font-medium text-foreground mb-1.5">
-                                Title <span className="text-danger">*</span>
-                                <span className="text-xs text-muted-foreground ml-1">({title.length}/80)</span>
-                            </label>
-                            <input
-                                type="text"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value.slice(0, 80))}
-                                required
-                                maxLength={80}
-                                placeholder="Notification title"
-                                className="w-full px-3 py-2 rounded-xl border border-border bg-card text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-foreground mb-1.5">
-                                Message <span className="text-danger">*</span>
-                                <span className="text-xs text-muted-foreground ml-1">({message.length}/300)</span>
-                            </label>
-                            <textarea
-                                value={message}
-                                onChange={(e) => setMessage(e.target.value.slice(0, 300))}
-                                required
-                                maxLength={300}
-                                rows={3}
-                                placeholder="Notification message"
-                                className="w-full px-3 py-2 rounded-xl border border-border bg-card text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none"
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-foreground mb-1.5">Type</label>
-                                <select
-                                    value={type}
-                                    onChange={(e) => setType(e.target.value)}
-                                    className="w-full px-3 py-2 rounded-xl border border-border bg-card text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                </div>
+            ) : (
+                <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Send to</label>
+                        <div className="flex gap-2">
+                            {targetTypes.map((t) => (
+                                <button
+                                    key={t.value}
+                                    type="button"
+                                    onClick={() => setTargetType(t.value)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                                        targetType === t.value
+                                            ? 'bg-primary text-white'
+                                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                    }`}
                                 >
-                                    {TYPES.map((t) => (
-                                        <option key={t} value={t}>{t}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-foreground mb-1.5">Priority</label>
-                                <select
-                                    value={priority}
-                                    onChange={(e) => setPriority(e.target.value)}
-                                    className="w-full px-3 py-2 rounded-xl border border-border bg-card text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                                >
-                                    {PRIORITIES.map((p) => (
-                                        <option key={p} value={p}>{p}</option>
-                                    ))}
-                                </select>
-                            </div>
+                                    {t.label}
+                                </button>
+                            ))}
                         </div>
+                    </div>
 
-                        <div className="space-y-3">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={actionRequired}
-                                    onChange={(e) => setActionRequired(e.target.checked)}
-                                    className="rounded border-border text-primary focus:ring-primary"
-                                />
-                                <span className="text-sm text-foreground">Requires action</span>
+                    {(targetType === 'USER' || targetType === 'ROLE') && (
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                {targetType === 'USER' ? 'User ID' : 'Role'}
                             </label>
-
-                            {actionRequired && (
+                            {targetType === 'USER' ? (
                                 <input
-                                    type="url"
-                                    value={actionUrl}
-                                    onChange={(e) => setActionUrl(e.target.value)}
-                                    placeholder="Action URL (optional)"
-                                    className="w-full px-3 py-2 rounded-xl border border-border bg-card text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                                    type="text"
+                                    value={userId}
+                                    onChange={(e) => setUserId(e.target.value)}
+                                    placeholder="Enter user ID"
+                                    className={inputClasses}
                                 />
+                            ) : (
+                                <select
+                                    value={userId}
+                                    onChange={(e) => setUserId(e.target.value)}
+                                    className={inputClasses}
+                                >
+                                    <option value="">Select role</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="user">User</option>
+                                </select>
                             )}
                         </div>
+                    )}
 
-                        <button
-                            type="button"
-                            onClick={() => setShowPreview(!showPreview)}
-                            className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-all"
-                        >
-                            {showPreview ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                            {showPreview ? 'Hide preview' : 'Show preview'}
-                        </button>
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            Title <span className="text-destructive">*</span>
+                            <span className="text-xs text-muted-foreground ml-1">({title.length}/80)</span>
+                        </label>
+                        <input
+                            type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value.slice(0, 80))}
+                            required
+                            maxLength={80}
+                            placeholder="Notification title"
+                            className={inputClasses}
+                        />
+                    </div>
 
-                        {showPreview && (
-                            <div className="p-3 bg-muted rounded-xl border border-border">
-                                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Preview</p>
-                                <div className="flex items-start gap-3 p-3 bg-card rounded-lg border border-border">
-                                    <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
-                                        priority === 'CRITICAL' ? 'bg-danger-bg text-danger' :
-                                        priority === 'HIGH' ? 'bg-warning-bg text-warning' :
-                                        'bg-muted text-muted-foreground'
-                                    }`}>
-                                        {type.charAt(0)}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-semibold text-foreground">{previewNotification.title}</p>
-                                        <p className="text-xs text-muted-foreground mt-0.5">{previewNotification.message}</p>
-                                        {actionRequired && (
-                                            <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-warning-bg text-warning">
-                                                Action needed
-                                            </span>
-                                        )}
-                                    </div>
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            Message <span className="text-destructive">*</span>
+                            <span className="text-xs text-muted-foreground ml-1">({message.length}/300)</span>
+                        </label>
+                        <textarea
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value.slice(0, 300))}
+                            required
+                            maxLength={300}
+                            rows={3}
+                            placeholder="Notification message"
+                            className={`${inputClasses} resize-none`}
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Type</label>
+                            <select
+                                value={type}
+                                onChange={(e) => setType(e.target.value)}
+                                className={inputClasses}
+                            >
+                                {TYPES.map((t) => (
+                                    <option key={t} value={t}>{t}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Priority</label>
+                            <select
+                                value={priority}
+                                onChange={(e) => setPriority(e.target.value)}
+                                className={inputClasses}
+                            >
+                                {PRIORITIES.map((p) => (
+                                    <option key={p} value={p}>{p}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={actionRequired}
+                                onChange={(e) => setActionRequired(e.target.checked)}
+                                className="rounded border-border text-primary focus:ring-primary"
+                            />
+                            <span className="text-sm text-foreground">Requires action</span>
+                        </label>
+
+                        {actionRequired && (
+                            <input
+                                type="url"
+                                value={actionUrl}
+                                onChange={(e) => setActionUrl(e.target.value)}
+                                placeholder="Action URL (optional)"
+                                className={inputClasses}
+                            />
+                        )}
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={() => setShowPreview(!showPreview)}
+                        className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-all"
+                    >
+                        {showPreview ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        {showPreview ? 'Hide preview' : 'Show preview'}
+                    </button>
+
+                    {showPreview && (
+                        <div className="p-3 rounded-xl bg-muted border border-border">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Preview</p>
+                            <div className="flex items-start gap-3 p-3 rounded-lg bg-card border border-border">
+                                <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
+                                    priority === 'CRITICAL' ? 'bg-danger-bg text-danger' :
+                                    priority === 'HIGH' ? 'bg-warning-bg text-warning' :
+                                    'bg-muted text-muted-foreground'
+                                }`}>
+                                    {type.charAt(0)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-foreground">{previewNotification.title}</p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">{previewNotification.message}</p>
+                                    {actionRequired && (
+                                        <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-warning-bg text-warning">
+                                            Action needed
+                                        </span>
+                                    )}
                                 </div>
                             </div>
-                        )}
-
-                        <div className="flex items-center gap-3 pt-2">
-                            <button
-                                type="button"
-                                onClick={() => { reset(); onClose(); }}
-                                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium border border-border text-muted-foreground hover:bg-muted transition-all"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={submitting || !title.trim() || !message.trim()}
-                                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-1.5"
-                            >
-                                {submitting ? (
-                                    <>
-                                        <Spinner size="sm" color="white" className="!w-4 !h-4" />
-                                        Sending...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Send className="w-4 h-4" />
-                                        {targetType === 'ALL' ? 'Broadcast' : 'Send'}
-                                    </>
-                                )}
-                            </button>
                         </div>
-                    </form>
-                )}
-            </div>
-        </div>
+                    )}
+                </form>
+            )}
+        </Modal>
     );
 };
 

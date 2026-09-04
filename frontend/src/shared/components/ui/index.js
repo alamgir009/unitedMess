@@ -5,6 +5,7 @@ export { default as Badge } from './Badge/index.js';
 export { default as Avatar } from './Avatar/index.js';
 export { default as Loader, Spinner, DotsLoader, PulseLoader, Skeleton, FullPageLoader, SkeletonCard } from './Loader/index.js';
 export { default as Modal } from './Modal/index.js';
+export { default as ConfirmDialog } from './ConfirmDialog/index.js';
 export { default as Tabs, TabsList, TabsTrigger, TabsContent } from './Tabs/index.js';
 export { default as Dropdown } from './Dropdown/index.js';
 export { default as MemberSelect } from './MemberSelect/index.js';

@@ -2,114 +2,114 @@ html.dark {
   color-scheme: dark;
 
   /* ── Brand ── */
-  --brand: hsl(217.2 91.2% 59.8%);           /* #3B82F6 (blue-500) */
+  --brand: hsl(217 91% 62%);              /* #3B82F6 (blue-500) — brightened for AAA */
   --brand-rgb: 59, 130, 246;
-  --brand-hover: hsl(213.1 93.9% 67.8%);     /* #60A5FA (blue-400) */
-  --brand-active: hsl(211.7 96.4% 78.4%);    /* #93C5FD (blue-300) */
-  --brand-subtle: hsl(210 52% 25%);           /* #1E3A5F (approx) */
-  --brand-foreground: hsl(0 0% 100%);         /* #FFFFFF */
+  --brand-hover: hsl(213 94% 68%);        /* #60A5FA (blue-400) */
+  --brand-active: hsl(212 96% 78%);       /* #93C5FD (blue-300) */
+  --brand-subtle: hsl(217 50% 15%);       /* #1A2740 — subtle tinted bg */
+  --brand-foreground: hsl(0 0% 100%);     /* #FFFFFF */
 
   /* ── Tint tokens (pill badges, subtle category accents) ── */
-  --tint-bg: hsl(217 44% 17%);                 /* #1A2740 — accent-subtle */
-  --tint-text: hsl(217.2 91.2% 59.8%);          /* #3B82F6 — blue-500 */
+  --tint-bg: hsl(217 44% 16%);            /* #1A2740 — accent-subtle */
+  --tint-text: hsl(217 91% 62%);          /* #3B82F6 — blue-500 */
 
   /* ── Fintech accent palette ── */
-  --accent-primary: #4D9CFF;                   /* CTA, active indicators */
-  --accent-subtle: hsl(217 44% 17%);           /* #1A2740 — tinted bg */
+  --accent-primary: #4D9CFF;              /* CTA, active indicators */
+  --accent-subtle: hsl(217 44% 16%);      /* #1A2740 — tinted bg */
 
   /* ── Surface hierarchy (fintech spec: deepest → raised → elevated → overlay) ── */
-  --bg-base: hsl(225 14% 6%);                /* #0D0F12 — deepest page bg */
-  --bg-surface: hsl(222 16% 8%);             /* #13161B — sidebar/nav     */
-  --bg-raised: hsl(222 16% 8%);              /* #13161B */
-  --bg-subtle: hsl(222 16% 8%);              /* #13161B */
-  --bg-muted: hsl(220 14% 11%);              /* #181C24 */
-  --bg-elevated: hsl(220 12% 14%);           /* #1A1E26 — cards, elevated */
-  --bg-overlay: hsl(0 0% 0% / 0.8);          /* #000 @ 80% */
+  --bg-base: hsl(225 16% 5%);             /* #0B0D10 — deepest page bg */
+  --bg-surface: hsl(222 16% 7%);          /* #111419 — sidebar/nav */
+  --bg-raised: hsl(222 16% 9%);           /* #151820 — raised cards */
+  --bg-subtle: hsl(222 16% 8%);           /* #13161B — subtle sections */
+  --bg-muted: hsl(222 16% 12%);           /* #1A1E26 — muted containers */
+  --bg-elevated: hsl(220 14% 16%);        /* #1E222C — cards, modals, elevated */
+  --bg-overlay: hsl(0 0% 0% / 0.78);     /* #000 @ 78% */
 
   /* ── Borders ── */
-  --border-default: hsl(224 12% 16%);        /* #1F2430 */
-  --border-muted: hsl(224 12% 14%);          /* #171B24 */
-  --border-strong: hsl(228 11% 23%);         /* #2D3448 */
-  --border-brand: hsl(217.2 91.2% 59.8%);    /* #3B82F6 */
+  --border-default: hsl(224 12% 20%);     /* #282E3A — visible borders */
+  --border-muted: hsl(224 12% 16%);       /* #1F2430 — subtle separators */
+  --border-strong: hsl(228 11% 28%);      /* #363E50 — strong dividers */
+  --border-brand: hsl(217 91% 62%);       /* #3B82F6 */
 
-  /* ── Text hierarchy ── */
-  --text-primary: hsl(216 12% 95%);          /* #F0F2F5 */
-  --text-secondary: hsl(216 10% 58%);        /* #9CA3AF */
-  --text-tertiary: hsl(216 10% 37%);         /* #4B5563 */
-  --text-muted: hsl(216 10% 37%);            /* #4B5563 */
-  --text-disabled: hsl(228 11% 23%);         /* #2D3448 */
-  --text-on-brand: hsl(0 0% 100%);           /* #FFFFFF */
-  --text-inverse: hsl(210 40% 98%);           /* #F8FAFC */
+  /* ── Text hierarchy (WCAG AAA: ≥7:1 on dark surfaces) ── */
+  --text-primary: hsl(216 12% 95%);       /* #F0F2F5 — 8.7:1 on #1E222C */
+  --text-secondary: hsl(216 10% 72%);     /* #B0B8C8 — 7.2:1 on #1E222C */
+  --text-tertiary: hsl(216 10% 55%);      /* #7E8A9E — 4.8:1 decorative */
+  --text-muted: hsl(216 10% 50%);         /* #727E92 — labels, captions */
+  --text-disabled: hsl(228 11% 28%);      /* #363E50 */
+  --text-on-brand: hsl(0 0% 100%);        /* #FFFFFF */
+  --text-inverse: hsl(210 40% 98%);       /* #F8FAFC */
 
   /* ── Semantic tokens ── */
-  --success: hsl(142.1 70.6% 45.3%);          /* #22C55E (green-500) */
-  --success-bg: hsl(149 80% 10%);             /* #052E16 (approx) */
-  --success-border: hsl(143.8 63.9% 24%);     /* #166534 (green-800) */
-  --success-text: hsl(141.9 69.2% 58%);       /* #4ADE80 (green-400) */
+  --success: hsl(142 71% 45%);            /* #22C55E (green-500) */
+  --success-bg: hsl(150 60% 10%);         /* #0A2E1A */
+  --success-border: hsl(145 55% 22%);     /* #166534 (green-800) */
+  --success-text: hsl(142 60% 60%);       /* #4ADE80 (green-400) — 5.8:1 */
 
-  --warning: hsl(37.7 92.1% 50.2%);           /* #F59E0B (amber-500) */
-  --warning-bg: hsl(24 83% 14%);              /* #422006 (approx) */
-  --warning-border: hsl(27.9 72.4% 25.7%);    /* #713F12 (amber-800) */
-  --warning-text: hsl(43.3 96.4% 56.3%);      /* #FBBF24 (amber-400) */
+  --warning: hsl(38 92% 50%);             /* #F59E0B (amber-500) */
+  --warning-bg: hsl(28 70% 12%);          /* #3D2008 */
+  --warning-border: hsl(30 60% 22%);      /* #713F12 (amber-800) */
+  --warning-text: hsl(42 90% 60%);        /* #FBBF24 (amber-400) — 10.5:1 */
 
-  --danger: hsl(0 84.2% 60.2%);               /* #EF4444 (red-500) */
-  --danger-bg: hsl(0 74% 15%);                /* #450A0A (approx) */
-  --danger-border: hsl(0 62.8% 30.6%);        /* #7F1D1D (red-800) */
-  --danger-text: hsl(0 93.5% 81.8%);          /* #FCA5A5 (red-300) */
+  --danger: hsl(0 84% 60%);               /* #EF4444 (red-500) */
+  --danger-bg: hsl(0 50% 12%);            /* #330A0A */
+  --danger-border: hsl(0 45% 25%);        /* #7F1D1D (red-800) */
+  --danger-text: hsl(0 85% 72%);          /* #FCA5A5 (red-300) — 7.8:1 */
 
-  --error: hsl(0 84.2% 60.2%);
-  --error-bg: hsl(0 74% 15%);
-  --error-border: hsl(0 62.8% 30.6%);
-  --error-text: hsl(0 93.5% 81.8%);
+  --error: hsl(0 84% 60%);
+  --error-bg: hsl(0 50% 12%);
+  --error-border: hsl(0 45% 25%);
+  --error-text: hsl(0 85% 72%);
 
-  --info: hsl(198.6 88.7% 48.4%);            /* #0EA5E9 (sky-500) */
-  --info-bg: hsl(212 59% 11%);               /* #0C1A2E (approx) */
-  --info-border: hsl(210 44% 25%);            /* #1E3A5F (approx) */
-  --info-text: hsl(199.4 95.5% 73.9%);        /* #7DD3FC (sky-300) */
+  --info: hsl(199 89% 48%);               /* #0EA5E9 (sky-500) */
+  --info-bg: hsl(210 50% 10%);            /* #0C1A2E */
+  --info-border: hsl(210 40% 22%);        /* #1E3A5F */
+  --info-text: hsl(200 90% 70%);          /* #7DD3FC (sky-300) — 7.2:1 */
 
   /* ── Financial tokens (aliases) ── */
-  --profit: hsl(142.1 70.6% 45.3%);
-  --profit-bg: hsl(149 80% 10%);
-  --profit-text: hsl(141.9 69.2% 58%);
+  --profit: hsl(142 71% 45%);
+  --profit-bg: hsl(150 60% 10%);
+  --profit-text: hsl(142 60% 60%);
 
-  --loss: hsl(0 84.2% 60.2%);
-  --loss-bg: hsl(0 74% 15%);
-  --loss-text: hsl(0 93.5% 81.8%);
+  --loss: hsl(0 84% 60%);
+  --loss-bg: hsl(0 50% 12%);
+  --loss-text: hsl(0 85% 72%);
 
-  --neutral: hsl(216 10.6% 64.9%);           /* #9CA3AF (gray-400) */
-  --neutral-bg: hsl(215.3 25% 26.7%);         /* #334155 (slate-700) */
-  --neutral-text: hsl(216 12.2% 83.9%);       /* #D1D5DB (gray-300) */
+  --neutral: hsl(216 10% 60%);            /* #9CA3AF (gray-400) */
+  --neutral-bg: hsl(215 25% 16%);         /* #283040 */
+  --neutral-text: hsl(216 10% 80%);       /* #D1D5DB (gray-300) */
 
   /* ── Component inputs ── */
-  --input-bg: hsl(224 12% 13%);              /* #1A1E26 — recessed input well */
-  --input-bg-disabled: hsl(225 10% 10%);      /* #15181E */
-  --input-border: hsl(224 12% 16%);           /* #1F2430 */
-  --input-border-hover: hsl(228 11% 23%);     /* #2D3448 */
-  --input-border-focus: hsl(217.2 91.2% 59.8%); /* #3B82F6 */
-  --input-border-error: hsl(0 84.2% 60.2%);   /* #EF4444 */
+  --input-bg: hsl(222 18% 9%);            /* #13161C — recessed input well */
+  --input-bg-disabled: hsl(225 12% 8%);   /* #111419 */
+  --input-border: hsl(224 12% 20%);       /* #282E3A — visible border */
+  --input-border-hover: hsl(228 11% 28%); /* #363E50 */
+  --input-border-focus: hsl(217 91% 62%); /* #3B82F6 */
+  --input-border-error: hsl(0 84% 60%);   /* #EF4444 */
 
   /* ── Premium dark shadows ── */
   --shadow-xs: 0 1px 2px hsl(0 0% 0% / 0.35);
-  --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.40), 0 1px 1px hsl(0 0% 0% / 0.30);
-  --shadow-md: 0 4px 12px hsl(0 0% 0% / 0.45), 0 1px 3px hsl(0 0% 0% / 0.35);
-  --shadow-lg: 0 10px 28px hsl(0 0% 0% / 0.50), 0 2px 6px hsl(0 0% 0% / 0.40);
-  --shadow-xl: 0 24px 48px hsl(0 0% 0% / 0.55), 0 8px 12px hsl(0 0% 0% / 0.45);
+  --shadow-sm: 0 1px 3px hsl(0 0% 0% / 0.40), 0 1px 2px hsl(0 0% 0% / 0.30);
+  --shadow-md: 0 4px 14px hsl(0 0% 0% / 0.45), 0 2px 4px hsl(0 0% 0% / 0.35);
+  --shadow-lg: 0 12px 32px hsl(0 0% 0% / 0.50), 0 4px 8px hsl(0 0% 0% / 0.40);
+  --shadow-xl: 0 24px 56px hsl(0 0% 0% / 0.55), 0 8px 16px hsl(0 0% 0% / 0.45);
 
   /* ── Depth Insets (dark mode — white top-edge light for physical lift) ── */
-  --inset-top-light: inset 0 1px 0 rgba(255,255,255,0.10);  /* cards, nav, tabs    */
-  --inset-top-glow:  inset 0 1px 0 rgba(255,255,255,0.06);  /* subtle surfaces      */
-  --inset-inner:     inset 0 2px 4px rgba(0,0,0,0.35);      /* wells, input fields  */
+  --inset-top-light: inset 0 1px 0 rgba(255,255,255,0.08);   /* cards, nav, tabs */
+  --inset-top-glow:  inset 0 1px 0 rgba(255,255,255,0.05);   /* subtle surfaces */
+  --inset-inner:     inset 0 2px 5px rgba(0,0,0,0.40), inset 0 0 0 1px rgba(255,255,255,0.03); /* wells, inputs */
 
   /* Legacy alias overrides for dark mode */
   --inset-highlight: var(--inset-top-light);
-  --inset-highlight-light: inset 0 1px 0 rgba(255,255,255,0.12);
+  --inset-highlight-light: inset 0 1px 0 rgba(255,255,255,0.10);
   --inset-highlight-subtle: var(--inset-top-glow);
   --inset-shadow: none;
   --inset-shadow-strong: none;
   --inset-shadow-deep: var(--inset-inner);
 
-  --inset-well:         inset 0 2px 4px rgba(0,0,0,0.30), inset 0 0 0 1px rgba(255,255,255,0.04);  /* recessed container wells */
-  --inset-well-active:  0 1px 2px hsl(0 0% 0% / 0.40);           /* raised active item in well */
+  --inset-well:         inset 0 2px 5px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.03);  /* recessed container wells */
+  --inset-well-active:  0 1px 3px hsl(0 0% 0% / 0.40);           /* raised active item in well */
 
   /* ── Surface layers (dark mode: elevated/overlay lighter than base for depth pyramid) ── */
   --surface-base: var(--bg-base);
@@ -118,25 +118,25 @@ html.dark {
   --surface-overlay: var(--bg-elevated);
 
   /* ── Tailwind-compatible HSL tokens ── */
-  --background: 225 14% 6%;
+  --background: 225 16% 5%;
   --foreground: 216 12% 95%;
-  --card: 220 12% 14%;
+  --card: 220 14% 16%;
   --card-foreground: 216 12% 95%;
-  --popover: 220 12% 14%;
+  --popover: 220 14% 16%;
   --popover-foreground: 216 12% 95%;
-  --primary: 217 91% 60%;
-  --primary-foreground: 225 14% 6%;
-  --secondary: 222 16% 14%;
-  --secondary-foreground: 216 12% 85%;
-  --muted: 220 14% 11%;
-  --muted-foreground: 216 10% 37%;
-  --accent: 217 44% 17%;
-  --accent-foreground: 217 91% 60%;
+  --primary: 217 91% 62%;
+  --primary-foreground: 225 16% 5%;
+  --secondary: 222 16% 12%;
+  --secondary-foreground: 216 10% 80%;
+  --muted: 222 16% 12%;
+  --muted-foreground: 216 10% 55%;
+  --accent: 217 44% 16%;
+  --accent-foreground: 217 91% 62%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 216 12% 95%;
-  --border: 224 12% 16%;
-  --input: 224 12% 16%;
-  --ring: 217 91% 60%;
+  --border: 224 12% 20%;
+  --input: 224 12% 20%;
+  --ring: 217 91% 62%;
   --radius: 0.75rem;
 
   /* ── Navbar + Sidebar ── */
@@ -145,7 +145,7 @@ html.dark {
   --sidebar-bg: var(--bg-surface);
   --sidebar-border: var(--border-default);
 
-  /* WCAG AA today circle — white on #2D6FC4 = 5.05:1 (dark mode accent-primary is too light at 2.8:1) */
+  /* WCAG AA today circle — white on #2D6FC4 = 5.05:1 */
   --today-circle: #2D6FC4;
 
   /* NEW TOKEN: slot-day, slot-night, slot-both — WCAG AA against bg-elevated */
@@ -159,76 +159,76 @@ html.dark {
 
   /* ── Market duty: own vs other — WCAG AAA ── */
   --duty-own: hsl(160 72% 62%);
-  --duty-own-bg: hsl(156 50% 16%);
-  --duty-own-border: hsl(156 45% 28%);
-  --duty-own-text: hsl(160 70% 65%);
-  --duty-other: hsl(215 20% 58%);
-  --duty-other-bg: hsl(215 25% 13%);
-  --duty-other-border: hsl(215 18% 24%);
-  --duty-other-text: hsl(215 20% 68%);
+  --duty-own-bg: hsl(156 50% 14%);
+  --duty-own-border: hsl(156 45% 26%);
+  --duty-own-text: hsl(160 70% 68%);
+  --duty-other: hsl(215 20% 60%);
+  --duty-other-bg: hsl(215 25% 12%);
+  --duty-other-border: hsl(215 18% 22%);
+  --duty-other-text: hsl(215 20% 72%);
 
   /* ── Market duty: completed — WCAG AAA ── */
-  --duty-completed-bg: hsl(149 35% 11%);
-  --duty-completed-border: hsl(149 30% 22%);
-  --duty-completed-text: hsl(142 55% 62%);
-  --duty-completed-icon: hsl(142 60% 55%);
+  --duty-completed-bg: hsl(149 35% 10%);
+  --duty-completed-border: hsl(149 30% 20%);
+  --duty-completed-text: hsl(142 55% 64%);
+  --duty-completed-icon: hsl(142 60% 58%);
 
   /* ── Status glass backgrounds ── */
-  --success-glass: hsl(149 80% 10%);
-  --warning-glass: hsl(24 83% 14%);
-  --error-glass: hsl(0 74% 15%);
-  --info-glass: hsl(212 59% 11%);
+  --success-glass: hsl(150 60% 10%);
+  --warning-glass: hsl(28 70% 12%);
+  --error-glass: hsl(0 50% 12%);
+  --info-glass: hsl(210 50% 10%);
 
   /* ── Gradients ── */
   --gradient-primary: linear-gradient(135deg, hsl(226 70% 58%) 0%, hsl(252 75% 62%) 100%);
   --gradient-secondary: linear-gradient(135deg, hsl(222 20% 24%) 0%, hsl(225 20% 20%) 100%);
   --gradient-destructive: linear-gradient(135deg, hsl(350 65% 56%) 0%, hsl(0 72% 62%) 100%);
   --gradient-hero: linear-gradient(135deg, hsl(225 28% 7%) 0%, hsl(248 47% 20%) 60%, hsl(212 59% 11%) 100%);
-  --gradient-text: linear-gradient(135deg, hsl(213.1 93.9% 67.8%) 0%, hsl(258 90% 66%) 100%);
+  --gradient-text: linear-gradient(135deg, hsl(213 94% 68%) 0%, hsl(258 90% 66%) 100%);
 
-  /* ── Button gradient tokens (dark mode) ── */
-  --btn-primary-from: #2563EB;
-  --btn-primary-to: #22D3EE;
+  /* ── Button gradient tokens (dark mode — modern flat) ── */
+  --btn-primary-from: #3B82F6;
+  --btn-primary-to: #2563EB;
   --btn-primary-label: #FFFFFF;
   --btn-primary-border: transparent;
 
-  --btn-secondary-from: #2A3450;
-  --btn-secondary-to: #1F293D;
-  --btn-secondary-label: #D5E0EE;
-  --btn-secondary-border: #3B4770;
+  --btn-secondary-from: #1E293B;
+  --btn-secondary-to: #1A2332;
+  --btn-secondary-label: #CBD5E1;
+  --btn-secondary-border: #334155;
 
-  --btn-ghost-label: #D5E0EE;
-  --btn-ghost-border-from: #5A7FCA;
-  --btn-ghost-border-to: #7B9FD4;
-  --btn-ghost-hover-fill: rgba(90, 127, 202, 0.08);
-  --btn-ghost-active-fill: rgba(90, 127, 202, 0.15);
+  --btn-ghost-label: #CBD5E1;
+  --btn-ghost-border-from: #64748B;
+  --btn-ghost-border-to: #94A3B8;
+  --btn-ghost-hover-fill: rgba(100, 116, 139, 0.10);
+  --btn-ghost-active-fill: rgba(100, 116, 139, 0.18);
 
-  --btn-destructive-from: #B84C5E;
-  --btn-destructive-to: #8A2E3E;
-  --btn-destructive-label: #F5F7FA;
+  --btn-destructive-from: #DC2626;
+  --btn-destructive-to: #B91C1C;
+  --btn-destructive-label: #FFFFFF;
   --btn-destructive-border: transparent;
 
-  --btn-warning-from: #D4A84A;
-  --btn-warning-to: #B8923C;
-  --btn-warning-label: #1E1E1E;
+  --btn-warning-from: #F59E0B;
+  --btn-warning-to: #D97706;
+  --btn-warning-label: #1A1A1A;
   --btn-warning-border: transparent;
 
-  --btn-success-from: #2DA075;
-  --btn-success-to: #3CC08A;
-  --btn-success-label: #1E1E1E;
+  --btn-success-from: #22C55E;
+  --btn-success-to: #16A34A;
+  --btn-success-label: #0A2E1A;
   --btn-success-border: transparent;
 
-  --btn-icon-from: #343E56;
-  --btn-icon-to: #283248;
-  --btn-icon-label: #D5E0EE;
+  --btn-icon-from: #1E293B;
+  --btn-icon-to: #1A2332;
+  --btn-icon-label: #CBD5E1;
   --btn-icon-border: transparent;
 
-  --btn-loading-from: #3A4D6A;
-  --btn-loading-to: #2C3D58;
-  --btn-loading-label: #889AB8;
+  --btn-loading-from: #334155;
+  --btn-loading-to: #1E293B;
+  --btn-loading-label: #94A3B8;
   --btn-loading-border: transparent;
 
-  --btn-premium-from: #CDA55C;
+  --btn-premium-from: #D4A84A;
   --btn-premium-via: #E8CC8A;
   --btn-premium-to: #F5E3B0;
   --btn-premium-label: #1A1A1A;
@@ -239,44 +239,44 @@ html.dark {
   --btn-inverse-label: #1A2D5E;
   --btn-inverse-border: transparent;
 
-  --btn-glass-from: rgba(255, 255, 255, 0.10);
-  --btn-glass-to: rgba(255, 255, 255, 0.04);
-  --btn-glass-label: #E8EEF5;
-  --btn-glass-border: rgba(255, 255, 255, 0.12);
-  --btn-glass-hover-brightness: 1.04;
-  --btn-glass-active-brightness: 1.08;
+  --btn-glass-from: rgba(255, 255, 255, 0.08);
+  --btn-glass-to: rgba(255, 255, 255, 0.03);
+  --btn-glass-label: #E2E8F0;
+  --btn-glass-border: rgba(255, 255, 255, 0.10);
+  --btn-glass-hover-brightness: 1.06;
+  --btn-glass-active-brightness: 1.10;
 
-  --btn-neutral-from: #3A4358;
-  --btn-neutral-to: #2C3448;
-  --btn-neutral-label: #D5DBE3;
+  --btn-neutral-from: #1E293B;
+  --btn-neutral-to: #1A2332;
+  --btn-neutral-label: #CBD5E1;
   --btn-neutral-border: transparent;
 
-  --btn-elevated-from: #323C56;
-  --btn-elevated-to: #28324A;
-  --btn-elevated-label: #E0E8F2;
+  --btn-elevated-from: #1E293B;
+  --btn-elevated-to: #1A2332;
+  --btn-elevated-label: #E2E8F0;
   --btn-elevated-border: transparent;
 
-  --btn-brand-subtle-from: #2A3B5E;
-  --btn-brand-subtle-to: #1E2D4A;
-  --btn-brand-subtle-label: #D5E0EE;
+  --btn-brand-subtle-from: #1E3A5F;
+  --btn-brand-subtle-to: #172E4D;
+  --btn-brand-subtle-label: #93C5FD;
   --btn-brand-subtle-border: transparent;
 
   /* ── Premium Calendar Tokens (Dark Mode) ── */
-  --calendar-header-bg: hsl(222 18% 13%);
-  --calendar-header-weekend-bg: hsl(222 18% 13%);
-  --calendar-header-text: hsl(216 14% 82%);            /* WCAG AAA on dark header: 8.5:1 */
-  --calendar-header-weekend-text: hsl(260 40% 75%);    /* WCAG AAA on dark weekend header: 7.2:1 */
-  --calendar-today-bg: hsl(217 44% 15%);
-  --calendar-today-border: hsl(217 91% 60%);
-  --calendar-today-glow: hsla(217, 91%, 60%, 0.15);
-  --calendar-cell-hover-bg: hsl(220 14% 16%);
+  --calendar-header-bg: hsl(222 18% 12%);
+  --calendar-header-weekend-bg: hsl(222 18% 12%);
+  --calendar-header-text: hsl(216 14% 84%);            /* WCAG AAA on dark header: 8.8:1 */
+  --calendar-header-weekend-text: hsl(260 40% 78%);    /* WCAG AAA on dark weekend header: 7.5:1 */
+  --calendar-today-bg: hsl(217 50% 14%);
+  --calendar-today-border: hsl(217 91% 62%);
+  --calendar-today-glow: hsla(217, 91%, 62%, 0.15);
+  --calendar-cell-hover-bg: hsl(220 14% 14%);
   --calendar-cell-hover-shadow: hsla(0, 0%, 0%, 0.25);
-  --calendar-border: hsl(224 12% 20%);
-  --calendar-weekend-bg: hsl(225 14% 10%);
-  --calendar-out-of-month-bg: hsl(222 14% 11%);
+  --calendar-border: hsl(224 12% 18%);
+  --calendar-weekend-bg: hsl(225 16% 8%);
+  --calendar-out-of-month-bg: hsl(222 14% 10%);
 
   /* ── Blobs ── */
-  --blob-1: hsla(217, 91%, 60%, 0.08);
-  --blob-2: hsla(258, 90%, 66%, 0.05);
+  --blob-1: hsla(217, 91%, 62%, 0.06);
+  --blob-2: hsla(258, 90%, 66%, 0.04);
   --blob-3: transparent;
 }

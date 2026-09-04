@@ -46,7 +46,7 @@ TabsTrigger.displayName = 'TabsTrigger';
       },
       glass: {
         base: 'text-muted-foreground hover:text-foreground rounded-lg',
-        active: 'surface-elevated text-foreground shadow-sm rounded-lg font-semibold',
+        active: 'surface-elevated text-foreground shadow-sm rounded-lg font-semibold border border-border-default',
       },
     };
 
