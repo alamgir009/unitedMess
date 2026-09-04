@@ -4,7 +4,7 @@ import { Avatar } from '@/shared/components/ui';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { fmt } from '@/core/utils/helpers/currency.helper';
 import { formatInIST } from '@/core/utils/helpers/date.helper';
-import { Calendar, Trash2, Loader2 } from 'lucide-react';
+import { Calendar, Trash2, Loader2, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { removeMarketScheduledDate } from '../../store/marketSchedule.slice';
 import SlotIcon from './cells/SlotIcon';
@@ -57,6 +57,25 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
     [entries],
   );
 
+  const isDutyFulfilled = useMemo(() => {
+    if (!scheduleData?.user || category !== 'markets') return false;
+    const scheduledUserId = scheduleData.user?._id;
+    return entries.some((e) => {
+      const entryUserId = typeof e.user === 'object' ? e.user?._id : e.user;
+      return entryUserId === scheduledUserId;
+    });
+  }, [scheduleData, entries, category]);
+
+  const fulfilledEntryId = useMemo(() => {
+    if (!isDutyFulfilled) return null;
+    const scheduledUserId = scheduleData.user?._id;
+    const match = entries.find((e) => {
+      const entryUserId = typeof e.user === 'object' ? e.user?._id : e.user;
+      return entryUserId === scheduledUserId;
+    });
+    return match?._id || null;
+  }, [isDutyFulfilled, scheduleData, entries]);
+
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -97,7 +116,12 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
       style={{ height: '100%', minHeight: 200 }}
     >
       {category === 'markets' && scheduleData?.user && (
-        <MarketDutyBanner scheduleData={scheduleData} currentUser={currentUser} />
+        <MarketDutyBanner
+          scheduleData={scheduleData}
+          currentUser={currentUser}
+          entries={entries}
+          isFulfilled={isDutyFulfilled}
+        />
       )}
       {showMealSummary && (
         <div className="flex items-center justify-center gap-1.5 mb-3 py-1.5 px-3 rounded-full bg-[var(--slot-both)]/8">
@@ -119,6 +143,8 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
             const avatarSrc = entry.user?.image || (isUnpopulated ? currentUser?.image : undefined);
             const isFailed = entry.status === 'failed';
             const isCompleted = entry.status === 'completed';
+
+            if (isDutyFulfilled && entry._id === fulfilledEntryId) return null;
 
             if (isVotes) {
               const hasPrev = !!entry.previousState?.type;
@@ -248,7 +274,7 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
 DayDetailContent.displayName = 'DayDetailContent';
 export default DayDetailContent;
 
-const MarketDutyBanner = ({ scheduleData, currentUser }) => {
+const MarketDutyBanner = ({ scheduleData, currentUser, entries = [], isFulfilled = false }) => {
   const dispatch = useDispatch();
   const [removing, setRemoving] = useState(false);
 
@@ -257,6 +283,15 @@ const MarketDutyBanner = ({ scheduleData, currentUser }) => {
   const userName = scheduleData.user.name || 'Member';
   const firstName = userName.split(' ')[0];
   const isOwnDuty = currentUser?._id === scheduleData?.user?._id;
+
+  const fulfilledEntry = useMemo(() => {
+    if (!isFulfilled) return null;
+    const scheduledUserId = scheduleData.user?._id;
+    return entries.find((e) => {
+      const entryUserId = typeof e.user === 'object' ? e.user?._id : e.user;
+      return entryUserId === scheduledUserId;
+    }) || null;
+  }, [isFulfilled, scheduleData, entries]);
 
   const handleRemove = async () => {
     if (!scheduleData?._id || removing) return;
@@ -271,9 +306,47 @@ const MarketDutyBanner = ({ scheduleData, currentUser }) => {
     }
   };
 
+  if (isFulfilled && fulfilledEntry) {
+    const entryName = fulfilledEntry.user?.name || fulfilledEntry.userName || userName;
+    const entryAvatar = fulfilledEntry.user?.image || scheduleData.user.image;
+
+    return (
+      <div className={cn(
+        'flex gap-2.5 px-3 py-2.5 rounded-lg border mb-3',
+        'bg-[var(--duty-completed-bg)] border-[var(--duty-completed-border)]',
+      )}>
+        <Avatar
+          src={entryAvatar}
+          name={entryName}
+          size="sm"
+          className="shrink-0"
+        />
+        <div className="flex flex-col gap-1 min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <CheckCircle className="w-4 h-4 shrink-0 text-[var(--duty-completed-icon)]" />
+            <span className="text-sm font-semibold text-[var(--duty-completed-text)]">
+              Market duty completed
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-[var(--text-primary)] truncate">
+              {entryName}
+            </span>
+            <span className="text-xs text-[var(--text-muted)] truncate">
+              {fulfilledEntry.items || fulfilledEntry.description || ''}
+            </span>
+            <span className="text-xs font-bold tabular-nums text-[var(--text-primary)] ml-auto shrink-0">
+              ₹{fmt(fulfilledEntry.amount)}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={cn(
-      'flex items-center gap-3 px-3 py-2.5 rounded-lg border',
+      'flex items-center gap-3 px-3 py-2.5 rounded-lg border mb-3',
       isOwnDuty
         ? 'bg-[var(--duty-own-bg)] border-[var(--duty-own-border)]'
         : 'bg-[var(--duty-other-bg)] border-[var(--duty-other-border)]',
@@ -282,10 +355,7 @@ const MarketDutyBanner = ({ scheduleData, currentUser }) => {
         src={scheduleData.user.image}
         name={userName}
         size="sm"
-        className={cn(
-          'shrink-0 ring-2',
-          isOwnDuty ? 'ring-[var(--duty-own-border)]' : 'ring-[var(--duty-other-border)]',
-        )}
+        className="shrink-0"
       />
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <Calendar className={cn(
@@ -296,7 +366,7 @@ const MarketDutyBanner = ({ scheduleData, currentUser }) => {
           'text-sm font-semibold truncate',
           isOwnDuty ? 'text-[var(--duty-own-text)]' : 'text-[var(--duty-other-text)]',
         )}>
-          {isOwnDuty ? `You are on market duty today` : `${firstName} is on market duty today`}
+          {isOwnDuty ? 'You are on market duty today' : `${firstName} is on market duty today`}
         </span>
       </div>
       {isOwnDuty && (

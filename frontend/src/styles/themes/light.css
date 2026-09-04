@@ -168,6 +168,12 @@ html.light {
   --duty-other-border: hsl(210 16% 88%);
   --duty-other-text: hsl(215 25% 35%);
 
+  /* ── Market duty: completed — WCAG AAA ── */
+  --duty-completed-bg: hsl(142 50% 95%);
+  --duty-completed-border: hsl(142 45% 82%);
+  --duty-completed-text: hsl(142 55% 25%);
+  --duty-completed-icon: hsl(142 60% 32%);
+
   /* ── Status glass backgrounds ── */
   --success-glass: hsl(138.5 76.5% 96.7%);
   --warning-glass: hsl(48 100% 96.1%);

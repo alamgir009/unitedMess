@@ -167,6 +167,12 @@ html.dark {
   --duty-other-border: hsl(215 18% 24%);
   --duty-other-text: hsl(215 20% 68%);
 
+  /* ── Market duty: completed — WCAG AAA ── */
+  --duty-completed-bg: hsl(149 35% 11%);
+  --duty-completed-border: hsl(149 30% 22%);
+  --duty-completed-text: hsl(142 55% 62%);
+  --duty-completed-icon: hsl(142 60% 55%);
+
   /* ── Status glass backgrounds ── */
   --success-glass: hsl(149 80% 10%);
   --warning-glass: hsl(24 83% 14%);
