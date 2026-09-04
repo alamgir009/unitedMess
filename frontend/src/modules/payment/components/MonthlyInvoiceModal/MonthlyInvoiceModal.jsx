@@ -167,11 +167,12 @@ const MonthlyInvoiceModal = ({
             onClose={handleClose}
             title="Invoice Details"
             description={monthName || monthlyInvoice?.monthName || ''}
-            size="2xl"
+            size="xl"
             mobileSheet
             accentColor="blue"
+            desktopMaxHeight="60vh"
         >
-            <div className="space-y-4">
+            <div className="space-y-2">
                 {isLoadingMonthly && <InvoiceSkeleton />}
 
                 {!isLoadingMonthly && error && (

@@ -23,7 +23,7 @@ import invoiceService from '../../services/invoice.service';
 
 /* ── Row helpers (PDF-identical line items) ── */
 const DataRow = memo(({ label, value, subLabel, accent = false }) => (
-    <div className="flex items-start justify-between py-3 border-b border-border/60 last:border-0 gap-4">
+    <div className="flex items-start justify-between py-2 border-b border-border/60 last:border-0 gap-3">
         <div className="min-w-0">
             <p className={`text-sm ${accent ? 'text-primary font-semibold' : 'text-foreground'}`}>{label}</p>
             {subLabel && <p className="text-[11px] text-muted-foreground mt-0.5">{subLabel}</p>}
@@ -37,8 +37,8 @@ DataRow.displayName = 'DataRow';
 
 /* ── Section divider (PDF-identical) ── */
 const SectionLabel = memo(({ label }) => (
-    <div className="pt-5 pb-2">
-        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground border-b border-border pb-2">
+    <div className="pt-3 pb-1">
+        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground border-b border-border pb-1.5">
             {label}
         </p>
     </div>
@@ -187,13 +187,13 @@ const InvoicePreview = ({
     if (!invoice) return null;
 
     return (
-        <div className="mx-auto w-full max-w-[680px] bg-card rounded-xl border border-border/50 overflow-hidden shadow-sm">
+        <div className="mx-auto w-full bg-card rounded-xl border border-border/50 overflow-hidden shadow-sm">
 
             {/* ═══════════════════════════════════════════════════
                HEADER — Logo + Brand + Invoice Meta
                Matches pdf.service.js HEADER section exactly
                ═══════════════════════════════════════════════════ */}
-            <div className="p-[var(--um-space-5)] px-[var(--um-space-4)]">
+            <div className="p-2.5 sm:p-4">
                 <div className="flex items-start justify-between gap-4">
                     {/* Left: Logo + Brand + User */}
                     <div className="min-w-0 flex-1">
@@ -209,7 +209,7 @@ const InvoicePreview = ({
                                 <span className="text-primary"> Mess</span>
                             </p>
                         </div>
-                        <div className="mt-[var(--um-space-2)] space-y-[var(--um-space-1)]">
+                        <div className="mt-1 space-y-0.5">
                             <p className="text-[length:var(--um-fs-meta)] text-muted-foreground">
                                 Mess Management Platform
                             </p>
@@ -241,7 +241,7 @@ const InvoicePreview = ({
             </div>
 
             {/* ── Indigo divider (PDF: hRule with C.indigo, thick=2) ── */}
-            <div className="px-[var(--um-space-4)]">
+            <div className="px-3 sm:px-5">
                 <div className="h-[2px] bg-primary" />
             </div>
 
@@ -249,34 +249,34 @@ const InvoicePreview = ({
                STAT CARDS — 3 horizontal cards
                Matches pdf.service.js STAT CARDS section exactly
                ═══════════════════════════════════════════════════ */}
-            <div className="px-[var(--um-space-4)] pt-5">
-                <div className="grid grid-cols-3 gap-2.5">
+            <div className="px-3 sm:px-5 pt-3">
+                <div className="grid grid-cols-3 gap-2">
                     {/* Card 1: Market Total (All) */}
-                    <div className="rounded-lg border border-border bg-muted/30 p-3.5">
-                        <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <div className="rounded-lg border border-border bg-muted/30 p-2 sm:p-2.5 flex flex-col">
+                        <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-muted-foreground leading-tight">
                             Market Total (All)
                         </p>
-                        <p className="text-lg font-bold tabular-nums text-foreground mt-1">
+                        <p className="text-sm sm:text-base font-bold tabular-nums text-foreground mt-auto pt-1">
                             {'\u20B9'}{fmt(grandStats.marketTotal)}
                         </p>
                     </div>
 
                     {/* Card 2: Total Meals (All) */}
-                    <div className="rounded-lg border border-border bg-muted/30 p-3.5">
-                        <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <div className="rounded-lg border border-border bg-muted/30 p-2 sm:p-2.5 flex flex-col">
+                        <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-muted-foreground leading-tight">
                             Total Meals (All)
                         </p>
-                        <p className="text-lg font-bold tabular-nums text-foreground mt-1">
+                        <p className="text-sm sm:text-base font-bold tabular-nums text-foreground mt-auto pt-1">
                             {fmt(grandStats.totalMeals)}
                         </p>
                     </div>
 
                     {/* Card 3: Your Payable (indigo accent) */}
-                    <div className="rounded-lg border border-primary/20 bg-primary/5 p-3.5">
-                        <p className="text-[9px] font-bold uppercase tracking-wider text-primary/70">
+                    <div className="rounded-lg border border-primary/20 bg-primary/5 p-2 sm:p-2.5 flex flex-col">
+                        <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-primary/70 leading-tight">
                             {amounts.isRefund ? 'Refund Due' : 'Your Payable'}
                         </p>
-                        <p className="text-lg font-bold tabular-nums text-primary mt-1">
+                        <p className="text-sm sm:text-base font-bold tabular-nums text-primary mt-auto pt-1">
                             {'\u20B9'}{fmt(amounts.displayAmt)}
                         </p>
                     </div>
@@ -287,7 +287,7 @@ const InvoicePreview = ({
                SECTIONS — Usage, Charges, Calculations
                Matches pdf.service.js section layout exactly
                ═══════════════════════════════════════════════════ */}
-            <div className="px-6 md:px-10 pt-2 pb-2">
+            <div className="px-3 sm:px-5 pt-1 pb-1">
 
                 {/* ── YOUR USAGE ── */}
                 <SectionLabel label="Your Usage" />
@@ -358,13 +358,13 @@ const InvoicePreview = ({
                TOTAL BOX — Amount + Status Badge
                Matches pdf.service.js TOTAL BOX section exactly
                ═══════════════════════════════════════════════════ */}
-            <div className="px-6 md:px-10 pt-3 pb-5">
-                <div className={`flex items-center justify-between p-5 rounded-xl border ${totalBoxStyle}`}>
+            <div className="px-3 sm:px-5 pt-2 pb-3">
+                <div className={`flex items-center justify-between p-4 rounded-xl border ${totalBoxStyle}`}>
                     <div>
                         <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground mb-1">
                             {amounts.isRefund ? 'Refund Amount' : 'Total Payable'}
                         </p>
-                        <p className={`text-[28px] font-black tabular-nums leading-none ${amountTextStyle}`}>
+                        <p className={`text-xl sm:text-[22px] font-extrabold tabular-nums leading-none ${amountTextStyle}`}>
                             {'\u20B9'}{fmt(amounts.displayAmt)}
                         </p>
                     </div>
@@ -382,11 +382,11 @@ const InvoicePreview = ({
                Matches pdf.service.js PAYMENT BLOCK section exactly
                ═══════════════════════════════════════════════════ */}
             {(status.isPaid || status.isPartiallyPaid) && (
-                <div className="px-6 md:px-10 pb-5">
+                <div className="px-3 sm:px-5 pb-3">
                     <div className="rounded-xl border border-border bg-muted/30 overflow-hidden">
 
                         {/* Payment status row */}
-                        <div className="px-4 py-3.5 flex items-center justify-between border-b border-border/60">
+                        <div className="px-3 sm:px-4 py-2.5 flex items-center justify-between border-b border-border/60">
                             <div>
                                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                                     Payment Status
@@ -415,7 +415,7 @@ const InvoicePreview = ({
 
                         {/* Partially paid: amount breakdown */}
                         {status.isPartiallyPaid && (
-                            <div className="px-4 py-3 flex items-center gap-6 border-b border-border/60">
+                            <div className="px-3 sm:px-4 py-2 flex items-center gap-6 border-b border-border/60">
                                 <p className="text-[11px] text-muted-foreground">
                                     Paid: <span className="font-bold text-foreground">{'\u20B9'}{fmt(amounts.paidAmount)}</span>
                                 </p>
@@ -427,7 +427,7 @@ const InvoicePreview = ({
 
                         {/* UTR block (if manual UPI with transaction ID) */}
                         {paymentData.paymentMethod === 'upi_manual' && paymentData.transactionId && (
-                            <div className="px-4 py-3 bg-primary/5">
+                            <div className="px-3 sm:px-4 py-2 bg-primary/5">
                                 <div className="flex items-center gap-2">
                                     <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
                                         UTR
@@ -450,7 +450,7 @@ const InvoicePreview = ({
             {/* ═══════════════════════════════════════════════════
                ACTION BUTTONS — Pay Now + Download + Email
                ═══════════════════════════════════════════════════ */}
-            <div className="px-6 md:px-10 pb-4 space-y-2.5">
+            <div className="px-3 sm:px-5 pb-3 space-y-2">
                 {/* Pay Now */}
                 {!status.isPaid && !amounts.isRefund && onPayNow && (
                     <button
@@ -473,7 +473,7 @@ const InvoicePreview = ({
                 )}
 
                 {/* Download + Email */}
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-2 gap-2">
                     <button
                         type="button"
                         disabled={isDownloading}
@@ -507,8 +507,8 @@ const InvoicePreview = ({
                FOOTER — Disclaimer + Powered by
                Matches pdf.service.js FOOTER section exactly
                ═══════════════════════════════════════════════════ */}
-            <div className="px-6 md:px-10 pb-6">
-                <div className="border-t border-border pt-4 text-center space-y-1.5">
+            <div className="px-3 sm:px-5 pb-4">
+                <div className="border-t border-border pt-3 text-center space-y-1">
                     <p className="text-[11px] text-muted-foreground leading-relaxed">
                         System-generated invoice for {meta.monthName}. For disputes, contact your mess admin.
                     </p>

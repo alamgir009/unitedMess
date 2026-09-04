@@ -65,6 +65,7 @@ const Modal = ({
   closeOnOverlayClick = true,
   className = '',
   isLoading = false,
+  desktopMaxHeight = '92dvh',
 }) => {
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
@@ -168,7 +169,7 @@ const Modal = ({
       aria-describedby={description ? 'modal-description' : undefined}
       aria-busy={isLoading || undefined}
       tabIndex={-1}
-      style={useSheet ? { height: `${sheetHeightPct}vh`, boxShadow: 'var(--shadow-xl), var(--inset-top-glow)' } : undefined}
+      style={useSheet ? { height: `${sheetHeightPct}vh`, boxShadow: 'var(--shadow-xl), var(--inset-top-glow)' } : { maxHeight: desktopMaxHeight }}
       className={cn(
         'relative w-full modal-gpu',
         !useSheet && sizeMap[size],
@@ -205,7 +206,7 @@ const Modal = ({
           {(title || showCloseButton) && (
             <div className={cn(
               'flex items-center justify-between flex-shrink-0 border-b border-border-default',
-              useSheet ? 'px-5 pt-1 pb-2' : 'px-5 py-4 sm:px-6 sm:py-5',
+              useSheet ? 'px-4 pt-1 pb-2' : 'px-5 py-4 sm:px-6 sm:py-5',
             )}>
               <div className="flex items-center gap-3 min-w-0">
                 {accentColor !== 'none' && (
@@ -243,7 +244,7 @@ const Modal = ({
 
           <div className={cn(
             'relative z-10 flex-1 overflow-y-auto overscroll-contain',
-            useSheet ? 'px-5 py-4' : 'px-5 py-4 sm:px-6 sm:py-5',
+            useSheet ? 'px-4 py-3' : 'px-5 py-4 sm:px-6 sm:py-5',
             '[scrollbar-width:thin] [scrollbar-color:var(--border-strong)_transparent]',
             '[&::-webkit-scrollbar]:w-1.5',
             '[&::-webkit-scrollbar-track]:bg-transparent',
@@ -257,7 +258,7 @@ const Modal = ({
           {footer && (
             <div className={cn(
               'flex items-center justify-end gap-3 flex-shrink-0 border-t border-border-default',
-              useSheet ? 'px-5 pb-4 pt-3' : 'px-5 pb-5 pt-3 sm:px-6 sm:pb-6 sm:pt-4',
+              useSheet ? 'px-4 pb-4 pt-3' : 'px-5 pb-5 pt-3 sm:px-6 sm:pb-6 sm:pt-4',
             )}>
               {footer}
             </div>
