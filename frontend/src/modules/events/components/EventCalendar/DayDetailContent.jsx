@@ -96,6 +96,9 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
       className="relative overflow-y-auto custom-scrollbar"
       style={{ height: '100%', minHeight: 200 }}
     >
+      {category === 'markets' && scheduleData?.user && (
+        <MarketDutyBanner scheduleData={scheduleData} currentUser={currentUser} />
+      )}
       {showMealSummary && (
         <div className="flex items-center justify-center gap-1.5 mb-3 py-1.5 px-3 rounded-full bg-[var(--slot-both)]/8">
           <span className="text-xs font-semibold text-[var(--slot-both)]">

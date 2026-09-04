@@ -5,12 +5,12 @@ import { isToday, isWeekend, isSameMonth } from 'date-fns';
 const DayDot = memo(({ categories }) => {
   const maxDots = categories.slice(0, 3);
   return (
-    <span className="inline-flex items-center gap-0.5 mt-px" aria-hidden="true">
+    <span className="inline-flex items-center gap-px mt-px" aria-hidden="true">
       {maxDots.map((cat, i) => (
         <span
           key={i}
           className={cn(
-            'w-1 h-1 rounded-full',
+            'w-[3px] h-[3px] sm:w-1 sm:h-1 rounded-full',
             cat === 'meals' && 'bg-[var(--slot-day)]',
             cat === 'markets' && 'bg-[var(--market-accent)]',
             cat === 'payments' && 'bg-[var(--payment-paid)]',
@@ -54,13 +54,13 @@ const DateNumber = memo(({
   const day = date.getDate();
 
   return (
-    <div className="flex items-center gap-0.5 sm:gap-1 mb-0.5 sm:mb-1">
+    <div className="flex items-center gap-0.5 sm:gap-1 mb-0">
       {today ? (
         <span
           className={cn(
-            'inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full',
+            'inline-flex items-center justify-center w-5 h-5 sm:w-7 sm:h-7 rounded-full',
             'bg-gradient-to-br from-[var(--accent-primary)] to-[var(--brand)] text-white font-bold',
-            'text-[11px] sm:text-xs',
+            'text-[10px] sm:text-xs',
             'shadow-md shadow-[var(--accent-primary)]/30',
             'ring-2 ring-white/30 dark:ring-white/15',
             'tabular-nums leading-none shrink-0',
@@ -72,7 +72,7 @@ const DateNumber = memo(({
       ) : (
         <span
           className={cn(
-            'tabular-nums leading-none text-[11px] sm:text-[13px] lg:text-[15px]',
+            'tabular-nums leading-none text-[10px] sm:text-[13px] lg:text-[15px]',
             !inMonth && 'text-[var(--text-muted)] opacity-35',
             inMonth && weekend && 'font-medium text-[var(--calendar-header-weekend-text)]',
             inMonth && !weekend && 'font-semibold text-[var(--calendar-header-text)]',

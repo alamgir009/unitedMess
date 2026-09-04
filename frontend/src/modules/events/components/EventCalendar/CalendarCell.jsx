@@ -60,13 +60,13 @@ const CalendarCell = ({
       aria-label={`${dayLabel}, ${category}: ${totalEntries} entries`}
       style={{
         contentVisibility: 'auto',
-        containIntrinsicSize: '72px',
+        containIntrinsicSize: '80px',
         borderBottom: '1px solid var(--calendar-border)',
         borderRight: !isLastInRow ? '1px solid var(--calendar-border)' : 'none',
       }}
       className={cn(
-        'relative flex flex-col p-1 sm:p-1.5 lg:p-2.5 overflow-hidden',
-        'min-h-[72px] sm:min-h-[clamp(80px,11vw,110px)] lg:min-h-[clamp(88px,12vw,120px)]',
+        'relative flex flex-col p-1.5 sm:p-1.5 lg:p-2.5 overflow-hidden',
+        'min-h-[80px] sm:min-h-[clamp(84px,11vw,110px)] lg:min-h-[clamp(88px,12vw,120px)]',
         'transition-all duration-150 ease-out',
         'cursor-pointer select-none',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent-primary)]',

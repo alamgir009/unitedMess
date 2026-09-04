@@ -1,5 +1,5 @@
 import { memo, useMemo } from 'react';
-import { ShoppingBag, Calendar } from 'lucide-react';
+import { ShoppingBag } from 'lucide-react';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { fmt } from '@/core/utils/helpers/currency.helper';
 import AvatarCluster from './AvatarCluster';
@@ -39,31 +39,34 @@ const MarketCellContent = memo(({ entries = [], loading, error, isCompact, onRet
 
   return (
     <div
-      className="flex items-center gap-1 min-w-0 overflow-hidden cursor-pointer"
+      className="flex flex-col justify-end min-w-0 overflow-hidden cursor-pointer"
       onClick={onCellClick}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onCellClick?.(); }}
     >
-      {hasDuty && (
-        <div className={cn(
-          'flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 rounded-full shrink-0',
-          isOwnDuty
-            ? 'bg-[var(--duty-own-bg)] text-[var(--duty-own)] ring-1 ring-[var(--duty-own-border)]'
-            : 'bg-[var(--duty-other-bg)] text-[var(--duty-other)] ring-1 ring-[var(--duty-other-border)]',
-        )}>
-          <Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-        </div>
-      )}
       {isCompact ? (
-        <span className={cn(
-          'text-xs font-bold tabular-nums tracking-tight drop-shadow-sm truncate min-w-0',
-          hasDuty
-            ? (isOwnDuty ? 'text-[var(--duty-own-text)]' : 'text-[var(--duty-other-text)]')
-            : 'text-[var(--market-accent)]',
-        )}>
-          {entries.length > 0 ? `₹${fmt(total)}` : (hasDuty ? scheduleData.user.name?.split(' ')[0] : '')}
-        </span>
+        entries.length > 0 ? (
+          <span className={cn(
+            'text-[11px] sm:text-xs font-bold tabular-nums tracking-tight leading-none',
+            'text-[var(--market-accent)]',
+          )}>
+            ₹{fmt(total)}
+          </span>
+        ) : hasDuty ? (
+          <span className={cn(
+            'inline-flex items-center gap-0.5 leading-none',
+            isOwnDuty ? 'text-[var(--duty-own-text)]' : 'text-[var(--duty-other-text)]',
+          )}>
+            <span className={cn(
+              'w-1 h-1 rounded-full shrink-0',
+              isOwnDuty ? 'bg-[var(--duty-own)]' : 'bg-[var(--duty-other)]',
+            )} />
+            <span className="text-[10px] sm:text-[11px] font-semibold truncate">
+              {scheduleData.user.name?.split(' ')[0]}
+            </span>
+          </span>
+        ) : null
       ) : (
         <>
           {entries.length > 0 && (
