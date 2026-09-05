@@ -32,12 +32,12 @@ const Input = forwardRef(({
 
   const variants = {
     default: cn(
-      'surface-elevated text-foreground placeholder:text-muted-foreground',
+      'bg-muted text-foreground placeholder:text-muted-foreground',
       'border border-border rounded-lg caret-foreground',
       'focus:outline-none focus:ring-2 focus:ring-offset-1',
       'focus:ring-offset-background',
       'transition-[border-color,box-shadow] duration-[var(--duration-fast)]',
-      '[&:-webkit-autofill]:bg-[var(--surface-elevated)] [&:-webkit-autofill]:text-foreground',
+      '[&:-webkit-autofill]:bg-muted [&:-webkit-autofill]:text-foreground',
       stateBorder,
       error ? 'focus:shadow-[var(--inset-inner),0_0_0_3px_rgba(220,38,38,0.15)]' : '',
     ),
@@ -51,12 +51,12 @@ const Input = forwardRef(({
       stateBorder,
     ),
     glass: cn(
-      'surface-elevated/60 text-foreground placeholder:text-muted-foreground',
+      'bg-muted/80 text-foreground placeholder:text-muted-foreground',
       'border border-border rounded-lg caret-foreground',
       'focus:outline-none focus:ring-2 focus:ring-offset-1',
       'focus:ring-offset-background',
       'transition-[border-color,box-shadow] duration-[var(--duration-fast)]',
-      '[&:-webkit-autofill]:text-foreground',
+      '[&:-webkit-autofill]:bg-muted/80 [&:-webkit-autofill]:text-foreground',
       stateBorder,
     ),
   };

@@ -83,7 +83,7 @@ const CountryCodeDropdown = ({ value, onChange, className = '' }) => {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full rounded-lg border border-input bg-background px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary flex items-center justify-between h-12"
+        className="w-full rounded-lg border border-input bg-muted px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary flex items-center justify-between h-12"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-label="Select country code"
