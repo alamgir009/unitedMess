@@ -21,10 +21,10 @@ const MAX_RANGE_DAYS = 31;
 const typeCountMap = { both: 2, day: 1, night: 1, off: 0 };
 
 const mealTypes = [
-    { value: 'both', label: 'Both', description: 'Day & Night', icon: HiOutlineSparkles, color: 'border-[var(--brand)]/60 bg-[var(--brand)]/10 text-[var(--brand)]' },
-    { value: 'day', label: 'Day', description: 'Morning only', icon: HiOutlineSun, color: 'border-[var(--warning)]/60 bg-[var(--warning)]/10 text-[var(--warning)]' },
-    { value: 'night', label: 'Night', description: 'Evening only', icon: HiOutlineMoon, color: 'border-[var(--info)]/60 bg-[var(--info)]/10 text-[var(--info)]' },
-    { value: 'off', label: 'Off', description: 'No meals', icon: HiOutlineNoSymbol, color: 'border-[var(--text-muted)]/40 bg-[var(--bg-muted)] text-[var(--text-secondary)]' },
+    { value: 'both', label: 'Both', description: 'Day & Night', icon: HiOutlineSparkles, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-violet-500' },
+    { value: 'day', label: 'Day', description: 'Morning only', icon: HiOutlineSun, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-[var(--warning)]' },
+    { value: 'night', label: 'Night', description: 'Evening only', icon: HiOutlineMoon, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-[var(--info)]' },
+    { value: 'off', label: 'Off', description: 'No meals', icon: HiOutlineNoSymbol, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-[var(--text-secondary)]' },
 ];
 
 const Field = ({ label, icon: Icon, children, className = '' }) => (
@@ -38,13 +38,13 @@ const Field = ({ label, icon: Icon, children, className = '' }) => (
 );
 
 const inputBase =
-    'w-full px-3 py-2.5 rounded-xl border border-[var(--input-border)] ' +
-    'bg-[var(--input-bg)] ' +
-    'shadow-[var(--inset-inner),var(--inset-top-glow)] ' +
+    'w-full px-3 py-2.5 rounded-xl border border-[var(--border-strong)] ' +
+    'bg-[var(--bg-subtle)] ' +
+    'shadow-[var(--inset-inner),0_1px_2px_rgba(0,0,0,0.08)] ' +
     'focus:ring-2 focus:ring-[var(--brand)]/25 focus:border-[var(--brand)] ' +
     'outline-none transition-all duration-150 ' +
     'text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] ' +
-    'hover:border-[var(--input-border-hover)]';
+    'hover:border-[var(--input-border-hover)] hover:shadow-[var(--inset-inner),0_2px_6px_rgba(0,0,0,0.12)]';
 
 const inputDisabled = 'opacity-60 cursor-not-allowed pointer-events-none select-none';
 
@@ -56,18 +56,18 @@ const TypeBtn = ({ value, current, onClick, icon: Icon, label, description, colo
             onClick={() => !disabled && onClick(value)}
             disabled={disabled}
             aria-pressed={isActive}
-            className={`relative flex flex-col items-center gap-1 py-2.5 px-2 sm:py-3 sm:px-3 rounded-xl border-2 transition-all duration-150 text-center
+            className={`relative flex flex-col items-center gap-1 py-2.5 px-2 sm:py-3 sm:px-3 rounded-lg border-2 transition-all duration-150 text-center
                 ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                 ${isActive
-                    ? `${color} shadow-md scale-[1.02]`
-                    : 'border-[var(--border-default)] bg-[var(--bg-muted)] hover:bg-[var(--bg-muted)]/80 text-[var(--text-secondary)]'
+                    ? `${color} shadow-[0_2px_8px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.04)] scale-[1.02]`
+                    : 'border-[var(--border-default)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:shadow-[0_3px_8px_rgba(0,0,0,0.1)]'
                 }`}
         >
             <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
             <span className="text-[10px] sm:text-xs font-bold">{label}</span>
             <span className="text-[9px] sm:text-[10px] text-[var(--text-muted)] leading-tight hidden sm:block">{description}</span>
             {isActive && (
-                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[var(--brand)] border-2 border-[var(--bg-elevated)]" />
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[var(--success)] border-2 border-[var(--bg-elevated)]" />
             )}
         </button>
     );
@@ -86,10 +86,10 @@ const ModeTab = ({ mode, current, onChange, label }) => (
         role="tab"
         aria-selected={current === mode}
         onClick={() => onChange(mode)}
-        className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all duration-150 ${
+        className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all duration-150 ${
             current === mode
-                ? 'bg-[var(--brand)] text-[var(--text-on-brand)] shadow-sm'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)]/50'
+                ? 'bg-[var(--brand)] text-[var(--text-on-brand)] shadow-[0_1px_3px_rgba(0,0,0,0.2)]'
+                : 'bg-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)]/40'
         }`}
     >
         {label}
@@ -323,7 +323,7 @@ const [singleAdminError, setSingleAdminError] = useState('');
                 <div
                     role="tablist"
                     aria-label="Entry mode"
-                    className="flex gap-1 p-1 rounded-xl bg-[var(--bg-muted)] border border-[var(--border-default)]"
+                    className="flex gap-1 p-1 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-strong)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)]"
                 >
                     <ModeTab mode="single" current={mode} onChange={setMode} label="Single Day" />
                     <ModeTab mode="range" current={mode} onChange={setMode} label="Date Range" />
@@ -374,7 +374,7 @@ const [singleAdminError, setSingleAdminError] = useState('');
                 {isAdmin && (
                     <Field label="Member" icon={HiOutlineUser}>
                         {initialData ? (
-                            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-[var(--input-border)] bg-[var(--input-bg)] shadow-[var(--inset-inner)] text-sm">
+                            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-[var(--border-strong)] bg-[var(--bg-subtle)] shadow-[var(--inset-inner)] text-sm">
                                 <Avatar
                                     name={typeof initialData.user === 'object' ? initialData.user?.name : ''}
                                     size="xs"
@@ -467,8 +467,8 @@ const [singleAdminError, setSingleAdminError] = useState('');
                     readOnly ? 'opacity-60 cursor-not-allowed' : ''
                 } ${
                     formData.isGuestMeal
-                        ? 'border-[var(--warning-border)] bg-[var(--warning-bg)]/50'
-                        : 'border-[var(--border-default)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-muted)]'
+                        ? 'border-[var(--info-border)] bg-[var(--info-bg)] shadow-[0_1px_3px_rgba(0,0,0,0.12)]'
+                        : 'border-[var(--border-default)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)] shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:shadow-[0_2px_6px_rgba(0,0,0,0.1)]'
                 }`}>
                     <button
                         type="button"
@@ -482,17 +482,17 @@ const [singleAdminError, setSingleAdminError] = useState('');
                         disabled={isRunning || readOnly}
                         className="flex items-center gap-1.5 flex-1 min-w-0 text-left"
                     >
-                        <HiOutlineUserGroup className="w-4 h-4 text-[var(--warning)] shrink-0" />
+                        <HiOutlineUserGroup className="w-4 h-4 text-[var(--info)] shrink-0" />
                         <span className="text-xs font-semibold text-[var(--text-primary)]">Guest Meals</span>
                         {formData.isGuestMeal && formData.guestCount > 0 && (
-                            <span className="text-[10px] font-bold text-[var(--warning-text)] bg-[var(--warning-bg)] px-1.5 py-0.5 rounded-full">
+                            <span className="text-[10px] font-bold text-[var(--info-text)] bg-[var(--info-bg)] px-1.5 py-0.5 rounded-full">
                                 +{formData.guestCount}
                             </span>
                         )}
                     </button>
 
                     {formData.isGuestMeal ? (
-                        <div className="flex items-center shrink-0 rounded-lg border border-[var(--warning-border)] overflow-hidden">
+                        <div className="flex items-center shrink-0 rounded-lg border border-[var(--info-border)] overflow-hidden">
                             <button
                                 type="button"
                                 onClick={() => {
@@ -503,12 +503,12 @@ const [singleAdminError, setSingleAdminError] = useState('');
                                     });
                                 }}
                                 disabled={isRunning || readOnly}
-                                className="w-9 h-9 flex items-center justify-center bg-[var(--warning-bg)] text-[var(--warning-text)] hover:brightness-110 active:brightness-95 transition-all text-lg font-bold select-none disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-9 h-9 flex items-center justify-center bg-[var(--info-bg)] text-[var(--info-text)] hover:brightness-110 active:brightness-95 transition-all text-lg font-bold select-none disabled:opacity-50 disabled:cursor-not-allowed"
                                 aria-label="Decrease guest count"
                             >
                                 <HiOutlineMinus className="w-4 h-4" />
                             </button>
-                            <div className="w-10 h-9 flex items-center justify-center bg-[var(--warning-bg)]/50 text-sm font-bold text-[var(--warning-text)] border-x border-[var(--warning-border)] tabular-nums select-none">
+                            <div className="w-10 h-9 flex items-center justify-center bg-[var(--info-bg)]/50 text-sm font-bold text-[var(--info-text)] border-x border-[var(--info-border)] tabular-nums select-none">
                                 {formData.guestCount}
                             </div>
                             <button
@@ -518,7 +518,7 @@ const [singleAdminError, setSingleAdminError] = useState('');
                                     setFormData(prev => ({ ...prev, guestCount: Math.min(20, prev.guestCount + 1) }));
                                 }}
                                 disabled={isRunning || readOnly}
-                                className="w-9 h-9 flex items-center justify-center bg-[var(--warning-bg)] text-[var(--warning-text)] hover:brightness-110 active:brightness-95 transition-all text-lg font-bold select-none disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-9 h-9 flex items-center justify-center bg-[var(--info-bg)] text-[var(--info-text)] hover:brightness-110 active:brightness-95 transition-all text-lg font-bold select-none disabled:opacity-50 disabled:cursor-not-allowed"
                                 aria-label="Increase guest count"
                             >
                                 <HiOutlinePlus className="w-4 h-4" />
@@ -532,7 +532,7 @@ const [singleAdminError, setSingleAdminError] = useState('');
                                 setFormData(prev => ({ ...prev, isGuestMeal: true, guestCount: 1 }));
                             }}
                             disabled={isRunning || readOnly}
-                            className="px-3 h-9 rounded-lg bg-[var(--warning-bg)] text-[var(--warning-text)] text-xs font-semibold shrink-0 hover:brightness-110 active:brightness-95 transition-all border border-[var(--warning-border)] disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-3 h-9 rounded-lg bg-[var(--info-bg)] text-[var(--info-text)] text-xs font-semibold shrink-0 hover:brightness-110 active:brightness-95 transition-all border border-[var(--info-border)] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             + Add
                         </button>
