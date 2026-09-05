@@ -11,6 +11,7 @@ const Payment = require('../../../models/Payment.model');
 const User = require('../../../models/User.model');
 const AppError = require('../../../utils/errors/AppError');
 const { emitToAll } = require('../../../sockets');
+const mongoose = require('mongoose');
 
 /**
  * Get the active invoice for the current user
@@ -43,11 +44,7 @@ const getMonthlyInvoice = asyncHandler(async (req, res) => {
         throw new AppError('Invalid year or month parameter', 400);
     }
 
-    // Admin can inspect any user's invoice; regular users see only their own.
-    let targetUserId = req.user.id;
-    if (req.user.role === 'admin' && req.query.userId) {
-        targetUserId = req.query.userId;
-    }
+    const targetUserId = _resolveTargetUserId(req);
 
     // Reuse the PDF pipeline's invoice+user assembly so the modal receives the
     // exact same data (payment attrs, mess-wide stats) the generated PDF uses.
@@ -204,6 +201,33 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Resolve the target user ID for invoice download/email endpoints.
+ * Security guard: non-admin users can ONLY access their own invoice.
+ * Admin users can access any user's invoice via ?userId= query param.
+ * Validates userId is a valid MongoDB ObjectId when provided.
+ */
+const _resolveTargetUserId = (req) => {
+    const requesterId = req.user.id;
+    const isOwnerRequest = !req.query.userId || req.query.userId === requesterId;
+
+    if (isOwnerRequest) {
+        return requesterId;
+    }
+
+    // A different userId was requested — admin-only
+    if (req.user.role !== 'admin') {
+        throw new AppError('You are not authorized to access another user\'s invoice', 403);
+    }
+
+    const requestedUserId = req.query.userId;
+    if (!mongoose.Types.ObjectId.isValid(requestedUserId)) {
+        throw new AppError('Invalid userId parameter', 400);
+    }
+
+    return requestedUserId;
+};
+
+/**
  * Helper: build a fully-annotated invoice + user pair ready for pdfService.
  * Runs independent DB queries in parallel to minimize latency.
  */
@@ -260,10 +284,7 @@ const downloadInvoicePDF = asyncHandler(async (req, res) => {
     const m = parseInt(month, 10);
     if (!y || !m || m < 1 || m > 12) throw new AppError('Invalid year or month parameter', 400);
 
-    let targetUserId = req.user.id;
-    if (req.user.role === 'admin' && req.query.userId) {
-        targetUserId = req.query.userId;
-    }
+    const targetUserId = _resolveTargetUserId(req);
 
     const { invoice, user, monthName } = await _buildInvoiceForPdf(targetUserId, y, m);
     const pdfBuffer = await pdfService.generateInvoicePDF(invoice, user);
@@ -288,10 +309,7 @@ const sendInvoiceEmailServer = asyncHandler(async (req, res) => {
     const m = parseInt(month, 10);
     if (!y || !m || m < 1 || m > 12) throw new AppError('Invalid year or month parameter', 400);
 
-    let targetUserId = req.user.id;
-    if (req.user.role === 'admin' && req.query.userId) {
-        targetUserId = req.query.userId;
-    }
+    const targetUserId = _resolveTargetUserId(req);
 
     // Validate user exists (fast) — fail fast before responding 202
     const user = await User.findById(targetUserId).select('name email').lean();

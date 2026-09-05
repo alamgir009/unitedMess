@@ -213,6 +213,7 @@ const MonthlyInvoiceModal = ({
                             paymentRecord={invoicePaymentRecord}
                             onPayNow={!isPartiallyPaid && paymentStatus !== 'success' ? onPayNow : undefined}
                             isPaying={isPaying}
+                            userId={userId || displayUser?._id || displayUser?.id}
                         />
                     </>
                 )}

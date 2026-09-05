@@ -54,6 +54,7 @@ const InvoicePreview = ({
     paymentRecord: externalPaymentRecord,
     onPayNow,
     isPaying,
+    userId,
 }) => {
     const [sendingEmail, setSendingEmail] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
@@ -130,26 +131,26 @@ const InvoicePreview = ({
     const handleDownloadPDF = useCallback(async () => {
         setIsDownloading(true);
         try {
-            await invoiceService.downloadInvoice(invoice?.year, invoice?.month);
+            await invoiceService.downloadInvoice(invoice?.year, invoice?.month, userId);
             toast.success('Invoice downloaded');
         } catch {
             toast.error('Failed to download invoice');
         } finally {
             setIsDownloading(false);
         }
-    }, [invoice?.year, invoice?.month]);
+    }, [invoice?.year, invoice?.month, userId]);
 
     const handleSendEmail = useCallback(async () => {
         setSendingEmail(true);
         try {
-            await invoiceService.sendInvoiceEmail(invoice?.year, invoice?.month);
+            await invoiceService.sendInvoiceEmail(invoice?.year, invoice?.month, userId);
             toast.success('Invoice sent to your email!');
         } catch (err) {
             toast.error(err?.response?.data?.message ?? 'Failed to send invoice email');
         } finally {
             setSendingEmail(false);
         }
-    }, [invoice?.year, invoice?.month]);
+    }, [invoice?.year, invoice?.month, userId]);
 
     const handlePayNow = useCallback(() => {
         if (typeof onPayNow === 'function') {

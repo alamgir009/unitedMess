@@ -127,6 +127,7 @@ const MessBillInvoice = ({
     paymentRecord,
     hidePayButton = false,
     autoExpand = false,
+    userId,
 }) => {
     const invMeta = useMemo(() => {
         const monthStr = data?.monthName || paymentRecord?.month;
@@ -260,7 +261,8 @@ const MessBillInvoice = ({
         try {
             await invoiceService.downloadInvoice(
                 billingNums.year,
-                billingNums.month
+                billingNums.month,
+                userId
             );
             toast.success('Invoice downloaded');
         } catch (err) {
@@ -275,7 +277,8 @@ const MessBillInvoice = ({
         try {
             await invoiceService.sendInvoiceEmail(
                 billingNums.year,
-                billingNums.month
+                billingNums.month,
+                userId
             );
             toast.success('Invoice sent to your email!');
         } catch (err) {
