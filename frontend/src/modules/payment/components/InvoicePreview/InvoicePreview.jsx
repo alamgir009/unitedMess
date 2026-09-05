@@ -188,7 +188,7 @@ const InvoicePreview = ({
     if (!invoice) return null;
 
     return (
-        <div className="mx-auto w-full bg-card rounded-xl border border-border/50 overflow-hidden shadow-sm">
+        <div className="mx-auto w-full bg-background dark:bg-[#151820] rounded-xl border border-border/50 overflow-hidden shadow-sm">
 
             {/* ═══════════════════════════════════════════════════
                HEADER — Logo + Brand + Invoice Meta
