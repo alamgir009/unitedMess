@@ -4,7 +4,7 @@ import { HiOutlineChevronDown, HiOutlineCheckCircle } from 'react-icons/hi2';
 import { cn } from '@/core/utils/helpers/string.helper';
 
 const DROPDOWN_MAX_H = 208;
-const DROPDOWN_MARGIN = 6;
+const DROPDOWN_MARGIN = 3;
 
 const inputBase =
   'w-full px-3 py-2 rounded-xl border border-[var(--input-border)] ' +
@@ -20,22 +20,26 @@ const inputDisabled = 'opacity-60 cursor-not-allowed pointer-events-none select-
 function getMenuStyle(triggerRect) {
   const vh = window.innerHeight;
   const vw = window.innerWidth;
+  const isSmallScreen = vw < 640;
+  const effectiveMaxH = isSmallScreen ? Math.min(DROPDOWN_MAX_H, 168) : DROPDOWN_MAX_H;
+
   const spaceBelow = vh - triggerRect.bottom;
-  const openAbove = spaceBelow < DROPDOWN_MAX_H + DROPDOWN_MARGIN * 2;
+  const spaceAbove = triggerRect.top;
+  const openAbove = spaceBelow < effectiveMaxH + DROPDOWN_MARGIN && spaceAbove > spaceBelow;
 
   let top;
-  let maxHeight = DROPDOWN_MAX_H;
+  let maxHeight = effectiveMaxH;
   let borderTopRadius = 0;
   let borderBottomRadius = 0;
 
   if (openAbove) {
-    const spaceAbove = triggerRect.top;
-    maxHeight = Math.min(DROPDOWN_MAX_H, spaceAbove - DROPDOWN_MARGIN * 2);
+    maxHeight = Math.min(effectiveMaxH, spaceAbove - DROPDOWN_MARGIN);
     top = triggerRect.top - maxHeight - DROPDOWN_MARGIN;
     borderTopRadius = 12;
   } else {
     top = triggerRect.bottom + DROPDOWN_MARGIN;
     borderBottomRadius = 12;
+    maxHeight = Math.min(effectiveMaxH, spaceBelow - DROPDOWN_MARGIN);
   }
 
   const left = Math.min(triggerRect.left, vw - triggerRect.width - 8);
@@ -43,8 +47,8 @@ function getMenuStyle(triggerRect) {
 
   return {
     position: 'fixed',
-    top: `${top}px`,
-    left: `${left}px`,
+    top: `${Math.max(4, top)}px`,
+    left: `${Math.max(4, left)}px`,
     width: `${width}px`,
     maxHeight: `${Math.max(maxHeight, 80)}px`,
     borderRadius: borderTopRadius
@@ -165,7 +169,7 @@ const IconSelect = ({ name, value, onChange, options, disabled = false, placehol
           onClick={() => pick(opt.value)}
           onMouseEnter={() => setHighlightedIndex(idx)}
           className={cn(
-            'w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors duration-100',
+            'w-full flex items-center gap-2 sm:gap-2.5 px-2.5 sm:px-3 py-2 sm:py-2.5 text-sm transition-colors duration-100',
             value === opt.value
               ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-medium'
               : highlightedIndex === idx
