@@ -95,6 +95,7 @@ const EventCalendar = () => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState(null);
   const [isPaymentSubmitting, setIsPaymentSubmitting] = useState(false);
+  const [paymentFooter, setPaymentFooter] = useState(null);
 
   const { monthSchedule } = useSelector((state) => state.marketSchedule);
 
@@ -564,6 +565,7 @@ const EventCalendar = () => {
   const handlePaymentClose = useCallback(() => {
     setIsPaymentModalOpen(false);
     setEditingPayment(null);
+    setPaymentFooter(null);
   }, []);
 
   const paymentModalTitle = useMemo(() => {
@@ -854,7 +856,7 @@ const EventCalendar = () => {
 
       {/* Payment Modal (admin only) */}
       <Suspense fallback={null}>
-        <PaymentModal isOpen={isPaymentModalOpen} onClose={handlePaymentClose} title={paymentModalTitle}>
+        <PaymentModal isOpen={isPaymentModalOpen} onClose={handlePaymentClose} title={paymentModalTitle} footer={paymentFooter}>
           <PaymentForm
             initialData={editingPayment}
             onSubmit={handlePaymentSave}
@@ -863,6 +865,7 @@ const EventCalendar = () => {
             currentUser={user}
             isSubmitting={isPaymentSubmitting}
             readOnly={!isAdmin}
+            renderFooter={setPaymentFooter}
           />
         </PaymentModal>
       </Suspense>
