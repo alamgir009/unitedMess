@@ -88,7 +88,7 @@ const ModeTab = ({ mode, current, onChange, label }) => (
         onClick={() => onChange(mode)}
         className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all duration-150 ${
             current === mode
-                ? 'bg-[var(--brand)] text-[var(--text-on-brand)] shadow-[0_1px_3px_rgba(0,0,0,0.2)]'
+                ? 'bg-[var(--brand)] text-[var(--text-on-brand)] shadow-[0_1px_3px_rgba(0,0,0,0.25)]'
                 : 'bg-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)]/40'
         }`}
     >
