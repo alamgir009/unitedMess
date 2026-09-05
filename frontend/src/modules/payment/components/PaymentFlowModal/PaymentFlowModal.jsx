@@ -800,23 +800,22 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
                         </div>
                       </div>
 
-                      <div className="bg-muted/30 border border-border rounded-xl p-5 text-center space-y-4">
+                      <div className="bg-card/50 border border-border/60 rounded-2xl p-6 text-center space-y-5">
                         <p className="text-xs text-muted-foreground leading-relaxed max-w-xs mx-auto">
                           You will be redirected to Razorpay&apos;s secure checkout environment to complete the payment.
                         </p>
 
                         <Button
                           variant="premium"
-                          size="lg"
+                          size="xl"
                           fullWidth
                           onClick={handleRazorpayProceed}
-                          className="shadow-md hover:shadow-lg transition-all"
+                          className="shadow-none transition-[transform] duration-100 will-change-transform"
                         >
-                          <HiOutlineLockClosed className="w-4 h-4 mr-2" />
-                          Pay ₹{fmt(totalAmountWithFee)} Securely
+                          Pay ₹{fmt(totalAmountWithFee)}
                         </Button>
 
-                        <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground opacity-80 pt-1">
+                        <div className="flex items-center justify-center gap-5 text-[11px] text-muted-foreground/70 pt-2 border-t border-border/30">
                           <span className="flex items-center gap-1.5"><HiOutlineCreditCard className="w-3.5 h-3.5" /> Cards</span>
                           <span className="flex items-center gap-1.5"><HiOutlineDevicePhoneMobile className="w-3.5 h-3.5" /> UPI</span>
                           <span className="flex items-center gap-1.5"><HiOutlineBanknotes className="w-3.5 h-3.5" /> Netbanking</span>
