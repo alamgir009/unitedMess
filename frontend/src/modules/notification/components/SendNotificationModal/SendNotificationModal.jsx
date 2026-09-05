@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { Send, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import NotificationService from '../../services/notification.service';
-import { Modal, Button } from '@/shared/components/ui';
+import { Modal, Button, IconSelect } from '@/shared/components/ui';
+import { FiUser, FiShield } from 'react-icons/fi';
+import { HiOutlineBell, HiOutlineFlag } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 
 const TYPES = [
@@ -200,15 +202,16 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                                     className={inputClasses}
                                 />
                             ) : (
-                                <select
+                                <IconSelect
+                                    name="userId"
                                     value={userId}
                                     onChange={(e) => setUserId(e.target.value)}
-                                    className={inputClasses}
-                                >
-                                    <option value="">Select role</option>
-                                    <option value="admin">Admin</option>
-                                    <option value="user">User</option>
-                                </select>
+                                    placeholder="Select role"
+                                    options={[
+                                        { value: 'admin', label: 'Admin', Icon: FiShield, iconClass: 'text-[var(--brand)]' },
+                                        { value: 'user', label: 'User', Icon: FiUser, iconClass: 'text-[var(--text-secondary)]' },
+                                    ]}
+                                />
                             )}
                         </div>
                     )}
@@ -248,27 +251,26 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="flex flex-col gap-1.5">
                             <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Type</label>
-                            <select
+                            <IconSelect
+                                name="type"
                                 value={type}
                                 onChange={(e) => setType(e.target.value)}
-                                className={inputClasses}
-                            >
-                                {TYPES.map((t) => (
-                                    <option key={t} value={t}>{t}</option>
-                                ))}
-                            </select>
+                                options={TYPES.map(t => ({ value: t, label: t, Icon: HiOutlineBell, iconClass: 'text-[var(--brand)]' }))}
+                            />
                         </div>
                         <div className="flex flex-col gap-1.5">
                             <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Priority</label>
-                            <select
+                            <IconSelect
+                                name="priority"
                                 value={priority}
                                 onChange={(e) => setPriority(e.target.value)}
-                                className={inputClasses}
-                            >
-                                {PRIORITIES.map((p) => (
-                                    <option key={p} value={p}>{p}</option>
-                                ))}
-                            </select>
+                                options={PRIORITIES.map(p => ({
+                                    value: p,
+                                    label: p,
+                                    Icon: HiOutlineFlag,
+                                    iconClass: p === 'CRITICAL' ? 'text-[var(--danger)]' : p === 'HIGH' ? 'text-[var(--warning)]' : 'text-[var(--text-secondary)]',
+                                }))}
+                            />
                         </div>
                     </div>
 

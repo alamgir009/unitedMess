@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { FiCalendar, FiAlertTriangle } from 'react-icons/fi';
+import { FiCalendar, FiAlertTriangle, FiUser, FiShield } from 'react-icons/fi';
+import { HiCheckCircle, HiXCircle, HiClock } from 'react-icons/hi2';
 import { fetchUsers } from '../../../members/store/members.slice';
 import toast from 'react-hot-toast';
 import apiClient from '@/services/api/client/apiClient';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { format } from 'date-fns';
-import { Modal, Button } from '@/shared/components/ui';
+import { Modal, Button, IconSelect } from '@/shared/components/ui';
 
 const isPreviousMonthBillingWindow = () => {
   const day = new Date().getUTCDate();
@@ -52,7 +53,16 @@ const getAvatarColor = (name = '') => {
   return AVATAR_COLORS[idx] || AVATAR_COLORS[0];
 };
 
-const inputClasses = 'w-full h-11 rounded-xl surface-elevated border border-border px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground caret-foreground outline-none transition-[border-color,box-shadow] duration-150 focus:ring-2 focus:ring-ring/30 focus:border-ring';
+const inputClasses =
+  'w-full h-10 px-3 py-2.5 rounded-xl ' +
+  'border border-[var(--input-border)] ' +
+  'bg-[var(--input-bg)] ' +
+  'shadow-[var(--inset-inner),var(--inset-top-glow)] ' +
+  'focus:ring-2 focus:ring-[var(--brand)]/25 focus:border-[var(--brand)] ' +
+  'outline-none transition-all duration-150 ' +
+  'text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] ' +
+  'hover:border-[var(--input-border-hover)] ' +
+  '-webkit-appearance:none';
 
 const InfoBadge = ({ label, value, color = 'gray' }) => {
   const colorMap = {
@@ -167,7 +177,7 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
 
   const footer = (
     <div className="flex gap-2.5 w-full">
-      <Button variant="ghost" size="sm" className="flex-1" onClick={onClose}>
+      <Button variant="secondary" size="sm" className="flex-1" onClick={onClose} disabled={isLoading}>
         Cancel
       </Button>
       <Button variant="primary" size="sm" className="flex-[2]" type="submit" disabled={isLoading} isLoading={isLoading}>
@@ -188,11 +198,11 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
       footer={footer}
     >
       <div className="flex flex-col md:flex-row">
-        <div className="border-b border-border p-4 md:w-64 md:border-b-0 md:border-r md:border-border md:p-5">
-          <div className="flex items-center gap-3 mb-4">
+        <div className="border-b border-border p-4 md:w-56 md:border-b-0 md:border-r md:border-border md:p-4 md:flex md:flex-col">
+          <div className="flex items-center gap-3 mb-3 md:flex-col md:text-center md:items-center">
             <div
               className={cn(
-                'flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-tr text-lg font-bold text-white shadow-md',
+                'flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-tr text-lg font-bold text-white shadow-md',
                 avatarColor
               )}
             >
@@ -206,151 +216,154 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
             </div>
           </div>
 
-          <p className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            Account Info
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3 md:mb-4">
+            <FiCalendar size={12} className="shrink-0" />
+            {joinedDate}
           </p>
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-1 md:gap-3">
-            <InfoBadge label="Approval Status" value={user.userStatus || 'pending'} color={statusColor} />
-            <InfoBadge
-              label="Active State"
-              value={user.isActive ? 'Active' : 'Inactive'}
-              color={user.isActive ? 'green' : 'gray'}
-            />
-            <InfoBadge
-              label="Meal Bill"
-              value={user.payment === 'success' ? '✓ Paid' : '✕ Unpaid'}
-              color={mealPaidColor}
-            />
-            <InfoBadge
-              label="Gas Bill"
-              value={user.gasBill === 'success' ? '✓ Paid' : '✕ Unpaid'}
-              color={gasPaidColor}
-            />
-          </div>
 
-          <div className="mt-4 border-t border-border pt-3 md:mt-5 md:pt-4">
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              Member Since
-            </p>
-            <p className="flex items-center gap-1.5 text-xs font-semibold text-foreground sm:text-sm">
-              <FiCalendar size={12} className="text-muted-foreground" />
-              {joinedDate}
-            </p>
+          <div className="border-t border-border/50 pt-3 md:mt-auto">
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-1 md:gap-2.5">
+              <InfoBadge label="Approval Status" value={user.userStatus || 'pending'} color={statusColor} />
+              <InfoBadge
+                label="Active State"
+                value={user.isActive ? 'Active' : 'Inactive'}
+                color={user.isActive ? 'green' : 'gray'}
+              />
+              <InfoBadge
+                label="Meal Bill"
+                value={user.payment === 'success' ? '✓ Paid' : '✕ Unpaid'}
+                color={mealPaidColor}
+              />
+              <InfoBadge
+                label="Gas Bill"
+                value={user.gasBill === 'success' ? '✓ Paid' : '✕ Unpaid'}
+                color={gasPaidColor}
+              />
+            </div>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 p-4 sm:p-5">
-          <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground sm:mb-4">
-            Edit Details
-          </p>
-          <div className="flex flex-col gap-3 sm:gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Full Name</label>
-              <input
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className={inputClasses}
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="mb-4">
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Identity
+            </p>
+            <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Email</label>
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Full Name</label>
                 <input
-                  name="email"
-                  type="email"
-                  value={formData.email}
+                  name="name"
+                  value={formData.name}
                   onChange={handleChange}
                   className={inputClasses}
                   required
                 />
               </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Phone</label>
-                <input
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className={inputClasses}
-                />
-              </div>
-            </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Role</label>
-              <select
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                className={inputClasses}
-              >
-                <option value="user" className="bg-card text-foreground">Regular User</option>
-                <option value="admin" className="bg-card text-foreground">Administrator</option>
-              </select>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Approval Status</label>
-                <select
-                  name="userStatus"
-                  value={formData.userStatus}
-                  onChange={handleChange}
-                  className={inputClasses}
-                >
-                  <option value="approved" className="bg-card text-foreground">Approved</option>
-                  <option value="pending" className="bg-card text-foreground">Pending</option>
-                  <option value="denied" className="bg-card text-foreground">Denied</option>
-                </select>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Active State</label>
-                <select
-                  name="isActive"
-                  value={formData.isActive.toString()}
-                  onChange={handleBooleanChange}
-                  className={inputClasses}
-                >
-                  <option value="true" className="bg-card text-foreground">Active</option>
-                  <option value="false" className="bg-card text-foreground">Inactive</option>
-                </select>
-              </div>
-            </div>
-
-            {formData.isActive && !user.isActive && isPreviousMonthBillingWindow() && (
-              <div className="flex items-start gap-3 p-3 rounded-xl bg-warning-bg border border-warning-border">
-                <FiAlertTriangle size={16} className="text-warning mt-0.5 shrink-0" />
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-warning">
-                    Billing Exemption Notice
-                  </p>
-                  <p className="text-[11px] text-warning mt-0.5">
-                    {getBillingInfo().message}
-                  </p>
-                  <p className="text-[10px] text-warning/70 mt-0.5">
-                    {getBillingInfo().detail}
-                  </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Email</label>
+                  <input
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className={inputClasses}
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Phone</label>
+                  <input
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className={inputClasses}
+                  />
                 </div>
               </div>
-            )}
+            </div>
+          </div>
 
-            {formData.userStatus === 'denied' && (
+          <div className="border-t border-border/50 pt-4">
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Access & Status
+            </p>
+            <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-destructive">
-                  Denial Reason (Required for Email)
-                </label>
-                <input
-                  name="denialReason"
-                  value={formData.denialReason}
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Role</label>
+                <IconSelect
+                  name="role"
+                  value={formData.role}
                   onChange={handleChange}
-                  placeholder="Brief reason for account denial..."
-                  className={`${inputClasses} border-destructive/30 bg-destructive/5 placeholder:text-destructive/40 focus:border-destructive/50 focus:ring-destructive/20`}
-                  required
+                  options={[
+                    { value: 'user', label: 'Regular User', Icon: FiUser, iconClass: 'text-[var(--text-secondary)]' },
+                    { value: 'admin', label: 'Administrator', Icon: FiShield, iconClass: 'text-[var(--brand)]' },
+                  ]}
                 />
               </div>
-            )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Approval Status</label>
+                  <IconSelect
+                    name="userStatus"
+                    value={formData.userStatus}
+                    onChange={handleChange}
+                    options={[
+                      { value: 'approved', label: 'Approved', Icon: HiCheckCircle, iconClass: 'text-[var(--success)]' },
+                      { value: 'pending', label: 'Pending', Icon: HiClock, iconClass: 'text-[var(--warning)]' },
+                      { value: 'denied', label: 'Denied', Icon: HiXCircle, iconClass: 'text-[var(--danger)]' },
+                    ]}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Active State</label>
+                  <IconSelect
+                    name="isActive"
+                    value={formData.isActive.toString()}
+                    onChange={handleBooleanChange}
+                    options={[
+                      { value: 'true', label: 'Active', Icon: HiCheckCircle, iconClass: 'text-[var(--success)]' },
+                      { value: 'false', label: 'Inactive', Icon: HiXCircle, iconClass: 'text-[var(--text-tertiary)]' },
+                    ]}
+                  />
+                </div>
+              </div>
+
+              {formData.isActive && !user.isActive && isPreviousMonthBillingWindow() && (
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-warning-bg border border-warning-border">
+                  <FiAlertTriangle size={16} className="text-warning mt-0.5 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-xs font-bold text-warning">
+                      Billing Exemption Notice
+                    </p>
+                    <p className="text-[11px] text-warning mt-0.5">
+                      {getBillingInfo().message}
+                    </p>
+                    <p className="text-[10px] text-warning/70 mt-0.5">
+                      {getBillingInfo().detail}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {formData.userStatus === 'denied' && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-destructive">
+                    Denial Reason (Required for Email)
+                  </label>
+                  <input
+                    name="denialReason"
+                    value={formData.denialReason}
+                    onChange={handleChange}
+                    placeholder="Brief reason for account denial..."
+                    className={`${inputClasses} border-destructive/30 bg-destructive/5 placeholder:text-destructive/40 focus:border-destructive/50 focus:ring-destructive/20`}
+                    required
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </form>
       </div>

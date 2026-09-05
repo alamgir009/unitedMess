@@ -8,7 +8,6 @@ import {
     HiOutlineCheckCircle,
     HiOutlineChatBubbleBottomCenterText,
     HiOutlineUser,
-    HiOutlineChevronDown,
     HiOutlineLockClosed,
     HiOutlineArrowPath,
 } from 'react-icons/hi2';
@@ -16,7 +15,7 @@ import { BsCashCoin, BsGlobe2 } from 'react-icons/bs';
 import { MdPendingActions, MdCheckCircleOutline, MdErrorOutline, MdRefresh } from 'react-icons/md';
 import apiClient from '@/services/api/client/apiClient';
 import paymentService from '../../services/payment.service';
-import { Button, Avatar, MemberSelect } from '@/shared/components/ui';
+import { Button, Avatar, MemberSelect, IconSelect } from '@/shared/components/ui';
 import { SiRazorpay } from "react-icons/si";
 import { HiOutlineIdentification } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
@@ -89,132 +88,6 @@ const Field = ({ label, icon: Icon, children, className = '' }) => (
         {children}
     </div>
 );
-
-/* ─── Custom icon dropdown ──────────────────────────────────── */
-const IconDropdown = ({ name, value, onChange, options, disabled = false }) => {
-    const [open, setOpen] = useState(false);
-    const [highlightedIndex, setHighlightedIndex] = useState(-1);
-    const ref = useRef(null);
-    const listRef = useRef(null);
-    const selected = options.find(o => o.value === value) ?? options[0];
-
-    useEffect(() => {
-        const handler = (e) => {
-            if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-        };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
-    }, []);
-
-    useEffect(() => {
-        if (open) {
-            const idx = options.findIndex(o => o.value === value);
-            setHighlightedIndex(idx >= 0 ? idx : 0);
-        }
-    }, [open, value, options]);
-
-    useEffect(() => {
-        if (!open || highlightedIndex < 0) return;
-        const items = listRef.current?.querySelectorAll('[role="option"]');
-        items?.[highlightedIndex]?.scrollIntoView({ block: 'nearest' });
-    }, [open, highlightedIndex]);
-
-    const pick = (val) => {
-        if (disabled) return;
-        onChange({ target: { name, value: val } });
-        setOpen(false);
-    };
-
-    const handleKeyDown = (e) => {
-        if (disabled) return;
-        if (!open) {
-            if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                setOpen(true);
-            }
-            return;
-        }
-        switch (e.key) {
-            case 'ArrowDown':
-                e.preventDefault();
-                setHighlightedIndex(i => (i + 1) % options.length);
-                break;
-            case 'ArrowUp':
-                e.preventDefault();
-                setHighlightedIndex(i => (i - 1 + options.length) % options.length);
-                break;
-            case 'Enter':
-            case ' ':
-                e.preventDefault();
-                if (highlightedIndex >= 0) pick(options[highlightedIndex].value);
-                break;
-            case 'Escape':
-                e.preventDefault();
-                setOpen(false);
-                break;
-            default:
-                break;
-        }
-    };
-
-    return (
-        <div ref={ref} className="relative w-full">
-            <button
-                type="button"
-                onClick={() => !disabled && setOpen(o => !o)}
-                onKeyDown={handleKeyDown}
-                aria-haspopup="listbox"
-                aria-expanded={open}
-                className={`${inputBase} flex items-center justify-between gap-2 text-left
-                    ${disabled ? inputDisabled : 'cursor-pointer'}`}
-            >
-                <span className="flex items-center gap-2 truncate">
-                    <selected.Icon className={`w-4 h-4 shrink-0 ${selected.iconClass}`} />
-                    <span className="truncate text-sm">{selected.label}</span>
-                </span>
-                {!disabled && (
-                    <HiOutlineChevronDown
-                        className={`w-4 h-4 shrink-0 text-[var(--text-tertiary)] transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-                    />
-                )}
-            </button>
-
-            {open && !disabled && (
-                <div
-                    ref={listRef}
-                    role="listbox"
-                    aria-label={`${name} options`}
-                    className="absolute z-50 top-full mt-1.5 w-full rounded-xl border border-[var(--border-muted)] bg-[var(--bg-elevated)] overflow-hidden max-h-[200px] overflow-y-auto [scrollbar-width:thin] [scrollbar-color:var(--border-strong)_transparent]"
-                    style={{ boxShadow: 'var(--shadow-lg), var(--inset-top-glow)' }}
-                >
-                    {options.map((opt, idx) => (
-                        <button
-                            key={opt.value}
-                            type="button"
-                            role="option"
-                            aria-selected={value === opt.value}
-                            onClick={() => pick(opt.value)}
-                            onMouseEnter={() => setHighlightedIndex(idx)}
-                            className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors duration-100
-                                ${value === opt.value
-                                    ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-medium'
-                                    : idx === highlightedIndex
-                                        ? 'bg-[var(--bg-muted)] text-[var(--text-primary)]'
-                                        : 'hover:bg-[var(--bg-muted)] text-[var(--text-primary)]'
-                                }`}
-                        >
-                            <opt.Icon className={`w-4 h-4 shrink-0 ${opt.iconClass}`} />
-                            <span>{opt.label}</span>
-                            {value === opt.value && (
-                                <HiOutlineCheckCircle className="ml-auto w-4 h-4 text-[var(--accent-primary)]" />
-                            )}
-                        </button>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-};
 
 /* ─── Payment type toggle button (segmented pill control) ───── */
 const TypeBtn = ({ value, current, onClick, label, color, disabled = false }) => (
@@ -645,20 +518,18 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                         />
                     </Field>
                     <Field label="For Month" icon={HiOutlineCalendarDays}>
-                        <div className="relative">
-                            <select
-                                name="month" value={formData.month} onChange={handleChange}
-                                disabled={readOnly || isSubmitting}
-                                className={`${inputBase} appearance-none cursor-pointer pr-9 ${readOnly || isSubmitting ? inputDisabled : ''}`}
-                            >
-                                {monthOptions.map(mo => (
-                                    <option key={mo} value={mo}>{mo}</option>
-                                ))}
-                            </select>
-                            {!readOnly && !isSubmitting && (
-                                <HiOutlineChevronDown className="absolute inset-y-0 right-3 my-auto w-4 h-4 pointer-events-none text-[var(--text-tertiary)]" />
-                            )}
-                        </div>
+                        <IconSelect
+                            name="month"
+                            value={formData.month}
+                            onChange={handleChange}
+                            disabled={readOnly || isSubmitting}
+                            options={monthOptions.map(mo => ({
+                                value: mo,
+                                label: mo,
+                                Icon: HiOutlineCalendarDays,
+                                iconClass: 'text-[var(--text-secondary)]',
+                            }))}
+                        />
                     </Field>
                 </div>
 
@@ -692,7 +563,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                 {/* Method + Status (admin only) — side by side */}
                 <div className={`grid gap-3 ${showStatus ? 'grid-cols-2' : 'grid-cols-1'}`}>
                     <Field label="Method" icon={HiOutlineCreditCard}>
-                        <IconDropdown
+                        <IconSelect
                             name="paymentMethod" value={formData.paymentMethod}
                             onChange={handleChange} options={PAYMENT_METHODS}
                             disabled={readOnly || isSubmitting}
@@ -700,7 +571,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                     </Field>
                     {showStatus && (
                         <Field label="Status" icon={HiOutlineCheckCircle}>
-                            <IconDropdown
+                            <IconSelect
                                 name="status" value={formData.status}
                                 onChange={handleChange} options={STATUS_OPTIONS}
                                 disabled={readOnly || isSubmitting}
