@@ -1,18 +1,26 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Plus, Trash2, X, Check, Users, Loader2 } from 'lucide-react';
+import { Plus, Trash2, X, Check, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { fmt } from '@/core/utils/helpers/currency.helper';
 import { MemberSelect, Button } from '@/shared/components/ui';
 import apiClient from '@/services/api/client/apiClient';
 import SlotIcon from './cells/SlotIcon';
+import {
+  HiOutlineSun,
+  HiOutlineMoon,
+  HiOutlineNoSymbol,
+  HiOutlineSparkles,
+  HiOutlineUserGroup,
+  HiOutlineMinus,
+  HiOutlinePlus,
+} from 'react-icons/hi2';
 
-const MEAL_TYPES = [
-  /* Active: solid brand fill. Inactive: neutral bg. Off: ring outline (active) / muted chip (inactive). */
-  { value: 'day', label: 'Day', activeBg: 'bg-[var(--warning)]', activeText: 'text-[var(--text-on-brand)]', inactiveBg: 'bg-[var(--bg-elevated)]', inactiveText: 'text-[var(--text-secondary)]', offBg: 'bg-[var(--bg-muted)]', offText: 'text-[var(--text-secondary)]' },
-  { value: 'night', label: 'Night', activeBg: 'bg-[var(--info)]', activeText: 'text-[var(--text-on-brand)]', inactiveBg: 'bg-[var(--bg-elevated)]', inactiveText: 'text-[var(--text-secondary)]', offBg: 'bg-[var(--bg-muted)]', offText: 'text-[var(--text-secondary)]' },
-  { value: 'both', label: 'Both', activeBg: 'bg-[var(--slot-both)]', activeText: 'text-[var(--text-on-brand)]', inactiveBg: 'bg-[var(--bg-elevated)]', inactiveText: 'text-[var(--text-secondary)]', offBg: 'bg-[var(--bg-muted)]', offText: 'text-[var(--text-secondary)]' },
-  { value: 'off', label: 'Off', activeBg: 'bg-transparent', activeText: 'text-[var(--text-secondary)]', inactiveBg: 'bg-[var(--bg-muted)]', inactiveText: 'text-[var(--text-secondary)]', offBg: 'bg-[var(--bg-muted)]', offText: 'text-[var(--text-secondary)]' },
+const mealTypes = [
+  { value: 'both', label: 'Both', description: 'Day & Night', icon: HiOutlineSparkles, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-violet-500' },
+  { value: 'day', label: 'Day', description: 'Morning only', icon: HiOutlineSun, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-[var(--warning)]' },
+  { value: 'night', label: 'Night', description: 'Evening only', icon: HiOutlineMoon, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-[var(--info)]' },
+  { value: 'off', label: 'Off', description: 'No meals', icon: HiOutlineNoSymbol, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-[var(--text-secondary)]' },
 ];
 
 const FintechCheckbox = React.memo(({ checked, onChange, indeterminate, ariaLabel, disabled }) => {
@@ -79,11 +87,13 @@ const FintechCheckbox = React.memo(({ checked, onChange, indeterminate, ariaLabe
 FintechCheckbox.displayName = 'FintechCheckbox';
 
 const inputBase =
-  'w-full px-2.5 py-1.5 rounded-lg border border-[var(--border-default)] ' +
-  'bg-[var(--bg-elevated)] text-sm text-[var(--text-primary)] ' +
-  'focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/30 focus:border-[var(--accent-primary)]/50 ' +
-  'transition-colors duration-100 ' +
-  'placeholder:text-[var(--text-muted)]/50';
+  'w-full px-3 py-2.5 rounded-xl border border-[var(--border-strong)] ' +
+  'bg-[var(--bg-subtle)] ' +
+  'shadow-[var(--inset-inner),0_1px_2px_rgba(0,0,0,0.08)] ' +
+  'focus:ring-2 focus:ring-[var(--brand)]/25 focus:border-[var(--brand)] ' +
+  'outline-none transition-all duration-150 ' +
+  'text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] ' +
+  'hover:border-[var(--input-border-hover)] hover:shadow-[var(--inset-inner),0_2px_6px_rgba(0,0,0,0.12)]';
 
 const getEntryUserId = (entry) =>
   typeof entry.user === 'object' ? entry.user?._id : entry.user;
@@ -105,7 +115,7 @@ const SelectAllCheckbox = ({ checked, indeterminate, onChange, count, disabled }
   );
 };
 
-const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, currentUser, onSave, onUpdate, onDelete, selectedEntryIds, onToggleSelect, onSelectAll, onBulkDelete, onBulkUpdate, onExitSelectMode, isBulkSubmitting = false, isEditMode = false, isAdding, setIsAdding, editingId, setEditingId, confirmDeleteId, setConfirmDeleteId }) => {
+const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, currentUser, onSave, onUpdate, onDelete, selectedEntryIds, onToggleSelect, onSelectAll, onBulkDelete, onBulkUpdate, onExitSelectMode, isBulkSubmitting = false, isAdding, setIsAdding, editingId, setEditingId, confirmDeleteId, setConfirmDeleteId }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showBulkUpdateForm, setShowBulkUpdateForm] = useState(false);
 
@@ -233,8 +243,8 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
                       <SlotIcon slot={entry.type} status={entry.status} size={12} />
                     )}
                     {category === 'meals' && entry.isGuestMeal && entry.guestCount > 0 && (
-                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-[var(--warning-bg)] text-[var(--warning-text)] border border-[var(--warning-border)]">
-                        <Users className="w-2.5 h-2.5" />
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-[var(--info-bg)] text-[var(--info-text)] border border-[var(--info-border)]">
+                        <HiOutlineUserGroup className="w-2.5 h-2.5" />
                         +{entry.guestCount}
                       </span>
                     )}
@@ -392,49 +402,46 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
 const MAX_RANGE_DAYS = 31;
 const typeCountMap = { both: 2, day: 1, night: 1, off: 0 };
 
-const handleSegmentedKeyDown = (e, currentValue, onChange) => {
-  const values = MEAL_TYPES.map((t) => t.value);
-  const idx = values.indexOf(currentValue);
-  if (idx === -1) return;
-  let next = idx;
-  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-    e.preventDefault();
-    next = (idx + 1) % values.length;
-  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-    e.preventDefault();
-    next = (idx - 1 + values.length) % values.length;
-  } else if (e.key === 'Home') {
-    e.preventDefault();
-    next = 0;
-  } else if (e.key === 'End') {
-    e.preventDefault();
-    next = values.length - 1;
-  } else {
-    return;
-  }
-  onChange(values[next]);
-  document.getElementById(`seg-${values[next]}`)?.focus();
-};
-
 const ModeTab = ({ mode, current, onChange, label }) => (
   <button
     type="button"
     role="tab"
     aria-selected={current === mode}
     onClick={() => onChange(mode)}
-    className={cn(
-      /* composited: only bg/text/border-color change */
-      'flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-colors duration-100 border',
+    className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all duration-150 ${
       current === mode
-        /* richer bg/border for premium depth; active tab raises above the well */
-        ? 'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] border-[var(--accent-primary)]/40 shadow-sm'
-        /* --text-secondary replaces --text-muted for inactive tab AA contrast (2.44:1 fails → 4.86:1 passes) */
-        : 'text-[var(--text-secondary)] border-transparent hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)]/50',
-    )}
+        ? 'bg-[var(--brand)] text-[var(--text-on-brand)] shadow-[0_1px_3px_rgba(0,0,0,0.25)]'
+        : 'bg-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)]/40'
+    }`}
   >
     {label}
   </button>
 );
+
+const TypeBtn = ({ value, current, onClick, icon: Icon, label, description, color, disabled }) => {
+    const isActive = current === value;
+    return (
+        <button
+            type="button"
+            onClick={() => !disabled && onClick(value)}
+            disabled={disabled}
+            aria-pressed={isActive}
+            className={`relative flex flex-col items-center gap-1 py-2.5 px-2 sm:py-3 sm:px-3 rounded-lg border-2 transition-all duration-150 text-center
+                ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                ${isActive
+                    ? `${color} shadow-[0_2px_8px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.04)] scale-[1.02]`
+                    : 'border-[var(--border-default)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:shadow-[0_3px_8px_rgba(0,0,0,0.1)]'
+                }`}
+        >
+            <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="text-[10px] sm:text-xs font-bold">{label}</span>
+            <span className="text-[9px] sm:text-[10px] text-[var(--text-muted)] leading-tight hidden sm:block">{description}</span>
+            {isActive && (
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[var(--success)] border-2 border-[var(--bg-elevated)]" />
+            )}
+        </button>
+    );
+};
 
 const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, setIsSubmitting, isSubmitting = false }) => {
   const [mode, setMode] = useState('single');
@@ -542,8 +549,8 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
   const rangeInvalid = isRangeMode && (daysCount === 0 || daysCount > MAX_RANGE_DAYS);
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-3 rounded-xl border border-[var(--border-default)] bg-[var(--bg-muted)]/30">
-      <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Add Entry</p>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full">
+      <p className="text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Add Entry</p>
 
       {isAdmin && (
         <MemberSelect
@@ -561,7 +568,7 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
       {/* Mode toggle — only for meals (markets don't support bulk) */}
       {category === 'meals' && (
         /* shadow-inner creates a recessed well; active tab with shadow-sm rises above it */
-        <div role="tablist" aria-label="Date mode" className="flex gap-1 p-0.5 rounded-lg bg-[var(--bg-muted)]/40 border border-[var(--border-default)] shadow-[var(--inset-shadow-deep)]">
+        <div role="tablist" aria-label="Date mode" className="flex gap-1 p-1 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-strong)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)]">
           <ModeTab mode="single" current={mode} onChange={isSubmitting ? () => {} : setMode} label="Single" />
           <ModeTab mode="range" current={mode} onChange={isSubmitting ? () => {} : setMode} label="Range" />
         </div>
@@ -621,43 +628,20 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
       )}
 
       {category === 'meals' ? (
-        <div
-          role="radiogroup"
-          aria-label="Meal type"
-          className="grid grid-cols-4 gap-0.5 p-0.5 rounded-lg bg-[var(--bg-muted)]/40 border border-[var(--border-default)] shadow-[var(--inset-shadow-deep)]"
-          onKeyDown={(e) => handleSegmentedKeyDown(e, type, (v) => { setType(v); setErrors((p) => ({ ...p, type: undefined })); })}
-        >
-          {MEAL_TYPES.map((t) => {
-            const isActive = type === t.value;
-            return (
-              <button
-                key={t.value}
-                id={`seg-${t.value}`}
-                type="button"
-                role="radio"
-                aria-checked={isActive}
-                tabIndex={isActive ? 0 : -1}
-                onClick={() => { if (!isSubmitting) { setType(t.value); setErrors((p) => ({ ...p, type: undefined })); } }}
-                disabled={isSubmitting}
-                className={cn(
-                  'rounded-md font-semibold border transition-colors duration-100',
-                  'min-h-[clamp(var(--btn-height-md),calc(36px+0.3vw),var(--btn-height-lg))] px-[clamp(var(--space-2),0.5vw+6px,var(--space-3))]',
-                  'text-[clamp(0.75rem,0.6875rem+0.3vw,0.8125rem)]',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
-                  isActive
-                    ? t.value === 'off'
-                      ? `${t.activeText} border-2 border-[var(--text-secondary)]`
-                      : `${t.activeBg} ${t.activeText} border-transparent shadow-xs`
-                    : t.value === 'off'
-                      ? `${t.offBg} ${t.offText} border-[var(--border-strong)]`
-                      : `${t.inactiveBg} ${t.inactiveText} border-[var(--border-default)] hover:bg-[var(--bg-muted)]`,
-                  isSubmitting && 'opacity-60 cursor-not-allowed',
-                )}
-              >
-                {t.label}
-              </button>
-            );
-          })}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {mealTypes.map((t) => (
+            <TypeBtn
+              key={t.value}
+              value={t.value}
+              current={type}
+              onClick={(v) => { if (!isSubmitting) { setType(v); setErrors((p) => ({ ...p, type: undefined })); } }}
+              icon={t.icon}
+              label={t.label}
+              description={t.description}
+              color={t.color}
+              disabled={isSubmitting}
+            />
+          ))}
         </div>
       ) : (
         <div className="flex items-center gap-2">
@@ -690,8 +674,8 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
         <div className={cn(
           'flex items-center gap-2 px-2.5 py-2 rounded-lg border transition-colors',
           isGuestMeal
-            ? 'border-[var(--warning-border)] bg-[var(--warning-bg)]/50'
-            : 'border-[var(--border-default)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-muted)]',
+            ? 'border-[var(--info-border)] bg-[var(--info-bg)] shadow-[0_1px_3px_rgba(0,0,0,0.12)]'
+            : 'border-[var(--border-default)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)] shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:shadow-[0_2px_6px_rgba(0,0,0,0.1)]',
           isSubmitting && 'opacity-60 cursor-not-allowed',
         )}>
           <button
@@ -700,37 +684,37 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
             disabled={isSubmitting}
             className="flex items-center gap-1.5 flex-1 min-w-0 text-left"
           >
-            <Users className="w-4 h-4 text-[var(--warning)] shrink-0" />
+            <HiOutlineUserGroup className="w-4 h-4 text-[var(--info)] shrink-0" />
             <span className="text-xs font-semibold text-[var(--text-primary)]">Guest Meals</span>
             {isGuestMeal && guestCount > 0 && (
-              <span className="text-[10px] font-bold text-[var(--warning-text)] bg-[var(--warning-bg)] px-1.5 py-0.5 rounded-full">
+              <span className="text-[10px] font-bold text-[var(--info-text)] bg-[var(--info-bg)] px-1.5 py-0.5 rounded-full">
                 +{guestCount}
               </span>
             )}
           </button>
 
           {isGuestMeal ? (
-            <div className="flex items-center shrink-0 rounded-lg border border-[var(--warning-border)] overflow-hidden">
+            <div className="flex items-center shrink-0 rounded-lg border border-[var(--info-border)] overflow-hidden">
               <button
                 type="button"
                 onClick={() => { if (!isSubmitting) { if (guestCount <= 1) { setIsGuestMeal(false); setGuestCount(1); } else { setGuestCount((c) => c - 1); } setErrors((p) => ({ ...p, guestCount: undefined })); } }}
                 disabled={isSubmitting}
-                className="w-9 h-9 flex items-center justify-center bg-[var(--warning-bg)] text-[var(--warning-text)] hover:bg-[var(--warning-bg)]/80 active:bg-[var(--warning-bg)]/60 transition-colors text-lg font-bold select-none disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-9 h-9 flex items-center justify-center bg-[var(--info-bg)] text-[var(--info-text)] hover:brightness-110 active:brightness-95 transition-all text-lg font-bold select-none disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Decrease guest count"
               >
-                −
+                <HiOutlineMinus className="w-4 h-4" />
               </button>
-              <div className="w-10 h-9 flex items-center justify-center bg-[var(--warning-bg)]/50 text-sm font-bold text-[var(--warning-text)] border-x border-[var(--warning-border)] tabular-nums select-none">
+              <div className="w-10 h-9 flex items-center justify-center bg-[var(--info-bg)]/50 text-sm font-bold text-[var(--info-text)] border-x border-[var(--info-border)] tabular-nums select-none">
                 {guestCount}
               </div>
               <button
                 type="button"
                 onClick={() => { if (!isSubmitting) { setGuestCount((c) => Math.min(20, c + 1)); setErrors((p) => ({ ...p, guestCount: undefined })); } }}
                 disabled={isSubmitting}
-                className="w-9 h-9 flex items-center justify-center bg-[var(--warning-bg)] text-[var(--warning-text)] hover:bg-[var(--warning-bg)]/80 active:bg-[var(--warning-bg)]/60 transition-colors text-lg font-bold select-none disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-9 h-9 flex items-center justify-center bg-[var(--info-bg)] text-[var(--info-text)] hover:brightness-110 active:brightness-95 transition-all text-lg font-bold select-none disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Increase guest count"
               >
-                +
+                <HiOutlinePlus className="w-4 h-4" />
               </button>
             </div>
           ) : (
@@ -738,7 +722,7 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
               type="button"
               onClick={() => { if (!isSubmitting) { setIsGuestMeal(true); setGuestCount(1); setErrors((p) => ({ ...p, guestCount: undefined })); } }}
               disabled={isSubmitting}
-              className="px-3 h-9 rounded-lg bg-[var(--warning-bg)] text-[var(--warning-text)] text-xs font-semibold shrink-0 hover:bg-[var(--warning-bg)]/80 active:bg-[var(--warning-bg)]/60 transition-colors border border-[var(--warning-border)] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 h-9 rounded-lg bg-[var(--info-bg)] text-[var(--info-text)] text-xs font-semibold shrink-0 hover:brightness-110 active:brightness-95 transition-all border border-[var(--info-border)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               + Add
             </button>
@@ -846,44 +830,22 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-2 px-3 py-2.5 rounded-lg bg-[var(--bg-muted)]/50 border border-[var(--border-default)]">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full">
       {/* Row 1: Segmented control (meals) or Amount+Items (markets) */}
       {category === 'meals' ? (
-        <div
-          role="radiogroup"
-          aria-label="Meal type"
-          className="flex gap-0.5 p-0.5 rounded-lg bg-[var(--bg-muted)]/40 border border-[var(--border-default)] shadow-[var(--inset-shadow-deep)]"
-          onKeyDown={(e) => handleSegmentedKeyDown(e, type, (v) => { setType(v); setErrors((p) => ({ ...p, type: undefined })); })}
-        >
-          {MEAL_TYPES.map((t) => {
-            const isActive = type === t.value;
-            return (
-              <button
-                key={t.value}
-                id={`seg-${t.value}`}
-                type="button"
-                role="radio"
-                aria-checked={isActive}
-                tabIndex={isActive ? 0 : -1}
-                onClick={() => { setType(t.value); setErrors((p) => ({ ...p, type: undefined })); }}
-                className={cn(
-                  'flex-1 rounded-md font-semibold border transition-colors duration-100',
-                  'min-h-[clamp(var(--btn-height-md),calc(36px+0.3vw),var(--btn-height-lg))] px-[clamp(var(--space-2),0.5vw+6px,var(--space-3))]',
-                  'text-[clamp(0.75rem,0.6875rem+0.3vw,0.8125rem)]',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
-                  isActive
-                    ? t.value === 'off'
-                      ? `${t.activeText} border-2 border-[var(--text-secondary)]`
-                      : `${t.activeBg} ${t.activeText} border-transparent shadow-xs`
-                    : t.value === 'off'
-                      ? `${t.offBg} ${t.offText} border-[var(--border-strong)]`
-                      : `${t.inactiveBg} ${t.inactiveText} border-[var(--border-default)] hover:bg-[var(--bg-muted)]`,
-                )}
-              >
-                {t.label}
-              </button>
-            );
-          })}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {mealTypes.map((t) => (
+            <TypeBtn
+              key={t.value}
+              value={t.value}
+              current={type}
+              onClick={(v) => { setType(v); setErrors((p) => ({ ...p, type: undefined })); }}
+              icon={t.icon}
+              label={t.label}
+              description={t.description}
+              color={t.color}
+            />
+          ))}
         </div>
       ) : (
         <div className="flex items-center gap-2">
@@ -923,50 +885,50 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
         <div className={cn(
           'flex items-center gap-2 px-2.5 py-2 rounded-lg border transition-colors',
           isGuestMeal
-            ? 'border-[var(--warning-border)] bg-[var(--warning-bg)]/50'
-            : 'border-[var(--border-default)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-muted)]',
+            ? 'border-[var(--info-border)] bg-[var(--info-bg)] shadow-[0_1px_3px_rgba(0,0,0,0.12)]'
+            : 'border-[var(--border-default)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)] shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:shadow-[0_2px_6px_rgba(0,0,0,0.1)]',
         )}>
           <button
             type="button"
             onClick={() => { setIsGuestMeal((p) => { if (p) setGuestCount(1); return !p; }); setErrors((p) => ({ ...p, guestCount: undefined })); }}
             className="flex items-center gap-1.5 flex-1 min-w-0 text-left"
           >
-            <Users className="w-4 h-4 text-[var(--warning)] shrink-0" />
+            <HiOutlineUserGroup className="w-4 h-4 text-[var(--info)] shrink-0" />
             <span className="text-xs font-semibold text-[var(--text-primary)]">Guest Meals</span>
             {isGuestMeal && guestCount > 0 && (
-              <span className="text-[10px] font-bold text-[var(--warning-text)] bg-[var(--warning-bg)] px-1.5 py-0.5 rounded-full">
+              <span className="text-[10px] font-bold text-[var(--info-text)] bg-[var(--info-bg)] px-1.5 py-0.5 rounded-full">
                 +{guestCount}
               </span>
             )}
           </button>
 
           {isGuestMeal ? (
-            <div className="flex items-center shrink-0 rounded-lg border border-[var(--warning-border)] overflow-hidden">
+            <div className="flex items-center shrink-0 rounded-lg border border-[var(--info-border)] overflow-hidden">
               <button
                 type="button"
                 onClick={() => { if (guestCount <= 1) { setIsGuestMeal(false); setGuestCount(1); } else { setGuestCount((c) => c - 1); } setErrors((p) => ({ ...p, guestCount: undefined })); }}
-                className="w-9 h-9 flex items-center justify-center bg-[var(--warning-bg)] text-[var(--warning-text)] hover:bg-[var(--warning-bg)]/80 active:bg-[var(--warning-bg)]/60 transition-colors text-lg font-bold select-none"
+                className="w-9 h-9 flex items-center justify-center bg-[var(--info-bg)] text-[var(--info-text)] hover:brightness-110 active:brightness-95 transition-all text-lg font-bold select-none"
                 aria-label="Decrease guest count"
               >
-                −
+                <HiOutlineMinus className="w-4 h-4" />
               </button>
-              <div className="w-10 h-9 flex items-center justify-center bg-[var(--warning-bg)]/50 text-sm font-bold text-[var(--warning-text)] border-x border-[var(--warning-border)] tabular-nums select-none">
+              <div className="w-10 h-9 flex items-center justify-center bg-[var(--info-bg)]/50 text-sm font-bold text-[var(--info-text)] border-x border-[var(--info-border)] tabular-nums select-none">
                 {guestCount}
               </div>
               <button
                 type="button"
                 onClick={() => { setGuestCount((c) => Math.min(20, c + 1)); setErrors((p) => ({ ...p, guestCount: undefined })); }}
-                className="w-9 h-9 flex items-center justify-center bg-[var(--warning-bg)] text-[var(--warning-text)] hover:bg-[var(--warning-bg)]/80 active:bg-[var(--warning-bg)]/60 transition-colors text-lg font-bold select-none"
+                className="w-9 h-9 flex items-center justify-center bg-[var(--info-bg)] text-[var(--info-text)] hover:brightness-110 active:brightness-95 transition-all text-lg font-bold select-none"
                 aria-label="Increase guest count"
               >
-                +
+                <HiOutlinePlus className="w-4 h-4" />
               </button>
             </div>
           ) : (
             <button
               type="button"
               onClick={() => { setIsGuestMeal(true); setGuestCount(1); setErrors((p) => ({ ...p, guestCount: undefined })); }}
-              className="px-3 h-9 rounded-lg bg-[var(--warning-bg)] text-[var(--warning-text)] text-xs font-semibold shrink-0 hover:bg-[var(--warning-bg)]/80 active:bg-[var(--warning-bg)]/60 transition-colors border border-[var(--warning-border)]"
+              className="px-3 h-9 rounded-lg bg-[var(--info-bg)] text-[var(--info-text)] text-xs font-semibold shrink-0 hover:brightness-110 active:brightness-95 transition-all border border-[var(--info-border)]"
             >
               + Add
             </button>
@@ -1047,41 +1009,19 @@ const BulkUpdateForm = ({ category, selectedCount, onSubmit, onCancel, isBulkSub
       </p>
 
       {category === 'meals' ? (
-        <div
-          role="radiogroup"
-          aria-label="Meal type"
-          className="grid grid-cols-4 gap-0.5 p-0.5 rounded-lg bg-[var(--bg-muted)]/40 border border-[var(--border-default)] shadow-[var(--inset-shadow-deep)]"
-          onKeyDown={(e) => handleSegmentedKeyDown(e, type, (v) => { setType(v); setErrors((p) => ({ ...p, type: undefined, empty: undefined })); })}
-        >
-          {MEAL_TYPES.map((t) => {
-            const isActive = type === t.value;
-            return (
-              <button
-                key={t.value}
-                id={`seg-${t.value}`}
-                type="button"
-                role="radio"
-                aria-checked={isActive}
-                tabIndex={isActive ? 0 : -1}
-                onClick={() => { setType(t.value); setErrors((p) => ({ ...p, type: undefined, empty: undefined })); }}
-                className={cn(
-                  'rounded-md font-semibold border transition-colors duration-100',
-                  'min-h-[clamp(var(--btn-height-md),calc(36px+0.3vw),var(--btn-height-lg))] px-[clamp(var(--space-2),0.5vw+6px,var(--space-3))]',
-                  'text-[clamp(0.75rem,0.6875rem+0.3vw,0.8125rem)]',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
-                  isActive
-                    ? t.value === 'off'
-                      ? `${t.activeText} border-2 border-[var(--text-secondary)]`
-                      : `${t.activeBg} ${t.activeText} border-transparent shadow-xs`
-                    : t.value === 'off'
-                      ? `${t.offBg} ${t.offText} border-[var(--border-strong)]`
-                      : `${t.inactiveBg} ${t.inactiveText} border-[var(--border-default)] hover:bg-[var(--bg-muted)]`,
-                )}
-              >
-                {t.label}
-              </button>
-            );
-          })}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {mealTypes.map((t) => (
+            <TypeBtn
+              key={t.value}
+              value={t.value}
+              current={type}
+              onClick={(v) => { setType(v); setErrors((p) => ({ ...p, type: undefined, empty: undefined })); }}
+              icon={t.icon}
+              label={t.label}
+              description={t.description}
+              color={t.color}
+            />
+          ))}
         </div>
       ) : (
         <div className="flex items-center gap-2">
