@@ -2,12 +2,13 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { HiOutlineChevronDown, HiOutlineCheckCircle } from 'react-icons/hi2';
 import { cn } from '@/core/utils/helpers/string.helper';
+import useBodyScrollLock from '@/shared/hooks/useBodyScrollLock';
 
 const DROPDOWN_MAX_H = 208;
 const DROPDOWN_MARGIN = 3;
 
 const inputBase =
-  'w-full px-3 py-2 rounded-xl border border-[var(--input-border)] ' +
+  'w-full h-10 px-3 py-2.5 rounded-xl border border-[var(--input-border)] ' +
   'bg-[var(--input-bg)] ' +
   'focus:ring-0 focus:border-[var(--input-border-focus)] ' +
   'outline-none transition-all duration-200 ' +
@@ -27,33 +28,23 @@ function getMenuStyle(triggerRect) {
   const spaceAbove = triggerRect.top;
   const openAbove = spaceBelow < effectiveMaxH + DROPDOWN_MARGIN && spaceAbove > spaceBelow;
 
-  let top;
-  let maxHeight = effectiveMaxH;
-  let borderTopRadius = 0;
-  let borderBottomRadius = 0;
-
-  if (openAbove) {
-    maxHeight = Math.min(effectiveMaxH, spaceAbove - DROPDOWN_MARGIN);
-    top = triggerRect.top - maxHeight - DROPDOWN_MARGIN;
-    borderTopRadius = 12;
-  } else {
-    top = triggerRect.bottom + DROPDOWN_MARGIN;
-    borderBottomRadius = 12;
-    maxHeight = Math.min(effectiveMaxH, spaceBelow - DROPDOWN_MARGIN);
-  }
+  const maxHeight = openAbove
+    ? Math.min(effectiveMaxH, spaceAbove - DROPDOWN_MARGIN)
+    : Math.min(effectiveMaxH, spaceBelow - DROPDOWN_MARGIN);
 
   const left = Math.min(triggerRect.left, vw - triggerRect.width - 8);
   const width = triggerRect.width;
 
   return {
     position: 'fixed',
-    top: `${Math.max(4, top)}px`,
+    ...(openAbove
+      ? { bottom: `${vh - triggerRect.top + DROPDOWN_MARGIN}px` }
+      : { top: `${triggerRect.bottom + DROPDOWN_MARGIN}px` }
+    ),
     left: `${Math.max(4, left)}px`,
     width: `${width}px`,
     maxHeight: `${Math.max(maxHeight, 80)}px`,
-    borderRadius: borderTopRadius
-      ? `${borderTopRadius}px ${borderTopRadius}px 12px 12px`
-      : `12px 12px ${borderBottomRadius}px ${borderBottomRadius}px`,
+    borderRadius: '12px',
   };
 }
 
@@ -68,6 +59,8 @@ const IconSelect = ({ name, value, onChange, options, disabled = false, placehol
     if (!open || !triggerRef.current) return {};
     return getMenuStyle(triggerRef.current.getBoundingClientRect());
   }, [open, highlightedIndex]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useBodyScrollLock(open, triggerRef);
 
   useEffect(() => {
     if (!open) return;
@@ -169,7 +162,7 @@ const IconSelect = ({ name, value, onChange, options, disabled = false, placehol
           onClick={() => pick(opt.value)}
           onMouseEnter={() => setHighlightedIndex(idx)}
           className={cn(
-            'w-full flex items-center gap-2 sm:gap-2.5 px-2.5 sm:px-3 py-2 sm:py-2.5 text-sm transition-colors duration-100',
+            'w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors duration-100',
             value === opt.value
               ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-medium'
               : highlightedIndex === idx

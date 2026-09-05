@@ -2,6 +2,7 @@ import { useRef, useEffect, useCallback, useLayoutEffect, useState } from 'react
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from '@/core/utils/helpers/string.helper';
+import useBodyScrollLock from '@/shared/hooks/useBodyScrollLock';
 
 function calcPosition(anchorRect, popupWidth, popupHeight, vw, vh) {
   const gap = 10;
@@ -40,6 +41,8 @@ const DayDetailPopover = ({
   const previousFocusRef = useRef(null);
   const [position, setPosition] = useState({ top: 0, left: 0, placement: 'bottom' });
   const [phase, setPhase] = useState('closed'); // 'closed' | 'entering' | 'open' | 'exiting'
+
+  useBodyScrollLock(phase === 'open' || phase === 'entering');
 
   // Sync phase with isOpen
   useEffect(() => {
