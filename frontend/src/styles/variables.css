@@ -120,6 +120,10 @@
   --btn-radius-lg: 12px;
   --btn-radius-xl: 14px;
 
+  /* === BUTTON TOP HIGHLIGHT (Cloudflare-style tactile inset) === */
+  --btn-top-highlight-light: inset 0 1px 0 rgba(255,255,255,0.15);
+  --btn-top-highlight-dark: inset 0 1px 0 rgba(255,255,255,0.08);
+
   /* === TINT TOKENS (pill badges, subtle accents) === */
   --tint-bg: var(--brand-subtle);
   --tint-text: var(--brand);

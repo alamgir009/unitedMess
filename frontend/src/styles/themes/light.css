@@ -187,7 +187,7 @@ html.light {
   --gradient-hero: linear-gradient(135deg, hsl(210 100% 97%) 0%, hsl(260 100% 97%) 60%, hsl(160 64% 97%) 100%);
   --gradient-text: linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(271 76% 53%) 100%);
 
-  /* ── Button gradient tokens (light mode — modern flat) ── */
+  /* ── Button tokens (light mode — Cloudflare-style tactile) ── */
   --btn-primary-from: #2563EB;
   --btn-primary-to: #1D4ED8;
   --btn-primary-label: #FFFFFF;
@@ -199,23 +199,21 @@ html.light {
   --btn-secondary-border: #CBD5E1;
 
   --btn-ghost-label: #334155;
-  --btn-ghost-border-from: #64748B;
-  --btn-ghost-border-to: #94A3B8;
   --btn-ghost-hover-fill: rgba(100, 116, 139, 0.06);
   --btn-ghost-active-fill: rgba(100, 116, 139, 0.12);
 
-  --btn-destructive-from: #DC2626;
-  --btn-destructive-to: #B91C1C;
+  --btn-destructive-from: #B91C1C;
+  --btn-destructive-to: #991B1B;
   --btn-destructive-label: #FFFFFF;
   --btn-destructive-border: transparent;
 
-  --btn-warning-from: #D97706;
-  --btn-warning-to: #B45309;
+  --btn-warning-from: #B45309;
+  --btn-warning-to: #92400E;
   --btn-warning-label: #FFFFFF;
   --btn-warning-border: transparent;
 
-  --btn-success-from: #16A34A;
-  --btn-success-to: #15803D;
+  --btn-success-from: #15803D;
+  --btn-success-to: #166534;
   --btn-success-label: #FFFFFF;
   --btn-success-border: transparent;
 
@@ -244,19 +242,19 @@ html.light {
   --btn-glass-to: rgba(255, 255, 255, 0.08);
   --btn-glass-label: #1E2A4A;
   --btn-glass-border: rgba(255, 255, 255, 0.40);
-  --btn-glass-hover-brightness: 1.06;
-  --btn-glass-active-brightness: 1.12;
 
   --btn-neutral-from: #E2E8F0;
   --btn-neutral-to: #CBD5E1;
   --btn-neutral-label: #334155;
   --btn-neutral-border: transparent;
 
-  --btn-link-from: #1A2D5E;
-  --btn-link-to: #2D4A7A;
+  --btn-outline-label: #334155;
+  --btn-outline-border: #CBD5E1;
+  --btn-outline-hover-bg: rgba(51, 65, 85, 0.06);
+  --btn-outline-hover-border: #94A3B8;
 
-  --btn-elevated-from: #0D9488;
-  --btn-elevated-to: #0F766E;
+  --btn-elevated-from: #0F766E;
+  --btn-elevated-to: #115E59;
   --btn-elevated-label: #FFFFFF;
   --btn-elevated-border: transparent;
 

@@ -186,9 +186,9 @@ html.dark {
   --gradient-hero: linear-gradient(135deg, hsl(225 28% 7%) 0%, hsl(248 47% 20%) 60%, hsl(212 59% 11%) 100%);
   --gradient-text: linear-gradient(135deg, hsl(213 94% 68%) 0%, hsl(258 90% 66%) 100%);
 
-  /* ── Button gradient tokens (dark mode — modern flat) ── */
-  --btn-primary-from: #3B82F6;
-  --btn-primary-to: #2563EB;
+  /* ── Button tokens (dark mode — Cloudflare-style tactile) ── */
+  --btn-primary-from: #2563EB;
+  --btn-primary-to: #1D4ED8;
   --btn-primary-label: #FFFFFF;
   --btn-primary-border: transparent;
 
@@ -198,24 +198,22 @@ html.dark {
   --btn-secondary-border: #334155;
 
   --btn-ghost-label: #CBD5E1;
-  --btn-ghost-border-from: #64748B;
-  --btn-ghost-border-to: #94A3B8;
   --btn-ghost-hover-fill: rgba(100, 116, 139, 0.10);
   --btn-ghost-active-fill: rgba(100, 116, 139, 0.18);
 
-  --btn-destructive-from: #DC2626;
-  --btn-destructive-to: #B91C1C;
+  --btn-destructive-from: #B91C1C;
+  --btn-destructive-to: #991B1B;
   --btn-destructive-label: #FFFFFF;
   --btn-destructive-border: transparent;
 
-  --btn-warning-from: #F59E0B;
-  --btn-warning-to: #D97706;
-  --btn-warning-label: #1A1A1A;
+  --btn-warning-from: #B45309;
+  --btn-warning-to: #92400E;
+  --btn-warning-label: #FFFFFF;
   --btn-warning-border: transparent;
 
-  --btn-success-from: #22C55E;
-  --btn-success-to: #16A34A;
-  --btn-success-label: #0A2E1A;
+  --btn-success-from: #15803D;
+  --btn-success-to: #166534;
+  --btn-success-label: #FFFFFF;
   --btn-success-border: transparent;
 
   --btn-icon-from: #1E293B;
@@ -243,13 +241,16 @@ html.dark {
   --btn-glass-to: rgba(255, 255, 255, 0.03);
   --btn-glass-label: #E2E8F0;
   --btn-glass-border: rgba(255, 255, 255, 0.10);
-  --btn-glass-hover-brightness: 1.06;
-  --btn-glass-active-brightness: 1.10;
 
   --btn-neutral-from: #1E293B;
   --btn-neutral-to: #1A2332;
   --btn-neutral-label: #CBD5E1;
   --btn-neutral-border: transparent;
+
+  --btn-outline-label: #CBD5E1;
+  --btn-outline-border: #334155;
+  --btn-outline-hover-bg: rgba(203, 213, 225, 0.06);
+  --btn-outline-hover-border: #475569;
 
   --btn-elevated-from: #1E293B;
   --btn-elevated-to: #1A2332;
@@ -258,7 +259,7 @@ html.dark {
 
   --btn-brand-subtle-from: #1E3A5F;
   --btn-brand-subtle-to: #172E4D;
-  --btn-brand-subtle-label: #93C5FD;
+  --btn-brand-subtle-label: #BFDBFE;
   --btn-brand-subtle-border: transparent;
 
   /* ── Premium Calendar Tokens (Dark Mode) ── */

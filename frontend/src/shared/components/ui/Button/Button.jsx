@@ -20,11 +20,7 @@ const btnVariantClass = {
   'brand-subtle': 'btn-brand-subtle',
   loading: 'btn-loading',
   icon: 'btn-icon',
-};
-
-const fallbackStyles = {
-  outline:
-    'bg-transparent text-primary border border-primary/30 hover:bg-primary/[0.08] hover:border-primary/50 active:bg-primary/[0.12]',
+  outline: 'btn-outline',
 };
 
 const sizeStyles = {
@@ -68,7 +64,7 @@ const Button = forwardRef(({
 
   const btnClasses = cn(
     'font-medium select-none whitespace-nowrap',
-    'transition-[box-shadow,transform,border-color,background-color,color,opacity] motion-reduce:transition-none duration-[var(--duration-base)] ease-out',
+    'transition-[background-color,border-color,opacity,transform] motion-reduce:transition-none duration-[180ms] ease-out',
     '-webkit-tap-highlight-color-transparent',
 
     isLink && [
@@ -83,11 +79,11 @@ const Button = forwardRef(({
       'disabled:opacity-45 disabled:cursor-not-allowed disabled:pointer-events-none',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
       !shouldReduceMotion && 'active:scale-[0.97] transform-gpu',
+      shouldReduceMotion && '[&::before]:hidden',
     ],
 
     isLoading && !isLink && 'btn-loading',
     !isLoading && btnVariantClass[variant],
-    !btnVariantClass[variant] && fallbackStyles[variant],
 
     !isLink && (iconOnly ? iconSizeStyles[size] || iconSizeStyles.md : sizeStyles[size] || sizeStyles.md),
 

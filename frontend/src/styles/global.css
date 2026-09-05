@@ -291,20 +291,13 @@
     border: 1px solid transparent;
     cursor: pointer;
     transition:
-      background var(--duration-fast) var(--ease-out),
-      box-shadow var(--duration-fast) var(--ease-out),
-      transform var(--duration-fast) var(--ease-out),
-      border-color var(--duration-fast) var(--ease-out);
+      background-color var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out),
+      opacity var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
     white-space: nowrap;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-  }
-
-  .btn-primary {
-    box-shadow: var(--shadow-xs);
-  }
-  .btn-primary:hover:not(:disabled) {
-    box-shadow: var(--shadow-sm);
   }
 
   .btn:active:not(:disabled) { transform: scale(0.97); }
@@ -312,11 +305,6 @@
     opacity: 0.45;
     cursor: not-allowed;
     pointer-events: none;
-  }
-
-  .btn-secondary:hover:not(:disabled),
-  .btn-elevated:hover:not(:disabled) {
-    box-shadow: var(--shadow-xs);
   }
 
   /* ─── Input base ─── */

@@ -340,7 +340,7 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
               </div>
               <div className="flex justify-between items-center pt-1">
                 <span className="text-sm text-muted-foreground font-medium">Amount Due</span>
-                <span className="text-2xl font-bold text-foreground font-mono tabular-nums">
+                <span className="text-2xl font-bold text-foreground tabular-nums">
                   ₹{fmt(payableAmount)}
                 </span>
               </div>
@@ -363,7 +363,7 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
             <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Amount Payable</p>
-                <p className="text-xl font-bold text-foreground font-mono tabular-nums">₹{fmt(baseAmount)}</p>
+                <p className="text-xl font-bold text-foreground tabular-nums">₹{fmt(baseAmount)}</p>
               </div>
               <div className="text-xs text-muted-foreground shrink-0 text-right">
                 <p className="truncate max-w-[150px]">{payableMonthName}</p>
@@ -420,20 +420,20 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
                   <div className="space-y-2.5 pt-1">
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-muted-foreground font-medium">Bill Amount</span>
-                      <span className="font-semibold text-foreground font-mono tabular-nums">₹{fmt(baseAmount)}</span>
+                      <span className="font-semibold text-foreground tabular-nums">₹{fmt(baseAmount)}</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-muted-foreground font-medium">Gateway Charge (2%)</span>
-                      <span className="font-semibold text-foreground font-mono tabular-nums">₹{fmt(gatewayFee)}</span>
+                      <span className="font-semibold text-foreground tabular-nums">₹{fmt(gatewayFee)}</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-muted-foreground font-medium">GST on Charges (18%)</span>
-                      <span className="font-semibold text-foreground font-mono tabular-nums">₹{fmt(gstOnFee)}</span>
+                      <span className="font-semibold text-foreground tabular-nums">₹{fmt(gstOnFee)}</span>
                     </div>
                     <div className="h-px bg-border my-2" />
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-bold text-foreground">Total Payable</span>
-                      <span className="text-2xl font-bold text-primary font-mono tabular-nums">₹{fmt(totalAmountWithFee)}</span>
+                      <span className="text-2xl font-bold text-primary tabular-nums">₹{fmt(totalAmountWithFee)}</span>
                     </div>
                   </div>
                 </div>
@@ -474,20 +474,20 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
                   <div className="space-y-2.5 pt-1">
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-muted-foreground font-medium">Bill Amount</span>
-                      <span className="font-semibold text-foreground font-mono tabular-nums">₹{fmt(baseAmount)}</span>
+                      <span className="font-semibold text-foreground tabular-nums">₹{fmt(baseAmount)}</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-muted-foreground font-medium">Gateway Surcharge</span>
-                      <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">₹0.00</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">₹0.00</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-muted-foreground font-medium">GST on Charges</span>
-                      <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">₹0.00</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">₹0.00</span>
                     </div>
                     <div className="h-px bg-border my-2" />
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-bold text-foreground">Total Payable</span>
-                      <span className="text-2xl font-bold text-foreground font-mono tabular-nums">₹{fmt(baseAmount)}</span>
+                      <span className="text-2xl font-bold text-foreground tabular-nums">₹{fmt(baseAmount)}</span>
                     </div>
                   </div>
                 </div>
