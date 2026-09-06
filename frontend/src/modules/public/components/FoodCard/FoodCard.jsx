@@ -14,11 +14,11 @@ const FoodCard = memo(({ food, onSelect }) => (
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(food); } }}
         className="group relative flex flex-col rounded-2xl border border-border bg-card/60 overflow-hidden motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-1 gpu-layer cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring contain-content"
     >
-        <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted shrink-0">
+        <div className="relative aspect-[4/3] w-full min-h-[180px] overflow-hidden bg-muted rounded-lg shrink-0">
             <FoodImage
                 src={food.image}
                 alt={food.name}
-                className="w-full h-full motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-105 transform-gpu"
+                className="w-full h-full object-cover object-center motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-105 transform-gpu"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
 
@@ -36,7 +36,7 @@ const FoodCard = memo(({ food, onSelect }) => (
 
         <div className="p-4 flex flex-col gap-2 flex-1">
             <div className="flex items-start justify-between gap-2">
-                <h3 className="font-bold text-foreground text-sm sm:text-base leading-tight">{food.name}</h3>
+                <h3 className="font-bold text-foreground text-sm sm:text-base line-clamp-1 leading-tight">{food.name}</h3>
                 <Stars rating={food.rating} />
             </div>
 

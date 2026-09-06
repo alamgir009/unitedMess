@@ -57,6 +57,7 @@ const Modal = ({
   description,
   children,
   footer,
+  headerContent,
   size = 'md',
   accentColor = 'blue',
   mobileSheet = false,
@@ -169,7 +170,7 @@ const Modal = ({
       aria-describedby={description ? 'modal-description' : undefined}
       aria-busy={isLoading || undefined}
       tabIndex={-1}
-      style={useSheet ? { height: `${sheetHeightPct}vh`, boxShadow: 'var(--shadow-xl), var(--inset-top-glow)' } : { maxHeight: desktopMaxHeight }}
+      style={useSheet ? { minHeight: '300px', maxHeight: '80vh', height: `${sheetHeightPct}vh`, boxShadow: 'var(--shadow-xl), var(--inset-top-glow)' } : { maxHeight: desktopMaxHeight }}
       className={cn(
         'relative w-full modal-gpu',
         !useSheet && sizeMap[size],
@@ -195,11 +196,17 @@ const Modal = ({
             <div
               onMouseDown={handleDragStart}
               onTouchStart={handleDragStart}
-              className="shrink-0 cursor-grab active:cursor-grabbing"
+              className="relative z-20 shrink-0 cursor-grab active:cursor-grabbing bg-transparent"
             >
               <div className="flex justify-center pt-2.5 pb-1">
                 <div className="w-10 h-1 rounded-full bg-border-strong" />
               </div>
+            </div>
+          )}
+
+          {headerContent && (
+            <div className="relative z-10 flex-shrink-0">
+              {headerContent}
             </div>
           )}
 
@@ -214,15 +221,15 @@ const Modal = ({
                 )}
                 <div className="min-w-0">
                   {title && (
-                    <h2 id="modal-title" className={cn(
-                      'truncate font-semibold text-foreground',
+<h2 id="modal-title" className={cn(
+                      'truncate line-clamp-2 font-semibold text-foreground',
                       useSheet ? 'text-sm sm:text-base' : 'text-base sm:text-lg',
-                    )}>
+                  )}>
                       {title}
                     </h2>
                   )}
                   {description && (
-                    <p id="modal-description" className="text-sm text-muted-foreground mt-0.5">
+                    <p id="modal-description" className="text-sm text-muted-foreground mt-0.5 line-clamp-3">
                       {description}
                     </p>
                   )}
