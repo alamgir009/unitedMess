@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { onMessage, getMessaging } from 'firebase/messaging';
-import { app, requestFcmToken } from '@/lib/firebase';
+import { onMessage } from 'firebase/messaging';
+import { app, getMessagingInstance, requestFcmToken } from '@/lib/firebase';
 import NotificationService from '../services/notification.service';
 
 const STORAGE_KEY = 'um_fcm_token';
@@ -32,7 +32,7 @@ const useFcmPush = () => {
         if (!user || !supported) return;
 
         try {
-            const messaging = getMessaging(app);
+            const messaging = getMessagingInstance();
             const unsub = onMessage(messaging, (payload) => {
                 const data = payload.data || {};
                 const notification = payload.notification || {};

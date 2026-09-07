@@ -81,14 +81,18 @@ const UserDashboard = () => {
         isActivitiesLoading,
         userStatsLoaded,
         isUserStatsError,
+        lastFetchedAt,
     } = useSelector((state) => state.dashboard);
 
     const { user } = useSelector((state) => state.auth);
 
     useEffect(() => {
-        dispatch(fetchUserDashboardStats());
-        dispatch(fetchUserRecentActivity());
-    }, [dispatch]);
+        const isFresh = userStatsLoaded && lastFetchedAt && (Date.now() - lastFetchedAt < 60000);
+        if (!isFresh) {
+            dispatch(fetchUserDashboardStats());
+            dispatch(fetchUserRecentActivity());
+        }
+    }, [dispatch, userStatsLoaded, lastFetchedAt]);
 
     /* ── visibility / focus — re-fetch when user returns to this tab ── */
     useEffect(() => {
@@ -112,7 +116,7 @@ const UserDashboard = () => {
             {/* ── Greeting Header Card ── */}
             <div
                 className={cn(
-                    "relative overflow-hidden rounded-2xl p-6 sm:p-8 bg-card border shadow-sm transition-all duration-200",
+                    "relative overflow-hidden rounded-2xl p-6 sm:p-8 bg-card border shadow-sm hover:shadow-md transition-[box-shadow] duration-200 ease-out",
                     g.cardBorderClass
                 )}
             >
@@ -131,7 +135,7 @@ const UserDashboard = () => {
                         {/* Greeting pill */}
                         <div
                             className={cn(
-                                "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-4 border",
+                                "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-caption sm:text-xs font-bold uppercase tracking-wider mb-4 border",
                                 g.pillClass
                             )}
                         >
@@ -140,13 +144,13 @@ const UserDashboard = () => {
                         </div>
 
                         {/* User Name */}
-                        <h2 className="flex items-center gap-2.5 flex-wrap text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground leading-tight">
+                        <h2 className="flex items-center gap-2.5 flex-wrap text-h1 font-extrabold tracking-tight text-foreground leading-tight">
                             <span>Welcome, {user?.name ?? 'Member'}</span>
-                            <Sparkles className={cn("w-5 h-5 animate-pulse", g.iconColorClass)} strokeWidth={2} />
+                            <Sparkles className={cn("w-5 h-5 animate-pulse transform-gpu", g.iconColorClass)} strokeWidth={2} />
                         </h2>
 
                         {/* Greeting Subtext */}
-                        <p className="mt-2 text-sm sm:text-base text-muted-foreground font-medium leading-relaxed">
+                        <p className="mt-2 text-body text-muted-foreground font-medium leading-relaxed">
                             {g.sub}
                         </p>
                     </div>
@@ -154,13 +158,13 @@ const UserDashboard = () => {
                     {/* Right Side: Account Summary Badge */}
                     <div className="flex flex-wrap items-center justify-between md:justify-start gap-4 shrink-0 pt-4 border-t border-border/10 md:border-t-0 md:pt-0">
                         <div className="flex flex-col text-left md:text-right min-w-0 flex-1 md:flex-initial">
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Account Status</span>
+                            <span className="text-caption font-bold text-muted-foreground uppercase tracking-wider">Account Status</span>
                             <span className="text-xs text-foreground font-semibold mt-0.5 truncate max-w-[180px] sm:max-w-none" title={user?.email}>
                                 {user?.email}
                             </span>
                         </div>
                         <div className="h-8 w-px bg-border/60 hidden md:block" />
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400 rounded-xl text-[11px] font-bold uppercase tracking-wider shadow-sm select-none shrink-0">
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-success-bg border border-success-border text-success-text rounded-xl text-caption font-bold uppercase tracking-wider shadow-sm select-none shrink-0">
                             <ShieldCheck size={14} strokeWidth={2.5} />
                             <span>Active</span>
                         </div>

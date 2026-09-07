@@ -11,7 +11,14 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const messaging = getMessaging(app);
+
+let messagingInstance = null;
+const getMessagingInstance = () => {
+    if (!messagingInstance) {
+        messagingInstance = getMessaging(app);
+    }
+    return messagingInstance;
+};
 
 const FCM_VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 
@@ -25,7 +32,7 @@ const requestFcmToken = async () => {
             throw new Error('Notification permission denied');
         }
 
-        const token = await getToken(messaging, {
+        const token = await getToken(getMessagingInstance(), {
             vapidKey: FCM_VAPID_KEY,
         });
 
@@ -36,4 +43,4 @@ const requestFcmToken = async () => {
     }
 };
 
-export { app, messaging, requestFcmToken };
+export { app, getMessagingInstance, requestFcmToken };

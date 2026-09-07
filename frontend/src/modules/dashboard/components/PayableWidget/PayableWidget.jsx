@@ -54,7 +54,7 @@ const PayableWidget = ({
     const totalOutstanding = (mealPaid ? 0 : safeMeal) + (gasPaid ? 0 : safeGas);
 
     return (
-        <div className="rounded-2xl p-6 relative overflow-hidden shadow-sm h-full flex flex-col transform-gpu hover:shadow-md transition-all duration-200 ease-out contain-layout border border-white/10" style={{ background: 'var(--gradient-primary)' }}>
+        <div className="rounded-2xl p-6 relative overflow-hidden shadow-sm h-full flex flex-col transform-gpu will-change-transform hover:shadow-xl transition-[box-shadow] duration-200 ease-out contain-layout border border-white/10" style={{ background: 'var(--gradient-primary)' }}>
             {/* Background decoration */}
             <div className="absolute top-0 right-0 p-8 opacity-[0.04] dark:opacity-[0.08] pointer-events-none text-white">
                 <FiCreditCard size={96} />
@@ -63,8 +63,8 @@ const PayableWidget = ({
             <div className="relative z-10 flex flex-col flex-1">
                 {/* Header */}
                 <div className="mb-5">
-                    <h3 className="text-lg font-bold tracking-tight text-white">Your Payables</h3>
-                    <p className="text-indigo-200/80 text-xs sm:text-sm mt-0.5">Monthly bill summary for this period</p>
+                    <h3 className="text-h3 font-bold tracking-tight text-white">Your Payables</h3>
+                    <p className="text-indigo-200/80 text-body mt-0.5">Monthly bill summary for this period</p>
                 </div>
 
                 {/* Error state */}
@@ -81,7 +81,7 @@ const PayableWidget = ({
                 <div className="space-y-3 flex-1">
 
                     {/* ── Meal Bill ── */}
-                    <div className="bg-white/5 dark:bg-white/[0.02] border border-white/10 hover:bg-white/10 dark:hover:bg-white/[0.05] rounded-xl p-4 flex items-center justify-between gap-3 transition-colors duration-150">
+                    <div className="bg-white/5 dark:bg-white/[0.02] border border-white/10 hover:bg-white/10 dark:hover:bg-white/[0.05] rounded-xl p-4 flex items-center justify-between gap-3 transition-[background-color] duration-150 ease-out transform-gpu">
                         <div className="flex items-center gap-3">
                             <div className={cn('p-2 rounded-lg border', mealPaid ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-white/10 border-white/10 text-white')}>
                                 {mealPaid
@@ -90,8 +90,8 @@ const PayableWidget = ({
                                 }
                             </div>
                             <div>
-                                <p className="text-indigo-200/90 text-[10px] font-semibold uppercase tracking-wider mb-0.5">Meal Bill</p>
-                                <p className="text-lg sm:text-xl font-extrabold text-white leading-none tabular-nums">
+                                <p className="text-indigo-200/90 text-caption font-semibold uppercase tracking-wider mb-0.5">Meal Bill</p>
+                                <p className="text-h2 font-extrabold text-white leading-none tabular-nums">
                                     {isLoading ? (
                                         <span className="inline-block w-16 h-5 bg-white/20 rounded animate-pulse" />
                                     ) : isError ? (
@@ -108,7 +108,7 @@ const PayableWidget = ({
                         {/* Action */}
                         {!isLoading && !isError && (
                             mealPaid ? (
-                                <span className="bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-[10.5px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg shrink-0">
+                                <span className="bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-caption font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg shrink-0">
                                     Paid
                                 </span>
                             ) : (
@@ -124,7 +124,7 @@ const PayableWidget = ({
                     </div>
 
                     {/* ── Gas Bill ── */}
-                    <div className="bg-white/5 dark:bg-white/[0.02] border border-white/10 hover:bg-white/10 dark:hover:bg-white/[0.05] rounded-xl p-4 flex items-center justify-between gap-3 transition-colors duration-150">
+                    <div className="bg-white/5 dark:bg-white/[0.02] border border-white/10 hover:bg-white/10 dark:hover:bg-white/[0.05] rounded-xl p-4 flex items-center justify-between gap-3 transition-[background-color] duration-150 ease-out transform-gpu">
                         <div className="flex items-center gap-3">
                             <div className={cn('p-2 rounded-lg border', gasPaid ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-white/10 border-white/10 text-white')}>
                                 {gasPaid
@@ -133,8 +133,8 @@ const PayableWidget = ({
                                 }
                             </div>
                             <div>
-                                <p className="text-indigo-200/90 text-[10px] font-semibold uppercase tracking-wider mb-0.5">Gas Bill</p>
-                                <p className="text-lg sm:text-xl font-extrabold text-white leading-none tabular-nums">
+                                <p className="text-indigo-200/90 text-caption font-semibold uppercase tracking-wider mb-0.5">Gas Bill</p>
+                                <p className="text-h2 font-extrabold text-white leading-none tabular-nums">
                                     {isLoading ? (
                                         <span className="inline-block w-16 h-5 bg-white/20 rounded animate-pulse" />
                                     ) : isError ? (
@@ -151,7 +151,7 @@ const PayableWidget = ({
                         {/* Action */}
                         {!isLoading && !isError && (
                             gasPaid ? (
-                                <span className="bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-[10.5px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg shrink-0">
+                                <span className="bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-caption font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg shrink-0">
                                     Paid
                                 </span>
                             ) : (
@@ -171,8 +171,8 @@ const PayableWidget = ({
                 {/* Total outstanding — only when loaded, not errored, and at least one bill is unpaid */}
                 {isLoaded && !isError && (!mealPaid || !gasPaid) && (
                     <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between">
-                        <span className="text-indigo-200/95 text-xs sm:text-sm font-semibold uppercase tracking-wider">Total Outstanding</span>
-                        <span className="text-lg sm:text-xl font-bold text-white tabular-nums">
+                        <span className="text-indigo-200/95 text-body font-semibold uppercase tracking-wider">Total Outstanding</span>
+                        <span className="text-h2 font-bold text-white tabular-nums">
                             ₹{totalOutstanding.toLocaleString('en-IN')}
                         </span>
                     </div>
@@ -180,7 +180,7 @@ const PayableWidget = ({
 
                 {/* All bills cleared */}
                 {isLoaded && !isError && mealPaid && gasPaid && (
-                    <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-1.5 text-emerald-400 text-xs font-semibold uppercase tracking-wider">
+                    <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-1.5 text-emerald-400 text-caption font-semibold uppercase tracking-wider">
                         <FiCheckCircle size={14} />
                         <span>All bills cleared for this period!</span>
                     </div>

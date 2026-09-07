@@ -19,6 +19,7 @@ const initialState = {
     // Components must NOT infer "paid" from null values until this is true.
     userStatsLoaded: false,
     isUserStatsError: false,
+    lastFetchedAt: null,
     message: '',
 };
 
@@ -133,6 +134,7 @@ export const dashboardSlice = createSlice({
                 state.isSuccess = true;
                 state.userStatsLoaded = true;
                 state.isUserStatsError = false;
+                state.lastFetchedAt = Date.now();
                 state.userMealPayable = action.payload.mealPayable;
                 state.userGasBillPayable = action.payload.gasBillPayable;
             })
@@ -141,6 +143,7 @@ export const dashboardSlice = createSlice({
                 state.isError = true;
                 state.isUserStatsError = true;
                 state.userStatsLoaded = true; // Loaded (with error) — stop showing skeleton
+                state.lastFetchedAt = Date.now();
                 state.message = action.payload;
             })
             // Recent Activity
@@ -150,10 +153,12 @@ export const dashboardSlice = createSlice({
             .addCase(fetchUserRecentActivity.fulfilled, (state, action) => {
                 state.isActivitiesLoading = false;
                 state.recentActivities = action.payload || [];
+                state.lastFetchedAt = Date.now();
             })
             .addCase(fetchUserRecentActivity.rejected, (state) => {
                 state.isActivitiesLoading = false;
                 state.recentActivities = [];
+                state.lastFetchedAt = Date.now();
             })
             // ── logout: clear all dashboard state ──────────────────────────
             .addCase(logout.fulfilled, (state) => {
@@ -165,6 +170,7 @@ export const dashboardSlice = createSlice({
                 state.userGasBillPayable = null;
                 state.recentActivities = [];
                 state.userStatsLoaded = false;
+                state.lastFetchedAt = null;
             });
     },
 });
