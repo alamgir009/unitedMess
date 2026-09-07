@@ -55,6 +55,12 @@ export const fetchUsers = createAsyncThunk(
 export const searchUsers = createAsyncThunk(
     'members/searchUsers',
     async (params, thunkAPI) => {
+        // searchUsers is admin-only on the backend (authorize('admin')).
+        // Reject early to prevent a 403 from reaching the UI.
+        const state = thunkAPI.getState();
+        if (state.auth.user?.role !== 'admin') {
+            return thunkAPI.rejectWithValue('Search is restricted to administrators');
+        }
         try {
             return await membersService.searchUsers(params);
         } catch (error) {

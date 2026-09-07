@@ -153,7 +153,7 @@ SectionHeading.displayName = 'SectionHeading';
 /* ─────────────────────────────────────────────
    MemberInvoiceDetails — root component
 ───────────────────────────────────────────── */
-const MemberInvoiceDetails = React.memo(({ user }) => {
+const MemberInvoiceDetails = React.memo(({ user, isAdmin }) => {
     const formattedMeals = useMemo(() => fmt(user?.totalMeal ?? 0), [user?.totalMeal]);
     const formattedGuest = useMemo(() => fmt(user?.guestMeal ?? 0), [user?.guestMeal]);
     const formattedCooking = useMemo(() => fmt(user?.cookingCharge ?? 0), [user?.cookingCharge]);
@@ -179,8 +179,8 @@ const MemberInvoiceDetails = React.memo(({ user }) => {
                     <SectionHeading color="blue-500">Identity &amp; Contact</SectionHeading>
 
                     <div className="flex flex-col gap-4 flex-1">
-                        <InfoItem icon={Mail} label="Email Address" value={user?.email} />
-                        <InfoItem icon={Phone} label="Phone Number" value={user?.phone} />
+                        {isAdmin && <InfoItem icon={Mail} label="Email Address" value={user?.email} />}
+                        {isAdmin && <InfoItem icon={Phone} label="Phone Number" value={user?.phone} />}
                         <InfoItem
                             icon={ShieldCheck}
                             label="System Role"

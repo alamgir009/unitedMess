@@ -74,7 +74,7 @@ MobileLabel.displayName = 'MobileLabel';
 /* ─────────────────────────────────────────────
    MemberRow
 ───────────────────────────────────────────── */
-const MemberRow = React.memo(({ user, index, isLast }) => {
+const MemberRow = React.memo(({ user, index, isLast, isAdmin }) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
     const toggle = useCallback(() => setIsExpanded((v) => !v), []);
@@ -135,9 +135,11 @@ const MemberRow = React.memo(({ user, index, isLast }) => {
                                     </span>
                                 )}
                             </div>
-                            <span className="text-[12.5px] font-medium text-muted-foreground truncate mt-0.5">
-                                {user.email ?? '\u2014'}
-                            </span>
+                            {isAdmin && (
+                                <span className="text-[12.5px] font-medium text-muted-foreground truncate mt-0.5">
+                                    {user.email ?? '\u2014'}
+                                </span>
+                            )}
                         </div>
                     </div>
 
@@ -204,7 +206,7 @@ const MemberRow = React.memo(({ user, index, isLast }) => {
                         isLast ? 'md:rounded-b-[1.5rem]' : '',
                     ].join(' ')}
                 >
-                    {isExpanded && <MemberInvoiceDetails user={user} />}
+                    {isExpanded && <MemberInvoiceDetails user={user} isAdmin={isAdmin} />}
                 </div>
             </div>
         </div>

@@ -67,9 +67,12 @@ const getUsers = asyncHandler(async (req, res) => {
     const isAdmin = req.user.role === 'admin';
     const result = await userService.getAllUsers(filter, options);
 
-    // Strip sensitive fields for non-admin requests
+    // Strip sensitive fields for non-admin requests.
+    // NOTE: 'payment' and 'gasBill' are intentionally NOT stripped — they are
+    // aggregation-computed billing status values (derived from invoice + payment
+    // records), not raw PII. All users need these to display correct bill status.
     if (!isAdmin && result.users) {
-        const SENSITIVE_FIELDS = ['email', 'phone', 'payment', 'gasBill', 'lastLoginIP', 'lastLoginUA'];
+        const SENSITIVE_FIELDS = ['email', 'phone', 'lastLoginIP', 'lastLoginUA'];
         result.users = result.users.map(user => {
             const stripped = { ...user };
             SENSITIVE_FIELDS.forEach(f => delete stripped[f]);

@@ -45,7 +45,7 @@ const SkeletonRow = React.memo(() => (
 ));
 SkeletonRow.displayName = 'SkeletonRow';
 
-const MemberTable = ({ users, isLoading }) => {
+const MemberTable = ({ users, isLoading, isAdmin }) => {
     const membersList = Array.isArray(users) ? users : [];
     const columns = COLUMNS;
 
@@ -88,6 +88,7 @@ const MemberTable = ({ users, isLoading }) => {
                             user={user}
                             index={index}
                             isLast={index === membersList.length - 1}
+                            isAdmin={isAdmin}
                         />
                     ))}
                 </div>
