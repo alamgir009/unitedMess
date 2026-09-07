@@ -60,7 +60,7 @@ const EmptyState = ({ hasUnread }) => (
                 : <Sparkles className="w-5 h-5 text-muted-foreground" />
             }
         </div>
-        <h4 className="text-sm font-semibold text-foreground mb-1">
+        <h4 className="text-body font-semibold text-foreground mb-1">
             {hasUnread ? 'No unread notifications' : 'All caught up!'}
         </h4>
         <p className="text-caption text-muted-foreground max-w-[180px] leading-relaxed">
@@ -86,7 +86,7 @@ const ErrorState = ({ error, onRetry }) => (
         )}>
             <AlertCircle className="w-5 h-5 text-danger" />
         </div>
-        <h4 className="text-sm font-semibold text-foreground mb-1">
+        <h4 className="text-body font-semibold text-foreground mb-1">
             Failed to load
         </h4>
         <p className="text-caption text-muted-foreground max-w-[220px] leading-relaxed mb-3">
@@ -188,7 +188,7 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
                         <Bell className="w-5 h-5 text-white" aria-hidden />
                     </div>
                     <div>
-                        <h3 className="font-semibold text-foreground text-[15px] tracking-tight">
+                        <h3 className="font-semibold text-foreground text-body-lg tracking-tight">
                             Notifications
                         </h3>
                         {total > 0 && (

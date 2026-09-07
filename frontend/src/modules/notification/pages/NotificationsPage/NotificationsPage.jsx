@@ -78,7 +78,7 @@ const AdminComposeCard = ({ onSent }) => {
             <button
                 type="button"
                 onClick={() => setOpen(!open)}
-                className="w-full flex items-center justify-between px-5 py-3.5 text-sm font-semibold text-foreground hover:bg-muted/50 transition-colors"
+                className="w-full flex items-center justify-between px-5 py-3.5 text-body font-semibold text-foreground hover:bg-muted/50 transition-colors"
             >
                 <span className="flex items-center gap-2">
                     <Send className="w-4 h-4 text-primary" />
@@ -258,7 +258,7 @@ const NotificationsPage = () => {
                                     key={tab}
                                     onClick={() => setActiveFilter(tab)}
                                     className={cn(
-                                        'px-4 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
+                                        'px-4 py-1.5 rounded-lg text-body font-medium transition-all whitespace-nowrap',
                                         activeFilter === tab
                                             ? 'bg-card text-foreground shadow-sm'
                                             : 'text-muted-foreground hover:text-foreground',
@@ -285,7 +285,7 @@ const NotificationsPage = () => {
                                 <div className="w-14 h-14 rounded-full mb-4 bg-danger-bg flex items-center justify-center">
                                     <Bell className="w-5 h-5 text-danger" />
                                 </div>
-                                <h4 className="text-sm font-semibold text-foreground mb-1">
+                                <h4 className="text-body font-semibold text-foreground mb-1">
                                     Failed to load
                                 </h4>
                                 <p className="text-caption text-muted-foreground max-w-[220px] leading-relaxed mb-3">
@@ -305,7 +305,7 @@ const NotificationsPage = () => {
                                 <div className="w-14 h-14 rounded-full mb-4 bg-muted flex items-center justify-center">
                                     <Bell className="w-5 h-5 text-muted-foreground" />
                                 </div>
-                                <h4 className="text-sm font-semibold text-foreground mb-1">
+                                <h4 className="text-body font-semibold text-foreground mb-1">
                                     {activeFilter === 'All' ? 'All caught up!' : `No ${activeFilter.toLowerCase()} notifications`}
                                 </h4>
                                 <p className="text-caption text-muted-foreground max-w-[200px] leading-relaxed">

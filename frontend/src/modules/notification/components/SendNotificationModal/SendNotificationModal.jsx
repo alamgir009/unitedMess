@@ -21,7 +21,7 @@ const targetTypes = [
     { value: 'ROLE', label: 'By Role' },
 ];
 
-const inputClasses = 'w-full h-11 px-3 py-2.5 rounded-xl surface-elevated border border-border text-sm text-foreground placeholder:text-muted-foreground caret-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring transition-[border-color,box-shadow] duration-150';
+const inputClasses = 'w-full h-11 px-3 py-2.5 rounded-xl surface-elevated border border-border text-body text-foreground placeholder:text-muted-foreground caret-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring transition-[border-color,box-shadow] duration-150';
 
 const SendNotificationModal = ({ isOpen, onClose }) => {
     const { user } = useSelector((state) => state.auth);
@@ -158,7 +158,7 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                     <div className="flex items-start gap-3 p-4 rounded-xl bg-warning-bg border border-warning-border">
                         <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
                         <div>
-                            <p className="text-sm font-semibold text-warning">
+                            <p className="text-body font-semibold text-warning">
                                 Broadcast to all {estimatedRecipients} active users
                             </p>
                             <p className="text-caption text-warning mt-1">

@@ -77,7 +77,7 @@ const NotificationItem = ({ notification, onSelect, expanded = false }) => {
             {/* ── Content ── */}
             <div className="flex-1 min-w-0 space-y-1">
                 <p className={cn(
-                    'text-label font-medium',
+                    'text-body font-medium',
                     'leading-snug',
                     !expanded && 'line-clamp-2',
                     'text-foreground',
