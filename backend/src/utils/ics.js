@@ -80,7 +80,7 @@ const generateMarketDutyICS = ({ userName, dates, description }) => {
     lines.push('END:VCALENDAR');
 
     const icsContent = lines.join('\r\n');
-    return Buffer.from(icsContent, 'utf-8');
+    return Promise.resolve(Buffer.from(icsContent, 'utf-8'));
 };
 
 module.exports = { generateMarketDutyICS };
