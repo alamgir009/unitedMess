@@ -263,9 +263,9 @@ html.dark {
 
   /* Outline — transparent: #CBD5E1 on dark bg = 10.2:1 ✓ AAA */
   --btn-outline-label: #CBD5E1;
-  --btn-outline-border: #475569;
+  --btn-outline-border: #334155;
   --btn-outline-hover-bg: rgba(203, 213, 225, 0.08);
-  --btn-outline-hover-border: #64748B;
+  --btn-outline-hover-border: #475569;
 
   /* Elevated — teal: white on #115E59 = 7.58:1 ✓ AAA */
   --btn-elevated-from: #14B8A6;

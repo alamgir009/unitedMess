@@ -118,7 +118,7 @@ const Navbar = () => {
           <nav
             className={cn(
               'relative flex items-center justify-between px-5 py-3 rounded-2xl transform-gpu',
-              'transition-all duration-150',
+              'transition-[background-color,border-color,box-shadow] duration-150',
               scrolled
                 ? 'bg-card/95 border-border navbar-depth'
                 : 'bg-card/50 border-transparent',
@@ -158,7 +158,7 @@ const Navbar = () => {
                   >
                     {label}
                     {isActive && (
-                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-primary rounded-full" />
+                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[1.5px] bg-primary rounded-full" />
                     )}
                   </Link>
                 </li>
@@ -166,7 +166,7 @@ const Navbar = () => {
             })}
           </ul>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <button
               onClick={toggleTheme}
               aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
@@ -177,13 +177,13 @@ const Navbar = () => {
               </span>
             </button>
 
-            <Button variant="outline" size="sm" asChild className="hidden md:inline-flex !text-sm !font-medium !px-4 !py-2 !h-auto rounded-2xl">
+            <Button variant="outline" size="sm" asChild className="hidden md:inline-flex !text-sm !font-medium !px-4 !py-2 !h-auto rounded-lg">
               <Link to="/login">
                 Sign In
               </Link>
             </Button>
 
-            <Button variant="primary" size="sm" asChild className="hidden md:inline-flex !text-sm !font-medium !px-5 !py-2 !h-auto rounded-2xl">
+            <Button variant="primary" size="sm" asChild className="hidden md:inline-flex !text-sm !font-medium !px-5 !py-2 !h-auto rounded-lg">
               <Link to="/register">
                 Get Started
               </Link>
@@ -211,7 +211,7 @@ const Navbar = () => {
           <div
             id="mobile-menu"
             ref={menuRef}
-            className="mt-2 rounded-xl overflow-hidden md:hidden bg-card border border-border shadow-lg animate-fade-in-up"
+            className="mt-2 rounded-2xl overflow-hidden md:hidden bg-card border border-border shadow-lg animate-fade-in-up"
             onKeyDown={handleMenuKeyDown}
           >
             <div className="px-3 py-3 flex flex-col gap-1">
@@ -233,12 +233,12 @@ const Navbar = () => {
                 );
               })}
               <div className="flex flex-col gap-2 mt-2 pt-3 border-t border-border">
-                <Button variant="outline" fullWidth asChild className="!text-sm !font-medium !px-4 !py-2.5 !h-auto rounded-2xl">
+                <Button variant="outline" fullWidth asChild className="!text-sm !font-medium !px-4 !py-2.5 !h-auto rounded-lg">
                   <Link to="/login">
                     Sign In
                   </Link>
                 </Button>
-                <Button variant="primary" fullWidth asChild className="!text-sm !font-medium !px-4 !py-2.5 !h-auto rounded-2xl">
+                <Button variant="primary" fullWidth asChild className="!text-sm !font-medium !px-4 !py-2.5 !h-auto rounded-lg">
                   <Link to="/register">
                     Get Started
                   </Link>

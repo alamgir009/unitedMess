@@ -178,7 +178,7 @@ export default {
       borderRadius: {
         lg: "var(--radius-lg)",
         xl: "var(--radius-xl)",
-        '2xl': "var(--radius-xl)",
+        '2xl': "var(--radius-2xl)",
         md: "var(--radius-md)",
         sm: "var(--radius-sm)",
         xs: "var(--radius-xs)",

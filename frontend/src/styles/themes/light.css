@@ -264,9 +264,9 @@ html.light {
 
   /* Outline — transparent: #334155 on bg = 10.1:1 ✓ AAA */
   --btn-outline-label: #334155;
-  --btn-outline-border: #94A3B8;
+  --btn-outline-border: #CBD5E1;
   --btn-outline-hover-bg: rgba(51, 65, 85, 0.08);
-  --btn-outline-hover-border: #64748B;
+  --btn-outline-hover-border: #94A3B8;
 
   /* Elevated — teal: white on #115E59 = 7.58:1 ✓ AAA */
   --btn-elevated-from: #0D9488;
