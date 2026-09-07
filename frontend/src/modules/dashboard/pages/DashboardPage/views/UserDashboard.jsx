@@ -146,7 +146,7 @@ const UserDashboard = () => {
                         {/* User Name */}
                         <h2 className="flex items-center gap-2.5 flex-wrap text-h1 font-extrabold tracking-tight text-foreground leading-tight">
                             <span>Welcome, {user?.name ?? 'Member'}</span>
-                            <Sparkles className={cn("w-5 h-5 animate-pulse transform-gpu", g.iconColorClass)} strokeWidth={2} />
+                            <Sparkles className={cn("w-5 h-5 animate-pulse", g.iconColorClass)} strokeWidth={2} />
                         </h2>
 
                         {/* Greeting Subtext */}

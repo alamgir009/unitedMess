@@ -23,7 +23,7 @@ const StatsCard = React.memo(({ title, value, change, changeType, icon: Icon }) 
   const badgeCls = getBadgeStyle(title);
 
   return (
-    <div className="relative overflow-hidden rounded-lg border border-border surface-elevated p-3.5 sm:p-4 md:p-5 lg:p-6 shadow-sm depth-top transform-gpu hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-md transition-all duration-200 ease-out motion-reduce:hover:translate-y-0 contain-layout group">
+    <div className="relative overflow-hidden rounded-lg border border-border surface-elevated p-3.5 sm:p-4 md:p-5 lg:p-6 shadow-sm depth-top hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-md transition-all duration-200 ease-out motion-reduce:hover:translate-y-0 group">
       <div className="relative z-10 flex items-start justify-between gap-2.5">
         <div className="min-w-0 flex-1">
           <p className="text-caption font-semibold uppercase tracking-wider text-muted-foreground truncate mb-1" title={title}>
@@ -48,7 +48,7 @@ const StatsCard = React.memo(({ title, value, change, changeType, icon: Icon }) 
           )}
         </div>
 
-        <div className={cn('p-1.5 sm:p-2.5 md:p-3 rounded-lg sm:rounded-lg shrink-0 transition-all duration-200 group-hover:scale-105', badgeCls)}>
+        <div className={cn('p-1.5 sm:p-2.5 md:p-3 rounded-lg sm:rounded-lg shrink-0 transition-all duration-200', badgeCls)}>
           <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
         </div>
       </div>

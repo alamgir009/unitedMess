@@ -54,7 +54,7 @@ const PayableWidget = ({
     const totalOutstanding = (mealPaid ? 0 : safeMeal) + (gasPaid ? 0 : safeGas);
 
     return (
-        <div className="rounded-2xl p-6 relative overflow-hidden shadow-sm h-full flex flex-col transform-gpu will-change-transform hover:shadow-xl transition-[box-shadow] duration-200 ease-out contain-layout border border-white/10" style={{ background: 'var(--gradient-primary)' }}>
+        <div className="rounded-2xl p-6 relative overflow-hidden shadow-sm h-full flex flex-col hover:shadow-xl transition-[box-shadow] duration-200 ease-out contain-layout border border-white/10" style={{ background: 'var(--gradient-primary)' }}>
             {/* Background decoration */}
             <div className="absolute top-0 right-0 p-8 opacity-[0.04] dark:opacity-[0.08] pointer-events-none text-white">
                 <FiCreditCard size={96} />
@@ -81,7 +81,7 @@ const PayableWidget = ({
                 <div className="space-y-3 flex-1">
 
                     {/* ── Meal Bill ── */}
-                    <div className="bg-white/5 dark:bg-white/[0.02] border border-white/10 hover:bg-white/10 dark:hover:bg-white/[0.05] rounded-xl p-4 flex items-center justify-between gap-3 transition-[background-color] duration-150 ease-out transform-gpu">
+                    <div className="bg-white/5 dark:bg-white/[0.02] border border-white/10 hover:bg-white/10 dark:hover:bg-white/[0.05] rounded-xl p-4 flex items-center justify-between gap-3 transition-[background-color] duration-150 ease-out">
                         <div className="flex items-center gap-3">
                             <div className={cn('p-2 rounded-lg border', mealPaid ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-white/10 border-white/10 text-white')}>
                                 {mealPaid
@@ -124,7 +124,7 @@ const PayableWidget = ({
                     </div>
 
                     {/* ── Gas Bill ── */}
-                    <div className="bg-white/5 dark:bg-white/[0.02] border border-white/10 hover:bg-white/10 dark:hover:bg-white/[0.05] rounded-xl p-4 flex items-center justify-between gap-3 transition-[background-color] duration-150 ease-out transform-gpu">
+                    <div className="bg-white/5 dark:bg-white/[0.02] border border-white/10 hover:bg-white/10 dark:hover:bg-white/[0.05] rounded-xl p-4 flex items-center justify-between gap-3 transition-[background-color] duration-150 ease-out">
                         <div className="flex items-center gap-3">
                             <div className={cn('p-2 rounded-lg border', gasPaid ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-white/10 border-white/10 text-white')}>
                                 {gasPaid

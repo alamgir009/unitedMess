@@ -875,7 +875,10 @@ async function getMealCharge() {
     const totalMeal   = mealResult?.totalMeal   || 0;
     const totalGuest  = mealResult?.totalGuest  || 0;
     const totalMarket = marketResult?.totalMarket || 0;
-    const guestRevenue = totalGuest * 60; // default guest meal rate
+    const [settingsUser] = await User.find({ isActive: true, userStatus: 'approved' })
+        .select('chargePerGuestMeal').lean();
+    const guestMealRate = settingsUser?.chargePerGuestMeal || 60;
+    const guestRevenue = totalGuest * guestMealRate;
 
     const charge = totalMeal > 0 ? (totalMarket - guestRevenue) / totalMeal : 0;
     return round2(charge);
@@ -909,7 +912,10 @@ async function getBillingMonthStats() {
     const grandTotalMeal   = mealAgg[0]?.totalMeal   || 0;
     const totalGuest       = mealAgg[0]?.totalGuest  || 0;
     const grandTotalMarket = marketAgg[0]?.totalMarket || 0;
-    const guestRevenue     = totalGuest * 60;
+    const [settingsUser] = await User.find({ isActive: true, userStatus: 'approved' })
+        .select('chargePerGuestMeal').lean();
+    const guestMealRate = settingsUser?.chargePerGuestMeal || 60;
+    const guestRevenue     = totalGuest * guestMealRate;
     const mealCharge = grandTotalMeal > 0
         ? round2((grandTotalMarket - guestRevenue) / grandTotalMeal)
         : 0;

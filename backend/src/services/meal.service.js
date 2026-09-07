@@ -245,8 +245,9 @@ const createMeal = async (mealBody) => {
     }
 
     mealBody.date = date;
-    mealBody.mealCount = mealTypeCountMap[mealBody.type] ?? 0;
+    const typeCount = mealTypeCountMap[mealBody.type] ?? 0;
     mealBody.guestCount = mealBody.isGuestMeal ? (mealBody.guestCount || 1) : 0;
+    mealBody.mealCount = typeCount + mealBody.guestCount;
 
     const mealId = new mongoose.Types.ObjectId();
     mealBody._id = mealId;

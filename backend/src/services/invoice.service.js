@@ -71,7 +71,9 @@ const calculateMessStats = async (month, year) => {
         totalMarketAmount: Number(marketStats[0]?.totalAmount || 0)
     };
 
-    const guestMealRate = 60; 
+    const [settingsUser] = await User.find({ isActive: true, userStatus: 'approved' })
+        .select('chargePerGuestMeal').lean();
+    const guestMealRate = settingsUser?.chargePerGuestMeal || 60;
     const guestRevenue = stats.totalGuestCount * guestMealRate;
 
     const mealRate = stats.totalMealCount > 0 

@@ -33,7 +33,7 @@ const ActivityIcon = memo(function ActivityIcon({ type }) {
 
 const ActivityRow = memo(function ActivityRow({ activity }) {
     return (
-        <div className="group flex items-center justify-between px-3.5 py-2.5 sm:px-5 sm:py-3.5 hover:bg-muted/40 transition-[background-color] duration-150 ease-out cursor-default transform-gpu">
+        <div className="group flex items-center justify-between px-3.5 py-2.5 sm:px-5 sm:py-3.5 hover:bg-muted/40 transition-[background-color] duration-150 ease-out cursor-default">
             <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
                 <ActivityIcon type={activity.type} />
                 <div className="min-w-0">
@@ -73,7 +73,7 @@ const RecentActivityWidget = memo(function RecentActivityWidget({ activities = [
     }
 
     return (
-        <div className="bg-card border border-border/50 rounded-2xl shadow-sm hover:shadow-md transition-[box-shadow] duration-200 ease-out flex flex-col h-full overflow-hidden transform-gpu will-change-transform">
+        <div className="bg-card border border-border/50 rounded-2xl shadow-sm hover:shadow-md transition-[box-shadow] duration-200 ease-out flex flex-col h-full overflow-hidden">
             <div className="px-4 pt-4 pb-3 sm:px-6 sm:pt-6 sm:pb-4 border-b border-border/50 flex items-center justify-between">
                 <h3 className="text-h4 font-bold text-foreground flex items-center gap-2">
                     <FiActivity className="text-primary" size={16} />
