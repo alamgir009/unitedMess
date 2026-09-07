@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { HiOutlineMagnifyingGlass, HiOutlineSparkles } from 'react-icons/hi2';
+import { HiOutlineMagnifyingGlass } from 'react-icons/hi2';
 import { TbToolsKitchen2 } from 'react-icons/tb';
 import { CAT_ICONS, CATEGORIES } from '../FoodConstants/FoodConstants';
 
@@ -17,16 +17,18 @@ const Hero = memo(({ totalCount, search, onSearchChange, activeCategory, onCateg
             <p className="text-sm sm:text-base text-muted-foreground max-w-xl leading-relaxed">
                 Every dish crafted with care — from humble breakfasts to festive spreads.
             </p>
-            <div className="relative w-full max-w-md">
-                <HiOutlineMagnifyingGlass className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                <input
-                    type="search"
-                    placeholder="Search dishes…"
-                    value={search}
-                    onChange={(e) => onSearchChange(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 rounded-2xl border border-border bg-background/60 text-foreground placeholder:text-muted-foreground backdrop-blur-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent motion-safe:transition-shadow motion-safe:duration-150"
-                    aria-label="Search dishes"
-                />
+            <div className="w-full max-w-md rounded-xl p-1.5 bg-muted/50 dark:bg-muted/30 border border-border/60 dark:border-border/40 shadow-[var(--inset-inner)] focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background motion-safe:transition-shadow motion-safe:duration-150">
+                <div className="relative flex items-center rounded-lg bg-card border border-border">
+                    <HiOutlineMagnifyingGlass className="absolute left-3 w-4 h-4 text-muted-foreground pointer-events-none" />
+                    <input
+                        type="search"
+                        placeholder="Search"
+                        value={search}
+                        onChange={(e) => onSearchChange(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-transparent text-foreground placeholder:text-muted-foreground text-sm focus:outline-none motion-safe:transition-colors motion-safe:duration-150"
+                        aria-label="Search dishes"
+                    />
+                </div>
             </div>
         </div>
 
