@@ -110,14 +110,14 @@ const Navbar = () => {
   return (
     <header
       className={cn(
-        'fixed top-0 left-0 right-0 z-sticky transition-[padding] duration-[var(--duration-base)] ease-out',
+        'fixed top-0 left-0 right-0 z-sticky will-change-transform backface-hidden transition-[padding] duration-[var(--duration-base)] ease-out',
         scrolled ? 'py-2.5' : 'py-4',
       )}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <nav
             className={cn(
-              'relative flex items-center justify-between px-5 py-2.5 rounded-2xl',
+              'relative flex items-center justify-between px-5 py-3 rounded-2xl transform-gpu',
               'transition-all duration-150',
               scrolled
                 ? 'bg-card/95 border-border navbar-depth'
@@ -140,7 +140,7 @@ const Navbar = () => {
             </span>
           </Link>
 
-          <ul className="hidden md:flex items-center gap-0.5">
+          <ul className="hidden md:flex items-center gap-1">
             {NAV_LINKS.map(({ label, href }) => {
               const isActive = location.pathname === href;
               return (
@@ -177,13 +177,13 @@ const Navbar = () => {
               </span>
             </button>
 
-            <Button variant="outline" size="sm" asChild className="hidden md:inline-flex !py-1.5 rounded-lg">
+            <Button variant="outline" size="sm" asChild className="hidden md:inline-flex !text-sm !font-medium !px-4 !py-2 !h-auto rounded-2xl">
               <Link to="/login">
                 Sign In
               </Link>
             </Button>
 
-            <Button variant="primary" size="sm" asChild className="hidden md:inline-flex !py-1.5 rounded-lg">
+            <Button variant="primary" size="sm" asChild className="hidden md:inline-flex !text-sm !font-medium !px-5 !py-2 !h-auto rounded-2xl">
               <Link to="/register">
                 Get Started
               </Link>
@@ -233,12 +233,12 @@ const Navbar = () => {
                 );
               })}
               <div className="flex flex-col gap-2 mt-2 pt-3 border-t border-border">
-                <Button variant="outline" fullWidth asChild className="!py-2 rounded-lg">
+                <Button variant="outline" fullWidth asChild className="!text-sm !font-medium !px-4 !py-2.5 !h-auto rounded-2xl">
                   <Link to="/login">
                     Sign In
                   </Link>
                 </Button>
-                <Button variant="primary" fullWidth asChild className="!py-2 rounded-lg">
+                <Button variant="primary" fullWidth asChild className="!text-sm !font-medium !px-4 !py-2.5 !h-auto rounded-2xl">
                   <Link to="/register">
                     Get Started
                   </Link>
