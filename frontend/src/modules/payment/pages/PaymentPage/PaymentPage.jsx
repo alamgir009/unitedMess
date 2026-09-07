@@ -23,7 +23,7 @@ import {
 } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 
-import { SkeletonCard }              from '@/shared/components/ui';
+import { SkeletonCard, Button }              from '@/shared/components/ui';
 import MainLayout      from '@/shared/components/layout/MainLayout/MainLayout';
 import Pagination      from '@/shared/components/ui/Pagination/Pagination';
 
@@ -156,16 +156,16 @@ const BillsOverview = React.memo(({
                                 Paid
                             </span>
                         ) : (
-                            <button
+                            <Button
                                 type="button"
+                                size="sm"
                                 disabled={isPaying}
                                 onClick={onPayMess}
                                 aria-label={`Pay ₹${fmtINR(messAmount)} mess bill`}
-                                className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 min-h-[40px] sm:min-h-[44px] rounded-lg text-xs font-bold text-white bg-gradient-primary active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-[transform,opacity,filter] duration-150 ease-out hover:brightness-90"
                             >
                                 {isPaying ? 'Processing' : (<><span className="sm:hidden">Pay</span><span className="hidden sm:inline">Pay Now</span></>)}
                                 {!isPaying && <HiOutlineArrowRight className="w-3.5 h-3.5" />}
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </div>
@@ -189,16 +189,16 @@ const BillsOverview = React.memo(({
                                     Paid
                                 </span>
                             ) : (
-                                <button
+                                <Button
                                     type="button"
+                                    size="sm"
                                     disabled={isPaying}
                                     onClick={onPayGas}
                                     aria-label={`Pay ₹${fmtINR(gasAmount)} gas bill`}
-                                    className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 min-h-[40px] sm:min-h-[44px] rounded-lg text-xs font-bold text-white bg-gradient-primary active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-[transform,opacity,filter] duration-150 ease-out hover:brightness-90"
                                 >
                                 {isPaying ? 'Processing' : (<><span className="sm:hidden">Pay</span><span className="hidden sm:inline">Pay Now</span></>)}
                                     {!isPaying && <HiOutlineArrowRight className="w-3.5 h-3.5" />}
-                                </button>
+                                </Button>
                             )}
                         </div>
                     </div>
@@ -679,14 +679,16 @@ const PaymentPage = () => {
                                 <p className="flex-1 text-sm font-medium">
                                     {message || 'Something went wrong. Please try again.'}
                                 </p>
-                                <button
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
                                     onClick={() => dispatch(reset())}
-                                    className="flex-shrink-0 p-1 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/10 transition-colors"
                                     title="Dismiss"
                                     aria-label="Dismiss error"
+                                    iconOnly
                                 >
                                     <HiOutlineXMark className="w-5 h-5" />
-                                </button>
+                                </Button>
                             </div>
                         )}
                     </AnimatePresence>

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '@/app/providers/ThemeProvider';
 import { cn } from '@/core/utils/helpers/string.helper';
+import { Button } from '@/shared/components/ui';
 
 const NAV_LINKS = [
   { label: 'Home', href: '/' },
@@ -176,19 +177,17 @@ const Navbar = () => {
               </span>
             </button>
 
-            <Link
-              to="/login"
-              className="hidden md:inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-medium text-foreground border border-border hover:bg-muted/50 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              Sign In
-            </Link>
+            <Button variant="outline" size="sm" asChild className="hidden md:inline-flex !py-1.5 rounded-lg">
+              <Link to="/login">
+                Sign In
+              </Link>
+            </Button>
 
-            <Link
-              to="/register"
-              className="hidden md:inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-gradient-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              Get Started
-            </Link>
+            <Button variant="primary" size="sm" asChild className="hidden md:inline-flex !py-1.5 rounded-lg">
+              <Link to="/register">
+                Get Started
+              </Link>
+            </Button>
 
             <button
               ref={hamburgerRef}
@@ -234,18 +233,16 @@ const Navbar = () => {
                 );
               })}
               <div className="flex flex-col gap-2 mt-2 pt-3 border-t border-border">
-                <Link
-                  to="/login"
-                  className="px-4 py-2.5 rounded-lg text-sm font-semibold text-center border border-border hover:bg-muted/50 transition-colors text-foreground"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  to="/register"
-                  className="px-4 py-2.5 rounded-lg text-sm font-semibold text-center text-white bg-gradient-primary transition-opacity shadow-sm"
-                >
-                  Get Started
-                </Link>
+                <Button variant="outline" fullWidth asChild className="!py-2 rounded-lg">
+                  <Link to="/login">
+                    Sign In
+                  </Link>
+                </Button>
+                <Button variant="primary" fullWidth asChild className="!py-2 rounded-lg">
+                  <Link to="/register">
+                    Get Started
+                  </Link>
+                </Button>
               </div>
             </div>
           </div>

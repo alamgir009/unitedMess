@@ -26,7 +26,7 @@ import {
     HiOutlineCalendarDays,
     HiOutlineXMark,
 } from 'react-icons/hi2';
-import { Spinner } from '@/shared/components/ui';
+import { Spinner, Button } from '@/shared/components/ui';
 import { fmt } from '@/core/utils/helpers/currency.helper';
 
 const MONTHS = [
@@ -468,54 +468,54 @@ const MessBillInvoice = ({
 
                     {/* ── Pay Now button ── */}
                     {!isPaid && !isRefund && !hidePayButton && (
-                        <button
+                        <Button
                             type="button"
+                            variant={isPartiallyPaid ? 'warning' : 'primary'}
+                            fullWidth
                             disabled={isPaying}
                             onClick={handleOpenPaymentFlow}
-                            className={`touch-target w-full flex items-center justify-center gap-2.5 py-3 px-5 rounded-xl text-sm font-bold text-white mt-5 transition-[transform,opacity,background,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-out)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 ${
-                                isPartiallyPaid
-                                    ? 'bg-warning hover:brightness-90 shadow-md hover:shadow-lg'
-                                    : 'bg-primary hover:brightness-90 shadow-md hover:shadow-lg'
-                            }`}
+                            className="mt-5"
                         >
                             <span>{isPartiallyPaid ? 'Pay Remaining Balance' : 'Pay Bill'}</span>
                             {!isPartiallyPaid && <HiOutlineShieldCheck className="w-4 h-4 opacity-80" />}
-                        </button>
+                        </Button>
                     )}
 
                     {/* ── Download / Email ── */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3">
-                        <button
+                        <Button
                             type="button"
+                            variant="secondary"
                             disabled={isDownloading}
                             onClick={handleDownloadPDF}
-                            className="touch-target flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold border bg-card border-input hover:bg-muted active:scale-[0.98] disabled:opacity-60 disabled:scale-100 transition-[transform,opacity,background,border-color,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-out)] text-foreground shadow-sm"
                         >
                             {isDownloading ? <Spinner size="sm" color="current" /> : <HiOutlineArrowDownTray className="w-4 h-4 flex-shrink-0" />}
                             <span>Download</span>
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="button"
+                            variant="secondary"
                             disabled={sendingEmail}
                             onClick={handleSendEmail}
-                            className="touch-target flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold border bg-card border-input hover:bg-muted active:scale-[0.98] disabled:opacity-60 disabled:scale-100 transition-[transform,opacity,background,border-color,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-out)] text-foreground shadow-sm"
                         >
                             {sendingEmail ? <Spinner size="sm" color="current" /> : <HiOutlineEnvelope className="w-4 h-4 flex-shrink-0" />}
                             <span>Email</span>
-                        </button>
+                        </Button>
                     </div>
 
                     {/* ── Admin: Email to all ── */}
                     {isAdmin && (
-                        <button
+                        <Button
                             type="button"
+                            variant="outline"
+                            fullWidth
                             disabled={sendingAllEmails}
                             onClick={openEmailAllModal}
-                            className="touch-target w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold border bg-primary/10 border-primary/20 hover:bg-primary/20 active:scale-[0.98] disabled:opacity-60 disabled:scale-100 transition-[transform,opacity,background,border-color] duration-[var(--duration-base)] ease-[var(--ease-out)] text-primary shadow-sm mt-3"
+                            className="mt-3"
                         >
                             {sendingAllEmails ? <Spinner size="sm" color="current" /> : <HiOutlineUsers className="w-4 h-4 flex-shrink-0" />}
                             <span>{sendingAllEmails ? 'Sending to all members\u2026' : 'Email to all'}</span>
-                        </button>
+                        </Button>
                     )}
 
                     {/* ── Footer ── */}
@@ -793,54 +793,54 @@ const MessBillInvoice = ({
 
             {/* ── Premium Pay Now / Remaining Button ── */}
             {!isPaid && !isRefund && !hidePayButton && (
-                <button
+                <Button
                 type="button"
+                variant={isPartiallyPaid ? 'warning' : 'primary'}
+                fullWidth
                 disabled={isPaying}
                 onClick={handleOpenPaymentFlow}
-                className={`touch-target w-full flex items-center justify-center gap-2.5 py-3 px-5 rounded-xl text-sm font-bold text-white mb-3 transition-[transform,opacity,background,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-out)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 ${
-                    isPartiallyPaid
-                    ? 'bg-warning hover:brightness-90 active:from-amber-700 active:to-amber-800 shadow-md hover:shadow-lg'
-                    : 'bg-primary hover:brightness-90 active:from-indigo-800 active:to-indigo-900 shadow-md hover:shadow-lg'
-                }`}
+                className="mb-3"
                 >
                 <span>{isPartiallyPaid ? 'Pay Remaining Balance' : 'Pay Bill'}</span>
                 {!isPartiallyPaid && <HiOutlineShieldCheck className="w-4 h-4 opacity-80" />}
-                </button>
+                </Button>
             )}
 
             {/* ── Download / Email actions ── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-                <button
+                <Button
                 type="button"
+                variant="secondary"
                 disabled={isDownloading}
                 onClick={handleDownloadPDF}
-                className="touch-target flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold border bg-card border-input hover:bg-muted active:scale-[0.98] disabled:opacity-60 disabled:scale-100 transition-[transform,opacity,background,border-color,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-out)] text-foreground shadow-sm"
                 >
                 {isDownloading ? <Spinner size="sm" color="current" /> : <HiOutlineArrowDownTray className="w-4 h-4 flex-shrink-0" />}
                 <span>Download</span>
-                </button>
-                <button
+                </Button>
+                <Button
                 type="button"
+                variant="secondary"
                 disabled={sendingEmail}
                 onClick={handleSendEmail}
-                className="touch-target flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold border bg-card border-input hover:bg-muted active:scale-[0.98] disabled:opacity-60 disabled:scale-100 transition-[transform,opacity,background,border-color,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-out)] text-foreground shadow-sm"
                 >
                 {sendingEmail ? <Spinner size="sm" color="current" /> : <HiOutlineEnvelope className="w-4 h-4 flex-shrink-0" />}
                 <span>Email</span>
-                </button>
+                </Button>
             </div>
 
             {/* ── Admin: Email to all members ── */}
             {isAdmin && (
-                <button
+                <Button
                 type="button"
+                variant="outline"
+                fullWidth
                 disabled={sendingAllEmails}
                 onClick={openEmailAllModal}
-                className="touch-target w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold border bg-primary/10 border-primary/20 hover:bg-primary/20 active:scale-[0.98] disabled:opacity-60 disabled:scale-100 transition-[transform,opacity,background,border-color] duration-[var(--duration-base)] ease-[var(--ease-out)] text-primary shadow-sm mt-3"
+                className="mt-3"
                 >
                 {sendingAllEmails ? <Spinner size="sm" color="current" /> : <HiOutlineUsers className="w-4 h-4 flex-shrink-0" />}
                 <span>{sendingAllEmails ? 'Sending to all members\u2026' : 'Email to all'}</span>
-                </button>
+                </Button>
             )}
 
             {/* ── Footer disclaimer ── */}
@@ -887,14 +887,16 @@ const MessBillInvoice = ({
                                     Email Invoice to All
                                 </h2>
                             </div>
-                            <button
+                            <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => !sendingAllEmails && setIsEmailAllModalOpen(false)}
                                 disabled={sendingAllEmails}
                                 aria-label="Close dialog"
-                                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-40"
+                                iconOnly
                             >
                                 <HiOutlineXMark className="w-5 h-5" />
-                            </button>
+                            </Button>
                         </div>
 
                         {/* ── Body ── */}
@@ -968,27 +970,28 @@ const MessBillInvoice = ({
 
                             {/* Action buttons */}
                             <div className="flex gap-3 pt-1">
-                                <button
+                                <Button
                                     type="button"
+                                    variant="secondary"
                                     id="email-all-cancel"
                                     onClick={() => setIsEmailAllModalOpen(false)}
                                     disabled={sendingAllEmails}
-                                    className="touch-target flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold border border-border bg-card hover:bg-muted text-foreground transition-[transform,opacity,background,border-color] duration-[var(--duration-base)] ease-[var(--ease-out)] disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+                                    className="flex-1"
                                 >
                                     Cancel
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     type="button"
+                                    variant="primary"
                                     id="email-all-confirm"
                                     onClick={handleEmailAll}
                                     disabled={sendingAllEmails}
-                                    className="touch-target flex-[1.3] flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-bold text-white bg-gradient-to-br from-primary to-primary/70 hover:brightness-90 shadow-md hover:shadow-lg transition-[transform,opacity,background,box-shadow] duration-[var(--duration-base)] ease-[var(--ease-out)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100"
+                                    className="flex-[1.3]"
+                                    isLoading={sendingAllEmails}
                                 >
-                                    {sendingAllEmails
-                                        ? <Spinner size="sm" color="current" />
-                                        : <HiOutlineEnvelope className="w-4 h-4 flex-shrink-0" />}
+                                    {!sendingAllEmails && <HiOutlineEnvelope className="w-4 h-4 flex-shrink-0" />}
                                     <span>{sendingAllEmails ? 'Sending\u2026' : 'Send Invoices'}</span>
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </motion.div>

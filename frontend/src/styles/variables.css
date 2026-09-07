@@ -120,8 +120,16 @@
   --btn-radius-lg: 12px;
   --btn-radius-xl: 14px;
 
+  /* === BUTTON SHADOWS (near-invisible separation — Cloudflare-grade) === */
+  --btn-shadow: 0 1px 3px rgba(0,0,0,0.10), 0 1px 2px rgba(0,0,0,0.06);
+  --btn-shadow-hover: 0 2px 6px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08);
+  --btn-shadow-active: 0 1px 2px rgba(0,0,0,0.08);
+  --btn-shadow-dark: 0 1px 3px rgba(0,0,0,0.40), 0 1px 2px rgba(0,0,0,0.30);
+  --btn-shadow-dark-hover: 0 2px 6px rgba(0,0,0,0.50), 0 1px 3px rgba(0,0,0,0.35);
+  --btn-shadow-dark-active: 0 1px 2px rgba(0,0,0,0.30);
+
   /* === BUTTON TOP HIGHLIGHT (Cloudflare-style tactile inset) === */
-  --btn-top-highlight-light: inset 0 1px 0 rgba(255,255,255,0.15);
+  --btn-top-highlight-light: inset 0 1px 0 rgba(255,255,255,0.18);
   --btn-top-highlight-dark: inset 0 1px 0 rgba(255,255,255,0.08);
 
   /* === TINT TOKENS (pill badges, subtle accents) === */
@@ -135,6 +143,7 @@
   --btn-height-sm: 32px;
   --btn-height-md: 40px;
   --btn-height-lg: 48px;
+  --btn-height-xl: 56px;
   --sidebar-width: 256px;
   --sidebar-width-collapsed: 64px;
   --navbar-height: 60px;

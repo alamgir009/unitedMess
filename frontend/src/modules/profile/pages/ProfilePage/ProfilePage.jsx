@@ -257,12 +257,13 @@ class ProfileCardErrorBoundary extends Component {
                     <p className="text-xs text-muted-foreground max-w-md mx-auto">
                         An error occurred while loading this section of your profile: {this.state.error?.message || "Unknown error"}
                     </p>
-                    <button
+                    <Button
+                        variant="destructive"
+                        size="sm"
                         onClick={() => this.setState({ hasError: false, error: null })}
-                        className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-danger text-white hover:bg-danger/90 shadow-sm transition-colors active:scale-95"
                     >
                         Try Again
-                    </button>
+                    </Button>
                 </div>
             );
         }
@@ -496,21 +497,23 @@ const ProfilePage = () => {
 
                                     <div className="h-px bg-border mx-2" />
 
-                                    <button
+                                    <Button
+                                        variant="ghost"
+                                        fullWidth
                                         onClick={() => setShowDeactivateConfirm(true)}
                                         disabled={deactivationLoading}
-                                        className="w-full flex items-center justify-between p-3 rounded-xl text-danger hover:bg-danger-bg transition-colors disabled:opacity-50 disabled:cursor-not-allowed group font-medium"
+                                        className="justify-between text-danger hover:bg-danger-bg hover:text-danger"
                                     >
-                                        <span className="flex items-center gap-3 text-sm">
-                                            <UserX className="w-5 h-5 text-danger group-hover:text-danger transition-colors" />
+                                        <span className="flex items-center gap-3">
+                                            <UserX className="w-5 h-5" />
                                             Deactivate Account
                                         </span>
                                         {deactivationLoading ? (
-                                            <Spinner size="sm" color="current" className="text-danger" />
+                                            <Spinner size="sm" color="current" />
                                         ) : (
-                                            <ChevronDown className="w-4 h-4 -rotate-90 text-danger/50" />
+                                            <ChevronDown className="w-4 h-4 -rotate-90 opacity-50" />
                                         )}
-                                    </button>
+                                    </Button>
                                 </div>
                             </CardContent>
                         </Card>
@@ -533,14 +536,15 @@ const ProfilePage = () => {
                                             <p className="text-[11px] text-muted-foreground">Your profile registration data</p>
                                         </div>
                                     </div>
-                                    <button
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
                                         onClick={() => setIsModalOpen(true)}
-                                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg border border-primary/30 text-primary bg-primary/10 hover:bg-primary/20 transition-colors active:scale-95 shadow-sm"
                                         aria-label="Edit personal details"
                                     >
                                         <Edit3 className="w-3.5 h-3.5" />
                                         Edit Profile
-                                    </button>
+                                    </Button>
                                 </div>
                                 <CardContent className="px-6 py-6">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

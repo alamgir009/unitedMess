@@ -7,7 +7,7 @@ import {
     HiOutlineShieldCheck,
     HiOutlineArrowPath,
 } from 'react-icons/hi2';
-import { Spinner } from '@/shared/components/ui';
+import { Spinner, Button } from '@/shared/components/ui';
 import { fmt } from '@/core/utils/helpers/currency.helper';
 import invoiceService from '../../services/invoice.service';
 
@@ -454,32 +454,26 @@ const InvoicePreview = ({
             <div className="px-3 sm:px-5 pb-3 space-y-2">
                 {/* Pay Now */}
                 {!status.isPaid && !amounts.isRefund && onPayNow && (
-                    <button
+                    <Button
                         type="button"
+                        variant={status.isPartiallyPaid ? 'warning' : 'primary'}
+                        fullWidth
                         disabled={isPaying}
                         onClick={handlePayNow}
-                        className={`touch-target w-full flex items-center justify-center gap-2.5 py-3 px-5 rounded-xl text-sm font-bold text-white transition-[transform,opacity,background,box-shadow] duration-150 ease-out active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 ${
-                            status.isPartiallyPaid
-                                ? 'bg-warning hover:brightness-90 shadow-md hover:shadow-lg'
-                                : 'bg-gradient-primary hover:brightness-90 shadow-md hover:shadow-lg'
-                        }`}
+                        isLoading={isPaying}
                     >
-                        {isPaying ? (
-                            <HiOutlineArrowPath className="w-4 h-4 animate-spin" />
-                        ) : (
-                            <HiOutlineShieldCheck className="w-4 h-4 opacity-80" />
-                        )}
+                        {!isPaying && <HiOutlineShieldCheck className="w-4 h-4 opacity-80" />}
                         <span>{isPaying ? 'Processing\u2026' : status.isPartiallyPaid ? 'Pay Remaining Balance' : 'Pay Bill'}</span>
-                    </button>
+                    </Button>
                 )}
 
                 {/* Download + Email */}
                 <div className="grid grid-cols-2 gap-2">
-                    <button
+                    <Button
                         type="button"
+                        variant="secondary"
                         disabled={isDownloading}
                         onClick={handleDownloadPDF}
-                        className="touch-target flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold border bg-card border-border hover:bg-muted active:scale-[0.98] disabled:opacity-60 disabled:scale-100 transition-[transform,opacity,background,border-color] duration-150 ease-out text-foreground shadow-sm"
                     >
                         {isDownloading ? (
                             <Spinner size="sm" color="current" />
@@ -487,12 +481,12 @@ const InvoicePreview = ({
                             <HiOutlineArrowDownTray className="w-4 h-4 flex-shrink-0" />
                         )}
                         <span>Download</span>
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         type="button"
+                        variant="secondary"
                         disabled={sendingEmail}
                         onClick={handleSendEmail}
-                        className="touch-target flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold border bg-card border-border hover:bg-muted active:scale-[0.98] disabled:opacity-60 disabled:scale-100 transition-[transform,opacity,background,border-color] duration-150 ease-out text-foreground shadow-sm"
                     >
                         {sendingEmail ? (
                             <Spinner size="sm" color="current" />
@@ -500,7 +494,7 @@ const InvoicePreview = ({
                             <HiOutlineEnvelope className="w-4 h-4 flex-shrink-0" />
                         )}
                         <span>Email</span>
-                    </button>
+                    </Button>
                 </div>
             </div>
 

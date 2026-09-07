@@ -42,7 +42,7 @@ const SegmentedControl = ({ className = '', isAdmin = true }) => {
             'sm:flex-none sm:px-4',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             active === value
-              ? 'bg-[var(--bg-elevated)] dark:bg-gray-400/30 text-foreground font-semibold shadow-[var(--inset-well-active)]'
+              ? 'bg-[var(--bg-elevated)] dark:bg-elevated text-foreground font-semibold shadow-[var(--inset-well-active)]'
               : 'text-[var(--text-secondary)] hover:text-foreground',
           )}
         >

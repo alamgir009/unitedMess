@@ -1,4 +1,5 @@
 import toast from 'react-hot-toast';
+import { Button } from '@/shared/components/ui';
 
 const TOAST_ID = 'app-update-notification';
 const DISMISSED_KEY = '__um_dismissed_commit';
@@ -11,7 +12,9 @@ const showUpdateToast = (source, newVersion, commit) => {
                     <p className="text-sm font-medium text-foreground">Update available</p>
                     <p className="text-xs text-muted-foreground">A new version of UnitedMess is ready</p>
                 </div>
-                <button
+                <Button
+                    variant="primary"
+                    size="sm"
                     onClick={async () => {
                         toast.dismiss(t.id);
 
@@ -44,11 +47,13 @@ const showUpdateToast = (source, newVersion, commit) => {
                         // We use location.replace so the reload doesn't add to the history stack.
                         window.location.replace(window.location.pathname + '?update=' + Date.now());
                     }}
-                    className="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 sm:px-3 py-2.5 sm:py-1.5 text-xs font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                    className="w-full sm:w-auto"
                 >
                     Update
-                </button>
-                <button
+                </Button>
+                <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={() => {
                         toast.dismiss(t.id);
                         if (commit) {
@@ -57,10 +62,10 @@ const showUpdateToast = (source, newVersion, commit) => {
                             } catch { /* quota exceeded */ }
                         }
                     }}
-                    className="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 sm:px-3 py-2.5 sm:py-1.5 text-xs font-semibold rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+                    className="w-full sm:w-auto"
                 >
                     Later
-                </button>
+                </Button>
             </div>
         ),
         {

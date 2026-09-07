@@ -266,10 +266,10 @@ export default {
         btnBase[cls] = {
           position: 'relative',
           isolation: 'isolate',
-          background: `var(--btn-${v}-from)`,
+          backgroundImage: `linear-gradient(to bottom, var(--btn-${v}-from), var(--btn-${v}-to))`,
           color: `var(--btn-${v}-label)`,
           borderColor: `var(--btn-${v}-border, transparent)`,
-          boxShadow: 'none',
+          boxShadow: 'var(--btn-shadow)',
         };
         btnBase[cls]['&::before'] = {
           content: '""',
@@ -278,25 +278,48 @@ export default {
           borderRadius: 'inherit',
           pointerEvents: 'none',
           zIndex: '10',
-          boxShadow: 'var(--btn-top-highlight-light)',
+          backgroundImage: 'var(--btn-top-highlight-light)',
         };
         btnHover[`${cls}:hover`] = {
-          background: `var(--btn-${v}-to)`,
-          boxShadow: 'none',
+          backgroundImage: `linear-gradient(to bottom, var(--btn-${v}-to), var(--btn-${v}-to))`,
+          boxShadow: 'var(--btn-shadow-hover)',
         };
         btnActive[`${cls}:active`] = {
+          backgroundImage: `linear-gradient(to bottom, var(--btn-${v}-to), var(--btn-${v}-to))`,
+          boxShadow: 'var(--btn-shadow-active)',
           opacity: '0.92',
-          boxShadow: 'none',
         };
       });
 
+      /* Dark mode overrides — applied via html.dark ancestor */
+      const darkOverrides = {};
+      filledVariants.forEach(v => {
+        const cls = `.dark .btn-${v}`;
+        darkOverrides[cls] = {
+          backgroundImage: `linear-gradient(to bottom, var(--btn-${v}-from), var(--btn-${v}-to))`,
+          boxShadow: 'var(--btn-shadow-dark)',
+        };
+        darkOverrides[`${cls}::before`] = {
+          backgroundImage: 'var(--btn-top-highlight-dark)',
+        };
+        darkOverrides[`${cls}:hover`] = {
+          backgroundImage: `linear-gradient(to bottom, var(--btn-${v}-to), var(--btn-${v}-to))`,
+          boxShadow: 'var(--btn-shadow-dark-hover)',
+        };
+        darkOverrides[`${cls}:active`] = {
+          backgroundImage: `linear-gradient(to bottom, var(--btn-${v}-to), var(--btn-${v}-to))`,
+          boxShadow: 'var(--btn-shadow-dark-active)',
+        };
+      });
+
+      /* Loading variant */
       btnBase['.btn-loading'] = {
         position: 'relative',
         isolation: 'isolate',
-        background: 'var(--btn-loading-from)',
+        backgroundImage: 'linear-gradient(to bottom, var(--btn-loading-from), var(--btn-loading-to))',
         color: 'var(--btn-loading-label)',
         borderColor: 'var(--btn-loading-border, transparent)',
-        boxShadow: 'none',
+        boxShadow: 'var(--btn-shadow)',
         pointerEvents: 'none',
       };
       btnBase['.btn-loading']['&::before'] = {
@@ -306,9 +329,17 @@ export default {
         borderRadius: 'inherit',
         pointerEvents: 'none',
         zIndex: '10',
-        boxShadow: 'var(--btn-top-highlight-light)',
+        backgroundImage: 'var(--btn-top-highlight-light)',
+      };
+      darkOverrides['.dark .btn-loading'] = {
+        backgroundImage: 'linear-gradient(to bottom, var(--btn-loading-from), var(--btn-loading-to))',
+        boxShadow: 'var(--btn-shadow-dark)',
+      };
+      darkOverrides['.dark .btn-loading::before'] = {
+        backgroundImage: 'var(--btn-top-highlight-dark)',
       };
 
+      /* Ghost — transparent, no shadow */
       btnBase['.btn-ghost'] = {
         background: 'none',
         color: 'var(--btn-ghost-label)',
@@ -325,6 +356,7 @@ export default {
         boxShadow: 'none',
       };
 
+      /* Outline — transparent with border */
       btnBase['.btn-outline'] = {
         background: 'none',
         color: 'var(--btn-outline-label)',
@@ -342,11 +374,12 @@ export default {
         boxShadow: 'none',
       };
 
+      /* Glass — translucent with border and highlight */
       btnBase['.btn-glass'] = {
-        background: 'var(--btn-glass-from)',
+        backgroundImage: 'linear-gradient(to bottom, var(--btn-glass-from), var(--btn-glass-to))',
         color: 'var(--btn-glass-label)',
         border: '1px solid var(--btn-glass-border)',
-        boxShadow: 'none',
+        boxShadow: 'var(--btn-shadow)',
       };
       btnBase['.btn-glass']['&::before'] = {
         content: '""',
@@ -355,17 +388,30 @@ export default {
         borderRadius: 'inherit',
         pointerEvents: 'none',
         zIndex: '10',
-        boxShadow: 'var(--btn-top-highlight-light)',
+        backgroundImage: 'var(--btn-top-highlight-light)',
       };
       btnHover['.btn-glass:hover'] = {
-        background: 'var(--btn-glass-to)',
-        boxShadow: 'none',
+        backgroundImage: 'linear-gradient(to bottom, var(--btn-glass-to), var(--btn-glass-to))',
+        boxShadow: 'var(--btn-shadow-hover)',
       };
       btnActive['.btn-glass:active'] = {
+        backgroundImage: 'linear-gradient(to bottom, var(--btn-glass-to), var(--btn-glass-to))',
+        boxShadow: 'var(--btn-shadow-active)',
         opacity: '0.92',
-        boxShadow: 'none',
+      };
+      darkOverrides['.dark .btn-glass'] = {
+        backgroundImage: 'linear-gradient(to bottom, var(--btn-glass-from), var(--btn-glass-to))',
+        boxShadow: 'var(--btn-shadow-dark)',
+      };
+      darkOverrides['.dark .btn-glass::before'] = {
+        backgroundImage: 'var(--btn-top-highlight-dark)',
+      };
+      darkOverrides['.dark .btn-glass:hover'] = {
+        backgroundImage: 'linear-gradient(to bottom, var(--btn-glass-to), var(--btn-glass-to))',
+        boxShadow: 'var(--btn-shadow-dark-hover)',
       };
 
+      /* Link — no background, underline on hover */
       btnBase['.btn-link'] = {
         background: 'none',
         color: 'var(--btn-outline-label)',
@@ -393,6 +439,8 @@ export default {
       addUtilities({
         ...btnActive,
       }, ['responsive', 'active']);
+
+      addUtilities(darkOverrides, ['responsive']);
     },
   ],
 }

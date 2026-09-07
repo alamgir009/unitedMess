@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { Spinner } from '@/shared/components/ui';
+import { Spinner, Button } from '@/shared/components/ui';
 
 // TODO: Replace with env variable
 const API_URL = `${import.meta.env.VITE_API_URL}/api/v1` || 'https://api.unitedmess.uk/api/v1';
@@ -72,12 +72,14 @@ const VerifyEmailPage = () => {
                         </svg>
                         <p className="text-lg">Verification failed.</p>
                         <p className="text-sm text-muted-foreground mt-2">The link may be invalid or expired.</p>
-                        <button
+                        <Button
+                            variant="primary"
+                            size="sm"
                             onClick={() => navigate('/login')}
-                            className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+                            className="mt-4"
                         >
                             Back to Login
-                        </button>
+                        </Button>
                     </div>
                 )}
             </div>

@@ -40,7 +40,7 @@ const monthYearFromDate = (dateStr) => {
 
 const PAYMENT_TYPES = [
     { value: 'mess_bill', label: 'Mess Bill', color: 'bg-[var(--accent-primary)] text-[var(--text-on-brand)]' },
-    { value: 'gas_bill',  label: 'Gas Bill',  color: 'bg-[var(--warning)] text-[#1A1A1A]' },
+    { value: 'gas_bill',  label: 'Gas Bill',  color: 'bg-[var(--warning)] text-foreground' },
     { value: 'other',     label: 'Other',     color: 'bg-[var(--bg-muted)] text-[var(--text-primary)]' },
 ];
 

@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { fetchAdminUnpaidInvoices, resolveInvoicePayment } from '../store/members.slice';
 import { toast } from 'react-hot-toast';
-import { Spinner, Avatar } from '@/shared/components/ui';
+import { Spinner, Avatar, Button } from '@/shared/components/ui';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { getLastFinalizedPeriod } from '@shared/utils/billingPeriod';
 
@@ -189,18 +189,13 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                             )}
                         </div>
                         <div className="flex gap-3 pt-1">
-                            <button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl text-sm font-bold border border-input text-muted-foreground hover:bg-muted active:opacity-80">
+                            <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
                                 Cancel
-                            </button>
-                            <button type="submit" disabled={isSaving || isSettled} className={cn(
-                                'flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black text-white dark:text-slate-950 hover:brightness-105 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed shadow-md',
-                                isRefundMode
-                                    ? 'bg-gradient-to-r from-amber-600 to-orange-600 dark:from-amber-500 dark:to-orange-500'
-                                    : 'bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500'
-                            )}>
-                                {isSaving ? <Spinner size="sm" color="white" /> : isRefundMode ? <RefreshCw size={16} /> : <CheckCircle2 size={16} />}
+                            </Button>
+                            <Button type="submit" variant={isRefundMode ? 'warning' : 'success'} disabled={isSaving || isSettled} className="flex-1" isLoading={isSaving}>
+                                {!isSaving && (isRefundMode ? <RefreshCw size={16} /> : <CheckCircle2 size={16} />)}
                                 {isSaving ? 'Saving…' : isRefundMode ? 'Issue Refund' : 'Mark Payment'}
-                            </button>
+                            </Button>
                         </div>
                     </form>
                 </div>
@@ -271,11 +266,10 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
                 <div className="col-span-1"><p className="text-[12.5px] font-bold tabular-nums text-danger-text">₹{fmt(outstanding)}</p></div>
                 <div className="col-span-1 flex items-center justify-start"><StatusPill status={invoice.status} /></div>
                 <div className="col-span-1 flex justify-end">
-                    <button onClick={() => setShowModal(true)} disabled={isSaving}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 transition-colors shadow-sm">
+                    <Button variant="success" size="sm" onClick={() => setShowModal(true)} disabled={isSaving} iconOnly={false}>
                         {isSaving ? <Spinner size="xs" color="white" /> : <ArrowRight size={13} className="stroke-[2.5]" />}
                         {isSaving ? 'Saving' : 'Resolve'}
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -314,11 +308,10 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
                         <span className="text-[12.5px] font-bold tabular-nums text-danger-text">₹ {fmt(outstanding)}</span>
                     </div>
                 </div>
-                <button onClick={() => setShowModal(true)} disabled={isSaving}
-                    className="flex items-center justify-center gap-2 py-3 rounded-full text-[13px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-60 min-h-[44px] shadow-md">
+                <Button variant="success" fullWidth onClick={() => setShowModal(true)} disabled={isSaving}>
                     {isSaving ? <Spinner size="sm" color="white" /> : <BadgeIndianRupee size={16} />}
                     {isSaving ? 'Processing…' : `Resolve — ₹ ${fmt(outstanding)}`}
-                </button>
+                </Button>
             </div>
 
             {showModal && <ResolveModal invoice={invoice} isSaving={isSaving} onClose={handleCloseModal} onResolve={handleResolveInvoice} />}

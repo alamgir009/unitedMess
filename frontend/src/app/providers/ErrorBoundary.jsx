@@ -1,4 +1,5 @@
 import { Component } from 'react';
+import { Button } from '@/shared/components/ui';
 
 class ErrorBoundary extends Component {
     constructor(props) {
@@ -21,12 +22,13 @@ class ErrorBoundary extends Component {
                     <div className="p-8 bg-card rounded-lg shadow-md border border-border">
                         <h1 className="text-2xl font-bold text-destructive mb-4">Something went wrong.</h1>
                         <p className="text-muted-foreground">Please refresh the page or try again later.</p>
-                        <button
+                        <Button
+                            variant="primary"
                             onClick={() => window.location.reload()}
-                            className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
+                            className="mt-4"
                         >
                             Refresh Page
-                        </button>
+                        </Button>
                     </div>
                 </div>
             );
