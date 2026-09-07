@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Send, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { useSelector } from 'react-redux';
+import { cn } from '@/core/utils/helpers/string.helper';
 import NotificationService from '../../services/notification.service';
 import { Modal, Button, IconSelect } from '@/shared/components/ui';
 import { FiUser, FiShield } from 'react-icons/fi';
@@ -160,7 +161,7 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                             <p className="text-sm font-semibold text-warning">
                                 Broadcast to all {estimatedRecipients} active users
                             </p>
-                            <p className="text-xs text-warning mt-1">
+                            <p className="text-caption text-warning mt-1">
                                 This will send a notification to every active user in the system. This action is logged for audit purposes.
                             </p>
                         </div>
@@ -169,18 +170,19 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
             ) : (
                 <form onSubmit={handleSubmit} className="flex flex-col gap-3">
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Send to</label>
+                        <label className="text-overline">Send to</label>
                         <div className="flex gap-2">
                             {targetTypes.map((t) => (
                                 <button
                                     key={t.value}
                                     type="button"
                                     onClick={() => setTargetType(t.value)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                                    className={cn(
+                                        'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
                                         targetType === t.value
                                             ? 'bg-primary text-white'
-                                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                    }`}
+                                            : 'bg-muted text-muted-foreground hover:bg-muted/80',
+                                    )}
                                 >
                                     {t.label}
                                 </button>
@@ -190,7 +192,7 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
 
                     {(targetType === 'USER' || targetType === 'ROLE') && (
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            <label className="text-overline">
                                 {targetType === 'USER' ? 'User ID' : 'Role'}
                             </label>
                             {targetType === 'USER' ? (
@@ -217,9 +219,9 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                     )}
 
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        <label className="text-overline">
                             Title <span className="text-destructive">*</span>
-                            <span className="text-xs text-muted-foreground ml-1">({title.length}/80)</span>
+                            <span className="text-caption text-muted-foreground ml-1">({title.length}/80)</span>
                         </label>
                         <input
                             type="text"
@@ -233,9 +235,9 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        <label className="text-overline">
                             Message <span className="text-destructive">*</span>
-                            <span className="text-xs text-muted-foreground ml-1">({message.length}/300)</span>
+                            <span className="text-caption text-muted-foreground ml-1">({message.length}/300)</span>
                         </label>
                         <textarea
                             value={message}
@@ -250,7 +252,7 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Type</label>
+                            <label className="text-overline">Type</label>
                             <IconSelect
                                 name="type"
                                 value={type}
@@ -259,7 +261,7 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                             />
                         </div>
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Priority</label>
+                            <label className="text-overline">Priority</label>
                             <IconSelect
                                 name="priority"
                                 value={priority}
@@ -299,7 +301,7 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                     <button
                         type="button"
                         onClick={() => setShowPreview(!showPreview)}
-                        className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-all"
+                        className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
                     >
                         {showPreview ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                         {showPreview ? 'Hide preview' : 'Show preview'}
@@ -307,20 +309,21 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
 
                     {showPreview && (
                         <div className="p-3 rounded-xl bg-muted border border-border">
-                            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Preview</p>
+                            <p className="text-overline mb-2">Preview</p>
                             <div className="flex items-start gap-3 p-3 rounded-lg bg-card border border-border">
-                                <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
-                                    priority === 'CRITICAL' ? 'bg-danger-bg text-danger' :
-                                    priority === 'HIGH' ? 'bg-warning-bg text-warning' :
-                                    'bg-muted text-muted-foreground'
-                                }`}>
+                                <div className={cn(
+                                    'shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold',
+                                    priority === 'CRITICAL' && 'bg-danger-bg text-danger',
+                                    priority === 'HIGH' && 'bg-warning-bg text-warning',
+                                    !['CRITICAL', 'HIGH'].includes(priority) && 'bg-muted text-muted-foreground',
+                                )}>
                                     {type.charAt(0)}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-semibold text-foreground">{previewNotification.title}</p>
-                                    <p className="text-xs text-muted-foreground mt-0.5">{previewNotification.message}</p>
+                                    <p className="text-caption text-muted-foreground mt-0.5">{previewNotification.message}</p>
                                     {actionRequired && (
-                                        <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-warning-bg text-warning">
+                                        <span className="inline-block mt-1 text-caption px-1.5 py-0.5 rounded-full font-medium bg-warning-bg text-warning">
                                             Action needed
                                         </span>
                                     )}

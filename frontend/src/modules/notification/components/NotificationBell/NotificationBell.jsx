@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bell } from 'lucide-react';
 import { useSelector } from 'react-redux';
+import { cn } from '@/core/utils/helpers/string.helper';
 import useNotifications from '../../hooks/useNotifications';
 import NotificationList from '../NotificationList/NotificationList';
 import useBodyScrollLock from '@/shared/hooks/useBodyScrollLock';
@@ -31,12 +33,12 @@ const BELL_SHAKE = {
 const NotificationBell = () => {
     const { unreadCount, lastRealtimeUpdate } = useSelector(s => s.notification);
     useNotifications({ autoFetch: false });
+    const navigate = useNavigate();
 
     const [open, setOpen] = useState(false);
     const [isShaking, setIsShaking] = useState(false);
     const prevCount = useRef(unreadCount);
 
-    // Shake animation on new notification
     useEffect(() => {
         if (lastRealtimeUpdate && unreadCount > prevCount.current) {
             setIsShaking(true);
@@ -46,7 +48,6 @@ const NotificationBell = () => {
         prevCount.current = unreadCount;
     }, [unreadCount, lastRealtimeUpdate]);
 
-    // Keyboard accessibility
     useEffect(() => {
         if (!open) return;
         const handler = (e) => { if (e.key === 'Escape') setOpen(false); };
@@ -58,6 +59,11 @@ const NotificationBell = () => {
 
     const badgeLabel = unreadCount > 99 ? '99+' : unreadCount;
 
+    const handleNotificationClick = useCallback(() => {
+        setOpen(false);
+        navigate('/notifications');
+    }, [navigate]);
+
     return (
         <div className="relative inline-block">
             <motion.button
@@ -67,17 +73,16 @@ const NotificationBell = () => {
                 aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
                 aria-haspopup="true"
                 aria-expanded={open}
-                className={`
-                    relative flex items-center justify-center
-                    w-11 h-11 rounded-xl
-                    border transition-all duration-200
-                    focus:outline-none focus-visible:ring-2
-                    focus-visible:ring-ring focus-visible:ring-offset-2
-                    ${open
+                className={cn(
+                    'relative flex items-center justify-center',
+                    'w-11 h-11 rounded-xl',
+                    'border transition-colors duration-150',
+                    'focus:outline-none focus-visible:ring-2',
+                    'focus-visible:ring-ring focus-visible:ring-offset-2',
+                    open
                         ? 'bg-muted text-foreground border-border'
-                        : 'bg-transparent border-transparent text-muted-foreground hover:bg-muted/70 hover:text-foreground hover:border-border'
-                    }
-                `}
+                        : 'bg-transparent border-transparent text-muted-foreground hover:bg-muted/70 hover:text-foreground hover:border-border',
+                )}
             >
                 <motion.span animate={isShaking ? BELL_SHAKE.animate : BELL_SHAKE.initial}>
                     <Bell className="w-5 h-5" aria-hidden />
@@ -91,13 +96,13 @@ const NotificationBell = () => {
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.4, opacity: 0 }}
                             transition={{ ...SPRING_BOUNCE, damping: 22 }}
-                            className="
-                                absolute top-0 right-0 -translate-y-[2px] translate-x-[2px]
-                                flex h-5 min-w-[20px] items-center justify-center px-1.5
-                                rounded-full bg-gradient-to-br from-red-500 to-rose-600
-                                text-[10px] font-bold leading-none text-white
-                                ring-2 ring-background shadow-sm
-                            "
+                            className={cn(
+                                'absolute top-0 right-0 -translate-y-[2px] translate-x-[2px]',
+                                'flex h-5 min-w-[20px] items-center justify-center px-1.5',
+                                'rounded-full bg-danger',
+                                'text-[10px] font-semibold leading-none text-white',
+                                'ring-2 ring-background',
+                            )}
                         >
                             {badgeLabel}
                         </motion.span>
@@ -110,9 +115,8 @@ const NotificationBell = () => {
                             key="ring"
                             initial={{ scale: 0.8, opacity: 0.6 }}
                             animate={{ scale: 1.8, opacity: 0 }}
-
                             transition={{ duration: 0.6 }}
-                                className="absolute inset-0 rounded-full bg-primary/30 pointer-events-none"
+                            className="absolute inset-0 rounded-full bg-primary/30 pointer-events-none"
                         />
                     )}
                 </AnimatePresence>
@@ -132,7 +136,7 @@ const NotificationBell = () => {
                                 animate="visible"
                                 exit="exit"
                                 transition={{ duration: 0.18 }}
-                                className="absolute inset-0 bg-black/60"
+                                className="absolute inset-0 bg-overlay"
                                 onClick={() => setOpen(false)}
                                 aria-hidden="true"
                             />
@@ -150,22 +154,20 @@ const NotificationBell = () => {
                                     willChange: 'transform, opacity',
                                     transform: 'translateZ(0)',
                                 }}
-                                className={[
+                                className={cn(
                                     'relative z-10 w-full sm:max-w-[480px] mx-auto',
                                     'rounded-t-[28px] sm:rounded-[28px]',
-                    'bg-card',
-                    'border-t border-x sm:border border-border',
+                                    'bg-card',
+                                    'border-t border-x sm:border border-border',
                                     'shadow-2xl overflow-hidden',
-                                    // Flex to manage NotificationList height
-                                    'flex flex-col max-h-[85vh] sm:max-h-[80vh]'
-                                ].join(' ')}
+                                    'flex flex-col max-h-[85vh] sm:max-h-[80vh]',
+                                )}
                             >
-                                {/* Mobile Drag Indicator */}
-                                <div className="flex justify-center pt-3 pb-2 sm:hidden shrink-0 bg-white dark:bg-slate-900" aria-hidden="true">
+                                <div className="flex justify-center pt-3 pb-2 sm:hidden shrink-0 bg-card" aria-hidden="true">
                                     <div className="w-10 h-1 rounded-full bg-muted-foreground/20" />
                                 </div>
 
-                                <NotificationList closeMenu={() => setOpen(false)} />
+                                <NotificationList closeMenu={() => setOpen(false)} onNotificationClick={handleNotificationClick} />
                             </motion.div>
                         </div>
                     )}

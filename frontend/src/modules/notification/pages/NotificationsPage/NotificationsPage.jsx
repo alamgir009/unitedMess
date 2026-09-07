@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, RefreshCw, CheckCircle2, Send, ChevronDown, ChevronUp } from 'lucide-react';
 import { useSelector } from 'react-redux';
+import { cn } from '@/core/utils/helpers/string.helper';
 import useNotifications from '../../hooks/useNotifications';
 import NotificationItem from '../../components/NotificationItem/NotificationItem';
 import NotificationService from '../../services/notification.service';
@@ -32,7 +33,7 @@ const Skeleton = () => (
     <div className="space-y-1.5 p-3" aria-busy="true" aria-label="Loading notifications">
         {Array.from({ length: 6 }, (_, i) => (
             <div key={i} className="flex items-start gap-3 p-4 rounded-xl animate-pulse">
-                <div className="shrink-0 w-10 h-10 rounded-xl bg-muted" />
+                <div className="shrink-0 w-9 h-9 rounded-xl bg-muted" />
                 <div className="flex-1 space-y-2 py-0.5">
                     <div className="h-4 bg-muted rounded w-3/4" />
                     <div className="h-3 bg-muted rounded w-full" />
@@ -99,7 +100,7 @@ const AdminComposeCard = ({ onSent }) => {
                         <form onSubmit={handleSubmit} className="px-5 pb-5 space-y-3 border-t border-border pt-4">
                             <div>
                                 <div className="flex items-center justify-between mb-1">
-                                    <label className="text-xs font-medium text-muted-foreground">Title</label>
+                                    <label className="text-caption font-medium text-muted-foreground">Title</label>
                                     <span className="text-caption text-muted-foreground">{title.length}/80</span>
                                 </div>
                                 <input
@@ -114,7 +115,7 @@ const AdminComposeCard = ({ onSent }) => {
                             </div>
                             <div>
                                 <div className="flex items-center justify-between mb-1">
-                                    <label className="text-xs font-medium text-muted-foreground">Message</label>
+                                    <label className="text-caption font-medium text-muted-foreground">Message</label>
                                     <span className="text-caption text-muted-foreground">{message.length}/300</span>
                                 </div>
                                 <textarea
@@ -198,9 +199,7 @@ const NotificationsPage = () => {
     return (
         <MainLayout>
             <div className="-mx-4 sm:mx-0 h-full flex flex-col pt-4 sm:pt-6">
-                {/* Fixed top section */}
                 <div className="shrink-0 px-4 sm:px-6 lg:px-8 space-y-4 mb-4">
-                    {/* Header */}
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
@@ -221,7 +220,7 @@ const NotificationsPage = () => {
                                 disabled={loading}
                                 aria-label="Refresh notifications"
                             >
-                                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                                <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
                                 <span className="hidden sm:inline">Refresh</span>
                             </Button>
                             {unreadCount > 0 && (
@@ -230,9 +229,13 @@ const NotificationsPage = () => {
                                     animate={{ opacity: 1, scale: 1 }}
                                     onClick={markAllAsRead}
                                     disabled={markAllLoading}
-                                    className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-sm font-medium
-                                        text-primary bg-primary/10 border border-primary/20
-                                        hover:bg-primary/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                    className={cn(
+                                        'inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg',
+                                        'text-sm font-medium',
+                                        'text-primary bg-primary/10 border border-primary/20',
+                                        'hover:bg-primary/20 disabled:opacity-50 disabled:cursor-not-allowed',
+                                        'transition-all',
+                                    )}
                                 >
                                     {markAllLoading
                                         ? <Spinner size="sm" color="current" className="!w-4 !h-4" />
@@ -244,23 +247,22 @@ const NotificationsPage = () => {
                         </div>
                     </div>
 
-                    {/* Admin Compose Card */}
                     {isAdmin && (
                         <AdminComposeCard onSent={refresh} />
                     )}
 
-                    {/* Filter Tabs */}
                     <div className="overflow-x-auto no-scrollbar">
                         <div className="flex items-center gap-1 p-1 bg-muted rounded-xl w-fit">
                             {FILTER_TABS.map((tab) => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveFilter(tab)}
-                                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+                                    className={cn(
+                                        'px-4 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
                                         activeFilter === tab
                                             ? 'bg-card text-foreground shadow-sm'
-                                            : 'text-muted-foreground hover:text-foreground'
-                                    }`}
+                                            : 'text-muted-foreground hover:text-foreground',
+                                    )}
                                 >
                                     {tab}
                                     {tab === 'Unread' && unreadCount > 0 && (
@@ -274,20 +276,19 @@ const NotificationsPage = () => {
                     </div>
                 </div>
 
-                {/* Scrollable list — edge-to-edge on mobile */}
                 <div className="flex-1 overflow-y-auto min-h-0 sm:px-6 lg:px-8 pb-4 sm:pb-6">
-                    <div className="bg-card border border-border shadow-sm overflow-hidden rounded-none sm:rounded-2xl">
+                    <div className="bg-card border border-border shadow-sm overflow-hidden rounded-2xl">
                         {loading && items.length === 0 ? (
                             <Skeleton />
                         ) : error ? (
                             <div className="flex flex-col items-center justify-center py-10 md:py-20 px-6 text-center">
-                                <div className="w-14 h-14 rounded-full mb-4 bg-destructive/10 flex items-center justify-center">
-                                    <Bell className="w-5 h-5 text-destructive" />
+                                <div className="w-14 h-14 rounded-full mb-4 bg-danger-bg flex items-center justify-center">
+                                    <Bell className="w-5 h-5 text-danger" />
                                 </div>
                                 <h4 className="text-sm font-semibold text-foreground mb-1">
                                     Failed to load
                                 </h4>
-                                <p className="text-xs text-muted-foreground max-w-[220px] leading-relaxed mb-3">
+                                <p className="text-caption text-muted-foreground max-w-[220px] leading-relaxed mb-3">
                                     {error || 'Something went wrong while fetching notifications.'}
                                 </p>
                                 <Button
@@ -301,24 +302,28 @@ const NotificationsPage = () => {
                             </div>
                         ) : filteredItems.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-10 md:py-20 px-6 text-center">
-                                <div className="w-14 h-14 rounded-full mb-4 bg-muted/50 flex items-center justify-center">
+                                <div className="w-14 h-14 rounded-full mb-4 bg-muted flex items-center justify-center">
                                     <Bell className="w-5 h-5 text-muted-foreground" />
                                 </div>
                                 <h4 className="text-sm font-semibold text-foreground mb-1">
                                     {activeFilter === 'All' ? 'All caught up!' : `No ${activeFilter.toLowerCase()} notifications`}
                                 </h4>
-                                <p className="text-xs text-muted-foreground max-w-[200px] leading-relaxed">
+                                <p className="text-caption text-muted-foreground max-w-[200px] leading-relaxed">
                                     {activeFilter === 'All'
                                         ? "We'll alert you when something needs attention"
-                                        : `Try switching to a different filter`}
+                                        : "Try switching to a different filter"}
                                 </p>
                             </div>
                         ) : (
                             <div className="divide-y divide-border/60">
                                 {groupKeys.map((groupKey) => (
                                     <div key={groupKey}>
-                                        <div className="px-5 py-2 sticky top-0 z-[1] bg-muted/95 border-b border-border/60">
-                                            <span className="text-caption font-semibold tracking-widest uppercase text-muted-foreground">
+                                        <div className={cn(
+                                            'px-5 py-2 sticky top-0 z-[1]',
+                                            'bg-muted/95 border-b border-border/60',
+                                            'backdrop-blur-sm',
+                                        )}>
+                                            <span className="text-overline font-mono text-muted-foreground">
                                                 {groupKey}
                                             </span>
                                         </div>
@@ -335,9 +340,7 @@ const NotificationsPage = () => {
                                                     transition={{ delay: delay * 0.03, type: 'spring', stiffness: 400, damping: 28 }}
                                                     ref={isLast ? sentinelRef : null}
                                                 >
-                                                    <div className="active:scale-[0.98] sm:active:scale-100 transition-transform">
-                                                        <NotificationItem notification={notif} onSelect={handleSelect} />
-                                                    </div>
+                                                    <NotificationItem notification={notif} onSelect={handleSelect} expanded />
                                                 </motion.div>
                                             );
                                         })}
@@ -346,7 +349,7 @@ const NotificationsPage = () => {
                                 {isLoadingMore && (
                                     <div className="flex items-center justify-center gap-2 py-5">
                                         <Spinner size="sm" color="current" className="text-primary" />
-                                        <span className="text-xs text-muted-foreground">Loading more&hellip;</span>
+                                        <span className="text-caption text-muted-foreground">Loading more&hellip;</span>
                                     </div>
                                 )}
                                 {!hasMore && items.length >= 20 && (
