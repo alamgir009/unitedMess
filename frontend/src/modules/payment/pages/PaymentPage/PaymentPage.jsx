@@ -53,20 +53,35 @@ import { getBillingPeriod } from '@shared/utils/billingPeriod';
 import { usePayment } from '../../hooks/usePayment';
 
 const InvoiceSkeleton = React.memo(() => (
-    <div className="card-base p-5 animate-pulse space-y-4">
-        <div className="flex justify-between">
-            <div className="h-7 w-44 bg-muted/40 rounded-md" />
-            <div className="h-7 w-28 bg-muted/30 rounded-md" />
+    <div className="card-base !rounded-2xl p-5 animate-pulse space-y-4">
+        <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+                <div className="h-5 w-20 bg-muted/40 rounded" />
+                <div className="h-4 w-16 bg-muted/30 rounded" />
+            </div>
+            <div className="text-right">
+                <div className="h-3 w-16 bg-muted/30 rounded mb-1" />
+                <div className="h-6 w-24 bg-muted/40 rounded" />
+            </div>
         </div>
-        <div className="space-y-3 pt-2">
-            {[1, 2, 3, 4, 5].map(n => (
-                <div key={n} className="flex justify-between items-center">
-                    <div className="h-3.5 w-2/5 bg-muted/30 rounded" />
-                    <div className="h-3.5 w-20  bg-muted/20 rounded" />
+        <div className="space-y-3 pt-1">
+            {[1, 2].map(n => (
+                <div key={n} className="flex justify-between items-center py-2">
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 bg-muted/30 rounded-lg" />
+                        <div>
+                            <div className="h-3.5 w-20 bg-muted/40 rounded mb-1.5" />
+                            <div className="h-2.5 w-28 bg-muted/20 rounded" />
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="h-4 w-16 bg-muted/40 rounded" />
+                        <div className="h-7 w-20 bg-muted/30 rounded-lg" />
+                    </div>
                 </div>
             ))}
         </div>
-        <div className="h-8 w-full bg-muted/30 rounded-xl mt-2" />
+        <div className="h-8 w-full bg-muted/30 rounded-lg mt-1" />
     </div>
 ));
 InvoiceSkeleton.displayName = 'InvoiceSkeleton';
@@ -110,19 +125,16 @@ const BillsOverview = React.memo(({
     if (!hasInvoiceData && gasAmount <= 0 && !bothPaid) return null;
 
     return (
-        <div className="card-base overflow-hidden shadow-sm" role="region" aria-label="Bills Due">
+        <div className="card-base !rounded-2xl overflow-hidden shadow-sm" role="region" aria-label="Bills Due">
             {/* Header */}
-            <div className="px-5 py-4 border-b border-border/40 flex items-center justify-between bg-bg-surface">
+            <div className="px-5 py-4 border-b border-border/40 flex items-center justify-between">
                 <div className="min-w-0">
                     <div className="flex items-center gap-2">
                         <p className="text-sm font-bold text-foreground">Bills Due</p>
-                        <span className="text-caption font-semibold px-2.5 py-0.5 rounded-full bg-tint/30 text-tint-text">
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-primary/8 text-primary">
                             {monthName}
                         </span>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                        {bothPaid ? 'All bills settled for this period' : 'Review and pay your pending bills'}
-                    </p>
                 </div>
                 {bothPaid ? (
                     <span className="badge-success [&::before]:content-none px-2.5 py-1 rounded-md text-[clamp(0.625rem,0.5vw+0.5rem,0.8125rem)]">
@@ -139,10 +151,10 @@ const BillsOverview = React.memo(({
             {/* Bill rows */}
             <div className="divide-y divide-border/40">
                 {/* Mess Bill Row */}
-                <div className={`px-4 py-3.5 flex items-center justify-between gap-3 sm:gap-4 hover:bg-muted/30 transition-[background-color] duration-150 ease-out${messOverdue ? ' border-l-2 border-warning bg-warning/5' : ''}`}>
+                <div className={`px-5 py-3 flex items-center justify-between gap-3 sm:gap-4 hover:bg-muted/30 transition-[background-color] duration-150 ease-out${messOverdue ? ' border-l-2 border-warning bg-warning/[0.03]' : ''}`}>
                     <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
-                            <HiOutlineCurrencyRupee className="w-5 h-5" />
+                        <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-primary/8 text-primary shrink-0">
+                            <HiOutlineCurrencyRupee className="w-4.5 h-4.5" />
                         </div>
                         <div className="min-w-0">
                             <p className="text-sm font-semibold text-foreground">Mess Bill</p>
@@ -152,12 +164,13 @@ const BillsOverview = React.memo(({
                     <div className="flex items-center gap-2 sm:gap-3 min-w-0 justify-end">
                         <span className="text-[clamp(0.8125rem,0.5vw+0.6rem,1rem)] font-bold tabular-nums text-foreground whitespace-nowrap">₹{fmtINR(messAmount)}</span>
                         {messPaid ? (
-                            <span className="badge-success [&::before]:content-none px-2.5 py-1 rounded-md text-[clamp(0.625rem,0.5vw+0.5rem,0.8125rem)]">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-success-bg text-success-text">
                                 Paid
                             </span>
                         ) : (
                             <Button
                                 type="button"
+                                variant="outline"
                                 size="sm"
                                 disabled={isPaying}
                                 onClick={onPayMess}
@@ -172,10 +185,10 @@ const BillsOverview = React.memo(({
 
                 {/* Gas Bill Row */}
                 {(gasAmount > 0 || gasPaid) && (
-                    <div className={`px-4 py-3.5 flex items-center justify-between gap-3 sm:gap-4 hover:bg-muted/30 transition-[background-color] duration-150 ease-out${gasOverdue ? ' border-l-2 border-warning bg-warning/5' : ''}`}>
+                    <div className={`px-5 py-3 flex items-center justify-between gap-3 sm:gap-4 hover:bg-muted/30 transition-[background-color] duration-150 ease-out${gasOverdue ? ' border-l-2 border-warning bg-warning/[0.03]' : ''}`}>
                         <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-warning/15 text-warning shrink-0">
-                                <HiOutlineFire className="w-5 h-5" />
+                            <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-warning/10 text-warning shrink-0">
+                                <HiOutlineFire className="w-4.5 h-4.5" />
                             </div>
                             <div className="min-w-0">
                                 <p className="text-sm font-semibold text-foreground">Gas Bill</p>
@@ -185,12 +198,13 @@ const BillsOverview = React.memo(({
                         <div className="flex items-center gap-2 sm:gap-3 min-w-0 justify-end">
                             <span className="text-[clamp(0.8125rem,0.5vw+0.6rem,1rem)] font-bold tabular-nums text-foreground whitespace-nowrap">₹{fmtINR(gasAmount)}</span>
                             {gasPaid ? (
-                                <span className="badge-success [&::before]:content-none px-2.5 py-1 rounded-md text-[clamp(0.625rem,0.5vw+0.5rem,0.8125rem)]">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-success-bg text-success-text">
                                     Paid
                                 </span>
                             ) : (
                                 <Button
                                     type="button"
+                                    variant="outline"
                                     size="sm"
                                     disabled={isPaying}
                                     onClick={onPayGas}
@@ -207,15 +221,16 @@ const BillsOverview = React.memo(({
 
             {/* Footer — View Invoice */}
             {hasInvoiceData && (
-                <div className="px-5 py-3 border-t border-border/40 bg-bg-surface">
-                    <button
-                        type="button"
+                <div className="px-5 py-3 border-t border-border/40">
+                    <Button
+                        variant="secondary"
+                        size="sm"
                         onClick={onViewInvoice}
-                        className="inline-flex items-center justify-center w-full md:w-auto gap-2 min-h-[44px] px-4 py-2 rounded-lg text-xs font-semibold bg-gradient-secondary text-btn-label-secondary border border-btn-border-secondary active:scale-[0.97] hover:brightness-95 transition-[transform,filter] duration-150 ease-out"
+                        className="w-full md:w-auto"
                     >
                         <HiOutlineDocumentText className="w-4 h-4" />
                         View Detailed Invoice
-                    </button>
+                    </Button>
                 </div>
             )}
         </div>
