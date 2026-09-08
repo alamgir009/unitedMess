@@ -28,9 +28,6 @@ const StatPill = React.memo(({ icon: Icon, label, value, color, trend, compact, 
       )}>
         {label}
       </p>
-      {sublabel && (
-        <p className="text-[10px] text-muted-foreground/60 truncate -mt-0.5">{sublabel}</p>
-      )}
       <div className="flex items-center gap-2">
         <p className={cn(
           'font-bold tracking-tight text-foreground leading-none tabular-nums truncate',
@@ -48,6 +45,9 @@ const StatPill = React.memo(({ icon: Icon, label, value, color, trend, compact, 
           </span>
         )}
       </div>
+      {sublabel && (
+        <p className="text-[10px] text-muted-foreground/60 truncate mt-0.5">{sublabel}</p>
+      )}
     </div>
   </div>
 ));

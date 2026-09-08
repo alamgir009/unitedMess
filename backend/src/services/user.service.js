@@ -49,6 +49,75 @@ const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 const round2 = (num) => Math.round((Number(num) || 0) * 100) / 100;
 
 /**
+ * ─────────────────────────────────────────────────────────────
+ * computePayableAmount — single source of truth for mess bill
+ * ─────────────────────────────────────────────────────────────
+ * Pure function.  No DB calls.  Takes pre-fetched data and
+ * returns { amount, isBilled }.
+ *
+ * Formula (fintech-grade):
+ *   totalBill = ownMeals × mealRate
+ *             + cookingCharge + waterBill + platformFee
+ *             + guestRevenue
+ *             − totalMarketAmount
+ *
+ * @param {Object}  opts
+ * @param {number}  opts.totalMeal        - total meals from Meal collection
+ * @param {number}  opts.guestMeal        - guest meals from Meal collection
+ * @param {number}  opts.totalMarketAmount - market spend from Market collection
+ * @param {number}  opts.mealRate          - global per-own-meal rate
+ * @param {number}  opts.cookingCharge     - fixed monthly cooking charge
+ * @param {number}  opts.waterBill         - fixed monthly water bill
+ * @param {number}  opts.platformFee       - fixed monthly platform fee
+ * @param {number}  opts.chargePerGuestMeal- per-guest-meal rate
+ * @param {boolean} opts.isInvoiceExempt   - invoice.isExempt flag (authoritative)
+ * @param {boolean} opts.isBillingExempt   - fresh 4-signal exemption check
+ * @returns {{ amount: number, isBilled: boolean }}
+ */
+const computePayableAmount = ({
+    totalMeal = 0,
+    guestMeal = 0,
+    totalMarketAmount = 0,
+    mealRate = 0,
+    cookingCharge = 0,
+    waterBill = 0,
+    platformFee = 0,
+    chargePerGuestMeal = 60,
+    isInvoiceExempt = false,
+    isBillingExempt = false,
+} = {}) => {
+    // Exempt = invoice says exempt OR fresh 4-signal check says exempt.
+    // Use both sources defensively — if EITHER says exempt, respect it.
+    if (isInvoiceExempt || isBillingExempt) {
+        return { amount: 0, isBilled: false };
+    }
+
+    const ownMeals = (totalMeal || 0) - (guestMeal || 0);
+    const messCost = ownMeals * (mealRate || 0);
+    const guestRevenue = (guestMeal || 0) * (chargePerGuestMeal || 60);
+    const fixedCosts = (cookingCharge || 0) + (waterBill || 0) + (platformFee || 0);
+
+    const totalBill = messCost + fixedCosts + guestRevenue - (totalMarketAmount || 0);
+    const amount = Math.round(Number(totalBill) || 0);
+
+    return { amount, isBilled: ownMeals > 0 || (guestMeal || 0) > 0 };
+};
+
+/**
+ * Check if a user is billing-exempt for a given period (4-signal check).
+ * Pure function — no DB calls.
+ *
+ * @returns {boolean}
+ */
+const isUserBillingExempt = (user, billingPeriodStart, { totalMeal = 0, totalMarketAmount = 0, billingMonth, billingYear } = {}) => {
+    if (user.activatedAt && new Date(user.activatedAt) > billingPeriodStart) return true;
+    if (billingMonth != null && billingYear != null && user.billingExemptMonth === billingMonth && user.billingExemptYear === billingYear) return true;
+    if (new Date(user.createdAt) > billingPeriodStart) return true;
+    if ((totalMeal || 0) === 0 && (totalMarketAmount || 0) === 0) return true;
+    return false;
+};
+
+/**
  * Get user by ID with optimized population
  * @param {string} userId
  * @param {string[]} [populateFields=['markets', 'meals']] - Fields to populate
@@ -664,43 +733,10 @@ async function getAllUsers(filters = {}, pagination = {}) {
                         }
                     }
                 },
-                // ── Fresh payable amount — computed from live aggregation data ──
-                // Replaces the stale User model field. Uses the same formula as
-                // getPayableAmountsBatch / getInvoice (totalBill = messCost + fixed + guest - market).
-                // Exemption check uses the Invoice collection (authoritative source),
-                // consistent with the payment field — NOT the isBillingExempt computed field.
-                paybleAmountforMeal: {
-                    $cond: {
-                        if: {
-                            $and: [
-                                { $gt: [{ $size: { $ifNull: ['$currentPeriodInvoice', []] } }, 0] },
-                                { $eq: [{ $arrayElemAt: ['$currentPeriodInvoice.isExempt', 0] }, true] }
-                            ]
-                        },
-                        then: 0,
-                        else: {
-                            $round: [{
-                                $add: [
-                                    // messCost = ownMeals × mealRate
-                                    { $multiply: [
-                                        { $subtract: ['$totalMeal', '$guestMeal'] },
-                                        mealRate
-                                    ]},
-                                    { $ifNull: ['$cookingCharge', 0] },
-                                    { $ifNull: ['$waterBill', 0] },
-                                    { $ifNull: ['$platformFee', 0] },
-                                    // guestRevenue = guestMeal × chargePerGuestMeal
-                                    { $multiply: [
-                                        '$guestMeal',
-                                        { $ifNull: ['$chargePerGuestMeal', 60] }
-                                    ]},
-                                    // − totalMarketAmount
-                                    { $multiply: [{ $ifNull: ['$totalMarketAmount', 0] }, -1] }
-                                ]
-                            }, 0]
-                        }
-                    }
-                },
+                // NOTE: paybleAmountforMeal is computed in application layer
+                // AFTER aggregation (see post-processing below).
+                // This avoids MongoDB aggregation operator pitfalls and ensures
+                // consistency with getPaybleAmountforMeal / getPayableAmountsBatch.
                 // ── Mess bill status — fintech-grade cascade ──────────────
                 // Derives status from Invoice + Payment records (source of truth).
                 // NEVER falls back to the stored user.payment field, which may
@@ -797,7 +833,8 @@ async function getAllUsers(filters = {}, pagination = {}) {
             $project: {
                 mealStats: 0,
                 marketStats: 0,
-                currentPeriodInvoice: 0,
+                // NOTE: currentPeriodInvoice is intentionally kept for
+                // application-layer paybleAmountforMeal computation below.
                 gasPayments: 0,
                 gasRefundPayments: 0,
                 messPayments: 0,
@@ -810,6 +847,37 @@ async function getAllUsers(filters = {}, pagination = {}) {
         User.aggregate(aggregationPipeline),
         User.countDocuments(query)  // uses same filters as aggregation
     ]);
+
+    // ── Application-layer payable computation (single source of truth) ──
+    // Replaces the removed MongoDB $addFields computation.
+    // Computes paybleAmountforMeal from the aggregation results + invoice data,
+    // ensuring consistency with getPaybleAmountforMeal and getPayableAmountsBatch.
+    for (const user of users) {
+        const isInvoiceExempt = (
+            Array.isArray(user.currentPeriodInvoice) &&
+            user.currentPeriodInvoice.length > 0 &&
+            user.currentPeriodInvoice[0].isExempt === true
+        );
+
+        const { amount } = computePayableAmount({
+            totalMeal: user.totalMeal,
+            guestMeal: user.guestMeal,
+            totalMarketAmount: user.totalMarketAmount,
+            mealRate,
+            cookingCharge: user.cookingCharge,
+            waterBill: user.waterBill,
+            platformFee: user.platformFee,
+            chargePerGuestMeal: user.chargePerGuestMeal,
+            isInvoiceExempt,
+            isBillingExempt: user.isBillingExempt,
+        });
+
+        user.paybleAmountforMeal = amount;
+
+        // Clean up internal fields that shouldn't leak to the API response
+        delete user.currentPeriodInvoice;
+        delete user.isBillingExempt;
+    }
 
     return {
         users,
@@ -988,31 +1056,30 @@ const recalculatePayableForUser = async (userId) => {
         const invoiceService = require('./invoice.service');
         const invoice = await invoiceService.getActiveInvoice(userId);
         
-        // If invoice is exempt, set payable to 0
-        if (invoice.isExempt) {
-            await User.findByIdAndUpdate(userId, {
-                paybleAmountforMeal: 0,
-                lastCalculatedAt: new Date()
-            });
-            return;
-        }
-        
-        // Safety: if the invoice has isExempt flag OR totalPayable is 0,
-        // don't overwrite with a stale non-zero value
-        if (invoice.isExempt || invoice.totalPayable === 0) {
-            await User.findByIdAndUpdate(userId, {
-                paybleAmountforMeal: 0,
-                lastCalculatedAt: new Date()
-            });
-            return;
-        }
+        // ── Compute payable using shared helper (single source of truth) ──
+        const user = await User.findById(userId).lean();
+        if (!user) return;
+
+        const messStats = await invoiceService.calculateMessStats(invoice.month, invoice.year);
+
+        const { amount: computedPayable } = computePayableAmount({
+            totalMeal: invoice.mealCount,
+            guestMeal: invoice.guestMealCount,
+            totalMarketAmount: invoice.marketAmountSpent,
+            mealRate: messStats.mealRate,
+            cookingCharge: invoice.fixedCosts?.cookingCharge || 0,
+            waterBill: invoice.fixedCosts?.waterBill || 0,
+            platformFee: invoice.fixedCosts?.platformFee || user.platformFee || 0,
+            chargePerGuestMeal: user.chargePerGuestMeal || 60,
+            isInvoiceExempt: invoice.isExempt,
+        });
 
         // For refunded invoices, store the SIGNED net payable (totalPayable - paidAmount)
         // so the frontend refund badge (< 0 check) works from the amount itself.
         // For non-refunded invoices, store the unsigned totalPayable (bill amount).
         const netPayable = invoice.status === 'refunded'
-            ? invoice.totalPayable - (invoice.paidAmount || 0)
-            : invoice.totalPayable;
+            ? computedPayable - (invoice.paidAmount || 0)
+            : computedPayable;
         const finalPayable = Math.round(round2(netPayable));
         await User.findByIdAndUpdate(userId, {
             paybleAmountforMeal: finalPayable,
@@ -1061,6 +1128,22 @@ const getPaybleAmountforMeal = async (userId) => {
     const user = await User.findById(userId).lean();
     if (!user) throw new AppError('User not found', 404);
 
+    // Get the global mess stats restricted to that same active month
+    const messStats = await invoiceService.calculateMessStats(invoice.month, invoice.year);
+
+    // ── Compute payable amount using shared helper (single source of truth) ──
+    const { amount: computedPayable } = computePayableAmount({
+        totalMeal: invoice.mealCount,
+        guestMeal: invoice.guestMealCount,
+        totalMarketAmount: invoice.marketAmountSpent,
+        mealRate: invoice.mealRate,
+        cookingCharge: invoice.fixedCosts?.cookingCharge || 0,
+        waterBill: invoice.fixedCosts?.waterBill || 0,
+        platformFee: invoice.fixedCosts?.platformFee || user.platformFee || 0,
+        chargePerGuestMeal: user.chargePerGuestMeal || 60,
+        isInvoiceExempt: invoice.isExempt,
+    });
+
     // If invoice is exempt, return zero amounts
     if (invoice.isExempt) {
         return {
@@ -1088,9 +1171,6 @@ const getPaybleAmountforMeal = async (userId) => {
         };
     }
     
-    // Get the global mess stats restricted to that same active month
-    const messStats = await invoiceService.calculateMessStats(invoice.month, invoice.year);
-
     // Calculate if user has paid the gas bill for this active month
     const completedGasAuth = await Payment.findOne({
         user: userId,
@@ -1099,9 +1179,7 @@ const getPaybleAmountforMeal = async (userId) => {
         type: 'gas_bill'
     }).lean();
 
-    // Rounding logic for continuity
-    const rounded = round2(invoice.totalPayable);
-    const finalPayable = Math.round(rounded);
+    const finalPayable = computedPayable;
 
     // Async update to sync the raw model (fire-and-forget)
     User.findByIdAndUpdate(userId, {
@@ -1293,51 +1371,7 @@ const getPayableAmountsBatch = async (userIds) => {
             const paymentInfo = paidTotals.get(uid) || { messTotal: 0, hasMess: false, hasGas: false };
             const userObjectId = new mongoose.Types.ObjectId(userId);
 
-            // ── Exemption check (4-signal, same as invoice.service.js) ──
-            let isExempt = false;
-
-            // Signal 1 (cheap): activatedAt set after billing period start
-            if (user.activatedAt && new Date(user.activatedAt) > billingPeriodStart) {
-                isExempt = true;
-            }
-            // Signal 2 (cheap): billingExemptMonth/Year match
-            else if (user.billingExemptMonth === bpMonth && user.billingExemptYear === bpYear) {
-                isExempt = true;
-            }
-            // Signal 3 (cheap): account created after billing period start
-            else if (new Date(user.createdAt) > billingPeriodStart) {
-                isExempt = true;
-            }
-            // Signal 4 (data-driven): zero meals + zero markets in this period
-            else {
-                const [mealAgg, marketAgg] = await Promise.all([
-                    Meal.aggregate([
-                        { $match: { user: userObjectId, date: { $gte: periodStart, $lte: periodEnd } } },
-                        { $group: { _id: null, count: { $sum: '$mealCount' } } },
-                    ]),
-                    Market.aggregate([
-                        { $match: { user: userObjectId, date: { $gte: periodStart, $lte: periodEnd } } },
-                        { $group: { _id: null, amount: { $sum: '$amount' } } },
-                    ]),
-                ]);
-                const userMealCount = mealAgg[0]?.count || 0;
-                const userMarketSpent = marketAgg[0]?.amount || 0;
-                isExempt = (userMealCount === 0 && userMarketSpent === 0);
-            }
-
-            if (isExempt) {
-                return {
-                    uid,
-                    messPayable: 0,
-                    gasPayable: user.gasBillCharge || 0,
-                    messStatus: paymentInfo.hasMess ? 'success' : 'pending',
-                    gasStatus: paymentInfo.hasGas ? 'success' : 'pending',
-                    monthName: billingMonthName,
-                    isExempt: true,
-                };
-            }
-
-            // ── Compute bill (same formula as invoice.service.js getInvoice) ──
+            // ── Fetch per-user meal/market data ──
             const [mealAgg, marketAgg] = await Promise.all([
                 Meal.aggregate([
                     { $match: { user: userObjectId, date: { $gte: periodStart, $lte: periodEnd } } },
@@ -1353,14 +1387,41 @@ const getPayableAmountsBatch = async (userIds) => {
             const userGuestCount = mealAgg[0]?.guestCount || 0;
             const userMarketSpent = marketAgg[0]?.totalAmount || 0;
 
-            const userOwnMeals = userMealCount - userGuestCount;
-            const messCost = userOwnMeals * messStats.mealRate;
-            const guestRevenue = userGuestCount * (user.chargePerGuestMeal || 60);
-            const totalBill = messCost + (user.cookingCharge || 0) + (user.waterBill || 0) + (user.platformFee || 0) + guestRevenue - userMarketSpent;
-            const totalPayable = Math.round(totalBill);
+            // ── Compute bill using shared helper (single source of truth) ──
+            const isBillingExempt = isUserBillingExempt(user, billingPeriodStart, {
+                totalMeal: userMealCount,
+                totalMarketAmount: userMarketSpent,
+                billingMonth: bpMonth,
+                billingYear: bpYear,
+            });
+
+            const { amount: totalBill } = computePayableAmount({
+                totalMeal: userMealCount,
+                guestMeal: userGuestCount,
+                totalMarketAmount: userMarketSpent,
+                mealRate: messStats.mealRate,
+                cookingCharge: user.cookingCharge || 0,
+                waterBill: user.waterBill || 0,
+                platformFee: user.platformFee || 0,
+                chargePerGuestMeal: user.chargePerGuestMeal || 60,
+                isBillingExempt,
+            });
+
+            if (isBillingExempt) {
+                return {
+                    uid,
+                    messPayable: 0,
+                    gasPayable: user.gasBillCharge || 0,
+                    messStatus: paymentInfo.hasMess ? 'success' : 'pending',
+                    gasStatus: paymentInfo.hasGas ? 'success' : 'pending',
+                    monthName: billingMonthName,
+                    isExempt: true,
+                };
+            }
+
             // Signed mess balance — NEVER clamp: >0 due, 0 settled, <0 refund credit.
-            const messPayable = Number.isFinite(totalPayable)
-                ? totalPayable - (paymentInfo.messTotal || 0)
+            const messPayable = Number.isFinite(totalBill)
+                ? totalBill - (paymentInfo.messTotal || 0)
                 : 0;
 
             return {
