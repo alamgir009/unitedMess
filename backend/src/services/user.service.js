@@ -1062,9 +1062,14 @@ const recalculatePayableForUser = async (userId) => {
 
         const messStats = await invoiceService.calculateMessStats(invoice.month, invoice.year);
 
+        // NOTE: invoice.mealCount stores OWN meals (total-guest). Reconstruct
+        // totalMeal for the helper which expects total meals including guests.
+        const invoiceOwnMeals = invoice.mealCount || 0;
+        const invoiceGuestMeals = invoice.guestMealCount || 0;
+
         const { amount: computedPayable } = computePayableAmount({
-            totalMeal: invoice.mealCount,
-            guestMeal: invoice.guestMealCount,
+            totalMeal: invoiceOwnMeals + invoiceGuestMeals,
+            guestMeal: invoiceGuestMeals,
             totalMarketAmount: invoice.marketAmountSpent,
             mealRate: messStats.mealRate,
             cookingCharge: invoice.fixedCosts?.cookingCharge || 0,
@@ -1132,11 +1137,16 @@ const getPaybleAmountforMeal = async (userId) => {
     const messStats = await invoiceService.calculateMessStats(invoice.month, invoice.year);
 
     // ── Compute payable amount using shared helper (single source of truth) ──
+    // NOTE: invoice.mealCount stores OWN meals (total-guest). Reconstruct
+    // totalMeal for the helper which expects total meals including guests.
+    const invoiceOwnMeals = invoice.mealCount || 0;
+    const invoiceGuestMeals = invoice.guestMealCount || 0;
+
     const { amount: computedPayable } = computePayableAmount({
-        totalMeal: invoice.mealCount,
-        guestMeal: invoice.guestMealCount,
+        totalMeal: invoiceOwnMeals + invoiceGuestMeals,
+        guestMeal: invoiceGuestMeals,
         totalMarketAmount: invoice.marketAmountSpent,
-        mealRate: invoice.mealRate,
+        mealRate: messStats.mealRate,
         cookingCharge: invoice.fixedCosts?.cookingCharge || 0,
         waterBill: invoice.fixedCosts?.waterBill || 0,
         platformFee: invoice.fixedCosts?.platformFee || user.platformFee || 0,
