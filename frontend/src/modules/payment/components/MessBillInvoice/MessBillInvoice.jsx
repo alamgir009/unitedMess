@@ -227,6 +227,7 @@ const MessBillInvoice = ({
     const {
         grandTotalMarketAmount = 0,
         grandTotalMeal = 0,
+        grandTotalGuest = 0,
         adjustedMealCharge = 0,
         userStats = {},
     } = data;
@@ -319,6 +320,9 @@ const MessBillInvoice = ({
                         <div className="flex-1 p-4 bg-muted/50 rounded-lg border border-border">
                             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Total Meals (All)</p>
                             <p className="text-xl font-bold text-foreground tabular-nums">{fmt(grandTotalMeal)}</p>
+                            {grandTotalGuest > 0 && (
+                                <p className="text-[10px] text-muted-foreground/60 tabular-nums mt-0.5">{fmt(grandTotalMeal - grandTotalGuest)} + {fmt(grandTotalGuest)} Guest</p>
+                            )}
                         </div>
                         <div className="flex-1 p-4 bg-primary/5 rounded-lg border border-primary/20">
                             <p className="text-[10px] font-semibold uppercase tracking-wider text-primary/70 mb-1">{isRefund ? 'Refund Due' : 'Your Payable'}</p>
@@ -615,7 +619,7 @@ const MessBillInvoice = ({
             <div className="px-4 md:px-6 pt-6 pb-2">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <StatCard icon={HiOutlineShoppingCart} label="Market Total" value={`{'\u20b9'}${fmt(grandTotalMarketAmount)}`} subLabel="All members" />
-                    <StatCard icon={HiOutlineUsers} label="Total Meals" value={fmt(grandTotalMeal)} subLabel="All members" />
+                    <StatCard icon={HiOutlineUsers} label="Total Meals" value={fmt(grandTotalMeal)} subLabel={grandTotalGuest > 0 ? `${fmt(grandTotalMeal - grandTotalGuest)} + ${fmt(grandTotalGuest)} Guest` : 'All members'} />
                     <StatCard icon={HiOutlineCurrencyRupee} label="Your Payable" value={`{'\u20b9'}${fmt(finalPayable)}`} subLabel={isRefund ? 'Refund due' : 'Due now'} accent />
                 </div>
             </div>

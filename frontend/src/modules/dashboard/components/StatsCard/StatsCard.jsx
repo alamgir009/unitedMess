@@ -2,7 +2,7 @@ import React from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/core/utils/helpers/string.helper';
 
-const StatsCard = React.memo(({ title, value, change, changeType, icon: Icon }) => {
+const StatsCard = React.memo(({ title, value, change, changeType, icon: Icon, subLabel }) => {
   const getBadgeStyle = (title) => {
     const t = String(title || '').toLowerCase();
     if (t.includes('member') || t.includes('user')) {
@@ -32,6 +32,7 @@ const StatsCard = React.memo(({ title, value, change, changeType, icon: Icon }) 
           <h3 className="text-h2 font-bold text-foreground tracking-tight leading-none tabular-nums truncate mb-1.5" title={value}>
             {value}
           </h3>
+          {subLabel && <p className="text-[10px] text-muted-foreground/60 truncate -mt-0.5">{subLabel}</p>}
 
           {change && (
             <div className="flex items-center text-xs font-semibold mt-1">

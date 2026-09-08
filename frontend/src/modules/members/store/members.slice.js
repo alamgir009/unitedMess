@@ -212,6 +212,7 @@ export const membersSlice = createSlice({
                 const d = action.payload || {};
                 state.billingStats = {
                     grandTotalMeal:   d.grandTotalMeal   ?? 0,
+                    grandTotalGuest:  d.grandTotalGuest  ?? 0,
                     grandTotalMarket: d.grandTotalMarket ?? 0,
                     mealCharge:       d.mealCharge       ?? 0,
                     billingMonth:     d.billingMonth     ?? '',

@@ -129,6 +129,9 @@ const AdminDashboard = () => {
         {
             title: 'Total Meals',
             value: mealGrandTotal?.overallMeal ?? 0,
+            subLabel: (mealGrandTotal?.overallGuestMeal ?? 0) > 0
+                ? `${(mealGrandTotal?.overallMeal ?? 0) - (mealGrandTotal?.overallGuestMeal ?? 0)} + ${mealGrandTotal?.overallGuestMeal} Guest`
+                : undefined,
             icon: Coffee,
         },
         {

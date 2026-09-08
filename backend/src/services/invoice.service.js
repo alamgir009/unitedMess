@@ -76,8 +76,9 @@ const calculateMessStats = async (month, year) => {
     const guestMealRate = settingsUser?.chargePerGuestMeal || 60;
     const guestRevenue = stats.totalGuestCount * guestMealRate;
 
-    const mealRate = stats.totalMealCount > 0 
-        ? (stats.totalMarketAmount - guestRevenue) / stats.totalMealCount 
+    const totalOwnMeals = stats.totalMealCount - stats.totalGuestCount;
+    const mealRate = totalOwnMeals > 0 
+        ? (stats.totalMarketAmount - guestRevenue) / totalOwnMeals 
         : 0;
 
     return { 
@@ -234,7 +235,8 @@ const getInvoice = async (userId, month, year) => {
     const uGuestCount = userMeals[0]?.guestCount || 0;
     const uMarketSpent = userMarkets[0]?.totalAmount || 0;
 
-    const messCost = uMealCount * messStats.mealRate;
+    const uOwnMeals = uMealCount - uGuestCount;
+    const messCost = uOwnMeals * messStats.mealRate;
     const guestRevenue = uGuestCount * (user.chargePerGuestMeal || 60);
 
     const totalBill = messCost + (user.cookingCharge || 0) + (user.waterBill || 0) + (user.platformFee || 0) + guestRevenue - uMarketSpent;
@@ -245,7 +247,7 @@ const getInvoice = async (userId, month, year) => {
 
     const invoiceData = {
         user: userId, month, year, monthName,
-        mealCount: uMealCount,
+        mealCount: uOwnMeals,
         guestMealCount: uGuestCount,
         marketAmountSpent: uMarketSpent,
         mealRate: messStats.mealRate,
@@ -608,6 +610,7 @@ const emailAllInvoices = async (month, year) => {
     const messStats = await calculateMessStats(month, year);
     const grandTotalMarket = messStats.totalMarketAmount;
     const grandTotalMeal   = messStats.totalMealCount;
+    const grandTotalGuest  = messStats.totalGuestCount;
 
     /* ── Process most-recent completed payment for each member (for PDF payment block) ── */
     // FIX: Use explicit 'en-US' locale — see calculatePaidAmount for rationale
@@ -624,6 +627,7 @@ const emailAllInvoices = async (month, year) => {
         /* Annotate with mess-wide totals so pdf.service can render stat cards */
         invoice._messGrandTotalMarket = grandTotalMarket;
         invoice._messGrandTotalMeal   = grandTotalMeal;
+        invoice._messGrandTotalGuest  = grandTotalGuest;
 
         /* Attach latest completed payment details for the payment block */
         const latestPayment = await Payment.findOne({

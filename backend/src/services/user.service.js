@@ -851,9 +851,12 @@ async function getGrandTotalMeal() {
     const { start, end } = getBillingPeriod();
     const [result] = await Meal.aggregate([
         { $match: { date: { $gte: start, $lte: end } } },
-        { $group: { _id: null, total: { $sum: '$mealCount' } } }
+        { $group: { _id: null, total: { $sum: '$mealCount' }, guestTotal: { $sum: '$guestCount' } } }
     ]);
-    return result?.total || 0;
+    return {
+        overallMeal: result?.total || 0,
+        overallGuestMeal: result?.guestTotal || 0,
+    };
 }
 
 /**
@@ -880,7 +883,8 @@ async function getMealCharge() {
     const guestMealRate = settingsUser?.chargePerGuestMeal || 60;
     const guestRevenue = totalGuest * guestMealRate;
 
-    const charge = totalMeal > 0 ? (totalMarket - guestRevenue) / totalMeal : 0;
+    const totalOwnMeals = totalMeal - totalGuest;
+    const charge = totalOwnMeals > 0 ? (totalMarket - guestRevenue) / totalOwnMeals : 0;
     return round2(charge);
 }
 
@@ -916,12 +920,14 @@ async function getBillingMonthStats() {
         .select('chargePerGuestMeal').lean();
     const guestMealRate = settingsUser?.chargePerGuestMeal || 60;
     const guestRevenue     = totalGuest * guestMealRate;
-    const mealCharge = grandTotalMeal > 0
-        ? round2((grandTotalMarket - guestRevenue) / grandTotalMeal)
+    const totalOwnMeals = grandTotalMeal - totalGuest;
+    const mealCharge = totalOwnMeals > 0
+        ? round2((grandTotalMarket - guestRevenue) / totalOwnMeals)
         : 0;
 
     return {
         grandTotalMeal,
+        grandTotalGuest: totalGuest,
         grandTotalMarket: round2(grandTotalMarket),
         mealCharge,
         billingMonth: monthName,
@@ -1065,6 +1071,7 @@ const getPaybleAmountforMeal = async (userId) => {
     return {
         grandTotalMarketAmount: round2(messStats.totalMarketAmount),
         grandTotalMeal: messStats.totalMealCount,
+        grandTotalGuest: messStats.totalGuestCount,
         totalGuestRevenue: round2(messStats.guestRevenue),
         adjustedMealCharge: round2(invoice.mealRate),
         userStats: {
@@ -1305,7 +1312,8 @@ const getPayableAmountsBatch = async (userIds) => {
             const userGuestCount = mealAgg[0]?.guestCount || 0;
             const userMarketSpent = marketAgg[0]?.totalAmount || 0;
 
-            const messCost = userMealCount * messStats.mealRate;
+            const userOwnMeals = userMealCount - userGuestCount;
+            const messCost = userOwnMeals * messStats.mealRate;
             const guestRevenue = userGuestCount * (user.chargePerGuestMeal || 60);
             const totalBill = messCost + (user.cookingCharge || 0) + (user.waterBill || 0) + (user.platformFee || 0) + guestRevenue - userMarketSpent;
             const totalPayable = Math.round(totalBill);

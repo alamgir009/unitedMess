@@ -175,6 +175,7 @@ const generateInvoicePDF = (invoiceData, user) => {
             /* Mess-wide stats */
             const grandTotalMarket = invoiceData._messGrandTotalMarket ?? 0;
             const grandTotalMeal   = invoiceData._messGrandTotalMeal   ?? 0;
+            const grandTotalGuest  = invoiceData._messGrandTotalGuest  ?? 0;
 
             /* ── Create PDF document ── */
             doc = new PDFDocument({
@@ -328,6 +329,11 @@ const generateInvoicePDF = (invoiceData, user) => {
             doc.text('TOTAL MEALS (ALL)', card2X + 10, cardY + 8);
             doc.fontSize(18).font('NotoSans-SemiBold').fillColor(C.gray900);
             doc.text(`${fmt(grandTotalMeal)}`, card2X + 10, cardY + 22);
+            if (grandTotalGuest > 0) {
+                const totalOwn = grandTotalMeal - grandTotalGuest;
+                doc.fontSize(7).font('NotoSans-Regular').fillColor(C.gray400);
+                doc.text(`${fmt(totalOwn)} + ${fmt(grandTotalGuest)} Guest`, card2X + 10, cardY + 42);
+            }
 
             // Card 3 — Your Payable
             const card3X = MARGIN + (cardW + cardGap) * 2;

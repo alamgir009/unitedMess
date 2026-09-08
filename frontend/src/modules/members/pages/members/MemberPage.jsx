@@ -113,6 +113,9 @@ const MemberPage = React.memo(() => {
                 icon: IoFastFoodOutline,
                 label: 'Total Meals',
                 value: billingStatsLoading ? '...' : formattedTotalMeals,
+                sublabel: (billingStats.grandTotalGuest ?? 0) > 0
+                    ? `${(billingStats.grandTotalMeal ?? 0) - (billingStats.grandTotalGuest ?? 0)} + ${billingStats.grandTotalGuest} Guest`
+                    : undefined,
                 color: 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400',
             },
             {

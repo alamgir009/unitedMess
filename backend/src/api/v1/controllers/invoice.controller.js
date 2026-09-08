@@ -254,6 +254,7 @@ const _buildInvoiceForPdf = async (targetUserId, year, month) => {
     // which getInvoice() does not provide.
     invoice._messGrandTotalMarket = messStats.totalMarketAmount;
     invoice._messGrandTotalMeal = messStats.totalMealCount;
+    invoice._messGrandTotalGuest = messStats.totalGuestCount;
 
     // If getInvoice() didn't attach payment data (exempt path), fetch it.
     if (!invoice._paymentMethod) {

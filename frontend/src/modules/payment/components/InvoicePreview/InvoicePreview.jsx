@@ -100,7 +100,8 @@ const InvoicePreview = ({
     const grandStats = useMemo(() => ({
         marketTotal: invoice?._messGrandTotalMarket ?? 0,
         totalMeals: invoice?._messGrandTotalMeal ?? 0,
-    }), [invoice?._messGrandTotalMarket, invoice?._messGrandTotalMeal]);
+        totalGuest: invoice?._messGrandTotalGuest ?? 0,
+    }), [invoice?._messGrandTotalMarket, invoice?._messGrandTotalMeal, invoice?._messGrandTotalGuest]);
 
     /* ── User-level values ── */
     const userValues = useMemo(() => ({
@@ -267,6 +268,11 @@ const InvoicePreview = ({
                         <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-muted-foreground leading-tight">
                             Total Meals (All)
                         </p>
+                        {grandStats.totalGuest > 0 && (
+                            <p className="text-[9px] sm:text-[10px] text-muted-foreground/60 tabular-nums mt-0.5">
+                                {fmt(grandStats.totalMeals - grandStats.totalGuest)} + {fmt(grandStats.totalGuest)} Guest
+                            </p>
+                        )}
                         <p className="text-sm sm:text-base font-bold tabular-nums text-foreground mt-auto pt-1">
                             {fmt(grandStats.totalMeals)}
                         </p>

@@ -276,8 +276,8 @@ const getGrandTotalMarketAmount = asyncHandler(async (req, res) => {
 });
 
 const getGrandTotalMeal = asyncHandler(async (req, res) => {
-    const overallMeal = await userService.getGrandTotalMeal();
-    sendSuccessResponse(res, 200, 'Overall total meals', { overallMeal });
+    const { overallMeal, overallGuestMeal } = await userService.getGrandTotalMeal();
+    sendSuccessResponse(res, 200, 'Overall total meals', { overallMeal, overallGuestMeal });
 });
 
 const getMealCharge = asyncHandler(async (req, res) => {
