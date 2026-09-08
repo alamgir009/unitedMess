@@ -401,6 +401,11 @@ async function getAllUsers(filters = {}, pagination = {}) {
     // Calculate billing period start for exemption check
     const billingPeriodStart = new Date(Date.UTC(billingYear, billingMonth - 1, 1));
 
+    // Compute the global meal rate once for all users (avoids N separate calls).
+    const invoiceService = require('./invoice.service');
+    const messStats = await invoiceService.calculateMessStats(billingMonth, billingYear);
+    const mealRate = messStats.mealRate || 0;
+
     const aggregationPipeline = [
         { $match: query },
         {
@@ -425,7 +430,6 @@ async function getAllUsers(filters = {}, pagination = {}) {
                 waterBill: 1,
                 platformFee: 1,
                 chargePerGuestMeal: 1,
-                paybleAmountforMeal: 1,
             }
         },
         { $sort: { name: 1 } }, // Alphabetical sort for member directory
@@ -657,6 +661,43 @@ async function getAllUsers(filters = {}, pagination = {}) {
                                 then: true,
                                 else: false
                             }
+                        }
+                    }
+                },
+                // ── Fresh payable amount — computed from live aggregation data ──
+                // Replaces the stale User model field. Uses the same formula as
+                // getPayableAmountsBatch / getInvoice (totalBill = messCost + fixed + guest - market).
+                // Exemption check uses the Invoice collection (authoritative source),
+                // consistent with the payment field — NOT the isBillingExempt computed field.
+                paybleAmountforMeal: {
+                    $cond: {
+                        if: {
+                            $and: [
+                                { $gt: [{ $size: { $ifNull: ['$currentPeriodInvoice', []] } }, 0] },
+                                { $eq: [{ $arrayElemAt: ['$currentPeriodInvoice.isExempt', 0] }, true] }
+                            ]
+                        },
+                        then: 0,
+                        else: {
+                            $round: [{
+                                $add: [
+                                    // messCost = ownMeals × mealRate
+                                    { $multiply: [
+                                        { $subtract: ['$totalMeal', '$guestMeal'] },
+                                        mealRate
+                                    ]},
+                                    { $ifNull: ['$cookingCharge', 0] },
+                                    { $ifNull: ['$waterBill', 0] },
+                                    { $ifNull: ['$platformFee', 0] },
+                                    // guestRevenue = guestMeal × chargePerGuestMeal
+                                    { $multiply: [
+                                        '$guestMeal',
+                                        { $ifNull: ['$chargePerGuestMeal', 60] }
+                                    ]},
+                                    // − totalMarketAmount
+                                    { $multiply: [{ $ifNull: ['$totalMarketAmount', 0] }, -1] }
+                                ]
+                            }, 0]
                         }
                     }
                 },

@@ -154,7 +154,7 @@ SectionHeading.displayName = 'SectionHeading';
    MemberInvoiceDetails — root component
 ───────────────────────────────────────────── */
 const MemberInvoiceDetails = React.memo(({ user, isAdmin }) => {
-    const formattedMeals = useMemo(() => fmt(user?.totalMeal ?? 0), [user?.totalMeal]);
+    const formattedMeals = useMemo(() => fmt((user?.totalMeal ?? 0) - (user?.guestMeal ?? 0)), [user?.totalMeal, user?.guestMeal]);
     const formattedGuest = useMemo(() => fmt(user?.guestMeal ?? 0), [user?.guestMeal]);
     const formattedCooking = useMemo(() => fmt(user?.cookingCharge ?? 0), [user?.cookingCharge]);
     const formattedGas = useMemo(() => fmt(user?.gasBillCharge ?? 0), [user?.gasBillCharge]);

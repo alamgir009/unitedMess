@@ -16,12 +16,14 @@ import MemberTable from '../../components/MemberTable';
 import StatPill from '@/shared/components/ui/StatPill/StatPill';
 import { RoleBadge } from '@/shared/components/ui';
 import { fetchUsers, fetchBillingMonthStats, reset } from '../../store/members.slice';
+import { useLocation } from 'react-router-dom';
 
 /* ─────────────────────────────────────────────
    MemberPage — Main
  ───────────────────────────────────────────── */
 const MemberPage = React.memo(() => {
     const dispatch = useDispatch();
+    const location = useLocation();
     const { users, isLoading, isError, message, billingStats, billingStatsLoading } = useSelector((state) => state.members);
     const { user: currentUser } = useSelector((state) => state.auth);
     const isAdmin = currentUser?.role === 'admin';
@@ -54,7 +56,7 @@ const MemberPage = React.memo(() => {
             userStatus: 'approved' 
         }));
         dispatch(fetchBillingMonthStats());
-    }, [dispatch]);
+    }, [dispatch, location.pathname]);
 
     /* ── visibility / focus — re-fetch when user returns to this tab ── */
     useEffect(() => {
