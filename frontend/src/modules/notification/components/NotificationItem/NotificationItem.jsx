@@ -57,10 +57,11 @@ const NotificationItem = ({ notification, onSelect, expanded = false }) => {
                 'group flex items-start w-full text-left',
                 'gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3',
                 'rounded-none transition-all duration-150',
-                'border-b border-border/50 last:border-0',
+                'border-b border-border/40 last:border-0',
                 'active:scale-[0.99]',
+                isRead && 'opacity-80',
                 isUrgent && 'bg-danger-bg sm:border-l-[3px] border-l-2 border-l-danger',
-                !isUrgent && notification.isRead === false && 'bg-primary/[0.06]',
+                !isUrgent && notification.isRead === false && 'bg-primary/5',
             )}
         >
             {/* ── Avatar ── */}
@@ -80,13 +81,13 @@ const NotificationItem = ({ notification, onSelect, expanded = false }) => {
                     'leading-snug',
                     !expanded && 'line-clamp-2',
                     'text-foreground',
-                    isRead && 'text-secondary-foreground',
+                    isRead && 'text-muted-foreground',
                 )}>
                     {notification.message}
                 </p>
 
                 <div className="flex items-center gap-2 pt-0.5">
-                    <span className="text-caption font-mono text-muted-foreground">
+                    <span className="text-caption font-mono text-muted-foreground/80">
                         {formatTime(notification.createdAt)}
                     </span>
 

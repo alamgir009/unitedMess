@@ -243,7 +243,7 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
                 ) : items.length === 0 ? (
                     <EmptyState hasUnread={unreadCount > 0} />
                 ) : (
-                    <div className="divide-y divide-border/50 py-1">
+                    <div className="divide-y divide-border/60 py-1">
                         {groupKeys.map(groupKey => (
                             <div key={groupKey}>
                                 <GroupLabel label={groupKey} />
@@ -288,7 +288,7 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
                 <div className={cn(
                     'shrink-0 px-4 py-3',
                     'border-t border-border',
-                    'bg-muted',
+                    'bg-muted/70',
                     'flex items-center justify-between',
                 )}>
                     <button
