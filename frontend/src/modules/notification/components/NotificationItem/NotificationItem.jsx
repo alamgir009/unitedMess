@@ -55,18 +55,17 @@ const NotificationItem = ({ notification, onSelect, expanded = false }) => {
             onClick={handleClick}
             className={cn(
                 'group flex items-start w-full text-left',
-                'gap-3 sm:gap-4 px-4 sm:px-5 py-3 sm:py-4',
+                'gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3',
                 'rounded-none transition-all duration-150',
-                'border-b border-border/40 last:border-0',
+                'border-b border-border/50 last:border-0',
                 'active:scale-[0.99]',
-                isRead && 'opacity-70',
                 isUrgent && 'bg-danger-bg sm:border-l-[3px] border-l-2 border-l-danger',
-                !isUrgent && notification.isRead === false && 'bg-primary/5',
+                !isUrgent && notification.isRead === false && 'bg-primary/[0.06]',
             )}
         >
             {/* ── Avatar ── */}
             <div className={cn(
-                'shrink-0 rounded-xl p-2',
+                'shrink-0 rounded-lg p-1.5',
                 'transition-colors duration-150',
                 'bg-card',
                 bg,
@@ -81,13 +80,13 @@ const NotificationItem = ({ notification, onSelect, expanded = false }) => {
                     'leading-snug',
                     !expanded && 'line-clamp-2',
                     'text-foreground',
-                    isRead && 'text-muted-foreground',
+                    isRead && 'text-secondary-foreground',
                 )}>
                     {notification.message}
                 </p>
 
                 <div className="flex items-center gap-2 pt-0.5">
-                    <span className="text-caption font-mono text-muted-foreground/70">
+                    <span className="text-caption font-mono text-muted-foreground">
                         {formatTime(notification.createdAt)}
                     </span>
 

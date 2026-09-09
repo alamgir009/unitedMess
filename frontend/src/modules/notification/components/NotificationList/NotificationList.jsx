@@ -29,14 +29,14 @@ const groupByDate = (notifications) => {
 
 /* ─── Skeleton ───────────────────────────────────────────────────────────── */
 const Skeleton = () => (
-    <div className="space-y-1.5 p-3" aria-busy="true" aria-label="Loading notifications">
+    <div className="space-y-1 p-2" aria-busy="true" aria-label="Loading notifications">
         {Array.from({ length: 4 }, (_, i) => (
-            <div key={i} className="flex items-start gap-3 p-3 rounded-xl animate-pulse">
-                <div className="shrink-0 w-9 h-9 rounded-xl bg-muted" />
-                <div className="flex-1 space-y-2 py-0.5">
-                    <div className="h-3.5 bg-muted rounded w-3/4" />
-                    <div className="h-3 bg-muted rounded w-full" />
-                    <div className="h-2.5 bg-muted rounded w-2/5" />
+            <div key={i} className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg animate-pulse">
+                <div className="shrink-0 w-7 h-7 rounded-lg bg-muted" />
+                <div className="flex-1 space-y-1.5 py-0.5">
+                    <div className="h-3 bg-muted rounded w-3/4" />
+                    <div className="h-2.5 bg-muted rounded w-full" />
+                    <div className="h-2 bg-muted rounded w-2/5" />
                 </div>
             </div>
         ))}
@@ -48,10 +48,10 @@ const EmptyState = ({ hasUnread }) => (
     <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center justify-center py-14 px-6 text-center"
+        className="flex flex-col items-center justify-center py-12 px-6 text-center"
     >
         <div className={cn(
-            'w-14 h-14 rounded-full mb-4',
+            'w-12 h-12 rounded-full mb-3',
             'flex items-center justify-center',
             'bg-muted',
         )}>
@@ -77,10 +77,10 @@ const ErrorState = ({ error, onRetry }) => (
     <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center justify-center py-14 px-6 text-center"
+        className="flex flex-col items-center justify-center py-12 px-6 text-center"
     >
         <div className={cn(
-            'w-14 h-14 rounded-full mb-4',
+            'w-12 h-12 rounded-full mb-3',
             'flex items-center justify-center',
             'bg-danger-bg',
         )}>
@@ -109,9 +109,8 @@ const ErrorState = ({ error, onRetry }) => (
 /* ─── Group label ────────────────────────────────────────────────────────── */
 const GroupLabel = ({ label }) => (
     <div className={cn(
-        'px-4 py-2 sticky top-0 z-[1]',
-        'bg-muted/90 border-b border-border',
-        'backdrop-blur-sm',
+        'px-4 py-1.5 sticky top-0 z-[1]',
+        'bg-muted border-b border-border',
     )}>
         <span className="text-overline font-mono">
             {label}
@@ -176,16 +175,16 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
             <div className={cn(
                 'sticky top-0 z-10 shrink-0',
                 'flex items-center justify-between',
-                'px-5 py-4',
+                'px-4 py-3',
                 'border-b border-border',
-                'bg-card/90 backdrop-blur-sm',
+                'bg-card',
             )}>
                 <div className="flex items-center gap-2.5">
                     <div className={cn(
-                        'w-9 h-9 rounded-2xl shadow-lg',
+                        'w-8 h-8 rounded-xl shadow-lg',
                         'bg-primary flex items-center justify-center',
                     )}>
-                        <Bell className="w-5 h-5 text-white" aria-hidden />
+                        <Bell className="w-4 h-4 text-white" aria-hidden />
                     </div>
                     <div>
                         <h3 className="font-semibold text-foreground text-body-lg tracking-tight">
@@ -206,7 +205,7 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
                             disabled={markAllLoading}
                             aria-label="Mark all notifications as read"
                             className={cn(
-                                'shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl',
+                                'shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg',
                                 'text-xs font-semibold text-white',
                                 'bg-primary shadow-sm',
                                 'hover:bg-primary/90 active:scale-[0.97]',
@@ -244,7 +243,7 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
                 ) : items.length === 0 ? (
                     <EmptyState hasUnread={unreadCount > 0} />
                 ) : (
-                    <div className="divide-y divide-border/60 py-1">
+                    <div className="divide-y divide-border/50 py-1">
                         {groupKeys.map(groupKey => (
                             <div key={groupKey}>
                                 <GroupLabel label={groupKey} />
@@ -287,9 +286,9 @@ const NotificationList = ({ closeMenu, onNotificationClick }) => {
             {/* ── Footer ── */}
             {items.length > 0 && (
                 <div className={cn(
-                    'shrink-0 px-5 py-4',
+                    'shrink-0 px-4 py-3',
                     'border-t border-border',
-                    'bg-muted/50',
+                    'bg-muted',
                     'flex items-center justify-between',
                 )}>
                     <button

@@ -30,14 +30,14 @@ const groupByDate = (notifications) => {
 };
 
 const Skeleton = () => (
-    <div className="space-y-1.5 p-3" aria-busy="true" aria-label="Loading notifications">
+    <div className="space-y-1 p-2" aria-busy="true" aria-label="Loading notifications">
         {Array.from({ length: 6 }, (_, i) => (
-            <div key={i} className="flex items-start gap-3 p-4 rounded-xl animate-pulse">
-                <div className="shrink-0 w-9 h-9 rounded-xl bg-muted" />
-                <div className="flex-1 space-y-2 py-0.5">
-                    <div className="h-4 bg-muted rounded w-3/4" />
-                    <div className="h-3 bg-muted rounded w-full" />
-                    <div className="h-2.5 bg-muted rounded w-2/5" />
+            <div key={i} className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg animate-pulse">
+                <div className="shrink-0 w-7 h-7 rounded-lg bg-muted" />
+                <div className="flex-1 space-y-1.5 py-0.5">
+                    <div className="h-3 bg-muted rounded w-3/4" />
+                    <div className="h-2.5 bg-muted rounded w-full" />
+                    <div className="h-2 bg-muted rounded w-2/5" />
                 </div>
             </div>
         ))}
@@ -78,7 +78,7 @@ const AdminComposeCard = ({ onSent }) => {
             <button
                 type="button"
                 onClick={() => setOpen(!open)}
-                className="w-full flex items-center justify-between px-5 py-3.5 text-body font-semibold text-foreground hover:bg-muted/50 transition-colors"
+                className="w-full flex items-center justify-between px-4 py-3 text-body font-semibold text-foreground hover:bg-muted/50 transition-colors"
             >
                 <span className="flex items-center gap-2">
                     <Send className="w-4 h-4 text-primary" />
@@ -97,7 +97,7 @@ const AdminComposeCard = ({ onSent }) => {
                         transition={{ duration: 0.2, ease: 'easeInOut' }}
                         className="overflow-hidden"
                     >
-                        <form onSubmit={handleSubmit} className="px-5 pb-5 space-y-3 border-t border-border pt-4">
+                        <form onSubmit={handleSubmit} className="px-4 pb-4 space-y-3 border-t border-border pt-3">
                             <div>
                                 <div className="flex items-center justify-between mb-1">
                                     <label className="text-caption font-medium text-muted-foreground">Title</label>
@@ -202,12 +202,12 @@ const NotificationsPage = () => {
                 <div className="shrink-0 px-4 sm:px-6 lg:px-8 space-y-4 mb-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
-                                <Bell className="w-6 h-6" />
+                            <div className="p-2 bg-primary/10 text-primary rounded-xl">
+                                <Bell className="w-5 h-5" />
                             </div>
                             <div>
-                                <h1 className="text-h1">Notifications</h1>
-                                <p className="text-body text-muted-foreground">
+                                <h1 className="text-h2">Notifications</h1>
+                                <p className="text-label text-muted-foreground">
                                     {total} total &middot; {unreadCount} unread
                                 </p>
                             </div>
@@ -258,7 +258,7 @@ const NotificationsPage = () => {
                                     key={tab}
                                     onClick={() => setActiveFilter(tab)}
                                     className={cn(
-                                        'px-4 py-1.5 rounded-lg text-body font-medium transition-all whitespace-nowrap',
+                                        'px-4 py-1.5 rounded-lg text-label font-medium transition-all whitespace-nowrap',
                                         activeFilter === tab
                                             ? 'bg-card text-foreground shadow-sm'
                                             : 'text-muted-foreground hover:text-foreground',
@@ -282,7 +282,7 @@ const NotificationsPage = () => {
                             <Skeleton />
                         ) : error ? (
                             <div className="flex flex-col items-center justify-center py-10 md:py-20 px-6 text-center">
-                                <div className="w-14 h-14 rounded-full mb-4 bg-danger-bg flex items-center justify-center">
+                                <div className="w-12 h-12 rounded-full mb-3 bg-danger-bg flex items-center justify-center">
                                     <Bell className="w-5 h-5 text-danger" />
                                 </div>
                                 <h4 className="text-body font-semibold text-foreground mb-1">
@@ -302,7 +302,7 @@ const NotificationsPage = () => {
                             </div>
                         ) : filteredItems.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-10 md:py-20 px-6 text-center">
-                                <div className="w-14 h-14 rounded-full mb-4 bg-muted flex items-center justify-center">
+                                <div className="w-12 h-12 rounded-full mb-3 bg-muted flex items-center justify-center">
                                     <Bell className="w-5 h-5 text-muted-foreground" />
                                 </div>
                                 <h4 className="text-body font-semibold text-foreground mb-1">
@@ -319,7 +319,7 @@ const NotificationsPage = () => {
                                 {groupKeys.map((groupKey) => (
                                     <div key={groupKey}>
                                         <div className={cn(
-                                            'px-5 py-2 sticky top-0 z-[1]',
+                                            'px-4 py-1.5 sticky top-0 z-[1]',
                                             'bg-muted/95 border-b border-border/60',
                                             'backdrop-blur-sm',
                                         )}>

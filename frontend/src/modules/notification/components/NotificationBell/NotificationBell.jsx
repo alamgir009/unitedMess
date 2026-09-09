@@ -156,11 +156,11 @@ const NotificationBell = () => {
                                 }}
                                 className={cn(
                                     'relative z-10 w-full sm:max-w-[480px] mx-auto',
-                                    'rounded-t-[28px] sm:rounded-[28px]',
+                                    'rounded-t-2xl sm:rounded-2xl',
                                     'bg-card',
                                     'border-t border-x sm:border border-border',
                                     'shadow-2xl overflow-hidden',
-                                    'flex flex-col max-h-[85vh] sm:max-h-[80vh]',
+                                    'flex flex-col max-h-[75vh] sm:max-h-[80vh]',
                                 )}
                             >
                                 <div className="flex justify-center pt-3 pb-2 sm:hidden shrink-0 bg-card" aria-hidden="true">
