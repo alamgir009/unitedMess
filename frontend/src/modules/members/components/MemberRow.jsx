@@ -193,7 +193,7 @@ const MemberRow = React.memo(({ user, index, isLast, isAdmin }) => {
             <div
                 className={[
                     'overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]',
-                    isExpanded ? 'max-h-[2400px] opacity-100' : 'max-h-0 opacity-0',
+                    isExpanded ? 'max-h-[1600px] opacity-100' : 'max-h-0 opacity-0',
                 ].join(' ')}
                 aria-hidden={!isExpanded}
             >
@@ -206,7 +206,7 @@ const MemberRow = React.memo(({ user, index, isLast, isAdmin }) => {
                         isLast ? 'md:rounded-b-[1.5rem]' : '',
                     ].join(' ')}
                 >
-                    {isExpanded && <MemberInvoiceDetails user={user} isAdmin={isAdmin} />}
+                    {isExpanded && <MemberInvoiceDetails user={user} />}
                 </div>
             </div>
         </div>

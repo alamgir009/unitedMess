@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import {
-    Mail, Phone, ShieldCheck, Flame, Droplets,
-    Utensils, Users, Banknote, Hash, Fuel,
-    CheckCircle2, Clock, XCircle, ArrowDownToLine,ReceiptIndianRupee
+    Flame, Droplets,
+    Utensils, Users, Banknote, Fuel,
+    CheckCircle2, Clock, XCircle, ArrowDownToLine, ReceiptIndianRupee
 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────
@@ -12,30 +12,6 @@ const fmt = (n) =>
     typeof n === 'number'
         ? n.toLocaleString('en-IN', { maximumFractionDigits: 2 })
         : (n ?? 'N/A');
-
-/* ─────────────────────────────────────────────
-   InfoItem — contact/identity row
-───────────────────────────────────────────── */
-const InfoItem = React.memo(({ icon: Icon, label, value }) => (
-    <div className="flex items-center gap-3.5">
-        <div
-            className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center
-                       bg-muted
-                       text-muted-foreground"
-        >
-            <Icon size={16} strokeWidth={2} />
-        </div>
-        <div className="flex flex-col min-w-0">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.07em] mb-0.5">
-                {label}
-            </span>
-            <span className="text-[13.5px] font-semibold text-foreground truncate">
-                {value ?? 'N/A'}
-            </span>
-        </div>
-    </div>
-));
-InfoItem.displayName = 'InfoItem';
 
 /* ─────────────────────────────────────────────
    InvoiceCard — large financial metric tile
@@ -153,7 +129,7 @@ SectionHeading.displayName = 'SectionHeading';
 /* ─────────────────────────────────────────────
    MemberInvoiceDetails — root component
 ───────────────────────────────────────────── */
-const MemberInvoiceDetails = React.memo(({ user, isAdmin }) => {
+const MemberInvoiceDetails = React.memo(({ user }) => {
     const formattedMeals = useMemo(() => fmt((user?.totalMeal ?? 0) - (user?.guestMeal ?? 0)), [user?.totalMeal, user?.guestMeal]);
     const formattedGuest = useMemo(() => fmt(user?.guestMeal ?? 0), [user?.guestMeal]);
     const formattedCooking = useMemo(() => fmt(user?.cookingCharge ?? 0), [user?.cookingCharge]);
@@ -165,123 +141,73 @@ const MemberInvoiceDetails = React.memo(({ user, isAdmin }) => {
     return (
         <div className="w-full animate-[expandIn_0.35s_cubic-bezier(0.22,1,0.36,1)_both]">
 
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
+            <div className="flex flex-col gap-5">
 
-                {/* ════════════════════════════════
-                    Left column — Identity panel
-                ════════════════════════════════ */}
-                <div
-                    className="xl:col-span-4 flex flex-col
-                               bg-card
-                               rounded-2xl border border-border
-                               shadow-sm p-5 md:p-6"
-                >
-                    <SectionHeading color="blue-500">Identity &amp; Contact</SectionHeading>
-
-                    <div className="flex flex-col gap-4 flex-1">
-                        {isAdmin && <InfoItem icon={Mail} label="Email Address" value={user?.email} />}
-                        {isAdmin && <InfoItem icon={Phone} label="Phone Number" value={user?.phone} />}
-                        <InfoItem
-                            icon={ShieldCheck}
-                            label="System Role"
-                            value={
-                                <span className="capitalize">
-                                    {user?.role ?? 'member'}
-                                </span>
-                            }
-                        />
-                    </div>
-
-                    {/* User ID footer */}
-                    <div
-                        className="mt-5 pt-4 border-t border-border
-                                   flex items-center justify-between gap-3"
-                    >
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest shrink-0">
-                            <Hash size={10} strokeWidth={2.5} />
-                            User ID
-                        </div>
-                        <span
-                            title={user?._id ?? user?.id}
-                            className="text-[11px] font-mono font-semibold text-muted-foreground
-                                       truncate max-w-[160px] bg-muted
-                                       px-2 py-1 rounded-md border border-border"
-                        >
-                            {user?._id ?? user?.id ?? '—'}
-                        </span>
-                    </div>
+                <div className="px-1">
+                    <SectionHeading color="amber-500">Financial Statement</SectionHeading>
                 </div>
 
-                {/* ════════════════════════════════
-                    Right column — Financial breakdown
-                ════════════════════════════════ */}
-                <div className="xl:col-span-8 flex flex-col gap-5">
-
-                    <div className="px-1">
-                        <SectionHeading color="amber-500">Financial Statement</SectionHeading>
-                    </div>
-
-                    {/* ── Mini metrics grid ── */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
-                        <MiniMetric
-                            icon={Utensils}
-                            label="Own Meals"
-                            value={formattedMeals}
-                            subtext="total count"
-                        />
-                        <MiniMetric
-                            icon={Users}
-                            label="Guest Meals"
-                            value={formattedGuest}
-                            subtext={`₹${formattedGuestRate} each`}
-                        />
-                        <MiniMetric
-                            icon={Flame}
-                            label="Cooking Charge"
-                            value={`₹\u202F${formattedCooking}`}
-                            subtext="monthly fixed"
-                        />
-                        <MiniMetric
-                            icon={Fuel}
-                            label="Gas Bill"
-                            value={`₹\u202F${formattedGas}`}
-                            subtext="per member share"
-                        />
-                        <MiniMetric
-                            icon={Droplets}
-                            label="Water Bill"
-                            value={`₹\u202F${formattedWater}`}
-                            subtext="per member share"
-                        />
-                        <MiniMetric
-                            icon={ReceiptIndianRupee}
-                            label="Platform Fee"
-                            value={`₹\u202F${formattedPlatform}`}
-                            subtext="fixed service fee"
-                        />
-                    </div>
-
-                    {/* ── Grand total cards ── */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <InvoiceCard
-                            icon={Banknote}
-                            label="Payable Meal Amount"
-                            amount={user?.paybleAmountforMeal ?? 0}
-                            accent="amber"
-                            subtext="Based on meal count × monthly rate"
-                        />
-                        <InvoiceCard
-                            icon={ReceiptIndianRupee}
-                            label="Total Market Amount"
-                            amount={user?.totalMarketAmount ?? 0}
-                            accent="blue"
-                            subtext="Combined market purchases & contributions"
-                        />
-                    </div>
-
-                    {/* ── Net position summary bar ── */}
-                    <PaymentStatusBanner user={user} />
+                {/* ── Mini metrics grid ── */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
+                    <MiniMetric
+                        icon={Utensils}
+                        label="Own Meals"
+                        value={formattedMeals}
+                        subtext="total count"
+                    />
+                    <MiniMetric
+                        icon={Users}
+                        label="Guest Meals"
+                        value={formattedGuest}
+                        subtext={`₹${formattedGuestRate} each`}
+                    />
+                    <MiniMetric
+                        icon={Flame}
+                        label="Cooking Charge"
+                        value={`₹\u202F${formattedCooking}`}
+                        subtext="monthly fixed"
+                    />
+                    <MiniMetric
+                        icon={Fuel}
+                        label="Gas Bill"
+                        value={`₹\u202F${formattedGas}`}
+                        subtext="per member share"
+                    />
+                    <MiniMetric
+                        icon={Droplets}
+                        label="Water Bill"
+                        value={`₹\u202F${formattedWater}`}
+                        subtext="per member share"
+                    />
+                    <MiniMetric
+                        icon={ReceiptIndianRupee}
+                        label="Platform Fee"
+                        value={`₹\u202F${formattedPlatform}`}
+                        subtext="fixed service fee"
+                    />
                 </div>
+
+                {/* ── Grand total cards ── */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <InvoiceCard
+                        icon={Banknote}
+                        label="Payable Meal Amount"
+                        amount={user?.paybleAmountforMeal ?? 0}
+                        accent="amber"
+                        subtext="Based on meal count × monthly rate"
+                    />
+                    <InvoiceCard
+                        icon={ReceiptIndianRupee}
+                        label="Total Market Amount"
+                        amount={user?.totalMarketAmount ?? 0}
+                        accent="blue"
+                        subtext="Combined market purchases & contributions"
+                    />
+                </div>
+
+                {/* ── Net position summary bar ── */}
+                <PaymentStatusBanner user={user} />
+
             </div>
 
             <style>{`
