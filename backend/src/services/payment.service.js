@@ -215,7 +215,7 @@ const createPayment = async (paymentBody) => {
         user: student._id,
         createdBy: createdBy || student._id, // Audit trail
         status: paymentBody.status || 'completed',
-        paymentDate: paymentBody.paymentDate || new Date(),
+        paymentDate: (paymentBody.paymentDate && String(paymentBody.paymentDate).includes('T')) ? paymentBody.paymentDate : new Date(),
     };
 
     const payment = await Payment.create(paymentData);
@@ -671,7 +671,7 @@ const createBulkPayments = async (body) => {
     const docs = users.map(user => ({
         user: user._id,
         amount: paymentData.amount ?? 0,
-        paymentDate: paymentData.paymentDate || new Date(),
+        paymentDate: (paymentData.paymentDate && String(paymentData.paymentDate).includes('T')) ? paymentData.paymentDate : new Date(),
         month: paymentData.month,
         type: paymentData.type || 'mess_bill',
         status: paymentData.status || 'completed',

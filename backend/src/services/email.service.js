@@ -632,7 +632,7 @@ const sendPaymentStatusEmail = async (to, name, payment, status) => {
         : 'Other Payment';
 
     const paymentDate = payment.paymentDate
-        ? new Date(payment.paymentDate).toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short' })
+        ? new Date(payment.paymentDate).toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Asia/Kolkata' })
         : 'N/A';
 
     const content = `
