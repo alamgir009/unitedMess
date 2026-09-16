@@ -18,6 +18,10 @@ const PaymentCellContent = memo(({ entries = [], loading, error, isCompact, onRe
     () => entries.some((e) => e.status === 'failed'),
     [entries],
   );
+  const hasRefunded = useMemo(
+    () => entries.some((e) => e.status === 'refunded'),
+    [entries],
+  );
 
   if (loading) {
     return <div className="skeleton h-8 w-full rounded-md" />;
@@ -45,6 +49,7 @@ const PaymentCellContent = memo(({ entries = [], loading, error, isCompact, onRe
       className={cn(
         'flex items-center gap-1 min-w-0 cursor-pointer rounded-sm',
         !isCompact && hasFailed && 'bg-[var(--danger-bg)]/40 border-l-[3px] border-[var(--payment-failed)] pl-1.5',
+        !isCompact && hasRefunded && !hasFailed && 'bg-violet-500/[0.03]',
       )}
       onClick={onCellClick}
       role="button"
@@ -53,17 +58,26 @@ const PaymentCellContent = memo(({ entries = [], loading, error, isCompact, onRe
     >
       {isCompact ? (
         <>
-          <span className="text-xs font-semibold tabular-nums text-[var(--text-primary)]">
+          <span className={cn(
+            'text-xs font-semibold tabular-nums',
+            hasRefunded ? 'text-violet-600 dark:text-violet-400' : 'text-[var(--text-primary)]',
+          )}>
             ₹{fmt(total)}
           </span>
           <StatusDotCluster entries={entries} />
         </>
       ) : (
         <>
-          <CreditCard className="w-[14px] h-[14px] text-[var(--payment-paid)] shrink-0" aria-hidden="true" />
+          <CreditCard className={cn(
+            'w-[14px] h-[14px] shrink-0',
+            hasRefunded ? 'text-violet-400' : 'text-[var(--payment-paid)]',
+          )} aria-hidden="true" />
           <AvatarCluster members={members} size="sm" maxAvatars={2} />
           <StatusDotCluster entries={entries} />
-          <span className="text-[10px] font-semibold tabular-nums text-[var(--text-primary)] ml-auto leading-none">
+          <span className={cn(
+            'text-[10px] font-semibold tabular-nums ml-auto leading-none',
+            hasRefunded ? 'text-violet-600 dark:text-violet-400' : 'text-[var(--text-primary)]',
+          )}>
             ₹{fmt(total)}
           </span>
         </>

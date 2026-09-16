@@ -4,6 +4,7 @@ import {
     HiOutlineCheckCircle,
     HiOutlineClock,
     HiOutlineUserGroup,
+    HiOutlineReceiptRefund,
 } from 'react-icons/hi2';
 import StatPill from '@/shared/components/ui/StatPill/StatPill';
 import { cn } from '@/core/utils/helpers/string.helper';
@@ -12,12 +13,14 @@ const COLORS = {
     primary: 'bg-primary/10 border-primary/20 text-primary',
     emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400',
     amber: 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400',
+    violet: 'bg-violet-500/10 border-violet-500/20 text-violet-600 dark:text-violet-400',
     secondary: 'bg-secondary-500/10 border-secondary-500/20 text-secondary-600 dark:text-secondary-400',
 };
 
 const PaymentStatsBar = React.memo(({ payments = [], isAdmin, totalCount = 0 }) => {
     const stats = useMemo(() => {
         let totalPaid = 0;
+        let totalRefunded = 0;
         let pendingCount = 0;
         const userIds = new Set();
 
@@ -25,6 +28,8 @@ const PaymentStatsBar = React.memo(({ payments = [], isAdmin, totalCount = 0 }) 
             const p = payments[i];
             if (p.status === 'completed') {
                 totalPaid += p.amount || 0;
+            } else if (p.status === 'refunded') {
+                totalRefunded += Math.abs(p.amount || 0);
             } else if (p.status === 'pending' || p.status === 'pending_verification') {
                 pendingCount += 1;
             }
@@ -50,6 +55,16 @@ const PaymentStatsBar = React.memo(({ payments = [], isAdmin, totalCount = 0 }) 
                 color: COLORS.emerald,
             },
         ];
+
+        if (totalRefunded > 0) {
+            items.push({
+                icon: HiOutlineReceiptRefund,
+                label: 'Refunded',
+                sublabel: totalCount > payments.length ? 'This page only' : undefined,
+                value: `\u20B9${totalRefunded.toLocaleString('en-IN')}`,
+                color: COLORS.violet,
+            });
+        }
 
         if (pendingCount > 0) {
             items.push({
@@ -77,7 +92,7 @@ const PaymentStatsBar = React.memo(({ payments = [], isAdmin, totalCount = 0 }) 
         'grid gap-3 sm:gap-4 items-stretch',
         stats.length === 2 && 'grid-cols-2 max-w-2xl',
         stats.length === 3 && 'grid-cols-2 md:grid-cols-3',
-        stats.length === 4 && 'grid-cols-2 lg:grid-cols-4'
+        stats.length >= 4 && 'grid-cols-2 lg:grid-cols-4'
     );
 
     return (

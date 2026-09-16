@@ -796,5 +796,6 @@ module.exports = {
     deletePaymentById,
     verifyUserExists,
     syncInvoiceAfterPayment,
+    syncUserPaymentStatus,
     parseMonthString,
 };

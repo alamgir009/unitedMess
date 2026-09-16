@@ -74,7 +74,7 @@ const finalizeMonth = asyncHandler(async (req, res) => {
     if (!month || !year) {
         throw new AppError('Month and year are required', 400);
     }
-    const results = await invoiceService.finalizeMonth(month, year);
+    const results = await invoiceService.finalizeMonth(month, year, req.user.id);
     sendSuccessResponse(res, 200, `Finalized invoices for ${month}/${year}`, { count: results.length });
 });
 

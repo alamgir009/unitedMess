@@ -37,6 +37,7 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewIn
     const stat   = STATUS[payment.status] || STATUS.pending;
     const typeC  = TYPE[payment.type]     || TYPE.other;
     const amount = Number(payment.amount ?? 0);
+    const isRefund = payment.status === 'refunded';
 
     return (
         <article
@@ -54,10 +55,14 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewIn
             </div>
 
             <div className="flex items-center gap-2.5 px-4 mt-3 flex-wrap">
-                <div className="flex items-baseline gap-0.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 ring-1 ring-indigo-200/80 dark:ring-indigo-500/20">
-                    <span className="text-sm font-bold text-indigo-500">₹</span>
-                    <span className="text-lg font-black tabular-nums text-indigo-700 dark:text-indigo-300">
-                        {amount.toLocaleString('en-IN')}
+                <div className={`flex items-baseline gap-0.5 px-2.5 py-1 rounded-lg ring-1 ${
+                    isRefund
+                        ? 'bg-violet-50 dark:bg-violet-500/10 ring-violet-200/80 dark:ring-violet-500/20'
+                        : 'bg-indigo-50 dark:bg-indigo-500/10 ring-indigo-200/80 dark:ring-indigo-500/20'
+                }`}>
+                    <span className={`text-sm font-bold ${isRefund ? 'text-violet-500' : 'text-indigo-500'}`}>{isRefund ? '-₹' : '₹'}</span>
+                    <span className={`text-lg font-black tabular-nums ${isRefund ? 'text-violet-700 dark:text-violet-300' : 'text-indigo-700 dark:text-indigo-300'}`}>
+                        {Math.abs(amount).toLocaleString('en-IN')}
                     </span>
                 </div>
                 <span className={`text-[10px] font-bold px-2.5 py-[3px] rounded-full ring-1 ${stat.cls}`}>
@@ -162,14 +167,18 @@ const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInv
     const stat   = STATUS[payment.status] || STATUS.pending;
     const typeC  = TYPE[payment.type]     || TYPE.other;
     const amount = Number(payment.amount ?? 0);
+    const isRefund = payment.status === 'refunded';
 
     return (
         <div
             ref={ref}
             className="group relative flex items-center gap-3 px-3 py-2.5 rounded-xl bg-card border border-border/40 hover:bg-muted/20 transition-colors duration-200 depth-top overflow-hidden contain-content"
         >
-            <div className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center
-                bg-indigo-50 dark:bg-indigo-400/10 text-indigo-600 dark:text-indigo-400">
+            <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
+                isRefund
+                    ? 'bg-violet-50 dark:bg-violet-400/10 text-violet-600 dark:text-violet-400'
+                    : 'bg-indigo-50 dark:bg-indigo-400/10 text-indigo-600 dark:text-indigo-400'
+            }`}>
                 <HiOutlineCurrencyRupee className="w-4 h-4" />
             </div>
 
@@ -195,8 +204,8 @@ const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInv
                     </div>
                     <span className="text-muted-foreground/25">·</span>
                     <div className="flex items-center gap-1">
-                        <span className="font-black tabular-nums text-indigo-700 dark:text-indigo-300">
-                            ₹{amount.toLocaleString('en-IN')}
+                        <span className={`font-black tabular-nums ${isRefund ? 'text-violet-700 dark:text-violet-300' : 'text-indigo-700 dark:text-indigo-300'}`}>
+                            {isRefund ? '-' : ''}₹{Math.abs(amount).toLocaleString('en-IN')}
                         </span>
                     </div>
                     <span className="text-muted-foreground/25">·</span>

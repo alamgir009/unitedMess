@@ -114,9 +114,11 @@ const BillsOverview = React.memo(({
     const gasPaid = gasBillStatus === 'success';
     const messOverdue = messBillStatus === 'overdue';
     const gasOverdue = gasBillStatus === 'overdue';
-    const messDue = !messPaid;
-    const gasDue = !gasPaid;
-    const bothPaid = messPaid && gasPaid;
+    const messRefunded = messBillStatus === 'refunded';
+    const gasRefunded = gasBillStatus === 'refunded';
+    const messDue = !messPaid && !messRefunded;
+    const gasDue = !gasPaid && !gasRefunded;
+    const bothPaid = (messPaid || messRefunded) && (gasPaid || gasRefunded);
     const totalDue = (messDue ? messAmount : 0) + (gasDue ? gasAmount : 0);
     const monthName = payableAmountData?.monthName || 'Current Period';
 
@@ -163,7 +165,11 @@ const BillsOverview = React.memo(({
                     </div>
                     <div className="flex items-center gap-2 sm:gap-3 min-w-0 justify-end">
                         <span className="text-[clamp(0.8125rem,0.5vw+0.6rem,1rem)] font-bold tabular-nums text-foreground whitespace-nowrap">₹{fmtINR(messAmount)}</span>
-                        {messPaid ? (
+                        {messRefunded ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-violet-500/15 text-violet-600 dark:text-violet-400">
+                                Refunded
+                            </span>
+                        ) : messPaid ? (
                             <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-success-bg text-success-text">
                                 Paid
                             </span>
@@ -184,7 +190,7 @@ const BillsOverview = React.memo(({
                 </div>
 
                 {/* Gas Bill Row */}
-                {(gasAmount > 0 || gasPaid) && (
+                {(gasAmount > 0 || gasPaid || gasRefunded) && (
                     <div className={`px-5 py-3 flex items-center justify-between gap-3 sm:gap-4 hover:bg-muted/30 transition-[background-color] duration-150 ease-out${gasOverdue ? ' border-l-2 border-warning bg-warning/[0.03]' : ''}`}>
                         <div className="flex items-center gap-3 min-w-0">
                             <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-warning/10 text-warning shrink-0">
@@ -197,7 +203,11 @@ const BillsOverview = React.memo(({
                         </div>
                         <div className="flex items-center gap-2 sm:gap-3 min-w-0 justify-end">
                             <span className="text-[clamp(0.8125rem,0.5vw+0.6rem,1rem)] font-bold tabular-nums text-foreground whitespace-nowrap">₹{fmtINR(gasAmount)}</span>
-                            {gasPaid ? (
+                            {gasRefunded ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-violet-500/15 text-violet-600 dark:text-violet-400">
+                                    Refunded
+                                </span>
+                            ) : gasPaid ? (
                                 <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-success-bg text-success-text">
                                     Paid
                                 </span>

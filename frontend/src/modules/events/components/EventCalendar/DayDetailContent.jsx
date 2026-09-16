@@ -143,6 +143,7 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
             const avatarSrc = entry.user?.image || (isUnpopulated ? currentUser?.image : undefined);
             const isFailed = entry.status === 'failed';
             const isCompleted = entry.status === 'completed';
+            const isRefundEntry = entry.status === 'refunded';
 
             if (isDutyFulfilled && entry._id === fulfilledEntryId) return null;
 
@@ -209,6 +210,7 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
                   'hover:bg-[var(--bg-muted)] hover:shadow-xs',
                   (category === 'payments' && onPaymentEdit || isOwnEntry) && 'cursor-pointer',
                   isFailed && 'bg-[var(--danger-bg)]/40 border-l-[3px] border-[var(--payment-failed)] pl-2.5',
+                  isRefundEntry && !isFailed && 'bg-violet-500/[0.03]',
                 )}
                 style={{ height: ROW_HEIGHT }}
               >
@@ -244,8 +246,11 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {(category === 'markets' || category === 'payments') && (
-                    <span className="text-sm font-bold tabular-nums tracking-tight text-[var(--text-primary)]">
-                      ₹{fmt(entry.amount)}
+                    <span className={cn(
+                      'text-sm font-bold tabular-nums tracking-tight',
+                      isRefundEntry ? 'text-violet-600 dark:text-violet-400' : 'text-[var(--text-primary)]',
+                    )}>
+                      {isRefundEntry ? '-' : ''}₹{fmt(Math.abs(entry.amount))}
                     </span>
                   )}
                   {category === 'payments' && entry.status && (

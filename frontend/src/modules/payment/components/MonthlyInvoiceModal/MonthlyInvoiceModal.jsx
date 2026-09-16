@@ -17,6 +17,7 @@ const toPaymentStatus = (invoiceStatus) => {
     switch (invoiceStatus) {
         case 'paid':           return 'success';
         case 'partially_paid': return 'partially_paid';
+        case 'refunded':       return 'refunded';
         case 'unpaid':
         default:               return 'pending';
     }

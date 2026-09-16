@@ -20,7 +20,8 @@ const pdfService   = require('./pdf.service');
  */
 function determineInvoiceStatus(paidAmount, totalPayable) {
     if (paidAmount < 0) return 'refunded';
-    if (totalPayable <= 0) return 'paid';
+    if (totalPayable < 0) return 'refunded';
+    if (totalPayable === 0) return 'paid';
     if (paidAmount >= totalPayable) return 'paid';
     if (paidAmount > 0) return 'partially_paid';
     return 'unpaid';
@@ -357,7 +358,14 @@ const getUserInvoiceHistory = async (userId) => {
  * Finalize all invoices for a given month
  * Excludes users who are EXEMPT (activated after billing period started)
  */
-const finalizeMonth = async (month, year) => {
+const finalizeMonth = async (month, year, adminId) => {
+    // Resolve admin ID for refund Payment records (createdBy is required)
+    let resolvedAdminId = adminId;
+    if (!resolvedAdminId) {
+        const admin = await User.findOne({ role: 'admin' }).select('_id').lean();
+        resolvedAdminId = admin?._id;
+    }
+
     // Calculate billing period start to check exemption eligibility
     const billingPeriodStart = new Date(Date.UTC(year, month - 1, 1));
 
@@ -400,6 +408,42 @@ const finalizeMonth = async (month, year) => {
 
         invoice.status = determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
 
+        // Auto-create refund Payment record when totalPayable is negative
+        // (user is owed money). Prevents orphaned refund-due invoices.
+        if (invoice.totalPayable < 0) {
+            const existingRefund = await Payment.findOne({
+                user: invoice.user,
+                month: invoice.monthName,
+                status: 'refunded',
+            }).lean();
+
+            if (!existingRefund) {
+                // Detect the original payment type for this user/month
+                const originalPayment = await Payment.findOne({
+                    user: invoice.user,
+                    month: invoice.monthName,
+                    status: 'completed',
+                }).sort({ paymentDate: -1 }).lean();
+                const refundType = originalPayment?.type || 'mess_bill';
+
+                await Payment.create({
+                    user: invoice.user,
+                    amount: invoice.totalPayable,
+                    month: invoice.monthName,
+                    type: refundType,
+                    status: 'refunded',
+                    paymentMethod: 'cash',
+                    paymentDate: invoice.finalizedAt || new Date(),
+                    createdBy: resolvedAdminId,
+                    remarks: `Auto-refund of ₹${Math.abs(invoice.totalPayable).toLocaleString('en-IN', { maximumFractionDigits: 2 })} — user credited during finalization`,
+                });
+
+                // Sync user payment/gasBill status for the refund
+                const { syncUserPaymentStatus } = require('./payment.service');
+                await syncUserPaymentStatus(invoice.user, refundType, 'refunded', invoice.monthName);
+            }
+        }
+
         await invoice.save();
         results.push(invoice.toObject());
     }
@@ -434,6 +478,43 @@ const syncInvoiceStatus = async (invoiceId) => {
     invoice.paidAmount = await calculatePaidAmount(invoice.user, invoice.month, invoice.year);
     
     invoice.status = determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
+
+    // Auto-create refund Payment record when totalPayable is negative
+    // (prevents orphaned refund-due invoices during re-sync)
+    if (invoice.totalPayable < 0) {
+        const existingRefund = await Payment.findOne({
+            user: invoice.user,
+            month: invoice.monthName,
+            status: 'refunded',
+        }).lean();
+
+        if (!existingRefund) {
+            const originalPayment = await Payment.findOne({
+                user: invoice.user,
+                month: invoice.monthName,
+                status: 'completed',
+            }).sort({ paymentDate: -1 }).lean();
+            const refundType = originalPayment?.type || 'mess_bill';
+
+            // Resolve admin ID for createdBy (required field)
+            const admin = await User.findOne({ role: 'admin' }).select('_id').lean();
+
+            await Payment.create({
+                user: invoice.user,
+                amount: invoice.totalPayable,
+                month: invoice.monthName,
+                type: refundType,
+                status: 'refunded',
+                paymentMethod: 'cash',
+                paymentDate: invoice.finalizedAt || new Date(),
+                createdBy: admin?._id,
+                remarks: `Auto-refund of ₹${Math.abs(invoice.totalPayable).toLocaleString('en-IN', { maximumFractionDigits: 2 })} — user credited during sync`,
+            });
+
+            const { syncUserPaymentStatus } = require('./payment.service');
+            await syncUserPaymentStatus(invoice.user, refundType, 'refunded', invoice.monthName);
+        }
+    }
 
     await invoice.save();
     return invoice;

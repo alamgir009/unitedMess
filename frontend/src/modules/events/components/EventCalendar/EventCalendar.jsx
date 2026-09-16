@@ -53,7 +53,7 @@ const groupByDateIST = (items) => {
   const map = {};
   if (!items || !Array.isArray(items)) return map;
   for (const item of items) {
-    const dateField = item.date || item.pollDate || item.createdAt || item.updatedAt || item.paymentDate;
+    const dateField = item.date || item.pollDate || item.paymentDate || item.createdAt || item.updatedAt;
     const d = dateField ? getISTDateKey(dateField) : 'unknown';
     if (!map[d]) map[d] = [];
     map[d].push(item);
