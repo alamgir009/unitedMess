@@ -12,22 +12,30 @@ const NAV_LINKS = [
 ];
 
 const SunIcon = () => {
-SunIcon.displayName = 'SunIcon';
-return (
-  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
-  </svg>
+  return (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+      />
+    </svg>
   );
 };
+SunIcon.displayName = 'SunIcon';
 
 const MoonIcon = () => {
-MoonIcon.displayName = 'MoonIcon';
-return (
-  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-  </svg>
+  return (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+      />
+    </svg>
   );
 };
+MoonIcon.displayName = 'MoonIcon';
 
 const Navbar = () => {
   const { toggleTheme, isDark } = useTheme();
@@ -61,8 +69,10 @@ const Navbar = () => {
 
     const handleClickOutside = (e) => {
       if (
-        menuRef.current && !menuRef.current.contains(e.target) &&
-        hamburgerRef.current && !hamburgerRef.current.contains(e.target)
+        menuRef.current &&
+        !menuRef.current.contains(e.target) &&
+        hamburgerRef.current &&
+        !hamburgerRef.current.contains(e.target)
       ) {
         setMobileOpen(false);
       }
@@ -77,48 +87,17 @@ const Navbar = () => {
     };
   }, [mobileOpen]);
 
-  useEffect(() => {
-    if (mobileOpen && menuRef.current) {
-      const firstLink = menuRef.current.querySelector('a');
-      firstLink?.focus();
-    }
-  }, [mobileOpen]);
-
-  const handleMenuKeyDown = (e) => {
-    const focusable = menuRef.current?.querySelectorAll('a, button');
-    if (!focusable || focusable.length < 2) return;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-
-    if (e.key === 'Tab') {
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    }
-  };
-
   return (
     <header
       className={cn(
-        'fixed top-0 left-0 right-0 z-sticky will-change-transform backface-hidden transition-[padding] duration-[var(--duration-base)] ease-out',
-        scrolled ? 'py-2.5' : 'py-4',
+        'fixed top-0 inset-x-0 z-50 transition-all duration-300',
+        scrolled
+          ? 'bg-background/80 backdrop-blur-md border-b border-border shadow-sm'
+          : 'bg-transparent'
       )}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <nav
-            className={cn(
-              'relative flex items-center justify-between px-5 py-3 rounded-2xl transform-gpu',
-              'transition-[background-color,border-color,box-shadow] duration-150',
-              scrolled
-                ? 'bg-card/95 border-border navbar-depth'
-                : 'bg-card/50 border-transparent',
-            )}
-            aria-label="Main navigation"
-          >
+      <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
           <Link
             to="/"
             className="inline-flex items-center gap-1.5 shrink-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
@@ -134,114 +113,97 @@ const Navbar = () => {
             </span>
           </Link>
 
-          <ul className="hidden md:flex items-center gap-1">
-            {NAV_LINKS.map(({ label, href }) => {
-              const isActive = location.pathname === href;
-              return (
-                <li key={href}>
-                  <Link
-                    to={href}
-                    className={cn(
-                      'relative px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-150',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                      isActive
-                        ? 'text-primary'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
-                    )}
-                    aria-current={isActive ? 'page' : undefined}
-                  >
-                    {label}
-                    {isActive && (
-                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[1.5px] bg-primary rounded-full" />
-                    )}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="hidden md:flex items-center gap-1">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                to={link.href}
+                className={cn(
+                  'px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                  location.pathname === link.href
+                    ? 'text-primary bg-primary/10'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                )}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
 
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={toggleTheme}
-              aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-              className="touch-target flex items-center justify-center w-10 h-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="h-9 w-9"
+              aria-label="Toggle theme"
             >
-              <span className="block transition-transform duration-[var(--duration-base)] motion-reduce:transition-none">
-                {isDark ? <SunIcon /> : <MoonIcon />}
-              </span>
-            </button>
-
-            <Button variant="outline" size="sm" asChild className="hidden md:inline-flex !text-sm !font-medium !px-4 !py-2 !h-auto rounded-lg">
-              <Link to="/login">
-                Sign In
-              </Link>
+              {isDark ? <SunIcon /> : <MoonIcon />}
             </Button>
 
-            <Button variant="primary" size="sm" asChild className="hidden md:inline-flex !text-sm !font-medium !px-5 !py-2 !h-auto rounded-lg">
-              <Link to="/register">
-                Get Started
-              </Link>
-            </Button>
+            <div className="hidden md:flex items-center gap-2">
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/login">Sign in</Link>
+              </Button>
+              <Button size="sm" asChild>
+                <Link to="/register">Get Started</Link>
+              </Button>
+            </div>
 
             <button
               ref={hamburgerRef}
-              onClick={() => setMobileOpen((o) => !o)}
+              className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-muted-foreground hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={() => setMobileOpen(!mobileOpen)}
               aria-expanded={mobileOpen}
-              aria-controls="mobile-menu"
-              aria-label="Toggle mobile menu"
-              className="touch-target md:hidden flex items-center justify-center w-10 h-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Toggle menu"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                {mobileOpen
-                  ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  : <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                }
-              </svg>
+              {mobileOpen ? (
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
             </button>
           </div>
-        </nav>
+        </div>
 
         {mobileOpen && (
-          <div
-            id="mobile-menu"
-            ref={menuRef}
-            className="mt-2 rounded-2xl overflow-hidden md:hidden bg-card border border-border shadow-lg animate-fade-in-up"
-            onKeyDown={handleMenuKeyDown}
-          >
-            <div className="px-3 py-3 flex flex-col gap-1">
-              {NAV_LINKS.map(({ label, href }) => {
-                const isActive = location.pathname === href;
-                return (
-                  <Link
-                    key={href}
-                    to={href}
-                    className={cn(
-                      'px-4 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-colors block',
-                      isActive
-                        ? 'text-primary bg-primary/10'
-                        : 'text-muted-foreground hover:bg-muted/50',
-                    )}
-                  >
-                    {label}
-                  </Link>
-                );
-              })}
-              <div className="flex flex-col gap-2 mt-2 pt-3 border-t border-border">
-                <Button variant="outline" fullWidth asChild className="!text-sm !font-medium !px-4 !py-2.5 !h-auto rounded-lg">
-                  <Link to="/login">
-                    Sign In
-                  </Link>
-                </Button>
-                <Button variant="primary" fullWidth asChild className="!text-sm !font-medium !px-4 !py-2.5 !h-auto rounded-lg">
-                  <Link to="/register">
-                    Get Started
-                  </Link>
-                </Button>
-              </div>
+          <div ref={menuRef} className="md:hidden border-t border-border py-3 space-y-1">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                to={link.href}
+                className={cn(
+                  'block px-3 py-2 rounded-md text-base font-medium',
+                  location.pathname === link.href
+                    ? 'text-primary bg-primary/10'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                )}
+              >
+                {link.label}
+              </Link>
+            ))}
+
+            <div className="border-t border-border mt-2 pt-2 space-y-1">
+              <Link
+                to="/login"
+                className="block px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
+              >
+                Sign in
+              </Link>
+              <Link
+                to="/register"
+                className="block px-3 py-2 rounded-md text-base font-medium text-primary hover:bg-primary/10"
+              >
+                Get Started
+              </Link>
             </div>
           </div>
         )}
-      </div>
+      </nav>
     </header>
   );
 };

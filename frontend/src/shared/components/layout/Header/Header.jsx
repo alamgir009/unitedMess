@@ -121,7 +121,7 @@ const Header = memo(({ onMenuClick }) => {
                       to="/profile"
                       className={cn(
                         active ? 'bg-muted' : '',
-                        'block px-3 py-2.5 text-sm leading-6 text-foreground transition-colors',
+                        'block px-3 py-2.5 text-sm leading-6 text-foreground transition-colors rounded-lg mx-1.5',
                       )}
                     >
                       Your Profile
@@ -139,7 +139,7 @@ const Header = memo(({ onMenuClick }) => {
                       }}
                       className={cn(
                         active ? 'bg-danger-bg' : '',
-                        'block px-3 py-2.5 text-sm leading-6 text-danger transition-colors',
+                        'block px-3 py-2.5 text-sm leading-6 text-danger transition-colors rounded-lg mx-1.5',
                       )}
                     >
                       Sign out
