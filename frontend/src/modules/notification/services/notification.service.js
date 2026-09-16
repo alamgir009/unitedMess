@@ -16,25 +16,8 @@ const NotificationService = {
         return response.data;
     },
 
-    subscribeToPush: async (subscription) => {
-        const response = await apiClient.post('/notifications/subscribe', subscription);
-        return response.data;
-    },
-
-    unsubscribeFromPush: async (endpoint) => {
-        const response = await apiClient.delete('/notifications/subscribe', {
-            data: { endpoint },
-        });
-        return response.data;
-    },
-
     sendAdminNotification: async (payload) => {
         const response = await apiClient.post('/notifications/admin/custom', payload);
-        return response.data;
-    },
-
-    getPushConfig: async () => {
-        const response = await apiClient.get('/notifications/push-config');
         return response.data;
     },
 

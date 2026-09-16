@@ -34,7 +34,6 @@ import { EditForm } from '../../components/EditForm/EditForm';
 import { AvatarUpload } from '../../components/AvatarUpload';
 import { toast } from 'react-hot-toast';
 import { Spinner } from '@/shared/components/ui';
-import usePushManager from '@/modules/notification/hooks/usePushManager';
 import useFcmPush from '@/modules/notification/hooks/useFcmPush';
 import NotificationService from '@/modules/notification/services/notification.service';
 
@@ -308,14 +307,6 @@ const ProfilePage = () => {
         supported: fcmSupported,
         error: fcmError,
     } = useFcmPush();
-
-    const {
-        isSubscribed: vapidEnabled,
-        loading: vapidLoading,
-        toggle: toggleVapid,
-        supported: vapidSupported,
-        error: vapidError,
-    } = usePushManager();
 
     const [notifPrefs, setNotifPrefs] = useState(null);
     const [prefsLoading, setPrefsLoading] = useState(true);
@@ -636,17 +627,6 @@ const ProfilePage = () => {
                                                             loading={fcmLoading}
                                                             onToggle={toggleFcm}
                                                             error={fcmError}
-                                                        />
-                                                        <NotificationToggle
-                                                            icon={Smartphone}
-                                                            iconBg="bg-success-bg"
-                                                            iconColor="text-success"
-                                                            title="VAPID Web Push"
-                                                            description={vapidSupported ? (vapidEnabled ? 'Subscribed' : 'Inactive') : 'Not supported on this device'}
-                                                            enabled={vapidEnabled}
-                                                            loading={vapidLoading}
-                                                            onToggle={toggleVapid}
-                                                            error={vapidError}
                                                         />
                                                         <NotificationToggle
                                                             icon={MailIcon}
