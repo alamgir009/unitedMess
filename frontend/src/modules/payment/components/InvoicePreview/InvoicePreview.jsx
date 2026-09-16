@@ -1,13 +1,20 @@
-import { useMemo, useCallback, memo, useState } from 'react';
+import { useMemo, useCallback, memo, useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'react-hot-toast';
+import { Send } from 'lucide-react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
     HiOutlineCheckCircle,
     HiOutlineArrowDownTray,
     HiOutlineEnvelope,
     HiOutlineShieldCheck,
-    HiOutlineArrowPath,
+    HiOutlineChevronDown,
+    HiOutlineUser,
+    HiOutlineUsers,
+    HiOutlineXMark,
 } from 'react-icons/hi2';
 import { Spinner, Button } from '@/shared/components/ui';
+import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
 import { fmt } from '@/core/utils/helpers/currency.helper';
 import invoiceService from '../../services/invoice.service';
 
@@ -55,9 +62,20 @@ const InvoicePreview = ({
     onPayNow,
     isPaying,
     userId,
+    isAdmin = false,
 }) => {
     const [sendingEmail, setSendingEmail] = useState(false);
+    const [sendingAllEmails, setSendingAllEmails] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
+    const [pendingEmailAction, setPendingEmailAction] = useState(null);
+    const [isEmailMenuOpen, setIsEmailMenuOpen] = useState(false);
+    const [emailMenuPos, setEmailMenuPos] = useState({ top: 0, left: 0 });
+
+    const emailContainerRef = useRef(null);
+    const emailMenuRef = useRef(null);
+    const emailMenuItemRefs = useRef([]);
+    const isMobile = useMediaQuery('(max-width: 639px)');
+    const shouldReduceMotion = useReducedMotion();
 
     /* ── Derived values (mirrors pdf.service.js exactly) ── */
     const meta = useMemo(() => {
@@ -128,7 +146,7 @@ const InvoicePreview = ({
         status: externalPaymentRecord?.status || invoice?.status,
     }), [invoice, externalPaymentRecord]);
 
-    /* ── Handlers ── */
+    /* ── Core handlers ── */
     const handleDownloadPDF = useCallback(async () => {
         setIsDownloading(true);
         try {
@@ -153,11 +171,162 @@ const InvoicePreview = ({
         }
     }, [invoice?.year, invoice?.month, userId]);
 
+    const handleEmailAll = useCallback(async () => {
+        setSendingAllEmails(true);
+        try {
+            const res = await invoiceService.emailAllInvoices({ month: invoice?.month, year: invoice?.year });
+            const { sent, failed } = res?.data ?? {};
+            if (failed > 0) {
+                toast(
+                    `Emailed ${sent} member${sent !== 1 ? 's' : ''}, ${failed} failed.`,
+                    { icon: '\u26A0\uFE0F' }
+                );
+            } else {
+                toast.success(`Invoice emailed to all ${sent} members successfully!`);
+            }
+        } catch (err) {
+            toast.error(err?.response?.data?.message ?? 'Failed to send invoices to all members');
+        } finally {
+            setSendingAllEmails(false);
+        }
+    }, [invoice?.month, invoice?.year]);
+
     const handlePayNow = useCallback(() => {
         if (typeof onPayNow === 'function') {
             onPayNow(meta.monthName);
         }
     }, [onPayNow, meta.monthName]);
+
+    /* ── Email menu handlers (two-step flow) ── */
+    const handleSelectEmailAction = useCallback((action) => {
+        setPendingEmailAction(action);
+        setIsEmailMenuOpen(false);
+    }, []);
+
+    const handleConfirmSendEmail = useCallback(async () => {
+        if (!pendingEmailAction) return;
+        if (pendingEmailAction === 'me') {
+            await handleSendEmail();
+        } else if (pendingEmailAction === 'all') {
+            await handleEmailAll();
+        }
+        setPendingEmailAction(null);
+    }, [pendingEmailAction, handleSendEmail, handleEmailAll]);
+
+    const handleResetEmailAction = useCallback(() => {
+        setPendingEmailAction(null);
+    }, []);
+
+    const toggleEmailMenu = useCallback(() => {
+        setIsEmailMenuOpen((prev) => !prev);
+    }, []);
+
+    /* ── Scroll lock: prevent wheel/touchmove on Modal's scroll container ── */
+    useEffect(() => {
+        if (!isEmailMenuOpen) return;
+
+        const handleWheel = (e) => {
+            const scrollContainer = e.target.closest('[role="dialog"] .overflow-y-auto');
+            if (scrollContainer) e.preventDefault();
+        };
+        const handleTouchMove = (e) => {
+            const scrollContainer = e.target.closest('[role="dialog"] .overflow-y-auto');
+            if (scrollContainer) e.preventDefault();
+        };
+
+        document.addEventListener('wheel', handleWheel, { passive: false });
+        document.addEventListener('touchmove', handleTouchMove, { passive: false });
+        return () => {
+            document.removeEventListener('wheel', handleWheel);
+            document.removeEventListener('touchmove', handleTouchMove);
+        };
+    }, [isEmailMenuOpen]);
+
+    /* ── Click-outside detection ── */
+    useEffect(() => {
+        if (!isEmailMenuOpen) return;
+
+        const handleClickOutside = (e) => {
+            if (
+                emailMenuRef.current && !emailMenuRef.current.contains(e.target) &&
+                emailContainerRef.current && !emailContainerRef.current.contains(e.target)
+            ) {
+                setIsEmailMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isEmailMenuOpen]);
+
+    /* ── Escape key ── */
+    useEffect(() => {
+        if (!isEmailMenuOpen) return;
+
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') setIsEmailMenuOpen(false);
+        };
+        document.addEventListener('keydown', handleEscape);
+        return () => document.removeEventListener('keydown', handleEscape);
+    }, [isEmailMenuOpen]);
+
+    /* ── Keyboard navigation for menu items (ArrowUp/Down, Home/End) ── */
+    const handleEmailMenuKeyDown = useCallback((e) => {
+        if (!isEmailMenuOpen) return;
+        const items = emailMenuItemRefs.current.filter(Boolean);
+        const currentIndex = items.indexOf(document.activeElement);
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                items[(currentIndex + 1) % items.length]?.focus();
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                items[(currentIndex - 1 + items.length) % items.length]?.focus();
+                break;
+            case 'Home':
+                e.preventDefault();
+                items[0]?.focus();
+                break;
+            case 'End':
+                e.preventDefault();
+                items[items.length - 1]?.focus();
+                break;
+        }
+    }, [isEmailMenuOpen]);
+
+    /* ── Viewport-aware menu positioning ── */
+    useEffect(() => {
+        if (!isEmailMenuOpen || !emailContainerRef.current) return;
+
+        const rect = emailContainerRef.current.getBoundingClientRect();
+        const MENU_W = 208;
+        const MENU_H = 110;
+        const GAP = 4;
+        const MARGIN = 12;
+
+        let top = rect.bottom + window.scrollY + GAP;
+        let left = rect.right - MENU_W;
+
+        if (rect.bottom + MENU_H + GAP > window.innerHeight) {
+            top = rect.top + window.scrollY - MENU_H - GAP;
+        }
+        if (left < MARGIN) left = MARGIN;
+        if (left + MENU_W > window.innerWidth - MARGIN) {
+            left = window.innerWidth - MENU_W - MARGIN;
+        }
+
+        setEmailMenuPos({ top, left });
+    }, [isEmailMenuOpen, isMobile]);
+
+    /* ── Focus first menu item when opened ── */
+    useEffect(() => {
+        if (!isEmailMenuOpen) return;
+        const timer = setTimeout(() => {
+            emailMenuItemRefs.current[0]?.focus();
+        }, 50);
+        return () => clearTimeout(timer);
+    }, [isEmailMenuOpen]);
 
     /* ── Status color mapping (mirrors pdf.service.js palette) ── */
     const totalBoxStyle = useMemo(() => {
@@ -186,6 +355,8 @@ const InvoicePreview = ({
         return 'bg-primary/10 text-primary border-primary/20';
     }, [status.isPaid, status.isPartiallyPaid, amounts.isRefund]);
 
+    const isEmailBusy = sendingEmail || sendingAllEmails;
+
     if (!invoice) return null;
 
     return (
@@ -193,11 +364,9 @@ const InvoicePreview = ({
 
             {/* ═══════════════════════════════════════════════════
                HEADER — Logo + Brand + Invoice Meta
-               Matches pdf.service.js HEADER section exactly
                ═══════════════════════════════════════════════════ */}
             <div className="p-2.5 sm:p-4">
                 <div className="flex items-start justify-between gap-4">
-                    {/* Left: Logo + Brand + User */}
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center -mt-px gap-[var(--um-space-3)]">
                             <img
@@ -224,7 +393,6 @@ const InvoicePreview = ({
                         </div>
                     </div>
 
-                    {/* Right: Invoice meta (matches PDF right-aligned block) */}
                     <div className="text-right flex-shrink-0 space-y-[var(--um-space-1)]">
                         <p className="text-[length:var(--um-fs-caption)] font-semibold uppercase tracking-widest text-muted-foreground/70">
                             Invoice
@@ -242,18 +410,15 @@ const InvoicePreview = ({
                 </div>
             </div>
 
-            {/* ── Indigo divider (PDF: hRule with C.indigo, thick=2) ── */}
             <div className="px-3 sm:px-5">
                 <div className="h-[2px] bg-primary" />
             </div>
 
             {/* ═══════════════════════════════════════════════════
-               STAT CARDS — 3 horizontal cards
-               Matches pdf.service.js STAT CARDS section exactly
+               STAT CARDS
                ═══════════════════════════════════════════════════ */}
             <div className="px-3 sm:px-5 pt-3">
                 <div className="grid grid-cols-3 gap-2">
-                    {/* Card 1: Market Total (All) */}
                     <div className="rounded-lg border border-border bg-muted/30 p-2 sm:p-2.5 flex flex-col">
                         <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-muted-foreground leading-tight">
                             Market Total (All)
@@ -263,7 +428,6 @@ const InvoicePreview = ({
                         </p>
                     </div>
 
-                    {/* Card 2: Total Meals (All) */}
                     <div className="rounded-lg border border-border bg-muted/30 p-2 sm:p-2.5 flex flex-col">
                         <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-muted-foreground leading-tight">
                             Total Meals (All)
@@ -278,7 +442,6 @@ const InvoicePreview = ({
                         </p>
                     </div>
 
-                    {/* Card 3: Your Payable (indigo accent) */}
                     <div className="rounded-lg border border-primary/20 bg-primary/5 p-2 sm:p-2.5 flex flex-col">
                         <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-primary/70 leading-tight">
                             {amounts.isRefund ? 'Refund Due' : 'Your Payable'}
@@ -292,32 +455,15 @@ const InvoicePreview = ({
 
             {/* ═══════════════════════════════════════════════════
                SECTIONS — Usage, Charges, Calculations
-               Matches pdf.service.js section layout exactly
                ═══════════════════════════════════════════════════ */}
             <div className="px-3 sm:px-5 pt-1 pb-1">
-
-                {/* ── YOUR USAGE ── */}
                 <SectionLabel label="Your Usage" />
-                <DataRow
-                    label="Your Meals"
-                    value={`${fmt(userValues.mealCount)} meals`}
-                />
-                <DataRow
-                    label="Your Market Spend"
-                    value={`\u20B9${fmt(userValues.marketSpent)}`}
-                    subLabel="What you spent"
-                />
+                <DataRow label="Your Meals" value={`${fmt(userValues.mealCount)} meals`} />
+                <DataRow label="Your Market Spend" value={`\u20B9${fmt(userValues.marketSpent)}`} subLabel="What you spent" />
 
-                {/* ── MONTHLY CHARGES ── */}
                 <SectionLabel label="Monthly Charges" />
-                <DataRow
-                    label="Water Bill"
-                    value={`\u20B9${fmt(userValues.waterBill)}`}
-                />
-                <DataRow
-                    label="Cooking Charge"
-                    value={`\u20B9${fmt(userValues.cookingCharge)}`}
-                />
+                <DataRow label="Water Bill" value={`\u20B9${fmt(userValues.waterBill)}`} />
+                <DataRow label="Cooking Charge" value={`\u20B9${fmt(userValues.cookingCharge)}`} />
                 {userValues.guestMealCount > 0 && (
                     <DataRow
                         label="Guest Meals"
@@ -326,28 +472,13 @@ const InvoicePreview = ({
                     />
                 )}
 
-                {/* ── CALCULATIONS ── */}
                 <SectionLabel label="Calculations" />
-                <DataRow
-                    label="Cost of Your Meals"
-                    value={`\u20B9${fmt(userValues.costOfMeals)}`}
-                    subLabel="Proportional share"
-                    accent
-                />
-                <DataRow
-                    label="Adjusted Meal Charge"
-                    value={`\u20B9${fmt(userValues.adjustedMealCharge)}`}
-                    subLabel="After guest deduction"
-                    accent
-                />
+                <DataRow label="Cost of Your Meals" value={`\u20B9${fmt(userValues.costOfMeals)}`} subLabel="Proportional share" accent />
+                <DataRow label="Adjusted Meal Charge" value={`\u20B9${fmt(userValues.adjustedMealCharge)}`} subLabel="After guest deduction" accent />
                 {userValues.platformFee !== 0 && (
-                    <DataRow
-                        label="Platform Fee"
-                        value={`\u20B9${fmt(userValues.platformFee)}`}
-                    />
+                    <DataRow label="Platform Fee" value={`\u20B9${fmt(userValues.platformFee)}`} />
                 )}
 
-                {/* ── PREVIOUS BALANCE (conditional) ── */}
                 {userValues.prevBalance !== 0 && (
                     <>
                         <SectionLabel label="Previous Balance" />
@@ -362,8 +493,7 @@ const InvoicePreview = ({
             </div>
 
             {/* ═══════════════════════════════════════════════════
-               TOTAL BOX — Amount + Status Badge
-               Matches pdf.service.js TOTAL BOX section exactly
+               TOTAL BOX
                ═══════════════════════════════════════════════════ */}
             <div className="px-3 sm:px-5 pt-2 pb-3">
                 <div className={`flex items-center justify-between p-4 rounded-xl border ${totalBoxStyle}`}>
@@ -375,8 +505,6 @@ const InvoicePreview = ({
                             {'\u20B9'}{fmt(amounts.displayAmt)}
                         </p>
                     </div>
-
-                    {/* Status badge */}
                     <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border ${badgeStyle}`}>
                         {(status.isPaid || amounts.isRefund) && <HiOutlineCheckCircle className="w-3 h-3" />}
                         {status.label}
@@ -385,28 +513,21 @@ const InvoicePreview = ({
             </div>
 
             {/* ═══════════════════════════════════════════════════
-               PAYMENT BLOCK — (paid or partially paid)
-               Matches pdf.service.js PAYMENT BLOCK section exactly
+               PAYMENT BLOCK
                ═══════════════════════════════════════════════════ */}
             {(status.isPaid || status.isPartiallyPaid) && (
                 <div className="px-3 sm:px-5 pb-3">
                     <div className="rounded-xl border border-border bg-muted/30 overflow-hidden">
-
-                        {/* Payment status row */}
                         <div className="px-3 sm:px-4 py-2.5 flex items-center justify-between border-b border-border/60">
                             <div>
-                                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                    Payment Status
-                                </p>
+                                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Payment Status</p>
                                 <p className="text-sm font-bold text-foreground mt-0.5">
                                     {status.isPaid ? 'Payment Successful' : 'Partially Paid'}
                                 </p>
                                 {paymentData.paymentMethod && (
                                     <p className="text-[11px] text-muted-foreground mt-0.5">
-                                        {paymentData.paymentMethod === 'upi_manual'
-                                            ? 'Manual UPI'
-                                            : paymentData.paymentMethod === 'razorpay'
-                                                ? 'Online (Razorpay)'
+                                        {paymentData.paymentMethod === 'upi_manual' ? 'Manual UPI'
+                                            : paymentData.paymentMethod === 'razorpay' ? 'Online (Razorpay)'
                                                 : paymentData.paymentMethod}
                                     </p>
                                 )}
@@ -420,7 +541,6 @@ const InvoicePreview = ({
                             </span>
                         </div>
 
-                        {/* Partially paid: amount breakdown */}
                         {status.isPartiallyPaid && (
                             <div className="px-3 sm:px-4 py-2 flex items-center gap-6 border-b border-border/60">
                                 <p className="text-[11px] text-muted-foreground">
@@ -432,21 +552,16 @@ const InvoicePreview = ({
                             </div>
                         )}
 
-                        {/* UTR block (if manual UPI with transaction ID) */}
                         {paymentData.paymentMethod === 'upi_manual' && paymentData.transactionId && (
                             <div className="px-3 sm:px-4 py-2 bg-primary/5">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
-                                        UTR
-                                    </span>
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary">UTR</span>
                                     <span className="text-[13px] font-mono font-bold text-primary select-all break-all">
                                         {paymentData.transactionId}
                                     </span>
                                 </div>
                                 {paymentData.utr && paymentData.utr !== paymentData.transactionId && (
-                                    <p className="text-[10px] text-muted-foreground mt-1">
-                                        Bank UTR: {paymentData.utr}
-                                    </p>
+                                    <p className="text-[10px] text-muted-foreground mt-1">Bank UTR: {paymentData.utr}</p>
                                 )}
                             </div>
                         )}
@@ -458,7 +573,6 @@ const InvoicePreview = ({
                ACTION BUTTONS — Pay Now + Download + Email
                ═══════════════════════════════════════════════════ */}
             <div className="px-3 sm:px-5 pb-3 space-y-2">
-                {/* Pay Now */}
                 {!status.isPaid && !amounts.isRefund && onPayNow && (
                     <Button
                         type="button"
@@ -473,40 +587,73 @@ const InvoicePreview = ({
                     </Button>
                 )}
 
-                {/* Download + Email */}
                 <div className="grid grid-cols-2 gap-2">
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        disabled={isDownloading}
-                        onClick={handleDownloadPDF}
-                    >
-                        {isDownloading ? (
-                            <Spinner size="sm" color="current" />
-                        ) : (
-                            <HiOutlineArrowDownTray className="w-4 h-4 flex-shrink-0" />
-                        )}
+                    <Button type="button" variant="secondary" disabled={isDownloading} onClick={handleDownloadPDF}>
+                        {isDownloading ? <Spinner size="sm" color="current" /> : <HiOutlineArrowDownTray className="w-4 h-4 flex-shrink-0" />}
                         <span>Download</span>
                     </Button>
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        disabled={sendingEmail}
-                        onClick={handleSendEmail}
-                    >
-                        {sendingEmail ? (
-                            <Spinner size="sm" color="current" />
-                        ) : (
-                            <HiOutlineEnvelope className="w-4 h-4 flex-shrink-0" />
-                        )}
-                        <span>Email</span>
-                    </Button>
+
+                    {isAdmin ? (
+                        <div ref={emailContainerRef} className="flex min-w-0">
+                            <Button
+                                type="button"
+                                variant={pendingEmailAction ? 'primary' : 'secondary'}
+                                disabled={isEmailBusy}
+                                onClick={pendingEmailAction ? handleConfirmSendEmail : toggleEmailMenu}
+                                className="rounded-r-none flex-1 min-w-0"
+                            >
+                                {isEmailBusy ? (
+                                    <Spinner size="sm" color="current" />
+                                ) : pendingEmailAction ? (
+                                    <Send className="w-4 h-4 flex-shrink-0" />
+                                ) : (
+                                    <HiOutlineEnvelope className="w-4 h-4 flex-shrink-0" />
+                                )}
+                                <span className="truncate">
+                                    {isEmailBusy
+                                        ? 'Sending\u2026'
+                                        : pendingEmailAction === 'me'
+                                            ? 'Send to me'
+                                            : pendingEmailAction === 'all'
+                                                ? 'Send to all'
+                                                : 'Email'
+                                    }
+                                </span>
+                            </Button>
+
+                            {pendingEmailAction ? (
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    disabled={isEmailBusy}
+                                    onClick={handleResetEmailAction}
+                                    className="rounded-l-none px-2 flex-shrink-0"
+                                >
+                                    <HiOutlineXMark className="w-4 h-4" />
+                                </Button>
+                            ) : (
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    disabled={isEmailBusy}
+                                    onClick={toggleEmailMenu}
+                                    className="rounded-l-none px-2 border-l border-border/50 flex-shrink-0"
+                                >
+                                    <HiOutlineChevronDown className="w-4 h-4" />
+                                </Button>
+                            )}
+                        </div>
+                    ) : (
+                        <Button type="button" variant="secondary" disabled={sendingEmail} onClick={handleSendEmail}>
+                            {sendingEmail ? <Spinner size="sm" color="current" /> : <HiOutlineEnvelope className="w-4 h-4 flex-shrink-0" />}
+                            <span>Email</span>
+                        </Button>
+                    )}
                 </div>
             </div>
 
             {/* ═══════════════════════════════════════════════════
-               FOOTER — Disclaimer + Powered by
-               Matches pdf.service.js FOOTER section exactly
+               FOOTER
                ═══════════════════════════════════════════════════ */}
             <div className="px-3 sm:px-5 pb-4">
                 <div className="border-t border-border pt-3 text-center space-y-1">
@@ -518,6 +665,62 @@ const InvoicePreview = ({
                     </p>
                 </div>
             </div>
+
+            {/* ═══════════════════════════════════════════════════
+               PORTAL EMAIL MENU — Dropdown-matching fintech-grade
+               - Framer Motion spring animations (matches shared Dropdown)
+               - Keyboard navigation (ArrowUp/Down, Home/End, Enter)
+               - Focus management (auto-focus first item, roving tabindex)
+               - Portal rendering (escapes Modal overflow)
+               - Modal-aware scroll lock (prevents wheel/touchmove)
+               ═══════════════════════════════════════════════════ */}
+            {isAdmin && createPortal(
+                <>
+                    <AnimatePresence>
+                        {isEmailMenuOpen && (
+                            <motion.div
+                                ref={emailMenuRef}
+                                role="menu"
+                                aria-label="Email action"
+                                initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: -4, scale: 0.97 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={shouldReduceMotion ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.95, y: -8 }}
+                                transition={shouldReduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 300, damping: 30 }}
+                                onKeyDown={handleEmailMenuKeyDown}
+                                className="fixed z-[9999] w-52 py-1 surface-overlay border border-border rounded-lg shadow-xl"
+                                style={{ top: emailMenuPos.top, left: emailMenuPos.left }}
+                            >
+                                <div className="px-1 py-0.5">
+                                    <button
+                                        ref={(el) => { emailMenuItemRefs.current[0] = el; }}
+                                        role="menuitem"
+                                        tabIndex={0}
+                                        disabled={isEmailBusy}
+                                        onClick={() => handleSelectEmailAction('me')}
+                                        className="w-full flex items-center gap-3 px-3 py-2.5 min-h-[44px] text-left text-sm text-foreground hover:bg-muted focus:bg-muted rounded-md transition-colors duration-150 focus-visible:outline-none disabled:opacity-50 disabled:pointer-events-none"
+                                    >
+                                        <HiOutlineUser className="w-4 h-4 shrink-0 text-muted-foreground" />
+                                        <span>Send to me</span>
+                                    </button>
+
+                                    <button
+                                        ref={(el) => { emailMenuItemRefs.current[1] = el; }}
+                                        role="menuitem"
+                                        tabIndex={-1}
+                                        disabled={isEmailBusy}
+                                        onClick={() => handleSelectEmailAction('all')}
+                                        className="w-full flex items-center gap-3 px-3 py-2.5 min-h-[44px] text-left text-sm text-foreground hover:bg-muted focus:bg-muted rounded-md transition-colors duration-150 focus-visible:outline-none disabled:opacity-50 disabled:pointer-events-none"
+                                    >
+                                        <HiOutlineUsers className="w-4 h-4 shrink-0 text-muted-foreground" />
+                                        <span>Send to all members</span>
+                                    </button>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </>,
+                document.body
+            )}
         </div>
     );
 };
