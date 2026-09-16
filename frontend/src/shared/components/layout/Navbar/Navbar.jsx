@@ -91,8 +91,8 @@ const Navbar = () => {
     <header
       className={cn(
         'fixed top-0 inset-x-0 z-50 transition-all duration-300',
-        scrolled
-          ? 'bg-background/80 backdrop-blur-md border-b border-border shadow-sm'
+        scrolled || mobileOpen
+          ? 'bg-background/95 backdrop-blur-md border-b border-border shadow-sm'
           : 'bg-transparent'
       )}
     >
@@ -141,18 +141,18 @@ const Navbar = () => {
               {isDark ? <SunIcon /> : <MoonIcon />}
             </Button>
 
-            <div className="hidden md:flex items-center gap-2">
-              <Button variant="ghost" size="sm" asChild>
+            <div className="hidden md:flex items-center gap-2.5">
+              <Button variant="outline" size="md" asChild>
                 <Link to="/login">Sign in</Link>
               </Button>
-              <Button size="sm" asChild>
+              <Button size="md" asChild>
                 <Link to="/register">Get Started</Link>
               </Button>
             </div>
 
             <button
               ref={hamburgerRef}
-              className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-muted-foreground hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="md:hidden inline-flex items-center justify-center rounded-xl w-11 h-11 text-muted-foreground hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-expanded={mobileOpen}
               aria-label="Toggle menu"
@@ -171,35 +171,33 @@ const Navbar = () => {
         </div>
 
         {mobileOpen && (
-          <div ref={menuRef} className="md:hidden border-t border-border py-3 space-y-1">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                to={link.href}
-                className={cn(
-                  'block px-3 py-2 rounded-md text-base font-medium',
-                  location.pathname === link.href
-                    ? 'text-primary bg-primary/10'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                )}
-              >
-                {link.label}
-              </Link>
-            ))}
+          <div ref={menuRef} className="md:hidden pb-4 space-y-1">
+            <div className="pt-1 pb-2 space-y-0.5">
+              {NAV_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  className={cn(
+                    'flex items-center min-h-[48px] px-4 rounded-xl text-[15px] font-medium transition-colors',
+                    location.pathname === link.href
+                      ? 'text-primary bg-primary/10'
+                      : 'text-foreground hover:bg-muted'
+                  )}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
 
-            <div className="border-t border-border mt-2 pt-2 space-y-1">
-              <Link
-                to="/login"
-                className="block px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
-              >
-                Sign in
-              </Link>
-              <Link
-                to="/register"
-                className="block px-3 py-2 rounded-md text-base font-medium text-primary hover:bg-primary/10"
-              >
-                Get Started
-              </Link>
+            <div className="h-px bg-border my-2" />
+
+            <div className="space-y-2 px-1 pt-1">
+              <Button variant="outline" size="md" fullWidth asChild>
+                <Link to="/login">Sign in</Link>
+              </Button>
+              <Button size="md" fullWidth asChild>
+                <Link to="/register">Get Started</Link>
+              </Button>
             </div>
           </div>
         )}
