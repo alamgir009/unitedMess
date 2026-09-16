@@ -39,7 +39,9 @@ export const injectStore = (store) => { _store = store; };
 // X-Requested-With       → extra CSRF layer; server can reject requests missing this.
 // ---------------------------------------------------------------------------
 const apiClient = axios.create({
-    baseURL: `${import.meta.env.VITE_API_URL}/api/v1` || 'https://api.unitedmess.uk/api/v1',
+    baseURL: import.meta.env.VITE_API_URL
+        ? `${import.meta.env.VITE_API_URL}/api/v1`
+        : 'https://api.unitedmess.uk/api/v1',
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json',

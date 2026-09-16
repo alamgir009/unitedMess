@@ -220,6 +220,15 @@ const createPayment = async (paymentBody) => {
 
     const payment = await Payment.create(paymentData);
 
+    // Push initial status to audit trail
+    payment.statusHistory.push({
+        status: payment.status,
+        changedBy: payment.createdBy,
+        changedAt: new Date(),
+        remarks: 'Payment created',
+    });
+    await payment.save({ validateBeforeSave: false });
+
     // Sub-fix C & D: Sync and Email (non-blocking)
     if (payment.status === 'completed') {
         // Sync payment status (only if current billing period)

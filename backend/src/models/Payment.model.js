@@ -10,6 +10,7 @@ const paymentSchema = new mongoose.Schema(
         amount: {
             type: Number,
             required: true,
+            min: [0, 'Payment amount cannot be negative'],
         },
         paymentDate: {
             type: Date,
@@ -51,6 +52,7 @@ const paymentSchema = new mongoose.Schema(
         gatewayFee: {
             type: Number,
             default: 0,
+            min: [0, 'Gateway fee cannot be negative'],
         },
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,

@@ -8,6 +8,13 @@ const fcmService = require('./fcm.service');
 
 const BATCH_SIZE = 500;
 
+const NOTIFICATION_TTL = {
+    CRITICAL: 90 * 24 * 60 * 60 * 1000,  // 90 days
+    HIGH: 60 * 24 * 60 * 60 * 1000,      // 60 days
+    NORMAL: 30 * 24 * 60 * 60 * 1000,    // 30 days
+    LOW: 7 * 24 * 60 * 60 * 1000,        // 7 days
+};
+
 /**
  * Create a notification with idempotency check.
  */
@@ -28,7 +35,7 @@ const createNotification = async ({ userId, type, title, message, priority, acti
         metadata: metadata || null,
         deliveryStatus: 'PENDING',
         idempotencyKey: idempotencyKey || null,
-        expiresAt: null,
+        expiresAt: new Date(Date.now() + (NOTIFICATION_TTL[priority || 'NORMAL'] || NOTIFICATION_TTL.NORMAL)),
     });
 
     return notification;
@@ -75,7 +82,9 @@ const createAndSend = async (userId, type, title, message, options = {}) => {
         });
 
         // Push delivery via FCM only (VAPID web-push removed)
-        fcmService.sendToUser(userId, notifObj).catch(() => {});
+        fcmService.sendToUser(userId, notifObj).catch((err) => {
+            logger.error(`FCM push failed for user ${userId}: ${err.message}`);
+        });
 
         return notifObj;
     } catch (error) {

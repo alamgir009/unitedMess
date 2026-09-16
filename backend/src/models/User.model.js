@@ -89,7 +89,7 @@ const userSchema = new mongoose.Schema({
     waterBill: { type: Number, default: 0, min: 0 },
     gasBillCharge: { type: Number, default: 0, min: 0 },
     platformFee: { type: Number, default: 0, min: 0 },
-    paybleAmountforMeal: { type: Number, default: 0 },
+    paybleAmountforMeal: { type: Number, default: 0, min: [0, 'Payable amount cannot be negative'] },
     payment: {
         type: String,
         enum: ['pending', 'success', 'failed', 'refunded'],
@@ -129,6 +129,10 @@ const userSchema = new mongoose.Schema({
     googleCalendarToken: { type: String, select: false, default: null },
     googleCalendarRefreshToken: { type: String, select: false, default: null },
     googleCalendarSyncEnabled: { type: Boolean, default: false },
+    notificationPreferences: {
+        type: mongoose.Schema.Types.Mixed,
+        default: {},
+    },
 }, {
     timestamps: true,
     toObject: { virtuals: true },

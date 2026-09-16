@@ -25,6 +25,11 @@ const MAX_USER_MEALS = 200;
  * duplicate/conflicting entries like "01/06/2026 Day + 01/06/2026 Off".
  */
 const bulkCreateMeals = async ({ startDate, endDate, type, userIds, isGuestMeal, guestCount, remarks, createdBy }) => {
+  const validTypes = ['day', 'night', 'both', 'off'];
+  if (!type || !validTypes.includes(type)) {
+    throw new AppError(`Invalid meal type. Must be one of: ${validTypes.join(', ')}`, 400);
+  }
+
   const start = normalizeDate(parseDate(startDate));
   const end = normalizeDate(parseDate(endDate));
 

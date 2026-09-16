@@ -10,10 +10,14 @@ const invoiceSchema = new mongoose.Schema(
         month: {
             type: Number, // 1-12
             required: true,
+            min: [1, 'Month must be 1-12'],
+            max: [12, 'Month must be 1-12'],
         },
         year: {
             type: Number,
             required: true,
+            min: [2000, 'Year must be >= 2000'],
+            max: [2100, 'Year must be <= 2100'],
         },
         monthName: {
             type: String, // e.g., "April 2024"
@@ -23,51 +27,60 @@ const invoiceSchema = new mongoose.Schema(
         mealCount: {
             type: Number,
             default: 0,
+            min: [0, 'Meal count cannot be negative'],
         },
         guestMealCount: {
             type: Number,
             default: 0,
+            min: [0, 'Guest meal count cannot be negative'],
         },
         marketAmountSpent: {
             type: Number,
             default: 0,
+            min: [0, 'Market amount cannot be negative'],
             comment: "Total amount this user spent on markets this month",
         },
         // Shared costs
         mealRate: {
             type: Number,
             default: 0,
+            min: [0, 'Meal rate cannot be negative'],
         },
         messCost: {
             type: Number,
             default: 0,
+            min: [0, 'Mess cost cannot be negative'],
             comment: "mealRate * mealCount",
         },
         guestMealRevenue: {
             type: Number,
             default: 0,
+            min: [0, 'Guest meal revenue cannot be negative'],
         },
         // Fixed costs at the time of invoice generation
         fixedCosts: {
-            cookingCharge: { type: Number, default: 0 },
-            waterBill: { type: Number, default: 0 },
-            gasBillCharge: { type: Number, default: 0 },
-            platformFee: { type: Number, default: 0 },
+            cookingCharge: { type: Number, default: 0, min: [0, 'Cooking charge cannot be negative'] },
+            waterBill: { type: Number, default: 0, min: [0, 'Water bill cannot be negative'] },
+            gasBillCharge: { type: Number, default: 0, min: [0, 'Gas bill charge cannot be negative'] },
+            platformFee: { type: Number, default: 0, min: [0, 'Platform fee cannot be negative'] },
         },
         // Final calculation
         totalBill: {
             type: Number,
             default: 0,
+            min: [0, 'Total bill cannot be negative'],
             comment: "messCost + fixedCosts + guestRevenue - marketAmountSpent",
         },
         totalPayable: {
             type: Number,
             default: 0,
+            min: [0, 'Total payable cannot be negative'],
             comment: "totalBill (includes fixed costs and guest adjustments)",
         },
         paidAmount: {
             type: Number,
             default: 0,
+            min: [0, 'Paid amount cannot be negative'],
         },
         status: {
             type: String,

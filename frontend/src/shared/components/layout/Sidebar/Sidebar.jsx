@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -17,11 +16,14 @@ import { IoFastFoodOutline } from 'react-icons/io5';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '@/modules/auth/store/auth.slice';
+import useBodyScrollLock from '@/shared/hooks/useBodyScrollLock';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
+
+  useBodyScrollLock(isOpen);
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -32,15 +34,6 @@ const Sidebar = ({ isOpen, onClose }) => {
     { name: 'Notifications', href: '/notifications', icon: Bell },
     { name: 'Events', href: '/events', icon: CalendarDays },
   ];
-
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [isOpen]);
 
   const handleLogout = () => {
     dispatch(logout());

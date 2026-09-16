@@ -29,7 +29,8 @@ const mealSchema = new mongoose.Schema(
         },
         guestCount: {
             type: Number,
-            default: 0
+            default: 0,
+            min: [0, 'Guest count cannot be negative'],
         },
         remarks: {
             type: String,
@@ -45,6 +46,18 @@ const mealSchema = new mongoose.Schema(
         timestamps: true,
     }
 );
+
+// Normalize date to midnight UTC for consistent unique index behavior
+mealSchema.pre('validate', function (next) {
+    if (this.date && this.isModified('date')) {
+        this.date = new Date(Date.UTC(
+            this.date.getUTCFullYear(),
+            this.date.getUTCMonth(),
+            this.date.getUTCDate()
+        ));
+    }
+    next();
+});
 
 // Enforce one-record-per-date-per-user at database level
 mealSchema.index({ date: 1, user: 1 }, { unique: true });

@@ -3,7 +3,7 @@ const { marketService } = require('../../../services');
 const { sendSuccessResponse } = require('../../../utils/helpers/response.helper');
 const pick = require('../../../utils/helpers/pick');
 const AppError = require('../../../utils/errors/AppError');
-const { getVisibleBillingStartDate } = require('../../../utils/helpers/date.helper');
+const { getVisibleBillingStartDate, parseDate } = require('../../../utils/helpers/date.helper');
 
 // ─── Authenticated User Controllers ────────────────────────────────────────────
 
@@ -28,8 +28,8 @@ const getMarkets = asyncHandler(async (req, res) => {
     // so that navigating to any past month returns the correct data.
     if (req.query.startDate || req.query.endDate) {
         filter.date = {};
-        if (req.query.startDate) filter.date.$gte = new Date(req.query.startDate);
-        if (req.query.endDate)   filter.date.$lte = new Date(req.query.endDate);
+        if (req.query.startDate) filter.date.$gte = parseDate(req.query.startDate);
+        if (req.query.endDate)   filter.date.$lte = parseDate(req.query.endDate);
     } else if (!filter.date && !(isAdmin && req.query.allHistory === 'true')) {
         filter.date = { $gte: getVisibleBillingStartDate() };
     }

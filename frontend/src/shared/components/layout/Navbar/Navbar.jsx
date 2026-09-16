@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '@/app/providers/ThemeProvider';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { Button } from '@/shared/components/ui';
+import useBodyScrollLock from '@/shared/hooks/useBodyScrollLock';
 
 const NAV_LINKS = [
   { label: 'Home', href: '/' },
@@ -36,6 +37,8 @@ const Navbar = () => {
   const menuRef = useRef(null);
   const hamburgerRef = useRef(null);
 
+  useBodyScrollLock(mobileOpen);
+
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 24);
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -45,15 +48,6 @@ const Navbar = () => {
   useEffect(() => {
     setMobileOpen(false);
   }, [location]);
-
-  useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [mobileOpen]);
 
   useEffect(() => {
     if (!mobileOpen) return;

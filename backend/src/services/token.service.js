@@ -77,7 +77,7 @@ const revokeToken = async (token) => {
  * @returns {Promise<Object>}
  */
 const generateAuthTokens = async (user) => {
-    const accessTokenExpires = moment().add(24, 'hours');
+    const accessTokenExpires = moment().add(config.jwt.accessExpirationMinutes || 30, 'minutes');
     const accessToken = generateToken(user.id, accessTokenExpires, tokenTypes.ACCESS);
 
     const refreshTokenExpires = moment().add(config.jwt.refreshExpirationDays || 7, 'days');

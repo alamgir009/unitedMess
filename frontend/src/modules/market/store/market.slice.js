@@ -1,6 +1,9 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import marketService from '../services/market.service';
 
+// Helper to extract data from { success, message, data } envelope
+const unwrap = (payload) => payload?.data ?? payload;
+
 const initialState = {
     markets: [],
     schedule: [],
@@ -156,7 +159,7 @@ export const marketSlice = createSlice({
                 state.isLoading = false;
                 state.isSuccess = true;
                 // Add the new market to the beginning of the list
-                state.markets.unshift(action.payload);
+                state.markets.unshift(unwrap(action.payload));
             })
             .addCase(createMarket.rejected, (state, action) => {
                 state.isLoading = false;
@@ -171,7 +174,7 @@ export const marketSlice = createSlice({
                 state.isLoading = false;
                 state.isSuccess = true;
                 // Add the new market to the beginning of the list
-                state.markets.unshift(action.payload);
+                state.markets.unshift(unwrap(action.payload));
             })
             .addCase(adminCreateMarket.rejected, (state, action) => {
                 state.isLoading = false;
@@ -199,9 +202,10 @@ export const marketSlice = createSlice({
                 state.isLoading = false;
                 state.isSuccess = true;
                 // Update the market in the state array
-                const index = state.markets.findIndex((market) => market._id === action.payload._id);
+                const updated = unwrap(action.payload);
+                const index = state.markets.findIndex((market) => market._id === updated._id);
                 if (index !== -1) {
-                    state.markets[index] = action.payload;
+                    state.markets[index] = updated;
                 }
             })
             .addCase(updateMarket.rejected, (state, action) => {

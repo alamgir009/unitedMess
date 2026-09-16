@@ -155,107 +155,101 @@ async function updateProfile(userId, updateData, isAdmin = false) {
 
     const { email, phone, name, image, role, isActive, userStatus } = updateData;
     const updates = {};
-    const session = await User.startSession();
 
+    const applyUpdates = async (user) => {
+        // Email change logic with verification
+        if (email && email !== user.email) {
+            const emailTaken = await User.isEmailTaken(email, userId);
+            if (emailTaken) throw new AppError('Email already in use', 409);
+
+            updates.email = email;
+            updates.isEmailVerified = false;
+            updates.emailChangedAt = new Date();
+
+            emailService.sendVerificationEmail(email, user.name).catch(console.error);
+        }
+
+        // Basic profile updates
+        if (name) updates.name = name.trim();
+        if (phone) updates.phone = phone;
+        if (image !== undefined) updates.image = image;
+
+        // Role update – only if requester is admin
+        if (role && isAdmin) updates.role = role;
+        
+        // isActive update – only if requester is admin
+        if (isActive !== undefined && isAdmin) {
+            const wasInactive = !user.isActive;
+            const isActivating = wasInactive && isActive;
+            const isDeactivating = user.isActive && !isActive;
+
+            if (isActivating) {
+                updates.activatedAt = new Date();
+                updates.isActive = true;
+
+                const { month, year } = getBillingPeriod();
+                const today = new Date();
+                const day = today.getUTCDate();
+
+                if (day <= 10) {
+                    updates.billingExemptMonth = month;
+                    updates.billingExemptYear = year;
+                }
+            } else if (isDeactivating) {
+                updates.deactivatedAt = new Date();
+                updates.isActive = false;
+                updates.billingExemptMonth = undefined;
+                updates.billingExemptYear = undefined;
+            } else {
+                updates.isActive = isActive;
+
+                if (isActive && !user.activatedAt) {
+                    updates.activatedAt = user.createdAt || new Date();
+                }
+            }
+        }
+
+        // userStatus update - only if requester is admin
+        if (userStatus && isAdmin) updates.userStatus = userStatus;
+
+        updates.updatedAt = new Date();
+    };
+
+    let session;
     try {
+        session = await User.startSession();
         await session.withTransaction(async () => {
             const user = await User.findById(userId).session(session);
             if (!user) throw new AppError('User not found', 404);
-
-            // Email change logic with verification
-            if (email && email !== user.email) {
-                const emailTaken = await User.isEmailTaken(email, userId);
-                if (emailTaken) throw new AppError('Email already in use', 409);
-
-                updates.email = email;
-                updates.isEmailVerified = false;
-                updates.emailChangedAt = new Date();
-
-                // Queue verification email (don't await in transaction)
-                emailService.sendVerificationEmail(email, user.name).catch(console.error);
-            }
-
-            // Basic profile updates
-            if (name) updates.name = name.trim();
-            if (phone) updates.phone = phone;
-            if (image !== undefined) updates.image = image;
-
-            // Role update – only if requester is admin
-            if (role && isAdmin) updates.role = role;
-            
-            // isActive update – only if requester is admin
-            // Handles activation/deactivation billing logic
-            if (isActive !== undefined && isAdmin) {
-                const wasInactive = !user.isActive;
-                const isActivating = wasInactive && isActive;
-                const isDeactivating = user.isActive && !isActive;
-
-                if (isActivating) {
-                    // Member being activated — track when they became active
-                    updates.activatedAt = new Date();
-                    updates.isActive = true;
-
-                    // Billing exemption logic:
-                    // If activation happens on Day 1-10 of a month (previous month is active billing period),
-                    // the member should NOT be billed for the previous month.
-                    const { month, year, start } = getBillingPeriod();
-                    const today = new Date();
-                    const day = today.getUTCDate();
-
-                    if (day <= 10) {
-                        // Day 1-10: Previous month is active billing period
-                        // Mark user to skip billing for that period
-                        updates.billingExemptMonth = month;
-                        updates.billingExemptYear = year;
-                    }
-                } else if (isDeactivating) {
-                    // Member being deactivated — track when they became inactive
-                    updates.deactivatedAt = new Date();
-                    updates.isActive = false;
-                    // Clear any billing exemption since they're now inactive
-                    updates.billingExemptMonth = undefined;
-                    updates.billingExemptYear = undefined;
-                } else {
-                    // No change in active state
-                    updates.isActive = isActive;
-
-                    // SAFETY: If user is active but activatedAt was never set
-                    // (e.g. activated before this code was deployed), backfill it
-                    // from createdAt so the billing exemption check works.
-                    if (isActive && !user.activatedAt) {
-                        updates.activatedAt = user.createdAt || new Date();
-                    }
-                }
-            }
-
-            // userStatus update - only if requester is admin
-            if (userStatus && isAdmin) updates.userStatus = userStatus;
-
-            updates.updatedAt = new Date();
-
-            // Atomic update
+            await applyUpdates(user);
             await User.findByIdAndUpdate(userId, updates, {
                 session,
                 new: true,
                 runValidators: true
             });
         });
-
-        // Return updated user (without session)
-        const updatedUser = await User.findById(userId).lean();
-
-        // Fire-and-forget: If member was activated, recalculate their payable amount
-        // and notify all clients that billing data changed. This ensures the frontend
-        // immediately reflects the billing exemption (₹0 for exempt periods).
-        if (updatedUser && updatedUser.isActive) {
-            recalculatePayableForUser(userId).catch(console.error);
-            emitToAll('billing:updated');
+    } catch (sessionError) {
+        // If sessions are not supported (standalone MongoDB), fall back to non-transactional update
+        if (sessionError.message?.includes('Sessions are not supported') || sessionError.name === 'MongoServerError') {
+            const user = await User.findById(userId);
+            if (!user) throw new AppError('User not found', 404);
+            await applyUpdates(user);
+            await User.findByIdAndUpdate(userId, updates, { new: true, runValidators: true });
+        } else {
+            throw sessionError;
         }
-
-        return updatedUser;
     } finally {
-        session.endSession();
+        if (session) session.endSession();
     }
+
+    const updatedUser = await User.findById(userId).lean();
+
+    if (updatedUser && updatedUser.isActive) {
+        recalculatePayableForUser(userId).catch(console.error);
+        emitToAll('billing:updated');
+    }
+
+    return updatedUser;
 }
 
 /**

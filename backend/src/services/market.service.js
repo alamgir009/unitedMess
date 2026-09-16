@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Market = require('../models/Market.model');
 const User = require('../models/User.model');
 const AppError = require('../utils/errors/AppError');
-const { parseDate } = require('../utils/helpers/date.helper');
+const { parseDate, normalizeDate } = require('../utils/helpers/date.helper');
 const { recalculateAllActiveUsersPayable } = require('./user.service');
 
 /**
@@ -10,7 +10,7 @@ const { recalculateAllActiveUsersPayable } = require('./user.service');
  * Idempotent: skips users who already have a market entry for that date.
  */
 const bulkCreateMarkets = async ({ userIds, date, amount, items, description }) => {
-    const parsedDate = parseDate(date);
+    const parsedDate = normalizeDate(parseDate(date));
 
     if (!items || typeof items !== 'string' || !items.trim()) {
         throw new AppError('Items description is required and must be a non-empty string', 400);
@@ -94,7 +94,7 @@ const bulkCreateMarkets = async ({ userIds, date, amount, items, description }) 
  */
 const createMarket = async (marketBody) => {
     const { user, amount, items, description, image } = marketBody;
-    const date = parseDate(marketBody.date);
+    const date = normalizeDate(parseDate(marketBody.date));
 
     if (!items || typeof items !== 'string' || !items.trim()) {
         throw new AppError('Items description is required and must be a non-empty string', 400);
@@ -200,7 +200,7 @@ const updateMarketById = async (marketId, updateBody) => {
 
     // Date Logic 
     if (updateBody.date) {
-        const parsedDate = parseDate(updateBody.date);
+        const parsedDate = normalizeDate(parseDate(updateBody.date));
 
         if (market.date.getTime() !== parsedDate.getTime()) {
             // Date changed — check for duplicate

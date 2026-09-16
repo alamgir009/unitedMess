@@ -4,11 +4,11 @@ import { Button } from '@/shared/components/ui';
 class ErrorBoundary extends Component {
     constructor(props) {
         super(props);
-        this.state = { hasError: false };
+        this.state = { hasError: false, error: null };
     }
 
-    static getDerivedStateFromError() {
-        return { hasError: true };
+    static getDerivedStateFromError(error) {
+        return { hasError: true, error };
     }
 
     componentDidCatch(_error, errorInfo) {
@@ -21,7 +21,9 @@ class ErrorBoundary extends Component {
                 <div className="flex items-center justify-center h-screen bg-background">
                     <div className="p-8 bg-card rounded-lg shadow-md border border-border">
                         <h1 className="text-2xl font-bold text-destructive mb-4">Something went wrong.</h1>
-                        <p className="text-muted-foreground">Please refresh the page or try again later.</p>
+                        <p className="text-muted-foreground">
+                            {this.state.error?.message || 'An unexpected error occurred.'}
+                        </p>
                         <Button
                             variant="primary"
                             onClick={() => window.location.reload()}

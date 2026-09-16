@@ -92,11 +92,14 @@ const resetMonthEnd = async () => {
  */
 const resetFirstOfMonth = async () => {
     const now = new Date();
-    const utcDay = now.getUTCDate();
-    if (utcDay !== 1) return;
+    // Convert to IST (UTC+5:30) to check the day correctly
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istDate = new Date(now.getTime() + istOffset);
+    const istDay = istDate.getUTCDate();
+    if (istDay !== 1) return;
 
-    let utcMonth = now.getUTCMonth() + 1;
-    let utcYear = now.getUTCFullYear();
+    let utcMonth = istDate.getUTCMonth() + 1;
+    let utcYear = istDate.getUTCFullYear();
 
     // Go back to the previous month
     utcMonth -= 1;

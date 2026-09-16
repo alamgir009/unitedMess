@@ -260,8 +260,8 @@ const getInvoice = async (userId, month, year) => {
             gasBillCharge: Number(user.gasBillCharge || 0),
             platformFee: Number(user.platformFee || 0),
         },
-        totalBill: Math.round(totalBill),
-        totalPayable: Math.round(totalBill),
+        totalBill: Math.round(totalBill * 100) / 100,
+        totalPayable: Math.round(totalBill * 100) / 100,
         paidAmount: livePaidAmount,
         isFinalized: false
     };
