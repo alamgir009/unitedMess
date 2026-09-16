@@ -4,7 +4,7 @@ import { TbToolsKitchen2 } from 'react-icons/tb';
 import { CAT_ICONS, CATEGORIES } from '../FoodConstants/FoodConstants';
 
 const Hero = memo(({ totalCount, search, onSearchChange, activeCategory, onCategoryChange }) => (
-    <header className="relative z-10 pt-12 md:pt-16 pb-8 md:pb-10 px-4 sm:px-6 text-center">
+    <header className="relative z-10 pt-6 md:pt-8 pb-8 md:pb-10 px-4 sm:px-6 text-center">
         <div className="max-w-3xl mx-auto flex flex-col items-center gap-4 animate-fade-in-up">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border bg-card/80 backdrop-blur-sm text-xs font-semibold uppercase tracking-widest text-muted-foreground shadow-sm">
                 <TbToolsKitchen2 className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />

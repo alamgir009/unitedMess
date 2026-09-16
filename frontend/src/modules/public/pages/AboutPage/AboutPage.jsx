@@ -162,7 +162,7 @@ const AboutPage = () => {
             </div>
 
             {/* ── HERO ── */}
-            <section className="relative z-10 w-full max-w-[1280px] pt-12 md:pt-16 pb-8 md:pb-10 px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
+            <section className="relative z-10 w-full max-w-[1280px] pt-6 md:pt-8 pb-8 md:pb-10 px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
                 <div className="max-w-3xl mx-auto flex flex-col items-center gap-4">
                     <Reveal className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/80 px-3 py-1.5 text-caption font-semibold uppercase tracking-[0.22em] text-muted-foreground sm:px-4 shadow-sm shrink-0">
                         <HiOutlineSparkles className="w-3.5 h-3.5 text-primary" />

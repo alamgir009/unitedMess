@@ -469,7 +469,7 @@ const HomePage = () => {
         <div className="absolute bottom-[-10rem] left-1/3 h-[24rem] w-[24rem] rounded-full bg-accent/10 blur-[100px] dark:bg-accent/10 sm:bottom-[-16rem] sm:h-[38rem] sm:w-[38rem] sm:blur-[120px]" />
       </div>
 
-      <section className="relative mx-auto grid max-w-7xl items-center gap-6 px-4 pb-8 pt-20 sm:gap-8 sm:px-6 sm:pb-12 sm:pt-24 lg:grid-cols-[1fr_1.05fr] lg:px-8 lg:pb-16 lg:pt-24 xl:gap-10">
+      <section className="relative mx-auto grid max-w-7xl items-center gap-6 px-4 pb-8 pt-8 sm:gap-8 sm:px-6 sm:pb-12 sm:pt-12 lg:grid-cols-[1fr_1.05fr] lg:px-8 lg:pb-16 lg:pt-12 xl:gap-10">
 
         <div>
           <div className="mb-4 flex flex-wrap items-center gap-2 sm:gap-3 animate-fade-up" style={{ animationDelay: '0s' }}>
