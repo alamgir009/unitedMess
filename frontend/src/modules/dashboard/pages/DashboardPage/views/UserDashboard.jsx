@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchUserDashboardStats, fetchUserRecentActivity } from '../../../store/dashboard.slice';
 import PayableWidget from '../../../components/PayableWidget/PayableWidget';
@@ -8,10 +8,9 @@ import {
     Sunrise,
     Sun,
     Sunset,
-    Moon,
-    ShieldCheck,
     Sparkles,
 } from 'lucide-react';
+import { HiOutlineMoon } from 'react-icons/hi2';
 
 /* ─────────────────────────────────────────────────────────────
    IST-aware greeting  (UTC + 5:30)
@@ -57,8 +56,8 @@ const getISTGreeting = () => {
     return {
         label: 'Good Night',
         sub: 'Rest well — accounts are secure.',
-        Icon: Moon,
-        iconColorClass: 'text-blue-500 dark:text-blue-400',
+        Icon: HiOutlineMoon,
+        iconColorClass: 'text-blue-400 dark:text-blue-400',
         pillClass: 'bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-400',
         cardBorderClass: 'border-blue-500/20 dark:border-blue-500/30',
         bgGradient: 'bg-gradient-to-br from-blue-500/[0.03] to-transparent',
@@ -68,7 +67,7 @@ const getISTGreeting = () => {
 /* ─────────────────────────────────────────────────────────────
    Component
    ───────────────────────────────────────────────────────────── */
-const UserDashboard = () => {
+const UserDashboard = memo(function UserDashboard() {
     const dispatch = useDispatch();
     const g = useMemo(() => getISTGreeting(), []);
     const GreetIcon = g.Icon;
@@ -112,12 +111,12 @@ const UserDashboard = () => {
     }, [dispatch]);
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-5 sm:space-y-6">
 
             {/* ── Greeting Header Card ── */}
             <div
                 className={cn(
-                    "relative overflow-hidden rounded-2xl p-6 sm:p-8 bg-card border shadow-sm hover:shadow-md transition-[box-shadow] duration-200 ease-out",
+                    "relative overflow-hidden rounded-2xl p-4 sm:p-6 bg-card border shadow-sm hover:shadow-md transition-[box-shadow] duration-200 ease-out",
                     g.cardBorderClass
                 )}
             >
@@ -129,53 +128,38 @@ const UserDashboard = () => {
                     )}
                 />
 
-                <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    
-                    {/* Left Side: Dynamic Greeting */}
+                <div className="relative">
+
+                    {/* Dynamic Greeting */}
                     <div className="min-w-0 flex-1">
                         {/* Greeting pill */}
                         <div
                             className={cn(
-                                "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-caption sm:text-xs font-bold uppercase tracking-wider mb-4 border",
+                                "inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-semibold uppercase tracking-wider mb-3 sm:mb-4 border",
                                 g.pillClass
                             )}
                         >
-                            <GreetIcon className={cn("w-3.5 h-3.5", g.iconColorClass)} strokeWidth={2.5} />
+                            <GreetIcon className={cn("w-3 h-3 sm:w-3.5 sm:h-3.5", g.iconColorClass)} strokeWidth={2.5} />
                             {g.label}
                         </div>
 
                         {/* User Name */}
-                        <h2 className="flex items-center gap-2.5 flex-wrap text-h1 font-extrabold tracking-tight text-foreground leading-tight">
+                        <h2 className="flex items-center gap-2 flex-wrap text-xl sm:text-2xl font-bold tracking-tight text-foreground leading-tight">
                             <span>Welcome, {user?.name ?? 'Member'}</span>
-                            <Sparkles className={cn("w-5 h-5 animate-pulse", g.iconColorClass)} strokeWidth={2} />
+                            <Sparkles className={cn("w-4 h-4 sm:w-5 sm:h-5", g.iconColorClass)} strokeWidth={2} />
                         </h2>
 
                         {/* Greeting Subtext */}
-                        <p className="mt-2 text-body text-muted-foreground font-medium leading-relaxed">
+                        <p className="mt-1.5 sm:mt-2 text-sm sm:text-body text-muted-foreground leading-relaxed">
                             {g.sub}
                         </p>
-                    </div>
-
-                    {/* Right Side: Account Summary Badge */}
-                    <div className="flex flex-wrap items-center justify-between md:justify-start gap-4 shrink-0 pt-4 border-t border-border/10 md:border-t-0 md:pt-0">
-                        <div className="flex flex-col text-left md:text-right min-w-0 flex-1 md:flex-initial">
-                            <span className="text-caption font-bold text-muted-foreground uppercase tracking-wider">Account Status</span>
-                            <span className="text-xs text-foreground font-semibold mt-0.5 truncate max-w-[180px] sm:max-w-none" title={user?.email}>
-                                {user?.email}
-                            </span>
-                        </div>
-                        <div className="h-8 w-px bg-border/60 hidden md:block" />
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-success-bg border border-success-border text-success-text rounded-xl text-caption font-bold uppercase tracking-wider shadow-sm select-none shrink-0">
-                            <ShieldCheck size={14} strokeWidth={2.5} />
-                            <span>Active</span>
-                        </div>
                     </div>
 
                 </div>
             </div>
 
             {/* ── Widget Grid ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 lg:gap-6">
                 <PayableWidget
                     mealPayable={userMealPayable?.payableAmount}
                     gasBillPayable={userGasBillPayable?.payableAmount}
@@ -194,6 +178,6 @@ const UserDashboard = () => {
             </div>
         </div>
     );
-};
+});
 
 export default UserDashboard;
