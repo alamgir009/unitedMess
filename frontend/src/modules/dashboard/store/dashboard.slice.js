@@ -19,6 +19,8 @@ const initialState = {
     // Components must NOT infer "paid" from null values until this is true.
     userStatsLoaded: false,
     isUserStatsError: false,
+    isMealPayableError: false,
+    isGasBillPayableError: false,
     lastFetchedAt: null,
     message: '',
 };
@@ -52,24 +54,24 @@ export const fetchAdminDashboardStats = createAsyncThunk(
 
 export const fetchUserDashboardStats = createAsyncThunk(
     'dashboard/fetchUserStats',
-    async (_, thunkAPI) => {
-        try {
-            const mealPayable = await dashboardService.getUserMealPayable();
-            const gasBillPayable = await dashboardService.getUserGasBillPayable();
+    async () => {
+        const [mealResult, gasResult] = await Promise.allSettled([
+            dashboardService.getUserMealPayable(),
+            dashboardService.getUserGasBillPayable(),
+        ]);
 
-            return {
-                mealPayable: mealPayable?.data || mealPayable,
-                gasBillPayable: gasBillPayable?.data || gasBillPayable,
-            };
-        } catch (error) {
-            const message =
-                (error.response &&
-                    error.response.data &&
-                    error.response.data.message) ||
-                error.message ||
-                error.toString();
-            return thunkAPI.rejectWithValue(message);
-        }
+        const extractData = (result) => {
+            if (result.status !== 'fulfilled') return null;
+            const payload = result.value;
+            return payload?.data ?? payload ?? null;
+        };
+
+        return {
+            mealPayable: extractData(mealResult),
+            gasBillPayable: extractData(gasResult),
+            isMealPayableError: mealResult.status === 'rejected',
+            isGasBillPayableError: gasResult.status === 'rejected',
+        };
     }
 );
 
@@ -127,24 +129,30 @@ export const dashboardSlice = createSlice({
                 state.isLoading = true;
                 state.isError = false;
                 state.isUserStatsError = false;
+                state.isMealPayableError = false;
+                state.isGasBillPayableError = false;
                 state.isSuccess = false;
             })
             .addCase(fetchUserDashboardStats.fulfilled, (state, action) => {
                 state.isLoading = false;
                 state.isSuccess = true;
                 state.userStatsLoaded = true;
-                state.isUserStatsError = false;
                 state.lastFetchedAt = Date.now();
                 state.userMealPayable = action.payload.mealPayable;
                 state.userGasBillPayable = action.payload.gasBillPayable;
+                state.isMealPayableError = action.payload.isMealPayableError;
+                state.isGasBillPayableError = action.payload.isGasBillPayableError;
+                state.isUserStatsError =
+                    action.payload.isMealPayableError && action.payload.isGasBillPayableError;
             })
-            .addCase(fetchUserDashboardStats.rejected, (state, action) => {
+            .addCase(fetchUserDashboardStats.rejected, (state) => {
                 state.isLoading = false;
                 state.isError = true;
                 state.isUserStatsError = true;
-                state.userStatsLoaded = true; // Loaded (with error) — stop showing skeleton
+                state.isMealPayableError = true;
+                state.isGasBillPayableError = true;
+                state.userStatsLoaded = true;
                 state.lastFetchedAt = Date.now();
-                state.message = action.payload;
             })
             // Recent Activity
             .addCase(fetchUserRecentActivity.pending, (state) => {
@@ -170,6 +178,8 @@ export const dashboardSlice = createSlice({
                 state.userGasBillPayable = null;
                 state.recentActivities = [];
                 state.userStatsLoaded = false;
+                state.isMealPayableError = false;
+                state.isGasBillPayableError = false;
                 state.lastFetchedAt = null;
             });
     },

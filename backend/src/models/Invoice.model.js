@@ -68,14 +68,12 @@ const invoiceSchema = new mongoose.Schema(
         totalBill: {
             type: Number,
             default: 0,
-            min: [0, 'Total bill cannot be negative'],
-            comment: "messCost + fixedCosts + guestRevenue - marketAmountSpent",
+            comment: "messCost + fixedCosts + guestRevenue - marketAmountSpent (can be negative when market spend exceeds costs — triggers refund flow)",
         },
         totalPayable: {
             type: Number,
             default: 0,
-            min: [0, 'Total payable cannot be negative'],
-            comment: "totalBill (includes fixed costs and guest adjustments)",
+            comment: "totalBill (can be negative — determineInvoiceStatus maps < 0 to 'refunded')",
         },
         paidAmount: {
             type: Number,

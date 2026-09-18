@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import { FiCalendar, FiAlertTriangle, FiUser, FiShield } from 'react-icons/fi';
 import { HiCheckCircle, HiXCircle, HiClock } from 'react-icons/hi2';
@@ -92,6 +92,7 @@ const InfoBadge = ({ label, value, color = 'gray' }) => {
 
 const UserEditModal = ({ isOpen, onClose, user }) => {
   const dispatch = useDispatch();
+  const formRef = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -180,7 +181,7 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
       <Button variant="secondary" size="sm" className="flex-1" onClick={onClose} disabled={isLoading}>
         Cancel
       </Button>
-      <Button variant="primary" size="sm" className="flex-[2]" type="submit" disabled={isLoading} isLoading={isLoading}>
+      <Button variant="primary" size="sm" className="flex-[2]" type="button" onClick={() => formRef.current?.requestSubmit()} disabled={isLoading} isLoading={isLoading}>
         Save Changes
       </Button>
     </div>
@@ -243,7 +244,7 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 p-4 sm:p-5">
+        <form ref={formRef} onSubmit={handleSubmit} className="flex-1 p-4 sm:p-5">
           <div className="mb-4">
             <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
               Identity

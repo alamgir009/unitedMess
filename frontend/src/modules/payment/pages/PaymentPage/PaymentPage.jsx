@@ -20,6 +20,7 @@ import {
     HiOutlineFire,
     HiOutlineDocumentText,
     HiOutlineArrowRight,
+    HiOutlineArrowPath,
 } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 
@@ -116,10 +117,14 @@ const BillsOverview = React.memo(({
     const gasOverdue = gasBillStatus === 'overdue';
     const messRefunded = messBillStatus === 'refunded';
     const gasRefunded = gasBillStatus === 'refunded';
-    const messDue = !messPaid && !messRefunded;
-    const gasDue = !gasPaid && !gasRefunded;
+    const messRefundDue = messBillStatus === 'refund' || (!messPaid && !messRefunded && messAmount < 0);
+    const gasRefundDue = gasBillStatus === 'refund' || (!gasPaid && !gasRefunded && gasAmount < 0);
+    const messDue = !messPaid && !messRefunded && !messRefundDue;
+    const gasDue = !gasPaid && !gasRefunded && !gasRefundDue;
     const bothPaid = (messPaid || messRefunded) && (gasPaid || gasRefunded);
     const totalDue = (messDue ? messAmount : 0) + (gasDue ? gasAmount : 0);
+    const totalRefund = Math.abs(messRefundDue ? messAmount : 0) + Math.abs(gasRefundDue ? gasAmount : 0);
+    const hasRefundDue = totalRefund > 0;
     const monthName = payableAmountData?.monthName || 'Current Period';
 
     if (isInvoiceLoading) return <InvoiceSkeleton />;
@@ -132,7 +137,7 @@ const BillsOverview = React.memo(({
             <div className="px-5 py-4 border-b border-border/40 flex items-center justify-between">
                 <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                        <p className="text-sm font-bold text-foreground">Bills Due</p>
+                        <p className="text-sm font-bold text-foreground">{hasRefundDue && !bothPaid ? 'Refund Owed' : 'Bills Due'}</p>
                         <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-primary/8 text-primary">
                             {monthName}
                         </span>
@@ -142,6 +147,11 @@ const BillsOverview = React.memo(({
                     <span className="badge-success [&::before]:content-none px-2.5 py-1 rounded-md text-[clamp(0.625rem,0.5vw+0.5rem,0.8125rem)]">
                         All Paid
                     </span>
+                ) : hasRefundDue ? (
+                    <div className="text-right" aria-live="polite">
+                        <p className="text-overline text-violet-500 dark:text-violet-400">Refund Due</p>
+                        <p className="text-h3 font-bold tabular-nums text-violet-600 dark:text-violet-400">₹{fmtINR(totalRefund)}</p>
+                    </div>
                 ) : (
                     <div className="text-right" aria-live="polite">
                         <p className="text-overline text-muted-foreground">Total Due</p>
@@ -165,7 +175,12 @@ const BillsOverview = React.memo(({
                     </div>
                     <div className="flex items-center gap-2 sm:gap-3 min-w-0 justify-end">
                         <span className="text-[clamp(0.8125rem,0.5vw+0.6rem,1rem)] font-bold tabular-nums text-foreground whitespace-nowrap">₹{fmtINR(messAmount)}</span>
-                        {messRefunded ? (
+                        {messRefundDue ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-violet-500/15 text-violet-600 dark:text-violet-400">
+                                <HiOutlineArrowPath className="w-3 h-3" />
+                                Refund
+                            </span>
+                        ) : messRefunded ? (
                             <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-violet-500/15 text-violet-600 dark:text-violet-400">
                                 Refunded
                             </span>
@@ -190,7 +205,7 @@ const BillsOverview = React.memo(({
                 </div>
 
                 {/* Gas Bill Row */}
-                {(gasAmount > 0 || gasPaid || gasRefunded) && (
+                {(gasAmount > 0 || gasPaid || gasRefunded || gasRefundDue) && (
                     <div className={`px-5 py-3 flex items-center justify-between gap-3 sm:gap-4 hover:bg-muted/30 transition-[background-color] duration-150 ease-out${gasOverdue ? ' border-l-2 border-warning bg-warning/[0.03]' : ''}`}>
                         <div className="flex items-center gap-3 min-w-0">
                             <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-warning/10 text-warning shrink-0">
@@ -203,7 +218,12 @@ const BillsOverview = React.memo(({
                         </div>
                         <div className="flex items-center gap-2 sm:gap-3 min-w-0 justify-end">
                             <span className="text-[clamp(0.8125rem,0.5vw+0.6rem,1rem)] font-bold tabular-nums text-foreground whitespace-nowrap">₹{fmtINR(gasAmount)}</span>
-                            {gasRefunded ? (
+                            {gasRefundDue ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-violet-500/15 text-violet-600 dark:text-violet-400">
+                                    <HiOutlineArrowPath className="w-3 h-3" />
+                                    Refund
+                                </span>
+                            ) : gasRefunded ? (
                                 <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-violet-500/15 text-violet-600 dark:text-violet-400">
                                     Refunded
                                 </span>

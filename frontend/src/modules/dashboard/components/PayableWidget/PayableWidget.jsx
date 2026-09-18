@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import {
     FiCreditCard, FiClock, FiDroplet, FiCheckCircle,
-    FiArrowRight, FiAlertCircle,
+    FiArrowRight, FiAlertCircle, FiRotateCcw,
 } from 'react-icons/fi';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { Button } from '@/shared/components/ui';
@@ -17,7 +17,9 @@ import { Button } from '@/shared/components/ui';
  * gasBillStatus      {'success'|'pending'|null}   – authoritative backend status
  * isLoading          {boolean}                    – true while fetch in-flight
  * isLoaded           {boolean}                    – true once fetch settled (success OR error)
- * isError            {boolean}                    – true if fetch failed
+ * isError            {boolean}                    – true if both fetches failed
+ * isMealError        {boolean}                    – true if meal payable fetch failed
+ * isGasError         {boolean}                    – true if gas bill payable fetch failed
  */
 const PayableWidget = ({
     mealPayable,
@@ -26,7 +28,8 @@ const PayableWidget = ({
     gasBillStatus,
     isLoading,
     isLoaded,
-    isError,
+    isMealError,
+    isGasError,
 }) => {
     const navigate = useNavigate();
 
@@ -41,17 +44,21 @@ const PayableWidget = ({
     const mealPaid =
         mealPaymentStatus === 'success' ||
         mealPaymentStatus === 'refund' ||
-        (isLoaded && !isError && mealPayable === 0);
+        (isLoaded && !isMealError && mealPayable === 0);
 
     const gasPaid =
         gasBillStatus === 'success' ||
         gasBillStatus === 'refund' ||
-        (isLoaded && !isError && gasBillPayable === 0);
+        (isLoaded && !isGasError && gasBillPayable === 0);
+
+    const mealRefund = mealPaymentStatus === 'refund';
+    const gasRefund = gasBillStatus === 'refund';
 
     // Safe numeric totals (never NaN)
     const safeMeal = Number(mealPayable) || 0;
     const safeGas  = Number(gasBillPayable) || 0;
-    const totalOutstanding = (mealPaid ? 0 : safeMeal) + (gasPaid ? 0 : safeGas);
+    // Outstanding = only amounts that are actually owed (exclude refunds)
+    const totalOutstanding = (!mealPaid ? safeMeal : 0) + (!gasPaid ? safeGas : 0);
 
     return (
         <div className="rounded-2xl p-6 relative overflow-hidden shadow-sm h-full flex flex-col hover:shadow-xl transition-[box-shadow] duration-200 ease-out contain-layout border border-white/10" style={{ background: 'var(--gradient-primary)' }}>
@@ -67,26 +74,20 @@ const PayableWidget = ({
                     <p className="text-indigo-200/80 text-body mt-0.5">Monthly bill summary for this period</p>
                 </div>
 
-                {/* Error state */}
-                {isError && (
-                    <div className="flex items-center gap-2 bg-rose-500/20 border border-rose-500/30 rounded-xl px-4 py-2.5 mb-4 text-xs font-medium">
-                        <FiAlertCircle size={14} className="shrink-0 text-rose-300" />
-                        <span className="text-rose-100">
-                            Unable to load bill data. Please refresh.
-                        </span>
-                    </div>
-                )}
-
                 {/* Bill Cards */}
                 <div className="space-y-3 flex-1">
 
                     {/* ── Meal Bill ── */}
                     <div className="bg-white/5 dark:bg-white/[0.02] border border-white/10 hover:bg-white/10 dark:hover:bg-white/[0.05] rounded-xl p-4 flex items-center justify-between gap-3 transition-[background-color] duration-150 ease-out">
                         <div className="flex items-center gap-3">
-                            <div className={cn('p-2 rounded-lg border', mealPaid ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-white/10 border-white/10 text-white')}>
-                                {mealPaid
-                                    ? <FiCheckCircle size={18} />
-                                    : <FiClock size={18} />
+                            <div className={cn('p-2 rounded-lg border', isMealError ? 'bg-rose-500/20 border-rose-500/30 text-rose-400' : mealRefund && safeMeal < 0 ? 'bg-violet-500/20 border-violet-500/30 text-violet-400' : mealPaid ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-white/10 border-white/10 text-white')}>
+                                {isMealError
+                                    ? <FiAlertCircle size={18} />
+                                    : mealRefund && safeMeal < 0
+                                        ? <FiRotateCcw size={18} />
+                                        : mealPaid
+                                            ? <FiCheckCircle size={18} />
+                                            : <FiClock size={18} />
                                 }
                             </div>
                             <div>
@@ -94,8 +95,10 @@ const PayableWidget = ({
                                 <p className="text-h2 font-extrabold text-white leading-none tabular-nums">
                                     {isLoading ? (
                                         <span className="inline-block w-16 h-5 bg-white/20 rounded animate-pulse" />
-                                    ) : isError ? (
-                                        <span className="text-rose-300 text-sm">—</span>
+                                    ) : isMealError ? (
+                                        <span className="text-rose-300 text-sm">Failed to load</span>
+                                    ) : mealRefund && safeMeal < 0 ? (
+                                        <span className="text-violet-300 text-sm font-semibold">₹{Math.abs(safeMeal).toLocaleString('en-IN')} Refund</span>
                                     ) : mealPaid ? (
                                         <span className="text-emerald-300 text-sm font-semibold">Settled ✓</span>
                                     ) : (
@@ -106,8 +109,12 @@ const PayableWidget = ({
                         </div>
 
                         {/* Action */}
-                        {!isLoading && !isError && (
-                            mealPaid ? (
+                        {!isLoading && !isMealError && (
+                            mealRefund && safeMeal < 0 ? (
+                                <span className="bg-violet-500/20 border border-violet-500/30 text-violet-300 text-caption font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg shrink-0">
+                                    Refund
+                                </span>
+                            ) : mealPaid ? (
                                 <span className="bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-caption font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg shrink-0">
                                     Paid
                                 </span>
@@ -121,15 +128,28 @@ const PayableWidget = ({
                                 </Button>
                             )
                         )}
+                        {!isLoading && isMealError && (
+                            <Button
+                                variant="inverse"
+                                size="sm"
+                                onClick={() => window.location.reload()}
+                            >
+                                Retry
+                            </Button>
+                        )}
                     </div>
 
                     {/* ── Gas Bill ── */}
                     <div className="bg-white/5 dark:bg-white/[0.02] border border-white/10 hover:bg-white/10 dark:hover:bg-white/[0.05] rounded-xl p-4 flex items-center justify-between gap-3 transition-[background-color] duration-150 ease-out">
                         <div className="flex items-center gap-3">
-                            <div className={cn('p-2 rounded-lg border', gasPaid ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-white/10 border-white/10 text-white')}>
-                                {gasPaid
-                                    ? <FiCheckCircle size={18} />
-                                    : <FiDroplet size={18} />
+                            <div className={cn('p-2 rounded-lg border', isGasError ? 'bg-rose-500/20 border-rose-500/30 text-rose-400' : gasRefund && safeGas < 0 ? 'bg-violet-500/20 border-violet-500/30 text-violet-400' : gasPaid ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-white/10 border-white/10 text-white')}>
+                                {isGasError
+                                    ? <FiAlertCircle size={18} />
+                                    : gasRefund && safeGas < 0
+                                        ? <FiRotateCcw size={18} />
+                                        : gasPaid
+                                            ? <FiCheckCircle size={18} />
+                                            : <FiDroplet size={18} />
                                 }
                             </div>
                             <div>
@@ -137,8 +157,10 @@ const PayableWidget = ({
                                 <p className="text-h2 font-extrabold text-white leading-none tabular-nums">
                                     {isLoading ? (
                                         <span className="inline-block w-16 h-5 bg-white/20 rounded animate-pulse" />
-                                    ) : isError ? (
-                                        <span className="text-rose-300 text-sm">—</span>
+                                    ) : isGasError ? (
+                                        <span className="text-rose-300 text-sm">Failed to load</span>
+                                    ) : gasRefund && safeGas < 0 ? (
+                                        <span className="text-violet-300 text-sm font-semibold">₹{Math.abs(safeGas).toLocaleString('en-IN')} Refund</span>
                                     ) : gasPaid ? (
                                         <span className="text-emerald-300 text-sm font-semibold">Settled ✓</span>
                                     ) : (
@@ -149,8 +171,12 @@ const PayableWidget = ({
                         </div>
 
                         {/* Action */}
-                        {!isLoading && !isError && (
-                            gasPaid ? (
+                        {!isLoading && !isGasError && (
+                            gasRefund && safeGas < 0 ? (
+                                <span className="bg-violet-500/20 border border-violet-500/30 text-violet-300 text-caption font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg shrink-0">
+                                    Refund
+                                </span>
+                            ) : gasPaid ? (
                                 <span className="bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-caption font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg shrink-0">
                                     Paid
                                 </span>
@@ -164,12 +190,21 @@ const PayableWidget = ({
                                 </Button>
                             )
                         )}
+                        {!isLoading && isGasError && (
+                            <Button
+                                variant="inverse"
+                                size="sm"
+                                onClick={() => window.location.reload()}
+                            >
+                                Retry
+                            </Button>
+                        )}
                     </div>
                 </div>
 
                 {/* ── Footer ── */}
-                {/* Total outstanding — only when loaded, not errored, and at least one bill is unpaid */}
-                {isLoaded && !isError && (!mealPaid || !gasPaid) && (
+                {/* Total outstanding — when at least one bill is unpaid and no refunds pending */}
+                {isLoaded && !mealRefund && !gasRefund && (!mealPaid || !gasPaid) && !(isMealError && isGasError) && (
                     <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between">
                         <span className="text-indigo-200/95 text-body font-semibold uppercase tracking-wider">Total Outstanding</span>
                         <span className="text-h2 font-bold text-white tabular-nums">
@@ -178,11 +213,29 @@ const PayableWidget = ({
                     </div>
                 )}
 
-                {/* All bills cleared */}
-                {isLoaded && !isError && mealPaid && gasPaid && (
+                {/* Refund pending — when any bill has refund due */}
+                {isLoaded && (mealRefund || gasRefund) && (
+                    <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between">
+                        <span className="text-indigo-200/95 text-body font-semibold uppercase tracking-wider">Total Refund</span>
+                        <span className="text-h2 font-bold text-violet-300 tabular-nums">
+                            ₹{Math.abs(safeMeal + safeGas).toLocaleString('en-IN')}
+                        </span>
+                    </div>
+                )}
+
+                {/* All bills cleared — both paid, no refunds */}
+                {isLoaded && !isMealError && !isGasError && !mealRefund && !gasRefund && mealPaid && gasPaid && (
                     <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-1.5 text-emerald-400 text-caption font-semibold uppercase tracking-wider">
                         <FiCheckCircle size={14} />
                         <span>All bills cleared for this period!</span>
+                    </div>
+                )}
+
+                {/* Refund in progress — all bills have refund due */}
+                {isLoaded && !isMealError && !isGasError && mealRefund && gasRefund && (
+                    <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-1.5 text-violet-400 text-caption font-semibold uppercase tracking-wider">
+                        <FiRotateCcw size={14} />
+                        <span>Refunds pending for this period</span>
                     </div>
                 )}
             </div>

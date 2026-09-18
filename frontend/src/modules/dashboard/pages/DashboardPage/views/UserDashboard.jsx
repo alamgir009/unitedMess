@@ -80,7 +80,8 @@ const UserDashboard = () => {
         isLoading,
         isActivitiesLoading,
         userStatsLoaded,
-        isUserStatsError,
+        isMealPayableError,
+        isGasBillPayableError,
         lastFetchedAt,
     } = useSelector((state) => state.dashboard);
 
@@ -182,7 +183,8 @@ const UserDashboard = () => {
                     gasBillStatus={userGasBillPayable?.status ?? null}
                     isLoading={isLoading}
                     isLoaded={userStatsLoaded}
-                    isError={isUserStatsError}
+                    isMealError={isMealPayableError}
+                    isGasError={isGasBillPayableError}
                 />
 
                 <RecentActivityWidget
