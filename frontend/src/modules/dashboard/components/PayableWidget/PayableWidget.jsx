@@ -173,11 +173,11 @@ const PayableWidget = ({
                         {/* Action */}
                         {!isLoading && !isGasError && (
                             gasRefund && safeGas < 0 ? (
-                                <span className="bg-violet-500/10 border border-violet-500/20 text-violet-600 dark:text-violet-400 text-caption font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg shrink-0">
+                                <span className="bg-violet-500/10 border border-violet-500/20 text-violet-600 dark:text-violet-400 text-caption font-semibold uppercase tracking-wider px-2.5 py-1 rounded-lg shrink-0">
                                     Refund
                                 </span>
                             ) : gasPaid ? (
-                                <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-caption font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg shrink-0">
+                                <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-caption font-semibold uppercase tracking-wider px-2.5 py-1 rounded-lg shrink-0">
                                     Paid
                                 </span>
                             ) : (
