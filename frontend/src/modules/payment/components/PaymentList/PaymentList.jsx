@@ -14,7 +14,7 @@ import {
     HiOutlineIdentification,
 } from 'react-icons/hi2';
 import { Button } from '@/shared/components/ui';
-import { formatSmartDate } from '@/core/utils/helpers/date.helper';
+import { formatSmartDateTime } from '@/core/utils/helpers/date.helper';
 
 const STATUS = {
     completed:            { label: 'Paid',      cls: 'bg-success-bg text-success-text ring-1 ring-success-border' },
@@ -33,7 +33,7 @@ const TYPE = {
 const methodLabel = (m) => ({ cash: 'Cash', online: 'Online', razorpay: 'Razorpay', upi_manual: 'Manual UPI' }[m] || m);
 
 const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInvoice, onVerify, isAdmin, canEdit }, ref) => {
-    const date   = formatSmartDate(payment.paymentDate);
+    const date   = formatSmartDateTime(payment.paymentDate, payment.createdAt);
     const stat   = STATUS[payment.status] || STATUS.pending;
     const typeC  = TYPE[payment.type]     || TYPE.other;
     const amount = Number(payment.amount ?? 0);
@@ -163,7 +163,7 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewIn
 PaymentCard.displayName = 'PaymentCard';
 
 const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInvoice, onVerify, isAdmin, canEdit }, ref) => {
-    const date   = formatSmartDate(payment.paymentDate);
+    const date   = formatSmartDateTime(payment.paymentDate, payment.createdAt);
     const stat   = STATUS[payment.status] || STATUS.pending;
     const typeC  = TYPE[payment.type]     || TYPE.other;
     const amount = Number(payment.amount ?? 0);

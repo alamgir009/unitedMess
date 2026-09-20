@@ -16,7 +16,7 @@ import {
     HiOutlineMinus,
 } from 'react-icons/hi2';
 import { Button } from '@/shared/components/ui';
-import { formatSmartDate } from '@/core/utils/helpers/date.helper';
+import { formatSmartDateTime } from '@/core/utils/helpers/date.helper';
 
 const TYPE = {
     day: {
@@ -84,7 +84,7 @@ Checkbox.displayName = 'Checkbox';
 const MealCard = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin, isSelected, onToggleSelect }, ref) => {
     const cfg = TYPE[meal.type] || TYPE.both;
     const { Icon } = cfg;
-    const date = formatSmartDate(meal.date);
+    const date = formatSmartDateTime(meal.date, meal.createdAt);
 
     const handleCheckboxChange = useCallback(() => {
         onToggleSelect(meal._id);
@@ -193,7 +193,7 @@ MealCard.displayName = 'MealCard';
 const MealRow = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin, isSelected, onToggleSelect }, ref) => {
     const cfg = TYPE[meal.type] || TYPE.both;
     const { Icon } = cfg;
-    const date = formatSmartDate(meal.date);
+    const date = formatSmartDateTime(meal.date, meal.createdAt);
 
     const handleCheckboxChange = useCallback(() => {
         onToggleSelect(meal._id);

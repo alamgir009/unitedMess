@@ -11,7 +11,7 @@ import {
     HiOutlineShoppingBag,
 } from 'react-icons/hi2';
 import { Button } from '@/shared/components/ui';
-import { formatSmartDate } from '@/core/utils/helpers/date.helper';
+import { formatSmartDateTime } from '@/core/utils/helpers/date.helper';
 
 /* Amount color utility */
 const amountColor = (amount) => {
@@ -22,7 +22,7 @@ const amountColor = (amount) => {
 
 /* MARKET CARD -- grid view */
 const MarketCard = React.memo(React.forwardRef(({ market, onEdit, onDelete, isAdmin }, ref) => {
-    const date = formatSmartDate(market.date);
+    const date = formatSmartDateTime(market.date, market.createdAt);
     const formattedAmount = Number(market.amount).toLocaleString('en-IN');
     const amtColor = amountColor(market.amount);
 
@@ -121,7 +121,7 @@ MarketCard.displayName = 'MarketCard';
 
 /* MARKET ROW -- list view */
 const MarketRow = React.memo(React.forwardRef(({ market, onEdit, onDelete, isAdmin }, ref) => {
-    const date = formatSmartDate(market.date);
+    const date = formatSmartDateTime(market.date, market.createdAt);
     const formattedAmount = Number(market.amount).toLocaleString('en-IN');
     const amtColor = amountColor(market.amount);
 

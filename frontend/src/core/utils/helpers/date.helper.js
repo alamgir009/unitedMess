@@ -132,3 +132,33 @@ export const formatSmartDate = (dateStr) => {
         return { primary: '', secondary: '' };
     }
 };
+
+export const formatSmartDateTime = (dateStr, timeStr) => {
+    if (!dateStr) return { primary: '', secondary: '' };
+    try {
+        const date = dateStr instanceof Date ? dateStr : new Date(dateStr);
+        if (isNaN(date.getTime())) return { primary: '', secondary: '' };
+
+        const recent = isTodayIST(date) || isYesterdayIST(date) || differenceInDays(new Date(), date) < 7;
+
+        let primary;
+        if (isTodayIST(date)) primary = 'Today';
+        else if (isYesterdayIST(date)) primary = 'Yesterday';
+        else if (recent) primary = formatInIST(date, 'EEEE');
+        else primary = formatInIST(date, 'MMM d');
+
+        const timePart = (() => {
+            if (!timeStr) return '';
+            const time = timeStr instanceof Date ? timeStr : new Date(timeStr);
+            return isNaN(time.getTime()) ? '' : ` · ${formatInIST(time, 'h:mm a')}`;
+        })();
+
+        const secondary = recent
+            ? `${formatInIST(date, 'MMM d')}${timePart}`
+            : `${formatInIST(date, 'yyyy')}${timePart}`;
+
+        return { primary, secondary };
+    } catch {
+        return { primary: '', secondary: '' };
+    }
+};
