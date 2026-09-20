@@ -185,7 +185,7 @@ const RecentActivityWidget = memo(function RecentActivityWidget({ activities = [
 
     if (isLoading) {
         return (
-            <div className="bg-card border border-border/50 rounded-lg shadow-sm p-4 sm:p-5 flex flex-col animate-fade-up" style={{ animationDelay: '0.2s' }}>
+            <div className="bg-card border border-border/50 rounded-2xl shadow-sm p-4 sm:p-5 flex flex-col animate-fade-up" style={{ animationDelay: '0.2s' }}>
                 <div className="flex items-center justify-between mb-3 sm:mb-4">
                     <div className="flex items-center gap-2">
                         <div className="h-4 w-4 bg-muted rounded animate-pulse" />
@@ -201,7 +201,7 @@ const RecentActivityWidget = memo(function RecentActivityWidget({ activities = [
     }
 
     return (
-        <div className="bg-card border border-border/50 rounded-lg shadow-sm overflow-hidden animate-fade-up contain-content" style={{ animationDelay: '0.2s' }}>
+        <div className="bg-card border border-border/50 rounded-2xl shadow-sm overflow-hidden animate-fade-up contain-content" style={{ animationDelay: '0.2s' }}>
             {/* Header */}
             <div className="px-4 pt-4 pb-3 sm:px-5 sm:pt-5 sm:pb-3 border-b border-border/50">
                 <div className="flex items-center justify-between">

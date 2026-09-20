@@ -63,7 +63,7 @@ const PayableWidget = ({
     const allCleared = !hasRefund && !hasOutstanding && mealPaid && gasPaid;
 
     return (
-        <div className="rounded-lg relative overflow-hidden shadow-sm bg-card border border-border/50 animate-fade-up" style={{ animationDelay: '0.1s' }}>
+        <div className="rounded-2xl relative overflow-hidden shadow-sm bg-card border border-border/50 animate-fade-up" style={{ animationDelay: '0.1s' }}>
             <div className="p-4 sm:p-5 lg:p-6">
 
                 {/* ── Hero Number ── */}
@@ -82,7 +82,7 @@ const PayableWidget = ({
                         {/* Large hero amount */}
                         <div className="flex items-end gap-3">
                             <span className={cn(
-                                "text-4xl sm:text-5xl font-extrabold tabular-nums tracking-tight leading-none",
+                                "text-4xl sm:text-5xl font-bold tabular-nums tracking-tight leading-none",
                                 hasRefund
                                     ? "text-violet-600 dark:text-violet-400"
                                     : hasOutstanding
@@ -101,10 +101,8 @@ const PayableWidget = ({
                             </span>
 
                             {!isLoading && hasOutstanding && (
-                                <span className="inline-flex items-center gap-0.5 text-[10px] sm:text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5 mb-1">
-                                    <svg className="w-2.5 h-2.5" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M6 9V3M6 3L3 6M6 3L9 6" />
-                                    </svg>
+                                <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-full px-2 py-0.5 mb-1">
+                                    <FiAlertCircle size={11} />
                                     due
                                 </span>
                             )}
