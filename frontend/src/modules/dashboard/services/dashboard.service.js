@@ -68,7 +68,10 @@ const getUserRecentActivity = async () => {
     const safeDatetime = (doc) => {
         if (doc.createdAt) return new Date(doc.createdAt).getTime();
         if (doc.date) {
-            const d = new Date(doc.date);
+            const ms = Date.parse(
+                new Date(doc.date).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
+            );
+            const d = new Date(ms);
             d.setHours(12, 0, 0, 0);
             return d.getTime();
         }

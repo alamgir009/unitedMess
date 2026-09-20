@@ -100,6 +100,22 @@ export const formatActivityDate = (dateStr) => {
     }
 };
 
+export const formatActivityTime = (dateStr) => {
+    if (!dateStr) return '';
+    try {
+        const date = dateStr instanceof Date ? dateStr : new Date(dateStr);
+        if (isNaN(date.getTime())) return '';
+
+        const diffMs = Date.now() - date.getTime();
+
+        if (diffMs < MIN_MS) return 'Just now';
+        if (diffMs < HOUR_MS) return `${Math.floor(diffMs / MIN_MS)}m ago`;
+        return formatInIST(date, 'h:mm a');
+    } catch {
+        return '';
+    }
+};
+
 // new comment
 export const formatSmartDate = (dateStr) => {
     if (!dateStr) return { primary: '', secondary: '' };
