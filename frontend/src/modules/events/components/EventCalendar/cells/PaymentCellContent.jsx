@@ -57,15 +57,12 @@ const PaymentCellContent = memo(({ entries = [], loading, error, isCompact, onRe
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onCellClick?.(); }}
     >
       {isCompact ? (
-        <>
-          <span className={cn(
-            'text-xs font-semibold tabular-nums',
-            hasRefunded ? 'text-violet-600 dark:text-violet-400' : 'text-[var(--text-primary)]',
-          )}>
-            ₹{fmt(total)}
-          </span>
-          <StatusDotCluster entries={entries} />
-        </>
+        <span className={cn(
+          'text-[10px] font-semibold tabular-nums leading-tight',
+          hasRefunded ? 'text-violet-600 dark:text-violet-400' : 'text-[var(--text-primary)]',
+        )}>
+          ₹{fmt(total)}
+        </span>
       ) : (
         <>
           <CreditCard className={cn(
