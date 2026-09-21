@@ -248,6 +248,11 @@
     border-color: hsl(var(--ring) / 0.3);
   }
 
+  /* ─── Greeting card dark-mode gradient ─── */
+  html.dark .greeting-card {
+    background-image: var(--greet-dark) !important;
+  }
+
   /* ─── Active/selected surface indicator ─── */
   .active-surface {
     background: var(--accent-subtle);

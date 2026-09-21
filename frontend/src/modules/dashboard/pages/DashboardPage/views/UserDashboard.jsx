@@ -13,7 +13,9 @@ import { HiOutlineMoon } from 'react-icons/hi2';
 
 /* ─────────────────────────────────────────────────────────────
    IST-aware greeting  (UTC + 5:30)
-   Returns Tailwind classes — no raw dynamic inline strings.
+   Weather-app style: bold gradient per time of day.
+   Light mode → light pastel gradient + dark text (AAA ≥7:1)
+   Dark mode  → deep rich gradient  + light text (AAA ≥7:1)
    ───────────────────────────────────────────────────────────── */
 const getISTGreeting = () => {
     const nowIST = new Date(
@@ -25,32 +27,40 @@ const getISTGreeting = () => {
         label: 'Good Morning',
         sub: 'Rise & shine — your finances await.',
         Icon: Sunrise,
-        iconColor: 'text-amber-500 dark:text-amber-400',
-        gradient: 'from-amber-500/[0.06] via-transparent to-transparent',
+        gradient: 'linear-gradient(145deg, hsl(38 92% 88%) 0%, hsl(32 85% 80%) 50%, hsl(28 78% 74%) 100%)',
+        gradientDark: 'linear-gradient(145deg, hsl(30 65% 18%) 0%, hsl(25 60% 14%) 50%, hsl(20 55% 11%) 100%)',
+        iconChip: 'bg-white/30 dark:bg-white/10',
+        iconText: 'text-amber-700 dark:text-amber-300',
     };
 
     if (h >= 12 && h < 17) return {
         label: 'Good Afternoon',
         sub: 'Keep tracking — every rupee counts.',
         Icon: Sun,
-        iconColor: 'text-orange-500 dark:text-orange-400',
-        gradient: 'from-orange-500/[0.06] via-transparent to-transparent',
+        gradient: 'linear-gradient(145deg, hsl(200 85% 88%) 0%, hsl(205 80% 80%) 50%, hsl(210 75% 74%) 100%)',
+        gradientDark: 'linear-gradient(145deg, hsl(215 55% 17%) 0%, hsl(220 50% 13%) 50%, hsl(225 45% 10%) 100%)',
+        iconChip: 'bg-white/30 dark:bg-white/10',
+        iconText: 'text-sky-700 dark:text-sky-300',
     };
 
     if (h >= 17 && h < 21) return {
         label: 'Good Evening',
         sub: "Wind down — review today's activity.",
         Icon: Sunset,
-        iconColor: 'text-purple-500 dark:text-purple-400',
-        gradient: 'from-purple-500/[0.06] via-transparent to-transparent',
+        gradient: 'linear-gradient(145deg, hsl(280 55% 85%) 0%, hsl(310 48% 78%) 50%, hsl(340 42% 73%) 100%)',
+        gradientDark: 'linear-gradient(145deg, hsl(280 45% 17%) 0%, hsl(310 40% 14%) 50%, hsl(340 35% 11%) 100%)',
+        iconChip: 'bg-white/30 dark:bg-white/10',
+        iconText: 'text-violet-700 dark:text-violet-300',
     };
 
     return {
         label: 'Good Night',
         sub: 'Rest well — accounts are secure.',
         Icon: HiOutlineMoon,
-        iconColor: 'text-blue-400 dark:text-blue-300',
-        gradient: 'from-blue-500/[0.06] via-transparent to-transparent',
+        gradient: 'linear-gradient(145deg, hsl(230 50% 82%) 0%, hsl(240 45% 75%) 50%, hsl(250 40% 69%) 100%)',
+        gradientDark: 'linear-gradient(145deg, hsl(235 50% 15%) 0%, hsl(245 45% 12%) 50%, hsl(255 40% 9%) 100%)',
+        iconChip: 'bg-white/30 dark:bg-white/10',
+        iconText: 'text-indigo-700 dark:text-indigo-300',
     };
 };
 
@@ -103,31 +113,32 @@ const UserDashboard = memo(function UserDashboard() {
     return (
         <div className="space-y-3 sm:space-y-4">
 
-            {/* ── Compact Greeting Bar ── */}
+            {/* ── Premium Greeting Card (weather-app style) ── */}
             <div
-                className={cn(
-                    "relative overflow-hidden rounded-lg px-4 py-3.5 sm:px-5 sm:py-4 bg-card border border-border/40 shadow-sm animate-hero-card"
-                )}
+                className="greeting-card relative overflow-hidden rounded-2xl shadow-md animate-hero-card"
+                style={{
+                    '--greet-dark': g.gradientDark,
+                    backgroundImage: g.gradient,
+                }}
             >
-                {/* Subtle single-stop gradient */}
-                <div
-                    className={cn(
-                        "pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-br",
-                        g.gradient
-                    )}
-                />
-
-                <div className="relative z-10 flex items-center gap-3">
-                    {/* Time-of-day icon */}
-                    <div className={cn("shrink-0", g.iconColor)}>
-                        <GreetIcon size={20} strokeWidth={2} />
+                <div className="relative z-10 flex items-center gap-3 px-4 py-4 sm:px-6 sm:py-5">
+                    {/* Icon chip — frosted glass */}
+                    <div
+                        className={cn(
+                            "shrink-0 flex items-center justify-center",
+                            "w-11 h-11 sm:w-12 sm:h-12 rounded-2xl",
+                            "backdrop-blur-sm",
+                            g.iconChip
+                        )}
+                    >
+                        <GreetIcon size={22} strokeWidth={1.8} className={g.iconText} />
                     </div>
 
                     <div className="min-w-0 flex-1">
-                        <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground leading-tight truncate">
+                        <h2 className="text-[15px] sm:text-base font-bold tracking-tight text-foreground leading-tight truncate">
                             {g.label}, {user?.name ?? 'Member'}
                         </h2>
-                        <p className="text-[11px] sm:text-caption text-muted-foreground leading-snug truncate">
+                        <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug mt-0.5 truncate">
                             {g.sub}
                         </p>
                     </div>
