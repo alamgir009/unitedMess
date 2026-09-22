@@ -131,9 +131,9 @@ const PayableWidget = ({
                         <div className={cn(
                             "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] sm:text-caption font-semibold border",
                             mealRefund && safeMeal < 0
-                                ? "bg-violet-500/5 border-violet-500/20 text-violet-600 dark:text-violet-400"
+                                ? "bg-violet-500/10 border-violet-500/25 text-violet-700 dark:bg-violet-500/5 dark:border-violet-500/20 dark:text-violet-400"
                                 : mealPaid
-                                    ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                                    ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-700 dark:bg-emerald-500/5 dark:border-emerald-500/20 dark:text-emerald-400"
                                     : "bg-muted/50 border-border/40 text-foreground"
                         )}>
                             {mealRefund && safeMeal < 0 ? (
@@ -158,9 +158,9 @@ const PayableWidget = ({
                         <div className={cn(
                             "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] sm:text-caption font-semibold border",
                             gasRefund && safeGas < 0
-                                ? "bg-violet-500/5 border-violet-500/20 text-violet-600 dark:text-violet-400"
+                                ? "bg-violet-500/10 border-violet-500/25 text-violet-700 dark:bg-violet-500/5 dark:border-violet-500/20 dark:text-violet-400"
                                 : gasPaid
-                                    ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                                    ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-700 dark:bg-emerald-500/5 dark:border-emerald-500/20 dark:text-emerald-400"
                                     : "bg-muted/50 border-border/40 text-foreground"
                         )}>
                             {gasRefund && safeGas < 0 ? (
