@@ -28,9 +28,10 @@ const getISTGreeting = () => {
         sub: 'Rise & shine — your finances await.',
         Icon: Sunrise,
         gradient: 'linear-gradient(145deg, hsl(38 92% 88%) 0%, hsl(32 85% 80%) 50%, hsl(28 78% 74%) 100%)',
-        gradientDark: 'linear-gradient(145deg, hsl(30 65% 18%) 0%, hsl(25 60% 14%) 50%, hsl(20 55% 11%) 100%)',
-        iconChip: 'bg-white/30 dark:bg-white/10',
+        gradientDark: 'linear-gradient(145deg, hsl(35 75% 24%) 0%, hsl(30 68% 17%) 50%, hsl(25 60% 11%) 100%)',
+        iconChip: 'bg-white/30 dark:bg-white/[0.12]',
         iconText: 'text-amber-700 dark:text-amber-300',
+        subTextColor: 'text-slate-700 dark:text-slate-300',
     };
 
     if (h >= 12 && h < 17) return {
@@ -38,9 +39,10 @@ const getISTGreeting = () => {
         sub: 'Keep tracking — every rupee counts.',
         Icon: Sun,
         gradient: 'linear-gradient(145deg, hsl(200 85% 88%) 0%, hsl(205 80% 80%) 50%, hsl(210 75% 74%) 100%)',
-        gradientDark: 'linear-gradient(145deg, hsl(215 55% 17%) 0%, hsl(220 50% 13%) 50%, hsl(225 45% 10%) 100%)',
-        iconChip: 'bg-white/30 dark:bg-white/10',
+        gradientDark: 'linear-gradient(145deg, hsl(215 65% 24%) 0%, hsl(220 58% 17%) 50%, hsl(225 52% 11%) 100%)',
+        iconChip: 'bg-white/30 dark:bg-white/[0.12]',
         iconText: 'text-sky-700 dark:text-sky-300',
+        subTextColor: 'text-slate-700 dark:text-slate-300',
     };
 
     if (h >= 17 && h < 21) return {
@@ -48,9 +50,10 @@ const getISTGreeting = () => {
         sub: "Wind down — review today's activity.",
         Icon: Sunset,
         gradient: 'linear-gradient(145deg, hsl(280 55% 85%) 0%, hsl(310 48% 78%) 50%, hsl(340 42% 73%) 100%)',
-        gradientDark: 'linear-gradient(145deg, hsl(280 45% 17%) 0%, hsl(310 40% 14%) 50%, hsl(340 35% 11%) 100%)',
-        iconChip: 'bg-white/30 dark:bg-white/10',
+        gradientDark: 'linear-gradient(145deg, hsl(285 55% 24%) 0%, hsl(315 50% 17%) 50%, hsl(345 45% 11%) 100%)',
+        iconChip: 'bg-white/30 dark:bg-white/[0.12]',
         iconText: 'text-violet-700 dark:text-violet-300',
+        subTextColor: 'text-slate-700 dark:text-slate-300',
     };
 
     return {
@@ -58,9 +61,10 @@ const getISTGreeting = () => {
         sub: 'Rest well — accounts are secure.',
         Icon: HiOutlineMoon,
         gradient: 'linear-gradient(145deg, hsl(230 50% 82%) 0%, hsl(240 45% 75%) 50%, hsl(250 40% 69%) 100%)',
-        gradientDark: 'linear-gradient(145deg, hsl(235 50% 15%) 0%, hsl(245 45% 12%) 50%, hsl(255 40% 9%) 100%)',
-        iconChip: 'bg-white/30 dark:bg-white/10',
+        gradientDark: 'linear-gradient(145deg, hsl(240 60% 24%) 0%, hsl(250 55% 17%) 50%, hsl(260 48% 11%) 100%)',
+        iconChip: 'bg-white/30 dark:bg-white/[0.12]',
         iconText: 'text-indigo-700 dark:text-indigo-300',
+        subTextColor: 'text-slate-700 dark:text-slate-300',
     };
 };
 
@@ -138,7 +142,7 @@ const UserDashboard = memo(function UserDashboard() {
                         <h2 className="text-[15px] sm:text-base font-bold tracking-tight text-foreground leading-tight truncate">
                             {g.label}, {user?.name ?? 'Member'}
                         </h2>
-                        <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug mt-0.5 truncate">
+                        <p className={cn("text-[11px] sm:text-xs leading-snug mt-0.5 truncate", g.subTextColor)}>
                             {g.sub}
                         </p>
                     </div>
