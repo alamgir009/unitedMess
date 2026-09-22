@@ -31,7 +31,7 @@ const getISTGreeting = () => {
         gradientDark: 'linear-gradient(145deg, hsl(35 75% 24%) 0%, hsl(30 68% 17%) 50%, hsl(25 60% 11%) 100%)',
         iconChip: 'bg-white/30 dark:bg-white/[0.12]',
         iconText: 'text-amber-700 dark:text-amber-300',
-        subTextColor: 'text-slate-700 dark:text-slate-300',
+        subTextColor: 'text-slate-900 dark:text-slate-300',
     };
 
     if (h >= 12 && h < 17) return {
@@ -42,7 +42,7 @@ const getISTGreeting = () => {
         gradientDark: 'linear-gradient(145deg, hsl(215 65% 24%) 0%, hsl(220 58% 17%) 50%, hsl(225 52% 11%) 100%)',
         iconChip: 'bg-white/30 dark:bg-white/[0.12]',
         iconText: 'text-sky-700 dark:text-sky-300',
-        subTextColor: 'text-slate-700 dark:text-slate-300',
+        subTextColor: 'text-slate-900 dark:text-slate-300',
     };
 
     if (h >= 17 && h < 21) return {
@@ -53,7 +53,7 @@ const getISTGreeting = () => {
         gradientDark: 'linear-gradient(145deg, hsl(285 55% 24%) 0%, hsl(315 50% 17%) 50%, hsl(345 45% 11%) 100%)',
         iconChip: 'bg-white/30 dark:bg-white/[0.12]',
         iconText: 'text-violet-700 dark:text-violet-300',
-        subTextColor: 'text-slate-700 dark:text-slate-300',
+        subTextColor: 'text-slate-900 dark:text-slate-300',
     };
 
     return {
@@ -64,7 +64,7 @@ const getISTGreeting = () => {
         gradientDark: 'linear-gradient(145deg, hsl(240 60% 24%) 0%, hsl(250 55% 17%) 50%, hsl(260 48% 11%) 100%)',
         iconChip: 'bg-white/30 dark:bg-white/[0.12]',
         iconText: 'text-indigo-700 dark:text-indigo-300',
-        subTextColor: 'text-slate-700 dark:text-slate-300',
+        subTextColor: 'text-slate-900 dark:text-slate-300',
     };
 };
 
