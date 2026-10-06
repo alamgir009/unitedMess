@@ -74,6 +74,29 @@ const updateInvoicePayment = async (invoiceId, paidAmount, delta) => {
     return response.data;
 };
 
+/**
+ * Admin: READ-ONLY exemption status for a member + billing period.
+ * Preferred over the PDF pipeline in the Edit Member panel: it never creates
+ * an Invoice and never runs the mess-wide stats aggregate, so simply browsing
+ * a period costs one indexed findOne.
+ */
+const getInvoiceExemptionStatus = async (userId, month, year) => {
+    const params = new URLSearchParams({ userId, month, year }).toString();
+    const response = await apiClient.get(`${INVOICE_URL}/admin/exemption?${params}`);
+    return response.data;
+};
+
+/**
+ * Admin: set / clear a member's billing exemption for one invoice.
+ * The ONLY endpoint that changes exemption state.
+ * @param {string} invoiceId
+ * @param {{ override: 'none'|'force_exempt'|'force_bill', reason?: string }} payload
+ */
+const updateInvoiceExemption = async (invoiceId, payload) => {
+    const response = await apiClient.patch(`${INVOICE_URL}/${invoiceId}/exemption`, payload);
+    return response.data;
+};
+
 const membersService = {
     getUsers,
     searchUsers,
@@ -84,6 +107,8 @@ const membersService = {
     getBillingMonthStats,
     getAdminUnpaidInvoices,
     updateInvoicePayment,
+    getInvoiceExemptionStatus,
+    updateInvoiceExemption,
 };
 
 export default membersService;

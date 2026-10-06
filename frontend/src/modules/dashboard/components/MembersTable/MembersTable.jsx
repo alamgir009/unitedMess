@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Search,
   CheckCircle2,
@@ -29,37 +29,6 @@ const AVATAR_GRADIENTS = [
 
 const avatarGradient = (name = '') =>
   AVATAR_GRADIENTS[(name.charCodeAt(0) || 0) % AVATAR_GRADIENTS.length];
-
-/**
- * Check if a user is billing-exempt for the current period.
- * A user is exempt if they were activated AFTER the billing period started.
- * Uses the 10th-day rule: Day 1-10 = previous month is active, Day 11+ = current month.
- */
-const isUserBillingExempt = (user) => {
-  if (!user?.activatedAt || user?.isActive === false) return false;
-  
-  const now = new Date();
-  const day = now.getUTCDate();
-  const month = now.getUTCMonth() + 1;
-  const year = now.getUTCFullYear();
-  
-  // Calculate billing period start
-  let billingMonth, billingYear;
-  if (day <= 10) {
-    // Previous month is active
-    billingMonth = month === 1 ? 12 : month - 1;
-    billingYear = month === 1 ? year - 1 : year;
-  } else {
-    billingMonth = month;
-    billingYear = year;
-  }
-  
-  const billingPeriodStart = new Date(Date.UTC(billingYear, billingMonth - 1, 1));
-  const activatedAt = new Date(user.activatedAt);
-  
-  // User is exempt if activated AFTER billing period started
-  return activatedAt > billingPeriodStart;
-};
 
 const getDisplayStatus = ({ userStatus, isActive }) => {
   if (userStatus === 'pending') return 'pending';
@@ -102,10 +71,13 @@ const PaymentBadge = ({ status }) => {
   );
 };
 
-const ExemptBadge = React.memo(({ isExempt }) => {
+const ExemptBadge = React.memo(({ isExempt, reason }) => {
   if (!isExempt) return null;
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-widest bg-info-bg text-info border border-info-border">
+    <span
+      title={reason || 'No meals or market purchases this billing period'}
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-widest bg-info-bg text-info border border-info-border"
+    >
       <Shield size={10} strokeWidth={2.5} />
       Exempt
     </span>
@@ -189,13 +161,19 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
   };
 
   const usersWithStatus = useMemo(
-    () => users.map(u => ({
-      ...u,
-      _displayStatus: getDisplayStatus(u),
-      _isExempt: isUserBillingExempt(u)
-    })),
+    () => users.map(u => ({ ...u, _displayStatus: getDisplayStatus(u) })),
     [users]
   );
+
+  // Keep the open modal's member object in sync with the list, so status
+  // chips refresh after any fetchUsers (e.g. saving a billing exemption).
+  // UserEditModal initialises its form keyed on _id, so in-progress profile
+  // edits are never clobbered by this refresh.
+  useEffect(() => {
+    if (!isEditModalOpen || !editingUser?._id) return;
+    const fresh = usersWithStatus.find(u => u._id === editingUser._id);
+    if (fresh && fresh !== editingUser) setEditingUser(fresh);
+  }, [usersWithStatus, isEditModalOpen, editingUser]);
 
   const counts = useMemo(() => {
     const c = { all: usersWithStatus.length, active: 0, inactive: 0, pending: 0, denied: 0 };
@@ -343,7 +321,7 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
                       <div className="flex flex-col items-start gap-1.5">
                         <div className="flex items-center gap-2">
                           <PaymentBadge status={(user.paybleAmountforMeal ?? 0) < 0 ? 'refunded' : (user.paymentStatus ?? user.payment)} />
-                          <ExemptBadge isExempt={user._isExempt} />
+                            <ExemptBadge isExempt={user.isExempt} reason={user.exemptReason} />
                         </div>
                       </div>
                     </td>

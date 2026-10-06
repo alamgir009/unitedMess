@@ -1,5 +1,6 @@
 const User = require('../models/User.model');
 const Payment = require('../models/Payment.model');
+const Invoice = require('../models/Invoice.model');
 
 const Meal = require('../models/Meal.model');
 const Market = require('../models/Market.model');
@@ -9,33 +10,7 @@ const mongoose = require('mongoose');
 const { getBillingPeriod } = require('../utils/helpers/date.helper');
 const notificationService = require('./notification.service');
 const { emitToAll } = require('../sockets');
-
-/**
- * Check if a user is eligible for billing in a specific month/year.
- * A user is EXEMPT if they were activated AFTER the billing period started.
- * This handles the case where admin activates a member on Day 1-10
- * (previous month is active billing period) — they should NOT be billed
- * for the previous month.
- *
- * @param {Object} user - User document
- * @param {number} month - 1-indexed billing month
- * @param {number} year - 4-digit billing year
- * @returns {boolean} true if user IS eligible (NOT exempt)
- */
-function isUserEligibleForBilling(user, month, year) {
-    // If user was always active (no activatedAt set), they are eligible
-    if (!user.activatedAt) return true;
-
-    // Calculate billing period start date
-    const billingPeriodStart = new Date(Date.UTC(year, month - 1, 1));
-
-    // If user was activated BEFORE or ON the billing period start, they are eligible
-    const activatedAt = user.activatedAt instanceof Date ? user.activatedAt : new Date(user.activatedAt);
-    if (activatedAt <= billingPeriodStart) return true;
-
-    // User was activated AFTER billing period started — EXEMPT
-    return false;
-}
+const { resolveEffective } = require('./billingExemption.service');
 
 // Constants
 const PAYMENT_STATUSES = ['pending', 'success', 'failed'];
@@ -71,7 +46,8 @@ const round2 = (num) => Math.round((Number(num) || 0) * 100) / 100;
  * @param {number}  opts.platformFee       - fixed monthly platform fee
  * @param {number}  opts.chargePerGuestMeal- per-guest-meal rate
  * @param {boolean} opts.isInvoiceExempt   - invoice.isExempt flag (authoritative)
- * @param {boolean} opts.isBillingExempt   - fresh 4-signal exemption check
+ * @param {boolean} opts.isBillingExempt   - effective exemption (admin override or
+ *                                           zero-activity) from billingExemption.service
  * @returns {{ amount: number, isBilled: boolean }}
  */
 const computePayableAmount = ({
@@ -86,8 +62,9 @@ const computePayableAmount = ({
     isInvoiceExempt = false,
     isBillingExempt = false,
 } = {}) => {
-    // Exempt = invoice says exempt OR fresh 4-signal check says exempt.
-    // Use both sources defensively — if EITHER says exempt, respect it.
+    // Exempt = stored invoice flag OR freshly resolved effective exemption.
+    // Both derive from billingExemption.service (admin override / zero-activity).
+    // If EITHER says exempt, ₹0 is owed.
     if (isInvoiceExempt || isBillingExempt) {
         return { amount: 0, isBilled: false };
     }
@@ -101,20 +78,6 @@ const computePayableAmount = ({
     const amount = Math.round(Number(totalBill) || 0);
 
     return { amount, isBilled: ownMeals > 0 || (guestMeal || 0) > 0 };
-};
-
-/**
- * Check if a user is billing-exempt for a given period (4-signal check).
- * Pure function — no DB calls.
- *
- * @returns {boolean}
- */
-const isUserBillingExempt = (user, billingPeriodStart, { totalMeal = 0, totalMarketAmount = 0, billingMonth, billingYear } = {}) => {
-    if (user.activatedAt && new Date(user.activatedAt) > billingPeriodStart) return true;
-    if (billingMonth != null && billingYear != null && user.billingExemptMonth === billingMonth && user.billingExemptYear === billingYear) return true;
-    if (new Date(user.createdAt) > billingPeriodStart) return true;
-    if ((totalMeal || 0) === 0 && (totalMarketAmount || 0) === 0) return true;
-    return false;
 };
 
 /**
@@ -186,20 +149,12 @@ async function updateProfile(userId, updateData, isAdmin = false) {
             if (isActivating) {
                 updates.activatedAt = new Date();
                 updates.isActive = true;
-
-                const { month, year } = getBillingPeriod();
-                const today = new Date();
-                const day = today.getUTCDate();
-
-                if (day <= 10) {
-                    updates.billingExemptMonth = month;
-                    updates.billingExemptYear = year;
-                }
+                // NOTE: activating a member NEVER sets any exemption.
+                // Billing exemption is a manual admin decision made per
+                // billing period via invoice.service.setInvoiceExemption().
             } else if (isDeactivating) {
                 updates.deactivatedAt = new Date();
                 updates.isActive = false;
-                updates.billingExemptMonth = undefined;
-                updates.billingExemptYear = undefined;
             } else {
                 updates.isActive = isActive;
 
@@ -269,21 +224,10 @@ async function approveAccount(userId, approvedBy) {
         .lean();
     const inheritedGasBillCharge = activeUser?.gasBillCharge || 0;
 
-    // Determine billing exemption for newly approved user
-    // If approved on Day 1-10 (previous month is active billing period),
-    // the user should NOT be billed for the previous month.
-    const { month, year } = getBillingPeriod();
-    const today = new Date();
-    const day = today.getUTCDate();
-    const billingExemptUpdate = {};
-
-    if (day <= 10) {
-        // Day 1-10: Previous month is active billing period
-        // New user should be exempt for that period
-        billingExemptUpdate.billingExemptMonth = month;
-        billingExemptUpdate.billingExemptYear = year;
-    }
-
+    // NOTE: approving a member NEVER sets a billing exemption.
+    // A brand-new member approved on day 1-10 is handled by the
+    // zero-activity rule for the previous period (they have no meals),
+    // or explicitly by an admin via invoice.service.setInvoiceExemption().
     const result = await User.findOneAndUpdate(
         {
             _id: userId,
@@ -297,7 +241,6 @@ async function approveAccount(userId, approvedBy) {
                 approvedAt: new Date(),
                 activatedAt: new Date(),
                 gasBillCharge: inheritedGasBillCharge,
-                ...billingExemptUpdate,
             },
             $unset: { deleteIfNotApproved: 1 }
         },
@@ -443,7 +386,10 @@ async function deactivateAccount(userId) {
 /**
  * Get all users with optimized pagination and filtering.
  * Important: Returns current billing-month stats (meals/market) for each user.
- * Excludes billing for users who were activated after the billing period started.
+ *
+ * Exposes `isExempt` for the ACTIVE billing period. The value is the
+ * EFFECTIVE exemption produced by billingExemption.service (admin override
+ * or zero-activity rule) — the client must never re-derive it.
  */
 async function getAllUsers(filters = {}, pagination = {}) {
     const page = Math.max(1, Number(pagination.page) || DEFAULT_PAGE);
@@ -460,9 +406,6 @@ async function getAllUsers(filters = {}, pagination = {}) {
     const billingMonth = bp.month;
     const billingYear = bp.year;
     const billingMonthName = bp.monthName;
-
-    // Calculate billing period start for exemption check
-    const billingPeriodStart = new Date(Date.UTC(billingYear, billingMonth - 1, 1));
 
     // Compute the global meal rate once for all users (avoids N separate calls).
     const invoiceService = require('./invoice.service');
@@ -484,8 +427,6 @@ async function getAllUsers(filters = {}, pagination = {}) {
                 gasBill: 1,
                 createdAt: 1,
                 activatedAt: 1,
-                billingExemptMonth: 1,
-                billingExemptYear: 1,
                 // ── Invoice / billing fields ──
                 guestMeal: 1,
                 cookingCharge: 1,
@@ -575,7 +516,16 @@ async function getAllUsers(filters = {}, pagination = {}) {
                             }
                         }
                     },
-                    { $project: { status: 1, isExempt: 1, _id: 0 } }
+                    {
+                        $project: {
+                            _id: 1,
+                            status: 1,
+                            isExempt: 1,
+                            exemptReason: 1,
+                            exemptSource: 1,
+                            exemptOverride: 1
+                        }
+                    }
                 ],
                 as: 'currentPeriodInvoice'
             }
@@ -682,51 +632,11 @@ async function getAllUsers(filters = {}, pagination = {}) {
                 totalMeal: { $ifNull: [{ $arrayElemAt: ['$mealStats.totalMeal', 0] }, 0] },
                 guestMeal: { $ifNull: [{ $arrayElemAt: ['$mealStats.guestMeal', 0] }, 0] },
                 totalMarketAmount: { $ifNull: [{ $arrayElemAt: ['$marketStats.totalMarket', 0] }, 0] },
-                // Check if user is exempt for this billing period
-                // A user is exempt if ANY of these signals is true:
-                //   1. activatedAt > billingPeriodStart (new code path)
-                //   2. billingExemptMonth/Year match (Day 1-10 activation edge case)
-                //   3. createdAt > billingPeriodStart (account didn't exist)
-                //   4. Zero meals AND zero markets (data-driven: user was inactive)
-                isBillingExempt: {
-                    $let: {
-                        vars: {
-                            totalMeal: { $ifNull: [{ $arrayElemAt: ['$mealStats.totalMeal', 0] }, 0] },
-                            totalMarket: { $ifNull: [{ $arrayElemAt: ['$marketStats.totalMarket', 0] }, 0] }
-                        },
-                        in: {
-                            $cond: {
-                                if: {
-                                    $or: [
-                                        {
-                                            $and: [
-                                                { $ne: ['$activatedAt', null] },
-                                                { $gt: ['$activatedAt', billingPeriodStart] }
-                                            ]
-                                        },
-                                        {
-                                            $and: [
-                                                { $eq: ['$billingExemptMonth', billingMonth] },
-                                                { $eq: ['$billingExemptYear', billingYear] }
-                                            ]
-                                        },
-                                        {
-                                            $gt: ['$createdAt', billingPeriodStart]
-                                        },
-                                        {
-                                            $and: [
-                                                { $eq: ['$$totalMeal', 0] },
-                                                { $eq: ['$$totalMarket', 0] }
-                                            ]
-                                        }
-                                    ]
-                                },
-                                then: true,
-                                else: false
-                            }
-                        }
-                    }
-                },
+                // NOTE: billing exemption is intentionally NOT computed here.
+                // It is resolved in the application layer from the stored
+                // Invoice (admin override) + zero-activity, via
+                // billingExemption.service — the single source of truth.
+                // See post-processing below.
                 // NOTE: paybleAmountforMeal is computed in application layer
                 // AFTER aggregation (see post-processing below).
                 // This avoids MongoDB aggregation operator pitfalls and ensures
@@ -842,16 +752,24 @@ async function getAllUsers(filters = {}, pagination = {}) {
         User.countDocuments(query)  // uses same filters as aggregation
     ]);
 
-    // ── Application-layer payable computation (single source of truth) ──
-    // Replaces the removed MongoDB $addFields computation.
-    // Computes paybleAmountforMeal from the aggregation results + invoice data,
-    // ensuring consistency with getPaybleAmountforMeal and getPayableAmountsBatch.
+    // ── Application-layer computation (single source of truth) ────────
+    // Resolves ONE effective exemption value per member and drives the
+    // payable amount, the Exempt badge and the bill status from it — they
+    // can never disagree.
     for (const user of users) {
-        const isInvoiceExempt = (
-            Array.isArray(user.currentPeriodInvoice) &&
-            user.currentPeriodInvoice.length > 0 &&
-            user.currentPeriodInvoice[0].isExempt === true
-        );
+        const invoice = (
+            Array.isArray(user.currentPeriodInvoice) && user.currentPeriodInvoice.length > 0
+        ) ? user.currentPeriodInvoice[0] : null;
+
+        // When an Invoice exists it is authoritative: it carries the admin's
+        // explicit override AND the denormalized effective flag that the
+        // payment-status cascade above also reads. When no invoice has been
+        // created yet, fall back to the zero-activity rule.
+        const resolution = resolveEffective({
+            invoice,
+            totalMeal: user.totalMeal,
+            totalMarketAmount: user.totalMarketAmount,
+        });
 
         const { amount } = computePayableAmount({
             totalMeal: user.totalMeal,
@@ -862,15 +780,22 @@ async function getAllUsers(filters = {}, pagination = {}) {
             waterBill: user.waterBill,
             platformFee: user.platformFee,
             chargePerGuestMeal: user.chargePerGuestMeal,
-            isInvoiceExempt,
-            isBillingExempt: user.isBillingExempt,
+            isInvoiceExempt: resolution.isExempt,
+            isBillingExempt: resolution.isExempt,
         });
 
+        user.isExempt = resolution.isExempt;
+        user.exemptSource = resolution.exemptSource;
+        user.exemptReason = resolution.exemptReason;
         user.paybleAmountforMeal = amount;
+
+        // Exempt ⇒ nothing is owed, so the bill status must never read "Unpaid".
+        if (resolution.isExempt && user.payment !== 'refund') {
+            user.payment = 'success';
+        }
 
         // Clean up internal fields that shouldn't leak to the API response
         delete user.currentPeriodInvoice;
-        delete user.isBillingExempt;
     }
 
     return {
@@ -1218,6 +1143,60 @@ const getPaybleAmountforMeal = async (userId) => {
 };
 
 /**
+ * Merge the ACTIVE billing period's effective exemption onto a plain user
+ * list. Keeps search results consistent with getAllUsers() so the Exempt
+ * badge never disappears (or reappears wrongly) after a search.
+ *
+ * @param {Array<Object>} users — lean user docs (mutated in place)
+ * @returns {Promise<Array<Object>>}
+ */
+const attachBillingExemption = async (users) => {
+    if (!Array.isArray(users) || users.length === 0) return users || [];
+
+    const { month, year, start, end } = getBillingPeriod();
+    const ids = users.map(u => u._id);
+
+    const [invoices, mealGroups, marketGroups] = await Promise.all([
+        Invoice.find({ user: { $in: ids }, month, year })
+            .select('isExempt exemptSource exemptReason exemptOverride paidAmount')
+            .lean(),
+        Meal.aggregate([
+            { $match: { user: { $in: ids }, date: { $gte: start, $lte: end } } },
+            { $group: { _id: '$user', totalMeal: { $sum: '$mealCount' } } },
+        ]),
+        Market.aggregate([
+            { $match: { user: { $in: ids }, date: { $gte: start, $lte: end } } },
+            { $group: { _id: '$user', totalMarketAmount: { $sum: '$amount' } } },
+        ]),
+    ]);
+
+    const invoiceByUser = new Map(invoices.map(inv => [String(inv.user), inv]));
+    const mealByUser = new Map(mealGroups.map(g => [String(g._id), g.totalMeal || 0]));
+    const marketByUser = new Map(marketGroups.map(g => [String(g._id), g.totalMarketAmount || 0]));
+
+    for (const user of users) {
+        const key = String(user._id);
+        const invoice = invoiceByUser.get(key) || null;
+
+        const resolution = resolveEffective({
+            invoice,
+            totalMeal: mealByUser.get(key) || 0,
+            totalMarketAmount: marketByUser.get(key) || 0,
+        });
+
+        user.isExempt = resolution.isExempt;
+        user.exemptSource = resolution.exemptSource;
+        user.exemptReason = resolution.exemptReason;
+
+        if (resolution.isExempt && user.payment !== 'refund') {
+            user.payment = 'success';
+        }
+    }
+
+    return users;
+};
+
+/**
  * Search with text index (requires MongoDB text index on name+email)
  */
 async function searchUsers(searchTerm, pagination = {}) {
@@ -1248,6 +1227,12 @@ async function searchUsers(searchTerm, pagination = {}) {
                 .lean(),
             User.countDocuments(query),
         ]);
+
+        // Exemption must follow the same rules as the full member list.
+        await attachBillingExemption(users).catch(err => {
+            console.error('[searchUsers] Failed to attach exemption:', err.message);
+        });
+
         return {
             users,
             pagination: {
@@ -1328,12 +1313,10 @@ const getPayableAmountsBatch = async (userIds) => {
     const { month: bpMonth, year: bpYear, monthName: billingMonthName, start: periodStart, end: periodEnd } = getBillingPeriod();
 
     // ── Phase 1: Shared queries (run once, not per-user) ──
-    const billingPeriodStart = new Date(Date.UTC(bpYear, bpMonth - 1, 1));
-
-    const [users, messStats, allPayments] = await Promise.all([
+    const [users, messStats, allPayments, invoices] = await Promise.all([
         // 1. All users with billing-relevant fields
         User.find({ _id: { $in: validIds } })
-            .select('_id gasBillCharge cookingCharge waterBill platformFee chargePerGuestMeal activatedAt billingExemptMonth billingExemptYear createdAt')
+            .select('_id gasBillCharge cookingCharge waterBill platformFee chargePerGuestMeal')
             .lean(),
         // 2. Mess-wide stats (shared across all users — meal rate calculation)
         invoiceService.calculateMessStats(bpMonth, bpYear),
@@ -1344,9 +1327,15 @@ const getPayableAmountsBatch = async (userIds) => {
             status: 'completed',
             type: { $in: ['mess_bill', 'gas_bill'] },
         }).select('user type amount').lean(),
+        // 4. Stored invoices for the active period — carry the admin's
+        //    explicit exemption override (the ONLY manual control surface).
+        Invoice.find({ user: { $in: validIds }, month: bpMonth, year: bpYear })
+            .select('user isExempt exemptSource exemptReason exemptOverride paidAmount')
+            .lean(),
     ]);
 
     const userMap = new Map(users.map(u => [u._id.toString(), u]));
+    const invoiceMap = new Map(invoices.map(inv => [inv.user.toString(), inv]));
 
     // Pre-compute payment totals per user — mess and gas tracked SEPARATELY.
     // A paid gas bill must never reduce the mess billable that the Record
@@ -1391,12 +1380,12 @@ const getPayableAmountsBatch = async (userIds) => {
             const userGuestCount = mealAgg[0]?.guestCount || 0;
             const userMarketSpent = marketAgg[0]?.totalAmount || 0;
 
-            // ── Compute bill using shared helper (single source of truth) ──
-            const isBillingExempt = isUserBillingExempt(user, billingPeriodStart, {
+            // ── Effective exemption — same resolver as the member list ──
+            const { isExempt } = resolveEffective({
+                invoice: invoiceMap.get(uid) || null,
                 totalMeal: userMealCount,
                 totalMarketAmount: userMarketSpent,
-                billingMonth: bpMonth,
-                billingYear: bpYear,
+                paidAmount: paymentInfo.messTotal || 0,
             });
 
             const { amount: totalBill } = computePayableAmount({
@@ -1408,10 +1397,11 @@ const getPayableAmountsBatch = async (userIds) => {
                 waterBill: user.waterBill || 0,
                 platformFee: user.platformFee || 0,
                 chargePerGuestMeal: user.chargePerGuestMeal || 60,
-                isBillingExempt,
+                isInvoiceExempt: isExempt,
+                isBillingExempt: isExempt,
             });
 
-            if (isBillingExempt) {
+            if (isExempt) {
                 return {
                     uid,
                     messPayable: 0,

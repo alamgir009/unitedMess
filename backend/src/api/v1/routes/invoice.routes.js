@@ -33,8 +33,16 @@ router.post('/finalize', authorize('admin'), invoiceController.finalizeMonth);
 // Admin: view all finalized unpaid/partially-paid invoices for a given month
 router.get('/admin/unpaid', authorize('admin'), invoiceController.getAdminUnpaidInvoices);
 
+// Admin: READ-ONLY exemption status for a member + period. Used by the
+// Edit Member panel so browsing a period never mints an Invoice.
+router.get('/admin/exemption', authorize('admin'), invoiceController.getInvoiceExemption);
+
 // Admin: update a specific invoice's payment (mark paid / partial)
 router.patch('/:id/payment', authorize('admin'), invoiceController.updateInvoicePayment);
+
+// Admin: set / clear a member's billing exemption for this invoice.
+// The single manual control surface for exemption — nothing else writes it.
+router.patch('/:id/exemption', authorize('admin'), invoiceController.updateInvoiceExemption);
 
 // Admin: email invoice summary to all active members
 router.post('/admin/email-all', authorize('admin'), invoiceController.emailAllInvoices);

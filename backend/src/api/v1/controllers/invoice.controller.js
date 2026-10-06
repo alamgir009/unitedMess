@@ -67,6 +67,28 @@ const getMonthlyInvoice = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Admin: READ-ONLY exemption status for a member + billing period.
+ * GET /invoices/admin/exemption?userId=<id>&month=<m>&year=<y>
+ *
+ * Never creates or mutates an Invoice — the admin must be able to browse
+ * periods in the Edit Member panel without side effects. The PDF pipeline
+ * (getMonthlyInvoice) is deliberately NOT reused here for that reason.
+ */
+const getInvoiceExemption = asyncHandler(async (req, res) => {
+    const month = parseInt(req.query.month, 10);
+    const year = parseInt(req.query.year, 10);
+
+    if (!month || month < 1 || month > 12 || !year) {
+        throw new AppError('Valid month (1-12) and year are required', 400);
+    }
+
+    const targetUserId = _resolveTargetUserId(req);
+    const status = await invoiceService.getInvoiceExemptionStatus(targetUserId, month, year);
+
+    sendSuccessResponse(res, 200, 'Exemption status retrieved', status);
+});
+
+/**
  * Admin: Finalize current month for all users
  */
 const finalizeMonth = asyncHandler(async (req, res) => {
@@ -193,11 +215,50 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
         // Broadcast billing:updated to all connected clients for real-time status refresh
         emitToAll('billing:updated');
     } else {
+        // Guard: recording money against an exempt invoice would leave a
+        // Payment record with nothing to reconcile against. Clear the
+        // exemption first (or refund, if it was already collected).
+        if (invoice.isExempt === true && (invoice.totalPayable || 0) === 0) {
+            throw new AppError(
+                `${invoice.monthName} is marked exempt (₹0 due). Clear the exemption before recording a payment.`,
+                409
+            );
+        }
+
         invoice.status = invoiceService.determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
     }
 
     await invoice.save();
     sendSuccessResponse(res, 200, 'Invoice payment updated', invoice);
+});
+
+/**
+ * Admin: set / clear a member's billing exemption for one invoice.
+ * PATCH /invoices/:id/exemption
+ * Body: { override: 'none' | 'force_exempt' | 'force_bill', reason?: string }
+ *
+ * This is the ONLY endpoint in the system that changes exemption state.
+ * All validation, guards and audit-trail writes live in
+ * invoice.service.setInvoiceExemption().
+ */
+const updateInvoiceExemption = asyncHandler(async (req, res) => {
+    const { override, reason } = req.body || {};
+
+    if (typeof override !== 'string') {
+        throw new AppError('override is required', 400);
+    }
+
+    const invoice = await invoiceService.setInvoiceExemption(req.params.id, {
+        override,
+        reason,
+        adminId: req.user.id,
+    });
+
+    // Exemption changes every member's share of the mess cost pool —
+    // broadcast so open dashboards recompute without a manual refresh.
+    emitToAll('billing:updated');
+
+    sendSuccessResponse(res, 200, 'Billing exemption updated', invoice);
 });
 
 /**
@@ -373,7 +434,9 @@ module.exports = {
     finalizeMonth,
     getInvoiceById,
     getAdminUnpaidInvoices,
+    getInvoiceExemption,
     updateInvoicePayment,
+    updateInvoiceExemption,
     downloadInvoicePDF,
     sendInvoiceEmailServer,
     emailAllInvoices,

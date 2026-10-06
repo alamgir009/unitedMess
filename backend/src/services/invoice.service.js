@@ -6,6 +6,11 @@ const Market = require('../models/Market.model');
 const Payment = require('../models/Payment.model');
 const AppError = require('../utils/errors/AppError');
 const { getBillingPeriod, getLastFinalizedPeriod } = require('../utils/helpers/date.helper');
+const {
+    OVERRIDE,
+    resolveExemption,
+    normalizeOverride,
+} = require('./billingExemption.service');
 const emailService = require('./email.service');
 const pdfService   = require('./pdf.service');
 
@@ -90,124 +95,52 @@ const calculateMessStats = async (month, year) => {
 };
 
 /**
- * Calculate/Get invoice for a specific user and month
+ * Attach the most recent completed mess-bill payment metadata to an
+ * invoice-shaped plain object (used by the PDF / invoice preview UI).
+ */
+const _attachLatestPayment = async (invoiceObj, userId) => {
+    const latestPayment = await Payment.findOne({
+        user: userId, month: invoiceObj.monthName, status: 'completed', type: 'mess_bill',
+    }).sort({ paymentDate: -1 }).lean();
+
+    if (latestPayment) {
+        invoiceObj._paymentMethod = latestPayment.paymentMethod;
+        invoiceObj._transactionId = latestPayment.transactionId || null;
+        invoiceObj._utr = latestPayment.utr || null;
+        invoiceObj._paymentDate = latestPayment.paymentDate;
+    }
+    return invoiceObj;
+};
+
+/**
+ * Calculate/Get invoice for a specific user and month.
+ *
+ * EXEMPTION POLICY — see billingExemption.service.js
+ *  - Admin intent (`exemptOverride`) always wins.
+ *  - Otherwise the only automatic rule is zero-activity in the period.
+ *  - There is NO date-based (activatedAt / createdAt / billingExemptMonth)
+ *    exemption anywhere in this function.
+ *
+ * SIDE-EFFECT CONTRACT:
+ *  - Finalized (closed) invoices are returned VERBATIM — a read never
+ *    mutates closed books.
+ *  - Open invoices are recalculated and persisted only when something
+ *    actually changed (`isModified()`).
  */
 const getInvoice = async (userId, month, year) => {
-    let invoice = await Invoice.findOne({ user: userId, month, year });
+    const invoice = await Invoice.findOne({ user: userId, month, year });
     const user = await User.findById(userId).lean();
     if (!user) throw new AppError('User not found', 404);
 
-    // ── BILLING EXEMPTION — 4-signal check ──
-    // If ANY signal is true, user pays ₹0 for this period.
-    const billingPeriodStart = new Date(Date.UTC(year, month - 1, 1));
-    const { start, end } = getMonthRange(month, year);
-
-    // Signal 1 (cheap): activatedAt set after billing period start
-    const exemptByActivatedAt = (
-        user.activatedAt && new Date(user.activatedAt) > billingPeriodStart
-    );
-
-    // Signal 2 (cheap): billingExemptMonth/Year match (set on Day 1-10 activation)
-    const exemptByBillingFlag = (
-        user.billingExemptMonth === month && user.billingExemptYear === year
-    );
-
-    // Signal 3 (cheap): account created after billing period start
-    const exemptByCreatedAt = (
-        new Date(user.createdAt) > billingPeriodStart
-    );
-
-    // Signal 4 (data-driven, only if 1-3 all fail): zero meals + zero markets
-    // = user was inactive during this billing period. Catches pre-deployment
-    // users where activatedAt was never set and billingExempt flags were cleared.
-    let exemptByNoActivity = false;
-    if (!exemptByActivatedAt && !exemptByBillingFlag && !exemptByCreatedAt) {
-        const [{ mealCount = 0 } = {}] = await Meal.aggregate([
-            { $match: { user: new mongoose.Types.ObjectId(userId), date: { $gte: start, $lte: end } } },
-            { $group: { _id: null, mealCount: { $sum: '$mealCount' } } }
-        ]);
-        const [{ totalAmount = 0 } = {}] = await Market.aggregate([
-            { $match: { user: new mongoose.Types.ObjectId(userId), date: { $gte: start, $lte: end } } },
-            { $group: { _id: null, totalAmount: { $sum: '$amount' } } }
-        ]);
-        exemptByNoActivity = (mealCount === 0 && totalAmount === 0);
-    }
-
-    const isExempt = exemptByActivatedAt || exemptByBillingFlag || exemptByCreatedAt || exemptByNoActivity;
-
-    let exemptReason = 'Member was inactive during this billing period';
-    if (exemptByActivatedAt) exemptReason = 'Member activated after billing period started';
-    else if (exemptByBillingFlag) exemptReason = 'Member activated on Day 1-10 — previous month exempt';
-    else if (exemptByCreatedAt) exemptReason = 'Member account did not exist during this billing period';
-    else if (exemptByNoActivity) exemptReason = 'Member has no meal or market activity in this period';
-
-    // ── FINALIZED INVOICE PATH ──
+    // ── FINALIZED (CLOSED) PERIOD — STRICTLY READ-ONLY ──────────────
     if (invoice && invoice.isFinalized) {
-        if (isExempt && !invoice.isExempt) {
-            invoice.totalBill = 0;
-            invoice.totalPayable = 0;
-            invoice.paidAmount = 0;
-            invoice.messCost = 0;
-            invoice.mealCount = 0;
-            invoice.guestMealCount = 0;
-            invoice.guestMealRevenue = 0;
-            invoice.marketAmountSpent = 0;
-            invoice.mealRate = 0;
-            invoice.fixedCosts = { cookingCharge: 0, waterBill: 0, gasBillCharge: 0, platformFee: 0 };
-            invoice.isExempt = true;
-            invoice.exemptReason = exemptReason;
-            invoice.status = 'paid';
-            await invoice.save();
-        }
-
-        const invoiceObj = invoice.toObject ? invoice.toObject() : invoice;
+        const invoiceObj = invoice.toObject();
         invoiceObj.remainingAmount = Math.max(0, invoiceObj.totalPayable - invoiceObj.paidAmount);
-        const latestPayment = await Payment.findOne({
-            user: userId, month: invoiceObj.monthName, status: 'completed', type: 'mess_bill',
-        }).sort({ paymentDate: -1 }).lean();
-        if (latestPayment) {
-            invoiceObj._paymentMethod = latestPayment.paymentMethod;
-            invoiceObj._transactionId = latestPayment.transactionId || null;
-            invoiceObj._utr = latestPayment.utr || null;
-            invoiceObj._paymentDate = latestPayment.paymentDate;
-        }
-        return invoiceObj;
+        return _attachLatestPayment(invoiceObj, userId);
     }
 
-    // ── EXEMPT (non-finalized) PATH ──
-    if (isExempt) {
-        const monthName = new Intl.DateTimeFormat('en-US', {
-            month: 'long', year: 'numeric', timeZone: 'UTC',
-        }).format(new Date(Date.UTC(year, month - 1, 1)));
-
-        const exemptInvoiceData = {
-            user: userId, month, year, monthName,
-            mealCount: 0, guestMealCount: 0, marketAmountSpent: 0, mealRate: 0,
-            messCost: 0, guestMealRevenue: 0,
-            fixedCosts: { cookingCharge: 0, waterBill: 0, gasBillCharge: 0, platformFee: 0 },
-            totalBill: 0, totalPayable: 0, paidAmount: 0,
-            isExempt: true, exemptReason, status: 'paid', isFinalized: false,
-        };
-
-        invoice = await Invoice.findOne({ user: userId, month, year });
-        if (invoice) {
-            if (!invoice.isFinalized) {
-                Object.assign(invoice, exemptInvoiceData);
-                await invoice.save();
-            }
-            const invoiceObj = invoice.toObject ? invoice.toObject() : invoice;
-            invoiceObj.remainingAmount = 0;
-            return invoiceObj;
-        }
-
-        const created = await Invoice.create(exemptInvoiceData);
-        const createdObj = created.toObject();
-        createdObj.remainingAmount = 0;
-        return createdObj;
-    }
-
-    // ── NON-EXEMPT: calculate bill ──
-    // All four queries are independent — run in parallel.
+    // ── PERIOD FACTS — one parallel block, computed exactly once ─────
+    const { start, end } = getMonthRange(month, year);
     const [livePaidAmount, messStats, userMeals, userMarkets] = await Promise.all([
         calculatePaidAmount(userId, month, year),
         calculateMessStats(month, year),
@@ -236,15 +169,65 @@ const getInvoice = async (userId, month, year) => {
     const uGuestCount = userMeals[0]?.guestCount || 0;
     const uMarketSpent = userMarkets[0]?.totalAmount || 0;
 
+    // ── EXEMPTION RESOLUTION — single source of truth ────────────────
+    const { isExempt, exemptSource, exemptReason } = resolveExemption({
+        override: normalizeOverride(invoice?.exemptOverride),
+        totalMeal: uMealCount,
+        totalMarketAmount: uMarketSpent,
+        paidAmount: Math.max(livePaidAmount || 0, invoice?.paidAmount || 0),
+        reason: invoice?.exemptReason,
+    });
+
+    const monthName = new Intl.DateTimeFormat('en-US', {
+        month: 'long', year: 'numeric', timeZone: 'UTC',
+    }).format(new Date(Date.UTC(year, month - 1, 1)));
+
+    // ── EXEMPT (open period) PATH ────────────────────────────────────
+    // Money is zeroed. Recorded FACTS (mealCount / guestMealCount /
+    // marketAmountSpent) are preserved so audits and PDFs keep showing
+    // what actually happened — only the amount owed changes.
+    if (isExempt) {
+        const exemptionPatch = {
+            mealRate: 0,
+            messCost: 0,
+            guestMealRevenue: 0,
+            fixedCosts: { cookingCharge: 0, waterBill: 0, gasBillCharge: 0, platformFee: 0 },
+            totalBill: 0,
+            totalPayable: 0,
+            paidAmount: 0,
+            status: 'paid',
+            isExempt: true,
+            exemptReason,
+            exemptSource,
+            isFinalized: false,
+        };
+
+        if (invoice) {
+            Object.assign(invoice, exemptionPatch);
+            if (invoice.isModified()) await invoice.save();
+            const invoiceObj = invoice.toObject();
+            invoiceObj.remainingAmount = 0;
+            return invoiceObj;
+        }
+
+        const created = await Invoice.create({
+            user: userId, month, year, monthName,
+            mealCount: uMealCount,
+            guestMealCount: uGuestCount,
+            marketAmountSpent: uMarketSpent,
+            ...exemptionPatch,
+        });
+        const createdObj = created.toObject();
+        createdObj.remainingAmount = 0;
+        return createdObj;
+    }
+
+    // ── NON-EXEMPT: calculate bill ───────────────────────────────────
     const uOwnMeals = uMealCount - uGuestCount;
     const messCost = uOwnMeals * messStats.mealRate;
     const guestRevenue = uGuestCount * (user.chargePerGuestMeal || 60);
 
     const totalBill = messCost + (user.cookingCharge || 0) + (user.waterBill || 0) + (user.platformFee || 0) + guestRevenue - uMarketSpent;
-
-    const monthName = new Intl.DateTimeFormat('en-US', {
-        month: 'long', year: 'numeric', timeZone: 'UTC',
-    }).format(new Date(Date.UTC(year, month - 1, 1)));
 
     const invoiceData = {
         user: userId, month, year, monthName,
@@ -263,45 +246,225 @@ const getInvoice = async (userId, month, year) => {
         totalBill: Math.round(totalBill * 100) / 100,
         totalPayable: Math.round(totalBill * 100) / 100,
         paidAmount: livePaidAmount,
-        isFinalized: false
+        // Clear any stale exemption left behind by a previous period state
+        // (e.g. admin switched force_exempt → force_bill). The admin INTENT
+        // fields (exemptOverride / exemptedBy / exemptedAt / exemptHistory)
+        // are intentionally NOT touched here.
+        isExempt: false,
+        exemptReason: null,
+        exemptSource: null,
+        isFinalized: false,
     };
 
-    invoice = await Invoice.findOne({ user: userId, month, year });
-    
     if (invoice) {
-        if (!invoice.isFinalized) {
-            Object.assign(invoice, invoiceData);
-            invoice.status = determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
-            await invoice.save();
-        }
-        const invoiceObj = invoice.toObject ? invoice.toObject() : invoice;
+        Object.assign(invoice, invoiceData);
+        invoice.status = determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
+        if (invoice.isModified()) await invoice.save();
+        const invoiceObj = invoice.toObject();
         invoiceObj.remainingAmount = Math.max(0, invoiceObj.totalPayable - invoiceObj.paidAmount);
-        const latestPayment = await Payment.findOne({
-            user: userId, month: invoiceObj.monthName, status: 'completed', type: 'mess_bill',
-        }).sort({ paymentDate: -1 }).lean();
-        if (latestPayment) {
-            invoiceObj._paymentMethod = latestPayment.paymentMethod;
-            invoiceObj._transactionId = latestPayment.transactionId || null;
-            invoiceObj._utr = latestPayment.utr || null;
-            invoiceObj._paymentDate = latestPayment.paymentDate;
-        }
-        return invoiceObj;
+        return _attachLatestPayment(invoiceObj, userId);
     }
 
     invoiceData.status = determineInvoiceStatus(invoiceData.paidAmount, invoiceData.totalPayable);
     const created = await Invoice.create(invoiceData);
     const createdObj = created.toObject();
     createdObj.remainingAmount = Math.max(0, createdObj.totalPayable - createdObj.paidAmount);
-    const latestPayment = await Payment.findOne({
-        user: userId, month: invoiceData.monthName, status: 'completed', type: 'mess_bill',
-    }).sort({ paymentDate: -1 }).lean();
-    if (latestPayment) {
-        createdObj._paymentMethod = latestPayment.paymentMethod;
-        createdObj._transactionId = latestPayment.transactionId || null;
-        createdObj._utr = latestPayment.utr || null;
-        createdObj._paymentDate = latestPayment.paymentDate;
+    return _attachLatestPayment(createdObj, userId);
+};
+
+/**
+ * ─────────────────────────────────────────────────────────────────────
+ * setInvoiceExemption — THE ONLY WAY `exemptOverride` IS EVER WRITTEN
+ * ─────────────────────────────────────────────────────────────────────
+ * Admin-only, audited. This is the manual control surface for billing
+ * exemption; nothing else in the codebase may set these fields.
+ *
+ * Guards (fintech-grade):
+ *  - 'force_exempt' requires a non-empty reason (≥5 chars).
+ *  - Cannot exempt an invoice that already has money booked
+ *    (paidAmount > 0) — refund first, otherwise the Payment record
+ *    would be orphaned. Returns 409 with actionable guidance.
+ *  - Works on finalized (closed) periods too — but through this
+ *    explicit, audited write path only, never through a read.
+ *  - Recomputes the full bill when un-exempting so the restored amount
+ *    matches what getInvoice() would produce.
+ *
+ * @param {string} invoiceId
+ * @param {{ override: 'none'|'force_exempt'|'force_bill', reason?: string, adminId: string }} opts
+ * @returns {Promise<Object>} hydrated invoice
+ */
+const setInvoiceExemption = async (invoiceId, { override, reason = null, adminId } = {}) => {
+    const normalizedOverride = normalizeOverride(override);
+    if (normalizedOverride !== override) {
+        throw new AppError('Invalid exemption override', 400);
     }
-    return createdObj;
+
+    const invoice = await Invoice.findById(invoiceId);
+    if (!invoice) throw new AppError('Invoice not found', 404);
+
+    const trimmedReason = typeof reason === 'string' ? reason.trim() : '';
+
+    if (normalizedOverride === OVERRIDE.FORCE_EXEMPT && trimmedReason.length < 5) {
+        throw new AppError('A reason of at least 5 characters is required to exempt a bill', 400);
+    }
+
+    const isCurrentlyExempt = invoice.isExempt === true;
+
+    if (normalizedOverride === OVERRIDE.FORCE_EXEMPT && !isCurrentlyExempt && (invoice.paidAmount || 0) > 0) {
+        throw new AppError(
+            `Cannot exempt ${invoice.monthName}: ₹${invoice.paidAmount} has already been recorded. Refund the payment first, then exempt.`,
+            409
+        );
+    }
+
+    const previousOverride = normalizeOverride(invoice.exemptOverride);
+    const changed = previousOverride !== normalizedOverride;
+
+    invoice.exemptOverride = normalizedOverride;
+    invoice.exemptedBy = adminId || invoice.exemptedBy || null;
+    invoice.exemptedAt = new Date();
+
+    if (changed || !invoice.exemptHistory?.length) {
+        invoice.exemptHistory = [
+            ...(invoice.exemptHistory || []),
+            {
+                override: normalizedOverride,
+                reason: trimmedReason || null,
+                changedBy: adminId || null,
+                changedAt: new Date(),
+            },
+        ];
+    }
+
+    // Recompute the EFFECTIVE values from the same resolver every read uses.
+    // Activity data for this period is already stored on the invoice for open
+    // periods we just recalculated; for safety re-derive from live collections.
+    const { start, end } = getMonthRange(invoice.month, invoice.year);
+    const [userMeals, userMarkets] = await Promise.all([
+        Meal.aggregate([
+            { $match: { user: invoice.user, date: { $gte: start, $lte: end } } },
+            { $group: { _id: null, mealCount: { $sum: '$mealCount' }, guestCount: { $sum: '$guestCount' } } },
+        ]),
+        Market.aggregate([
+            { $match: { user: invoice.user, date: { $gte: start, $lte: end } } },
+            { $group: { _id: null, totalAmount: { $sum: '$amount' } } },
+        ]),
+    ]);
+
+    const resolution = resolveExemption({
+        override: normalizedOverride,
+        totalMeal: userMeals[0]?.mealCount || 0,
+        totalMarketAmount: userMarkets[0]?.totalAmount || 0,
+        paidAmount: invoice.paidAmount || 0,
+        reason: trimmedReason,
+    });
+
+    invoice.isExempt = resolution.isExempt;
+    invoice.exemptSource = resolution.exemptSource;
+    invoice.exemptReason = resolution.exemptReason;
+
+    if (invoice.isExempt) {
+        invoice.totalBill = 0;
+        invoice.totalPayable = 0;
+        invoice.messCost = 0;
+        invoice.guestMealRevenue = 0;
+        invoice.mealRate = 0;
+        invoice.fixedCosts = { cookingCharge: 0, waterBill: 0, gasBillCharge: 0, platformFee: 0 };
+        invoice.status = 'paid';
+    } else {
+        // Un-exempt: rebuild the bill from live facts so the restored amount
+        // is identical to what getInvoice() would have produced.
+        const user = await User.findById(invoice.user).lean();
+        if (!user) throw new AppError('User not found', 404);
+
+        const messStats = await calculateMessStats(invoice.month, invoice.year);
+        const uMealCount = userMeals[0]?.mealCount || 0;
+        const uGuestCount = userMeals[0]?.guestCount || 0;
+        const uMarketSpent = userMarkets[0]?.totalAmount || 0;
+        const uOwnMeals = uMealCount - uGuestCount;
+
+        const messCost = uOwnMeals * messStats.mealRate;
+        const guestRevenue = uGuestCount * (user.chargePerGuestMeal || 60);
+        const totalBill = messCost
+            + (user.cookingCharge || 0)
+            + (user.waterBill || 0)
+            + (user.platformFee || 0)
+            + guestRevenue
+            - uMarketSpent;
+
+        invoice.mealCount = uOwnMeals;
+        invoice.guestMealCount = uGuestCount;
+        invoice.marketAmountSpent = uMarketSpent;
+        invoice.mealRate = messStats.mealRate;
+        invoice.messCost = Number(messCost.toFixed(2));
+        invoice.guestMealRevenue = guestRevenue;
+        invoice.fixedCosts = {
+            cookingCharge: Number(user.cookingCharge || 0),
+            waterBill: Number(user.waterBill || 0),
+            gasBillCharge: Number(user.gasBillCharge || 0),
+            platformFee: Number(user.platformFee || 0),
+        };
+        invoice.totalBill = Math.round(totalBill * 100) / 100;
+        invoice.totalPayable = Math.round(totalBill * 100) / 100;
+        invoice.status = determineInvoiceStatus(invoice.paidAmount || 0, invoice.totalPayable);
+    }
+
+    await invoice.save();
+    return invoice;
+};
+
+/**
+ * READ-ONLY lookup of a member's exemption state for one billing period.
+ *
+ * Used by the admin Edit Member → Billing Exemption control so the admin can
+ * browse arbitrary periods WITHOUT minting Invoice documents as a side effect
+ * of a GET (getInvoice() creates one when it is missing) and without paying
+ * for a mess-wide calculateMessStats aggregate on every panel open.
+ *
+ * Contract: this function must never write to the database.
+ *
+ * @param {string} userId
+ * @param {number} month — 1-indexed
+ * @param {number} year
+ * @returns {Promise<{
+ *   exists: boolean,
+ *   invoiceId: string|null,
+ *   override: 'none'|'force_exempt'|'force_bill',
+ *   isExempt: boolean,
+ *   exemptSource: string|null,
+ *   exemptReason: string|null,
+ *   isFinalized: boolean,
+ *   paidAmount: number
+ * }>}
+ */
+const getInvoiceExemptionStatus = async (userId, month, year) => {
+    const invoice = await Invoice.findOne({ user: userId, month, year })
+        .select('isExempt exemptSource exemptReason exemptOverride paidAmount isFinalized')
+        .lean();
+
+    if (!invoice) {
+        return {
+            exists: false,
+            invoiceId: null,
+            override: OVERRIDE.NONE,
+            isExempt: false,
+            exemptSource: null,
+            exemptReason: null,
+            isFinalized: false,
+            paidAmount: 0,
+        };
+    }
+
+    return {
+        exists: true,
+        invoiceId: String(invoice._id),
+        override: normalizeOverride(invoice.exemptOverride),
+        isExempt: invoice.isExempt === true,
+        exemptSource: invoice.isExempt === true ? (invoice.exemptSource || null) : null,
+        exemptReason: invoice.isExempt === true ? (invoice.exemptReason || null) : null,
+        isFinalized: invoice.isFinalized === true,
+        paidAmount: Number(invoice.paidAmount) || 0,
+    };
 };
 
 /**
@@ -355,8 +518,12 @@ const getUserInvoiceHistory = async (userId) => {
 };
 
 /**
- * Finalize all invoices for a given month
- * Excludes users who are EXEMPT (activated after billing period started)
+ * Finalize all invoices for a given month.
+ *
+ * Exemption is decided ENTIRELY by invoice.isExempt, which is produced by
+ * billingExemption.service (admin override, or the zero-activity rule).
+ * There is no user-date pre-filter — a member is never silently dropped
+ * from finalization because of when their account was created.
  */
 const finalizeMonth = async (month, year, adminId) => {
     // Resolve admin ID for refund Payment records (createdBy is required)
@@ -366,34 +533,15 @@ const finalizeMonth = async (month, year, adminId) => {
         resolvedAdminId = admin?._id;
     }
 
-    // Calculate billing period start to check exemption eligibility
-    const billingPeriodStart = new Date(Date.UTC(year, month - 1, 1));
-
-    // Fetch active users and filter out exempt ones
-    const allActiveUsers = await User.find({ isActive: true, userStatus: 'approved' }).lean();
-    
-    // Filter: include only users who were active BEFORE or ON the billing period start
-    // Exclude users who are EXEMPT (activated after billing period started)
-    const eligibleUsers = allActiveUsers.filter(user => {
-        // Signal 1: activatedAt set after billing period start — exempt
-        if (user.activatedAt && new Date(user.activatedAt) > billingPeriodStart) return false;
-        
-        // Signal 2: billingExemptMonth/Year match — exempt
-        if (user.billingExemptMonth === month && user.billingExemptYear === year) return false;
-        
-        // Signal 3: account created after billing period start — exempt
-        if (!user.activatedAt && user.createdAt && new Date(user.createdAt) > billingPeriodStart) return false;
-        
-        // User was active before or on billing period start — eligible
-        return true;
-    });
+    const activeUsers = await User.find({ isActive: true, userStatus: 'approved' })
+        .select('_id')
+        .lean();
 
     const results = [];
 
-    for (const user of eligibleUsers) {
-        // getInvoice applies the full 4-signal exemption check (including
-        // data-driven zero-activity check). If the user is exempt, the
-        // returned invoice will have isExempt: true and totalPayable: 0.
+    for (const user of activeUsers) {
+        // getInvoice() resolves the effective exemption (admin override or
+        // zero-activity). Exempt invoices come back with totalPayable: 0.
         const invoiceObj = await getInvoice(user._id, month, year);
 
         // Skip exempt invoices — they are handled separately below
@@ -528,7 +676,9 @@ const syncInvoiceStatus = async (invoiceId) => {
  *     (1st of current month → today) so the running counters are accurate.
  *  2. Resets `payment` and `gasBill` flags back to 'pending' so the Members
  *     page correctly reflects the status for the brand-new billing period.
- *  3. Clears billing exemption flags for users who were exempt in the previous period.
+ *  3. Clears the legacy join-date exemption flags. Billing exemption now
+ *     lives on the Invoice (admin override / zero-activity), so these
+ *     User-level fields are no longer read by any billing path.
  *
  * Implementation notes:
  *  - Uses a single MongoDB `bulkWrite` for all user updates → O(1) round-trips
@@ -619,7 +769,8 @@ const resetUserStatsAfterFinalization = async () => {
                         // ── Recalculate gas bill per user for new cycle ──
                         gasBillCharge: canonicalGasCharge,
                     },
-                    // ── Clear billing exemption flags for new cycle ──
+                    // ── Clear legacy join-date exemption flags ──
+                    // No longer consulted by billing (see billingExemption.service).
                     $unset: {
                         billingExemptMonth: '',
                         billingExemptYear: '',
@@ -639,7 +790,7 @@ const resetUserStatsAfterFinalization = async () => {
  * Admin only. Used for the "Resolve Unpaid Bills" panel.
  * Shows ALL unpaid/partially paid invoices regardless of finalization status,
  * so the admin always sees outstanding debt without depending on the cron schedule.
- * EXCLUDES exempt invoices (users activated after billing period started).
+ * EXCLUDES exempt invoices (admin-set exemption or zero-activity rule).
  * @param {number} month - 1-indexed month (optional, defaults to previous month)
  * @param {number} year  - full year (optional, defaults to last active billing month)
  */
@@ -766,6 +917,8 @@ module.exports = {
     finalizeMonth,
     calculateMessStats,
     syncInvoiceStatus,
+    setInvoiceExemption,
+    getInvoiceExemptionStatus,
     resetUserStatsAfterFinalization,
     getAdminUnpaidInvoices,
     emailAllInvoices

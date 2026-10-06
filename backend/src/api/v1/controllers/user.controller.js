@@ -73,9 +73,12 @@ const getUsers = asyncHandler(async (req, res) => {
     // records), not raw PII. All users need these to display correct bill status.
     if (!isAdmin && result.users) {
         const SENSITIVE_FIELDS = ['email', 'phone', 'lastLoginIP', 'lastLoginUA'];
+        // Admin-authored billing notes — the *fact* of exemption is public
+        // (members need it to understand their bill), the reason is not.
+        const ADMIN_ONLY_FIELDS = ['exemptReason'];
         result.users = result.users.map(user => {
             const stripped = { ...user };
-            SENSITIVE_FIELDS.forEach(f => delete stripped[f]);
+            [...SENSITIVE_FIELDS, ...ADMIN_ONLY_FIELDS].forEach(f => delete stripped[f]);
             return stripped;
         });
     }

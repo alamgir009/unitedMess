@@ -85,6 +85,12 @@ const Modal = ({
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Escape') {
+      // A portaled layer (IconSelect listbox, Dropdown menu) handles Escape
+      // itself. Both listeners sit on `document`, so stopPropagation cannot
+      // help — without this guard the first Esc closes BOTH the dropdown and
+      // the modal behind it. Let the layer dismiss first; the next Esc closes
+      // the dialog.
+      if (document.querySelector('[role="listbox"], [role="menu"]')) return;
       onClose?.();
       return;
     }
@@ -186,91 +192,97 @@ const Modal = ({
       )}
       onClick={(e) => e.stopPropagation()}
     >
-      {isLoading ? (
-        <div className="flex items-center justify-center p-12">
-          <Spinner size="xl" />
+      {useSheet && (
+        <div
+          onMouseDown={handleDragStart}
+          onTouchStart={handleDragStart}
+          className="relative z-20 shrink-0 cursor-grab active:cursor-grabbing bg-transparent"
+        >
+          <div className="flex justify-center pt-2.5 pb-1">
+            <div className="w-10 h-1 rounded-full bg-border-strong" />
+          </div>
         </div>
-      ) : (
-        <>
-          {useSheet && (
-            <div
-              onMouseDown={handleDragStart}
-              onTouchStart={handleDragStart}
-              className="relative z-20 shrink-0 cursor-grab active:cursor-grabbing bg-transparent"
-            >
-              <div className="flex justify-center pt-2.5 pb-1">
-                <div className="w-10 h-1 rounded-full bg-border-strong" />
-              </div>
-            </div>
-          )}
+      )}
 
-          {headerContent && (
-            <div className="relative z-10 flex-shrink-0">
-              {headerContent}
-            </div>
-          )}
+      {headerContent && (
+        <div className="relative z-10 flex-shrink-0">
+          {headerContent}
+        </div>
+      )}
 
-          {(title || showCloseButton) && (
-            <div className={cn(
-              'flex items-center justify-between flex-shrink-0 border-b border-border-default',
-              useSheet ? 'px-4 pt-1 pb-2' : 'px-5 py-4 sm:px-6 sm:py-5',
-            )}>
-              <div className="flex items-center gap-3 min-w-0">
-                {accentColor !== 'none' && (
-                  <div className={cn('w-1 h-6 rounded-full bg-gradient-to-b shrink-0', accentBar)} />
-                )}
-                <div className="min-w-0">
-                  {title && (
-<h2 id="modal-title" className={cn(
+      {(title || showCloseButton) && (
+        <div className={cn(
+          'flex items-center justify-between flex-shrink-0 border-b border-border-default',
+          useSheet ? 'px-4 pt-1 pb-2' : 'px-5 py-4 sm:px-6 sm:py-5',
+        )}>
+          <div className="flex items-center gap-3 min-w-0">
+            {accentColor !== 'none' && (
+              <div className={cn('w-1 h-6 rounded-full bg-gradient-to-b shrink-0', accentBar)} />
+            )}
+            <div className="min-w-0">
+              {title && (
+                <h2 id="modal-title" className={cn(
                       'truncate line-clamp-2 font-semibold text-foreground',
                       useSheet ? 'text-sm sm:text-base' : 'text-base sm:text-lg',
                   )}>
-                      {title}
-                    </h2>
-                  )}
-                  {description && (
-                    <p id="modal-description" className="text-sm text-muted-foreground mt-0.5 line-clamp-3">
-                      {description}
-                    </p>
-                  )}
-                </div>
-              </div>
-              {showCloseButton && (
-                <button
-                  onClick={onClose}
-                  aria-label="Close dialog"
-                  className="ml-4 shrink-0 p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                  {title}
+                </h2>
+              )}
+              {description && (
+                <p id="modal-description" className="text-sm text-muted-foreground mt-0.5 line-clamp-3">
+                  {description}
+                </p>
               )}
             </div>
-          )}
-
-          <div className={cn(
-            'relative z-10 flex-1 overflow-y-auto overscroll-contain',
-            useSheet ? 'px-4 py-3' : 'px-5 py-4 sm:px-6 sm:py-5',
-            '[scrollbar-width:thin] [scrollbar-color:var(--border-strong)_transparent]',
-            '[&::-webkit-scrollbar]:w-1.5',
-            '[&::-webkit-scrollbar-track]:bg-transparent',
-            '[&::-webkit-scrollbar-thumb]:bg-[var(--border-strong)] [&::-webkit-scrollbar-thumb]:rounded-full',
-            '[&::-webkit-scrollbar-thumb:hover]:bg-[var(--text-muted)]',
-            '[-webkit-overflow-scrolling:touch]',
-          )}>
-            {children}
           </div>
-
-          {footer && (
-            <div className={cn(
-              'flex items-center justify-end gap-3 flex-shrink-0 border-t border-border-default',
-              useSheet ? 'px-4 pb-4 pt-3' : 'px-5 pb-5 pt-3 sm:px-6 sm:pb-6 sm:pt-4',
-            )}>
-              {footer}
-            </div>
+          {showCloseButton && (
+            <button
+              onClick={onClose}
+              aria-label="Close dialog"
+              className="ml-4 shrink-0 p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           )}
-        </>
+        </div>
+      )}
+
+      {/* Body only — header/footer stay mounted during isLoading so the user
+          keeps the title, the close button, the Cancel escape hatch and their
+          scroll position (previously the whole dialog collapsed to a spinner
+          on save, and scroll reset to top on failure). */}
+      <div className={cn(
+        'relative z-10 flex-1 overflow-y-auto overscroll-contain',
+        useSheet ? 'px-4 py-3' : 'px-5 py-4 sm:px-6 sm:py-5',
+        '[scrollbar-width:thin] [scrollbar-color:var(--border-strong)_transparent]',
+        '[&::-webkit-scrollbar]:w-1.5',
+        '[&::-webkit-scrollbar-track]:bg-transparent',
+        '[&::-webkit-scrollbar-thumb]:bg-[var(--border-strong)] [&::-webkit-scrollbar-thumb]:rounded-full',
+        '[&::-webkit-scrollbar-thumb:hover]:bg-[var(--text-muted)]',
+        '[-webkit-overflow-scrolling:touch]',
+      )}>
+        {isLoading ? (
+          <div
+            className="flex min-h-[220px] items-center justify-center py-10"
+            role="status"
+            aria-live="polite"
+          >
+            <Spinner size="xl" />
+          </div>
+        ) : (
+          children
+        )}
+      </div>
+
+      {footer && (
+        <div className={cn(
+          'flex items-center justify-end gap-3 flex-shrink-0 border-t border-border-default',
+          useSheet ? 'px-4 pb-4 pt-3' : 'px-5 pb-5 pt-3 sm:px-6 sm:pb-6 sm:pt-4',
+        )}>
+          {footer}
+        </div>
       )}
     </div>
   );

@@ -92,15 +92,61 @@ const invoiceSchema = new mongoose.Schema(
         finalizedAt: {
             type: Date,
         },
+        // ── Billing exemption ────────────────────────────────────────────
+        // isExempt / exemptReason are the DENORMALIZED EFFECTIVE values
+        // produced by billingExemption.service.resolveExemption(). They are
+        // what every read path (list, batch, badge, payable) consumes.
+        //
+        // exemptOverride is the ADMIN'S EXPLICIT INTENT and is the only
+        // field that can change the outcome when activity data says
+        // otherwise:
+        //   'none'         → automatic (zero-activity) rule applies
+        //   'force_exempt' → exempt even if the member had activity
+        //   'force_bill'   → billed even if the member had no activity
+        //
+        // There is deliberately NO date-based (activatedAt/createdAt)
+        // exemption anywhere in this schema or the codebase.
         isExempt: {
             type: Boolean,
             default: false,
-            comment: "True if user was activated after billing period start — not charged"
+            comment: "Effective flag: true when the member pays ₹0 for this period"
         },
         exemptReason: {
             type: String,
             default: null,
-            comment: "Reason for billing exemption"
+            comment: "Effective reason shown to admin/member"
+        },
+        exemptSource: {
+            type: String,
+            enum: ['manual', 'auto_no_activity', null],
+            default: null,
+            comment: "'manual' = set by an admin, 'auto_no_activity' = zero-activity rule"
+        },
+        exemptOverride: {
+            type: String,
+            enum: ['none', 'force_exempt', 'force_bill'],
+            default: 'none',
+            comment: "Admin intent. 'force_bill' is the escape hatch from the zero-activity rule"
+        },
+        exemptedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            default: null,
+            comment: "Admin who last changed the exemption manually"
+        },
+        exemptedAt: {
+            type: Date,
+            default: null,
+        },
+        exemptHistory: {
+            type: [{
+                override: { type: String, enum: ['none', 'force_exempt', 'force_bill'] },
+                reason: { type: String, default: null },
+                changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+                changedAt: { type: Date, default: Date.now },
+            }],
+            default: [],
+            comment: "Immutable audit trail of manual exemption changes"
         },
     },
     {
