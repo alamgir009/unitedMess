@@ -7,6 +7,7 @@ import StatOverview from '../../../components/StatOverview/StatOverview';
 import MembersTable from '../../../components/MembersTable/MembersTable';
 import SendNotificationModal from '@/modules/notification/components/SendNotificationModal/SendNotificationModal';
 import Button from '@/shared/components/ui/Button/Button';
+import { buildMealRateFormula } from '@/core/utils/helpers/billing.helper';
 import {
     Users,
     IndianRupee,
@@ -137,6 +138,7 @@ const AdminDashboard = () => {
         {
             title: 'Meal Rate',
             value: `₹${mealCharge?.mealCharge ?? 0}`,
+            subLabel: buildMealRateFormula(mealCharge),
             icon: TrendingUp,
         },
     ];

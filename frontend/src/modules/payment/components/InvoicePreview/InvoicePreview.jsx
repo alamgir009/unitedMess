@@ -16,6 +16,7 @@ import {
 import { Spinner, Button } from '@/shared/components/ui';
 import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
 import { fmt } from '@/core/utils/helpers/currency.helper';
+import { buildMealRateFormula } from '@/core/utils/helpers/billing.helper';
 import invoiceService from '../../services/invoice.service';
 
 /* ══════════════════════════════════════════════════════════════
@@ -136,6 +137,40 @@ const InvoicePreview = ({
         chargePerGuestMeal: user?.chargePerGuestMeal ?? 60,
         prevBalance: invoice?.previousBalance ?? 0,
     }), [invoice, user?.chargePerGuestMeal]);
+
+    /* ── Meal-rate breakdown formula (mirrors dashboard sub-label) ── */
+    const mealRateFormula = useMemo(() => {
+        if ((invoice?.mealRate ?? 0) <= 0) return undefined;
+
+        const guestRate = userValues.guestMealCount > 0 && userValues.guestMealRevenue > 0
+            ? Number((userValues.guestMealRevenue / userValues.guestMealCount).toFixed(2))
+            : userValues.chargePerGuestMeal;
+
+        return buildMealRateFormula({
+            totalMarket: grandStats.marketTotal,
+            totalGuest: grandStats.totalGuest,
+            totalOwnMeals: grandStats.totalMeals - grandStats.totalGuest,
+            guestMealRate: guestRate,
+        });
+    }, [
+        invoice?.mealRate,
+        grandStats,
+        userValues.guestMealCount,
+        userValues.guestMealRevenue,
+        userValues.chargePerGuestMeal,
+    ]);
+
+    /* Memoized so DataRow's React.memo keeps working (new JSX node each render would break it) */
+    const adjustedChargeSubLabel = useMemo(() => (
+        <>
+            <span className="block">After guest deduction</span>
+            {mealRateFormula && (
+                <span className="block font-medium text-foreground/70 tabular-nums">
+                    {mealRateFormula}
+                </span>
+            )}
+        </>
+    ), [mealRateFormula]);
 
     /* ── Payment record (merge backend + external fallback) ── */
     const paymentData = useMemo(() => ({
@@ -474,7 +509,7 @@ const InvoicePreview = ({
 
                 <SectionLabel label="Calculations" />
                 <DataRow label="Cost of Your Meals" value={`\u20B9${fmt(userValues.costOfMeals)}`} subLabel="Proportional share" accent />
-                <DataRow label="Adjusted Meal Charge" value={`\u20B9${fmt(userValues.adjustedMealCharge)}`} subLabel="After guest deduction" accent />
+                <DataRow label="Adjusted Meal Charge" value={`\u20B9${fmt(userValues.adjustedMealCharge)}`} subLabel={adjustedChargeSubLabel} accent />
                 {userValues.platformFee !== 0 && (
                     <DataRow label="Platform Fee" value={`\u20B9${fmt(userValues.platformFee)}`} />
                 )}

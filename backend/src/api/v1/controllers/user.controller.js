@@ -284,8 +284,8 @@ const getGrandTotalMeal = asyncHandler(async (req, res) => {
 });
 
 const getMealCharge = asyncHandler(async (req, res) => {
-    const mealCharge = await userService.getMealCharge();
-    sendSuccessResponse(res, 200, 'Current meal charge rate', { mealCharge });
+    const stats = await userService.getMealCharge();
+    sendSuccessResponse(res, 200, 'Current meal charge rate', stats);
 });
 
 const getBillingMonthStats = asyncHandler(async (req, res) => {

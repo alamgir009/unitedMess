@@ -17,7 +17,10 @@ const initialState = {
     // ── Billing-month stats (current month totals from Meal/Market collections) ──
     billingStats: {
         grandTotalMeal: 0,
+        grandTotalGuest: 0,
         grandTotalMarket: 0,
+        totalOwnMeals: 0,
+        guestMealRate: 0,
         mealCharge: 0,
         billingMonth: '',
         month: null,
@@ -214,6 +217,8 @@ export const membersSlice = createSlice({
                     grandTotalMeal:   d.grandTotalMeal   ?? 0,
                     grandTotalGuest:  d.grandTotalGuest  ?? 0,
                     grandTotalMarket: d.grandTotalMarket ?? 0,
+                    totalOwnMeals:    d.totalOwnMeals    ?? 0,
+                    guestMealRate:    d.guestMealRate    ?? 0,
                     mealCharge:       d.mealCharge       ?? 0,
                     billingMonth:     d.billingMonth     ?? '',
                     month:            d.month            ?? null,

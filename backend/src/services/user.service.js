@@ -889,7 +889,8 @@ async function getGrandTotalMeal() {
 
 /**
  * Meal charge per meal for the ACTIVE billing month only.
- * mealCharge = totalMarket / totalMeals
+ * mealCharge = (totalMarket - guestRevenue) / totalOwnMeals
+ * Returns the full breakdown so callers can render the formula.
  */
 async function getMealCharge() {
     const { start, end } = getBillingPeriod();
@@ -913,7 +914,15 @@ async function getMealCharge() {
 
     const totalOwnMeals = totalMeal - totalGuest;
     const charge = totalOwnMeals > 0 ? (totalMarket - guestRevenue) / totalOwnMeals : 0;
-    return round2(charge);
+    return {
+        mealCharge: round2(charge),
+        totalMeal,
+        totalGuest,
+        totalOwnMeals,
+        totalMarket: round2(totalMarket),
+        guestMealRate,
+        guestRevenue: round2(guestRevenue),
+    };
 }
 
 /**
@@ -957,6 +966,8 @@ async function getBillingMonthStats() {
         grandTotalMeal,
         grandTotalGuest: totalGuest,
         grandTotalMarket: round2(grandTotalMarket),
+        totalOwnMeals: grandTotalMeal - totalGuest,
+        guestMealRate,
         mealCharge,
         billingMonth: monthName,
         month,

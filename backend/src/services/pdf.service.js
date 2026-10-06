@@ -175,7 +175,18 @@ const generateInvoicePDF = (invoiceData, user) => {
             /* Mess-wide stats */
             const grandTotalMarket = invoiceData._messGrandTotalMarket ?? 0;
             const grandTotalMeal   = invoiceData._messGrandTotalMeal   ?? 0;
-            const grandTotalGuest  = invoiceData._messGrandTotalGuest  ?? 0;
+            const grandTotalGuest  = invoiceData._messGrandTotalGuest ?? 0;
+
+            /* Meal-rate breakdown formula — mirrors frontend buildMealRateFormula */
+            const ownMealsAll = grandTotalMeal - grandTotalGuest;
+            const effGuestRate = guestMeal > 0 && guestAmt > 0
+                ? Number((guestAmt / guestMeal).toFixed(2))
+                : guestRate;
+            const mealRateFormula = adjMealCharge > 0 && grandTotalMarket > 0 && ownMealsAll > 0
+                ? (grandTotalGuest > 0 && effGuestRate > 0
+                    ? `(${fmt(grandTotalMarket)} \u2212 ${fmt(grandTotalGuest)}\u00d7${fmt(effGuestRate)}) \u00f7 ${fmt(ownMealsAll)}`
+                    : `${fmt(grandTotalMarket)} \u00f7 ${fmt(ownMealsAll)}`)
+                : null;
 
             /* ── Create PDF document ── */
             doc = new PDFDocument({
@@ -358,17 +369,18 @@ const generateInvoicePDF = (invoiceData, user) => {
             };
 
             const dataRow = (label, value, subLabel = null, accent = false) => {
-                const rowH = subLabel ? 34 : 24;
+                const subs = subLabel == null ? [] : (Array.isArray(subLabel) ? subLabel : [subLabel]);
+                const rowH = subs.length > 1 ? 46 : subs.length === 1 ? 34 : 24;
                 ensureSpace(rowH + 2);
                 hRule(y + rowH - 1, C.gray100, 0.4);
 
                 doc.fontSize(11).font('NotoSans').fillColor(C.gray700);
                 doc.text(label, MARGIN, y + 4, { width: CONTENT_W * 0.6 });
 
-                if (subLabel) {
-                    doc.fontSize(9).font('NotoSans').fillColor(C.gray400);
-                    doc.text(subLabel, MARGIN, y + 18);
-                }
+                subs.forEach((line, i) => {
+                    doc.fontSize(9).font('NotoSans').fillColor(i === 0 ? C.gray400 : C.gray500);
+                    doc.text(line, MARGIN, y + 18 + i * 13);
+                });
 
                 doc.fontSize(11).font('NotoSans-SemiBold').fillColor(accent ? C.indigo : C.gray900);
                 doc.text(value, MARGIN, y + 4, { width: CONTENT_W, align: 'right' });
@@ -403,7 +415,7 @@ const generateInvoicePDF = (invoiceData, user) => {
 
             sectionLabel('Calculations');
             dataRow('Cost of Your Meals',   `\u20B9${fmt(costOfMeals)}`,   'Proportional share',    true);
-            dataRow('Adjusted Meal Charge', `\u20B9${fmt(adjMealCharge)}`, 'After guest deduction', true);
+            dataRow('Adjusted Meal Charge', `\u20B9${fmt(adjMealCharge)}`, mealRateFormula ? ['After guest deduction', mealRateFormula] : 'After guest deduction', true);
             if (platformFee !== 0) {
                 dataRow('Platform Fee', `\u20B9${fmt(platformFee)}`);
             }

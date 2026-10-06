@@ -15,6 +15,7 @@ import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import MemberTable from '../../components/MemberTable';
 import StatPill from '@/shared/components/ui/StatPill/StatPill';
 import { RoleBadge } from '@/shared/components/ui';
+import { buildMealRateFormula } from '@/core/utils/helpers/billing.helper';
 import { fetchUsers, fetchBillingMonthStats, reset } from '../../store/members.slice';
 import { useLocation } from 'react-router-dom';
 
@@ -97,6 +98,15 @@ const MemberPage = React.memo(() => {
     const formattedTotalMeals = useMemo(() => (billingStats.grandTotalMeal ?? 0).toLocaleString('en-IN'), [billingStats.grandTotalMeal]);
     const formattedMealRate = useMemo(() => `₹${(billingStats.mealCharge ?? 0).toFixed(2)}`, [billingStats.mealCharge]);
 
+    const mealRateFormula = useMemo(() => buildMealRateFormula({
+        totalMarket: billingStats.grandTotalMarket,
+        totalMeal: billingStats.grandTotalMeal,
+        totalGuest: billingStats.grandTotalGuest,
+        totalOwnMeals: billingStats.totalOwnMeals ||
+            (billingStats.grandTotalMeal ?? 0) - (billingStats.grandTotalGuest ?? 0),
+        guestMealRate: billingStats.guestMealRate,
+    }), [billingStats]);
+
     const stats = useMemo(() => {
         return [
             {
@@ -124,10 +134,11 @@ const MemberPage = React.memo(() => {
                 icon: HiOutlineArrowTrendingUp,
                 label: 'Meal Rate',
                 value: billingStatsLoading ? '...' : formattedMealRate,
+                sublabel: mealRateFormula,
                 color: 'bg-warning-bg border-warning-border text-warning-text',
             },
         ];
-    }, [activeCount, billingStatsLoading, formattedMarketExp, formattedTotalMeals, formattedMealRate]);
+    }, [activeCount, billingStatsLoading, formattedMarketExp, formattedTotalMeals, formattedMealRate, mealRateFormula, billingStats.grandTotalGuest, billingStats.grandTotalMeal]);
 
     return (
         <MainLayout>
