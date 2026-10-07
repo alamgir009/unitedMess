@@ -940,6 +940,7 @@ const emailAllInvoices = async (month, year) => {
 
 module.exports = {
     determineInvoiceStatus,
+    SETTLEMENT_TOLERANCE,
     getInvoice,
     getActiveInvoice,
     getInvoiceForMonth,

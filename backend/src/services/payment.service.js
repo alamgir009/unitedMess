@@ -7,7 +7,7 @@ const emailService = require('./email.service');
 const config = require('../config');
 const { getBillingPeriod } = require('../utils/helpers/date.helper');
 const { emitToUser } = require('../sockets');
-const { determineInvoiceStatus } = require('./invoice.service');
+const { determineInvoiceStatus, SETTLEMENT_TOLERANCE } = require('./invoice.service');
 
 // ─────────────────────────────────────────────────────────────
 // Constants
@@ -192,6 +192,56 @@ const syncInvoiceAfterPayment = async (userId, monthStr) => {
     }
 };
 
+/**
+ * Cumulative guard for COMPLETED payments sharing {user, month, type}.
+ *
+ * - mess_bill: installments are legitimate (partial collected now, balance
+ *   later). Allowed only while sum(existing completed) + incoming amount
+ *   stays within invoice.totalPayable + settlement tolerance — the same
+ *   tolerance `determineInvoiceStatus` uses to call a period settled.
+ * - any other type (gas_bill, other): one completed record per period is
+ *   the contract — a second completed record is always a duplicate.
+ *
+ * Fails closed: when the period's invoice does not exist there is nothing
+ * to cap against, so the original one-record-per-period rule applies.
+ *
+ * @param {{ userId: string, month: string, type: string, amount?: number, excludePaymentId?: string }} opts
+ *   `excludePaymentId` skips the record being edited (update path) so its own
+ *   amount is not counted twice against the cap.
+ * @throws {AppError} 409 when the payment would duplicate or exceed the payable
+ */
+const assertWithinPayableLimit = async ({ userId, month, type, amount = 0, excludePaymentId = null }) => {
+    const filter = { user: userId, month, type, status: 'completed' };
+    if (excludePaymentId) filter._id = { $ne: excludePaymentId };
+
+    const completed = await Payment.find(filter);
+    if (!completed || completed.length === 0) return;
+
+    const label = (type || 'payment').replace('_', ' ');
+    const duplicateError = new AppError(
+        `A completed ${label} for ${month} already exists for this student.`,
+        409
+    );
+
+    if (type !== 'mess_bill') throw duplicateError;
+
+    const parsed = parseMonthString(month);
+    const invoice = parsed
+        ? await Invoice.findOne({ user: userId, month: parsed.month, year: parsed.year })
+        : null;
+    if (!invoice) throw duplicateError;
+
+    const alreadyPaid = completed.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+    const proposed = alreadyPaid + (Number(amount) || 0);
+    if (proposed > invoice.totalPayable + SETTLEMENT_TOLERANCE) {
+        const remaining = Math.max(0, invoice.totalPayable - alreadyPaid);
+        throw new AppError(
+            `₹${Number(amount).toFixed(2)} exceeds the remaining payable of ₹${remaining.toFixed(2)} for ${month}.`,
+            409
+        );
+    }
+};
+
 // ─────────────────────────────────────────────────────────────
 // Create
 // ─────────────────────────────────────────────────────────────
@@ -209,24 +259,18 @@ const createPayment = async (paymentBody) => {
         throw new AppError('Target student not found. Payment record cannot be created.', 404);
     }
 
-    // Duplicate guard: prevent double-recording a COMPLETED payment for the
-    // same user/month/type. Only the new record's own status is guarded —
+    // Duplicate/cap guard: only the new record's own status is guarded —
     // refund/pending/failed records are legitimate alongside a completed one
-    // (corrections, partials, audit entries) and must never be blocked.
+    // (corrections, audit entries) and must never be blocked. Completed
+    // mess_bill records are cumulative installments within the invoice
+    // payable; other types keep the one-completed-record-per-period rule.
     if ((paymentBody.status || 'completed') === 'completed') {
-        const existing = await Payment.findOne({
-            user: student._id,
+        await assertWithinPayableLimit({
+            userId: student._id,
             month: paymentBody.month,
             type: paymentBody.type,
-            status: 'completed',
+            amount: paymentBody.amount,
         });
-
-        if (existing) {
-            throw new AppError(
-                `A completed ${paymentBody.type.replace('_', ' ')} for ${paymentBody.month} already exists for this student.`,
-                400
-            );
-        }
     }
 
     // Sub-fix B: Fix payment record creation
@@ -572,24 +616,17 @@ const updatePaymentById = async (paymentId, updateBody) => {
     const oldStatus = payment.status;
     const oldMonth = payment.month;
 
-    // Guard: Prevent duplicate completed payments on update
+    // Guard: cumulative cap when a record is promoted to completed —
+    // the other completed records for {user, month, type} plus this one's
+    // (possibly edited) amount must stay within the payable limit.
     if (safeUpdate.status === 'completed' && oldStatus !== 'completed') {
-        const targetMonth = safeUpdate.month || payment.month;
-        const duplicate = await Payment.exists({
-            user: payment.user,
+        await assertWithinPayableLimit({
+            userId: payment.user,
+            month: safeUpdate.month || payment.month,
             type: payment.type,
-            month: targetMonth,
-            status: 'completed',
-            _id: { $ne: payment._id }
+            amount: safeUpdate.amount !== undefined ? safeUpdate.amount : payment.amount,
+            excludePaymentId: payment._id,
         });
-
-        if (duplicate) {
-            const label = payment.type === 'gas_bill' ? 'Gas bill' : 'Payment';
-            throw new AppError(
-                `${label} already completed for this user for ${targetMonth}.`,
-                409
-            );
-        }
     }
 
     Object.assign(payment, safeUpdate);
@@ -694,9 +731,11 @@ const createBulkPayments = async (body) => {
         throw new AppError(`Users not found: ${missing.join(', ')}`, 404);
     }
 
-    // Duplicate guard per user — only when recording a COMPLETED payment.
+    // Duplicate/cap guard per user — only when recording a COMPLETED payment.
     // Refund/pending/failed bulk records must not be blocked by an existing
-    // completed payment (same rule as createPayment).
+    // completed payment (same rule as createPayment). Completed mess_bill
+    // records are cumulative installments within each invoice's payable;
+    // other types keep the one-completed-record-per-period rule.
     if ((paymentData.status || 'completed') === 'completed') {
         const duplicates = await Payment.find({
             user: { $in: userIds },
@@ -706,13 +745,46 @@ const createBulkPayments = async (body) => {
         }).populate('user', 'name').lean();
 
         if (duplicates.length > 0) {
-            const names = [...new Set(duplicates.map(d =>
-                typeof d.user === 'object' ? d.user?.name : 'Unknown'
-            ))];
-            throw new AppError(
-                `A completed ${(paymentData.type || 'payment').replace('_', ' ')} for ${paymentData.month} already exists for: ${names.join(', ')}`,
-                409
-            );
+            const label = (paymentData.type || 'payment').replace('_', ' ');
+            const nameOf = (d) => (typeof d.user === 'object' ? d.user?.name : 'Unknown');
+            const names = [...new Set(duplicates.map(nameOf))];
+
+            if (paymentData.type !== 'mess_bill') {
+                throw new AppError(
+                    `A completed ${label} for ${paymentData.month} already exists for: ${names.join(', ')}`,
+                    409
+                );
+            }
+
+            const parsed = parseMonthString(paymentData.month);
+            const invoices = parsed
+                ? await Invoice.find({ user: { $in: userIds }, month: parsed.month, year: parsed.year }).lean()
+                : [];
+            const invoiceByUser = new Map(invoices.map(inv => [String(inv.user), inv]));
+            const paidByUser = new Map();
+            duplicates.forEach(d => {
+                const key = String(d.user?._id || d.user);
+                paidByUser.set(key, (paidByUser.get(key) || 0) + (Number(d.amount) || 0));
+            });
+
+            // Only users that already have a completed record can exceed the
+            // cap here; missing invoice → original one-record rule (fail closed)
+            const overLimit = new Set();
+            for (const [key, alreadyPaid] of paidByUser) {
+                const inv = invoiceByUser.get(key);
+                const proposed = alreadyPaid + (Number(paymentData.amount) || 0);
+                if (!inv || proposed > inv.totalPayable + SETTLEMENT_TOLERANCE) overLimit.add(key);
+            }
+
+            if (overLimit.size > 0) {
+                const blockedNames = [...new Set(duplicates
+                    .filter(d => overLimit.has(String(d.user?._id || d.user)))
+                    .map(nameOf))];
+                throw new AppError(
+                    `Recorded amount exceeds the remaining payable for: ${blockedNames.join(', ')}`,
+                    409
+                );
+            }
         }
     }
 

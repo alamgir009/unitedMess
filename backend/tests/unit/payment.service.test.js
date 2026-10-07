@@ -385,8 +385,54 @@ describe('createPayment — status sync & duplicate guard', () => {
         expect(Payment.create).toHaveBeenCalled();
     });
 
-    it('blocks a duplicate COMPLETED payment for the same user/month/type', async () => {
-        Payment.findOne.mockResolvedValue({ _id: 'existing' });
+    it('allows a second installment within the invoice payable (regression: was flat-blocked)', async () => {
+        // Cap guard sees only the prior installment; invoice sync sees both
+        // (the ₹400 record is persisted by the time sync runs)
+        Payment.find
+            .mockResolvedValueOnce([{ amount: 500 }])
+            .mockResolvedValueOnce([{ amount: 500 }, { amount: 400 }]);
+        const invoice = {
+            user: 'user1', totalPayable: 1000, paidAmount: 500,
+            status: 'partially_paid', save: jest.fn().mockResolvedValue(undefined),
+        };
+        Invoice.findOne.mockResolvedValue(invoice);
+
+        await createPayment({
+            user: 'user1',
+            month: M,
+            type: 'mess_bill',
+            status: 'completed',
+            amount: 400,
+            createdBy: 'admin1',
+        });
+
+        expect(Payment.create).toHaveBeenCalled();
+        expect(invoice.paidAmount).toBe(900);
+        expect(invoice.status).toBe('partially_paid');
+        expect(invoice.save).toHaveBeenCalled();
+    });
+
+    it('blocks an installment that would exceed the invoice payable', async () => {
+        Payment.find.mockResolvedValue([{ amount: 900 }]);
+        Invoice.findOne.mockResolvedValue({ totalPayable: 1000 });
+
+        await expect(
+            createPayment({
+                user: 'user1',
+                month: M,
+                type: 'mess_bill',
+                status: 'completed',
+                amount: 200,
+                createdBy: 'admin1',
+            })
+        ).rejects.toThrow('exceeds the remaining payable');
+
+        expect(Payment.create).not.toHaveBeenCalled();
+    });
+
+    it('blocks a duplicate when no invoice exists to cap against (fail closed)', async () => {
+        Payment.find.mockResolvedValue([{ amount: 500 }]);
+        Invoice.findOne.mockResolvedValue(null);
 
         await expect(
             createPayment({
@@ -400,6 +446,25 @@ describe('createPayment — status sync & duplicate guard', () => {
         ).rejects.toThrow('already exists');
 
         expect(Payment.create).not.toHaveBeenCalled();
+    });
+
+    it('still blocks a second completed gas bill (fixed bills never install)', async () => {
+        Payment.find.mockResolvedValue([{ amount: 200 }]);
+
+        await expect(
+            createPayment({
+                user: 'user1',
+                month: M,
+                type: 'gas_bill',
+                status: 'completed',
+                amount: 200,
+                createdBy: 'admin1',
+            })
+        ).rejects.toThrow('already exists');
+
+        expect(Payment.create).not.toHaveBeenCalled();
+        // Non-mess types short-circuit before any invoice lookup
+        expect(Invoice.findOne).not.toHaveBeenCalled();
     });
 
     it('allows a refund alongside an existing completed payment (regression: was blocked)', async () => {
@@ -458,6 +523,51 @@ describe('updatePaymentById — month repair re-sync', () => {
         expect(Invoice.findOne).toHaveBeenCalledWith(
             expect.objectContaining({ month: BP.month, year: BP.year })
         );
+    });
+
+    it('allows pending→completed when installments stay within the payable', async () => {
+        Payment.findById.mockResolvedValue({
+            _id: 'pay1',
+            user: 'user1',
+            type: 'mess_bill',
+            month: BP.monthName,
+            status: 'pending',
+            amount: 300,
+            statusHistory: [],
+            save: jest.fn().mockResolvedValue(undefined),
+        });
+        // Existing completed installment of ₹500; 500 + 300 ≤ 1000 + tolerance
+        Payment.find.mockResolvedValue([{ amount: 500 }]);
+        Invoice.findOne.mockResolvedValue({
+            user: 'user1', totalPayable: 1000, paidAmount: 500, status: 'partially_paid',
+            save: jest.fn().mockResolvedValue(undefined),
+        });
+
+        await updatePaymentById('pay1', { status: 'completed' });
+
+        expect(User.findByIdAndUpdate).toHaveBeenCalledWith('user1', { payment: 'success' });
+    });
+
+    it('blocks pending→completed when it would exceed the payable', async () => {
+        Payment.findById.mockResolvedValue({
+            _id: 'pay1',
+            user: 'user1',
+            type: 'mess_bill',
+            month: BP.monthName,
+            status: 'pending',
+            amount: 600,
+            statusHistory: [],
+            save: jest.fn().mockResolvedValue(undefined),
+        });
+        Payment.find.mockResolvedValue([{ amount: 500 }]);
+        Invoice.findOne.mockResolvedValue({ user: 'user1', totalPayable: 1000 });
+
+        await expect(
+            updatePaymentById('pay1', { status: 'completed' })
+        ).rejects.toThrow('exceeds the remaining payable');
+
+        // Guard fires before any mutation — nothing saved or synced
+        expect(User.findByIdAndUpdate).not.toHaveBeenCalled();
     });
 });
 
