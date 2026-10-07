@@ -14,13 +14,6 @@ const CELL_CONTENT = {
   votes: VoteCellContent,
 };
 
-const CATEGORY_KEY = {
-  meals: 'meal',
-  markets: 'market',
-  payments: 'payment',
-  votes: 'vote',
-};
-
 const CalendarCell = ({
   date,
   data = [],
@@ -29,13 +22,10 @@ const CalendarCell = ({
   error,
   onCellClick,
   onRetry,
-  dateKey,
   currentMonth,
   isDesktop,
   isHovered,
   showMealCount = true,
-  isLastRow = false,
-  isFirstInRow = false,
   isLastInRow = false,
   scheduleData = null,
   isOwnDuty = false,
@@ -46,7 +36,6 @@ const CalendarCell = ({
   const dayLabel = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
   const totalEntries = data.length;
   const Content = CELL_CONTENT[category] || (() => null);
-  const catKey = CATEGORY_KEY[category] || category;
 
   const categoryList = new Set();
   if (data.some((e) => e.type || category === 'meals')) categoryList.add('meals');
@@ -102,7 +91,7 @@ const CalendarCell = ({
         error={error}
         isCompact={!isDesktop}
         onRetry={onRetry}
-        onCellClick={(e) => onCellClick?.(date, data)}
+        onCellClick={() => onCellClick?.(date, data)}
         showMealCount={showMealCount}
         scheduleData={scheduleData}
         isOwnDuty={isOwnDuty}

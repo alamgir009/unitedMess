@@ -6,6 +6,11 @@
  */
 
 const { validateMarketSchedule } = require('../../src/utils/validators/marketSchedule.validator');
+const { freezeClock } = require('../helpers/freezeClock');
+
+// Pin "now" to the date these fixtures were authored against (2026-08-27) so
+// every September 2026 date below reads as future instead of PAST_DATE.
+freezeClock();
 
 const MEMBER_ID = 'member123';
 const MONTH_CTX = { year: 2026, month: 9 };

@@ -65,6 +65,12 @@ const User = require('../../src/models/User.model');
 const emailService = require('../../src/services/email.service');
 const notificationService = require('../../src/services/notification.service');
 const { generateMarketDutyICS } = require('../../src/utils/ics');
+const { freezeClock } = require('../helpers/freezeClock');
+
+// Pin "now" to the date these fixtures were authored against (2026-08-27) so
+// every September 2026 selection date below reads as future instead of
+// "Cannot select dates in the past".
+freezeClock();
 
 beforeEach(() => {
     jest.clearAllMocks();

@@ -322,20 +322,22 @@ const MarketDutyBanner = ({ scheduleData, currentUser, entries = [], isFulfilled
   const dispatch = useDispatch();
   const [removing, setRemoving] = useState(false);
 
-  if (!scheduleData?.user) return null;
-
-  const userName = scheduleData.user.name || 'Member';
-  const firstName = userName.split(' ')[0];
-  const isOwnDuty = currentUser?._id === scheduleData?.user?._id;
-
+  // Hooks must run before any early return — the null-check lives inside the
+  // memo so hook order stays identical when scheduleData.user appears/leaves.
   const fulfilledEntry = useMemo(() => {
-    if (!isFulfilled) return null;
+    if (!isFulfilled || !scheduleData?.user) return null;
     const scheduledUserId = scheduleData.user?._id;
     return entries.find((e) => {
       const entryUserId = typeof e.user === 'object' ? e.user?._id : e.user;
       return entryUserId === scheduledUserId;
     }) || null;
   }, [isFulfilled, scheduleData, entries]);
+
+  if (!scheduleData?.user) return null;
+
+  const userName = scheduleData.user.name || 'Member';
+  const firstName = userName.split(' ')[0];
+  const isOwnDuty = currentUser?._id === scheduleData?.user?._id;
 
   const handleRemove = async () => {
     if (!scheduleData?._id || removing) return;

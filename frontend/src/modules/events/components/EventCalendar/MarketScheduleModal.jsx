@@ -28,8 +28,16 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
   );
 
   const scheduleKey = `${viewMonth.getFullYear()}-${viewMonth.getMonth() + 1}`;
-  const currentSchedule = monthSchedule[scheduleKey] || [];
-  const currentAvailable = availableDates[scheduleKey] || [];
+  // Memoized so the `|| []` fallback keeps a stable identity — otherwise the
+  // downstream map memos recompute on every render.
+  const currentSchedule = useMemo(
+    () => monthSchedule[scheduleKey] || [],
+    [monthSchedule, scheduleKey]
+  );
+  const currentAvailable = useMemo(
+    () => availableDates[scheduleKey] || [],
+    [availableDates, scheduleKey]
+  );
 
   useEffect(() => {
     if (!isOpen) {
@@ -73,8 +81,6 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
     return eachDayOfInterval({ start: startDate, end: endDate });
   }, [viewMonth]);
 
-  const today = new Date();
-
   const unavailableDatesMap = useMemo(() => {
     const map = {};
     for (const item of currentAvailable) {
@@ -98,7 +104,7 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
 
   const handleDateClick = useCallback((date) => {
     const dateKey = getISTDateKey(date);
-    if (isBefore(date, today) && !isToday(date)) return;
+    if (isBefore(date, new Date()) && !isToday(date)) return;
     if (unavailableDatesMap[dateKey] && !selectedDates.has(dateKey)) return;
 
     const isRemoving = selectedDates.has(dateKey);
@@ -117,7 +123,7 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
       }
       return next;
     });
-  }, [today, unavailableDatesMap, selectedDates]);
+  }, [unavailableDatesMap, selectedDates]);
 
   const canGoPrev = useMemo(() => {
     const now = new Date();
@@ -187,7 +193,7 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
   const getDateStatus = useCallback((date) => {
     const dateKey = getISTDateKey(date);
     const inMonth = isSameMonth(date, viewMonth);
-    const isPast = isBefore(date, today) && !isToday(date);
+    const isPast = isBefore(date, new Date()) && !isToday(date);
     const isSelected = selectedDates.has(dateKey);
     const unavailableItem = unavailableDatesMap[dateKey];
     const isTakenByOther = unavailableItem && !isSelected;
@@ -195,7 +201,7 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
     const isMyDate = mySelectedDates.some((d) => getISTDateKey(d.date) === dateKey);
 
     return { dateKey, inMonth, isPast, isSelected, isTakenByOther, takenItem, isMyDate };
-  }, [viewMonth, today, selectedDates, unavailableDatesMap, takenDatesMap, mySelectedDates]);
+  }, [viewMonth, selectedDates, unavailableDatesMap, takenDatesMap, mySelectedDates]);
 
   return (
     <Modal

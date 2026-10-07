@@ -12,13 +12,13 @@ import MarketScheduleModal from './MarketScheduleModal';
 import SegmentedControl from '../SegmentedControl';
 
 
-import { formatInIST, formatDateKey, getISTDateKey } from '@/core/utils/helpers/date.helper';
+import { formatInIST, getISTDateKey } from '@/core/utils/helpers/date.helper';
 import eventService from '../../services/event.service';
 import { setCurrentMonth, setLoading } from '../../store/events.slice';
 import { fetchMonthSchedule, fetchAvailableDates } from '../../store/marketSchedule.slice';
 import { createMeal, bulkCreateMeals, updateMeal, deleteMeal, bulkDeleteMeals } from '../../../meal/store/meal.slice';
 import { createMarket, updateMarket, deleteMarket, bulkCreateMarkets } from '../../../market/store/market.slice';
-import { createPayment, createBulkPayments, updatePayment, deletePayment } from '../../../payment/store/payment.slice';
+import { createPayment, createBulkPayments, updatePayment } from '../../../payment/store/payment.slice';
 
 const CalendarDayEdit = lazy(() => import('./CalendarDayEdit'));
 const PaymentModal = lazy(() => import('../../../payment/components/PaymentModal/PaymentModal'));
@@ -228,10 +228,6 @@ const EventCalendar = () => {
   const handleNextMonth = useCallback(() => {
     dispatch(setCurrentMonth(addMonths(currentMonthDate, 1).toISOString()));
   }, [dispatch, currentMonthDate]);
-
-  const handleToday = useCallback(() => {
-    dispatch(setCurrentMonth(new Date().toISOString()));
-  }, [dispatch]);
 
   const handleCellClick = useCallback((date) => {
     setDetailDate(date);

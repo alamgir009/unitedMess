@@ -37,11 +37,12 @@ const TYPE_LABELS = {
 
 // ─── Inline Pager (replaces Pagination to avoid onLimitChange crash) ─────────
 const InlinePager = React.memo(({ pagination, onPageChange }) => {
-    if (!pagination || pagination.pages <= 1) return null;
+    const page = pagination?.page;
+    const pages = pagination?.pages;
 
-    const { page, pages, hasNext, hasPrev, total } = pagination;
-
+    // Hook before the early return (rules-of-hooks) — guard inside the memo.
     const pageNumbers = useMemo(() => {
+        if (pages == null || pages <= 1) return [];
         const nums = [];
         const maxVisible = 5;
         if (pages <= maxVisible) {
@@ -59,6 +60,10 @@ const InlinePager = React.memo(({ pagination, onPageChange }) => {
         }
         return nums;
     }, [page, pages]);
+
+    if (!pagination || pages <= 1) return null;
+
+    const { hasNext, hasPrev, total } = pagination;
 
     return (
         <div className="flex items-center justify-between gap-3 pt-3">

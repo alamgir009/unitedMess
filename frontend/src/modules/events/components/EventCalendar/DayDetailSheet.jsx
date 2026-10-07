@@ -67,16 +67,8 @@ const DayDetailSheet = ({
     };
   }, [isOpen, handleKeyDown]);
 
-  const handleDragStart = useCallback((e) => {
-    if (e.target.closest('button')) return;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    dragRef.current = { startY: clientY, startHeight: heightPct, dragging: true };
-    document.addEventListener('mousemove', handleDragMove);
-    document.addEventListener('mouseup', handleDragEnd);
-    document.addEventListener('touchmove', handleDragMove, { passive: false });
-    document.addEventListener('touchend', handleDragEnd);
-  }, [heightPct]);
-
+  // Declared before handleDragStart so its identity is in scope for that
+  // callback's dependency array (fixes exhaustive-deps without a disable).
   const handleDragMove = useCallback((e) => {
     if (!dragRef.current.dragging) return;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -97,6 +89,16 @@ const DayDetailSheet = ({
       onClose?.();
     }
   }, [handleDragMove, heightPct, onClose]);
+
+  const handleDragStart = useCallback((e) => {
+    if (e.target.closest('button')) return;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    dragRef.current = { startY: clientY, startHeight: heightPct, dragging: true };
+    document.addEventListener('mousemove', handleDragMove);
+    document.addEventListener('mouseup', handleDragEnd);
+    document.addEventListener('touchmove', handleDragMove, { passive: false });
+    document.addEventListener('touchend', handleDragEnd);
+  }, [heightPct, handleDragMove, handleDragEnd]);
 
   if (typeof document === 'undefined') return null;
 

@@ -44,12 +44,22 @@ const DayDetailPopover = ({
 
   useBodyScrollLock(phase === 'open' || phase === 'entering');
 
+  // Latest phase for the sync effect below. Reading phase through a ref keeps
+  // the effect deps at [isOpen]; adding `phase` directly would make the effect
+  // re-run mid-transition and fight the rAF sequence (entering → open → …).
+  const phaseRef = useRef(phase);
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
+
   // Sync phase with isOpen
   useEffect(() => {
     if (isOpen) {
       setPhase('entering');
       requestAnimationFrame(() => requestAnimationFrame(() => setPhase('open')));
-    } else if (phase === 'open' || phase === 'entering') {
+      return;
+    }
+    if (phaseRef.current === 'open' || phaseRef.current === 'entering') {
       setPhase('exiting');
       const t = setTimeout(() => setPhase('closed'), 180);
       return () => clearTimeout(t);
@@ -63,6 +73,14 @@ const DayDetailPopover = ({
     const vh = window.innerHeight;
     setPosition(calcPosition(anchorRect, POPUP_WIDTH, POPUP_MAX_HEIGHT, vw, vh));
   }, [anchorRect]);
+
+  const handleClose = useCallback(() => {
+    setPhase('exiting');
+    setTimeout(() => {
+      setPhase('closed');
+      onClose?.();
+    }, 180);
+  }, [onClose]);
 
   // Focus + keyboard
   useEffect(() => {
@@ -78,15 +96,7 @@ const DayDetailPopover = ({
       document.removeEventListener('keydown', handleKeyDown);
       previousFocusRef.current?.focus?.();
     };
-  }, [phase]);
-
-  const handleClose = useCallback(() => {
-    setPhase('exiting');
-    setTimeout(() => {
-      setPhase('closed');
-      onClose?.();
-    }, 180);
-  }, [onClose]);
+  }, [phase, handleClose]);
 
   if (phase === 'closed') return null;
 

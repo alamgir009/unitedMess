@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { onMessage } from 'firebase/messaging';
-import { app, getMessagingInstance, requestFcmToken } from '@/lib/firebase';
+import { getMessagingInstance, requestFcmToken } from '@/lib/firebase';
 import NotificationService from '../services/notification.service';
 
 const STORAGE_KEY = 'um_fcm_token';

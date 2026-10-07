@@ -38,7 +38,11 @@ const mockUser = {
 
 const mockMeal = {
     find: jest.fn(),
-    findOne: jest.fn(),
+    // Default: an existing MANUAL meal so the vote-triggered auto-create path
+    // early-returns silently. Without this, `Meal.findOne(...).lean()` threw
+    // "Cannot read properties of undefined" and leaked console noise from
+    // vote tests that never exercise meal creation.
+    findOne: jest.fn(() => mockChain({ source: 'manual' })),
     create: jest.fn(),
     updateOne: jest.fn(),
     updateMany: jest.fn(),

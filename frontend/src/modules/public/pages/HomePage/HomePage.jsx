@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef, memo, useMemo } from 'react';
 import Button from '@/shared/components/ui/Button/Button';
 import Calendar from './Calendar';
-import { BarChart3, Shield, Users, Receipt, BellRing, MonitorSmartphone, ReceiptIndianRupee } from 'lucide-react';
+import { BarChart3, Shield, Users, BellRing, MonitorSmartphone, ReceiptIndianRupee } from 'lucide-react';
 
 /* ── CSS-only scroll reveal (zero JS per frame after first intersection) ── */
 const InView = memo(function InView({ children, delay = 0, className = '' }) {
