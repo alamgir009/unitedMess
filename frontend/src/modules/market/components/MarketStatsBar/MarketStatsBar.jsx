@@ -8,9 +8,9 @@ import StatPill from '@/shared/components/ui/StatPill/StatPill';
 import { cn } from '@/core/utils/helpers/string.helper';
 
 const COLORS = {
-    primary: 'bg-primary/10 border-primary/20 text-primary',
-    secondary: 'bg-secondary-500/10 border-secondary-500/20 text-secondary-600 dark:text-secondary-400',
-    amber: 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400',
+    primary: 'bg-primary/10 text-primary border border-primary/10',
+    danger: 'bg-danger-bg text-danger-text border border-danger-border',
+    neutral: 'bg-muted text-muted-foreground border border-border',
 };
 
 const MarketStatsBar = React.memo(({ totalRecords, totalAmount, uniqueUsers, isAdmin }) => {
@@ -20,13 +20,13 @@ const MarketStatsBar = React.memo(({ totalRecords, totalAmount, uniqueUsers, isA
                 icon: HiOutlineShoppingBag,
                 label: 'Total Records',
                 value: totalRecords,
-                color: COLORS.primary,
+                color: COLORS.neutral,
             },
             {
                 icon: HiOutlineCurrencyRupee,
                 label: 'Total Spent',
                 value: `\u20B9${totalAmount.toLocaleString('en-IN')}`,
-                color: COLORS.secondary,
+                color: COLORS.danger,
             },
         ];
 
@@ -35,7 +35,7 @@ const MarketStatsBar = React.memo(({ totalRecords, totalAmount, uniqueUsers, isA
                 icon: HiOutlineUserGroup,
                 label: 'Members',
                 value: uniqueUsers,
-                color: COLORS.amber,
+                color: COLORS.primary,
             });
         }
 

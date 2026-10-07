@@ -1,17 +1,15 @@
 import React, { useMemo } from 'react';
-import {
-    HiOutlineSparkles,
-    HiOutlineUserGroup,
-} from 'react-icons/hi2';
+import { ReceiptText } from 'lucide-react';
+import { HiOutlineUserGroup } from 'react-icons/hi2';
 import { IoFastFoodOutline } from 'react-icons/io5';
 import StatPill from '@/shared/components/ui/StatPill/StatPill';
 import { cn } from '@/core/utils/helpers/string.helper';
 
 const COLORS = {
-    primary: 'bg-primary/10 border-primary/20 text-primary',
-    accent: 'bg-accent-500/10 border-accent-500/20 text-accent-500 dark:text-accent-400',
-    amber: 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400',
-    secondary: 'bg-secondary-500/10 border-secondary-500/20 text-secondary-600 dark:text-secondary-400',
+    primary: 'bg-primary/10 text-primary border border-primary/10',
+    success: 'bg-success-bg text-success-text border border-success-border',
+    warning: 'bg-warning-bg text-warning-text border border-warning-border',
+    neutral: 'bg-muted text-muted-foreground border border-border',
 };
 
 const MealStatsBar = React.memo(({ meals = [], isAdmin }) => {
@@ -32,16 +30,16 @@ const MealStatsBar = React.memo(({ meals = [], isAdmin }) => {
 
         const items = [
             {
-                icon: HiOutlineSparkles,
+                icon: ReceiptText,
                 label: 'Total Records',
                 value: meals.length,
-                color: COLORS.primary,
+                color: COLORS.neutral,
             },
             {
                 icon: IoFastFoodOutline,
                 label: 'Total Meals',
                 value: totalMeals,
-                color: COLORS.accent,
+                color: COLORS.success,
             },
         ];
 
@@ -50,7 +48,7 @@ const MealStatsBar = React.memo(({ meals = [], isAdmin }) => {
                 icon: HiOutlineUserGroup,
                 label: 'Guest Meals',
                 value: guestMeals,
-                color: COLORS.amber,
+                color: COLORS.warning,
             });
         }
 
@@ -59,7 +57,7 @@ const MealStatsBar = React.memo(({ meals = [], isAdmin }) => {
                 icon: HiOutlineUserGroup,
                 label: 'Members',
                 value: userIds.size,
-                color: COLORS.secondary,
+                color: COLORS.primary,
             });
         }
 

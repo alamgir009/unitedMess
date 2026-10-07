@@ -113,13 +113,13 @@ const MemberPage = React.memo(() => {
                 icon: HiOutlineUserGroup,
                 label: 'Active Members',
                 value: activeCount,
-                color: 'bg-secondary-500/10 border-secondary-500/20 text-secondary-600 dark:text-secondary-400',
+                color: 'bg-primary/10 text-primary border border-primary/10',
             },
             {
                 icon: HiOutlineCurrencyRupee,
                 label: 'Market Exp.',
                 value: billingStatsLoading ? '...' : formattedMarketExp,
-                color: 'bg-primary/10 border-primary/20 text-primary',
+                color: 'bg-danger-bg text-danger-text border border-danger-border',
             },
             {
                 icon: IoFastFoodOutline,
@@ -128,14 +128,14 @@ const MemberPage = React.memo(() => {
                 sublabel: (billingStats.grandTotalGuest ?? 0) > 0
                     ? `${(billingStats.grandTotalMeal ?? 0) - (billingStats.grandTotalGuest ?? 0)} + ${billingStats.grandTotalGuest} Guest`
                     : undefined,
-                color: 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400',
+                color: 'bg-success-bg text-success-text border border-success-border',
             },
             {
                 icon: HiOutlineArrowTrendingUp,
                 label: 'Meal Rate',
                 value: billingStatsLoading ? '...' : formattedMealRate,
                 sublabel: mealRateFormula,
-                color: 'bg-warning-bg border-warning-border text-warning-text',
+                color: 'bg-warning-bg text-warning-text border border-warning-border',
             },
         ];
     }, [activeCount, billingStatsLoading, formattedMarketExp, formattedTotalMeals, formattedMealRate, mealRateFormula, billingStats.grandTotalGuest, billingStats.grandTotalMeal]);

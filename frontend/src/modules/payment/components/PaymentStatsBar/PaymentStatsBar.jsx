@@ -10,11 +10,11 @@ import StatPill from '@/shared/components/ui/StatPill/StatPill';
 import { cn } from '@/core/utils/helpers/string.helper';
 
 const COLORS = {
-    primary: 'bg-primary/10 border-primary/20 text-primary',
-    emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400',
-    amber: 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400',
-    violet: 'bg-violet-500/10 border-violet-500/20 text-violet-600 dark:text-violet-400',
-    secondary: 'bg-secondary-500/10 border-secondary-500/20 text-secondary-600 dark:text-secondary-400',
+    primary: 'bg-primary/10 text-primary border border-primary/10',
+    success: 'bg-success-bg text-success-text border border-success-border',
+    warning: 'bg-warning-bg text-warning-text border border-warning-border',
+    info: 'bg-info-bg text-info-text border border-info-border',
+    neutral: 'bg-muted text-muted-foreground border border-border',
 };
 
 const PaymentStatsBar = React.memo(({ payments = [], isAdmin, totalCount = 0 }) => {
@@ -45,14 +45,14 @@ const PaymentStatsBar = React.memo(({ payments = [], isAdmin, totalCount = 0 }) 
                 label: 'Total Records',
                 sublabel: totalCount > payments.length ? `${payments.length} on this page` : undefined,
                 value: totalCount || payments.length,
-                color: COLORS.primary,
+                color: COLORS.neutral,
             },
             {
                 icon: HiOutlineCheckCircle,
                 label: 'Total Paid',
                 sublabel: totalCount > payments.length ? 'This page only' : undefined,
                 value: `\u20B9${totalPaid.toLocaleString('en-IN')}`,
-                color: COLORS.emerald,
+                color: COLORS.success,
             },
         ];
 
@@ -62,7 +62,7 @@ const PaymentStatsBar = React.memo(({ payments = [], isAdmin, totalCount = 0 }) 
                 label: 'Refunded',
                 sublabel: totalCount > payments.length ? 'This page only' : undefined,
                 value: `\u20B9${totalRefunded.toLocaleString('en-IN')}`,
-                color: COLORS.violet,
+                color: COLORS.info,
             });
         }
 
@@ -72,7 +72,7 @@ const PaymentStatsBar = React.memo(({ payments = [], isAdmin, totalCount = 0 }) 
                 label: 'Pending',
                 sublabel: totalCount > payments.length ? 'This page only' : undefined,
                 value: pendingCount,
-                color: COLORS.amber,
+                color: COLORS.warning,
             });
         }
 
@@ -81,7 +81,7 @@ const PaymentStatsBar = React.memo(({ payments = [], isAdmin, totalCount = 0 }) 
                 icon: HiOutlineUserGroup,
                 label: 'Members',
                 value: userIds.size,
-                color: COLORS.secondary,
+                color: COLORS.primary,
             });
         }
 

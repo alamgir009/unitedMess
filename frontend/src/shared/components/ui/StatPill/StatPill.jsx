@@ -4,7 +4,7 @@ import { cn } from '@/core/utils/helpers/string.helper';
 const StatPill = React.memo(({ icon: Icon, label, value, color, trend, compact, sublabel }) => (
   <div
     className={cn(
-      'flex items-center gap-3 rounded-lg border border-border',
+      'flex items-start justify-between gap-2.5 rounded-lg border border-border',
       'surface-elevated text-card-foreground',
       'shadow-sm depth-top overflow-hidden min-w-0 h-full',
       'min-h-[72px] sm:min-h-[80px]',
@@ -14,13 +14,6 @@ const StatPill = React.memo(({ icon: Icon, label, value, color, trend, compact, 
       compact ? 'px-2.5 py-2' : 'px-3.5 py-3 sm:px-4 sm:py-3.5',
     )}
   >
-    <div className={cn(
-      'flex-shrink-0 flex items-center justify-center transition-colors duration-[var(--duration-base)]',
-      compact ? 'p-1.5 rounded-md' : 'p-2 rounded-lg',
-      color,
-    )}>
-      <Icon className={cn(compact ? 'w-3.5 h-3.5' : 'w-4 h-4')} aria-hidden="true" />
-    </div>
     <div className="min-w-0 flex-1">
       <p className={cn(
         'font-semibold uppercase tracking-wider text-muted-foreground truncate mb-0.5',
@@ -48,6 +41,14 @@ const StatPill = React.memo(({ icon: Icon, label, value, color, trend, compact, 
       {sublabel && (
         <p className="text-[10px] text-muted-foreground/60 truncate mt-0.5">{sublabel}</p>
       )}
+    </div>
+
+    <div className={cn(
+      'flex-shrink-0 flex items-center justify-center transition-colors duration-[var(--duration-base)]',
+      compact ? 'p-1.5 rounded-md' : 'rounded-lg p-1.5 sm:p-2.5 md:p-3',
+      color,
+    )}>
+      <Icon className={cn(compact ? 'w-3.5 h-3.5' : 'h-4 w-4 sm:h-5 sm:w-5')} aria-hidden="true" />
     </div>
   </div>
 ));
