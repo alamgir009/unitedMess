@@ -2,7 +2,8 @@ import { useMemo, useRef, useCallback, useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Avatar } from '@/shared/components/ui';
 import { cn } from '@/core/utils/helpers/string.helper';
-import { fmt } from '@/core/utils/helpers/currency.helper';
+import { fmt, formatSignedRupees } from '@/core/utils/helpers/currency.helper';
+import { summarizePayments, isRefundPayment } from '@shared/utils/paymentAmount';
 import { formatInIST } from '@/core/utils/helpers/date.helper';
 import { Calendar, Trash2, Loader2, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -101,6 +102,9 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
   }
 
   const showMealSummary = category === 'meals' && totalMealsCount > 0;
+  // Money-flow summary so the day-cell total and these rows always reconcile:
+  // Net = Paid − Refunded (pending/failed excluded, same as the cell badge).
+  const paymentSummary = category === 'payments' ? summarizePayments(entries) : null;
 
   const totalHeight = sorted.length * ROW_HEIGHT;
   const startIdx = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN);
@@ -133,6 +137,41 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
           </span>
         </div>
       )}
+      {paymentSummary && (
+        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 mb-3 py-1.5 px-3 rounded-full bg-muted/60 border border-border/60">
+          <span className={`text-xs font-bold tabular-nums ${paymentSummary.net < 0 ? 'text-violet-600 dark:text-violet-400' : 'text-[var(--text-primary)]'}`}>
+            Net {formatSignedRupees(paymentSummary.net)}
+          </span>
+          <span className="text-xs text-[var(--text-muted)]">·</span>
+          <span className="text-xs font-semibold tabular-nums text-[var(--text-secondary)]">
+            Paid {formatSignedRupees(paymentSummary.paid)}
+          </span>
+          {paymentSummary.refunded > 0 && (
+            <>
+              <span className="text-xs text-[var(--text-muted)]">·</span>
+              <span className="text-xs font-semibold tabular-nums text-violet-600 dark:text-violet-400">
+                Refunded {formatSignedRupees(paymentSummary.refunded)}
+              </span>
+            </>
+          )}
+          {paymentSummary.pending > 0 && (
+            <>
+              <span className="text-xs text-[var(--text-muted)]">·</span>
+              <span className="text-xs font-semibold tabular-nums text-[var(--warning-text)]">
+                Pending {formatSignedRupees(paymentSummary.pending)}
+              </span>
+            </>
+          )}
+          {paymentSummary.failed > 0 && (
+            <>
+              <span className="text-xs text-[var(--text-muted)]">·</span>
+              <span className="text-xs font-semibold tabular-nums text-[var(--danger-text)]">
+                Failed {formatSignedRupees(paymentSummary.failed)}
+              </span>
+            </>
+          )}
+        </div>
+      )}
       <div style={{ height: totalHeight, position: 'relative' }}>
         <div style={{ position: 'absolute', top: startIdx * ROW_HEIGHT, left: 0, right: 0 }}>
           {visibleRows.map((entry, i) => {
@@ -143,7 +182,7 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
             const avatarSrc = entry.user?.image || (isUnpopulated ? currentUser?.image : undefined);
             const isFailed = entry.status === 'failed';
             const isCompleted = entry.status === 'completed';
-            const isRefundEntry = entry.status === 'refunded';
+            const isRefundEntry = isRefundPayment(entry);
 
             if (isDutyFulfilled && entry._id === fulfilledEntryId) return null;
 

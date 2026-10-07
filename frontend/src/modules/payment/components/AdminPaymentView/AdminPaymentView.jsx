@@ -4,6 +4,8 @@ import {
     HiOutlineCurrencyRupee,
 } from 'react-icons/hi2';
 import { format } from 'date-fns';
+import { fmt } from '@/core/utils/helpers/currency.helper';
+import { sumSettledPayments } from '@shared/utils/paymentAmount';
 import PaymentList from '../PaymentList/PaymentList';
 
 const getInitials = (name) => {
@@ -76,10 +78,9 @@ const MemberRow = React.memo(({
     const color = getMemberColor(member._id);
     const initials = getInitials(member.name);
     const recordsCount = payments.length;
-    let totalAmount = 0;
-    for (let i = 0; i < payments.length; i++) {
-        totalAmount += payments[i].amount || 0;
-    }
+    // Net settled: completed in − refunded out (legacy negative-amount
+    // refunds included) — a raw sum added refunds back into the total.
+    const totalAmount = sumSettledPayments(payments);
     const dateRange = formatDateRange(payments);
 
     return (
@@ -114,7 +115,10 @@ const MemberRow = React.memo(({
                         <span className="text-muted-foreground/30">·</span>
                         <span className="flex items-center gap-0.5">
                             <HiOutlineCurrencyRupee className="w-3 h-3 text-emerald-500" />
-                            <span className="font-medium tabular-nums">{totalAmount.toLocaleString('en-IN')}</span>
+                            <span className="font-medium tabular-nums">
+                                {totalAmount < 0 ? '\u2212' : ''}{fmt(Math.abs(totalAmount))}
+                            </span>
+                            <span>total</span>
                         </span>
                         <span>total</span>
                         {dateRange && (

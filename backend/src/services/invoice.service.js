@@ -5,6 +5,7 @@ const Meal = require('../models/Meal.model');
 const Market = require('../models/Market.model');
 const Payment = require('../models/Payment.model');
 const AppError = require('../utils/errors/AppError');
+const logger = require('../utils/logger');
 const { getBillingPeriod, getLastFinalizedPeriod } = require('../utils/helpers/date.helper');
 const {
     OVERRIDE,
@@ -545,60 +546,73 @@ const finalizeMonth = async (month, year, adminId) => {
     const results = [];
 
     for (const user of activeUsers) {
-        // getInvoice() resolves the effective exemption (admin override or
-        // zero-activity). Exempt invoices come back with totalPayable: 0.
-        const invoiceObj = await getInvoice(user._id, month, year);
+        // One member's failure (refund ValidationError, save race, etc.) must
+        // never abort finalization for every other member.
+        try {
+            // getInvoice() resolves the effective exemption (admin override or
+            // zero-activity). Exempt invoices come back with totalPayable: 0.
+            const invoiceObj = await getInvoice(user._id, month, year);
 
-        // Skip exempt invoices — they are handled separately below
-        if (invoiceObj.isExempt) continue;
+            // Skip exempt invoices — they are handled separately below
+            if (invoiceObj.isExempt) continue;
 
-        // Find the invoice as a Mongoose document so .save() works
-        const invoice = await Invoice.findOne({ user: user._id, month, year });
-        if (!invoice) continue;
+            // Find the invoice as a Mongoose document so .save() works
+            const invoice = await Invoice.findOne({ user: user._id, month, year });
+            if (!invoice) continue;
 
-        invoice.isFinalized = true;
-        invoice.finalizedAt = new Date();
+            invoice.isFinalized = true;
+            invoice.finalizedAt = new Date();
 
-        invoice.status = determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
+            invoice.status = determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
 
-        // Auto-create refund Payment record when totalPayable is negative
-        // (user is owed money). Prevents orphaned refund-due invoices.
-        if (invoice.totalPayable < 0) {
-            const existingRefund = await Payment.findOne({
-                user: invoice.user,
-                month: invoice.monthName,
-                status: 'refunded',
-            }).lean();
-
-            if (!existingRefund) {
-                // Detect the original payment type for this user/month
-                const originalPayment = await Payment.findOne({
+            // Auto-create refund Payment record when totalPayable is negative
+            // (user is owed money). Prevents orphaned refund-due invoices.
+            if (invoice.totalPayable < 0) {
+                const existingRefund = await Payment.findOne({
                     user: invoice.user,
                     month: invoice.monthName,
-                    status: 'completed',
-                }).sort({ paymentDate: -1 }).lean();
-                const refundType = originalPayment?.type || 'mess_bill';
-
-                await Payment.create({
-                    user: invoice.user,
-                    amount: invoice.totalPayable,
-                    month: invoice.monthName,
-                    type: refundType,
                     status: 'refunded',
-                    paymentMethod: 'cash',
-                    paymentDate: invoice.finalizedAt || new Date(),
-                    createdBy: resolvedAdminId,
-                    remarks: `Auto-refund of ₹${Math.abs(invoice.totalPayable).toLocaleString('en-IN', { maximumFractionDigits: 2 })} — user credited during finalization`,
-                });
+                }).lean();
 
-                // Sync user payment/gasBill status for the refund
-                const { syncUserPaymentStatus } = require('./payment.service');
-                await syncUserPaymentStatus(invoice.user, refundType, 'refunded', invoice.monthName);
+                if (!existingRefund) {
+                    // Detect the original payment type for this user/month
+                    const originalPayment = await Payment.findOne({
+                        user: invoice.user,
+                        month: invoice.monthName,
+                        status: 'completed',
+                    }).sort({ paymentDate: -1 }).lean();
+                    const refundType = originalPayment?.type || 'mess_bill';
+
+                    await Payment.create({
+                        user: invoice.user,
+                        // totalPayable is negative here; Payment.amount min: 0 —
+                        // status:'refunded' carries the sign (see Payment.model).
+                        amount: Math.abs(invoice.totalPayable),
+                        month: invoice.monthName,
+                        type: refundType,
+                        status: 'refunded',
+                        paymentMethod: 'cash',
+                        paymentDate: invoice.finalizedAt || new Date(),
+                        createdBy: resolvedAdminId,
+                        remarks: `Auto-refund of ₹${Math.abs(invoice.totalPayable).toLocaleString('en-IN', { maximumFractionDigits: 2 })} — user credited during finalization`,
+                    });
+
+                    // Sync user payment/gasBill status for the refund
+                    const { syncUserPaymentStatus } = require('./payment.service');
+                    await syncUserPaymentStatus(invoice.user, refundType, 'refunded', invoice.monthName);
+                }
             }
-        }
 
-        await invoice.save();
-        results.push(invoice.toObject());
+            await invoice.save();
+            results.push(invoice.toObject());
+        } catch (err) {
+            logger.error('[FinalizeMonth] Skipping member after error', {
+                userId: String(user._id),
+                month,
+                year,
+                message: err.message,
+            });
+        }
     }
 
     // Also finalize exempt invoices (they exist but have zero amounts)
@@ -611,11 +625,20 @@ const finalizeMonth = async (month, year, adminId) => {
     });
 
     for (const invoice of exemptInvoices) {
-        invoice.isFinalized = true;
-        invoice.finalizedAt = new Date();
-        invoice.status = 'paid'; // Exempt invoices are always "paid"
-        await invoice.save();
-        results.push(invoice.toObject());
+        try {
+            invoice.isFinalized = true;
+            invoice.finalizedAt = new Date();
+            invoice.status = 'paid'; // Exempt invoices are always "paid"
+            await invoice.save();
+            results.push(invoice.toObject());
+        } catch (err) {
+            logger.error('[FinalizeMonth] Skipping exempt invoice after error', {
+                invoiceId: String(invoice._id),
+                month,
+                year,
+                message: err.message,
+            });
+        }
     }
 
     return results;
@@ -654,7 +677,9 @@ const syncInvoiceStatus = async (invoiceId) => {
 
             await Payment.create({
                 user: invoice.user,
-                amount: invoice.totalPayable,
+                // totalPayable is negative here; Payment.amount min: 0 —
+                // status:'refunded' carries the sign (see Payment.model).
+                amount: Math.abs(invoice.totalPayable),
                 month: invoice.monthName,
                 type: refundType,
                 status: 'refunded',

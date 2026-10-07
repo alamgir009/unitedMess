@@ -177,7 +177,10 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
         // and admin payment history (Payments page / invoice history).
         const refundPayment = await Payment.create({
             user: invoice.user,
-            amount: refundDelta,
+            // Refund deltas arrive negative; Payment.amount is min: 0 — the
+            // sign is carried by status:'refunded' (legacy rows store negative,
+            // new rows must store positive to pass model validation).
+            amount: Math.abs(refundDelta),
             month: invoice.monthName,
             type: refundType,
             status: 'refunded',

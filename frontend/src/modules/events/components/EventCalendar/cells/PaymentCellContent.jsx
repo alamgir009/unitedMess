@@ -1,15 +1,16 @@
 import { memo, useMemo } from 'react';
 import { CreditCard } from 'lucide-react';
 import { cn } from '@/core/utils/helpers/string.helper';
-import { fmt } from '@/core/utils/helpers/currency.helper';
+import { formatSignedRupees } from '@/core/utils/helpers/currency.helper';
+import { sumSettledPayments, isRefundPayment } from '@shared/utils/paymentAmount';
 import AvatarCluster from './AvatarCluster';
 import StatusDotCluster from './StatusDotCluster';
 
 const PaymentCellContent = memo(({ entries = [], loading, error, isCompact, onRetry, onCellClick }) => {
-  const total = useMemo(
-    () => entries.reduce((sum, e) => sum + (e.amount || 0), 0),
-    [entries],
-  );
+  // Net settled cash flow: completed in − refunded out; pending/failed = 0.
+  // (Naive raw sums added refunds stored as positive amounts → inflated totals.)
+  const total = useMemo(() => sumSettledPayments(entries), [entries]);
+  const totalLabel = useMemo(() => formatSignedRupees(total), [total]);
   const members = useMemo(
     () => entries.filter((e) => e.user || e.userName),
     [entries],
@@ -19,7 +20,7 @@ const PaymentCellContent = memo(({ entries = [], loading, error, isCompact, onRe
     [entries],
   );
   const hasRefunded = useMemo(
-    () => entries.some((e) => e.status === 'refunded'),
+    () => entries.some((e) => isRefundPayment(e)),
     [entries],
   );
 
@@ -61,7 +62,7 @@ const PaymentCellContent = memo(({ entries = [], loading, error, isCompact, onRe
           'text-[10px] font-semibold tabular-nums leading-tight',
           hasRefunded ? 'text-violet-600 dark:text-violet-400' : 'text-[var(--text-primary)]',
         )}>
-          ₹{fmt(total)}
+          {totalLabel}
         </span>
       ) : (
         <>
@@ -75,7 +76,7 @@ const PaymentCellContent = memo(({ entries = [], loading, error, isCompact, onRe
             'text-[10px] font-semibold tabular-nums ml-auto leading-none',
             hasRefunded ? 'text-violet-600 dark:text-violet-400' : 'text-[var(--text-primary)]',
           )}>
-            ₹{fmt(total)}
+            {totalLabel}
           </span>
         </>
       )}

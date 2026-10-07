@@ -9,7 +9,8 @@ import {
 } from 'date-fns';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { Avatar, Badge, Skeleton } from '@/shared/components/ui';
-import { fmt } from '@/core/utils/helpers/currency.helper';
+import { fmt, formatSignedRupees } from '@/core/utils/helpers/currency.helper';
+import { sumSettledPayments } from '@shared/utils/paymentAmount';
 
 const AgendaView = ({
   currentMonth,
@@ -34,6 +35,11 @@ const AgendaView = ({
         const loading = loadingMap[dateStr];
         const error = errorMap[dateStr];
         const today = isToday(day);
+        // Payments: net settled cash (refunds subtract, pending/failed = 0).
+        // Markets: plain expense sum (no payment statuses involved).
+        const totalLabel = category === 'payments'
+          ? formatSignedRupees(sumSettledPayments(entries))
+          : `₹${fmt(entries.reduce((s, e) => s + (e.amount || 0), 0))}`;
 
         return (
           <div
@@ -103,7 +109,7 @@ const AgendaView = ({
                   )}
                   {(category === 'markets' || category === 'payments') && (
                     <span className="text-xs font-bold tabular-nums text-foreground ml-auto">
-                      ₹{fmt(entries.reduce((s, e) => s + (e.amount || 0), 0))}
+                      {totalLabel}
                     </span>
                   )}
                 </div>
