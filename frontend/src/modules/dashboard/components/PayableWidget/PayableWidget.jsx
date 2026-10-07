@@ -5,6 +5,7 @@ import {
     FiArrowRight, FiAlertCircle, FiRotateCcw,
 } from 'react-icons/fi';
 import { cn } from '@/core/utils/helpers/string.helper';
+import { isSettledBill, isRefundDueBill, isRefundedBill } from '@shared/utils/paymentStatus';
 
 /**
  * PayableWidget
@@ -13,8 +14,8 @@ import { cn } from '@/core/utils/helpers/string.helper';
  * ─────
  * mealPayable        {number | null | undefined}  – raw payable amount from backend
  * gasBillPayable     {number | null | undefined}  – raw payable amount from backend
- * mealPaymentStatus  {'success'|'pending'|'refund'|null}   – authoritative backend status
- * gasBillStatus      {'success'|'pending'|'refund'|null}   – authoritative backend status
+ * mealPaymentStatus  {'success'|'pending'|'refund'|'refunded'|null} – authoritative backend status
+ * gasBillStatus      {'success'|'pending'|'refund'|'refunded'|null} – authoritative backend status
  * isLoading          {boolean}                    – true while fetch in-flight
  * isLoaded           {boolean}                    – true once fetch settled (success OR error)
  * isMealError        {boolean}                    – true if meal payable fetch failed
@@ -32,18 +33,24 @@ const PayableWidget = ({
 }) => {
     const navigate = useNavigate();
 
+    // Nothing owed when paid, refund already returned, refund credit exists,
+    // or the computed balance is zero.
     const mealPaid =
-        mealPaymentStatus === 'success' ||
-        mealPaymentStatus === 'refund' ||
+        isSettledBill(mealPaymentStatus) ||
+        isRefundDueBill(mealPaymentStatus) ||
         (isLoaded && !isMealError && mealPayable === 0);
 
     const gasPaid =
-        gasBillStatus === 'success' ||
-        gasBillStatus === 'refund' ||
+        isSettledBill(gasBillStatus) ||
+        isRefundDueBill(gasBillStatus) ||
         (isLoaded && !isGasError && gasBillPayable === 0);
 
-    const mealRefund = mealPaymentStatus === 'refund';
-    const gasRefund = gasBillStatus === 'refund';
+    // Hero keeps showing the refund amount whether it is due or settled —
+    // only the ACTION changes (view details vs already processed).
+    const mealRefund = isRefundDueBill(mealPaymentStatus) || isRefundedBill(mealPaymentStatus);
+    const gasRefund = isRefundDueBill(gasBillStatus) || isRefundedBill(gasBillStatus);
+    const hasPendingRefund = isRefundDueBill(mealPaymentStatus) || isRefundDueBill(gasBillStatus);
+    const hasSettledRefund = isRefundedBill(mealPaymentStatus) || isRefundedBill(gasBillStatus);
 
     const safeMeal = Number(mealPayable) || 0;
     const safeGas  = Number(gasBillPayable) || 0;
@@ -60,7 +67,7 @@ const PayableWidget = ({
     // Determine hero state
     const hasRefund = mealRefund || gasRefund;
     const hasOutstanding = totalOutstanding > 0;
-    const allCleared = !hasRefund && !hasOutstanding && mealPaid && gasPaid;
+    const allCleared = !hasPendingRefund && !hasOutstanding && mealPaid && gasPaid;
 
     return (
         <div className="rounded-2xl relative overflow-hidden shadow-sm bg-card border border-border/50 animate-fade-up" style={{ animationDelay: '0.1s' }}>
@@ -106,6 +113,12 @@ const PayableWidget = ({
                                     due
                                 </span>
                             )}
+                            {!isLoading && hasSettledRefund && !hasOutstanding && (
+                                <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-violet-600 dark:text-violet-400 bg-violet-500/10 border border-violet-500/25 rounded-full px-2 py-0.5 mb-1">
+                                    <FiRotateCcw size={11} />
+                                    Refunded
+                                </span>
+                            )}
                             {!isLoading && !hasRefund && !hasOutstanding && mealPaid && gasPaid && (
                                 <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5 mb-1">
                                     <FiCheckCircle size={11} />
@@ -146,7 +159,7 @@ const PayableWidget = ({
                             <span>Meal</span>
                             <span className="tabular-nums">
                                 {mealRefund && safeMeal < 0
-                                    ? `₹${Math.abs(safeMeal).toLocaleString('en-IN')}`
+                                    ? `₹${Math.abs(safeMeal).toLocaleString('en-IN')}${isRefundedBill(mealPaymentStatus) ? ' · Refunded' : ''}`
                                     : mealPaid
                                         ? 'Settled'
                                         : `₹${safeMeal.toLocaleString('en-IN')}`
@@ -173,7 +186,7 @@ const PayableWidget = ({
                             <span>Gas</span>
                             <span className="tabular-nums">
                                 {gasRefund && safeGas < 0
-                                    ? `₹${Math.abs(safeGas).toLocaleString('en-IN')}`
+                                    ? `₹${Math.abs(safeGas).toLocaleString('en-IN')}${isRefundedBill(gasBillStatus) ? ' · Refunded' : ''}`
                                     : gasPaid
                                         ? 'Settled'
                                         : `₹${safeGas.toLocaleString('en-IN')}`
@@ -215,8 +228,8 @@ const PayableWidget = ({
             {/* ── Footer ── */}
             {isLoaded && !isMealError && !isGasError && (
                 <>
-                    {/* Refund pending */}
-                    {hasRefund && (
+                    {/* Refund pending — action only while money is still owed back */}
+                    {hasPendingRefund && (
                         <button
                             onClick={() => navigate('/payments')}
                             className="w-full px-4 sm:px-6 py-3 sm:py-3.5 border-t border-border/40 bg-violet-500/5 hover:bg-violet-500/10 flex items-center justify-between transition-colors duration-150 group"
@@ -235,7 +248,7 @@ const PayableWidget = ({
                     )}
 
                     {/* Bills pending */}
-                    {!hasRefund && hasOutstanding && (
+                    {!hasPendingRefund && hasOutstanding && (
                         <button
                             onClick={() => navigate('/payments')}
                             className="w-full px-4 sm:px-6 py-3 sm:py-3.5 border-t border-border/40 bg-primary/5 hover:bg-primary/10 flex items-center justify-between transition-colors duration-150 group"

@@ -147,6 +147,10 @@ const generateInvoicePDF = (invoiceData, user) => {
             const finalPayable  = invoiceData.totalPayable  ?? 0;
             const isRefund      = finalPayable < 0;
             const displayAmt    = Math.abs(finalPayable);
+            // Payout record attached by _buildInvoiceForPdf — totalPayable
+            // stays negative after the refund is paid out, so the sign alone
+            // cannot distinguish "Refund Due" from "Refunded".
+            const refundSettled = !!invoiceData.refundSettled;
 
             const isPaid          = invoiceData.status === 'paid';
             const isPartiallyPaid = invoiceData.status === 'partially_paid';
@@ -155,7 +159,7 @@ const generateInvoicePDF = (invoiceData, user) => {
                 : isPartiallyPaid
                     ? 'Partial'
                     : isRefund
-                        ? 'Refund Due'
+                        ? (refundSettled ? 'Refunded' : 'Refund Due')
                         : 'Due';
 
             /* User stats */
@@ -350,7 +354,7 @@ const generateInvoicePDF = (invoiceData, user) => {
             const card3X = MARGIN + (cardW + cardGap) * 2;
             fillStrokeRect(card3X, cardY, cardW, cardH, C.indigoBg, C.indigoBorder);
             doc.fontSize(8).font('NotoSans-SemiBold').fillColor(C.gray500);
-            doc.text(isRefund ? 'REFUND DUE' : 'YOUR PAYABLE', card3X + 10, cardY + 8);
+            doc.text(isRefund ? (refundSettled ? 'REFUNDED' : 'REFUND DUE') : 'YOUR PAYABLE', card3X + 10, cardY + 8);
             doc.fontSize(18).font('NotoSans-SemiBold').fillColor(C.indigo);
             doc.text(`\u20B9${fmt(displayAmt)}`, card3X + 10, cardY + 22);
 

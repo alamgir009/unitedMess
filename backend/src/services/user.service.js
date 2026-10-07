@@ -647,11 +647,13 @@ async function getAllUsers(filters = {}, pagination = {}) {
                 // be stale from a past billing period.
                 //
                 // Priority:
-                //   1. Invoice exempt OR status='paid'  → 'success'
-                //   2. Invoice status='refunded'         → 'refund'
-                //   3. Refunded mess_bill payment exists  → 'refund'
-                //   4. Completed mess_bill payment exists  → 'success'
-                //   5. else                               → 'pending'
+                //   1. Refunded mess_bill payment exists → 'refunded' (settled —
+                //      the payout record is the only ground truth for money
+                //      returned, so it beats every other signal)
+                //   2. Invoice exempt OR status='paid'   → 'success'
+                //   3. Invoice status='refunded' (no payout yet) → 'refund'
+                //   4. Completed mess_bill payment exists → 'success'
+                //   5. else                              → 'pending'
                 payment: {
                     $let: {
                         vars: {
@@ -668,20 +670,20 @@ async function getAllUsers(filters = {}, pagination = {}) {
                         },
                         in: {
                             $cond: {
-                                if: {
-                                    $or: [
-                                        '$$isExempt',
-                                        { $eq: ['$$invoiceStatus', 'paid'] }
-                                    ]
-                                },
-                                then: 'success',
+                                if: '$$hasMessRefund',
+                                then: 'refunded',
                                 else: {
                                     $cond: {
-                                        if: { $eq: ['$$invoiceStatus', 'refunded'] },
-                                        then: 'refund',
+                                        if: {
+                                            $or: [
+                                                '$$isExempt',
+                                                { $eq: ['$$invoiceStatus', 'paid'] }
+                                            ]
+                                        },
+                                        then: 'success',
                                         else: {
                                             $cond: {
-                                                if: '$$hasMessRefund',
+                                                if: { $eq: ['$$invoiceStatus', 'refunded'] },
                                                 then: 'refund',
                                                 else: {
                                                     $cond: {
@@ -700,8 +702,9 @@ async function getAllUsers(filters = {}, pagination = {}) {
                 },
                 // ── Gas bill status — fintech-grade cascade ──────────────
                 // Priority:
-                //   1. Refunded gas_bill payment exists  → 'refund'
-                //   2. Completed gas_bill payment exists  → 'success'
+                //   1. Refunded gas_bill payment exists  → 'refunded' (payout
+                //      recorded — settled, NOT 'refund' which means still owed)
+                //   2. Completed gas_bill payment exists → 'success'
                 //   3. Stored field is 'success' but no payment → 'pending' (stale correction)
                 //   4. else → stored user.gasBill (for admin manual toggles)
                 gasBill: {
@@ -713,7 +716,7 @@ async function getAllUsers(filters = {}, pagination = {}) {
                         in: {
                             $cond: {
                                 if: '$$hasRefundedGas',
-                                then: 'refund',
+                                then: 'refunded',
                                 else: {
                                     $cond: {
                                         if: '$$hasCompletedGas',
@@ -1111,13 +1114,30 @@ const getPaybleAmountforMeal = async (userId) => {
         };
     }
     
-    // Calculate if user has paid the gas bill for this active month
-    const completedGasAuth = await Payment.findOne({
-        user: userId,
-        status: 'completed',
-        month: invoice.monthName,
-        type: 'gas_bill'
-    }).lean();
+    // Settlement lookups for the ACTIVE invoice's month — run in parallel.
+    // A refund payout record (status 'refunded') is the ONLY ground truth for
+    // "money returned"; invoice.status 'refunded' alone means the credit
+    // exists but may still be owed.
+    const [completedGasAuth, refundMessAuth, refundGasAuth] = await Promise.all([
+        Payment.findOne({
+            user: userId,
+            status: 'completed',
+            month: invoice.monthName,
+            type: 'gas_bill'
+        }).lean(),
+        Payment.findOne({
+            user: userId,
+            status: 'refunded',
+            month: invoice.monthName,
+            type: 'mess_bill'
+        }).lean(),
+        Payment.findOne({
+            user: userId,
+            status: 'refunded',
+            month: invoice.monthName,
+            type: 'gas_bill'
+        }).lean(),
+    ]);
 
     const finalPayable = computedPayable;
 
@@ -1145,10 +1165,15 @@ const getPaybleAmountforMeal = async (userId) => {
             platformFee: round2(invoice.fixedCosts?.platformFee || user.platformFee || 0)
         },
         payableAmount: finalPayable,
-        paymentStatus: invoice.status === 'refunded' ? 'refund'
+        // 'refunded' = payout recorded (settled) → surfaces show "Refunded";
+        // 'refund'   = credit exists, money still owed → "Refund Due".
+        paymentStatus: refundMessAuth ? 'refunded'
+            : invoice.status === 'refunded' ? 'refund'
             : invoice.status === 'paid' ? 'success'
             : 'pending',
-        gasBillStatus: completedGasAuth ? 'success' : 'pending',
+        gasBillStatus: refundGasAuth ? 'refunded'
+            : completedGasAuth ? 'success'
+            : 'pending',
         monthName: invoice.monthName,
     };
 };
@@ -1285,19 +1310,29 @@ const getPaybleAmountforGasBill = async (userId) => {
     // calendar month (important on days 1–10 of a new month).
     const { monthName: billingMonthName } = getBillingPeriod();
 
-    const completedGasAuth = await Payment.findOne({
-        user: userId,
-        status: 'completed',
-        month: billingMonthName,
-        type: 'gas_bill'
-    }).lean();
+    const [completedGasAuth, refundGasAuth] = await Promise.all([
+        Payment.findOne({
+            user: userId,
+            status: 'completed',
+            month: billingMonthName,
+            type: 'gas_bill'
+        }).lean(),
+        Payment.findOne({
+            user: userId,
+            status: 'refunded',
+            month: billingMonthName,
+            type: 'gas_bill'
+        }).lean(),
+    ]);
 
     return {
         payableAmount: user.gasBillCharge || 0,
-        // Use completed payment records as source of truth — never trust
-        // the stored user.gasBill field which may have been set to 'success'
-        // by a past-period payment (the pre-fix bug).
-        status: completedGasAuth ? 'success' : 'pending',
+        // Use payment records as source of truth — never trust the stored
+        // user.gasBill field which may have been set to 'success' by a
+        // past-period payment (the pre-fix bug). A refund payout record
+        // means the gas credit was returned → 'refunded' (settled),
+        // distinct from 'refund' (still owed).
+        status: refundGasAuth ? 'refunded' : completedGasAuth ? 'success' : 'pending',
         monthName: billingMonthName,
     };
 };

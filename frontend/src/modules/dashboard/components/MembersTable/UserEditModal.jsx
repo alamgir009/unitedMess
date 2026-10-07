@@ -10,6 +10,7 @@ import { cn } from '@/core/utils/helpers/string.helper';
 import { format } from 'date-fns';
 import { Modal, Button, IconSelect, Badge } from '@/shared/components/ui';
 import { getBillingPeriod } from '@shared/utils/billingPeriod';
+import { resolveBillStatus } from '@shared/utils/paymentStatus';
 
 /**
  * Billing exemption is MANUAL and PERIOD-SCOPED.
@@ -336,13 +337,27 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
   const statusVariant =
     user.userStatus === 'approved' ? 'success'
       : user.userStatus === 'pending' ? 'warning' : 'error';
-  const mealState = user.payment === 'refund' ? 'refunded'
-    : user.payment === 'success' ? 'paid' : 'unpaid';
-  const gasState = user.gasBill === 'refund' ? 'refunded'
-    : user.gasBill === 'success' ? 'paid' : 'unpaid';
-  const moneyState = (state) => state === 'paid' ? 'success' : state === 'refunded' ? 'info' : 'error';
+  // Canonical tokens — resolveBillStatus keeps 'refunded' (settled) and
+  // 'refund' (still owed) distinct; the old `=== 'refund'` branch was dead
+  // (stored enum has no 'refund') so settled refunds fell through to "unpaid".
+  const mealBill = resolveBillStatus({ status: user.payment, payableAmount: user.paybleAmountforMeal });
+  const gasBill  = resolveBillStatus({ status: user.gasBill, payableAmount: user.gasBillCharge });
+  const toState = (token) =>
+    token === 'success' ? 'paid'
+      : token === 'refunded' ? 'refunded'
+      : token === 'refund' ? 'refundDue'
+      : 'unpaid';
+  const mealState = toState(mealBill);
+  const gasState = toState(gasBill);
+  const moneyState = (state) =>
+    state === 'paid' ? 'success'
+      : state === 'refunded' || state === 'refundDue' ? 'info'
+      : 'error';
   const moneyLabel = (word, state) =>
-    state === 'refunded' ? `${word} refunded` : state === 'paid' ? `${word} paid` : `${word} unpaid`;
+    state === 'refunded' ? `${word} refunded`
+      : state === 'refundDue' ? `${word} refund due`
+      : state === 'paid' ? `${word} paid`
+      : `${word} unpaid`;
 
   const footer = confirmDiscard ? (
     <div className="flex w-full flex-col-reverse gap-2.5 sm:flex-row sm:items-center">

@@ -108,12 +108,16 @@ const InvoicePreview = ({
         const isPaid = s === 'paid';
         const isPartiallyPaid = s === 'partially_paid';
         const isRefund = amounts.isRefund;
+        // refundSettled comes from the backend's refund payout record —
+        // totalPayable < 0 stays negative AFTER the money is returned.
+        const refundSettled = !!invoice?.refundSettled;
 
-        const label = isPaid ? 'Paid' : isPartiallyPaid ? 'Partial' : isRefund ? 'Refund Due' : 'Due';
+        const label = isPaid ? 'Paid' : isPartiallyPaid ? 'Partial'
+            : isRefund ? (refundSettled ? 'Refunded' : 'Refund Due') : 'Due';
         const settled = isPaid || isRefund;
 
-        return { isPaid, isPartiallyPaid, isRefund, label, settled };
-    }, [invoice?.status, amounts.isRefund]);
+        return { isPaid, isPartiallyPaid, isRefund, refundSettled, label, settled };
+    }, [invoice?.status, invoice?.refundSettled, amounts.isRefund]);
 
     /* ── Mess-wide stats (from backend enrichment) ── */
     const grandStats = useMemo(() => ({
@@ -479,7 +483,9 @@ const InvoicePreview = ({
 
                     <div className="rounded-lg border border-primary/20 bg-primary/5 p-2 sm:p-2.5 flex flex-col">
                         <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-primary/70 leading-tight">
-                            {amounts.isRefund ? 'Refund Due' : 'Your Payable'}
+                            {amounts.isRefund
+                                ? (status.refundSettled ? 'Refunded' : 'Refund Due')
+                                : 'Your Payable'}
                         </p>
                         <p className="text-sm sm:text-base font-bold tabular-nums text-primary mt-auto pt-1">
                             {'\u20B9'}{fmt(amounts.displayAmt)}

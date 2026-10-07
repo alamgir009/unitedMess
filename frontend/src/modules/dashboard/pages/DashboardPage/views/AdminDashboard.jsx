@@ -8,6 +8,7 @@ import MembersTable from '../../../components/MembersTable/MembersTable';
 import SendNotificationModal from '@/modules/notification/components/SendNotificationModal/SendNotificationModal';
 import Button from '@/shared/components/ui/Button/Button';
 import { buildMealRateFormula } from '@/core/utils/helpers/billing.helper';
+import { resolveBillStatus } from '@shared/utils/paymentStatus';
 import {
     Users,
     IndianRupee,
@@ -96,11 +97,20 @@ const AdminDashboard = () => {
             u.userStatus !== 'pending' &&
             u.userStatus !== 'denied'
     ).length;
+    // "Unpaid" = money still owed (pending/failed). Settled refunds and
+    // refund credits are NOT unpaid — counting them here made refunded
+    // members show up as unpaid dues forever.
     const unpaidMealCount = users.filter(
-        (u) => u.payment !== 'success' && u.isActive
+        (u) => {
+            const s = resolveBillStatus({ status: u.payment, payableAmount: u.paybleAmountforMeal });
+            return (s === 'pending' || s === 'failed') && u.isActive;
+        }
     ).length;
     const unpaidGasCount = users.filter(
-        (u) => u.gasBill !== 'success' && u.isActive
+        (u) => {
+            const s = resolveBillStatus({ status: u.gasBill, payableAmount: u.gasBillCharge });
+            return (s === 'pending' || s === 'failed') && u.isActive;
+        }
     ).length;
     const activeCount = users.filter((u) => u.isActive).length;
 

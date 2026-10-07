@@ -51,6 +51,7 @@ import {
 import { fetchPayableAmount, fetchPayableGasBill } from '../../../auth/store/auth.slice';
 
 import { getBillingPeriod } from '@shared/utils/billingPeriod';
+import { formatSignedRupees } from '@/core/utils/helpers/currency.helper';
 import { usePayment } from '../../hooks/usePayment';
 
 const InvoiceSkeleton = React.memo(() => (
@@ -115,13 +116,17 @@ const BillsOverview = React.memo(({
     const gasPaid = gasBillStatus === 'success';
     const messOverdue = messBillStatus === 'overdue';
     const gasOverdue = gasBillStatus === 'overdue';
+    // 'refunded' = payout recorded (settled); 'refund' = credit still owed.
     const messRefunded = messBillStatus === 'refunded';
     const gasRefunded = gasBillStatus === 'refunded';
     const messRefundDue = messBillStatus === 'refund' || (!messPaid && !messRefunded && messAmount < 0);
     const gasRefundDue = gasBillStatus === 'refund' || (!gasPaid && !gasRefunded && gasAmount < 0);
     const messDue = !messPaid && !messRefunded && !messRefundDue;
     const gasDue = !gasPaid && !gasRefunded && !gasRefundDue;
-    const bothPaid = (messPaid || messRefunded) && (gasPaid || gasRefunded);
+    // A zero-amount gas bill is nothing to collect — don't keep the card
+    // in "due" state when only a ₹0 gas row exists.
+    const gasCleared = gasPaid || gasRefunded || gasAmount <= 0;
+    const bothPaid = (messPaid || messRefunded) && gasCleared;
     const totalDue = (messDue ? messAmount : 0) + (gasDue ? gasAmount : 0);
     const totalRefund = Math.abs(messRefundDue ? messAmount : 0) + Math.abs(gasRefundDue ? gasAmount : 0);
     const hasRefundDue = totalRefund > 0;
@@ -174,7 +179,7 @@ const BillsOverview = React.memo(({
                         </div>
                     </div>
                     <div className="flex items-center gap-2 sm:gap-3 min-w-0 justify-end">
-                        <span className="text-[clamp(0.8125rem,0.5vw+0.6rem,1rem)] font-bold tabular-nums text-foreground whitespace-nowrap">₹{fmtINR(messAmount)}</span>
+                        <span className="text-[clamp(0.8125rem,0.5vw+0.6rem,1rem)] font-bold tabular-nums text-foreground whitespace-nowrap">{formatSignedRupees(messAmount)}</span>
                         {messRefundDue ? (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-violet-500/15 text-violet-600 dark:text-violet-400">
                                 <HiOutlineArrowPath className="w-3 h-3" />
@@ -217,7 +222,7 @@ const BillsOverview = React.memo(({
                             </div>
                         </div>
                         <div className="flex items-center gap-2 sm:gap-3 min-w-0 justify-end">
-                            <span className="text-[clamp(0.8125rem,0.5vw+0.6rem,1rem)] font-bold tabular-nums text-foreground whitespace-nowrap">₹{fmtINR(gasAmount)}</span>
+                            <span className="text-[clamp(0.8125rem,0.5vw+0.6rem,1rem)] font-bold tabular-nums text-foreground whitespace-nowrap">{formatSignedRupees(gasAmount)}</span>
                             {gasRefundDue ? (
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-violet-500/15 text-violet-600 dark:text-violet-400">
                                     <HiOutlineArrowPath className="w-3 h-3" />

@@ -303,11 +303,18 @@ const _buildInvoiceForPdf = async (targetUserId, year, month) => {
     }).format(new Date(Date.UTC(year, month - 1, 1)));
 
     // Parallel: fetch user, invoice (with payment data already attached),
-    // and mess-wide stats — these are independent of each other.
-    const [user, invoice, messStats] = await Promise.all([
+    // mess-wide stats, and the refund payout record — all independent.
+    const [user, invoice, messStats, refundPayout] = await Promise.all([
         User.findById(targetUserId).lean(),
         invoiceService.getInvoice(targetUserId, month, year),
         invoiceService.calculateMessStats(month, year),
+        // Ground truth for "money returned": a refund Payment for this
+        // period (any type — same scope as the refund idempotency guard).
+        Payment.findOne({
+            user: targetUserId,
+            month: monthName,
+            status: 'refunded',
+        }).lean(),
     ]);
 
     if (!user) throw new AppError('User not found', 404);
@@ -319,6 +326,11 @@ const _buildInvoiceForPdf = async (targetUserId, year, month) => {
     invoice._messGrandTotalMarket = messStats.totalMarketAmount;
     invoice._messGrandTotalMeal = messStats.totalMealCount;
     invoice._messGrandTotalGuest = messStats.totalGuestCount;
+
+    // Distinguishes "Refund Due" (credit not yet returned) from "Refunded"
+    // (payout recorded). invoice.totalPayable < 0 alone cannot — it stays
+    // negative after the refund is paid out.
+    invoice.refundSettled = !!refundPayout;
 
     // If getInvoice() didn't attach payment data (exempt path), fetch it.
     if (!invoice._paymentMethod) {

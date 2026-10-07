@@ -17,6 +17,7 @@ import { BiBlock } from 'react-icons/bi';
 import MemberRowActions from './MemberRowActions';
 import UserEditModal from './UserEditModal';
 import { cn } from '@/core/utils/helpers/string.helper';
+import { resolveBillStatus, BILL_STATUS_LABEL } from '@shared/utils/paymentStatus';
 
 const AVATAR_GRADIENTS = [
   'from-blue-500 to-indigo-600',
@@ -57,7 +58,9 @@ const resolvePayment = (raw) => {
   const s = String(raw || '').toLowerCase();
   if (s === 'paid' || s === 'success')  return { label: 'Paid',     icon: CheckCircle2, cls: 'bg-success-bg text-success border-success-border' };
   if (s === 'pending')                  return { label: 'Pending',  icon: Clock,        cls: 'bg-warning-bg text-warning border-warning-border' };
-  if (s === 'refunded')                 return { label: 'Refunded', icon: RotateCcw,    cls: 'bg-info-bg text-info border-info-border' };
+  if (s === 'refunded')                 return { label: BILL_STATUS_LABEL.refunded,  icon: RotateCcw, cls: 'bg-info-bg text-info border-info-border' };
+  // Credit exists but not yet returned — must never fall through to "Unpaid".
+  if (s === 'refund')                   return { label: BILL_STATUS_LABEL.refund,    icon: RotateCcw, cls: 'bg-info-bg text-info border-info-border' };
   return                                       { label: 'Unpaid',   icon: XCircle,      cls: 'bg-danger-bg text-danger border-danger-border' };
 };
 
@@ -320,14 +323,14 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
                     <td className="px-5 py-3.5">
                       <div className="flex flex-col items-start gap-1.5">
                         <div className="flex items-center gap-2">
-                          <PaymentBadge status={(user.paybleAmountforMeal ?? 0) < 0 ? 'refunded' : (user.paymentStatus ?? user.payment)} />
+                          <PaymentBadge status={resolveBillStatus({ status: user.paymentStatus ?? user.payment, payableAmount: user.paybleAmountforMeal })} />
                             <ExemptBadge isExempt={user.isExempt} reason={user.exemptReason} />
                         </div>
                       </div>
                     </td>
 
                     <td className="px-5 py-3.5">
-                      <PaymentBadge status={user.gasBillStatus ?? user.gasBill} />
+                          <PaymentBadge status={resolveBillStatus({ status: user.gasBillStatus ?? user.gasBill, payableAmount: user.gasBillCharge })} />
                     </td>
 
                     <td className="px-5 py-3.5 text-right">

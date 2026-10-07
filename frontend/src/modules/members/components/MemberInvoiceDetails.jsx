@@ -2,8 +2,9 @@ import React, { useMemo } from 'react';
 import {
     Flame, Droplets,
     Utensils, Users, Banknote, Fuel,
-    CheckCircle2, Clock, XCircle, ArrowDownToLine, ReceiptIndianRupee
+    CheckCircle2, Clock, XCircle, ArrowDownToLine, ReceiptIndianRupee, RotateCcw
 } from 'lucide-react';
+import { resolveBillStatus } from '@shared/utils/paymentStatus';
 
 /* ─────────────────────────────────────────────
    Shared helpers
@@ -272,23 +273,34 @@ const PAYMENT_CONFIG = {
         label:     'Credit',
         message:   (a) => `You will get a refund of ₹\u202F${a}`,
     },
+    refunded: {
+        container: 'bg-violet-500/10 border-violet-500/30',
+        text:      'text-violet-600 dark:text-violet-400',
+        badge:     'bg-violet-500/15 text-violet-600 dark:text-violet-400 border-violet-500/30',
+        iconBox:   'bg-violet-500/15 border-violet-500/30 text-violet-600 dark:text-violet-400',
+        icon:      RotateCcw,
+        label:     'Refunded',
+        message:   (a) => `Refund of ₹\u202F${a} received — settled`,
+    },
 };
 
 const PaymentStatusBanner = React.memo(({ user }) => {
-    const paymentStatus = (user?.payment || 'pending').toLowerCase();
     const payable      = user?.paybleAmountforMeal ?? 0;
     const absPayable   = useMemo(() => Math.abs(payable), [payable]);
     const fmtPayable   = useMemo(() => fmt(absPayable), [absPayable]);
+    // Settlement ('refunded') beats balance — checked BEFORE payable < 0 so
+    // a returned refund never renders as "You will get a refund…".
+    const billStatus   = resolveBillStatus({ status: user?.payment, payableAmount: payable });
 
     /* ── Resolve state ── */
     let state;
-    if (payable < 0) {
+    if (billStatus === 'refunded') {
+        state = 'refunded';
+    } else if (billStatus === 'refund' || payable < 0) {
         state = 'credit';
-    } else if (['refund', 'refunded'].includes(paymentStatus)) {
-        state = 'credit';
-    } else if (['success', 'paid', 'approved'].includes(paymentStatus)) {
+    } else if (['success', 'paid', 'approved'].includes(billStatus)) {
         state = 'paid';
-    } else if (['failed', 'denied'].includes(paymentStatus)) {
+    } else if (['failed', 'denied'].includes(billStatus)) {
         state = 'failed';
     } else if (payable === 0) {
         state = 'settled';
