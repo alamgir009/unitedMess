@@ -7,6 +7,7 @@ const emailService = require('./email.service');
 const config = require('../config');
 const { getBillingPeriod } = require('../utils/helpers/date.helper');
 const { emitToUser } = require('../sockets');
+const { determineInvoiceStatus } = require('./invoice.service');
 
 // ─────────────────────────────────────────────────────────────
 // Constants
@@ -17,6 +18,7 @@ const PAYMENT_TO_USER_STATUS = {
     failed: 'failed',
     refunded: 'refunded',
     pending: 'pending',
+    pending_verification: 'pending',
 };
 
 // Fields admin is allowed to update — prevents accidental corruption
@@ -117,6 +119,23 @@ const sendPaymentEmail = async (user, payment, status) => {
 };
 
 /**
+ * Fire-and-forget refresh of user.paybleAmountforMeal after a mess-billing
+ * mutation, so the Members page's stored amount flips immediately instead of
+ * waiting for the next meal/market recalc cron. Lazy-requires user.service to
+ * keep module load order acyclic (invoice.service requires payment.service).
+ */
+const recalcUserPayable = (userId) => {
+    try {
+        const { recalculatePayableForUser } = require('./user.service');
+        recalculatePayableForUser(userId).catch(err =>
+            console.error(`[Sync] Payable recalc failed for user ${userId}:`, err.message)
+        );
+    } catch (err) {
+        console.error(`[Sync] Payable recalc unavailable for user ${userId}:`, err.message);
+    }
+};
+
+/**
  * Parse month string like "May 2026" to { month: 5, year: 2026 }
  */
 const parseMonthString = (monthStr) => {
@@ -159,14 +178,11 @@ const syncInvoiceAfterPayment = async (userId, monthStr) => {
         const invoice = await Invoice.findOne({ user: userId, month: parsed.month, year: parsed.year });
         if (invoice) {
             invoice.paidAmount = totalPaid;
-            if (invoice.totalPayable <= 0) {
-                invoice.status = 'paid';
-            } else if (invoice.paidAmount >= invoice.totalPayable) {
-                invoice.status = 'paid';
-            } else if (invoice.paidAmount > 0) {
-                invoice.status = 'partially_paid';
-            } else {
-                invoice.status = 'unpaid';
+            // Single source of truth for status (same deriver every invoice
+            // read/save uses). A refunded invoice is terminal — never
+            // resurrect it to paid/unpaid from a payment re-sync.
+            if (invoice.status !== 'refunded') {
+                invoice.status = determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
             }
             await invoice.save();
             console.info(`[Sync] Synced invoice status for user ${userId}, month ${monthStr} to ${invoice.status}`);
@@ -193,19 +209,24 @@ const createPayment = async (paymentBody) => {
         throw new AppError('Target student not found. Payment record cannot be created.', 404);
     }
 
-    // Duplicate guard: prevent double-recording for same user/month/type
-    const existing = await Payment.findOne({
-        user: student._id,
-        month: paymentBody.month,
-        type: paymentBody.type,
-        status: 'completed',
-    });
+    // Duplicate guard: prevent double-recording a COMPLETED payment for the
+    // same user/month/type. Only the new record's own status is guarded —
+    // refund/pending/failed records are legitimate alongside a completed one
+    // (corrections, partials, audit entries) and must never be blocked.
+    if ((paymentBody.status || 'completed') === 'completed') {
+        const existing = await Payment.findOne({
+            user: student._id,
+            month: paymentBody.month,
+            type: paymentBody.type,
+            status: 'completed',
+        });
 
-    if (existing) {
-        throw new AppError(
-            `A completed ${paymentBody.type.replace('_', ' ')} for ${paymentBody.month} already exists for this student.`,
-            400
-        );
+        if (existing) {
+            throw new AppError(
+                `A completed ${paymentBody.type.replace('_', ' ')} for ${paymentBody.month} already exists for this student.`,
+                400
+            );
+        }
     }
 
     // Sub-fix B: Fix payment record creation
@@ -230,16 +251,20 @@ const createPayment = async (paymentBody) => {
     await payment.save({ validateBeforeSave: false });
 
     // Sub-fix C & D: Sync and Email (non-blocking)
-    if (payment.status === 'completed') {
-        // Sync payment status (only if current billing period)
+    // Invoice + user status sync run for every decided status — a refunded or
+    // failed manual payment must update user.payment/user.gasBill and the
+    // invoice too (bulk path always did; single-create was completed-only).
+    // Pending/pending_verification never declare the period status: they sync
+    // when verified (same contract as createOnlinePaymentOrder).
+    if (!['pending', 'pending_verification'].includes(payment.status)) {
         await syncUserPaymentStatus(student._id, payment.type, payment.status, payment.month);
-        // Sync invoice paid amount and status
-        await syncInvoiceAfterPayment(student._id, payment.month);
+    }
+    await syncInvoiceAfterPayment(student._id, payment.month);
+    if (payment.type === 'mess_bill') recalcUserPayable(student._id);
 
-        // Send payment email
-        // Ensure this function receives student.email and student.name
-        sendPaymentEmail(student, payment, 'completed').catch(err => {
-            console.error(`[Email Error] Failed to send payment confirmation to ${student.email}:`, err.message);
+    if (['completed', 'failed', 'refunded'].includes(payment.status)) {
+        sendPaymentEmail(student, payment, payment.status).catch(err => {
+            console.error(`[Email Error] Failed to send payment email to ${student.email}:`, err.message);
         });
     }
 
@@ -545,6 +570,7 @@ const updatePaymentById = async (paymentId, updateBody) => {
     }, {});
 
     const oldStatus = payment.status;
+    const oldMonth = payment.month;
 
     // Guard: Prevent duplicate completed payments on update
     if (safeUpdate.status === 'completed' && oldStatus !== 'completed') {
@@ -581,23 +607,32 @@ const updatePaymentById = async (paymentId, updateBody) => {
     await payment.save();
 
     const statusChanged = safeUpdate.status && safeUpdate.status !== oldStatus;
+    const monthChanged = safeUpdate.month && safeUpdate.month !== oldMonth;
 
-    if (statusChanged) {
+    if (statusChanged || monthChanged) {
         // Fetch user once — shared by sync and email
         const user = await User.findById(payment.user)
             .select('name email')
             .lean();
 
         await Promise.all([
+            // Month edits must re-derive user status too — this is the repair
+            // path for records saved under the wrong billing month.
             syncUserPaymentStatus(payment.user, payment.type, payment.status, payment.month),
-            user && ['completed', 'failed', 'refunded'].includes(safeUpdate.status)
+            statusChanged && user && ['completed', 'failed', 'refunded'].includes(safeUpdate.status)
                 ? sendPaymentEmail(user, payment, safeUpdate.status)
                 : Promise.resolve()
         ]);
+
+        if (payment.type === 'mess_bill') recalcUserPayable(payment.user);
     }
 
     // Always sync invoice after payment updates
     await syncInvoiceAfterPayment(payment.user, payment.month);
+    // A corrected month leaves the OLD period's invoice stale — re-sync it too
+    if (monthChanged) {
+        await syncInvoiceAfterPayment(payment.user, oldMonth);
+    }
 
     return payment;
 };
@@ -659,22 +694,26 @@ const createBulkPayments = async (body) => {
         throw new AppError(`Users not found: ${missing.join(', ')}`, 404);
     }
 
-    // Duplicate guard per user — prevent double-recording for same month/type
-    const duplicates = await Payment.find({
-        user: { $in: userIds },
-        month: paymentData.month,
-        type: paymentData.type,
-        status: 'completed',
-    }).populate('user', 'name').lean();
+    // Duplicate guard per user — only when recording a COMPLETED payment.
+    // Refund/pending/failed bulk records must not be blocked by an existing
+    // completed payment (same rule as createPayment).
+    if ((paymentData.status || 'completed') === 'completed') {
+        const duplicates = await Payment.find({
+            user: { $in: userIds },
+            month: paymentData.month,
+            type: paymentData.type,
+            status: 'completed',
+        }).populate('user', 'name').lean();
 
-    if (duplicates.length > 0) {
-        const names = [...new Set(duplicates.map(d =>
-            typeof d.user === 'object' ? d.user?.name : 'Unknown'
-        ))];
-        throw new AppError(
-            `A completed ${(paymentData.type || 'payment').replace('_', ' ')} for ${paymentData.month} already exists for: ${names.join(', ')}`,
-            409
-        );
+        if (duplicates.length > 0) {
+            const names = [...new Set(duplicates.map(d =>
+                typeof d.user === 'object' ? d.user?.name : 'Unknown'
+            ))];
+            throw new AppError(
+                `A completed ${(paymentData.type || 'payment').replace('_', ' ')} for ${paymentData.month} already exists for: ${names.join(', ')}`,
+                409
+            );
+        }
     }
 
     const docs = users.map(user => ({
@@ -697,15 +736,22 @@ const createBulkPayments = async (body) => {
     // Sync user payment statuses and invoice amounts in parallel
     await Promise.all(createdPayments.map(p =>
         Promise.all([
-            syncUserPaymentStatus(p.user, p.type, p.status, p.month),
+            // Pending/pending_verification never declare the period status
+            // (same contract as createPayment) — invoice sync always runs.
+            ['pending', 'pending_verification'].includes(p.status)
+                ? Promise.resolve()
+                : syncUserPaymentStatus(p.user, p.type, p.status, p.month),
             syncInvoiceAfterPayment(p.user, p.month),
         ])
     ));
+    createdPayments.forEach(p => {
+        if (p.type === 'mess_bill') recalcUserPayable(p.user);
+    });
 
     // Emails fire non-blocking — never fail the request
     users.forEach((user, i) => {
-        if (createdPayments[i]?.status === 'completed') {
-            sendPaymentEmail(user, createdPayments[i], 'completed').catch(() => {});
+        if (['completed', 'failed', 'refunded'].includes(createdPayments[i]?.status)) {
+            sendPaymentEmail(user, createdPayments[i], createdPayments[i].status).catch(() => {});
         }
     });
 

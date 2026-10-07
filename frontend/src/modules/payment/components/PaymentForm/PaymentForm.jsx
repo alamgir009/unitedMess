@@ -15,6 +15,7 @@ import { BsCashCoin, BsGlobe2 } from 'react-icons/bs';
 import { MdPendingActions, MdCheckCircleOutline, MdErrorOutline, MdRefresh } from 'react-icons/md';
 import apiClient from '@/services/api/client/apiClient';
 import paymentService from '../../services/payment.service';
+import { getBillingPeriod } from '@shared/utils/billingPeriod';
 import { Button, Avatar, MemberSelect, IconSelect } from '@/shared/components/ui';
 import { SiRazorpay } from "react-icons/si";
 import { HiOutlineIdentification } from 'react-icons/hi2';
@@ -27,15 +28,15 @@ const MONTHS = [
     'July','August','September','October','November','December',
 ];
 
-const currentMonthYear = () => {
-    const d = new Date();
-    return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
-};
-
-const monthYearFromDate = (dateStr) => {
-    if (!dateStr) return currentMonthYear();
-    const d = new Date(dateStr + 'T12:00:00Z');
-    return `${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+/* Billing-period-aware month label for a payment date.
+   SINGLE SOURCE OF TRUTH: shared getBillingPeriod() (day 1-10 rule) — the
+   same period the backend scopes sync/aggregation to. Calendar-month labels
+   (e.g. Oct 7 → "October 2026") made records invisible to every status
+   derivation, which keyed on month === billing monthName. */
+const monthForDate = (dateStr) => {
+    let d = dateStr ? new Date(`${dateStr}T12:00:00Z`) : new Date();
+    if (isNaN(d.getTime())) d = new Date();
+    return getBillingPeriod(d).monthName;
 };
 
 const PAYMENT_TYPES = [
@@ -135,7 +136,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
     const [formData, setFormData] = useState({
         amount:        '',
         paymentDate:   format(new Date(), 'yyyy-MM-dd'),
-        month:         currentMonthYear(),
+        month:         monthForDate(),
         type:          'mess_bill',
         status:        'completed',
         paymentMethod: 'cash',
@@ -227,7 +228,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
             setFormData({
                 amount:        initialData.amount        ?? '',
                 paymentDate:   pd,
-                month:         initialData.month         || monthYearFromDate(pd),
+                month:         initialData.month         || monthForDate(pd),
                 type:          initialData.type          || 'mess_bill',
                 status:        initialData.status        || 'completed',
                 paymentMethod: initialData.paymentMethod || 'cash',
@@ -305,7 +306,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                     ? (value === '' ? '' : parseFloat(value) || 0)
                     : value,
             };
-            if (name === 'paymentDate' && value) next.month = monthYearFromDate(value);
+            if (name === 'paymentDate' && value) next.month = monthForDate(value);
             return next;
         });
     };

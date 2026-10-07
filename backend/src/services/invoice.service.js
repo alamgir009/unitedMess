@@ -14,12 +14,17 @@ const {
 const emailService = require('./email.service');
 const pdfService   = require('./pdf.service');
 
+/* Whole-rupee settlement tolerance: the UI suggests/stores rounded payables
+   (₹1011) while invoices keep paise (₹1011.29) — a shortfall under ₹1 still
+   settles the invoice, otherwise "full" payments stick on partially_paid. */
+const SETTLEMENT_TOLERANCE = 1;
+
 /**
  * Determine invoice status from paidAmount and totalPayable.
  * Fintech-grade deterministic logic:
  *  - paidAmount < 0        → refunded (never unpaid)
- *  - totalPayable <= 0     → paid (user owes nothing — credit/zero-balance)
- *  - paidAmount >= totalPayable → paid
+ *  - totalPayable <= 0     → refunded/credit or zero → refunded/paid
+ *  - paidAmount >= totalPayable - ₹1 tolerance → paid
  *  - paidAmount > 0        → partially_paid
  *  - otherwise             → unpaid
  */
@@ -27,7 +32,7 @@ function determineInvoiceStatus(paidAmount, totalPayable) {
     if (paidAmount < 0) return 'refunded';
     if (totalPayable < 0) return 'refunded';
     if (totalPayable === 0) return 'paid';
-    if (paidAmount >= totalPayable) return 'paid';
+    if (paidAmount >= totalPayable - SETTLEMENT_TOLERANCE) return 'paid';
     if (paidAmount > 0) return 'partially_paid';
     return 'unpaid';
 }

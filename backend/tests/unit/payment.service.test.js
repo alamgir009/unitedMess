@@ -1,6 +1,13 @@
-const { verifyUpiManualPaymentService } = require('../../src/services/payment.service');
+const {
+    verifyUpiManualPaymentService,
+    createPayment,
+    updatePaymentById,
+} = require('../../src/services/payment.service');
+const { determineInvoiceStatus } = require('../../src/services/invoice.service');
+const { getBillingPeriod } = require('../../src/utils/helpers/date.helper');
 const Payment = require('../../src/models/Payment.model');
 const User = require('../../src/models/User.model');
+const Invoice = require('../../src/models/Invoice.model');
 const AppError = require('../../src/utils/errors/AppError');
 
 // ── Mongoose chain-query mock helper ──
@@ -21,10 +28,18 @@ function mockQueryChain(resolvedValue) {
 
 jest.mock('../../src/models/Payment.model');
 jest.mock('../../src/models/User.model');
+jest.mock('../../src/models/Invoice.model');
+// Real SMTP sends must never fire from unit tests (createPayment emails on
+// completed/failed/refunded).
+jest.mock('../../src/services/email.service');
 
 describe('verifyUpiManualPaymentService', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+
+        // Payment.find() must resolve [] so invoice sync does not crash on
+        // undefined.reduce (Invoice.findOne automock then returns null).
+        Payment.find.mockResolvedValue([]);
 
         // User.findById(...).select(...).lean() must return a user
         User.findById.mockImplementation(() => {
@@ -282,5 +297,186 @@ describe('verifyUpiManualPaymentService', () => {
                 verifiedBy: 'admin1',
             })
         ).rejects.toThrow('Payment record not found');
+    });
+});
+
+// ─────────────────────────────────────────────────────────────
+// Regression suite: manual payment creation → status sync
+// (refunded sync, duplicate guard, pending non-declaration)
+// Month is always the ACTIVE billing period so the day-1-10 rule
+// keeps these tests timezone/date-independent.
+// ─────────────────────────────────────────────────────────────
+
+describe('createPayment — status sync & duplicate guard', () => {
+    const M = getBillingPeriod().monthName;
+    const student = { _id: 'user1', name: 'Test', email: 'test@test.com', payment: 'pending', gasBill: 'pending' };
+
+    const makePaymentDoc = (over = {}) => ({
+        _id: 'pay1',
+        user: 'user1',
+        type: 'mess_bill',
+        month: M,
+        status: 'completed',
+        amount: 500,
+        statusHistory: [],
+        save: jest.fn().mockResolvedValue(undefined),
+        ...over,
+    });
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+
+        // Thenable query: supports both `await findById().select(...)` (createPayment)
+        // and `findById().select(...).lean(...)` (updatePaymentById).
+        const chain = {
+            select: jest.fn().mockReturnThis(),
+            lean: jest.fn().mockResolvedValue(student),
+            then: (onF, onR) => Promise.resolve(student).then(onF, onR),
+        };
+        User.findById.mockImplementation(() => chain);
+
+        Payment.find.mockResolvedValue([]);       // invoice sync: no payments
+        Invoice.findOne.mockResolvedValue(null);  // invoice sync: no invoice
+        Payment.create.mockResolvedValue(makePaymentDoc());
+        Payment.findOne.mockResolvedValue(null);  // duplicate guard: none
+    });
+
+    it('syncs user.payment for a refunded manual payment (regression: was completed-only)', async () => {
+        Payment.create.mockResolvedValue(makePaymentDoc({ status: 'refunded', amount: 232 }));
+
+        await createPayment({
+            user: 'user1',
+            month: M,
+            type: 'mess_bill',
+            status: 'refunded',
+            amount: 232,
+            createdBy: 'admin1',
+        });
+
+        expect(User.findByIdAndUpdate).toHaveBeenCalledWith('user1', { payment: 'refunded' });
+    });
+
+    it('syncs user.payment for a completed manual payment', async () => {
+        await createPayment({
+            user: 'user1',
+            month: M,
+            type: 'mess_bill',
+            status: 'completed',
+            amount: 500,
+            createdBy: 'admin1',
+        });
+
+        expect(User.findByIdAndUpdate).toHaveBeenCalledWith('user1', { payment: 'success' });
+    });
+
+    it('does not declare period status for a pending payment (syncs on verification)', async () => {
+        Payment.create.mockResolvedValue(makePaymentDoc({ status: 'pending' }));
+
+        await createPayment({
+            user: 'user1',
+            month: M,
+            type: 'mess_bill',
+            status: 'pending',
+            amount: 100,
+            createdBy: 'admin1',
+        });
+
+        expect(User.findByIdAndUpdate).not.toHaveBeenCalled();
+        expect(Payment.create).toHaveBeenCalled();
+    });
+
+    it('blocks a duplicate COMPLETED payment for the same user/month/type', async () => {
+        Payment.findOne.mockResolvedValue({ _id: 'existing' });
+
+        await expect(
+            createPayment({
+                user: 'user1',
+                month: M,
+                type: 'mess_bill',
+                status: 'completed',
+                amount: 500,
+                createdBy: 'admin1',
+            })
+        ).rejects.toThrow('already exists');
+
+        expect(Payment.create).not.toHaveBeenCalled();
+    });
+
+    it('allows a refund alongside an existing completed payment (regression: was blocked)', async () => {
+        Payment.findOne.mockResolvedValue({ _id: 'existing' });
+        Payment.create.mockResolvedValue(makePaymentDoc({ status: 'refunded', amount: 100 }));
+
+        await createPayment({
+            user: 'user1',
+            month: M,
+            type: 'mess_bill',
+            status: 'refunded',
+            amount: 100,
+            createdBy: 'admin1',
+        });
+
+        expect(Payment.findOne).not.toHaveBeenCalled();
+        expect(Payment.create).toHaveBeenCalled();
+        expect(User.findByIdAndUpdate).toHaveBeenCalledWith('user1', { payment: 'refunded' });
+    });
+});
+
+describe('updatePaymentById — month repair re-sync', () => {
+    const BP = getBillingPeriod();
+    // Guaranteed to differ from the active period regardless of run date
+    const wrongMonth = BP.month === 9 ? 'October 2026' : 'September 2026';
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        const student = { _id: 'user1', name: 'Test', email: 'test@test.com' };
+        const chain = {
+            select: jest.fn().mockReturnThis(),
+            lean: jest.fn().mockResolvedValue(student),
+            then: (onF, onR) => Promise.resolve(student).then(onF, onR),
+        };
+        User.findById.mockImplementation(() => chain);
+        Payment.find.mockResolvedValue([]);
+        Invoice.findOne.mockResolvedValue(null);
+        Payment.findById.mockResolvedValue({
+            _id: 'pay1',
+            user: 'user1',
+            type: 'mess_bill',
+            month: wrongMonth,
+            status: 'completed',
+            amount: 1011,
+            statusHistory: [],
+            save: jest.fn().mockResolvedValue(undefined),
+        });
+    });
+
+    it('re-syncs user.payment when month is corrected (regression: sync only ran on status change)', async () => {
+        await updatePaymentById('pay1', { month: BP.monthName });
+
+        expect(User.findByIdAndUpdate).toHaveBeenCalledWith('user1', { payment: 'success' });
+        // New month's invoice AND old month's invoice both re-synced
+        expect(Invoice.findOne).toHaveBeenCalledTimes(2);
+        expect(Invoice.findOne).toHaveBeenCalledWith(
+            expect.objectContaining({ month: BP.month, year: BP.year })
+        );
+    });
+});
+
+describe('determineInvoiceStatus — settlement tolerance', () => {
+    it('settles a full payment within ₹1 of the invoice (whole-rupee UI suggestions)', () => {
+        expect(determineInvoiceStatus(1011, 1011.29)).toBe('paid');
+    });
+
+    it('keeps a genuine shortfall partially_paid', () => {
+        expect(determineInvoiceStatus(1010, 1011.29)).toBe('partially_paid');
+    });
+
+    it('derives refunded for credit balances and negative payments', () => {
+        expect(determineInvoiceStatus(0, -232.27)).toBe('refunded');
+        expect(determineInvoiceStatus(-133, 41)).toBe('refunded');
+    });
+
+    it('handles zero and untouched invoices', () => {
+        expect(determineInvoiceStatus(0, 0)).toBe('paid');
+        expect(determineInvoiceStatus(0, 500)).toBe('unpaid');
     });
 });
