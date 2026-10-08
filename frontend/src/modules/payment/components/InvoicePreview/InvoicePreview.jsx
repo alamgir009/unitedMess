@@ -487,7 +487,7 @@ const InvoicePreview = ({
             <div className="p-2.5 sm:p-4">
                 <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
-                        <div className="flex items-center -mt-px gap-[var(--um-space-3)]">
+                        <div className="flex items-center -mt-px gap-[var(--um-space-2)]">
                             <img
                                 src="/assets/icons/resize_logo.png"
                                 alt="United Mess"
