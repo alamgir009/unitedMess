@@ -58,17 +58,21 @@ const C = {
     purple:       '#c4b5fd',
 };
 
-/** Font paths — loaded once into memory at startup */
+/** Font paths — loaded once into memory at startup (Inter, OFL — fintech-grade) */
 const FONT_DIR = path.join(__dirname, 'fonts');
 const FONTS = {
-    regular:  path.join(FONT_DIR, 'NotoSans-Regular.ttf'),
-    semibold: path.join(FONT_DIR, 'NotoSans-SemiBold.ttf'),
+    regular:  path.join(FONT_DIR, 'Inter_400Regular.ttf'),
+    medium:   path.join(FONT_DIR, 'Inter_500Medium.ttf'),
+    semibold: path.join(FONT_DIR, 'Inter_600SemiBold.ttf'),
+    bold:     path.join(FONT_DIR, 'Inter_700Bold.ttf'),
 };
 
 /** Cache font buffers at module load — avoids disk I/O on every PDF generation */
 const FONT_BUFFERS = {
     regular:  fs.readFileSync(FONTS.regular),
+    medium:   fs.readFileSync(FONTS.medium),
     semibold: fs.readFileSync(FONTS.semibold),
+    bold:     fs.readFileSync(FONTS.bold),
 };
 
 /** Cache brand logo buffer at module load */
@@ -81,7 +85,11 @@ const MARGIN    = 40;
 const CONTENT_W = PAGE_W - MARGIN * 2;
 
 /** Minimum bottom margin before triggering a new page */
-const PAGE_BOTTOM_SAFE = 60;
+const PAGE_BOTTOM_SAFE = 48;
+
+/** Footer block height (rule + two centred lines) — reserved as part of the
+ *  bottom cluster so it can never be orphaned onto a page of its own. */
+const FOOTER_H = 42;
 
 /* ─────────────────────────────────────────────────────────────────────────────
    VALIDATION
@@ -208,8 +216,10 @@ const generateInvoicePDF = (invoiceData, user) => {
             });
 
             /* ── Register custom fonts from cached buffers (no disk I/O) ── */
-            doc.registerFont('NotoSans',          FONT_BUFFERS.regular);
-            doc.registerFont('NotoSans-SemiBold', FONT_BUFFERS.semibold);
+            doc.registerFont('Inter',          FONT_BUFFERS.regular);
+            doc.registerFont('Inter-Medium',   FONT_BUFFERS.medium);
+            doc.registerFont('Inter-SemiBold', FONT_BUFFERS.semibold);
+            doc.registerFont('Inter-Bold',     FONT_BUFFERS.bold);
 
             /* ── Buffer collection ── */
             const chunks = [];
@@ -269,7 +279,7 @@ const generateInvoicePDF = (invoiceData, user) => {
             const headerStartY     = y;   // anchor for right-side meta alignment
 
             // Configure brand font first so metrics are accurate
-            doc.font('Helvetica-Bold').fontSize(BRAND_FONT_SIZE);
+            doc.font('Inter-Bold').fontSize(BRAND_FONT_SIZE);
             const textHeight = doc.currentLineHeight();
 
             // Logo (from cached buffer — no disk I/O)
@@ -295,29 +305,29 @@ const generateInvoicePDF = (invoiceData, user) => {
 
             // Sub-lines below brand name
             const subLineStartY = brandTextY + textHeight + 4;
-            doc.fontSize(10).font('NotoSans').fillColor(C.gray500);
+            doc.fontSize(10).font('Inter').fillColor(C.gray500);
             doc.text('Mess Management Platform', brandTextX, subLineStartY);
 
-            doc.fontSize(10).font('NotoSans').fillColor(C.gray700);
+            doc.fontSize(10).font('Inter').fillColor(C.gray700);
             doc.text(user.name  || '—', brandTextX, subLineStartY + 14);
             doc.text(user.email || '',  brandTextX, subLineStartY + 28);
 
             // Invoice meta — right-aligned, pinned to headerStartY
             const metaX = PAGE_W - MARGIN - 160;
-            doc.fontSize(9).font('NotoSans').fillColor(C.gray400);
+            doc.fontSize(9).font('Inter').fillColor(C.gray400);
             doc.text('INVOICE', metaX, headerStartY, { width: 160, align: 'right' });
 
-            doc.fontSize(10).font('NotoSans').fillColor(C.indigo);
+            doc.fontSize(10).font('Inter').fillColor(C.indigo);
             doc.text(invoiceNo, metaX, headerStartY + 14, { width: 160, align: 'right' });
 
-            doc.fontSize(11).font('NotoSans-SemiBold').fillColor(C.gray700);
+            doc.fontSize(11).font('Inter-SemiBold').fillColor(C.gray700);
             doc.text(monthName, metaX, headerStartY + 30, { width: 160, align: 'right' });
 
-            doc.fontSize(10).font('NotoSans').fillColor(C.gray700);
+            doc.fontSize(10).font('Inter').fillColor(C.gray700);
             doc.text(displayDate, metaX, headerStartY + 44, { width: 160, align: 'right' });
 
             // Advance cursor below the full header block, then draw the rule
-            y = headerStartY + Math.max(LOGO_SIZE, textHeight) + 56;
+            y = headerStartY + Math.max(LOGO_SIZE, textHeight) + 48;
             hRule(y, C.indigo, 2);
             y += 12;
 
@@ -333,33 +343,33 @@ const generateInvoicePDF = (invoiceData, user) => {
 
             // Card 1 — Market Total
             fillStrokeRect(MARGIN, cardY, cardW, cardH, C.gray50, C.gray200);
-            doc.fontSize(8).font('NotoSans-SemiBold').fillColor(C.gray500);
+            doc.fontSize(8).font('Inter-SemiBold').fillColor(C.gray500);
             doc.text('MARKET TOTAL (ALL)', MARGIN + 10, cardY + 8);
-            doc.fontSize(18).font('NotoSans-SemiBold').fillColor(C.gray900);
+            doc.fontSize(18).font('Inter-SemiBold').fillColor(C.gray900);
             doc.text(`\u20B9${fmt(grandTotalMarket)}`, MARGIN + 10, cardY + 22);
 
             // Card 2 — Total Meals
             const card2X = MARGIN + cardW + cardGap;
             fillStrokeRect(card2X, cardY, cardW, cardH, C.gray50, C.gray200);
-            doc.fontSize(8).font('NotoSans-SemiBold').fillColor(C.gray500);
+            doc.fontSize(8).font('Inter-SemiBold').fillColor(C.gray500);
             doc.text('TOTAL MEALS (ALL)', card2X + 10, cardY + 8);
-            doc.fontSize(18).font('NotoSans-SemiBold').fillColor(C.gray900);
+            doc.fontSize(18).font('Inter-SemiBold').fillColor(C.gray900);
             doc.text(`${fmt(grandTotalMeal)}`, card2X + 10, cardY + 22);
             if (grandTotalGuest > 0) {
                 const totalOwn = grandTotalMeal - grandTotalGuest;
-                doc.fontSize(7).font('NotoSans-Regular').fillColor(C.gray400);
+                doc.fontSize(7).font('Inter').fillColor(C.gray400);
                 doc.text(`${fmt(totalOwn)} + ${fmt(grandTotalGuest)} Guest`, card2X + 10, cardY + 42);
             }
 
             // Card 3 — Your Payable
             const card3X = MARGIN + (cardW + cardGap) * 2;
             fillStrokeRect(card3X, cardY, cardW, cardH, C.indigoBg, C.indigoBorder);
-            doc.fontSize(8).font('NotoSans-SemiBold').fillColor(C.gray500);
+            doc.fontSize(8).font('Inter-SemiBold').fillColor(C.gray500);
             doc.text(isRefund ? (refundSettled ? 'REFUNDED' : 'REFUND DUE') : 'YOUR PAYABLE', card3X + 10, cardY + 8);
-            doc.fontSize(18).font('NotoSans-SemiBold').fillColor(C.indigo);
+            doc.fontSize(18).font('Inter-SemiBold').fillColor(C.indigo);
             doc.text(`\u20B9${fmt(displayAmt)}`, card3X + 10, cardY + 22);
 
-            y = cardY + cardH + 20;
+            y = cardY + cardH + 16;
 
             /* ──────────────────────────────────────────────────
                SECTION & ROW HELPERS
@@ -367,27 +377,27 @@ const generateInvoicePDF = (invoiceData, user) => {
 
             const sectionLabel = (label) => {
                 ensureSpace(30);
-                doc.fontSize(9).font('NotoSans-SemiBold').fillColor(C.gray400);
+                doc.fontSize(9).font('Inter-SemiBold').fillColor(C.gray400);
                 doc.text(label.toUpperCase(), MARGIN, y);
                 hRule(y + 14, C.gray200, 0.5);
-                y += 20;
+                y += 16;
             };
 
             const dataRow = (label, value, subLabel = null, accent = false) => {
                 const subs = subLabel == null ? [] : (Array.isArray(subLabel) ? subLabel : [subLabel]);
-                const rowH = subs.length > 1 ? 46 : subs.length === 1 ? 34 : 24;
+                const rowH = subs.length > 1 ? 46 : subs.length === 1 ? 34 : 22;
                 ensureSpace(rowH + 2);
                 hRule(y + rowH - 1, C.gray100, 0.4);
 
-                doc.fontSize(11).font('NotoSans').fillColor(C.gray700);
+                doc.fontSize(11).font('Inter').fillColor(C.gray700);
                 doc.text(label, MARGIN, y + 4, { width: CONTENT_W * 0.6 });
 
                 subs.forEach((line, i) => {
-                    doc.fontSize(9).font('NotoSans').fillColor(i === 0 ? C.gray400 : C.gray500);
+                    doc.fontSize(9).font('Inter').fillColor(i === 0 ? C.gray400 : C.gray500);
                     doc.text(line, MARGIN, y + 18 + i * 13);
                 });
 
-                doc.fontSize(11).font('NotoSans-SemiBold').fillColor(accent ? C.indigo : C.gray900);
+                doc.fontSize(11).font('Inter-SemiBold').fillColor(accent ? C.indigo : C.gray900);
                 doc.text(value, MARGIN, y + 4, { width: CONTENT_W, align: 'right' });
 
                 y += rowH;
@@ -400,7 +410,7 @@ const generateInvoicePDF = (invoiceData, user) => {
             sectionLabel('Your Usage');
             dataRow('Your Meals',        `${fmt(uMeal)} meals`);
             dataRow('Your Market Spend', `\u20B9${fmt(uMarket)}`, 'What you spent');
-            y += 6;
+            y += 4;
 
             /* ──────────────────────────────────────────────────
                MONTHLY CHARGES
@@ -412,7 +422,7 @@ const generateInvoicePDF = (invoiceData, user) => {
             if (guestMeal > 0) {
                 dataRow('Guest Meals', `\u20B9${fmt(guestAmt)}`, `${guestMeal} meal(s) × \u20B9${fmt(guestRate)}`);
             }
-            y += 6;
+            y += 4;
 
             /* ──────────────────────────────────────────────────
                CALCULATIONS
@@ -424,7 +434,7 @@ const generateInvoicePDF = (invoiceData, user) => {
             if (platformFee !== 0) {
                 dataRow('Platform Fee', `\u20B9${fmt(platformFee)}`);
             }
-            y += 6;
+            y += 4;
 
             /* ──────────────────────────────────────────────────
                PREVIOUS BALANCE  (conditional — was missing in original)
@@ -438,17 +448,31 @@ const generateInvoicePDF = (invoiceData, user) => {
                     prevBalance > 0 ? 'Carried forward from last month' : 'Credit from last month',
                     prevBalance > 0   // accent only for debit
                 );
-                y += 6;
+                y += 4;
             }
 
-            y += 10;
+            y += 6;
 
             /* ──────────────────────────────────────────────────
                TOTAL BOX
                ────────────────────────────────────────────────── */
 
+            /* ── Payment-block geometry ──────────────────────────────
+               Height derives from the rows actually rendered (status
+               label / title / method [+ partial amounts]) plus the
+               optional UTR strip — so the strip can never be painted
+               over the row above it, for any combination of flags. */
+            const hasUtr = invoiceData._paymentMethod === 'upi_manual'
+                && !!(invoiceData._utr || invoiceData._transactionId);
+            const lastRowBottom = (isPartiallyPaid ? 48 : 36) + 11;
+            const pbH = !(isPaid || isPartiallyPaid) ? 0
+                : hasUtr ? lastRowBottom + 6 + 20 + 8   // row + gap + strip + bottom pad
+                         : lastRowBottom + 8;
+
             const totalBoxH = 64;
-            ensureSpace(totalBoxH + 20);
+            /* Reserve the whole bottom cluster (total box + payment block +
+               footer) as one atomic unit so the footer never lands alone. */
+            ensureSpace(totalBoxH + 12 + (pbH ? pbH + 12 : 0) + FOOTER_H);
 
             const totalBg = isPaid          ? C.greenBg
                           : isPartiallyPaid ? C.amberBg
@@ -461,11 +485,11 @@ const generateInvoicePDF = (invoiceData, user) => {
 
             fillStrokeRect(MARGIN, y, CONTENT_W, totalBoxH, totalBg, totalBd, 1, 10);
 
-            doc.fontSize(9).font('NotoSans').fillColor(C.gray500);
+            doc.fontSize(9).font('Inter').fillColor(C.gray500);
             doc.text(isRefund ? 'REFUND AMOUNT' : 'TOTAL PAYABLE', MARGIN + 16, y + 10);
 
             const amtColor = isRefund ? C.green : C.indigo;
-            doc.fontSize(28).font('NotoSans-SemiBold').fillColor(amtColor);
+            doc.fontSize(28).font('Inter-SemiBold').fillColor(amtColor);
             doc.text(`\u20B9${fmt(displayAmt)}`, MARGIN + 16, y + 24);
 
             // Status badge
@@ -481,7 +505,7 @@ const generateInvoicePDF = (invoiceData, user) => {
             const badgeX = PAGE_W - MARGIN - badgeW - 12;
             const badgeY = y + 20;
             fillRect(badgeX, badgeY, badgeW, badgeH, badgeBg);
-            doc.fontSize(10).font('NotoSans-SemiBold').fillColor(badgeTx);
+            doc.fontSize(10).font('Inter-SemiBold').fillColor(badgeTx);
             doc.text(statusLabel, badgeX, badgeY + 6, { width: badgeW, align: 'center' });
 
             y += totalBoxH + 12;
@@ -491,17 +515,15 @@ const generateInvoicePDF = (invoiceData, user) => {
                ────────────────────────────────────────────────── */
 
             if (isPaid || isPartiallyPaid) {
-                const hasUtr = invoiceData._paymentMethod === 'upi_manual' && (invoiceData._utr || invoiceData._transactionId);
-                const pbH    = hasUtr ? 80 : isPartiallyPaid ? 68 : 50;
-                ensureSpace(pbH + 20);
+                ensureSpace(pbH + 12);
 
                 fillStrokeRect(MARGIN, y, CONTENT_W, pbH, C.gray50, C.gray200, 1, 8);
 
                 // Status label
-                doc.fontSize(9).font('NotoSans').fillColor(C.gray500);
+                doc.fontSize(9).font('Inter').fillColor(C.gray500);
                 doc.text('PAYMENT STATUS', MARGIN + 12, y + 10);
 
-                doc.fontSize(11).font('NotoSans-SemiBold').fillColor(C.gray900);
+                doc.fontSize(11).font('Inter-SemiBold').fillColor(C.gray900);
                 doc.text(isPaid ? 'Payment Successful' : 'Partially Paid', MARGIN + 12, y + 22);
 
                 // Payment method
@@ -511,13 +533,13 @@ const generateInvoicePDF = (invoiceData, user) => {
                         : invoiceData._paymentMethod === 'razorpay'
                             ? 'Online (Razorpay)'
                             : invoiceData._paymentMethod;
-                    doc.fontSize(9).font('NotoSans').fillColor(C.gray500);
+                    doc.fontSize(9).font('Inter').fillColor(C.gray500);
                     doc.text(mLabel, MARGIN + 12, y + 36);
                 }
 
                 // Partially paid: show amount paid vs remaining
                 if (isPartiallyPaid) {
-                    doc.fontSize(9).font('NotoSans').fillColor(C.gray500);
+                    doc.fontSize(9).font('Inter').fillColor(C.gray500);
                     doc.text(`Paid: \u20B9${fmt(paidAmount)}`, MARGIN + 12, y + 48);
                     doc.text(`Remaining: \u20B9${fmt(displayAmt - paidAmount)}`, MARGIN + 120, y + 48);
                 }
@@ -527,41 +549,41 @@ const generateInvoicePDF = (invoiceData, user) => {
                 const pbBadgeTx = isPaid ? C.greenBadgeTx : C.amberBadgeTx;
                 const pbBadgeLb = isPaid ? 'SETTLED' : 'PARTIAL';
                 fillRect(PAGE_W - MARGIN - 72, y + 16, 62, 20, pbBadgeBg);
-                doc.fontSize(9).font('NotoSans-SemiBold').fillColor(pbBadgeTx);
+                doc.fontSize(9).font('Inter-SemiBold').fillColor(pbBadgeTx);
                 doc.text(pbBadgeLb, PAGE_W - MARGIN - 72, y + 22, { width: 62, align: 'center' });
 
                 // UTR block
                 if (hasUtr) {
                     fillRect(MARGIN + 8, y + pbH - 28, CONTENT_W - 16, 20, C.blueBg);
-                    doc.fontSize(9).font('NotoSans-SemiBold').fillColor(C.blueTx);
+                    doc.fontSize(9).font('Inter-SemiBold').fillColor(C.blueTx);
                     doc.text('UTR', MARGIN + 16, y + pbH - 22);
-                    doc.fontSize(10).font('NotoSans').fillColor(C.blue);
+                    doc.fontSize(10).font('Inter').fillColor(C.blue);
                     doc.text(invoiceData._utr || invoiceData._transactionId, MARGIN + 42, y + pbH - 22, {
                         width: CONTENT_W - 58,
                         ellipsis: true,
                     });
                 }
 
-                y += pbH + 14;
+                y += pbH + 12;
             }
 
             /* ──────────────────────────────────────────────────
                FOOTER
                ────────────────────────────────────────────────── */
 
-            ensureSpace(50);
-            y += 10;
+            ensureSpace(FOOTER_H);
+            y += 8;
             hRule(y, C.gray200, 0.5);
-            y += 10;
+            y += 8;
 
-            doc.fontSize(9).font('NotoSans').fillColor(C.gray400);
+            doc.fontSize(9).font('Inter').fillColor(C.gray400);
             doc.text(
                 `System-generated invoice for ${monthName}. For disputes, contact your mess admin.`,
                 MARGIN, y, { width: CONTENT_W, align: 'center' }
             );
             y += 14;
 
-            doc.fontSize(9).font('NotoSans').fillColor(C.purple);
+            doc.fontSize(9).font('Inter').fillColor(C.purple);
             doc.text(
                 `Powered by United Mess · ${invoiceNo}`,
                 MARGIN, y, { width: CONTENT_W, align: 'center' }
