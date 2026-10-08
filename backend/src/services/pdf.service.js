@@ -533,7 +533,7 @@ const generateInvoicePDF = (invoiceData, user) => {
             const pbH = blockRows(payRows);
             const rbH = blockRows(refRows);
 
-            const totalBoxH = 68;
+            const totalBoxH = 76;
             ensureSpace(totalBoxH + 12 + (pbH ? pbH + 12 : 0) + (rbH ? rbH + 12 : 0) + FOOTER_H);
 
             /* ── Total box — neutral container; status colour lives only in
