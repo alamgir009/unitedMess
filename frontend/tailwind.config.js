@@ -87,6 +87,12 @@ export default {
           text: "var(--info-text)",
           border: "var(--info-border)",
         },
+        refund: {
+          DEFAULT: "var(--refund)",
+          bg: "var(--refund-bg)",
+          text: "var(--refund-text)",
+          border: "var(--refund-border)",
+        },
         profit: {
           DEFAULT: "var(--profit)",
           bg: "var(--profit-bg)",

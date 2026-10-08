@@ -389,6 +389,7 @@
   .badge-warning { background: var(--warning-bg); color: var(--warning-text); }
   .badge-danger  { background: var(--danger-bg);  color: var(--danger-text);  }
   .badge-info    { background: var(--info-bg);    color: var(--info-text);    }
+  .badge-refund  { background: var(--refund-bg);  color: var(--refund-text);  }
   .badge-neutral { background: var(--bg-muted);   color: var(--text-secondary); }
 
   .badge-profit  { background: var(--profit-bg); color: var(--profit-text); }
@@ -398,6 +399,7 @@
   .badge-solid-warning { background: var(--warning); color: var(--warning-bg); }
   .badge-solid-danger  { background: var(--danger);  color: var(--danger-bg);  }
   .badge-solid-info    { background: var(--info);    color: var(--info-bg);    }
+  .badge-solid-refund  { background: var(--refund);  color: var(--refund-bg);  }
 
   /* ─── Skeleton ─── */
   .skeleton {
@@ -635,5 +637,20 @@
   .gpu-scroll {
     will-change: scroll-position;
     transform: translateZ(0);
+  }
+}
+
+/* ─── Invoice print — .invoice-print is the InvoicePreview root ─── */
+@media print {
+  .invoice-print {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    box-shadow: none !important;
+  }
+
+  .invoice-print .no-print {
+    display: none !important;
   }
 }

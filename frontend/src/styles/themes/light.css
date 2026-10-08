@@ -51,7 +51,7 @@ html.light {
   --warning: hsl(38 92% 42%);             /* #D97706 (amber-600) */
   --warning-bg: hsl(48 100% 96%);         /* #FFFBEB (amber-50) */
   --warning-border: hsl(48 97% 77%);      /* #FDE68A (amber-200) */
-  --warning-text: hsl(32 95% 37%);        /* #B45309 (amber-700) */
+  --warning-text: hsl(32 95% 35%);        /* #AE5F04 — 4.56:1 on --warning-bg (AA; l 37→35) */
 
   --danger: hsl(0 72% 51%);               /* #DC2626 (red-600) */
   --danger-bg: hsl(0 86% 97%);            /* #FEF2F2 (red-50) */
@@ -67,6 +67,12 @@ html.light {
   --info-bg: hsl(204 100% 97%);           /* #F0F9FF (sky-50) */
   --info-border: hsl(201 94% 86%);        /* #BAE6FD (sky-200) */
   --info-text: hsl(201 96% 32%);          /* #0369A1 (sky-700) */
+
+  /* ── Refund family (refund-due / refunded identity) ── */
+  --refund: hsl(265 74% 50%);             /* #7021DE */
+  --refund-bg: hsl(264 85% 97%);          /* #F6F1FE */
+  --refund-border: hsl(262 83% 90%);      /* #E0D0FB */
+  --refund-text: hsl(265 59% 40%);        /* #5C2AA2 — 8.2:1 on --refund-bg */
 
   /* ── Financial tokens (aliases) ── */
   --profit: hsl(142 76% 36%);

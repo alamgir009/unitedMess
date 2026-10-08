@@ -32,29 +32,29 @@ const fmt2 = (n) =>
 
 /* ── Display tokens ─────────────────────────────────────────────────────────
    The PDF cannot read CSS variables; these literals mirror the app's design
-   tokens 1:1 (source: frontend/src/styles/light.css). Muted text uses
+   tokens 1:1 (source: frontend/src/styles/themes/light.css). Muted text uses
    --text-secondary (7.29:1 on white) because --text-tertiary (4.17:1) and
    --text-muted fail WCAG AA at invoice sizes. */
 const C = {
-    // light.css:37-38
+    // themes/light.css:37-38
     textPrimary:   '#121212',   // --text-primary
     textSecondary: '#505762',   // --text-secondary
-    // light.css:25,31,32
+    // themes/light.css:25,31,32
     bgSubtle:      '#f6f7f8',   // --bg-subtle
     borderDefault: '#dddfe4',   // --border-default
     borderMuted:   '#e6e7eb',   // --border-muted
     white:         '#ffffff',
-    // light.css:6 (brand)
+    // themes/light.css:6 (brand)
     brand:         '#2463eb',   // --brand
-    // light.css:46-49 (success)
+    // themes/light.css:47-49 (success)
     successBg:     '#f1fdf5',
     successBorder: '#bbf7d0',
     successText:   '#157f3c',
-    // light.css:51-54 (warning)
+    // themes/light.css:52-54 (warning)
     warningBg:     '#fffbeb',
     warningBorder: '#fde68b',
-    warningText:   '#ae5f04',   // --warning-text lightness 37→35 for AA (see light.css)
-    // --refund family (new token, mirrors frontend/src/styles/light.css)
+    warningText:   '#ae5f04',   // --warning-text lightness 37→35 for AA (see themes/light.css:54)
+    // --refund family (new token, mirrors frontend/src/styles/themes/light.css)
     refundBg:      '#f6f1fe',
     refundBorder:  '#e0d0fb',
     refundText:    '#5c2aa2',

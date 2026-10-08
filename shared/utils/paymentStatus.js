@@ -8,6 +8,7 @@
  *
  * Canonical tokens:
  *   pending    — nothing settled yet (may owe, may be zero-bill)
+ *   partial    — member paid part of the bill; balance still outstanding
  *   success    — member paid
  *   failed     — payment attempt failed
  *   refund     — credit exists but the money has NOT been returned yet
@@ -33,7 +34,7 @@ const normalize = (status) => {
  *                    payable paymentStatus, …)
  *   payableAmount  — signed balance (>0 owed, <0 credit). Optional; 0 when
  *                    absent so no credit is inferred without a balance.
- * @returns {'pending'|'success'|'failed'|'refund'|'refunded'}
+ * @returns {'pending'|'partial'|'success'|'failed'|'refund'|'refunded'}
  */
 export function resolveBillStatus({ status, payableAmount } = {}) {
     const s = normalize(status);
@@ -51,12 +52,16 @@ export function resolveBillStatus({ status, payableAmount } = {}) {
     // 4. 'paid' is a legacy alias of 'success'.
     if (s === 'paid') return 'success';
 
+    // 5. Partly settled — still money outstanding (Invoice.status enum).
+    if (s === 'partial' || s === 'partially_paid') return 'partial';
+
     return s;
 }
 
 /** Human labels for canonical tokens (single mapping for every badge). */
 export const BILL_STATUS_LABEL = Object.freeze({
     pending: 'Pending',
+    partial: 'Partially Paid',
     success: 'Paid',
     failed: 'Failed',
     refund: 'Refund Due',
@@ -66,6 +71,7 @@ export const BILL_STATUS_LABEL = Object.freeze({
 /** Badge tone for canonical tokens (component-specific classes map onto these). */
 export const BILL_STATUS_TONE = Object.freeze({
     pending: 'warning',
+    partial: 'warning',
     success: 'success',
     failed: 'danger',
     refund: 'info',

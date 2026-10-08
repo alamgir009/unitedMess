@@ -11,7 +11,6 @@ import {
     HiOutlineBeaker,
     HiOutlineUsers,
     HiOutlineStar,
-    HiOutlineCheckCircle,
     HiOutlineArrowTrendingDown,
     HiOutlineReceiptPercent,
     HiOutlineDocumentText,
@@ -22,7 +21,6 @@ import {
     HiOutlineArrowDownTray,
     HiOutlineShieldCheck,
     HiOutlineChevronDown,
-    HiOutlineIdentification,
     HiOutlineCalendarDays,
     HiOutlineXMark,
 } from 'react-icons/hi2';
@@ -33,6 +31,77 @@ const MONTHS = [
     'January','February','March','April','May','June',
     'July','August','September','October','November','December'
 ];
+
+/* ── Status chip — glyph + label + token pair (never colour alone).
+      Mirrors pdf.service.js CHIPS / InvoicePreview. ── */
+const CHIPS = {
+    pending:  { glyph: '!',      label: 'DUE',        cls: 'bg-warning-bg text-warning-text border-warning-border' },
+    partial:  { glyph: '\u2026', label: 'PARTIAL',    cls: 'bg-warning-bg text-warning-text border-warning-border' },
+    success:  { glyph: '\u2713', label: 'PAID',       cls: 'bg-success-bg text-success-text border-success-border' },
+    refund:   { glyph: '\u21A9', label: 'REFUND DUE', cls: 'bg-refund-bg text-refund-text border-refund-border' },
+    refunded: { glyph: '\u21BA', label: 'REFUNDED',   cls: 'bg-refund-bg text-refund-text border-refund-border' },
+};
+
+/* ── Money display: 2 decimals, true minus sign (mirrors pdf.service.js) ── */
+const money = (n) => {
+    const v = Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+    return `${v < 0 ? '\u2212' : ''}\u20B9${fmt(Math.abs(v), 2, 2)}`;
+};
+const r2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+
+/* ── IST display — timestamps are UTC; display pinned to Asia/Kolkata
+      (pattern: email.service.js:644 — never browser-local time) ── */
+const istFull = (d = new Date()) => {
+    try {
+        const date = new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }).format(d);
+        const time = new Intl.DateTimeFormat('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }).format(d).toUpperCase();
+        return `${date}, ${time} IST`;
+    } catch {
+        return null;
+    }
+};
+
+/* Human labels for Payment.paymentMethod — kept in sync with
+   email.service.js:15-20 (PAYMENT_METHOD_LABELS) and pdf.service.js. */
+const METHOD_LABELS = {
+    razorpay: 'Online (Razorpay)',
+    online: 'Online Transfer',
+    upi_manual: 'UPI (Manual)',
+    cash: 'Cash',
+};
+
+/* Mask a UPI VPA for display — ali@okaxis → ali•••@okaxis (mirrors PDF) */
+const maskVpa = (vpa) => {
+    const [local, host] = String(vpa).split('@');
+    if (!host) return String(vpa);
+    return `${local.slice(0, Math.min(3, local.length))}\u2022\u2022\u2022@${host}`;
+};
+
+/* ── Key-value row (PAYMENT / REFUND DETAILS blocks) ── */
+const KeyRow = memo(({ label, value, mono = false }) => (
+    <div className="flex items-start justify-between gap-3 py-0.5">
+        <span className="text-[11px] text-muted-foreground shrink-0">{label}</span>
+        <span className={`text-[11px] text-foreground text-right min-w-0 break-all ${mono ? 'font-mono font-medium select-all' : 'font-medium'}`}>
+            {value}
+        </span>
+    </div>
+));
+KeyRow.displayName = 'KeyRow';
+
+/* ── Keyed detail block (mirrors pdf.service.js drawKeyedBlock) ── */
+const KeyedBlock = memo(({ title, rows }) => (
+    <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 mb-5">
+        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground border-b border-border/60 pb-1.5">
+            {title}
+        </p>
+        <div className="pt-1.5 space-y-0.5">
+            {rows.map((r) => (
+                <KeyRow key={r.label} label={r.label} value={r.value} mono={r.mono} />
+            ))}
+        </div>
+    </div>
+));
+KeyedBlock.displayName = 'KeyedBlock';
 
 /* ────────────────────────────────────────
    SUB-COMPONENTS (memoized)
@@ -222,6 +291,8 @@ const MessBillInvoice = ({
         };
     }, [isEmailAllModalOpen, sendingAllEmails]);
 
+    const issuedAt = useMemo(() => istFull(new Date()), []);
+
     if (!data) return null;
 
     const {
@@ -239,7 +310,6 @@ const MessBillInvoice = ({
         cookingCharge = 0,
         costOfMeals = 0,
         guestMeal = 0,
-        chargePerGuestMeal = 0,
         guestMealAmount = 0,
     } = userStats;
 
@@ -248,8 +318,44 @@ const MessBillInvoice = ({
 
     const paidAmount = paymentRecord?.paidAmount ?? 0;
     const totalPayable = paymentRecord?.totalPayable ?? finalPayable;
-    const remainingAmount = paymentRecord?.remainingAmount ?? Math.max(0, totalPayable - paidAmount);
-    const paidPercent = totalPayable > 0 ? Math.min(100, Math.round((paidAmount / totalPayable) * 100)) : 0;
+
+    /* ── Status chip — same precedence as pdf.service.js: settled money >
+          partial > refund sign > unpaid. Colour lives ONLY in the chip. ── */
+    const refundSettled = !!data?.refundSettled;
+    const chipKey = isPaid ? 'success'
+        : isPartiallyPaid ? 'partial'
+            : isRefund ? (refundSettled ? 'refunded' : 'refund')
+                : 'pending';
+    const chip = CHIPS[chipKey];
+
+    /* ── Ledger — displayed rows reconcile to the displayed total
+          (mirrors pdf.service.js:485-497) ── */
+    const dispSum = r2(r2(costOfMeals) + r2(waterBill) + r2(cookingCharge)
+        + (guestMeal > 0 ? r2(guestMealAmount) : 0) + r2(platformFee || 0));
+    const market = r2(totalMarketAmount);
+    const rounding = r2(finalPayable - (dispSum - market));
+
+    /* ── PAYMENT DETAILS rows — annotated Payment data only ── */
+    const paymentMethodVal = paymentRecord?._paymentMethod || paymentRecord?.paymentMethod;
+    const paymentRows = [];
+    if (paymentMethodVal) {
+        paymentRows.push({ label: 'Paid at', value: (paymentRecord?.paymentDate && istFull(new Date(paymentRecord.paymentDate))) || '\u2014' });
+        paymentRows.push({ label: 'Method', value: METHOD_LABELS[paymentMethodVal] || paymentMethodVal });
+        const ref = paymentRecord?.utr || paymentRecord?.transactionId;
+        if (ref) paymentRows.push({ label: paymentRecord?.utr ? 'UTR' : 'Transaction ID', value: ref, mono: true });
+        if (paymentRecord?._payeeVpa) paymentRows.push({ label: 'Payee', value: maskVpa(paymentRecord._payeeVpa) });
+        if (paymentRecord?._verifiedByName) paymentRows.push({ label: 'Verified by', value: paymentRecord._verifiedByName });
+        else if (paymentRecord?._recordedByName) paymentRows.push({ label: 'Recorded by', value: paymentRecord._recordedByName });
+    }
+
+    /* ── REFUND DETAILS rows — shown when the refund payout is recorded ── */
+    const refundRows = refundSettled
+        ? [
+            { label: 'Refund amount', value: money(data._refundAmount ?? displayAmt) },
+            { label: 'Refunded on', value: (data._refundAt && istFull(new Date(data._refundAt))) || '\u2014' },
+            { label: 'Reference', value: data._refundReference || '\u2014', mono: true },
+        ]
+        : [];
 
     const handleOpenPaymentFlow = () => {
         if (typeof onPayNow === 'function') {
@@ -289,14 +395,8 @@ const MessBillInvoice = ({
         }
     };
 
-    const statusLabel = isPaid ? 'Paid' : isPartiallyPaid ? 'Partial' : isRefund ? 'Refund' : 'Due';
-    const statusCls   = isPaid
-        ? 'bg-success-bg text-success-text'
-        : isPartiallyPaid
-        ? 'bg-warning-bg text-warning-text'
-        : isRefund
-        ? 'bg-success-bg text-success-text'
-        : 'bg-warning-bg text-warning-text';
+    const statusLabel = chip.label;
+    const statusCls   = chip.cls;
 
     return (
         <motion.div
@@ -304,7 +404,7 @@ const MessBillInvoice = ({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, ease: 'easeOut' }}
-            className="relative mx-auto w-full max-w-none rounded-xl bg-card border border-border/50 overflow-hidden shadow-sm transition-all duration-200 ease-out transform-gpu hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md motion-reduce:hover:translate-y-0 contain-layout"
+            className="invoice-print relative mx-auto w-full max-w-none rounded-xl bg-card border border-border/50 overflow-hidden shadow-sm transition-all duration-200 ease-out transform-gpu hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md motion-reduce:hover:translate-y-0 contain-layout"
         >
             {/* ═══════════════════════════════════════════════════
                 FLAT LAYOUT — autoExpand mode
@@ -315,7 +415,7 @@ const MessBillInvoice = ({
                     <div className="flex gap-3 mb-6">
                         <div className="flex-1 p-4 bg-muted/50 rounded-lg border border-border">
                             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Market Total (All)</p>
-                            <p className="text-xl font-bold text-foreground tabular-nums">{'\u20b9'}{fmt(grandTotalMarketAmount)}</p>
+                            <p className="text-xl font-bold text-foreground tabular-nums">{money(grandTotalMarketAmount)}</p>
                         </div>
                         <div className="flex-1 p-4 bg-muted/50 rounded-lg border border-border">
                             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Total Meals (All)</p>
@@ -324,146 +424,102 @@ const MessBillInvoice = ({
                                 <p className="text-[10px] text-muted-foreground/60 tabular-nums mt-0.5">{fmt(grandTotalMeal - grandTotalGuest)} + {fmt(grandTotalGuest)} Guest</p>
                             )}
                         </div>
-                        <div className="flex-1 p-4 bg-primary/5 rounded-lg border border-primary/20">
-                            <p className="text-[10px] font-semibold uppercase tracking-wider text-primary/70 mb-1">{isRefund ? 'Refund Due' : 'Your Payable'}</p>
-                            <p className="text-xl font-bold text-primary tabular-nums">{'\u20b9'}{fmt(Math.abs(finalPayable))}</p>
+                        <div className="flex-1 p-4 bg-muted/50 rounded-lg border border-border">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">{isRefund ? (refundSettled ? 'Refunded' : 'Refund Due') : 'Your Payable'}</p>
+                            <p className="text-xl font-bold text-foreground tabular-nums">{money(finalPayable)}</p>
                         </div>
                     </div>
 
-                    {/* ── Your Usage ── */}
-                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground border-b border-border pb-2 mt-5 mb-0">Your Usage</p>
-                    <div className="flex justify-between items-center py-3 border-b border-border/60">
-                        <p className="text-sm text-foreground">Your Meals</p>
-                        <p className="text-sm font-bold text-foreground tabular-nums">{fmt(totalMeal)} meals</p>
-                    </div>
+                    {/* ── Ledger — every line reconciles to totalPayable ── */}
+                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground border-b border-border pb-2 mt-5 mb-0">Ledger</p>
                     <div className="flex justify-between items-center py-3 border-b border-border/60">
                         <div>
-                            <p className="text-sm text-foreground">Your Market Spend</p>
-                            <p className="text-[11px] text-muted-foreground mt-0.5">What you spent</p>
+                            <p className="text-sm text-foreground">Meals</p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5 tabular-nums">{fmt(totalMeal)} meals {'\u00d7'} {'\u20B9'}{fmt(adjustedMealCharge, 2, 2)}</p>
                         </div>
-                        <p className="text-sm font-bold text-foreground tabular-nums">{'\u20b9'}{fmt(totalMarketAmount)}</p>
+                        <p className="text-sm font-bold text-foreground tabular-nums">{money(costOfMeals)}</p>
                     </div>
-
-                    {/* ── Monthly Charges ── */}
-                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground border-b border-border pb-2 mt-5 mb-0">Monthly Charges</p>
                     <div className="flex justify-between items-center py-3 border-b border-border/60">
                         <p className="text-sm text-foreground">Water Bill</p>
-                        <p className="text-sm font-bold text-foreground tabular-nums">{'\u20b9'}{fmt(waterBill)}</p>
+                        <p className="text-sm font-bold text-foreground tabular-nums">{money(waterBill)}</p>
                     </div>
                     <div className="flex justify-between items-center py-3 border-b border-border/60">
                         <p className="text-sm text-foreground">Cooking Charge</p>
-                        <p className="text-sm font-bold text-foreground tabular-nums">{'\u20b9'}{fmt(cookingCharge)}</p>
+                        <p className="text-sm font-bold text-foreground tabular-nums">{money(cookingCharge)}</p>
                     </div>
                     {guestMeal > 0 && (
                         <div className="flex justify-between items-center py-3 border-b border-border/60">
                             <div>
                                 <p className="text-sm text-foreground">Guest Meals</p>
-                                <p className="text-[11px] text-muted-foreground mt-0.5">{guestMeal} meal(s) {'\u00d7'} {'\u20b9'}{fmt(chargePerGuestMeal)}</p>
+                                <p className="text-[11px] text-muted-foreground mt-0.5 tabular-nums">{guestMeal} meals {'\u00d7'} {'\u20B9'}{fmt(guestMealAmount / guestMeal, 2, 2)}</p>
                             </div>
-                            <p className="text-sm font-bold text-foreground tabular-nums">{'\u20b9'}{fmt(guestMealAmount)}</p>
+                            <p className="text-sm font-bold text-foreground tabular-nums">{money(guestMealAmount)}</p>
+                        </div>
+                    )}
+                    {(platformFee || 0) !== 0 && (
+                        <div className="flex justify-between items-center py-3 border-b border-border/60">
+                            <p className="text-sm text-foreground">Platform Fee</p>
+                            <p className="text-sm font-bold text-foreground tabular-nums">{money(platformFee || 0)}</p>
                         </div>
                     )}
 
-                    {/* ── Calculations ── */}
-                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground border-b border-border pb-2 mt-5 mb-0">Calculations</p>
                     <div className="flex justify-between items-center py-3 border-b border-border/60">
-                        <div>
-                            <p className="text-sm text-foreground">Cost of Your Meals</p>
-                            <p className="text-[11px] text-muted-foreground mt-0.5">Proportional share</p>
-                        </div>
-                        <p className="text-sm font-bold text-primary tabular-nums">{'\u20b9'}{fmt(costOfMeals)}</p>
+                        <p className="text-sm font-semibold text-foreground">Subtotal</p>
+                        <p className="text-sm font-bold text-foreground tabular-nums">{money(dispSum)}</p>
                     </div>
                     <div className="flex justify-between items-center py-3 border-b border-border/60">
                         <div>
-                            <p className="text-sm text-foreground">Adjusted Meal Charge</p>
-                            <p className="text-[11px] text-muted-foreground mt-0.5">After guest deduction</p>
+                            <p className="text-sm text-foreground">Less: Market spend you paid</p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">
+                                {market > 0 ? 'Credit \u2014 spend you settled directly' : 'No direct market spend recorded'}
+                            </p>
                         </div>
-                        <p className="text-sm font-bold text-primary tabular-nums">{'\u20b9'}{fmt(adjustedMealCharge)}</p>
+                        <p className="text-sm font-bold text-foreground tabular-nums">{money(-market)}</p>
                     </div>
                     <div className="flex justify-between items-center py-3 border-b border-border/60">
-                        <p className="text-sm text-foreground">Platform Fee</p>
-                        <p className="text-sm font-bold text-foreground tabular-nums">{'\u20b9'}{fmt(platformFee || 0)}</p>
+                        <p className="text-sm text-foreground">Rounding off</p>
+                        <p className="text-sm font-bold text-foreground tabular-nums">{money(rounding)}</p>
                     </div>
 
-                    {/* ── Total ── */}
-                    <div className={`mt-6 p-5 rounded-xl flex justify-between items-center ${
-                        isPaid ? 'bg-success-bg border border-success-border'
-                        : isPartiallyPaid ? 'bg-warning-bg border border-warning-border'
-                        : isRefund ? 'bg-success-bg border border-success-border'
-                        : 'bg-primary/5 border border-primary/20'
-                    }`}>
-                        <div>
+                    {/* ── Total — neutral box; status colour only in the chip ── */}
+                    <div className="mt-6 p-5 rounded-xl flex justify-between items-start gap-4 bg-muted/30 border border-border">
+                        <div className="min-w-0">
                             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                                {isRefund ? 'Refund Amount' : 'Total Payable'}
+                                {isRefund ? 'Total (Credit)' : 'Total Payable'}
                             </p>
-                            <p className={`text-3xl font-black tabular-nums ${isRefund ? 'text-success-text' : 'text-primary'}`}>
-                                {'\u20b9'}{fmt(Math.abs(finalPayable))}
+                            <p className="text-3xl font-black tabular-nums text-foreground">
+                                {money(finalPayable)}
                             </p>
                         </div>
-                        <span className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold ${
-                            isPaid ? 'bg-success/10 text-success border border-success-border/60'
-                            : isPartiallyPaid ? 'bg-warning-bg text-warning-text border border-warning-border'
-                            : isRefund ? 'bg-success/10 text-success border border-success-border/60'
-                            : 'bg-warning-bg text-warning-text border border-warning-border'
-                        }`}>
-                            {isPaid && <HiOutlineCheckCircle className="w-3 h-3" />}
-                            {isPaid ? 'Paid' : isPartiallyPaid ? 'Partial' : isRefund ? 'Refund' : 'Due'}
-                        </span>
+                        <div className="flex flex-col items-end gap-2 shrink-0">
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${chip.cls}`}>
+                                <span aria-hidden="true">{chip.glyph}</span>
+                                <span>{chip.label}</span>
+                            </span>
+                            <div className="w-full min-w-[150px] space-y-1">
+                                <div className="flex items-baseline justify-between gap-3">
+                                    <span className="text-[11px] text-muted-foreground">Paid</span>
+                                    <span className="text-[11px] font-semibold text-foreground tabular-nums">{money(paidAmount)}</span>
+                                </div>
+                                <div className="flex items-baseline justify-between gap-3">
+                                    <span className="text-[11px] text-muted-foreground">Balance due</span>
+                                    <span className="text-[11px] font-semibold text-foreground tabular-nums">
+                                        {isRefund ? '\u2014' : money(Math.max(0, totalPayable - paidAmount))}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    {/* ── Payment Confirmation ── */}
-                    {(paymentRecord?.paymentMethod === 'upi_manual' && (paymentRecord?.utr || paymentRecord?.transactionId)) && (
-                        <div className="mt-4 p-4 rounded-xl bg-primary/5 border border-primary/20">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-xs font-bold text-primary uppercase tracking-wide">UPI Manual Payment</p>
-                                    <div className="flex items-center gap-1.5 mt-1">
-                                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">UTR</span>
-                                        <span className="text-sm font-mono font-bold text-foreground select-all">{paymentRecord.utr || paymentRecord.transactionId}</span>
-                                    </div>
-                                </div>
-                                {paymentRecord.status === 'completed' && (
-                                    <span className="text-[10px] font-bold text-success-text bg-success-bg px-2.5 py-1 rounded-lg border border-success-border">Verified</span>
-                                )}
-                                {paymentRecord.status === 'pending_verification' && (
-                                    <span className="text-[10px] font-bold text-warning-text bg-warning-bg px-2.5 py-1 rounded-lg border border-warning-border">Pending Review</span>
-                                )}
-                            </div>
+                    {/* ── PAYMENT / REFUND DETAILS — annotated data only ── */}
+                    {paymentRows.length > 0 && (
+                        <div className="mt-4">
+                            <KeyedBlock title="Payment Details" rows={paymentRows} />
                         </div>
                     )}
-                    {isPaid && !(paymentRecord?.paymentMethod === 'upi_manual' && (paymentRecord?.utr || paymentRecord?.transactionId)) && (
-                        <div className="mt-4 p-4 rounded-xl bg-success-bg border border-success-border flex items-center justify-between">
-                            <div>
-                                <p className="text-xs font-bold text-success-text">Payment Successful</p>
-                                <p className="text-[11px] text-success-text/80 mt-0.5">{'\u20b9'}{fmt(displayAmt)} received · Invoice is final</p>
-                            </div>
-                            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold text-success bg-success/15 border border-success-border/60">
-                                <HiOutlineCheckCircle className="w-3 h-3" />
-                                SETTLED
-                            </span>
-                        </div>
-                    )}
-                    {isRefund && !isPaid && (
-                        <div className="mt-4 p-4 rounded-xl bg-success-bg border border-success-border">
-                            <p className="text-xs font-bold text-success-text">Refund Applicable</p>
-                            <p className="text-[11px] text-success-text/80 mt-0.5">{'\u20b9'}{fmt(displayAmt)} will be credited · Contact your mess admin</p>
-                        </div>
-                    )}
-
-                    {/* ── Partial Payment Progress ── */}
-                    {isPartiallyPaid && (
-                        <div className="mt-4 p-4 rounded-xl bg-warning-bg border border-warning-border">
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-xs font-bold text-warning-text">Payment Progress</span>
-                                <span className="text-xs font-bold text-warning-text tabular-nums">{paidPercent}%</span>
-                            </div>
-                            <div className="h-2 w-full rounded-full bg-warning/20 overflow-hidden mb-3">
-                                <div className="h-full rounded-full bg-gradient-to-r from-warning to-warning" style={{ width: `${paidPercent}%` }} />
-                            </div>
-                            <div className="flex items-center justify-between text-[11px] text-warning-text/70 font-semibold">
-                                <span>Paid: {'\u20b9'}{fmt(paidAmount)}</span>
-                                <span>Remaining: {'\u20b9'}{fmt(remainingAmount)}</span>
-                            </div>
+                    {refundRows.length > 0 && (
+                        <div className="mt-4">
+                            <KeyedBlock title="Refund Details" rows={refundRows} />
                         </div>
                     )}
 
@@ -475,7 +531,7 @@ const MessBillInvoice = ({
                             fullWidth
                             disabled={isPaying}
                             onClick={handleOpenPaymentFlow}
-                            className="mt-5"
+                            className="no-print mt-5"
                         >
                             <span>{isPartiallyPaid ? 'Pay Remaining Balance' : 'Pay Bill'}</span>
                             {!isPartiallyPaid && <HiOutlineShieldCheck className="w-4 h-4 opacity-80" />}
@@ -483,7 +539,7 @@ const MessBillInvoice = ({
                     )}
 
                     {/* ── Download / Email ── */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3">
+                    <div className="no-print grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3">
                         <Button
                             type="button"
                             variant="secondary"
@@ -512,7 +568,7 @@ const MessBillInvoice = ({
                             fullWidth
                             disabled={sendingAllEmails}
                             onClick={openEmailAllModal}
-                            className="mt-3"
+                            className="no-print mt-3"
                         >
                             {sendingAllEmails ? <Spinner size="sm" color="current" /> : <HiOutlineUsers className="w-4 h-4 flex-shrink-0" />}
                             <span>{sendingAllEmails ? 'Sending to all members\u2026' : 'Email to all'}</span>
@@ -522,6 +578,9 @@ const MessBillInvoice = ({
                     {/* ── Footer ── */}
                     <p className="text-[11px] text-muted-foreground mt-5 text-center leading-relaxed">
                         System-generated invoice for {displayMonth}. For disputes, contact your mess admin.
+                    </p>
+                    <p className="text-[11px] text-muted-foreground font-medium mt-1 text-center">
+                        United Mess {'\u00B7'} {invMeta.no} {'\u00B7'} Generated {issuedAt}
                     </p>
                 </div>
             )}
@@ -557,9 +616,10 @@ const MessBillInvoice = ({
                 <div className="flex items-center gap-3 flex-shrink-0">
                     <div className="text-right">
                         <p className="text-lg font-black tabular-nums text-foreground">
-                            {isRefund ? '\u2212' : ''}{'\u20b9'}{fmt(displayAmt)}
+                            {money(finalPayable)}
                         </p>
-                        <span className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-full ring-1 ${statusCls}`}>
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ring-1 ${statusCls}`}>
+                            <span aria-hidden="true">{chip.glyph}</span>
                             {statusLabel}
                         </span>
                     </div>
@@ -607,45 +667,57 @@ const MessBillInvoice = ({
                     <p className="text-xs font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
                         {invMeta.no}
                     </p>
+                    <p className="text-xs text-muted-foreground">
+                        Billing period <span className="font-semibold text-foreground">{displayMonth}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                        Issued on <span className="text-foreground">{issuedAt}</span>
+                    </p>
                     {user?.name && <p className="text-sm font-semibold text-foreground">{user.name}</p>}
-                    {user?.email && <p className="text-xs text-muted-foreground max-w-[200px] truncate">{user.email}</p>}
+                    {user?.email && <p className="text-xs text-muted-foreground max-w-[220px] truncate">{user.email}</p>}
                 </div>
             </div>
 
             {/* ── Summary Stats ── */}
             <div className="px-4 md:px-6 pt-6 pb-2">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <StatCard icon={HiOutlineShoppingCart} label="Market Total" value={`{'\u20b9'}${fmt(grandTotalMarketAmount)}`} subLabel="All members" />
+                    <StatCard icon={HiOutlineShoppingCart} label="Market Total" value={money(grandTotalMarketAmount)} subLabel="All members" />
                     <StatCard icon={HiOutlineUsers} label="Total Meals" value={fmt(grandTotalMeal)} subLabel={grandTotalGuest > 0 ? `${fmt(grandTotalMeal - grandTotalGuest)} + ${fmt(grandTotalGuest)} Guest` : 'All members'} />
-                    <StatCard icon={HiOutlineCurrencyRupee} label="Your Payable" value={`{'\u20b9'}${fmt(finalPayable)}`} subLabel={isRefund ? 'Refund due' : 'Due now'} accent />
+                    <StatCard icon={HiOutlineCurrencyRupee} label="Your Payable" value={money(finalPayable)} subLabel={isRefund ? (refundSettled ? 'Refunded' : 'Refund due') : 'Due now'} accent={false} />
                 </div>
             </div>
 
-            {/* ── Detailed Breakdown ── */}
+            {/* ── Ledger — every line reconciles to totalPayable ── */}
             <div className="px-4 md:px-6 py-6 space-y-1">
-                <SectionDivider label="Your usage" />
-                <LineItem icon={HiOutlineStar} label="Your meals" value={`${fmt(totalMeal)} meals`} />
-                <LineItem icon={HiOutlineShoppingCart} label="Your market spend" value={`{'\u20b9'}${fmt(totalMarketAmount)}`} subText="What you spent" />
-
-                <SectionDivider label="Monthly charges" />
-                <LineItem icon={HiOutlineBeaker} label="Water bill" value={`{'\u20b9'}${fmt(waterBill)}`} />
-                <LineItem icon={HiOutlineWrenchScrewdriver} label="Cooking charge" value={`{'\u20b9'}${fmt(cookingCharge)}`} />
+                <SectionDivider label="Ledger" />
+                <LineItem
+                    icon={HiOutlineStar}
+                    label="Meals"
+                    value={money(costOfMeals)}
+                    subText={`${fmt(totalMeal)} meals \u00d7 \u20B9${fmt(adjustedMealCharge, 2, 2)}`}
+                />
+                <LineItem icon={HiOutlineBeaker} label="Water Bill" value={money(waterBill)} />
+                <LineItem icon={HiOutlineWrenchScrewdriver} label="Cooking Charge" value={money(cookingCharge)} />
                 {guestMeal > 0 && (
                     <LineItem
                         icon={HiOutlineUserGroup}
-                        label="Guest meals"
-                        subText={`${guestMeal} meal(s) \u00d7 {'\u20b9'}${fmt(chargePerGuestMeal)}`}
-                        value={`{'\u20b9'}${fmt(guestMealAmount)}`}
+                        label="Guest Meals"
+                        subText={`${guestMeal} meals \u00d7 \u20B9${fmt(guestMealAmount / guestMeal, 2, 2)}`}
+                        value={money(guestMealAmount)}
                     />
                 )}
+                {(platformFee || 0) !== 0 && (
+                    <LineItem icon={HiOutlineReceiptPercent} label="Platform Fee" value={money(platformFee || 0)} />
+                )}
 
-                <SectionDivider label="Calculations" />
-                <LineItem icon={HiOutlineCurrencyRupee} label="Cost of your meals" value={`{'\u20b9'}${fmt(costOfMeals)}`} subText="Proportional share" accent />
-                <LineItem icon={HiOutlineCurrencyRupee} label="Adjusted meal charge" value={`{'\u20b9'}${fmt(adjustedMealCharge)}`} subText="After guest deduction" accent />
-
-                <LineItem icon={HiOutlineReceiptPercent} label="Platform Fee" value={`{'\u20b9'}${fmt(platformFee || 0)}`} subText="Fixed service fee" />
-
-
+                <LineItem icon={HiOutlineCurrencyRupee} label="Subtotal" value={money(dispSum)} accent />
+                <LineItem
+                    icon={HiOutlineArrowTrendingDown}
+                    label="Less: Market spend you paid"
+                    subText={market > 0 ? 'Credit \u2014 spend you settled directly' : 'No direct market spend recorded'}
+                    value={money(-market)}
+                />
+                <LineItem icon={HiOutlineReceiptPercent} label="Rounding off" value={money(rounding)} />
             </div>
 
             {/* ── Total & Payment Area ── */}
@@ -655,137 +727,48 @@ const MessBillInvoice = ({
                 : 'bg-card'
             }`}>
 
-            {/* ── Amount + Status unified card ── */}
-            <div className={`flex items-center justify-between gap-4 p-4 md:p-5 rounded-2xl mb-5 border shadow-sm ${
-                isPaid
-                ? 'bg-card border-success-border'
-                : isRefund
-                ? 'bg-card border-success-border'
-                : isPartiallyPaid
-                ? 'bg-card border-warning-border'
-                : 'bg-card border-border'
-            }`}>
+            {/* ── Total — neutral container; status colour only in the chip ── */}
+            <div className="flex items-start justify-between gap-4 p-4 md:p-5 rounded-2xl mb-5 border shadow-sm bg-muted/30 border-border">
                 <div className="min-w-0">
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground mb-1">
-                    {isRefund ? 'Refund Amount' : 'Total Payable'}
+                    {isRefund ? 'Total (Credit)' : 'Total Payable'}
                 </p>
                 <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className={`text-3xl md:text-4xl font-black tabular-nums leading-none ${
-                    isRefund ? 'text-success-text' : 'text-foreground'
-                    }`}>
-                    {isRefund ? '\u2212' : ''}{'\u20b9'}{fmt(displayAmt)}
+                    <span className="text-3xl md:text-4xl font-black tabular-nums leading-none text-foreground">
+                    {money(finalPayable)}
                     </span>
                     {isPartiallyPaid && totalPayable > 0 && (
                     <span className="text-xs text-muted-foreground font-medium">
-                        of {'\u20b9'}{fmt(totalPayable)}
+                        of {money(totalPayable)}
                     </span>
                     )}
                 </div>
                 </div>
 
-                {/* ── Premium Status Pill ── */}
-                <div className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border shadow-sm select-none backdrop-blur-sm transition-all duration-200 ${
-                isPaid
-                    ? 'bg-success-bg border-success-border text-success-text shadow-none'
-                    : isPartiallyPaid
-                    ? 'bg-warning-bg border-warning-border text-warning-text shadow-none'
-                    : isRefund
-                    ? 'bg-success-bg border-success-border text-success-text shadow-none'
-                    : 'bg-warning-bg border-warning-border text-warning-text shadow-none'
-                }`}>
-                {isPaid ? <HiOutlineCheckCircle className="w-3.5 h-3.5" /> :
-                isPartiallyPaid ? <HiOutlineCurrencyRupee className="w-3.5 h-3.5" /> :
-                isRefund ? <HiOutlineArrowTrendingDown className="w-3.5 h-3.5" /> :
-                <HiOutlineCurrencyRupee className="w-3.5 h-3.5" />}
-                <span>{isPaid ? 'Paid' : isPartiallyPaid ? 'Partial' : isRefund ? 'Refund' : 'Due'}</span>
+                {/* ── Status chip + Paid / Balance due ── */}
+                <div className="flex flex-col items-end gap-2 shrink-0">
+                    <span className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border select-none ${chip.cls}`}>
+                        <span aria-hidden="true">{chip.glyph}</span>
+                        <span>{chip.label}</span>
+                    </span>
+                    <div className="w-full min-w-[160px] space-y-1">
+                        <div className="flex items-baseline justify-between gap-3">
+                            <span className="text-[11px] text-muted-foreground">Paid</span>
+                            <span className="text-[11px] font-semibold text-foreground tabular-nums">{money(paidAmount)}</span>
+                        </div>
+                        <div className="flex items-baseline justify-between gap-3">
+                            <span className="text-[11px] text-muted-foreground">Balance due</span>
+                            <span className="text-[11px] font-semibold text-foreground tabular-nums">
+                                {isRefund ? '\u2014' : money(Math.max(0, totalPayable - paidAmount))}
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {/* ── Payment Confirmation Block (unchanged, kept clean) ── */}
-            {(paymentRecord?.paymentMethod === 'upi_manual' && (paymentRecord?.utr || paymentRecord?.transactionId)) || isPaid || isRefund ? (
-                <div className="rounded-2xl overflow-hidden border border-border mb-5 shadow-sm">
-                {paymentRecord?.paymentMethod === 'upi_manual' && (paymentRecord?.utr || paymentRecord?.transactionId) && (
-                    <div className="flex items-start gap-3 px-4 py-3.5 bg-primary/10 border-b border-primary/20">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <HiOutlineIdentification className="w-4 h-4 text-primary" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <p className="text-xs font-bold text-primary uppercase tracking-wide">UPI Manual Payment</p>
-                        {paymentRecord.status === 'pending_verification' && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-warning-bg text-warning-text border border-warning-border">
-                            Pending Review
-                            </span>
-                        )}
-                        {paymentRecord.status === 'completed' && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-success-bg text-success-text border border-success-border">
-                            <HiOutlineCheckCircle className="w-3 h-3" /> Verified
-                            </span>
-                        )}
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-1.5">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">UTR</span>
-                        <span className="text-sm font-mono font-bold text-primary select-all tracking-tight break-all">
-                            {paymentRecord.utr || paymentRecord.transactionId}
-                        </span>
-                        </div>
-                    </div>
-                    </div>
-                )}
-                {isPaid && (
-                    <div className="flex items-center gap-3 px-4 py-3.5 bg-success-bg">
-                    <div className="w-8 h-8 rounded-lg bg-success-bg flex items-center justify-center flex-shrink-0">
-                        <HiOutlineCheckCircle className="w-4 h-4 text-success-text" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-success-text">Payment Successful</p>
-                        <p className="text-[11px] text-success-text/80 mt-0.5">
-                        {'\u20b9'}{fmt(displayAmt)} received · Invoice is final
-                        </p>
-                    </div>
-                    <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold text-success bg-success/15 border border-success-border/60">
-                        <HiOutlineCheckCircle className="w-3 h-3" />
-                        SETTLED
-                    </span>
-                    </div>
-                )}
-                {isRefund && !isPaid && (
-                    <div className="flex items-center gap-3 px-4 py-3.5 bg-success-bg">
-                    <div className="w-8 h-8 rounded-lg bg-success-bg flex items-center justify-center flex-shrink-0">
-                        <HiOutlineArrowTrendingDown className="w-4 h-4 text-success-text" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-success-text">Refund Applicable</p>
-                        <p className="text-[11px] text-success-text/80 mt-0.5">
-                        {'\u20b9'}{fmt(displayAmt)} will be credited · Contact your mess admin
-                        </p>
-                    </div>
-                    </div>
-                )}
-                </div>
-            ) : null}
-
-            {/* ── Partial Payment Progress (lightly enhanced) ── */}
-            {isPartiallyPaid && (
-                <div className="mb-5 p-4 rounded-2xl bg-warning-bg border border-warning-border backdrop-blur-sm">
-                <div className="flex items-center justify-between mb-2.5">
-                    <span className="text-xs font-bold text-warning-text">Payment Progress</span>
-                    <span className="text-xs font-bold text-warning-text tabular-nums">{paidPercent}%</span>
-                </div>
-                <div className="h-2 w-full rounded-full bg-warning-bg overflow-hidden mb-3">
-                    <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${paidPercent}%` }}
-                    transition={{ duration: 1, ease: 'easeOut' }}
-                    className="h-full rounded-full bg-gradient-to-r from-warning to-warning shadow-inner"
-                    />
-                </div>
-                <div className="flex items-center justify-between text-[11px] text-warning-text/70 font-semibold">
-                    <span>Paid: {'\u20b9'}{fmt(paidAmount)}</span>
-                    <span>Remaining: {'\u20b9'}{fmt(remainingAmount)}</span>
-                </div>
-                </div>
-            )}
+            {/* ── PAYMENT / REFUND DETAILS — annotated data only ── */}
+            {paymentRows.length > 0 && <KeyedBlock title="Payment Details" rows={paymentRows} />}
+            {refundRows.length > 0 && <KeyedBlock title="Refund Details" rows={refundRows} />}
 
             {/* ── Premium Pay Now / Remaining Button ── */}
             {!isPaid && !isRefund && !hidePayButton && (
@@ -795,7 +778,7 @@ const MessBillInvoice = ({
                 fullWidth
                 disabled={isPaying}
                 onClick={handleOpenPaymentFlow}
-                className="mb-3"
+                className="no-print mb-3"
                 >
                 <span>{isPartiallyPaid ? 'Pay Remaining Balance' : 'Pay Bill'}</span>
                 {!isPartiallyPaid && <HiOutlineShieldCheck className="w-4 h-4 opacity-80" />}
@@ -803,7 +786,7 @@ const MessBillInvoice = ({
             )}
 
             {/* ── Download / Email actions ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+            <div className="no-print grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                 <Button
                 type="button"
                 variant="secondary"
@@ -832,7 +815,7 @@ const MessBillInvoice = ({
                 fullWidth
                 disabled={sendingAllEmails}
                 onClick={openEmailAllModal}
-                className="mt-3"
+                className="no-print mt-3"
                 >
                 {sendingAllEmails ? <Spinner size="sm" color="current" /> : <HiOutlineUsers className="w-4 h-4 flex-shrink-0" />}
                 <span>{sendingAllEmails ? 'Sending to all members\u2026' : 'Email to all'}</span>
@@ -842,6 +825,9 @@ const MessBillInvoice = ({
             {/* ── Footer disclaimer ── */}
             <p className="text-[11px] text-muted-foreground mt-5 text-center leading-relaxed">
                 System-generated invoice for {displayMonth}. For disputes, contact your mess admin.
+            </p>
+            <p className="text-[11px] text-muted-foreground font-medium mt-1 text-center">
+                United Mess {'\u00B7'} {invMeta.no} {'\u00B7'} Generated {issuedAt}
             </p>
             </div>
 

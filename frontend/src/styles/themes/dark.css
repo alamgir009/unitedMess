@@ -67,6 +67,12 @@ html.dark {
   --info-border: hsl(210 40% 22%);        /* #1E3A5F */
   --info-text: hsl(200 90% 70%);          /* #7DD3FC (sky-300) — 7.2:1 */
 
+  /* ── Refund family (refund-due / refunded identity) ── */
+  --refund: hsl(262 83% 58%);             /* #7C3BED */
+  --refund-bg: hsl(262 45% 14%);          /* #1F1434 */
+  --refund-border: hsl(262 45% 24%);      /* #362259 */
+  --refund-text: hsl(265 90% 82%);        /* #CAA8FA — 8.69:1 on --refund-bg */
+
   /* ── Financial tokens (aliases) ── */
   --profit: hsl(142 71% 45%);
   --profit-bg: hsl(150 60% 10%);

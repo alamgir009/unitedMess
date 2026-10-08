@@ -4,7 +4,6 @@ import { toast } from 'react-hot-toast';
 import { Send } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
-    HiOutlineCheckCircle,
     HiOutlineArrowDownTray,
     HiOutlineEnvelope,
     HiOutlineShieldCheck,
@@ -23,18 +22,48 @@ import invoiceService from '../../services/invoice.service';
    InvoicePreview — PDF-exact invoice preview component
 
    Renders the same layout as pdf.service.js:
-   Header → Stat Cards → Usage → Charges → Calculations →
-   Previous Balance (conditional) → Total Box → Payment Block → Footer
+   Header (issuer + BILLED TO + labelled period/issued-on in IST) →
+   Stat Cards → LEDGER (charges → subtotal → less market → rounding) →
+   Total Box (neutral) + status chip → PAYMENT/REFUND DETAILS → Footer
 
    All colors map to the PDF's palette via Tailwind design tokens.
    ══════════════════════════════════════════════════════════════ */
+
+/* ── Status chip — glyph + label + token pair (never colour alone).
+      Mirrors pdf.service.js CHIPS; colour never carries meaning alone. ── */
+const CHIPS = {
+    pending:  { glyph: '!',      label: 'DUE',        cls: 'bg-warning-bg text-warning-text border-warning-border' },
+    partial:  { glyph: '\u2026', label: 'PARTIAL',    cls: 'bg-warning-bg text-warning-text border-warning-border' },
+    success:  { glyph: '\u2713', label: 'PAID',       cls: 'bg-success-bg text-success-text border-success-border' },
+    refund:   { glyph: '\u21A9', label: 'REFUND DUE', cls: 'bg-refund-bg text-refund-text border-refund-border' },
+    refunded: { glyph: '\u21BA', label: 'REFUNDED',   cls: 'bg-refund-bg text-refund-text border-refund-border' },
+};
+
+/* ── Money display: 2 decimals, true minus sign (mirrors fmt2+money in PDF) ── */
+const money = (n) => {
+    const v = Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+    return `${v < 0 ? '\u2212' : ''}\u20B9${fmt(Math.abs(v), 2, 2)}`;
+};
+const r2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+
+/* ── IST display helpers — timestamps are UTC; display pinned to Asia/Kolkata
+      (pattern: email.service.js:644 — never browser-local time) ── */
+const istFull = (d = new Date()) => {
+    try {
+        const date = new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }).format(d);
+        const time = new Intl.DateTimeFormat('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }).format(d).toUpperCase();
+        return `${date}, ${time} IST`;
+    } catch {
+        return null;
+    }
+};
 
 /* ── Row helpers (PDF-identical line items) ── */
 const DataRow = memo(({ label, value, subLabel, accent = false }) => (
     <div className="flex items-start justify-between py-2 border-b border-border/60 last:border-0 gap-3">
         <div className="min-w-0">
             <p className={`text-sm ${accent ? 'text-primary font-semibold' : 'text-foreground'}`}>{label}</p>
-            {subLabel && <p className="text-[11px] text-muted-foreground mt-0.5">{subLabel}</p>}
+            {subLabel && <div className="text-[11px] text-muted-foreground mt-0.5">{subLabel}</div>}
         </div>
         <span className={`text-sm font-bold tabular-nums whitespace-nowrap ${accent ? 'text-primary' : 'text-foreground'}`}>
             {value}
@@ -52,6 +81,33 @@ const SectionLabel = memo(({ label }) => (
     </div>
 ));
 SectionLabel.displayName = 'SectionLabel';
+
+/* ── Key-value row (PAYMENT / REFUND DETAILS blocks) ── */
+const KeyRow = memo(({ label, value, mono = false }) => (
+    <div className="flex items-start justify-between gap-3 py-0.5">
+        <span className="text-[11px] text-muted-foreground shrink-0">{label}</span>
+        <span className={`text-[11px] text-foreground text-right min-w-0 break-all ${mono ? 'font-mono font-medium select-all' : 'font-medium'}`}>
+            {value}
+        </span>
+    </div>
+));
+KeyRow.displayName = 'KeyRow';
+
+/* Human labels for Payment.paymentMethod — kept in sync with
+   email.service.js:15-20 (PAYMENT_METHOD_LABELS) and pdf.service.js. */
+const METHOD_LABELS = {
+    razorpay: 'Online (Razorpay)',
+    online: 'Online Transfer',
+    upi_manual: 'UPI (Manual)',
+    cash: 'Cash',
+};
+
+/* Mask a UPI VPA for display — ali@okaxis → ali•••@okaxis (mirrors PDF) */
+const maskVpa = (vpa) => {
+    const [local, host] = String(vpa).split('@');
+    if (!host) return String(vpa);
+    return `${local.slice(0, Math.min(3, local.length))}\u2022\u2022\u2022@${host}`;
+};
 
 /* ══════════════════════════════════════════════════════════════
    MAIN COMPONENT
@@ -81,15 +137,13 @@ const InvoicePreview = ({
     /* ── Derived values (mirrors pdf.service.js exactly) ── */
     const meta = useMemo(() => {
         const monthName = invoice?.monthName || `Month ${invoice?.month}/${invoice?.year}`;
-        const displayDate = new Date().toLocaleDateString('en-IN', {
-            day: '2-digit', month: 'short', year: 'numeric',
-        });
+        const issuedAt = istFull(new Date());   // IST, not browser-local
 
         const invoiceNo = `UM-${invoice?.year}${String(invoice?.month).padStart(2, '0')}-${
             String(invoice?._id || invoice?.user || 'GEN').slice(-6).toUpperCase()
         }`;
 
-        return { monthName, displayDate, invoiceNo };
+        return { monthName, issuedAt, invoiceNo };
     }, [invoice?.monthName, invoice?.month, invoice?.year, invoice?._id, invoice?.user]);
 
     const amounts = useMemo(() => {
@@ -116,7 +170,14 @@ const InvoicePreview = ({
             : isRefund ? (refundSettled ? 'Refunded' : 'Refund Due') : 'Due';
         const settled = isPaid || isRefund;
 
-        return { isPaid, isPartiallyPaid, isRefund, refundSettled, label, settled };
+        // Chip key — same precedence as pdf.service.js: settled money >
+        // partial > refund sign > unpaid.
+        const chipKey = isPaid ? 'success'
+            : isPartiallyPaid ? 'partial'
+                : isRefund ? (refundSettled ? 'refunded' : 'refund')
+                    : 'pending';
+
+        return { isPaid, isPartiallyPaid, isRefund, refundSettled, label, settled, chipKey };
     }, [invoice?.status, invoice?.refundSettled, amounts.isRefund]);
 
     /* ── Mess-wide stats (from backend enrichment) ── */
@@ -132,15 +193,25 @@ const InvoicePreview = ({
         marketSpent: invoice?.marketAmountSpent ?? 0,
         waterBill: invoice?.fixedCosts?.waterBill ?? 0,
         cookingCharge: invoice?.fixedCosts?.cookingCharge ?? 0,
-        gasBillCharge: invoice?.fixedCosts?.gasBillCharge ?? 0,
         platformFee: invoice?.fixedCosts?.platformFee ?? 0,
         costOfMeals: invoice?.messCost ?? 0,
         adjustedMealCharge: invoice?.mealRate ?? 0,
         guestMealCount: invoice?.guestMealCount ?? 0,
         guestMealRevenue: invoice?.guestMealRevenue ?? 0,
         chargePerGuestMeal: user?.chargePerGuestMeal ?? 60,
-        prevBalance: invoice?.previousBalance ?? 0,
     }), [invoice, user?.chargePerGuestMeal]);
+
+    /* ── Ledger — displayed rows must reconcile to the displayed total:
+          subtotal (2dp rows) − market + rounding = totalPayable
+          (mirrors pdf.service.js ledger math) ── */
+    const ledger = useMemo(() => {
+        const u = userValues;
+        const dispSum = r2(r2(u.costOfMeals) + r2(u.waterBill) + r2(u.cookingCharge)
+            + (u.guestMealCount > 0 ? r2(u.guestMealRevenue) : 0) + r2(u.platformFee));
+        const market = r2(u.marketSpent);
+        const rounding = r2(amounts.finalPayable - (dispSum - market));
+        return { dispSum, market, rounding };
+    }, [userValues, amounts.finalPayable]);
 
     /* ── Meal-rate breakdown formula (mirrors dashboard sub-label) ── */
     const mealRateFormula = useMemo(() => {
@@ -164,17 +235,19 @@ const InvoicePreview = ({
         userValues.chargePerGuestMeal,
     ]);
 
-    /* Memoized so DataRow's React.memo keeps working (new JSX node each render would break it) */
-    const adjustedChargeSubLabel = useMemo(() => (
+    /* Meals row sub-lines: qty × rate + the mess-wide formula ── */
+    const mealsSubLabel = useMemo(() => (
         <>
-            <span className="block">After guest deduction</span>
+            <span className="block tabular-nums">
+                {fmt(userValues.mealCount)} meals {'\u00D7'} {'\u20B9'}{fmt(userValues.adjustedMealCharge, 2, 2)}
+            </span>
             {mealRateFormula && (
                 <span className="block font-medium text-foreground/70 tabular-nums">
                     {mealRateFormula}
                 </span>
             )}
         </>
-    ), [mealRateFormula]);
+    ), [mealRateFormula, userValues.mealCount, userValues.adjustedMealCharge]);
 
     /* ── Payment record (merge backend + external fallback) ── */
     const paymentData = useMemo(() => ({
@@ -182,6 +255,9 @@ const InvoicePreview = ({
         transactionId: invoice?._transactionId || externalPaymentRecord?.transactionId,
         utr: invoice?._utr || externalPaymentRecord?.utr,
         paymentDate: invoice?._paymentDate || externalPaymentRecord?.paymentDate,
+        payeeVpa: invoice?._payeeVpa || null,
+        recordedByName: invoice?._recordedByName || null,
+        verifiedByName: invoice?._verifiedByName || null,
         status: externalPaymentRecord?.status || invoice?.status,
     }), [invoice, externalPaymentRecord]);
 
@@ -367,42 +443,46 @@ const InvoicePreview = ({
         return () => clearTimeout(timer);
     }, [isEmailMenuOpen]);
 
-    /* ── Status color mapping (mirrors pdf.service.js palette) ── */
-    const totalBoxStyle = useMemo(() => {
-        if (status.isPaid || amounts.isRefund) {
-            return 'bg-success-bg border-success-border';
-        }
-        if (status.isPartiallyPaid) {
-            return 'bg-warning-bg border-warning-border';
-        }
-        return 'bg-primary/5 border-primary/20';
-    }, [status.isPaid, status.isPartiallyPaid, amounts.isRefund]);
+    /* ── Status chip + neutral total-box styling (mirrors pdf.service.js:
+          status colour lives ONLY in the chip; the box is neutral) ── */
+    const chip = CHIPS[status.chipKey];
 
-    const amountTextStyle = useMemo(() => {
-        if (amounts.isRefund) return 'text-success-text';
-        if (status.isPaid) return 'text-success-text';
-        return 'text-primary';
-    }, [amounts.isRefund, status.isPaid]);
+    /* ── PAYMENT DETAILS rows — real, annotated data only (never
+          user-supplied text), exactly the PDF's row set ── */
+    const paymentRows = useMemo(() => {
+        if (!paymentData.paymentMethod) return [];
+        const rows = [
+            { label: 'Paid at', value: (paymentData.paymentDate && istFull(new Date(paymentData.paymentDate))) || '\u2014' },
+            { label: 'Method', value: METHOD_LABELS[paymentData.paymentMethod] || paymentData.paymentMethod },
+        ];
+        const ref = paymentData.utr || paymentData.transactionId;
+        if (ref) rows.push({ label: paymentData.utr ? 'UTR' : 'Transaction ID', value: ref, mono: true });
+        if (paymentData.payeeVpa) rows.push({ label: 'Payee', value: maskVpa(paymentData.payeeVpa) });
+        rows.push(paymentData.verifiedByName
+            ? { label: 'Verified by', value: paymentData.verifiedByName }
+            : { label: 'Recorded by', value: paymentData.recordedByName || 'admin' });
+        return rows;
+    }, [paymentData]);
 
-    const badgeStyle = useMemo(() => {
-        if (status.isPaid || amounts.isRefund) {
-            return 'bg-success-bg text-success-text border-success-border';
-        }
-        if (status.isPartiallyPaid) {
-            return 'bg-warning-bg text-warning-text border-warning-border';
-        }
-        return 'bg-primary/10 text-primary border-primary/20';
-    }, [status.isPaid, status.isPartiallyPaid, amounts.isRefund]);
+    /* ── REFUND DETAILS rows — shown when the refund payout is recorded ── */
+    const refundRows = useMemo(() => {
+        if (!status.refundSettled) return [];
+        return [
+            { label: 'Refund amount', value: money(invoice?._refundAmount ?? amounts.displayAmt) },
+            { label: 'Refunded on', value: (invoice?._refundAt && istFull(new Date(invoice._refundAt))) || '\u2014' },
+            { label: 'Reference', value: invoice?._refundReference || '\u2014', mono: true },
+        ];
+    }, [status.refundSettled, invoice?._refundAmount, invoice?._refundAt, invoice?._refundReference, amounts.displayAmt]);
 
     const isEmailBusy = sendingEmail || sendingAllEmails;
 
     if (!invoice) return null;
 
     return (
-        <div className="mx-auto w-full bg-background dark:bg-[#151820] rounded-xl border border-border/50 overflow-hidden shadow-sm">
+        <div className="invoice-print mx-auto w-full bg-background dark:bg-[#151820] rounded-xl border border-border/50 overflow-hidden shadow-sm">
 
             {/* ═══════════════════════════════════════════════════
-               HEADER — Logo + Brand + Invoice Meta
+               HEADER — Issuer + BILLED TO | Invoice meta (IST)
                ═══════════════════════════════════════════════════ */}
             <div className="p-2.5 sm:p-4">
                 <div className="flex items-start justify-between gap-4">
@@ -423,28 +503,39 @@ const InvoicePreview = ({
                             <p className="text-[length:var(--um-fs-meta)] text-muted-foreground">
                                 Mess Management Platform
                             </p>
-                            <p className="text-[length:var(--um-fs-meta)] text-foreground/80 font-medium">
+                        </div>
+                        <div className="mt-2">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                BILLED TO
+                            </p>
+                            <p className="text-[13px] font-semibold text-foreground mt-0.5">
                                 {user?.name || '\u2014'}
                             </p>
-                            <p className="text-[length:var(--um-fs-meta)] text-foreground/80">
+                            <p className="text-[11px] text-muted-foreground">
                                 {user?.email || ''}
                             </p>
                         </div>
                     </div>
 
-                    <div className="text-right flex-shrink-0 space-y-[var(--um-space-1)]">
+                    <div className="text-right flex-shrink-0 min-w-0 max-w-[60%] space-y-1">
                         <p className="text-[length:var(--um-fs-caption)] font-semibold uppercase tracking-widest text-muted-foreground/70">
                             Invoice
                         </p>
                         <p className="text-[length:var(--um-fs-meta)] text-primary font-semibold font-mono">
                             {meta.invoiceNo}
                         </p>
-                        <p className="text-[length:var(--um-fs-meta)] text-foreground/80 font-semibold">
-                            {meta.monthName}
-                        </p>
-                        <p className="text-[length:var(--um-fs-meta)] text-foreground/80">
-                            {meta.displayDate}
-                        </p>
+                        <div className="flex items-baseline justify-end gap-3 pt-1">
+                            <span className="text-[11px] text-muted-foreground shrink-0">Billing period</span>
+                            <span className="text-[13px] font-semibold text-foreground text-right">
+                                {meta.monthName}
+                            </span>
+                        </div>
+                        <div className="flex items-baseline justify-end gap-3">
+                            <span className="text-[11px] text-muted-foreground shrink-0">Issued on</span>
+                            <span className="text-[13px] text-foreground text-right">
+                                {meta.issuedAt || '\u2014'}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -463,7 +554,7 @@ const InvoicePreview = ({
                             Market Total (All)
                         </p>
                         <p className="text-sm sm:text-base font-bold tabular-nums text-foreground mt-auto pt-1">
-                            {'\u20B9'}{fmt(grandStats.marketTotal)}
+                            {money(grandStats.marketTotal)}
                         </p>
                     </div>
 
@@ -481,128 +572,122 @@ const InvoicePreview = ({
                         </p>
                     </div>
 
-                    <div className="rounded-lg border border-primary/20 bg-primary/5 p-2 sm:p-2.5 flex flex-col">
-                        <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-primary/70 leading-tight">
+                    <div className="rounded-lg border border-border bg-muted/30 p-2 sm:p-2.5 flex flex-col">
+                        <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-muted-foreground leading-tight">
                             {amounts.isRefund
                                 ? (status.refundSettled ? 'Refunded' : 'Refund Due')
                                 : 'Your Payable'}
                         </p>
-                        <p className="text-sm sm:text-base font-bold tabular-nums text-primary mt-auto pt-1">
-                            {'\u20B9'}{fmt(amounts.displayAmt)}
+                        <p className="text-sm sm:text-base font-bold tabular-nums text-foreground mt-auto pt-1">
+                            {money(amounts.finalPayable)}
                         </p>
                     </div>
                 </div>
             </div>
 
             {/* ═══════════════════════════════════════════════════
-               SECTIONS — Usage, Charges, Calculations
+               LEDGER — every line reconciles to totalPayable
+               (invoice.service.js:236: mess + cooking + water +
+                platform + guest − market)
                ═══════════════════════════════════════════════════ */}
             <div className="px-3 sm:px-5 pt-1 pb-1">
-                <SectionLabel label="Your Usage" />
-                <DataRow label="Your Meals" value={`${fmt(userValues.mealCount)} meals`} />
-                <DataRow label="Your Market Spend" value={`\u20B9${fmt(userValues.marketSpent)}`} subLabel="What you spent" />
-
-                <SectionLabel label="Monthly Charges" />
-                <DataRow label="Water Bill" value={`\u20B9${fmt(userValues.waterBill)}`} />
-                <DataRow label="Cooking Charge" value={`\u20B9${fmt(userValues.cookingCharge)}`} />
+                <SectionLabel label="Ledger" />
+                <DataRow label="Meals" value={money(userValues.costOfMeals)} subLabel={mealsSubLabel} />
+                <DataRow label="Water Bill" value={money(userValues.waterBill)} />
+                <DataRow label="Cooking Charge" value={money(userValues.cookingCharge)} />
                 {userValues.guestMealCount > 0 && (
                     <DataRow
                         label="Guest Meals"
-                        value={`\u20B9${fmt(userValues.guestMealRevenue)}`}
-                        subLabel={`${userValues.guestMealCount} meal(s) \u00D7 \u20B9${fmt(userValues.chargePerGuestMeal)}`}
+                        value={money(userValues.guestMealRevenue)}
+                        subLabel={`${userValues.guestMealCount} meals \u00D7 \u20B9${fmt(userValues.guestMealRevenue / userValues.guestMealCount, 2, 2)}`}
                     />
                 )}
-
-                <SectionLabel label="Calculations" />
-                <DataRow label="Cost of Your Meals" value={`\u20B9${fmt(userValues.costOfMeals)}`} subLabel="Proportional share" accent />
-                <DataRow label="Adjusted Meal Charge" value={`\u20B9${fmt(userValues.adjustedMealCharge)}`} subLabel={adjustedChargeSubLabel} accent />
                 {userValues.platformFee !== 0 && (
-                    <DataRow label="Platform Fee" value={`\u20B9${fmt(userValues.platformFee)}`} />
+                    <DataRow label="Platform Fee" value={money(userValues.platformFee)} />
                 )}
 
-                {userValues.prevBalance !== 0 && (
-                    <>
-                        <SectionLabel label="Previous Balance" />
-                        <DataRow
-                            label={userValues.prevBalance > 0 ? 'Outstanding Balance' : 'Credit Balance'}
-                            value={`\u20B9${fmt(Math.abs(userValues.prevBalance))}`}
-                            subLabel={userValues.prevBalance > 0 ? 'Carried forward from last month' : 'Credit from last month'}
-                            accent={userValues.prevBalance > 0}
-                        />
-                    </>
-                )}
+                <DataRow label="Subtotal" value={money(ledger.dispSum)} accent />
+                <DataRow
+                    label="Less: Market spend you paid"
+                    value={money(-ledger.market)}
+                    subLabel={ledger.market > 0
+                        ? 'Credit \u2014 spend you settled directly'
+                        : 'No direct market spend recorded'}
+                />
+                <DataRow label="Rounding off" value={money(ledger.rounding)} />
             </div>
 
             {/* ═══════════════════════════════════════════════════
-               TOTAL BOX
+               TOTAL BOX — neutral container; status colour lives
+               only in the chip. Total, Paid and Balance due here once.
                ═══════════════════════════════════════════════════ */}
             <div className="px-3 sm:px-5 pt-2 pb-3">
-                <div className={`flex items-center justify-between p-4 rounded-xl border ${totalBoxStyle}`}>
-                    <div>
+                <div className="flex items-start justify-between gap-4 p-4 rounded-xl border bg-muted/30 border-border">
+                    <div className="min-w-0">
                         <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground mb-1">
-                            {amounts.isRefund ? 'Refund Amount' : 'Total Payable'}
+                            {amounts.isRefund ? 'Total (Credit)' : 'Total Payable'}
                         </p>
-                        <p className={`text-xl sm:text-[22px] font-extrabold tabular-nums leading-none ${amountTextStyle}`}>
-                            {'\u20B9'}{fmt(amounts.displayAmt)}
+                        <p className="text-xl sm:text-[22px] font-extrabold tabular-nums leading-none text-foreground">
+                            {money(amounts.finalPayable)}
                         </p>
                     </div>
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border ${badgeStyle}`}>
-                        {(status.isPaid || amounts.isRefund) && <HiOutlineCheckCircle className="w-3 h-3" />}
-                        {status.label}
-                    </span>
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                        <span
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border ${chip.cls}`}
+                        >
+                            <span aria-hidden="true">{chip.glyph}</span>
+                            <span>{chip.label}</span>
+                        </span>
+                        <div className="w-full min-w-[150px] space-y-1">
+                            <div className="flex items-baseline justify-between gap-3">
+                                <span className="text-[11px] text-muted-foreground">Paid</span>
+                                <span className="text-[11px] font-semibold text-foreground tabular-nums">
+                                    {money(amounts.paidAmount)}
+                                </span>
+                            </div>
+                            <div className="flex items-baseline justify-between gap-3">
+                                <span className="text-[11px] text-muted-foreground">Balance due</span>
+                                <span className="text-[11px] font-semibold text-foreground tabular-nums">
+                                    {amounts.isRefund
+                                        ? '\u2014'
+                                        : money(Math.max(0, amounts.finalPayable - amounts.paidAmount))}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             {/* ═══════════════════════════════════════════════════
-               PAYMENT BLOCK
+               PAYMENT / REFUND DETAILS — annotated Payment-record
+               data only (never user-supplied text)
                ═══════════════════════════════════════════════════ */}
-            {(status.isPaid || status.isPartiallyPaid) && (
+            {paymentRows.length > 0 && (
                 <div className="px-3 sm:px-5 pb-3">
-                    <div className="rounded-xl border border-border bg-muted/30 overflow-hidden">
-                        <div className="px-3 sm:px-4 py-2.5 flex items-center justify-between border-b border-border/60">
-                            <div>
-                                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Payment Status</p>
-                                <p className="text-sm font-bold text-foreground mt-0.5">
-                                    {status.isPaid ? 'Payment Successful' : 'Partially Paid'}
-                                </p>
-                                {paymentData.paymentMethod && (
-                                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                                        {paymentData.paymentMethod === 'upi_manual' ? 'Manual UPI'
-                                            : paymentData.paymentMethod === 'razorpay' ? 'Online (Razorpay)'
-                                                : paymentData.paymentMethod}
-                                    </p>
-                                )}
-                            </div>
-                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-                                status.isPaid
-                                    ? 'bg-success-bg text-success-text border-success-border'
-                                    : 'bg-warning-bg text-warning-text border-warning-border'
-                            }`}>
-                                {status.isPaid ? 'SETTLED' : 'PARTIAL'}
-                            </span>
+                    <div className="rounded-xl border border-border bg-muted/30 px-3 sm:px-4 py-3">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground border-b border-border/60 pb-1.5">
+                            Payment Details
+                        </p>
+                        <div className="pt-1.5 space-y-0.5">
+                            {paymentRows.map((r) => (
+                                <KeyRow key={r.label} label={r.label} value={r.value} mono={r.mono} />
+                            ))}
                         </div>
+                    </div>
+                </div>
+            )}
 
-                        {status.isPartiallyPaid && (
-                            <div className="px-3 sm:px-4 py-2 flex items-center gap-6 border-b border-border/60">
-                                <p className="text-[11px] text-muted-foreground">
-                                    Paid: <span className="font-bold text-foreground">{'\u20B9'}{fmt(amounts.paidAmount)}</span>
-                                </p>
-                                <p className="text-[11px] text-muted-foreground">
-                                    Remaining: <span className="font-bold text-foreground">{'\u20B9'}{fmt(amounts.remainingAmount)}</span>
-                                </p>
-                            </div>
-                        )}
-
-                        {paymentData.paymentMethod === 'upi_manual' && (paymentData.utr || paymentData.transactionId) && (
-                            <div className="px-3 sm:px-4 py-2 bg-primary/5">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary">UTR</span>
-                                    <span className="text-[13px] font-mono font-bold text-primary select-all break-all">
-                                        {paymentData.utr || paymentData.transactionId}
-                                    </span>
-                                </div>
-                            </div>
-                        )}
+            {refundRows.length > 0 && (
+                <div className="px-3 sm:px-5 pb-3">
+                    <div className="rounded-xl border border-border bg-muted/30 px-3 sm:px-4 py-3">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground border-b border-border/60 pb-1.5">
+                            Refund Details
+                        </p>
+                        <div className="pt-1.5 space-y-0.5">
+                            {refundRows.map((r) => (
+                                <KeyRow key={r.label} label={r.label} value={r.value} mono={r.mono} />
+                            ))}
+                        </div>
                     </div>
                 </div>
             )}
@@ -610,7 +695,7 @@ const InvoicePreview = ({
             {/* ═══════════════════════════════════════════════════
                ACTION BUTTONS — Pay Now + Download + Email
                ═══════════════════════════════════════════════════ */}
-            <div className="px-3 sm:px-5 pb-3 space-y-2">
+            <div className="no-print px-3 sm:px-5 pb-3 space-y-2">
                 {!status.isPaid && !amounts.isRefund && onPayNow && (
                     <Button
                         type="button"
@@ -698,8 +783,8 @@ const InvoicePreview = ({
                     <p className="text-[11px] text-muted-foreground leading-relaxed">
                         System-generated invoice for {meta.monthName}. For disputes, contact your mess admin.
                     </p>
-                    <p className="text-[11px] text-primary/60 font-medium">
-                        Powered by United Mess {'\u00B7'} {meta.invoiceNo}
+                    <p className="text-[11px] text-muted-foreground font-medium">
+                        United Mess {'\u00B7'} {meta.invoiceNo} {'\u00B7'} Generated {meta.issuedAt}
                     </p>
                 </div>
             </div>
