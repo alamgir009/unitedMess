@@ -593,17 +593,14 @@ const InvoicePreview = ({
                             </div>
                         )}
 
-                        {paymentData.paymentMethod === 'upi_manual' && paymentData.transactionId && (
+                        {paymentData.paymentMethod === 'upi_manual' && (paymentData.utr || paymentData.transactionId) && (
                             <div className="px-3 sm:px-4 py-2 bg-primary/5">
                                 <div className="flex items-center gap-2">
                                     <span className="text-[10px] font-bold uppercase tracking-wider text-primary">UTR</span>
                                     <span className="text-[13px] font-mono font-bold text-primary select-all break-all">
-                                        {paymentData.transactionId}
+                                        {paymentData.utr || paymentData.transactionId}
                                     </span>
                                 </div>
-                                {paymentData.utr && paymentData.utr !== paymentData.transactionId && (
-                                    <p className="text-[10px] text-muted-foreground mt-1">Bank UTR: {paymentData.utr}</p>
-                                )}
                             </div>
                         )}
                     </div>

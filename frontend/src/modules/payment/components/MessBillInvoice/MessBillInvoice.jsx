@@ -412,18 +412,15 @@ const MessBillInvoice = ({
                     </div>
 
                     {/* ── Payment Confirmation ── */}
-                    {(paymentRecord?.paymentMethod === 'upi_manual' && paymentRecord?.transactionId) && (
+                    {(paymentRecord?.paymentMethod === 'upi_manual' && (paymentRecord?.utr || paymentRecord?.transactionId)) && (
                         <div className="mt-4 p-4 rounded-xl bg-primary/5 border border-primary/20">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-xs font-bold text-primary uppercase tracking-wide">UPI Manual Payment</p>
                                     <div className="flex items-center gap-1.5 mt-1">
-                                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Transaction Ref</span>
-                                        <span className="text-sm font-mono font-bold text-foreground select-all">{paymentRecord.transactionId}</span>
+                                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">UTR</span>
+                                        <span className="text-sm font-mono font-bold text-foreground select-all">{paymentRecord.utr || paymentRecord.transactionId}</span>
                                     </div>
-                                    {paymentRecord.utr && paymentRecord.utr !== paymentRecord.transactionId && (
-                                        <p className="text-[10px] text-muted-foreground mt-1">Bank UTR: {paymentRecord.utr}</p>
-                                    )}
                                 </div>
                                 {paymentRecord.status === 'completed' && (
                                     <span className="text-[10px] font-bold text-success-text bg-success-bg px-2.5 py-1 rounded-lg border border-success-border">Verified</span>
@@ -434,7 +431,7 @@ const MessBillInvoice = ({
                             </div>
                         </div>
                     )}
-                    {isPaid && !(paymentRecord?.paymentMethod === 'upi_manual' && paymentRecord?.transactionId) && (
+                    {isPaid && !(paymentRecord?.paymentMethod === 'upi_manual' && (paymentRecord?.utr || paymentRecord?.transactionId)) && (
                         <div className="mt-4 p-4 rounded-xl bg-success-bg border border-success-border flex items-center justify-between">
                             <div>
                                 <p className="text-xs font-bold text-success-text">Payment Successful</p>
@@ -705,9 +702,9 @@ const MessBillInvoice = ({
             </div>
 
             {/* ── Payment Confirmation Block (unchanged, kept clean) ── */}
-            {(paymentRecord?.paymentMethod === 'upi_manual' && paymentRecord?.transactionId) || isPaid || isRefund ? (
+            {(paymentRecord?.paymentMethod === 'upi_manual' && (paymentRecord?.utr || paymentRecord?.transactionId)) || isPaid || isRefund ? (
                 <div className="rounded-2xl overflow-hidden border border-border mb-5 shadow-sm">
-                {paymentRecord?.paymentMethod === 'upi_manual' && paymentRecord?.transactionId && (
+                {paymentRecord?.paymentMethod === 'upi_manual' && (paymentRecord?.utr || paymentRecord?.transactionId) && (
                     <div className="flex items-start gap-3 px-4 py-3.5 bg-primary/10 border-b border-primary/20">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                         <HiOutlineIdentification className="w-4 h-4 text-primary" />
@@ -727,15 +724,10 @@ const MessBillInvoice = ({
                         )}
                         </div>
                         <div className="flex items-center gap-1.5 mt-1.5">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">Transaction Ref</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">UTR</span>
                         <span className="text-sm font-mono font-bold text-primary select-all tracking-tight break-all">
-                            {paymentRecord.transactionId}
+                            {paymentRecord.utr || paymentRecord.transactionId}
                         </span>
-                        {paymentRecord.utr && paymentRecord.utr !== paymentRecord.transactionId && (
-                            <span className="text-[10px] text-muted-foreground ml-2">
-                                Bank UTR: {paymentRecord.utr}
-                            </span>
-                        )}
                         </div>
                     </div>
                     </div>

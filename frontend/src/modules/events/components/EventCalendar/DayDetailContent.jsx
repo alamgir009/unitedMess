@@ -279,7 +279,7 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
                   {category === 'payments' && entry.paymentMethod && (
                     <span className="text-xs text-[var(--text-muted)] truncate">
                       {entry.paymentMethod}
-                      {entry.transactionId && ` · ${entry.transactionId.slice(0, 10)}…`}
+                      {(entry.utr || entry.transactionId) && ` · ${(entry.utr || entry.transactionId).slice(0, 10)}…`}
                     </span>
                   )}
                 </div>

@@ -902,6 +902,7 @@ const emailAllInvoices = async (month, year) => {
         if (latestPayment) {
             invoice._paymentMethod  = latestPayment.paymentMethod;
             invoice._transactionId  = latestPayment.transactionId || null;
+            invoice._utr            = latestPayment.utr || null;
             invoice._paymentDate    = latestPayment.paymentDate;
         }
 

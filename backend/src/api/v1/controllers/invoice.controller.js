@@ -344,6 +344,7 @@ const _buildInvoiceForPdf = async (targetUserId, year, month) => {
         if (latestPayment) {
             invoice._paymentMethod = latestPayment.paymentMethod;
             invoice._transactionId = latestPayment.transactionId || null;
+            invoice._utr = latestPayment.utr || null;
             invoice._paymentDate = latestPayment.paymentDate;
         }
     }

@@ -10,6 +10,15 @@ const INITIAL_RETRY_DELAY_MS = 1000;
 const RETRYABLE_CODES = new Set(['ETIMEDOUT', 'ESOCKET', 'ECONNECTION', 'ECONNRESET', 'EPIPE', 'EDNS']);
 const FROM_ADDRESS = config.email?.from || 'United Mess <noreply@unitedmess.com>';
 
+// Human-readable labels for Payment.paymentMethod enum values — keeps every
+// email rendering in sync (manual UPI must never fall through to "Cash").
+const PAYMENT_METHOD_LABELS = {
+    razorpay: 'Online (Razorpay)',
+    online: 'Online Transfer',
+    upi_manual: 'UPI (Manual)',
+    cash: 'Cash',
+};
+
 // ─── SMTP Transport Factory ────────────────────────────────────────────────────
 const createTransport = () => {
     const smtp = config.email?.smtp;
@@ -645,8 +654,8 @@ const sendPaymentStatusEmail = async (to, name, payment, status) => {
   <tr><td style="padding:10px;border:1px solid #ddd;"><strong>Amount:</strong></td><td style="padding:10px;border:1px solid #ddd;">${isRefund ? '-' : ''}${formattedAmount}</td></tr>
   <tr><td style="padding:10px;border:1px solid #ddd;"><strong>Payment Type:</strong></td><td style="padding:10px;border:1px solid #ddd;">${typeLabel}</td></tr>
   <tr><td style="padding:10px;border:1px solid #ddd;"><strong>Date:</strong></td><td style="padding:10px;border:1px solid #ddd;">${paymentDate}</td></tr>
-  <tr><td style="padding:10px;border:1px solid #ddd;"><strong>Transaction ID:</strong></td><td style="padding:10px;border:1px solid #ddd;word-break:break-all;">${validator.escape(String(payment.transactionId || 'N/A'))}</td></tr>
-  <tr><td style="padding:10px;border:1px solid #ddd;"><strong>Payment Method:</strong></td><td style="padding:10px;border:1px solid #ddd;">${payment.paymentMethod === 'razorpay' ? 'Online (Razorpay)' : payment.paymentMethod === 'online' ? 'Online Transfer' : 'Cash'}</td></tr>
+  <tr><td style="padding:10px;border:1px solid #ddd;"><strong>Transaction ID:</strong></td><td style="padding:10px;border:1px solid #ddd;word-break:break-all;">${validator.escape(String(payment.utr || payment.transactionId || 'N/A'))}</td></tr>
+  <tr><td style="padding:10px;border:1px solid #ddd;"><strong>Payment Method:</strong></td><td style="padding:10px;border:1px solid #ddd;">${PAYMENT_METHOD_LABELS[payment.paymentMethod] || 'Other'}</td></tr>
 </table>
 <p>Thank you for using United Mess.</p>`;
 

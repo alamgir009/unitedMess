@@ -497,6 +497,7 @@ const PaymentPage = () => {
         const paymentRecord = payment.paymentMethod === 'upi_manual' ? {
             paymentMethod: payment.paymentMethod,
             transactionId: payment.transactionId,
+            utr: payment.utr,
             status: payment.status,
         } : null;
 

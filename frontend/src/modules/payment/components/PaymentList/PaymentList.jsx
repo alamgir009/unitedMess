@@ -94,10 +94,10 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewIn
                     <HiOutlineCreditCard className="w-3.5 h-3.5 text-muted-foreground/50" />
                     <span className="text-xs text-muted-foreground">{methodLabel(payment.paymentMethod)}</span>
                 </div>
-                {payment.paymentMethod === 'upi_manual' && payment.transactionId && (
+                {payment.paymentMethod === 'upi_manual' && (payment.utr || payment.transactionId) && (
                     <div className="flex items-center gap-1">
                         <HiOutlineIdentification className="w-3.5 h-3.5 text-muted-foreground/50" />
-                        <span className="text-xs font-mono font-medium text-foreground/80">{payment.transactionId}</span>
+                        <span className="text-xs font-mono font-medium text-foreground/80">{payment.utr || payment.transactionId}</span>
                     </div>
                 )}
             </div>
@@ -210,12 +210,12 @@ const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInv
                     </div>
                     <span className="text-muted-foreground/25">·</span>
                     <span className={`text-[10px] font-bold px-2 py-[3px] rounded-full ring-1 ${typeC.cls}`}>{typeC.label}</span>
-                    {payment.paymentMethod === 'upi_manual' && payment.transactionId && (
+                    {payment.paymentMethod === 'upi_manual' && (payment.utr || payment.transactionId) && (
                         <>
                             <span className="text-muted-foreground/25">·</span>
                             <span className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground">
                                 <HiOutlineIdentification className="w-3 h-3" />
-                                {payment.transactionId}
+                                {payment.utr || payment.transactionId}
                             </span>
                         </>
                     )}

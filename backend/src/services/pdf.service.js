@@ -118,6 +118,7 @@ function validateInputs(invoiceData, user) {
  *                                _messGrandTotalMarket {number}
  *                                _messGrandTotalMeal   {number}
  *                                _transactionId?       {string}
+ *                                _utr?                 {string}  raw member-submitted bank UTR
  *                                _paymentMethod?       {string}
  * @param {Object} user         Plain user document { name, email, chargePerGuestMeal, … }
  * @returns {Promise<Buffer>}
@@ -490,7 +491,7 @@ const generateInvoicePDF = (invoiceData, user) => {
                ────────────────────────────────────────────────── */
 
             if (isPaid || isPartiallyPaid) {
-                const hasUtr = invoiceData._paymentMethod === 'upi_manual' && invoiceData._transactionId;
+                const hasUtr = invoiceData._paymentMethod === 'upi_manual' && (invoiceData._utr || invoiceData._transactionId);
                 const pbH    = hasUtr ? 80 : isPartiallyPaid ? 68 : 50;
                 ensureSpace(pbH + 20);
 
@@ -535,7 +536,7 @@ const generateInvoicePDF = (invoiceData, user) => {
                     doc.fontSize(9).font('NotoSans-SemiBold').fillColor(C.blueTx);
                     doc.text('UTR', MARGIN + 16, y + pbH - 22);
                     doc.fontSize(10).font('NotoSans').fillColor(C.blue);
-                    doc.text(invoiceData._transactionId, MARGIN + 42, y + pbH - 22, {
+                    doc.text(invoiceData._utr || invoiceData._transactionId, MARGIN + 42, y + pbH - 22, {
                         width: CONTENT_W - 58,
                         ellipsis: true,
                     });
