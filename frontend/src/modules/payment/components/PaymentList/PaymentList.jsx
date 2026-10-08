@@ -92,7 +92,7 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewIn
                 </div>
                 <div className="flex items-center gap-1">
                     <HiOutlineCreditCard className="w-3.5 h-3.5 text-muted-foreground/50" />
-                    <span className="text-xs text-muted-foreground">{methodLabel(payment.paymentMethod)}</span>
+                    <span className="text-xs text-foreground/75 font-medium">{methodLabel(payment.paymentMethod)}</span>
                 </div>
                 {payment.paymentMethod === 'upi_manual' && (payment.utr || payment.transactionId) && (
                     <div className="flex items-center gap-1">
