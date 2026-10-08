@@ -4,6 +4,7 @@ const User = require('../models/User.model');
 const Meal = require('../models/Meal.model');
 const Market = require('../models/Market.model');
 const Payment = require('../models/Payment.model');
+const UpiConfig = require('../models/UpiConfig.model');
 const AppError = require('../utils/errors/AppError');
 const logger = require('../utils/logger');
 const { getBillingPeriod, getLastFinalizedPeriod } = require('../utils/helpers/date.helper');
@@ -103,17 +104,34 @@ const calculateMessStats = async (month, year) => {
 /**
  * Attach the most recent completed mess-bill payment metadata to an
  * invoice-shaped plain object (used by the PDF / invoice preview UI).
+ *
+ * Besides method/UTR/date, attaches the *people* behind the record
+ * (recorder vs verifier — drives "Recorded by" vs "Verified by" on the
+ * invoice) and the payee VPA for manual-UPI payments.
  */
 const _attachLatestPayment = async (invoiceObj, userId) => {
     const latestPayment = await Payment.findOne({
         user: userId, month: invoiceObj.monthName, status: 'completed', type: 'mess_bill',
-    }).sort({ paymentDate: -1 }).lean();
+    })
+        .sort({ paymentDate: -1 })
+        .populate('createdBy', 'name')
+        .populate('verifiedBy', 'name')
+        .lean();
 
     if (latestPayment) {
-        invoiceObj._paymentMethod = latestPayment.paymentMethod;
-        invoiceObj._transactionId = latestPayment.transactionId || null;
-        invoiceObj._utr = latestPayment.utr || null;
-        invoiceObj._paymentDate = latestPayment.paymentDate;
+        invoiceObj._paymentMethod  = latestPayment.paymentMethod;
+        invoiceObj._transactionId  = latestPayment.transactionId || null;
+        invoiceObj._utr            = latestPayment.utr || null;
+        invoiceObj._paymentDate    = latestPayment.paymentDate;
+        invoiceObj._recordedByName = latestPayment.createdBy?.name || null;
+        invoiceObj._verifiedByName = latestPayment.verifiedBy?.name || null;
+        invoiceObj._verifiedAt     = latestPayment.verifiedAt || null;
+
+        // Payee = the UPI VPA the member paid into (manual UPI only).
+        if (latestPayment.paymentMethod === 'upi_manual') {
+            const upiConfig = await UpiConfig.findOne().sort({ updatedAt: -1 }).lean();
+            invoiceObj._payeeVpa = upiConfig?.upiId || null;
+        }
     }
     return invoiceObj;
 };
@@ -891,20 +909,10 @@ const emailAllInvoices = async (month, year) => {
         invoice._messGrandTotalMeal   = grandTotalMeal;
         invoice._messGrandTotalGuest  = grandTotalGuest;
 
-        /* Attach latest completed payment details for the payment block */
-        const latestPayment = await Payment.findOne({
-            user:   user._id,
-            month:  monthName,
-            status: 'completed',
-            type:   'mess_bill',
-        }).sort({ paymentDate: -1 }).lean();
-
-        if (latestPayment) {
-            invoice._paymentMethod  = latestPayment.paymentMethod;
-            invoice._transactionId  = latestPayment.transactionId || null;
-            invoice._utr            = latestPayment.utr || null;
-            invoice._paymentDate    = latestPayment.paymentDate;
-        }
+        /* Attach latest completed payment details for the payment block.
+           getInvoice() already called _attachLatestPayment — this re-run is
+           the pre-existing safety net for exempt/edge paths (same single query). */
+        await _attachLatestPayment(invoice, user._id);
 
         /* Generate per-member PDF */
         const pdfBuffer = await pdfService.generateInvoicePDF(invoice, user);
@@ -942,6 +950,7 @@ const emailAllInvoices = async (month, year) => {
 module.exports = {
     determineInvoiceStatus,
     SETTLEMENT_TOLERANCE,
+    attachLatestPayment: _attachLatestPayment,
     getInvoice,
     getActiveInvoice,
     getInvoiceForMonth,

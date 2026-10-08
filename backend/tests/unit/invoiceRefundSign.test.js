@@ -162,8 +162,12 @@ describe('finalizeMonth — per-user isolation', () => {
                     ? Promise.reject(new Error('transient db error'))
                     : Promise.resolve({ _id: 'uB' }),
         }));
+        // _attachLatestPayment chain: findOne().sort().populate().populate().lean()
         Payment.findOne.mockReturnValue({
-            sort: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue(null) }),
+            sort: jest.fn().mockReturnValue({
+                populate: jest.fn().mockReturnThis(),
+                lean: jest.fn().mockResolvedValue(null),
+            }),
         });
         Invoice.find.mockResolvedValue([]); // exempt-invoice sweep
 

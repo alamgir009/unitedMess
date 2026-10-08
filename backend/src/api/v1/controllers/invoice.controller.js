@@ -332,21 +332,19 @@ const _buildInvoiceForPdf = async (targetUserId, year, month) => {
     // negative after the refund is paid out.
     invoice.refundSettled = !!refundPayout;
 
+    // Refund payout details for the invoice's refund block (display-only
+    // annotation — the payout Payment is the source of truth).
+    if (refundPayout) {
+        invoice._refundAmount  = refundPayout.amount;
+        invoice._refundAt      = refundPayout.paymentDate || refundPayout.createdAt;
+        // Refund rows are written without a gateway txn id — fall back to the
+        // payment record's own id so the reference is real, never fabricated.
+        invoice._refundReference = refundPayout.transactionId || String(refundPayout._id);
+    }
+
     // If getInvoice() didn't attach payment data (exempt path), fetch it.
     if (!invoice._paymentMethod) {
-        const latestPayment = await Payment.findOne({
-            user: targetUserId,
-            month: monthName,
-            status: 'completed',
-            type: 'mess_bill',
-        }).sort({ paymentDate: -1 }).lean();
-
-        if (latestPayment) {
-            invoice._paymentMethod = latestPayment.paymentMethod;
-            invoice._transactionId = latestPayment.transactionId || null;
-            invoice._utr = latestPayment.utr || null;
-            invoice._paymentDate = latestPayment.paymentDate;
-        }
+        await invoiceService.attachLatestPayment(invoice, targetUserId);
     }
 
     return { invoice, user, monthName };
