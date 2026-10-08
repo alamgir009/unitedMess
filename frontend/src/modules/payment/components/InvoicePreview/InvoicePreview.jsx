@@ -62,10 +62,10 @@ const istFull = (d = new Date()) => {
 const DataRow = memo(({ label, value, subLabel, accent = false }) => (
     <div className="flex items-start justify-between py-2 border-b border-border/60 last:border-0 gap-3">
         <div className="min-w-0">
-            <p className={`text-sm ${accent ? 'text-primary font-semibold' : 'text-foreground'}`}>{label}</p>
+            <p className={`text-sm text-foreground ${accent ? 'font-semibold' : ''}`}>{label}</p>
             {subLabel && <div className="text-[11px] text-muted-foreground mt-0.5">{subLabel}</div>}
         </div>
-        <span className={`text-sm font-bold tabular-nums whitespace-nowrap ${accent ? 'text-primary' : 'text-foreground'}`}>
+        <span className="text-sm font-bold tabular-nums whitespace-nowrap text-foreground">
             {value}
         </span>
     </div>
@@ -484,9 +484,9 @@ const InvoicePreview = ({
             {/* ═══════════════════════════════════════════════════
                HEADER — Issuer + BILLED TO | Invoice meta (IST)
                ═══════════════════════════════════════════════════ */}
-            <div className="p-2.5 sm:p-4">
-                <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0 flex-1">
+            <div className="px-3 py-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
+                    <div className="min-w-0 w-full sm:w-auto sm:flex-1">
                         <div className="flex items-center -mt-px gap-[var(--um-space-2)]">
                             <img
                                 src="/assets/icons/resize_logo.png"
@@ -494,13 +494,13 @@ const InvoicePreview = ({
                                 style={{ aspectRatio: '1 / 1' }}
                                 className="block w-[1.05em] h-[1.05em] object-contain flex-shrink-0 rounded-[var(--radius-md)]"
                             />
-                            <p className="text-[length:var(--um-fs-brand)] font-bold leading-tight tracking-tight text-foreground">
+                            <p className="text-[length:var(--um-fs-brand)] font-bold leading-tight tracking-tight text-foreground whitespace-nowrap">
                                 United
                                 <span className="text-primary"> Mess</span>
                             </p>
                         </div>
                         <div className="mt-1 space-y-0.5">
-                            <p className="text-[length:var(--um-fs-meta)] text-muted-foreground">
+                            <p className="text-[length:var(--um-fs-meta)] text-muted-foreground whitespace-nowrap">
                                 Mess Management Platform
                             </p>
                         </div>
@@ -511,26 +511,28 @@ const InvoicePreview = ({
                             <p className="text-[13px] font-semibold text-foreground mt-0.5">
                                 {user?.name || '\u2014'}
                             </p>
-                            <p className="text-[11px] text-muted-foreground">
+                            <p className="text-[11px] text-muted-foreground break-all">
                                 {user?.email || ''}
                             </p>
                         </div>
                     </div>
 
-                    <div className="text-right flex-shrink-0 min-w-0 max-w-[60%] space-y-1">
-                        <p className="text-[length:var(--um-fs-caption)] font-semibold uppercase tracking-widest text-muted-foreground/70">
-                            Invoice
-                        </p>
-                        <p className="text-[length:var(--um-fs-meta)] text-primary font-semibold font-mono">
-                            {meta.invoiceNo}
-                        </p>
-                        <div className="flex items-baseline justify-end gap-3 pt-1">
+                    <div className="text-right flex-shrink-0 min-w-0 w-full sm:w-auto sm:max-w-[60%] border-t border-border/60 pt-2 sm:border-t-0 sm:pt-0 space-y-2 sm:space-y-1">
+                        <div className="flex flex-wrap items-baseline justify-between gap-x-3 sm:flex-col sm:items-end sm:gap-x-0 sm:gap-y-1">
+                            <p className="text-[length:var(--um-fs-caption)] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                                Invoice
+                            </p>
+                            <p className="text-[length:var(--um-fs-meta)] text-primary font-semibold font-mono">
+                                {meta.invoiceNo}
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap items-baseline justify-between sm:justify-end gap-x-3 gap-y-0.5 sm:pt-1">
                             <span className="text-[11px] text-muted-foreground shrink-0">Billing period</span>
                             <span className="text-[13px] font-semibold text-foreground text-right">
                                 {meta.monthName}
                             </span>
                         </div>
-                        <div className="flex items-baseline justify-end gap-3">
+                        <div className="flex flex-wrap items-baseline justify-between sm:justify-end gap-x-3 gap-y-0.5">
                             <span className="text-[11px] text-muted-foreground shrink-0">Issued on</span>
                             <span className="text-[13px] text-foreground text-right">
                                 {meta.issuedAt || '\u2014'}
@@ -550,7 +552,7 @@ const InvoicePreview = ({
             <div className="px-3 sm:px-5 pt-3">
                 <div className="grid grid-cols-3 gap-2">
                     <div className="rounded-lg border border-border bg-muted/30 p-2 sm:p-2.5 flex flex-col">
-                        <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-muted-foreground leading-tight">
+                        <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-muted-foreground leading-tight min-h-[20px] sm:min-h-0">
                             Market Total (All)
                         </p>
                         <p className="text-sm sm:text-base font-bold tabular-nums text-foreground mt-auto pt-1">
@@ -559,7 +561,7 @@ const InvoicePreview = ({
                     </div>
 
                     <div className="rounded-lg border border-border bg-muted/30 p-2 sm:p-2.5 flex flex-col">
-                        <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-muted-foreground leading-tight">
+                        <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-muted-foreground leading-tight min-h-[20px] sm:min-h-0">
                             Total Meals (All)
                         </p>
                         {grandStats.totalGuest > 0 && (
@@ -573,7 +575,7 @@ const InvoicePreview = ({
                     </div>
 
                     <div className="rounded-lg border border-border bg-muted/30 p-2 sm:p-2.5 flex flex-col">
-                        <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-muted-foreground leading-tight">
+                        <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-muted-foreground leading-tight min-h-[20px] sm:min-h-0">
                             {amounts.isRefund
                                 ? (status.refundSettled ? 'Refunded' : 'Refund Due')
                                 : 'Your Payable'}
