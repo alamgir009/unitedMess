@@ -16,6 +16,7 @@
  */
 
 const PDFDocument = require('pdfkit');
+const fontkit     = require('fontkit');   // pdfkit's layout engine — used for glyph-coverage checks
 const path        = require('path');
 const fs          = require('fs');
 
@@ -95,7 +96,12 @@ const maskVpa = (vpa) => {
     return `${local.slice(0, Math.min(3, local.length))}\u2022\u2022\u2022@${host}`;
 };
 
-/** Font paths — loaded once into memory at startup (Inter + JetBrains Mono, OFL) */
+/** Font paths — loaded once into memory at startup (Inter + JetBrains Mono, OFL).
+ *  Script-fallback families (all OFL, license files alongside):
+ *    Bengali    → Hind Siliguri   (same foundry family as Hind below)
+ *    Devanagari → Hind
+ *    Arabic     → IBM Plex Sans Arabic
+ *  Each family ships 400/500/600/700 so weight parity with Inter holds. */
 const FONT_DIR = path.join(__dirname, 'fonts');
 const FONTS = {
     regular:  path.join(FONT_DIR, 'Inter_400Regular.ttf'),
@@ -103,15 +109,125 @@ const FONTS = {
     semibold: path.join(FONT_DIR, 'Inter_600SemiBold.ttf'),
     bold:     path.join(FONT_DIR, 'Inter_700Bold.ttf'),
     mono:     path.join(FONT_DIR, 'JetBrainsMono-Regular.ttf'),   // UTR / txn / reference ids
+    bnRegular:  path.join(FONT_DIR, 'HindSiliguri-Regular.ttf'),
+    bnMedium:   path.join(FONT_DIR, 'HindSiliguri-Medium.ttf'),
+    bnSemiBold: path.join(FONT_DIR, 'HindSiliguri-SemiBold.ttf'),
+    bnBold:     path.join(FONT_DIR, 'HindSiliguri-Bold.ttf'),
+    dvRegular:  path.join(FONT_DIR, 'Hind-Regular.ttf'),
+    dvMedium:   path.join(FONT_DIR, 'Hind-Medium.ttf'),
+    dvSemiBold: path.join(FONT_DIR, 'Hind-SemiBold.ttf'),
+    dvBold:     path.join(FONT_DIR, 'Hind-Bold.ttf'),
+    arRegular:  path.join(FONT_DIR, 'IBMPlexSansArabic-Regular.ttf'),
+    arMedium:   path.join(FONT_DIR, 'IBMPlexSansArabic-Medium.ttf'),
+    arSemiBold: path.join(FONT_DIR, 'IBMPlexSansArabic-SemiBold.ttf'),
+    arBold:     path.join(FONT_DIR, 'IBMPlexSansArabic-Bold.ttf'),
 };
 
 /** Cache font buffers at module load — avoids disk I/O on every PDF generation */
-const FONT_BUFFERS = {
-    regular:  fs.readFileSync(FONTS.regular),
-    medium:   fs.readFileSync(FONTS.medium),
-    semibold: fs.readFileSync(FONTS.semibold),
-    bold:     fs.readFileSync(FONTS.bold),
-    mono:     fs.readFileSync(FONTS.mono),
+const FONT_BUFFERS = Object.fromEntries(
+    Object.entries(FONTS).map(([key, file]) => [key, fs.readFileSync(file)])
+);
+
+/* ── Unicode script fallback ─────────────────────────────────────────────────
+   Inter is Latin-only; member names may carry Bengali / Devanagari / Arabic
+   script. pickFont() swaps ONLY the affected string's font (same size, colour
+   and position — layout untouched), so Latin-only invoices render exactly as
+   before. fontkit — pdfkit's own layout engine — applies the Indic and Arabic
+   shapers (matra reordering, conjuncts, joining) automatically per word. */
+const SCRIPT_FAMILIES = [
+    { re: /[\u0980-\u09FF]/, family: 'Bengali',    key: 'bn' },
+    { re: /[\u0900-\u097F]/, family: 'Devanagari', key: 'dv' },
+    { re: /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFBFF\uFE70-\uFEFF]/, family: 'Arabic', key: 'ar' },
+];
+/** Base font → family weight suffix (nearest-weight map: everything offered). */
+const WEIGHT_SUFFIX = {
+    'Inter': 'Regular', 'Inter-Medium': 'Medium',
+    'Inter-SemiBold': 'SemiBold', 'Inter-Bold': 'Bold',
+    'JetBrains Mono': 'Regular',
+};
+/** family → buffer key of the Regular face (coverage checks run against it). */
+const COVERAGE_KEY = { Bengali: 'bnRegular', Devanagari: 'dvRegular', Arabic: 'arRegular' };
+const coverageFonts = new Map();   // family → fontkit Font, parsed once
+
+/** Log (without echoing name content) when the chosen font cannot cover every
+ *  codepoint — a missing glyph must never fail silently. */
+const assertCoverage = (family, text) => {
+    try {
+        let font = coverageFonts.get(family);
+        if (!font) {
+            font = fontkit.create(FONT_BUFFERS[COVERAGE_KEY[family]]);
+            coverageFonts.set(family, font);
+        }
+        const missing = [...text].filter((c) => !font.hasGlyphForCodePoint(c.codePointAt(0)));
+        if (missing.length > 0) {
+            console.warn(`[PDF] Font ${family} is missing glyphs for this text`, { missing: missing.length });
+        }
+    } catch (err) {
+        console.warn(`[PDF] Glyph coverage check failed for ${family}`, { error: err.message });
+    }
+};
+
+/** Majority-script font for one string: counts codepoints per family, picks
+ *  the highest (first-listed wins ties). Pure-Latin strings keep `base`. */
+const pickFont = (text, base) => {
+    const s = String(text ?? '');
+    let chosen = null;
+    let best = 0;
+    for (const spec of SCRIPT_FAMILIES) {
+        const count = [...s].filter((c) => spec.re.test(c)).length;
+        if (count > best) { best = count; chosen = spec; }
+    }
+    if (!chosen) return base;
+    assertCoverage(chosen.family, s);
+    return `${chosen.family}-${WEIGHT_SUFFIX[base] ?? 'Regular'}`;
+};
+
+/* ── RTL word order & placement ─────────────────────────────────────────────
+   pdfkit lays out each space-separated word independently (fontkit gives each
+   Arabic word in correct visual glyph order), but concatenates the words in
+   LOGICAL order — wrong for an RTL paragraph. prepareRtl() reverses the word
+   sequence when the first strong directional character is RTL, which restores
+   right-to-left line order. LTR-first strings (incl. Latin+Bengali) untouched.
+   For an RTL line, drawRtlLine() then places each word itself: pdfkit's own
+   space handling hoists the space glyph to the start of pure-RTL runs (a
+   stray indent + glued words), so we advance between words manually and
+   right-align the line inside its column box. */
+const LTR_STRONG = /[A-Za-z\u00C0-\u024F\u0900-\u09FF]/;
+const RTL_STRONG = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFBFF\uFE70-\uFEFF]/;
+const isRtlParagraph = (text) => {
+    for (const ch of String(text ?? '')) {
+        if (LTR_STRONG.test(ch)) return false;
+        if (RTL_STRONG.test(ch)) return true;
+    }
+    return false;
+};
+const prepareRtl = (text) => {
+    const s = String(text ?? '');
+    return isRtlParagraph(s) ? s.split(/(\s+)/).reverse().join('') : s;
+};
+
+/** Word x-positions for an RTL line right-aligned inside [x0, x0+boxW].
+ *  `text` is prepareRtl() output (visual left-to-right word order).
+ *  measure(text) → width in pt (use the draw font — widths are font-specific). */
+const rtlWordPositions = (text, measure, x0, boxW) => {
+    const words = String(text ?? '').trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return [];
+    const spaceW = measure(' ');
+    const total  = words.reduce((sum, w) => sum + measure(w), 0) + spaceW * (words.length - 1);
+    let cx = x0 + boxW - total;
+    return words.map((word) => {
+        const at = cx;
+        cx += measure(word) + spaceW;
+        return { word, x: at };
+    });
+};
+
+/** Draw an RTL line word-by-word (real word gaps) right-aligned in its box. */
+const drawRtlLine = (doc, text, x, y, boxW) => {
+    const measure = (s) => doc.widthOfString(s);
+    for (const seg of rtlWordPositions(text, measure, x, boxW)) {
+        doc.text(seg.word, seg.x, y);
+    }
 };
 
 /** Cache brand logo buffer at module load */
@@ -266,6 +382,14 @@ const generateInvoicePDF = (invoiceData, user) => {
             doc.registerFont('Inter-SemiBold', FONT_BUFFERS.semibold);
             doc.registerFont('Inter-Bold',     FONT_BUFFERS.bold);
             doc.registerFont('JetBrains Mono', FONT_BUFFERS.mono);
+            // Script fallbacks — parsed lazily by pdfkit on first use, so
+            // Latin-only invoices never pay for them.
+            for (const spec of SCRIPT_FAMILIES) {
+                doc.registerFont(`${spec.family}-Regular`,  FONT_BUFFERS[`${spec.key}Regular`]);
+                doc.registerFont(`${spec.family}-Medium`,   FONT_BUFFERS[`${spec.key}Medium`]);
+                doc.registerFont(`${spec.family}-SemiBold`, FONT_BUFFERS[`${spec.key}SemiBold`]);
+                doc.registerFont(`${spec.family}-Bold`,     FONT_BUFFERS[`${spec.key}Bold`]);
+            }
 
             /* ── Buffer collection ── */
             const chunks = [];
@@ -349,17 +473,27 @@ const generateInvoicePDF = (invoiceData, user) => {
             doc.fontSize(9).font('Inter').fillColor(C.textSecondary);
             doc.text('Mess Management Platform', brandTextX, subLineStartY);
 
+            // ── Invoice meta (right): labelled billing period + issued-on (IST) ──
+            // Declared before the billed-to block: the RTL name is right-aligned
+            // within the left column, which ends just before the meta column.
+            const metaX   = PAGE_W - MARGIN - 190;
+            const metaW   = 190;
+
             // ── Billed-to block (left), separated from the issuer ──
             doc.font('Inter-SemiBold').fontSize(9).fillColor(C.textSecondary);
             doc.text('BILLED TO', brandTextX, subLineStartY + 15);
-            doc.font('Inter').fontSize(10).fillColor(C.textPrimary);
-            doc.text(user.name || '\u2014', brandTextX, subLineStartY + 28);
-            doc.fontSize(9).fillColor(C.textSecondary);
+            const memberName = user.name || '\u2014';
+            doc.font(pickFont(memberName, 'Inter')).fontSize(10).fillColor(C.textPrimary);
+            if (isRtlParagraph(memberName)) {
+                // RTL: right-aligned in the left column (never enters the meta
+                // column); Latin / Bengali / Devanagari keep the original x.
+                drawRtlLine(doc, prepareRtl(memberName), brandTextX, subLineStartY + 28, (metaX - 14) - brandTextX);
+            } else {
+                doc.text(prepareRtl(memberName), brandTextX, subLineStartY + 28);
+            }
+            // Re-assert Inter so a fallback font never leaks onto the Latin email line
+            doc.font('Inter').fontSize(9).fillColor(C.textSecondary);
             doc.text(user.email || '', brandTextX, subLineStartY + 41);
-
-            // ── Invoice meta (right): labelled billing period + issued-on (IST) ──
-            const metaX   = PAGE_W - MARGIN - 190;
-            const metaW   = 190;
             // value hugs the right edge; label sits to its left on the same line
             const metaPair = (label, value, dy, vf, vs, vc) => {
                 doc.font(vf).fontSize(vs);                 // measure at the VALUE's real size
@@ -577,8 +711,15 @@ const generateInvoicePDF = (invoiceData, user) => {
                     const ry = y + 26 + i * 16;
                     doc.font('Inter').fontSize(9).fillColor(C.textSecondary);
                     doc.text(r[0], MARGIN + 12, ry);
-                    doc.font(r[2] ? 'JetBrains Mono' : 'Inter').fontSize(9).fillColor(C.textPrimary);
-                    doc.text(r[1], MARGIN + 130, ry, { width: CONTENT_W - 142 });
+                    const valueFont = r[2] ? 'JetBrains Mono' : pickFont(r[1], 'Inter');
+                    doc.font(valueFont).fontSize(9).fillColor(C.textPrimary);
+                    if (isRtlParagraph(r[1])) {
+                        // RTL value: right-aligned inside the existing value box;
+                        // every other value keeps the original left alignment.
+                        drawRtlLine(doc, prepareRtl(r[1]), MARGIN + 130, ry, CONTENT_W - 142);
+                    } else {
+                        doc.text(prepareRtl(r[1]), MARGIN + 130, ry, { width: CONTENT_W - 142 });
+                    }
                 });
                 y += blockH + 12;
             };
@@ -617,4 +758,4 @@ const generateInvoicePDF = (invoiceData, user) => {
     });
 };
 
-module.exports = { generateInvoicePDF };
+module.exports = { generateInvoicePDF, __testables: { pickFont, prepareRtl, rtlWordPositions } };
