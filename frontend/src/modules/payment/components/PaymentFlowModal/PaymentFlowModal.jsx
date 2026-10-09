@@ -826,7 +826,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
 
                       <Button
                         variant="premium"
-                        size="xl"
+                        size="md"
                         fullWidth
                         onClick={handleRazorpayProceed}
                         className="shadow-none transition-[transform] duration-100 will-change-transform"

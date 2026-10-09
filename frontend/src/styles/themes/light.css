@@ -197,11 +197,12 @@ html.light {
   /* Gradient: linear-gradient(to bottom, lighter-stop, darker-stop) */
   /* Label contrast verified against darkest gradient stop */
 
-  /* Primary — blue: white on #1E40AF = 8.8:1 ✓ AAA */
-  --btn-primary-from: #3B82F6;
-  --btn-primary-to: #1E40AF;
+  /* Primary — Cloudflare Kumo blue: white on #056DFF = 4.5:1 ✓ AA */
+  --btn-primary-from: #3C86FF;
+  --btn-primary-to: #056DFF;
   --btn-primary-label: #FFFFFF;
-  --btn-primary-border: #1D4ED8;
+  --btn-primary-border: #045EDE;
+  --btn-primary-hover-bg: linear-gradient(to bottom, #619EFF, #056DFF);
 
   /* Secondary — slate: #0F172A on #F1F5F9 = 18.4:1 ✓ AAA */
   --btn-secondary-from: #F8FAFC;
@@ -244,11 +245,12 @@ html.light {
   --btn-loading-label: #FFFFFF;
   --btn-loading-border: #334155;
 
-  /* Premium — gold: white on #92400E = 7.09:1 ✓ AAA */
-  --btn-premium-from: #F59E0B;
-  --btn-premium-to: #92400E;
-  --btn-premium-label: #FFFFFF;
-  --btn-premium-border: #78350F;
+  /* Premium — Cloudflare Kumo recipe, brand #F6821F: #2B1200 on #F6821F = 6.8:1 ✓ AAA */
+  --btn-premium-from: #F79541;
+  --btn-premium-to: #F6821F;
+  --btn-premium-label: #2B1200;
+  --btn-premium-border: #DD751C;
+  --btn-premium-hover-bg: linear-gradient(to bottom, #F9A661, #F6821F);
 
   /* Inverse — light on dark contexts: #0F172A on #F1F5F9 = 18.4:1 ✓ AAA */
   --btn-inverse-from: #F8FAFC;

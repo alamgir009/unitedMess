@@ -287,11 +287,11 @@ export default {
           backgroundImage: 'var(--btn-top-highlight-light)',
         };
         btnHover[`${cls}:hover`] = {
-          backgroundImage: `linear-gradient(to bottom, var(--btn-${v}-to), var(--btn-${v}-to))`,
+          backgroundImage: `var(--btn-${v}-hover-bg, linear-gradient(to bottom, var(--btn-${v}-to), var(--btn-${v}-to)))`,
           boxShadow: 'var(--btn-shadow-hover)',
         };
         btnActive[`${cls}:active`] = {
-          backgroundImage: `linear-gradient(to bottom, var(--btn-${v}-to), var(--btn-${v}-to))`,
+          backgroundImage: `var(--btn-${v}-hover-bg, linear-gradient(to bottom, var(--btn-${v}-to), var(--btn-${v}-to)))`,
           boxShadow: 'var(--btn-shadow-active)',
           opacity: '0.92',
         };
@@ -309,11 +309,11 @@ export default {
           backgroundImage: 'var(--btn-top-highlight-dark)',
         };
         darkOverrides[`${cls}:hover`] = {
-          backgroundImage: `linear-gradient(to bottom, var(--btn-${v}-to), var(--btn-${v}-to))`,
+          backgroundImage: `var(--btn-${v}-hover-bg, linear-gradient(to bottom, var(--btn-${v}-to), var(--btn-${v}-to)))`,
           boxShadow: 'var(--btn-shadow-dark-hover)',
         };
         darkOverrides[`${cls}:active`] = {
-          backgroundImage: `linear-gradient(to bottom, var(--btn-${v}-to), var(--btn-${v}-to))`,
+          backgroundImage: `var(--btn-${v}-hover-bg, linear-gradient(to bottom, var(--btn-${v}-to), var(--btn-${v}-to)))`,
           boxShadow: 'var(--btn-shadow-dark-active)',
         };
       });

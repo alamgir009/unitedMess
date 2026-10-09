@@ -196,11 +196,12 @@ html.dark {
   /* Gradient: linear-gradient(to bottom, lighter-stop, darker-stop) */
   /* Dark mode: deeper fills for AAA contrast with white/light text */
 
-  /* Primary — blue: white on #1E40AF = 8.72:1 ✓ AAA */
-  --btn-primary-from: #3B82F6;
-  --btn-primary-to: #1E40AF;
+  /* Primary — Cloudflare Kumo dark (brand #005AEB): white on #005AEB = 5.7:1 ✓ AA */
+  --btn-primary-from: #2673EE;
+  --btn-primary-to: #005AEB;
   --btn-primary-label: #FFFFFF;
-  --btn-primary-border: #1D4ED8;
+  --btn-primary-border: #0051D4;
+  --btn-primary-hover-bg: linear-gradient(to bottom, #4C83F1, #005AEB);
 
   /* Secondary — dark slate: #E2E8F0 on #0F172A = 14.48:1 ✓ AAA */
   --btn-secondary-from: #1E293B;
@@ -243,11 +244,12 @@ html.dark {
   --btn-loading-label: #E2E8F0;
   --btn-loading-border: #1E293B;
 
-  /* Premium — gold: white on #92400E = 7.09:1 ✓ AAA */
-  --btn-premium-from: #D97706;
-  --btn-premium-to: #92400E;
-  --btn-premium-label: #FFFFFF;
-  --btn-premium-border: #78350F;
+  /* Premium — Cloudflare Kumo dark, brand #DD751C: #2B1200 on #DD751C = 5.6:1 ✓ AA */
+  --btn-premium-from: #E28A3E;
+  --btn-premium-to: #DD751C;
+  --btn-premium-label: #2B1200;
+  --btn-premium-border: #C76919;
+  --btn-premium-hover-bg: linear-gradient(to bottom, #E7A060, #DD751C);
 
   /* Inverse — dark on light contexts: #F8FAFC on #0F172A = 17.06:1 ✓ AAA */
   --btn-inverse-from: #1E293B;
