@@ -620,7 +620,7 @@ const sendAccountLockedEmail = async (to, name = 'User') => {
     return sendEmail({ to, subject: 'Account Locked - Security Alert | United Mess', text, html });
 };
 
-const sendPaymentStatusEmail = async (to, name, payment, status) => {
+const sendPaymentStatusEmail = async (to, name, payment, status, invoicePdf) => {
     const isSuccess = status === 'completed';
     const isRefund = status === 'refunded';
     const title = isRefund ? 'Payment Refunded' : isSuccess ? 'Payment Successful' : 'Payment Failed';
@@ -677,7 +677,17 @@ const sendPaymentStatusEmail = async (to, name, payment, status) => {
             ? `Payment Confirmed — ${typeLabel} for ${payment.month}`
             : `Payment Failed — ${typeLabel} for ${payment.month}`;
 
-    return sendEmail({ to, subject, text, html });
+    // Optional invoice PDF attachment ({ buffer, fileName }) — same
+    // sanitisation + contentType contract as sendInvoiceEmail.
+    const attachments = invoicePdf?.buffer
+        ? [{
+            filename: String(invoicePdf.fileName || 'invoice.pdf').replace(/[^a-zA-Z0-9._-]/g, '_'),
+            content: invoicePdf.buffer,
+            contentType: 'application/pdf',
+        }]
+        : undefined;
+
+    return sendEmail({ to, subject, text, html, attachments });
 };
 
 const sendInvoiceEmail = async (to, name, monthName, pdfBuffer, fileName = 'invoice.pdf') => {

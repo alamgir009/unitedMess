@@ -7,7 +7,7 @@ const emailService = require('./email.service');
 const config = require('../config');
 const { getBillingPeriod } = require('../utils/helpers/date.helper');
 const { emitToUser } = require('../sockets');
-const { determineInvoiceStatus, SETTLEMENT_TOLERANCE } = require('./invoice.service');
+const { determineInvoiceStatus, SETTLEMENT_TOLERANCE, buildInvoicePdfAttachment } = require('./invoice.service');
 
 // ─────────────────────────────────────────────────────────────
 // Constants
@@ -115,6 +115,71 @@ const sendPaymentEmail = async (user, payment, status) => {
     } catch (error) {
         // Wrap in its own try/catch — if email fails, log and continue (non-blocking)
         console.error(`[Email Error] Failed to send payment email:`, error.message);
+    }
+};
+
+/**
+ * Payment-confirmation email with the invoice PDF attached.
+ *
+ *  - Atomic claim on Payment.invoiceEmailSentAt (updateOne with
+ *    `invoiceEmailSentAt: null`) → at-most-once per payment, so webhook
+ *    retries / double clicks can never produce a second email.
+ *  - PDF is best-effort: a build failure falls back to the plain
+ *    confirmation — the member still gets the payment email.
+ *  - gas_bill has no invoice PDF (the generator is mess-invoice only):
+ *    attachment skipped, email still sent.
+ *  - Never throws — PDF/email failure is logged with the payment ID only
+ *    (no PII, no secrets) and the payment flow is unaffected.
+ *
+ * @param {{ _id, name, email }} user
+ * @param {Object} payment - Mongoose doc or plain object
+ * @param {string} status  - 'completed' | 'refunded'
+ */
+const sendPaymentConfirmationWithInvoice = async (user, payment, status) => {
+    try {
+        if (!user || !user.email) {
+            console.warn('[Email] Skipping email: user data or email missing.');
+            return;
+        }
+
+        // Claim BEFORE doing any work — atomic filter+update on the null
+        // flag, so exactly one concurrent caller can win (modifiedCount 1)
+        const claimed = await Payment.updateOne(
+            { _id: payment._id, invoiceEmailSentAt: null },
+            { $set: { invoiceEmailSentAt: new Date() } }
+        );
+        if (!claimed?.modifiedCount) {
+            console.info('[Email] Payment confirmation already sent', { paymentId: String(payment._id) });
+            return;
+        }
+
+        let invoicePdf = null;
+        if (payment.type === 'mess_bill') {
+            try {
+                const parsed = parseMonthString(payment.month);
+                if (parsed) {
+                    invoicePdf = await buildInvoicePdfAttachment(
+                        payment.user || user._id,
+                        parsed.year,
+                        parsed.month
+                    );
+                }
+            } catch (err) {
+                console.error('[Email] Invoice PDF build failed', {
+                    paymentId: String(payment._id),
+                    error: err.message,
+                });
+            }
+        }
+
+        await emailService.sendPaymentStatusEmail(user.email, user.name, payment, status, invoicePdf);
+        console.info('[Email] Payment confirmation sent', { paymentId: String(payment._id) });
+    } catch (error) {
+        console.error('[Email Error] Payment confirmation failed', {
+            paymentId: String(payment?._id),
+            errorCode: error?.code,
+            error: error.message,
+        });
     }
 };
 
@@ -525,8 +590,8 @@ const verifyOnlinePayment = async ({ orderId, paymentId, signature }) => {
         await syncUserPaymentStatus(p.user, p.type, p.status, p.month);
         await syncInvoiceAfterPayment(p.user, p.month);
         if (user) {
-            sendPaymentEmail(user, p, 'completed').catch(err => {
-                console.error(`[Email Error] Failed to send payment confirmation to ${user.email}:`, err.message);
+            sendPaymentConfirmationWithInvoice(user, p, 'completed').catch(err => {
+                console.error(`[Email Error] Failed to send payment confirmation for payment ${p._id}:`, err.message);
             });
         }
     }
@@ -902,9 +967,13 @@ const verifyUpiManualPaymentService = async (paymentId, { status, adminRemarks, 
         syncInvoiceAfterPayment(payment.user, payment.month),
     ]);
 
-    // Send email (non-blocking)
+    // Send email (non-blocking) — approvals/rejections share one code path,
+    // only the confirmed (completed) state carries the invoice PDF
     if (user) {
-        sendPaymentEmail(user, payment, status).catch(() => {});
+        (status === 'completed'
+            ? sendPaymentConfirmationWithInvoice(user, payment, status)
+            : sendPaymentEmail(user, payment, status)
+        ).catch(() => {});
     }
 
     return payment;
@@ -917,6 +986,7 @@ module.exports = {
     createOnlinePaymentOrderForMonths,
     verifyOnlinePayment,
     verifyUpiManualPaymentService,
+    sendPaymentConfirmationWithInvoice,
     queryPayments,
     getPaymentById,
     updatePaymentById,

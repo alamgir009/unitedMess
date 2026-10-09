@@ -867,6 +867,94 @@ const getAdminUnpaidInvoices = async (month, year) => {
 };
 
 /**
+ * Helper: build a fully-annotated invoice + user pair ready for pdfService.
+ * Runs independent DB queries in parallel to minimize latency.
+ *
+ * Moved verbatim from invoice.controller — services must not import
+ * controllers, and payment.service needs this builder to attach the same
+ * PDF to payment-confirmation emails.
+ *
+ * @param {string} targetUserId
+ * @param {number} year
+ * @param {number} month — 1-indexed
+ * @returns {Promise<{ invoice: Object, user: Object, monthName: string }>}
+ */
+const buildInvoiceForPdf = async (targetUserId, year, month) => {
+    const monthName = new Intl.DateTimeFormat('en-US', {
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'UTC',
+    }).format(new Date(Date.UTC(year, month - 1, 1)));
+
+    // Parallel: fetch user, invoice (with payment data already attached),
+    // mess-wide stats, and the refund payout record — all independent.
+    // defer() converts a synchronous throw (e.g. a model call failing before
+    // it returns a promise) into a rejection, so array construction can never
+    // abort mid-way and orphan the promises already created — that would
+    // surface later as an unhandled rejection and crash the process.
+    const defer = (fn) => Promise.resolve().then(fn);
+    const [user, invoice, messStats, refundPayout] = await Promise.all([
+        defer(() => User.findById(targetUserId).lean()),
+        defer(() => getInvoice(targetUserId, month, year)),
+        defer(() => calculateMessStats(month, year)),
+        // Ground truth for "money returned": a refund Payment for this
+        // period (any type — same scope as the refund idempotency guard).
+        defer(() => Payment.findOne({
+            user: targetUserId,
+            month: monthName,
+            status: 'refunded',
+        }).lean()),
+    ]);
+
+    if (!user) throw new AppError('User not found', 404);
+    if (!invoice) throw new AppError('Invoice not found', 404);
+
+    // getInvoice() already attaches _paymentMethod/_transactionId/_paymentDate
+    // for finalized and non-finalized paths. Only annotate mess-wide stats
+    // which getInvoice() does not provide.
+    invoice._messGrandTotalMarket = messStats.totalMarketAmount;
+    invoice._messGrandTotalMeal = messStats.totalMealCount;
+    invoice._messGrandTotalGuest = messStats.totalGuestCount;
+
+    // Distinguishes "Refund Due" (credit not yet returned) from "Refunded"
+    // (payout recorded). invoice.totalPayable < 0 alone cannot — it stays
+    // negative after the refund is paid out.
+    invoice.refundSettled = !!refundPayout;
+
+    // Refund payout details for the invoice's refund block (display-only
+    // annotation — the payout Payment is the source of truth).
+    if (refundPayout) {
+        invoice._refundAmount  = refundPayout.amount;
+        invoice._refundAt      = refundPayout.paymentDate || refundPayout.createdAt;
+        // Refund rows are written without a gateway txn id — fall back to the
+        // payment record's own id so the reference is real, never fabricated.
+        invoice._refundReference = refundPayout.transactionId || String(refundPayout._id);
+    }
+
+    // If getInvoice() didn't attach payment data (exempt path), fetch it.
+    if (!invoice._paymentMethod) {
+        await _attachLatestPayment(invoice, targetUserId);
+    }
+
+    return { invoice, user, monthName };
+};
+
+/**
+ * In-memory invoice PDF attachment for one member + billing period.
+ * Never touches disk — the Buffer goes straight to nodemailer.
+ *
+ * @param {string} targetUserId
+ * @param {number} year
+ * @param {number} month — 1-indexed
+ * @returns {Promise<{ buffer: Buffer, fileName: string }>}
+ */
+const buildInvoicePdfAttachment = async (targetUserId, year, month) => {
+    const { invoice, user, monthName } = await buildInvoiceForPdf(targetUserId, year, month);
+    const buffer = await pdfService.generateInvoicePDF(invoice, user);
+    return { buffer, fileName: `UnitedMess_Invoice_${monthName.replace(/\s+/g, '_')}.pdf` };
+};
+
+/**
  * Send invoice PDF email to all active approved members.
  * Admin only. Generates a personalised binary PDF for each member
  * (mirroring PrintInvoice.jsx layout) and sends it as an attachment.
@@ -951,6 +1039,8 @@ module.exports = {
     determineInvoiceStatus,
     SETTLEMENT_TOLERANCE,
     attachLatestPayment: _attachLatestPayment,
+    buildInvoiceForPdf,
+    buildInvoicePdfAttachment,
     getInvoice,
     getActiveInvoice,
     getInvoiceForMonth,

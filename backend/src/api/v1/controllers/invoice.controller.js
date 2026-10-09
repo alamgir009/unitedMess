@@ -1,6 +1,7 @@
 const invoiceService = require('../../../services/invoice.service');
 const pdfService = require('../../../services/pdf.service');
 const emailService = require('../../../services/email.service');
+const paymentService = require('../../../services/payment.service');
 const notificationService = require('../../../services/notification.service');
 const { sendSuccessResponse } = require('../../../utils/helpers/response.helper');
 const { getBillingPeriod } = require('../../../utils/helpers/date.helper');
@@ -51,7 +52,7 @@ const getMonthlyInvoice = asyncHandler(async (req, res) => {
     // The resolved user doc is the authoritative identity for the invoice owner —
     // critical when an admin previews another member's invoice (header must show
     // the member, not the viewer).
-    const { invoice, user } = await _buildInvoiceForPdf(targetUserId, y, m);
+    const { invoice, user } = await invoiceService.buildInvoiceForPdf(targetUserId, y, m);
 
     // Attach a lean identity block (no sensitive fields) so the frontend preview
     // can render the invoice owner's name/email and per-guest charge correctly.
@@ -150,6 +151,10 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
 
     const refundDelta = delta !== undefined ? Number(delta) : 0;
 
+    // Hoisted so the refund confirmation (sent AFTER save) can read them
+    let refundPayment = null;
+    let refundUser = null;
+
     // If delta < 0, this is a refund operation — status is always 'refunded'
     if (refundDelta < 0) {
         // Idempotency check: prevent duplicate refunds for the same invoice
@@ -175,7 +180,7 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
 
         // Persist a Payment record so the refund appears in both member
         // and admin payment history (Payments page / invoice history).
-        const refundPayment = await Payment.create({
+        refundPayment = await Payment.create({
             user: invoice.user,
             // Refund deltas arrive negative; Payment.amount is min: 0 — the
             // sign is carried by status:'refunded' (legacy rows store negative,
@@ -190,21 +195,10 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
         });
 
         // Sync user payment/gasBill status for ALL refund types (not just gas_bill)
-        const { syncUserPaymentStatus } = require('../../../services/payment.service');
-        await syncUserPaymentStatus(invoice.user, refundType, 'refunded', invoice.monthName);
+        await paymentService.syncUserPaymentStatus(invoice.user, refundType, 'refunded', invoice.monthName);
 
         // Fetch full user details for email (name + email required)
-        const refundUser = await User.findById(invoice.user).select('name email').lean();
-
-        // Send refund confirmation email (non-blocking — never blocks the response)
-        if (refundUser?.email) {
-            emailService.sendPaymentStatusEmail(
-                refundUser.email,
-                refundUser.name,
-                { ...refundPayment.toObject?.() ?? refundPayment, month: invoice.monthName },
-                'refunded'
-            ).catch(err => logger.error('[Refund Email] Failed:', err.message));
-        }
+        refundUser = await User.findById(invoice.user).select('name email').lean();
 
         // Notify user of refund (in-app notification)
         notificationService.createAndSend(
@@ -232,6 +226,18 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
     }
 
     await invoice.save();
+
+    // Refund confirmation with the invoice PDF — sent AFTER save so the
+    // attached invoice reflects the persisted refunded state.
+    // Non-blocking: PDF/email failure must never fail the refund.
+    if (refundDelta < 0 && refundUser?.email) {
+        paymentService.sendPaymentConfirmationWithInvoice(
+            refundUser,
+            { ...refundPayment.toObject?.() ?? refundPayment, month: invoice.monthName, user: invoice.user },
+            'refunded'
+        ).catch(err => logger.error('[Refund Email] Failed:', err.message));
+    }
+
     sendSuccessResponse(res, 200, 'Invoice payment updated', invoice);
 });
 
@@ -292,65 +298,6 @@ const _resolveTargetUserId = (req) => {
 };
 
 /**
- * Helper: build a fully-annotated invoice + user pair ready for pdfService.
- * Runs independent DB queries in parallel to minimize latency.
- */
-const _buildInvoiceForPdf = async (targetUserId, year, month) => {
-    const monthName = new Intl.DateTimeFormat('en-US', {
-        month: 'long',
-        year: 'numeric',
-        timeZone: 'UTC',
-    }).format(new Date(Date.UTC(year, month - 1, 1)));
-
-    // Parallel: fetch user, invoice (with payment data already attached),
-    // mess-wide stats, and the refund payout record — all independent.
-    const [user, invoice, messStats, refundPayout] = await Promise.all([
-        User.findById(targetUserId).lean(),
-        invoiceService.getInvoice(targetUserId, month, year),
-        invoiceService.calculateMessStats(month, year),
-        // Ground truth for "money returned": a refund Payment for this
-        // period (any type — same scope as the refund idempotency guard).
-        Payment.findOne({
-            user: targetUserId,
-            month: monthName,
-            status: 'refunded',
-        }).lean(),
-    ]);
-
-    if (!user) throw new AppError('User not found', 404);
-    if (!invoice) throw new AppError('Invoice not found', 404);
-
-    // getInvoice() already attaches _paymentMethod/_transactionId/_paymentDate
-    // for finalized and non-finalized paths. Only annotate mess-wide stats
-    // which getInvoice() does not provide.
-    invoice._messGrandTotalMarket = messStats.totalMarketAmount;
-    invoice._messGrandTotalMeal = messStats.totalMealCount;
-    invoice._messGrandTotalGuest = messStats.totalGuestCount;
-
-    // Distinguishes "Refund Due" (credit not yet returned) from "Refunded"
-    // (payout recorded). invoice.totalPayable < 0 alone cannot — it stays
-    // negative after the refund is paid out.
-    invoice.refundSettled = !!refundPayout;
-
-    // Refund payout details for the invoice's refund block (display-only
-    // annotation — the payout Payment is the source of truth).
-    if (refundPayout) {
-        invoice._refundAmount  = refundPayout.amount;
-        invoice._refundAt      = refundPayout.paymentDate || refundPayout.createdAt;
-        // Refund rows are written without a gateway txn id — fall back to the
-        // payment record's own id so the reference is real, never fabricated.
-        invoice._refundReference = refundPayout.transactionId || String(refundPayout._id);
-    }
-
-    // If getInvoice() didn't attach payment data (exempt path), fetch it.
-    if (!invoice._paymentMethod) {
-        await invoiceService.attachLatestPayment(invoice, targetUserId);
-    }
-
-    return { invoice, user, monthName };
-};
-
-/**
  * GET /invoices/me/month/:year/:month/download
  * Server-side PDF generation — returns the PDF as a download.
  */
@@ -362,7 +309,7 @@ const downloadInvoicePDF = asyncHandler(async (req, res) => {
 
     const targetUserId = _resolveTargetUserId(req);
 
-    const { invoice, user, monthName } = await _buildInvoiceForPdf(targetUserId, y, m);
+    const { invoice, user, monthName } = await invoiceService.buildInvoiceForPdf(targetUserId, y, m);
     const pdfBuffer = await pdfService.generateInvoicePDF(invoice, user);
     const fileName = `UnitedMess_Invoice_${monthName.replace(/\s+/g, '_')}.pdf`;
 
@@ -399,7 +346,7 @@ const sendInvoiceEmailServer = asyncHandler(async (req, res) => {
         month: 'long', year: 'numeric', timeZone: 'UTC',
     }).format(new Date(Date.UTC(y, m - 1, 1)));
 
-    _buildInvoiceForPdf(targetUserId, y, m)
+    invoiceService.buildInvoiceForPdf(targetUserId, y, m)
         .then(({ invoice }) =>
             pdfService.generateInvoicePDF(invoice, user)
         )

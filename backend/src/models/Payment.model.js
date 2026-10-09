@@ -73,6 +73,11 @@ const paymentSchema = new mongoose.Schema(
             trim: true,
             default: '',
         },
+        invoiceEmailSentAt: {
+            type: Date,
+            default: null,
+            comment: "Claimed when the payment-confirmation email carrying the invoice PDF is sent — at-most-once guard against webhook retries / double clicks",
+        },
         statusHistory: [
             {
                 status: {
