@@ -373,7 +373,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
         renderFooter(
             <div className="flex gap-2.5 w-full">
                 <Button
-                    type="button" variant="ghost" size="sm"
+                    type="button" variant="secondary" size="sm"
                     onClick={onCancel} disabled={isSubmitting}
                     className="flex-1"
                 >
