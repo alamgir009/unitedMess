@@ -18,10 +18,10 @@ import {
     HiOutlineXMark,
     HiOutlineCurrencyRupee,
     HiOutlineFire,
-    HiOutlineDocumentText,
     HiOutlineArrowRight,
     HiOutlineArrowPath,
 } from 'react-icons/hi2';
+import { BsFileEarmarkPdf  } from "react-icons/bs";
 import toast from 'react-hot-toast';
 
 import { SkeletonCard, Button }              from '@/shared/components/ui';
@@ -263,7 +263,7 @@ const BillsOverview = React.memo(({
                         onClick={onViewInvoice}
                         className="w-full md:w-auto"
                     >
-                        <HiOutlineDocumentText className="w-4 h-4" />
+                        <BsFileEarmarkPdf  className="w-4 h-4" />
                         View Detailed Invoice
                     </Button>
                 </div>
