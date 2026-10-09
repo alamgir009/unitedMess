@@ -357,7 +357,7 @@ const AdminUpiForm = memo(({
       <Button variant="glass" size="md" fullWidth onClick={onCancel}>
         Cancel
       </Button>
-      <Button variant="premium" size="md" fullWidth isLoading={savingUpiConfig}>
+      <Button variant="premium" size="md" fullWidth isLoading={savingUpiConfig} className="!text-white">
         Save Setup
       </Button>
     </div>
@@ -829,7 +829,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
                         size="md"
                         fullWidth
                         onClick={handleRazorpayProceed}
-                        className="shadow-none transition-[transform] duration-100 will-change-transform"
+                        className="!text-white shadow-none transition-[transform] duration-100 will-change-transform"
                       >
                         Pay ₹{fmt(totalAmountWithFee)}
                       </Button>
@@ -975,6 +975,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
                             onClick={handleSubmitUtr}
                             disabled={submittingUpi || !utr.trim() || !UTR_PATTERN.test(utr)}
                             isLoading={submittingUpi}
+                            className="!text-white"
                           >
                             {!submittingUpi && <HiOutlineCheck className="w-4 h-4 mr-1.5" />}
                             Submit Reference

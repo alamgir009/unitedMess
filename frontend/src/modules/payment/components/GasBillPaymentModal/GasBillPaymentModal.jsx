@@ -447,7 +447,7 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
                     size="lg"
                     fullWidth
                     onClick={handleRazorpayProceed}
-                    className="shadow-md hover:shadow-lg transition-all"
+                    className="!text-white shadow-md hover:shadow-lg transition-all"
                   >
                     <HiOutlineLockClosed className="w-4 h-4 mr-2" />
                     Pay ₹{fmt(totalAmountWithFee)} Securely
@@ -539,6 +539,7 @@ const GasBillPaymentModal = ({ isOpen, onClose, payableAmount = 0, payableMonthN
                         onClick={handleSubmitUtr}
                         disabled={submittingUpi || !utr.trim()}
                         isLoading={submittingUpi}
+                        className="!text-white"
                       >
                         {!submittingUpi && <HiOutlineCheck className="w-4 h-4 mr-1.5" />}
                         Submit Reference
