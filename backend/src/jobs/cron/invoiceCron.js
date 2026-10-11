@@ -89,7 +89,32 @@ const registerInvoiceCron = () => {
         timezone: 'Asia/Kolkata', // IST — adjust to your server timezone if needed
     });
 
-    logger.info('[InvoiceCron] 📅 Invoice auto-finalization + billing-cycle reset cron registered (11th of each month at 00:01 IST).');
+    logger.info('[InvoiceCron] 📅 Invoice auto-finalization + billing-cycle reset cron registered (11th of each month at 00:01 AM IST).');
+
+    // ── Startup catch-up (idempotent) ────────────────────────────────────────
+    // node-cron does NOT backfill missed runs: if the server was down/restarting
+    // across 00:01 on the 11th (e.g. during a deploy), the rollover never
+    // happens and stale previous-month statuses (user.payment / user.gasBill,
+    // e.g. 'refunded') keep rendering on the Members page all month.
+    // Re-running the same job at boot is safe:
+    //  - finalizeMonth skips already-finalized invoices (isFinalized guard)
+    //  - the reset recomputes current-month aggregates and preserves any
+    //    member who already paid this period (completed-payment sets)
+    //  - the day >= 11 guard prevents finalizing the still-active period early
+    try {
+        const istNow = new Date().toLocaleDateString('en-US', {
+            timeZone: 'Asia/Kolkata',
+            day: 'numeric',
+        });
+        if (parseInt(istNow, 10) >= 11) {
+            logger.info('[InvoiceCron] 🔁 IST date is on/after the 11th — running rollover catch-up (idempotent)...');
+            runInvoiceFinalization().catch((err) => {
+                logger.error(`[InvoiceCron] ❌ Startup catch-up failed: ${err.message}`, { stack: err.stack });
+            });
+        }
+    } catch (err) {
+        logger.error(`[InvoiceCron] ❌ Startup catch-up check failed: ${err.message}`);
+    }
 };
 
 /**
