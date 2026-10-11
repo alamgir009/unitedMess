@@ -247,7 +247,20 @@ const syncInvoiceAfterPayment = async (userId, monthStr) => {
             // read/save uses). A refunded invoice is terminal — never
             // resurrect it to paid/unpaid from a payment re-sync.
             if (invoice.status !== 'refunded') {
-                invoice.status = determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
+                // A refund payout record is the ground truth that money was
+                // returned. Promote the invoice to 'refunded' instead of
+                // resurrecting it as unpaid — a resurrected row would re-list
+                // an already-settled bill in Unresolved Bills and invite
+                // double collection (the Resolve→refund path would then 409
+                // on the duplicate-refund guard).
+                const refundSettled = await Payment.exists({
+                    user: userId,
+                    month: monthStr,
+                    status: 'refunded',
+                });
+                invoice.status = refundSettled
+                    ? 'refunded'
+                    : determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
             }
             await invoice.save();
             console.info(`[Sync] Synced invoice status for user ${userId}, month ${monthStr} to ${invoice.status}`);

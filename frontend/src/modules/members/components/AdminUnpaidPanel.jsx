@@ -48,17 +48,46 @@ function shortRef(id) {
 }
 
 /* ─────────────────────────────────────────────
+   Settlement derivation — mirrors the backend's
+   invoiceService.computeRefundCredit / annotateRefundSettlement.
+   Fallbacks keep stale payloads (no annotation) rendering sanely.
+───────────────────────────────────────────── */
+const getSettlement = (inv) => {
+    const totalPayable = Number(inv.totalPayable) || 0;
+    const paidAmount = Number(inv.paidAmount) || 0;
+    const outstanding = totalPayable - paidAmount;
+    const refundCredit = Number(inv.refundCredit ?? Math.max(0, -outstanding));
+    // No annotation → recorded unknown → treat credit as still pending
+    const refundRemaining = Number(inv.refundRemaining ?? refundCredit);
+    const isRefundRow = refundCredit > 0 || outstanding < 0 || inv.status === 'refunded';
+    const isRefundDue = isRefundRow && refundRemaining > 0;
+    const isRefundSettled = isRefundRow && !isRefundDue;
+    const actionable = isRefundDue || (!isRefundRow && outstanding > 0);
+    const dueAmount = isRefundRow ? Math.max(0, refundRemaining) : Math.max(0, outstanding);
+    return { outstanding, refundCredit, refundRemaining, isRefundRow, isRefundDue, isRefundSettled, actionable, dueAmount };
+};
+
+/* ─────────────────────────────────────────────
    StatusPill
 ───────────────────────────────────────────── */
-const StatusPill = React.memo(({ status }) => {
+const StatusPill = React.memo(({ status, refund, refundDue }) => {
     const map = {
         unpaid: 'bg-danger-bg text-danger-text border-danger-border',
         partially_paid: 'bg-warning-bg text-warning-text border-warning-border',
         paid: 'bg-success-bg text-success-text border-success-border',
         refunded: 'bg-info-bg text-info-text border-info-border',
     };
-    const cls = map[status] ?? 'bg-card text-muted-foreground border-border';
-    const label = status === 'partially_paid' ? 'Partial' : status === 'refunded' ? 'Refunded' : (status ?? 'unknown');
+    const base = map[status] ?? 'bg-card text-muted-foreground border-border';
+    // Refund rows derive their label from settlement, NOT the stored status
+    // (stale rows can carry 'unpaid' while their credit is already recorded).
+    const cls = refund
+        ? (refundDue
+            ? 'bg-warning-bg text-warning-text border-warning-border'
+            : 'bg-info-bg text-info-text border-info-border')
+        : base;
+    const label = refund
+        ? (refundDue ? 'Refund Due' : 'Refunded')
+        : status === 'partially_paid' ? 'Partial' : (status ?? 'unknown');
     return (
         <span className={cn(
             'inline-flex items-center px-2.5 py-1 rounded-full text-[10.5px] font-bold uppercase tracking-widest border',
@@ -75,22 +104,23 @@ StatusPill.displayName = 'StatusPill';
 ───────────────────────────────────────────── */
 const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
     const { totalPayable, paidAmount } = invoice;
-    const outstanding = totalPayable - paidAmount;
-    const isRefundMode = outstanding < 0;
-    const isSettled = outstanding === 0;
+    const settlement = getSettlement(invoice);
+    const outstanding = settlement.outstanding;
+    const isRefundMode = settlement.isRefundDue || outstanding < 0;
+    const isSettled = !isRefundMode && outstanding === 0;
 
     // Minimum paidAmount allowed after refund:
     //   totalPayable > 0 → 0  (can't go below zero on a positive bill)
     //   totalPayable < 0 → totalPayable (negative bill allows matching negative paidAmount)
+    // Server clamps stored paidAmount to ≥ 0 (model min: 0).
     const minAllowedPaid = Math.min(0, totalPayable);
 
-    // Maximum refund amount = current paidAmount - lowest allowed paidAmount
-    const maxRefund = paidAmount - minAllowedPaid;
+    // Maximum refund = the credit still UNCOVERED by recorded payouts — the
+    // backend enforces the same amount-aware limit (partial top-ups like
+    // ₹215.60 of ₹329.60 are allowed; over-refunds are rejected).
+    const maxRefund = isRefundMode ? Math.max(0, settlement.refundRemaining) : 0;
 
-    // Suggested refund: the amount that settles paidAmount to totalPayable
-    const suggestedRefund = Math.max(0, paidAmount - totalPayable);
-
-    const defaultAmount = isRefundMode ? String(Math.min(suggestedRefund, maxRefund)) : String(outstanding);
+    const defaultAmount = isRefundMode ? String(maxRefund) : String(outstanding);
     const [amount, setAmount] = useState(defaultAmount);
 
     const parsed = parseFloat(amount);
@@ -208,7 +238,7 @@ ResolveModal.displayName = 'ResolveModal';
 /* ─────────────────────────────────────────────
    GroupHeader
 ───────────────────────────────────────────── */
-const GroupHeader = React.memo(({ user, count }) => (
+const GroupHeader = React.memo(({ user, count, settledCount }) => (
     <div className={cn(
         'flex items-center gap-3 px-4 md:px-6 py-4 bg-transparent'
     )}>
@@ -217,10 +247,17 @@ const GroupHeader = React.memo(({ user, count }) => (
             <p className="text-[13.5px] font-bold text-foreground truncate">{user?.name ?? 'Unknown'}</p>
             <p className="text-[11px] font-normal text-muted-foreground truncate">{user?.email ?? '—'}</p>
         </div>
-        <span className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-danger-bg text-danger-text border border-danger-border">
-            <AlertTriangle size={10} />
-            {count} unresolved
-        </span>
+        {count > 0 ? (
+            <span className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-danger-bg text-danger-text border border-danger-border">
+                <AlertTriangle size={10} />
+                {count} unresolved
+            </span>
+        ) : (
+            <span className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-info-bg text-info-text border border-info-border">
+                <CheckCircle2 size={10} />
+                {settledCount} refunded
+            </span>
+        )}
     </div>
 ));
 GroupHeader.displayName = 'GroupHeader';
@@ -230,7 +267,9 @@ GroupHeader.displayName = 'GroupHeader';
 ───────────────────────────────────────────── */
 const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
     const [showModal, setShowModal] = useState(false);
-    const outstanding = useMemo(() => Math.max(0, invoice.totalPayable - invoice.paidAmount), [invoice.totalPayable, invoice.paidAmount]);
+    // Settlement state derived the same way as the backend (credit/recorded).
+    const settlement = useMemo(() => getSettlement(invoice), [invoice]);
+    const { isRefundRow, isRefundDue, isRefundSettled, dueAmount } = settlement;
     const refId = useMemo(() => shortRef(invoice._id), [invoice._id]);
 
     const handleCopyRef = useCallback(() => {
@@ -263,13 +302,26 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
                 <div className="col-span-1"><p className="text-[12px] font-bold tabular-nums text-foreground">₹{fmt(invoice.marketAmountSpent)}</p></div>
                 <div className="col-span-1"><p className="text-[12.5px] font-bold tabular-nums text-foreground">₹{fmt(invoice.totalPayable)}</p></div>
                 <div className="col-span-1"><p className="text-[12.5px] font-bold tabular-nums text-success-text">₹{fmt(invoice.paidAmount)}</p></div>
-                <div className="col-span-1"><p className="text-[12.5px] font-bold tabular-nums text-danger-text">₹{fmt(outstanding)}</p></div>
-                <div className="col-span-1 flex items-center justify-start"><StatusPill status={invoice.status} /></div>
+                <div className="col-span-1">
+                    <p className={cn('text-[12.5px] font-bold tabular-nums',
+                        isRefundSettled ? 'text-muted-foreground' : isRefundDue ? 'text-success-text' : 'text-danger-text')}>
+                        {isRefundSettled ? '₹0'
+                            : isRefundDue ? `−₹${fmt(dueAmount)}`
+                                : `₹${fmt(dueAmount)}`}
+                    </p>
+                </div>
+                <div className="col-span-1 flex items-center justify-start">
+                    <StatusPill status={invoice.status} refund={isRefundRow} refundDue={isRefundDue} />
+                </div>
                 <div className="col-span-1 flex justify-end">
-                    <Button variant="success" size="sm" onClick={() => setShowModal(true)} disabled={isSaving} iconOnly={false}>
-                        {isSaving ? <Spinner size="xs" color="white" /> : <ArrowRight size={13} className="stroke-[2.5]" />}
-                        {isSaving ? 'Saving' : 'Resolve'}
-                    </Button>
+                    {isRefundSettled ? (
+                        <span className="text-[11px] font-semibold text-muted-foreground" title="Refund recorded — informational row, no action needed">Recorded</span>
+                    ) : (
+                        <Button variant={isRefundDue ? 'warning' : 'success'} size="sm" onClick={() => setShowModal(true)} disabled={isSaving} iconOnly={false}>
+                            {isSaving ? <Spinner size="xs" color="white" /> : <ArrowRight size={13} className="stroke-[2.5]" />}
+                            {isSaving ? 'Saving' : isRefundDue ? 'Refund' : 'Resolve'}
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -280,7 +332,7 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
                         <span className="text-[10px] font-mono font-semibold text-muted-foreground">{refId}</span>
                         <button onClick={handleCopyRef} className="p-0.5 rounded hover:bg-muted"><Copy size={9} /></button>
                     </div>
-                    <StatusPill status={invoice.status} />
+                    <StatusPill status={invoice.status} refund={isRefundRow} refundDue={isRefundDue} />
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="flex flex-col gap-1 bg-muted dark:bg-muted/40 rounded-xl px-3 py-2.5">
@@ -303,15 +355,32 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
                         <span className="text-[9px] font-bold text-success-text">Paid</span>
                         <span className="text-[12.5px] font-bold tabular-nums text-success-text">₹ {fmt(invoice.paidAmount)}</span>
                     </div>
-                    <div className="flex flex-col gap-1 bg-danger-bg rounded-xl px-3 py-2.5">
-                        <span className="text-[9px] font-bold text-danger-text">Due</span>
-                        <span className="text-[12.5px] font-bold tabular-nums text-danger-text">₹ {fmt(outstanding)}</span>
+                    <div className={cn('flex flex-col gap-1 rounded-xl px-3 py-2.5',
+                        isRefundSettled ? 'bg-muted dark:bg-muted/40'
+                            : isRefundDue ? 'bg-success-bg' : 'bg-danger-bg')}>
+                        <span className={cn('text-[9px] font-bold',
+                            isRefundSettled ? 'text-muted-foreground'
+                                : isRefundDue ? 'text-success-text' : 'text-danger-text')}>
+                            {isRefundSettled ? 'Refund' : isRefundDue ? 'Refund Due' : 'Due'}
+                        </span>
+                        <span className={cn('text-[12.5px] font-bold tabular-nums',
+                            isRefundSettled ? 'text-muted-foreground'
+                                : isRefundDue ? 'text-success-text' : 'text-danger-text')}>
+                            {isRefundSettled ? '₹ 0'
+                                : isRefundDue ? `− ₹ ${fmt(dueAmount)}`
+                                    : `₹ ${fmt(dueAmount)}`}
+                        </span>
                     </div>
                 </div>
-                <Button variant="success" fullWidth onClick={() => setShowModal(true)} disabled={isSaving}>
-                    {isSaving ? <Spinner size="sm" color="white" /> : <BadgeIndianRupee size={16} />}
-                    {isSaving ? 'Processing…' : `Resolve — ₹ ${fmt(outstanding)}`}
-                </Button>
+                {!isRefundSettled && (
+                    <Button variant={isRefundDue ? 'warning' : 'success'} fullWidth onClick={() => setShowModal(true)} disabled={isSaving}>
+                        {isSaving ? <Spinner size="sm" color="white" /> : isRefundDue ? <RefreshCw size={16} /> : <BadgeIndianRupee size={16} />}
+                        {isSaving ? 'Processing…' : isRefundDue ? `Refund — ₹ ${fmt(dueAmount)}` : `Resolve — ₹ ${fmt(dueAmount)}`}
+                    </Button>
+                )}
+                {isRefundSettled && (
+                    <p className="text-center text-[11px] font-semibold text-muted-foreground">Refund recorded — nothing to action</p>
+                )}
             </div>
 
             {showModal && <ResolveModal invoice={invoice} isSaving={isSaving} onClose={handleCloseModal} onResolve={handleResolveInvoice} />}
@@ -372,13 +441,16 @@ const AdminUnpaidPanel = React.memo(() => {
         }
     }, [dispatch, selected]);
 
-    const totalOutstanding = useMemo(
-        () => unpaidInvoices.reduce((sum, inv) => {
-            if (inv.status === 'refunded') return sum;
-            return sum + Math.max(0, inv.totalPayable - inv.paidAmount);
-        }, 0),
-        [unpaidInvoices]
-    );
+    const { totalOutstanding, totalRefundable } = useMemo(() => {
+        let debt = 0;
+        let refundable = 0;
+        for (const inv of unpaidInvoices) {
+            const s = getSettlement(inv);
+            if (s.isRefundRow) refundable += s.refundRemaining;
+            else debt += Math.max(0, s.outstanding);
+        }
+        return { totalOutstanding: debt, totalRefundable: refundable };
+    }, [unpaidInvoices]);
 
     const isLastFinalizedPeriod = useMemo(() => {
         const lp = getLastFinalizedPeriod();
@@ -391,7 +463,13 @@ const AdminUnpaidPanel = React.memo(() => {
     // ─────────────────────────────────────────────────────────────────────────
     const groupedInvoices = useMemo(() => {
         const groupMap = new Map();
-        const eligible = unpaidInvoices.filter(inv => inv.totalPayable > 0 && inv.totalPayable > inv.paidAmount);
+        // Displayable rows = member debt OR any refund-credit row (settled
+        // rows included for the refund record — they render as informational
+        // "Refunded"). Actionability is decided per-row for counts/buttons.
+        const eligible = unpaidInvoices.filter(inv => {
+            const s = getSettlement(inv);
+            return s.isRefundRow || s.outstanding > 0;
+        });
 
         for (const inv of eligible) {
             // 1. Extract a reliable user identifier from the invoice
@@ -443,10 +521,23 @@ const AdminUnpaidPanel = React.memo(() => {
         );
     }, [unpaidInvoices]);
 
-    const eligibleCount = useMemo(
-        () => groupedInvoices.reduce((sum, g) => sum + g.invoices.length, 0),
-        [groupedInvoices]
-    );
+    const { visibleCount, unresolvedCount, settledRefundCount, actionableMemberCount } = useMemo(() => {
+        let visible = 0;
+        let unresolved = 0;
+        let members = 0;
+        for (const g of groupedInvoices) {
+            visible += g.invoices.length;
+            const actionable = g.invoices.filter(inv => getSettlement(inv).actionable).length;
+            unresolved += actionable;
+            if (actionable > 0) members += 1;
+        }
+        return {
+            visibleCount: visible,
+            unresolvedCount: unresolved,
+            settledRefundCount: visible - unresolved,
+            actionableMemberCount: members,
+        };
+    }, [groupedInvoices]);
 
     return (
         <section className="w-full">
@@ -516,7 +607,7 @@ const AdminUnpaidPanel = React.memo(() => {
                 )}
 
                 {/* Empty States */}
-                {!unpaidInvoicesLoading && eligibleCount === 0 && isLastFinalizedPeriod && (
+                {!unpaidInvoicesLoading && visibleCount === 0 && isLastFinalizedPeriod && (
                     <div className="flex flex-col items-center justify-center py-16 gap-3">
                         <div className="w-14 h-14 rounded-full bg-border dark:bg-muted flex items-center justify-center"><Calendar size={26} className="text-muted-foreground" /></div>
                         <p className="text-sm font-bold text-muted-foreground">Last finalized period: {selected.label}</p>
@@ -524,7 +615,7 @@ const AdminUnpaidPanel = React.memo(() => {
                     </div>
                 )}
 
-                {!unpaidInvoicesLoading && eligibleCount === 0 && !isLastFinalizedPeriod && (
+                {!unpaidInvoicesLoading && visibleCount === 0 && !isLastFinalizedPeriod && (
                     <div className="flex flex-col items-center justify-center py-16 gap-3">
                         <div className="w-14 h-14 rounded-full bg-success-bg flex items-center justify-center"><CheckCircle2 size={26} className="text-success-text" /></div>
                         <p className="text-sm font-bold text-foreground">All clear for {selected.label}!</p>
@@ -534,28 +625,54 @@ const AdminUnpaidPanel = React.memo(() => {
                 {/* Grouped Rows */}
                 {!unpaidInvoicesLoading && groupedInvoices.length > 0 && (
                     <div className="flex flex-col">
-                        {groupedInvoices.map((group) => (
-                            <div key={group.user?._id || 'unknown'} className="flex flex-col">
-                                <GroupHeader user={group.user} count={group.invoices.length} />
-                                {group.invoices.map(invoice => (
-                                    <InvoiceRow key={invoice._id} invoice={invoice} onResolve={handleResolve} isSaving={savingId === invoice._id} />
-                                ))}
-                            </div>
-                        ))}
+                        {groupedInvoices.map((group) => {
+                            const actionable = group.invoices.filter(inv => getSettlement(inv).actionable).length;
+                            return (
+                                <div key={group.user?._id || 'unknown'} className="flex flex-col">
+                                    <GroupHeader user={group.user} count={actionable} settledCount={group.invoices.length - actionable} />
+                                    {group.invoices.map(invoice => (
+                                        <InvoiceRow key={invoice._id} invoice={invoice} onResolve={handleResolve} isSaving={savingId === invoice._id} />
+                                    ))}
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
 
                 {/* Footer */}
-                {!unpaidInvoicesLoading && eligibleCount > 0 && (
+                {!unpaidInvoicesLoading && visibleCount > 0 && (
                     <div className="flex flex-col md:flex-row gap-3 items-center justify-between px-4 md:px-6 py-3.5 bg-muted/60 dark:bg-muted/30 border-t border-border">
                         <div className="flex items-center gap-2">
-                            <AlertTriangle size={13} className="text-warning-text" />
-                            <span className="text-[11.5px] font-bold text-warning-text">
-                                {eligibleCount} unresolved invoice{eligibleCount !== 1 ? 's' : ''} across {groupedInvoices.length} member{groupedInvoices.length !== 1 ? 's' : ''}
-                            </span>
+                            {unresolvedCount > 0 ? (
+                                <>
+                                    <AlertTriangle size={13} className="text-warning-text" />
+                                    <span className="text-[11.5px] font-bold text-warning-text">
+                                        {unresolvedCount} unresolved invoice{unresolvedCount !== 1 ? 's' : ''} across {actionableMemberCount} member{actionableMemberCount !== 1 ? 's' : ''}
+                                    </span>
+                                </>
+                            ) : (
+                                <>
+                                    <CheckCircle2 size={13} className="text-info-text" />
+                                    <span className="text-[11.5px] font-bold text-info-text">
+                                        {settledRefundCount} refund{settledRefundCount !== 1 ? 's' : ''} recorded — no pending action
+                                    </span>
+                                </>
+                            )}
                         </div>
-                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
-                            <ReceiptIndianRupee size={11} /> Total outstanding: ₹ {fmt(totalOutstanding)}
+                        <div className="flex items-center gap-3 flex-wrap justify-end">
+                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
+                                <ReceiptIndianRupee size={11} /> Total outstanding: ₹ {fmt(totalOutstanding)}
+                            </div>
+                            {totalRefundable > 0 && (
+                                <div className="flex items-center gap-1.5 text-[11px] font-bold text-success-text">
+                                    <RefreshCw size={11} /> Refundable: ₹ {fmt(totalRefundable)}
+                                </div>
+                            )}
+                            {settledRefundCount > 0 && unresolvedCount > 0 && (
+                                <div className="flex items-center gap-1.5 text-[11px] font-bold text-info-text">
+                                    <CheckCircle2 size={11} /> {settledRefundCount} refund{settledRefundCount !== 1 ? 's' : ''} recorded
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

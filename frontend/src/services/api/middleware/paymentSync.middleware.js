@@ -8,15 +8,11 @@ import {
 import {
     fetchActiveInvoice,
 } from '../../../modules/payment/store/invoice.slice';
-import { fetchBillingMonthStats, fetchUsers, fetchAdminUnpaidInvoices } from '../../../modules/members/store/members.slice';
+import { fetchBillingMonthStats, fetchUsers } from '../../../modules/members/store/members.slice';
 import {
     fetchAdminDashboardStats,
     fetchUserDashboardStats,
 } from '../../../modules/dashboard/store/dashboard.slice';
-
-// FIX: Import centralized billing period utilities from shared source of truth.
-// Eliminates the duplicated local getBillingPeriod() that drifted from backend logic.
-import { getLastFinalizedPeriod } from '@shared/utils/billingPeriod';
 
 const MEAL_MUTATIONS = [
     'meal/create/fulfilled',
@@ -81,8 +77,10 @@ const syncAll = (store) => {
 
     // 5. Admin-only dispatches
     if (state.auth.user?.role === 'admin') {
-        const lastFinalized = getLastFinalizedPeriod();
-        store.dispatch(fetchAdminUnpaidInvoices({ month: lastFinalized.month, year: lastFinalized.year }));
+        // NOTE: fetchAdminUnpaidInvoices is intentionally NOT refetched here.
+        // The panel manages its own selected month; blindly reloading the
+        // last-finalized period clobbered whatever month the admin was
+        // inspecting (e.g. reviewing June while the middle of October).
         store.dispatch(fetchUsers(DEFAULT_USER_PARAMS));
         store.dispatch(fetchAdminDashboardStats());
     } else if (state.auth.user) {

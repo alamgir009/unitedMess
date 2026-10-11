@@ -147,7 +147,15 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
         throw new AppError('Valid paidAmount is required', 400);
     }
 
-    invoice.paidAmount = Number(paidAmount);
+    // paidAmount is min: 0 in the Invoice model — clamp so a refund-due
+    // resolution (which computes a negative new paid amount) never fails
+    // model validation, and so a negative paidAmount can never be stored
+    // without delta<0 having created the matching refund Payment record.
+    // Original paid kept for the refund guard: the body's paidAmount is
+    // already original + delta, and credit must be measured on the
+    // PRE-refund state.
+    const originalPaidAmount = Number(invoice.paidAmount) || 0;
+    invoice.paidAmount = Math.max(0, Number(paidAmount));
 
     const refundDelta = delta !== undefined ? Number(delta) : 0;
 
@@ -157,14 +165,37 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
 
     // If delta < 0, this is a refund operation — status is always 'refunded'
     if (refundDelta < 0) {
-        // Idempotency check: prevent duplicate refunds for the same invoice
-        const existingRefund = await Payment.findOne({
+        // Amount-aware refund guard (single source: invoiceService helpers).
+        // Existence-based blocking wrongly refused legitimate top-ups
+        // (e.g. only ₹114 of ₹329.60 recorded → the remaining ₹215.60
+        // could never be paid out). Allow payouts only while credit is
+        // still uncovered; the predicate over {user, month} matches the
+        // panel's refundRecorded sum exactly so they can never disagree.
+        const credit = invoiceService.computeRefundCredit({
+            totalPayable: invoice.totalPayable,
+            paidAmount: originalPaidAmount,
+        });
+        const recordedRows = await Payment.find({
             user: invoice.user,
             month: invoice.monthName,
             status: 'refunded',
-        }).lean();
-        if (existingRefund) {
-            throw new AppError(`A refund for ${invoice.monthName} has already been processed`, 409);
+        }).select('amount').lean();
+        const recorded = recordedRows.reduce(
+            (sum, r) => sum + Math.abs(Number(r.amount) || 0), 0
+        );
+        const remainingRefundable = credit - recorded;
+        const refundAmount = Math.abs(refundDelta);
+
+        if (remainingRefundable <= invoiceService.SETTLEMENT_TOLERANCE) {
+            throw new AppError(
+                `A refund for ${invoice.monthName} has already been processed`, 409
+            );
+        }
+        if (refundAmount > remainingRefundable + invoiceService.SETTLEMENT_TOLERANCE) {
+            throw new AppError(
+                `Refund of ₹${refundAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })} exceeds the remaining refundable of ₹${Math.max(0, remainingRefundable).toLocaleString('en-IN', { maximumFractionDigits: 2 })} for ${invoice.monthName}`,
+                409
+            );
         }
 
         invoice.status = 'refunded';
@@ -238,7 +269,12 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
         ).catch(err => logger.error('[Refund Email] Failed:', err.message));
     }
 
-    sendSuccessResponse(res, 200, 'Invoice payment updated', invoice);
+    // Annotate settlement so the panel row flips state without a refetch:
+    // credit fully recorded → informational "Refunded"; partial → remaining.
+    const payload = invoice.toObject();
+    await invoiceService.annotateRefundSettlement([payload]);
+
+    sendSuccessResponse(res, 200, 'Invoice payment updated', payload);
 });
 
 /**

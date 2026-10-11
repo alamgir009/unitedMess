@@ -549,14 +549,7 @@ const getUserInvoiceHistory = async (userId) => {
  * There is no user-date pre-filter — a member is never silently dropped
  * from finalization because of when their account was created.
  */
-const finalizeMonth = async (month, year, adminId) => {
-    // Resolve admin ID for refund Payment records (createdBy is required)
-    let resolvedAdminId = adminId;
-    if (!resolvedAdminId) {
-        const admin = await User.findOne({ role: 'admin' }).select('_id').lean();
-        resolvedAdminId = admin?._id;
-    }
-
+const finalizeMonth = async (month, year) => {
     const activeUsers = await User.find({ isActive: true, userStatus: 'approved' })
         .select('_id')
         .lean();
@@ -564,8 +557,8 @@ const finalizeMonth = async (month, year, adminId) => {
     const results = [];
 
     for (const user of activeUsers) {
-        // One member's failure (refund ValidationError, save race, etc.) must
-        // never abort finalization for every other member.
+        // One member's failure (save race, etc.) must never abort
+        // finalization for every other member.
         try {
             // getInvoice() resolves the effective exemption (admin override or
             // zero-activity). Exempt invoices come back with totalPayable: 0.
@@ -581,45 +574,13 @@ const finalizeMonth = async (month, year, adminId) => {
             invoice.isFinalized = true;
             invoice.finalizedAt = new Date();
 
+            // Negative payable derives 'refunded' (credit owed to the member).
+            // NO refund Payment record is fabricated here — a payout only
+            // exists once an admin actually resolves the bill on the
+            // Unresolved Bills panel. Fabricated records made refund-due
+            // bills invisible to the admin and falsely showed "Refunded"
+            // to members who never received money.
             invoice.status = determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
-
-            // Auto-create refund Payment record when totalPayable is negative
-            // (user is owed money). Prevents orphaned refund-due invoices.
-            if (invoice.totalPayable < 0) {
-                const existingRefund = await Payment.findOne({
-                    user: invoice.user,
-                    month: invoice.monthName,
-                    status: 'refunded',
-                }).lean();
-
-                if (!existingRefund) {
-                    // Detect the original payment type for this user/month
-                    const originalPayment = await Payment.findOne({
-                        user: invoice.user,
-                        month: invoice.monthName,
-                        status: 'completed',
-                    }).sort({ paymentDate: -1 }).lean();
-                    const refundType = originalPayment?.type || 'mess_bill';
-
-                    await Payment.create({
-                        user: invoice.user,
-                        // totalPayable is negative here; Payment.amount min: 0 —
-                        // status:'refunded' carries the sign (see Payment.model).
-                        amount: Math.abs(invoice.totalPayable),
-                        month: invoice.monthName,
-                        type: refundType,
-                        status: 'refunded',
-                        paymentMethod: 'cash',
-                        paymentDate: invoice.finalizedAt || new Date(),
-                        createdBy: resolvedAdminId,
-                        remarks: `Auto-refund of ₹${Math.abs(invoice.totalPayable).toLocaleString('en-IN', { maximumFractionDigits: 2 })} — user credited during finalization`,
-                    });
-
-                    // Sync user payment/gasBill status for the refund
-                    const { syncUserPaymentStatus } = require('./payment.service');
-                    await syncUserPaymentStatus(invoice.user, refundType, 'refunded', invoice.monthName);
-                }
-            }
 
             await invoice.save();
             results.push(invoice.toObject());
@@ -663,7 +624,10 @@ const finalizeMonth = async (month, year, adminId) => {
 };
 
 /**
- * Sync an invoice's paid amount and status
+ * Sync an invoice's paid amount and status.
+ * NOTE: never fabricates refund Payment records — a credit (negative
+ * payable) derives 'refunded' status; the payout record only appears
+ * when an admin resolves the bill (see getAdminUnpaidInvoices panel).
  */
 const syncInvoiceStatus = async (invoiceId) => {
     const invoice = await Invoice.findById(invoiceId);
@@ -672,45 +636,6 @@ const syncInvoiceStatus = async (invoiceId) => {
     invoice.paidAmount = await calculatePaidAmount(invoice.user, invoice.month, invoice.year);
     
     invoice.status = determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
-
-    // Auto-create refund Payment record when totalPayable is negative
-    // (prevents orphaned refund-due invoices during re-sync)
-    if (invoice.totalPayable < 0) {
-        const existingRefund = await Payment.findOne({
-            user: invoice.user,
-            month: invoice.monthName,
-            status: 'refunded',
-        }).lean();
-
-        if (!existingRefund) {
-            const originalPayment = await Payment.findOne({
-                user: invoice.user,
-                month: invoice.monthName,
-                status: 'completed',
-            }).sort({ paymentDate: -1 }).lean();
-            const refundType = originalPayment?.type || 'mess_bill';
-
-            // Resolve admin ID for createdBy (required field)
-            const admin = await User.findOne({ role: 'admin' }).select('_id').lean();
-
-            await Payment.create({
-                user: invoice.user,
-                // totalPayable is negative here; Payment.amount min: 0 —
-                // status:'refunded' carries the sign (see Payment.model).
-                amount: Math.abs(invoice.totalPayable),
-                month: invoice.monthName,
-                type: refundType,
-                status: 'refunded',
-                paymentMethod: 'cash',
-                paymentDate: invoice.finalizedAt || new Date(),
-                createdBy: admin?._id,
-                remarks: `Auto-refund of ₹${Math.abs(invoice.totalPayable).toLocaleString('en-IN', { maximumFractionDigits: 2 })} — user credited during sync`,
-            });
-
-            const { syncUserPaymentStatus } = require('./payment.service');
-            await syncUserPaymentStatus(invoice.user, refundType, 'refunded', invoice.monthName);
-        }
-    }
 
     await invoice.save();
     return invoice;
@@ -833,12 +758,84 @@ const resetUserStatsAfterFinalization = async () => {
 };
 
 
+/** Round to 2dp — keeps ₹ annotations free of float noise (1453.87 + …). */
+const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+
 /**
- * Get all unpaid or partially paid invoices for a given month.
- * Admin only. Used for the "Resolve Unpaid Bills" panel.
- * Shows ALL unpaid/partially paid invoices regardless of finalization status,
- * so the admin always sees outstanding debt without depending on the cron schedule.
- * EXCLUDES exempt invoices (admin-set exemption or zero-activity rule).
+ * Gross refund credit owed to the member for ONE invoice.
+ *   credit = max(0, −(totalPayable − max(0, paidAmount)))
+ * `max(0, paidAmount)` guards legacy rows saved with a negative paidAmount
+ * (before the model enforced min: 0) from erasing the credit.
+ * Shared by the Unresolved Bills panel and the PATCH payment controller so
+ * both always agree on how much a refund can be.
+ */
+function computeRefundCredit(invoice) {
+    const paid = Math.max(0, Number(invoice?.paidAmount) || 0);
+    const net = (Number(invoice?.totalPayable) || 0) - paid;
+    return net < 0 ? Math.abs(net) : 0;
+}
+
+/**
+ * Attach refund settlement fields to invoice objects returned by the panel:
+ *   refundCredit    — gross credit owed to the member
+ *   refundRecorded  — Σ |amount| of refund payouts recorded for {user, month}
+ *   refundRemaining — max(0, credit − recorded), snapped to 0 within
+ *                     SETTLEMENT_TOLERANCE (₹1 — same tolerance that settles
+ *                     debt; covers rounded payouts like ₹232 vs ₹232.27).
+ * Exactly ONE Payment.find for the whole period — no N+1.
+ *
+ * NOTE: recorded sums refund records of ANY type for the month (no type
+ * filter) — deliberately identical to the PATCH /invoices/:id/payment
+ * duplicate guard's predicate, so the panel and the guard can never
+ * disagree about what is already refunded.
+ */
+const annotateRefundSettlement = async (invoices) => {
+    if (!invoices || invoices.length === 0) return invoices || [];
+
+    const monthNames = [...new Set(invoices.map((inv) => inv.monthName).filter(Boolean))];
+    const refunds = await Payment.find({
+        month: { $in: monthNames },
+        status: 'refunded',
+    }).select('user amount').lean();
+
+    const recordedByUser = new Map();
+    for (const r of refunds) {
+        const key = String(r.user);
+        const amt = Math.abs(Number(r.amount) || 0);
+        recordedByUser.set(key, (recordedByUser.get(key) || 0) + amt);
+    }
+
+    for (const inv of invoices) {
+        const credit = computeRefundCredit(inv);
+        const recorded = credit > 0
+            ? (recordedByUser.get(String(inv.user?._id ?? inv.user)) || 0)
+            : 0;
+        const rawRemaining = credit - recorded;
+
+        inv.refundCredit = round2(credit);
+        inv.refundRecorded = round2(recorded);
+        inv.refundRemaining = rawRemaining > SETTLEMENT_TOLERANCE ? round2(rawRemaining) : 0;
+    }
+
+    return invoices;
+};
+
+/**
+ * Get every invoice that needs admin attention for a given month.
+ * Admin only. Used for the "Unresolved Bills" panel.
+ * Includes:
+ *  - unpaid / partially paid positive bills (debt owed to the mess), and
+ *  - refund-credit invoices (negative payable or status 'refunded') whose
+ *    credit is NOT yet fully recorded. Settlement travels on each row via
+ *    annotateRefundSettlement() (refundCredit / refundRecorded /
+ *    refundRemaining).
+ * EXCLUDES:
+ *  - fully-settled refund rows (refundRemaining = 0) — a resolved bill
+ *    must CLEAR from the panel so the admin's queue only ever contains
+ *    actionable work;
+ *  - exempt invoices (admin-set exemption or zero-activity rule).
+ * Shows these regardless of finalization status so the admin always sees
+ * outstanding items without depending on the cron schedule.
  * @param {number} month - 1-indexed month (optional, defaults to previous month)
  * @param {number} year  - full year (optional, defaults to last active billing month)
  */
@@ -855,15 +852,31 @@ const getAdminUnpaidInvoices = async (month, year) => {
     const invoices = await Invoice.find({
         month: Number(month),
         year:  Number(year),
-        status: { $nin: ['paid', 'refunded'] },
         isExempt: { $ne: true },
-        totalPayable: { $gt: 0 }
+        $or: [
+            // Debt owed to the mess — unpaid / partially paid positive bills
+            { status: { $in: ['unpaid', 'partially_paid'] }, totalPayable: { $gt: 0 } },
+            // Refund-credit invoices — surfaced whether or not a payout has
+            // been recorded (settled rows render as informational "Refunded")
+            { status: 'refunded' },
+            // Defensive: negative payable not yet flipped to 'refunded'
+            // (stale status from a partial write) is still a refund credit.
+            { totalPayable: { $lt: 0 } },
+        ],
     })
     .populate('user', 'name email image role isActive activatedAt')
     .sort({ totalPayable: -1 })
     .lean();
 
-    return invoices;
+    const annotated = await annotateRefundSettlement(invoices);
+
+    // Resolved bills must CLEAR from the panel:
+    //  - refund rows stay only while credit remains uncovered
+    //  - debt rows stay only while the member still owes (> 0)
+    return annotated.filter((inv) => {
+        if (inv.refundCredit > 0) return inv.refundRemaining > 0;
+        return (Number(inv.totalPayable) || 0) - (Number(inv.paidAmount) || 0) > 0;
+    });
 };
 
 /**
@@ -1052,5 +1065,7 @@ module.exports = {
     getInvoiceExemptionStatus,
     resetUserStatsAfterFinalization,
     getAdminUnpaidInvoices,
+    annotateRefundSettlement,
+    computeRefundCredit,
     emailAllInvoices
 };

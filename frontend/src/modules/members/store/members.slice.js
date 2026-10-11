@@ -31,6 +31,9 @@ const initialState = {
     unpaidInvoices: [],
     unpaidInvoicesLoading: false,
     unpaidInvoicesError: null,
+    // "YYYY-MonthName" of the in-flight/latest unpaid-invoices request —
+    // used to drop stale responses for a different month.
+    unpaidInvoicesRequestKey: null,
     // ── Generic flags ──
     isError: false,
     isSuccess: false,
@@ -229,33 +232,59 @@ export const membersSlice = createSlice({
                 state.billingStatsLoading = false;
             })
             // ── fetchAdminUnpaidInvoices ─────────────────────────────────────
-            .addCase(fetchAdminUnpaidInvoices.pending, (state) => {
+            .addCase(fetchAdminUnpaidInvoices.pending, (state, action) => {
                 state.unpaidInvoicesLoading = true;
                 state.unpaidInvoicesError = null;
+                // Remember which month this request is for — a stale response
+                // (e.g. last-finalized period raced against a user-selected
+                // older month) must never clobber the panel's current view.
+                const { month, year } = action.meta.arg || {};
+                state.unpaidInvoicesRequestKey = (month && year) ? `${year}-${month}` : null;
             })
             .addCase(fetchAdminUnpaidInvoices.fulfilled, (state, action) => {
+                const { month, year } = action.meta.arg || {};
+                const key = (month && year) ? `${year}-${month}` : null;
+                if (state.unpaidInvoicesRequestKey && key && state.unpaidInvoicesRequestKey !== key) {
+                    return; // stale response for a different month — drop it
+                }
                 state.unpaidInvoicesLoading = false;
                 state.unpaidInvoicesError = null;
                 state.unpaidInvoices = Array.isArray(action.payload) ? action.payload : [];
             })
             .addCase(fetchAdminUnpaidInvoices.rejected, (state, action) => {
-                state.unpaidInvoicesLoading = false;
-                // FIX: Preserve existing data on error — don't clear to empty array.
-                // Only set empty if there's no prior data.
-                // Also track the error so the UI can display a retry option.
-                if (state.unpaidInvoices.length === 0) {
-                    state.unpaidInvoices = [];
+                const { month, year } = action.meta.arg || {};
+                const key = (month && year) ? `${year}-${month}` : null;
+                if (state.unpaidInvoicesRequestKey && key && state.unpaidInvoicesRequestKey !== key) {
+                    return; // stale rejection — don't touch newer month's state
                 }
+                state.unpaidInvoicesLoading = false;
+                // Preserve existing data on error — the panel shows a retry UI.
                 state.unpaidInvoicesError = action.payload || 'Failed to load unresolved invoices';
             })
             // ── resolveInvoicePayment ────────────────────────────────────────
             .addCase(resolveInvoicePayment.fulfilled, (state, action) => {
                 const updated = action.payload;
-                if (updated?._id) {
-                    state.unpaidInvoices = state.unpaidInvoices
-                        .map(inv => inv._id === updated._id ? { ...inv, ...updated } : inv)
-                        .filter(inv => inv.status !== 'paid' && inv.status !== 'refunded');
-                }
+                if (!updated?._id) return;
+                // The controller returns the invoice annotated with
+                // refundCredit/refundRemaining. Merge it in; the moment it is
+                // no longer actionable (refund fully recorded, or debt paid
+                // off) REMOVE it — a resolved bill must clear from the
+                // Unresolved Bills panel immediately. The panel also
+                // refetches its selected month after every resolve.
+                state.unpaidInvoices = state.unpaidInvoices.flatMap(inv => {
+                    if (inv._id !== updated._id) return [inv];
+                    const merged = { ...inv, ...updated };
+                    // Controller returns `user` as a bare ObjectId — keep the
+                    // populated copy from the original list row.
+                    if (!merged.user?.name && !merged.user?.email && inv.user) {
+                        merged.user = inv.user;
+                    }
+                    const credit = Number(merged.refundCredit) || 0;
+                    const remaining = Number(merged.refundRemaining ?? credit);
+                    const outstanding = (Number(merged.totalPayable) || 0) - (Number(merged.paidAmount) || 0);
+                    const stillActionable = credit > 0 ? remaining > 0 : outstanding > 0;
+                    return stillActionable ? [merged] : [];
+                });
             });
     },
 });

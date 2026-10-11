@@ -1,11 +1,18 @@
 /**
- * Refund-sign regression suite.
+ * Refund-sign + no-fabrication regression suite.
  *
- * Payment.amount is validated min: 0 (Payment.model), so every refund record
- * must be stored as a NON-NEGATIVE amount with status:'refunded'. Storing the
- * negative delta/totalPayable directly throws ValidationError and, because
- * finalizeMonth had no per-user isolation, a single credited member used to be
- * able to abort finalization for everyone.
+ * finalizeMonth / syncInvoiceStatus must NEVER fabricate refund Payment
+ * records. Auto-created "Auto-refund … credited during finalization"
+ * records made fully-unsettled refund-due bills invisible to the
+ * Unresolved Bills panel and falsely showed "Refunded" to members who
+ * never received money. A payout record only exists once an admin
+ * actually resolves the bill on the panel.
+ *
+ * Sign rules that remain:
+ *  - Payment.amount is validated min: 0 → admin refunds store |delta| with
+ *    status:'refunded' (controller).
+ *  - Invoice.paidAmount is validated min: 0 → controller clamps.
+ *  - Negative totalPayable derives status 'refunded' (credit owed).
  */
 jest.mock('../../src/models/Invoice.model');
 jest.mock('../../src/models/Payment.model');
@@ -21,28 +28,12 @@ const { getBillingPeriod } = require('../../src/utils/helpers/date.helper');
 
 const currentMonthName = getBillingPeriod().monthName;
 
-/** Stubs the two findOne chains syncInvoiceStatus walks before creating a refund. */
-function stubRefundLookups(existingRefund, originalPayment) {
-    let call = 0;
-    Payment.findOne.mockImplementation(() => {
-        call += 1;
-        if (call === 1) {
-            // existing refund lookup: findOne().lean()
-            return { lean: jest.fn().mockResolvedValue(existingRefund) };
-        }
-        // original payment lookup: findOne().sort().lean()
-        return {
-            sort: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue(originalPayment) }),
-        };
-    });
-}
-
 beforeEach(() => {
     jest.clearAllMocks();
 });
 
-describe('syncInvoiceStatus — auto-refund stores non-negative amount', () => {
-    it('creates the refund Payment with amount > 0 for negative totalPayable', async () => {
+describe('syncInvoiceStatus — derives status, never fabricates refund records', () => {
+    it('marks refunded for negative totalPayable WITHOUT creating any Payment', async () => {
         const invoice = {
             user: 'u1',
             month: 9,
@@ -55,20 +46,12 @@ describe('syncInvoiceStatus — auto-refund stores non-negative amount', () => {
 
         Invoice.findById.mockResolvedValue(invoice);
         Payment.find.mockResolvedValue([]); // calculatePaidAmount → 0
-        stubRefundLookups(null, null);
-        User.findOne.mockReturnValue({
-            select: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue({ _id: 'admin1' }) }),
-        });
-        Payment.create.mockResolvedValue({});
 
         await syncInvoiceStatus('inv1');
 
-        expect(Payment.create).toHaveBeenCalledTimes(1);
-        const created = Payment.create.mock.calls[0][0];
-        expect(created.amount).toBe(232.27);
-        expect(created.amount).toBeGreaterThanOrEqual(0);
-        expect(created.status).toBe('refunded');
-        expect(created.createdBy).toBe('admin1');
+        expect(Payment.create).not.toHaveBeenCalled();
+        expect(Payment.findOne).not.toHaveBeenCalled();
+        expect(invoice.status).toBe('refunded');
         expect(invoice.save).toHaveBeenCalled();
     });
 
@@ -89,28 +72,31 @@ describe('syncInvoiceStatus — auto-refund stores non-negative amount', () => {
         await syncInvoiceStatus('inv2');
 
         expect(Payment.create).not.toHaveBeenCalled();
+        expect(invoice.status).toBe('unpaid');
         expect(invoice.save).toHaveBeenCalled();
     });
 
-    it('skips creation when a refund for the period already exists (idempotent)', async () => {
+    it('derives partially_paid from completed payments on a positive bill', async () => {
         const invoice = {
             user: 'u1',
             month: 9,
             year: 2026,
             monthName: currentMonthName,
-            totalPayable: -100,
+            totalPayable: 500,
             paidAmount: 0,
             save: jest.fn().mockResolvedValue(undefined),
         };
 
         Invoice.findById.mockResolvedValue(invoice);
-        Payment.find.mockResolvedValue([]);
-        stubRefundLookups({ _id: 'existingRefund' }, null);
+        // calculatePaidAmount queries { status: 'completed', type: 'mess_bill' }
+        // — the mock returns what that query would yield.
+        Payment.find.mockResolvedValue([{ amount: 200 }, { amount: 100 }]);
 
         await syncInvoiceStatus('inv3');
 
         expect(Payment.create).not.toHaveBeenCalled();
-        expect(invoice.save).toHaveBeenCalled();
+        expect(invoice.paidAmount).toBe(300);
+        expect(invoice.status).toBe('partially_paid');
     });
 });
 
@@ -171,12 +157,14 @@ describe('finalizeMonth — per-user isolation', () => {
         });
         Invoice.find.mockResolvedValue([]); // exempt-invoice sweep
 
-        const results = await finalizeMonth(9, 2026, 'admin1');
+        const results = await finalizeMonth(9, 2026);
 
         expect(results).toHaveLength(1);
         expect(results[0].user).toBe('uB');
         expect(invoiceB.save).toHaveBeenCalledTimes(1);
         expect(invoiceB.isFinalized).toBe(true);
+        // No refund bookkeeping during finalization — ever.
+        expect(Payment.create).not.toHaveBeenCalled();
         expect(logger.error).toHaveBeenCalledWith(
             '[FinalizeMonth] Skipping member after error',
             expect.objectContaining({ userId: 'uA' }),

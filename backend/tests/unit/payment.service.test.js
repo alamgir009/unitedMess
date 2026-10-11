@@ -143,7 +143,9 @@ describe('verifyUpiManualPaymentService', () => {
     /* ── Test #4: duplicate UTR idempotency ── */
     it('rejects duplicate UTR submission', async () => {
         const cleanUtr = 'DUP12345678';
-        Payment.exists.mockResolvedValue(true);
+        // Once (not persistent) — a leaked mockResolvedValue(true) would leak
+        // into later suites whose invoice sync also queries Payment.exists.
+        Payment.exists.mockResolvedValueOnce(true);
 
         const existing = await Payment.exists({
             utr: cleanUtr,
@@ -339,6 +341,9 @@ describe('createPayment — status sync & duplicate guard', () => {
         Invoice.findOne.mockResolvedValue(null);  // invoice sync: no invoice
         Payment.create.mockResolvedValue(makePaymentDoc());
         Payment.findOne.mockResolvedValue(null);  // duplicate guard: none
+        // Invoice sync now checks for a refund payout (ground truth) before
+        // deriving status — default to "no refund" for these tests.
+        Payment.exists.mockResolvedValue(false);
     });
 
     it('syncs user.payment for a refunded manual payment (regression: was completed-only)', async () => {
