@@ -288,7 +288,8 @@ function validateInputs(invoiceData, user) {
  *                                _verifiedByName?      {string}  verifiedBy.name of the payment
  *                                _refundAmount?        {number}  refund payout amount
  *                                _refundAt?            {Date}    refund payout date (UTC)
- *                                _refundReference?     {string}  txn id or payment _id
+ *                                _refundMethod?        {string}  Payment.paymentMethod of the payout
+ *                                _refundReference?     {string}  gateway txn id (absent for cash)
  * @param {Object} user         Plain user document { name, email, chargePerGuestMeal, … }
  * @returns {Promise<Buffer>}
  */
@@ -661,7 +662,11 @@ const generateInvoicePDF = (invoiceData, user) => {
             if (refundSettled) {
                 refRows.push(['Refund amount', money(invoiceData._refundAmount ?? displayAmt)]);
                 refRows.push(['Refunded on',   istFull(invoiceData._refundAt) || '\u2014']);
-                refRows.push(['Reference',     invoiceData._refundReference || '\u2014', true]);
+                refRows.push(['Method',        METHOD_LABELS[invoiceData._refundMethod] || invoiceData._refundMethod || '\u2014']);
+                // Gateway payouts only (real txn id) — cash refunds have no reference.
+                if (invoiceData._refundReference) {
+                    refRows.push(['Reference', invoiceData._refundReference, true]);
+                }
             }
 
             const pbH = blockRows(payRows);

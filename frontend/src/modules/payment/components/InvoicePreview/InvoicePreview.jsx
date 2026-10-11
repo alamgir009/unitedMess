@@ -464,15 +464,22 @@ const InvoicePreview = ({
         return rows;
     }, [paymentData]);
 
-    /* ── REFUND DETAILS rows — shown when the refund payout is recorded ── */
+    /* ── REFUND DETAILS rows — shown when the refund payout is recorded.
+          Method uses the same METHOD_LABELS map as PAYMENT DETAILS; the
+          Reference row appears only for gateway payouts (real txn id) —
+          cash refunds have none (mirrors pdf.service.js). ── */
     const refundRows = useMemo(() => {
         if (!status.refundSettled) return [];
-        return [
+        const rows = [
             { label: 'Refund amount', value: money(invoice?._refundAmount ?? amounts.displayAmt) },
             { label: 'Refunded on', value: (invoice?._refundAt && istFull(new Date(invoice._refundAt))) || '\u2014' },
-            { label: 'Reference', value: invoice?._refundReference || '\u2014', mono: true },
+            { label: 'Method', value: METHOD_LABELS[invoice?._refundMethod] || invoice?._refundMethod || '\u2014' },
         ];
-    }, [status.refundSettled, invoice?._refundAmount, invoice?._refundAt, invoice?._refundReference, amounts.displayAmt]);
+        if (invoice?._refundReference) {
+            rows.push({ label: 'Reference', value: invoice._refundReference, mono: true });
+        }
+        return rows;
+    }, [status.refundSettled, invoice?._refundAmount, invoice?._refundAt, invoice?._refundMethod, invoice?._refundReference, amounts.displayAmt]);
 
     const isEmailBusy = sendingEmail || sendingAllEmails;
 

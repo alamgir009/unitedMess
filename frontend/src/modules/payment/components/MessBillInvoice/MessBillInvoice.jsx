@@ -348,12 +348,18 @@ const MessBillInvoice = ({
         else if (paymentRecord?._recordedByName) paymentRows.push({ label: 'Recorded by', value: paymentRecord._recordedByName });
     }
 
-    /* ── REFUND DETAILS rows — shown when the refund payout is recorded ── */
+    /* ── REFUND DETAILS rows — shown when the refund payout is recorded.
+          Method uses the same METHOD_LABELS map as PAYMENT DETAILS; the
+          Reference row appears only for gateway payouts (real txn id) —
+          cash refunds have none (mirrors pdf.service.js). ── */
     const refundRows = refundSettled
         ? [
             { label: 'Refund amount', value: money(data._refundAmount ?? displayAmt) },
             { label: 'Refunded on', value: (data._refundAt && istFull(new Date(data._refundAt))) || '\u2014' },
-            { label: 'Reference', value: data._refundReference || '\u2014', mono: true },
+            { label: 'Method', value: METHOD_LABELS[data._refundMethod] || data._refundMethod || '\u2014' },
+            ...(data._refundReference
+                ? [{ label: 'Reference', value: data._refundReference, mono: true }]
+                : []),
         ]
         : [];
 

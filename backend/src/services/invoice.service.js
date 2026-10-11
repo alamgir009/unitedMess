@@ -939,9 +939,13 @@ const buildInvoiceForPdf = async (targetUserId, year, month) => {
     if (refundPayout) {
         invoice._refundAmount  = refundPayout.amount;
         invoice._refundAt      = refundPayout.paymentDate || refundPayout.createdAt;
-        // Refund rows are written without a gateway txn id — fall back to the
-        // payment record's own id so the reference is real, never fabricated.
-        invoice._refundReference = refundPayout.transactionId || String(refundPayout._id);
+        invoice._refundMethod  = refundPayout.paymentMethod;
+        // Reference only for gateway payouts (real txn id). Panel cash
+        // refunds carry no transactionId — a raw Mongo _id means nothing
+        // to a member, so the block simply omits the row.
+        if (refundPayout.transactionId) {
+            invoice._refundReference = refundPayout.transactionId;
+        }
     }
 
     // If getInvoice() didn't attach payment data (exempt path), fetch it.
