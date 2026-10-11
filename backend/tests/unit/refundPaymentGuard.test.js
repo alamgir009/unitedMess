@@ -61,12 +61,7 @@ function stubPaymentFind(guardRows, annotateRows) {
     });
 }
 
-function stubCommon({ originalPayment = { type: 'mess_bill' } } = {}) {
-    Payment.findOne.mockReturnValue({
-        sort: jest.fn().mockReturnValue({
-            lean: jest.fn().mockResolvedValue(originalPayment),
-        }),
-    });
+function stubCommon() {
     Payment.create.mockResolvedValue({ _id: 'pay1' });
     User.findById.mockReturnValue({
         select: jest.fn().mockReturnValue({
@@ -76,6 +71,18 @@ function stubCommon({ originalPayment = { type: 'mess_bill' } } = {}) {
     paymentService.syncUserPaymentStatus.mockResolvedValue(undefined);
     paymentService.sendPaymentConfirmationWithInvoice.mockResolvedValue(undefined);
     notificationService.createAndSend.mockResolvedValue({});
+}
+
+/**
+ * The controller annotates the response on BOTH paths via the REAL
+ * invoiceService.annotateRefundSettlement, which queries
+ * Payment.find({ month: {$in}, status: 'refunded' }). Stub it so the
+ * automock's undefined chain cannot crash the test.
+ */
+function stubAnnotateFind(refundRows = []) {
+    const chain = { select: jest.fn() };
+    chain.select.mockReturnValue({ lean: jest.fn().mockResolvedValue(refundRows) });
+    Payment.find.mockImplementation(() => chain);
 }
 
 const makeInvoice = (overrides = {}) => ({
@@ -124,7 +131,14 @@ describe('updateInvoicePayment — refund guard', () => {
             amount: 215.6,
             status: 'refunded',
             month: 'May 2026',
+            // Invoice refunds ALWAYS settle the mess bill — never sniff the
+            // member's latest completed payment (often a gas bill) for type.
+            type: 'mess_bill',
         });
+        expect(Payment.findOne).not.toHaveBeenCalled();
+        expect(paymentService.syncUserPaymentStatus).toHaveBeenCalledWith(
+            'u1', 'mess_bill', 'refunded', 'May 2026'
+        );
         expect(invoice.status).toBe('refunded');
         expect(invoice.save).toHaveBeenCalled();
 
@@ -216,6 +230,7 @@ describe('updateInvoicePayment — refund guard', () => {
         expect(Payment.create.mock.calls[0][0]).toMatchObject({
             amount: 100,
             status: 'refunded',
+            type: 'mess_bill',
         });
         expect(invoice.status).toBe('refunded');
         expect(invoice.paidAmount).toBe(400);
@@ -223,5 +238,121 @@ describe('updateInvoicePayment — refund guard', () => {
         const payload = res.json.mock.calls[0][0].data;
         expect(payload.refundCredit).toBe(0);
         expect(payload.refundRemaining).toBe(0);
+    });
+});
+
+describe('updateInvoicePayment — payment path creates ground-truth record', () => {
+    it('records a completed mess_bill Payment for the collected delta', async () => {
+        const invoice = makeInvoice({
+            totalPayable: 1453.87,
+            paidAmount: 0,
+            status: 'unpaid',
+            monthName: 'September 2026',
+            month: 9,
+        });
+        Invoice.findById.mockResolvedValue(invoice);
+        stubCommon();
+        stubAnnotateFind(); // no refunded rows recorded — full credit remaining is irrelevant for a debt
+
+        const req = {
+            params: { id: 'inv1' },
+            body: { paidAmount: 1453.87, delta: 1453.87 },
+            user: { id: 'admin1' },
+        };
+        const res = makeRes();
+        const next = jest.fn();
+
+        updateInvoicePayment(req, res, next);
+        await flush();
+
+        expect(next).not.toHaveBeenCalled();
+        expect(Payment.create).toHaveBeenCalledTimes(1);
+        expect(Payment.create.mock.calls[0][0]).toMatchObject({
+            amount: 1453.87,
+            month: 'September 2026',
+            type: 'mess_bill',
+            status: 'completed',
+            paymentMethod: 'cash',
+            createdBy: 'admin1',
+        });
+        expect(paymentService.syncUserPaymentStatus).toHaveBeenCalledWith(
+            'u1', 'mess_bill', 'completed', 'September 2026'
+        );
+        // The only Payment.find allowed on the payment path is the
+        // response annotation (months $in filter, no user scope). The
+        // refund guard's user-scoped query must never run.
+        expect(Payment.find).toHaveBeenCalledTimes(1);
+        expect(Payment.find.mock.calls[0][0]).toEqual({
+            month: { $in: ['September 2026'] },
+            status: 'refunded',
+        });
+        expect(Payment.findOne).not.toHaveBeenCalled();
+        expect(invoice.status).toBe('paid');
+        expect(invoice.save).toHaveBeenCalled();
+
+        const payload = res.json.mock.calls[0][0].data;
+        expect(payload.paidAmount).toBe(1453.87);
+        expect(payload.refundCredit).toBe(0);
+    });
+
+    it('falls back to the paidAmount jump when delta is absent (legacy callers)', async () => {
+        const invoice = makeInvoice({
+            totalPayable: 500,
+            paidAmount: 0,
+            status: 'unpaid',
+            monthName: 'September 2026',
+            month: 9,
+        });
+        Invoice.findById.mockResolvedValue(invoice);
+        stubCommon();
+        stubAnnotateFind();
+
+        const req = {
+            params: { id: 'inv1' },
+            body: { paidAmount: 500 }, // no delta
+            user: { id: 'admin1' },
+        };
+        const res = makeRes();
+        const next = jest.fn();
+
+        updateInvoicePayment(req, res, next);
+        await flush();
+
+        expect(Payment.create).toHaveBeenCalledTimes(1);
+        expect(Payment.create.mock.calls[0][0]).toMatchObject({
+            amount: 500,
+            type: 'mess_bill',
+            status: 'completed',
+        });
+        expect(invoice.status).toBe('paid');
+    });
+
+    it('creates no record and no sync when nothing is collected', async () => {
+        const invoice = makeInvoice({
+            totalPayable: 500,
+            paidAmount: 0,
+            status: 'unpaid',
+            monthName: 'September 2026',
+            month: 9,
+        });
+        Invoice.findById.mockResolvedValue(invoice);
+        stubCommon();
+        stubAnnotateFind();
+
+        const req = {
+            params: { id: 'inv1' },
+            body: { paidAmount: 0, delta: 0 },
+            user: { id: 'admin1' },
+        };
+        const res = makeRes();
+        const next = jest.fn();
+
+        updateInvoicePayment(req, res, next);
+        await flush();
+
+        expect(Payment.create).not.toHaveBeenCalled();
+        expect(paymentService.syncUserPaymentStatus).not.toHaveBeenCalled();
+        expect(invoice.status).toBe('unpaid');
+        expect(invoice.save).toHaveBeenCalled();
     });
 });

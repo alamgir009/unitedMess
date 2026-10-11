@@ -200,17 +200,13 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
 
         invoice.status = 'refunded';
 
-        // Detect the original payment type for this user/month so the refund
-        // record matches the original payment flow (mess_bill or gas_bill).
-        const originalPayment = await Payment.findOne({
-            user: invoice.user,
-            month: invoice.monthName,
-            status: 'completed',
-        }).sort({ paymentDate: -1 }).lean();
-        const refundType = originalPayment?.type || 'mess_bill';
-
-        // Persist a Payment record so the refund appears in both member
-        // and admin payment history (Payments page / invoice history).
+        // The refund settles the MESS BILL invoice — always record it as
+        // 'mess_bill'. (The previous "detect original payment type" logic
+        // sniffed the member's latest completed payment for the month; when
+        // their only payment was a gas bill it misclassified the refund as
+        // 'gas_bill' and synced the wrong user status field. Gas is a
+        // separate charge — calculatePaidAmount only counts mess_bill
+        // payments against this invoice, so its refunds are mess refunds.)
         refundPayment = await Payment.create({
             user: invoice.user,
             // Refund deltas arrive negative; Payment.amount is min: 0 — the
@@ -218,15 +214,16 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
             // new rows must store positive to pass model validation).
             amount: Math.abs(refundDelta),
             month: invoice.monthName,
-            type: refundType,
+            type: 'mess_bill',
             status: 'refunded',
             paymentMethod: 'cash',
             createdBy: req.user.id,
             remarks: `Refund of ₹ ${Math.abs(refundDelta).toLocaleString('en-IN', { maximumFractionDigits: 2 })} processed by admin`,
         });
 
-        // Sync user payment/gasBill status for ALL refund types (not just gas_bill)
-        await paymentService.syncUserPaymentStatus(invoice.user, refundType, 'refunded', invoice.monthName);
+        // Sync the user's MESS payment status (flat user.payment field) —
+        // month-guarded inside syncUserPaymentStatus.
+        await paymentService.syncUserPaymentStatus(invoice.user, 'mess_bill', 'refunded', invoice.monthName);
 
         // Fetch full user details for email (name + email required)
         refundUser = await User.findById(invoice.user).select('name email').lean();
@@ -251,6 +248,33 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
                 `${invoice.monthName} is marked exempt (₹0 due). Clear the exemption before recording a payment.`,
                 409
             );
+        }
+
+        // Persist a completed Payment record for the collected amount —
+        // GROUND TRUTH. paidAmount is reconstructible only from completed
+        // mess_bill payments (calculatePaidAmount); without this record the
+        // resolve lived solely on the invoice document and any later
+        // syncInvoiceStatus/syncInvoiceAfterPayment silently reverted it
+        // to unpaid with paidAmount 0. (Mirrors the refund branch, which
+        // has always created its record.)
+        const collectAmount = refundDelta > 0
+            ? refundDelta
+            : Math.max(0, Number(paidAmount) - originalPaidAmount);
+        if (collectAmount > 0) {
+            await Payment.create({
+                user: invoice.user,
+                amount: collectAmount,
+                month: invoice.monthName,
+                type: 'mess_bill',
+                status: 'completed',
+                paymentMethod: 'cash',
+                createdBy: req.user.id,
+                remarks: `Payment of ₹ ${collectAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })} recorded by admin`,
+            });
+
+            // Sync the user's MESS payment status (flat user.payment field) —
+            // month-guarded inside syncUserPaymentStatus.
+            await paymentService.syncUserPaymentStatus(invoice.user, 'mess_bill', 'completed', invoice.monthName);
         }
 
         invoice.status = invoiceService.determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
