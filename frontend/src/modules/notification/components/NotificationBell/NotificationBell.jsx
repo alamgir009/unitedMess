@@ -81,7 +81,7 @@ const NotificationBell = () => {
                     'focus-visible:ring-ring focus-visible:ring-offset-2',
                     open
                         ? 'bg-muted text-foreground border-border'
-                        : 'bg-transparent border-transparent text-muted-foreground hover:bg-muted/70 hover:text-foreground hover:border-border',
+                        : 'bg-transparent border-transparent text-foreground/60 hover:bg-muted/70 hover:text-foreground hover:border-border',
                 )}
             >
                 <motion.span animate={isShaking ? BELL_SHAKE.animate : BELL_SHAKE.initial}>

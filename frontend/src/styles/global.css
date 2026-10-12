@@ -248,9 +248,9 @@
     border-color: hsl(var(--ring) / 0.3);
   }
 
-  /* ─── Greeting card dark-mode gradient ─── */
-  html.dark .greeting-card {
-    background-image: var(--greet-dark) !important;
+  /* ─── Time-of-day navbar dark-mode gradient ─── */
+  html.dark .greet-bg {
+    background-image: var(--greet-bg-dark) !important;
   }
 
   /* ─── Active/selected surface indicator ─── */
