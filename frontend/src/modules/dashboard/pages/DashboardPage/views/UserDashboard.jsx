@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { fetchUserDashboardStats } from '../../../store/dashboard.slice';
 import { fetchPollStatus, voteMealPoll } from '@/modules/meal/store/meal.slice';
 import { fetchMarketSchedule, reset as resetMarket } from '@/modules/market/store/market.slice';
+import marketService from '@/modules/market/services/market.service';
 import PayableWidget from '../../../components/PayableWidget/PayableWidget';
 import { Button } from '@/shared/components/ui';
 import { cn } from '@/core/utils/helpers/string.helper';
@@ -359,6 +360,29 @@ const UserDashboard = memo(function UserDashboard() {
         loadSchedule();
     }, [loadSchedule]);
 
+    /* Month's market entries — powers the "Market duty Completed" chip.
+       Progressive enhancement: fetch once per month, errors swallowed silently. */
+    const [monthMarkets, setMonthMarkets] = useState([]);
+    useEffect(() => {
+        let cancelled = false;
+        const startDate = new Date(Date.UTC(year, month - 1, 1)).toISOString();
+        const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59)).toISOString();
+        marketService
+            .getMarkets({ startDate, endDate, limit: 'all' })
+            .then((res) => {
+                if (cancelled) return;
+                /* service returns the axios body: { success, message, data: { markets, pagination } } */
+                const payload = res?.data ?? res;
+                setMonthMarkets(Array.isArray(payload?.markets) ? payload.markets : []);
+            })
+            .catch(() => {
+                if (!cancelled) setMonthMarkets([]);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [year, month]);
+
     const dayList = useMemo(() => {
         if (!Array.isArray(schedule)) return [];
         return schedule.map((day) => ({
@@ -395,6 +419,27 @@ const UserDashboard = memo(function UserDashboard() {
         const dutyId = selectedDay.user._id || selectedDay.user.id || null;
         return !!uid && uid === dutyId;
     }, [selectedDay, user]);
+
+    /* Duty is completed when a market entry exists for that date.
+       Non-admin: /markets is already scoped to me → duty must be mine.
+       Admin: match entry's populated user against the duty member. */
+    const isDutyCompleted = useMemo(() => {
+        if (!selectedDay?.user || monthMarkets.length === 0) return false;
+        const dayKey = selectedDay.date.toISOString().slice(0, 10);
+        const dutyId = selectedDay.user._id || selectedDay.user.id || null;
+        if (!dutyId) return false;
+        const isAdminRole = user?.role === 'admin';
+        const uid = user?._id || user?.id || null;
+        if (!isAdminRole && (!uid || String(dutyId) !== String(uid))) return false;
+        return monthMarkets.some((m) => {
+            if (!m?.date || new Date(m.date).toISOString().slice(0, 10) !== dayKey) {
+                return false;
+            }
+            if (!isAdminRole) return true;
+            const mUser = typeof m.user === 'object' ? (m.user?._id || m.user?.id) : m.user;
+            return !!mUser && String(mUser) === String(dutyId);
+        });
+    }, [monthMarkets, selectedDay, user]);
 
     const showSchedSkeleton =
         dayList.length === 0 && (isScheduleLoading || !schedAttempted);
@@ -610,7 +655,7 @@ const UserDashboard = memo(function UserDashboard() {
                     sub={monthLabel}
                     right={
                         dayList.length > 0 ? (
-                            <span className="shrink-0 inline-flex items-center rounded-full border border-border/40 bg-muted/50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground tabular-nums">
+                            <span className="shrink-0 inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 tabular-nums shadow-xs">
                                 {dayList.length} duty {dayList.length === 1 ? 'day' : 'days'}
                             </span>
                         ) : null
@@ -620,12 +665,12 @@ const UserDashboard = memo(function UserDashboard() {
                 {/* Loading skeleton — fixed heights, no layout shift */}
                 {showSchedSkeleton && (
                     <div className="mt-4 animate-pulse" aria-hidden="true">
-                        <div className="flex gap-2 overflow-hidden">
+                        <div className="flex gap-2 overflow-hidden rounded-2xl border border-border/60 bg-muted/40 p-2">
                             {[0, 1, 2, 3, 4, 5].map((n) => (
-                                <div key={n} className="shrink-0 h-12 w-14 rounded-xl bg-muted/30 border border-border/40" />
+                                <div key={n} className="shrink-0 h-12 w-14 rounded-xl bg-card/70 border border-border/40" />
                             ))}
                         </div>
-                        <div className="mt-3 h-[76px] rounded-xl bg-muted/30 border border-border/40" />
+                        <div className="mt-3 h-[76px] rounded-2xl bg-muted/30 border border-border/40" />
                     </div>
                 )}
                 <span className="sr-only" role="status">
@@ -672,7 +717,7 @@ const UserDashboard = memo(function UserDashboard() {
                 {!showSchedSkeleton && !showSchedError && !showSchedEmpty && (
                     <>
                         <div
-                            className="mt-4 flex gap-2 overflow-x-auto pb-1"
+                            className="mt-4 flex flex-nowrap gap-1.5 overflow-x-auto no-scrollbar snap-x snap-mandatory min-[700px]:flex-wrap min-[700px]:overflow-visible min-[700px]:snap-none rounded-2xl border border-border/60 bg-muted/45 dark:bg-muted/30 p-2 inset-shadow"
                             role="group"
                             aria-label={`Duty days in ${monthLabel}`}
                         >
@@ -687,12 +732,12 @@ const UserDashboard = memo(function UserDashboard() {
                                         aria-pressed={isSelected}
                                         aria-label={format(day.date, 'EEEE, MMMM d')}
                                         className={cn(
-                                            'shrink-0 min-h-[48px] min-w-[54px] rounded-xl border px-2 py-1.5 text-center',
-                                            'transition-colors duration-150',
+                                            'shrink-0 snap-start min-h-[48px] min-w-[54px] rounded-xl border px-2 py-1.5 text-center',
+                                            'transition-[background-color,border-color,box-shadow,transform,color] duration-150',
                                             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                                             isSelected
-                                                ? 'border-primary bg-primary/5 ring-1 ring-primary/30'
-                                                : 'border-border/50 bg-muted/20 hover:bg-muted/40'
+                                                ? 'bg-card border-primary/70 ring-1 ring-primary/40 shadow-md text-primary -translate-y-0.5'
+                                                : 'bg-card border-border/50 shadow-xs hover:shadow-sm hover:-translate-y-px text-foreground'
                                         )}
                                     >
                                         <span
@@ -720,12 +765,12 @@ const UserDashboard = memo(function UserDashboard() {
                             })}
                         </div>
 
-                        <div className="mt-3 flex items-center gap-3 rounded-xl border border-border/50 bg-muted/30 p-3 min-h-[76px]">
+                        <div className="mt-3 flex flex-wrap sm:flex-nowrap items-center gap-3 rounded-2xl border border-border/60 bg-muted/30 dark:bg-muted/30 p-3 min-h-[76px]">
                             {selectedDay?.user ? (
                                 <>
                                     <span
                                         aria-hidden="true"
-                                        className="shrink-0 w-10 h-10 rounded-full overflow-hidden bg-muted/60 border border-border/40 flex items-center justify-center text-sm font-semibold text-foreground"
+                                        className="shrink-0 w-10 h-10 rounded-full overflow-hidden bg-muted/60 border border-border/40 shadow-sm flex items-center justify-center text-sm font-semibold text-foreground"
                                     >
                                         {selectedDay.user.image ? (
                                             <img
@@ -747,9 +792,19 @@ const UserDashboard = memo(function UserDashboard() {
                                             {format(selectedDay.date, 'EEEE, MMM d, yyyy')}
                                         </p>
                                     </div>
-                                    {isMyDuty && (
-                                        <span className="shrink-0 inline-flex items-center rounded-full border border-success-border bg-success-bg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-success-text">
-                                            You&apos;re on duty
+                                    {(isMyDuty || isDutyCompleted) && (
+                                        <span className="w-full sm:w-auto shrink-0 flex items-center gap-1.5">
+                                            {isDutyCompleted && (
+                                                <span className="inline-flex items-center gap-1 rounded-full border border-success-border bg-success-bg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-success-text">
+                                                    <HiOutlineCheckCircle size={12} aria-hidden="true" />
+                                                    Market duty Completed
+                                                </span>
+                                            )}
+                                            {isMyDuty && !isDutyCompleted && (
+                                                <span className="inline-flex items-center rounded-full border border-success-border bg-success-bg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-success-text">
+                                                    You&apos;re on duty
+                                                </span>
+                                            )}
                                         </span>
                                     )}
                                 </>
