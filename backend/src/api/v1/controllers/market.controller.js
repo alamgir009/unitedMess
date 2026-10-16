@@ -3,6 +3,7 @@ const { marketService } = require('../../../services');
 const { sendSuccessResponse } = require('../../../utils/helpers/response.helper');
 const pick = require('../../../utils/helpers/pick');
 const AppError = require('../../../utils/errors/AppError');
+const assertOwnedOrAdmin = require('../../../utils/helpers/assertOwnedOrAdmin');
 const { getVisibleBillingStartDate, parseDate } = require('../../../utils/helpers/date.helper');
 
 // ─── Authenticated User Controllers ────────────────────────────────────────────
@@ -43,9 +44,7 @@ const getMarket = asyncHandler(async (req, res) => {
     const market = await marketService.getMarketById(req.params.marketId);
     if (!market) throw new AppError('Market entry not found', 404);
 
-    if (req.user.role !== 'admin' && market.user._id.toString() !== req.user.id) {
-        throw new AppError('You do not have permission to access this market entry', 403);
-    }
+    assertOwnedOrAdmin(market, req.user, { label: 'market entry', action: 'access' });
 
     sendSuccessResponse(res, 200, 'Market entry retrieved successfully', market);
 });
@@ -54,9 +53,7 @@ const updateMarket = asyncHandler(async (req, res) => {
     const market = await marketService.getMarketById(req.params.marketId);
     if (!market) throw new AppError('Market entry not found', 404);
 
-    if (req.user.role !== 'admin' && market.user._id.toString() !== req.user.id) {
-        throw new AppError('You do not have permission to update this market entry', 403);
-    }
+    assertOwnedOrAdmin(market, req.user, { label: 'market entry', action: 'update' });
 
     const updatedMarket = await marketService.updateMarketById(req.params.marketId, req.body);
     sendSuccessResponse(res, 200, 'Market entry updated successfully', updatedMarket);
@@ -66,9 +63,7 @@ const deleteMarket = asyncHandler(async (req, res) => {
     const market = await marketService.getMarketById(req.params.marketId);
     if (!market) throw new AppError('Market entry not found', 404);
 
-    if (req.user.role !== 'admin' && market.user._id.toString() !== req.user.id) {
-        throw new AppError('You do not have permission to delete this market entry', 403);
-    }
+    assertOwnedOrAdmin(market, req.user, { label: 'market entry', action: 'delete' });
 
     await marketService.deleteMarketById(req.params.marketId);
     res.status(204).send();

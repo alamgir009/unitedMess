@@ -26,11 +26,7 @@ import {
 } from 'react-icons/hi2';
 import { Spinner, Button } from '@/shared/components/ui';
 import { fmt } from '@/core/utils/helpers/currency.helper';
-
-const MONTHS = [
-    'January','February','March','April','May','June',
-    'July','August','September','October','November','December'
-];
+import { MONTH_NAMES as MONTHS } from '@shared/utils/billingPeriod';
 
 /* ── Status chip — glyph + label + token pair (never colour alone).
       Mirrors pdf.service.js CHIPS / InvoicePreview. ── */

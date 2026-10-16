@@ -127,6 +127,8 @@ const [singleAdminError, setSingleAdminError] = useState('');
             try {
                 const res = await apiClient.get('users?limit=100');
                 if (!cancelled) setUsers(res.data?.data?.users || res.data?.users || []);
+            } catch (err) {
+                if (!cancelled) console.error('[MealForm] Member list fetch failed:', err);
             } finally {
                 if (!cancelled) setIsUsersLoading(false);
             }

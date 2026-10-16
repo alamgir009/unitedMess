@@ -10,6 +10,12 @@
 
 const MS_PER_DAY = 86400000;
 
+// English month names — shared by invoice/billing UIs and backend parsers
+export const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
 /**
  * Normalize a Date to midnight UTC (00:00:00.000Z).
  * FIX: Uses getUTCFullYear/getUTCMonth/getUTCDate — always UTC,

@@ -120,7 +120,6 @@ exports.refreshTokens = asyncHandler(async (req, res) => {
     const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
 
     if (!refreshToken) {
-        const AppError = require('../../../utils/errors/AppError');
         throw new AppError('Refresh token is required', 401);
     }
 

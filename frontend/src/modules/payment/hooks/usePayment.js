@@ -9,7 +9,6 @@ export function usePayment({ user, onSuccess, onCheckoutReady }) {
     const loadSDK        = useRazorpaySDK();
     const isPayingRef    = useRef(false);
     const isMountedRef   = useRef(true);
-    const [lastPaymentId, setLastPaymentId] = useState(null);
     const [isPaying, setIsPaying] = useState(false);
 
     const handleCheckout = useCallback(async (
@@ -33,7 +32,7 @@ export function usePayment({ user, onSuccess, onCheckoutReady }) {
             await loadSDK();
 
             const orderRes = await paymentService.createOnlineOrder({ amount, type: paymentType, months });
-            const { order, payment, keyId: serverKeyId } = orderRes?.data ?? {};
+            const { order, keyId: serverKeyId } = orderRes?.data ?? {};
             if (!order?.id) throw new Error('Invalid order response from server');
 
             const rzpKey = serverKeyId;
@@ -82,8 +81,6 @@ export function usePayment({ user, onSuccess, onCheckoutReady }) {
                             });
 
                             toast.success('Payment successful!');
-
-                            if (payment?._id) setLastPaymentId(payment._id);
 
                             if (isMountedRef.current) onSuccess?.();
 
@@ -135,7 +132,6 @@ export function usePayment({ user, onSuccess, onCheckoutReady }) {
     }, [loadSDK, user, onSuccess, onCheckoutReady]);
 
     return {
-        lastPaymentId,
         handleCheckout,
         isPaying,
         markUnmounted: () => { isMountedRef.current = false; },

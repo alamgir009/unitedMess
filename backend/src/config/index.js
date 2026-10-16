@@ -35,9 +35,6 @@ module.exports = {
     },
     mongoose: {
         url: process.env.MONGO_URL || process.env.MONGO_URI || 'mongodb://localhost:27017/mess',
-        options: {
-            // mongoose 6+ doesn't need these explicitly but good to be explicit if using older
-        },
     },
     jwt: {
         secret: (() => {
@@ -74,11 +71,6 @@ module.exports = {
         keyId: process.env.RAZORPAY_KEY_ID,
         keySecret: process.env.RAZORPAY_KEY_SECRET,
     },
-    vonage: {
-        apiKey: process.env.VONAGE_API_KEY,
-        apiSecret: process.env.VONAGE_API_SECRET,
-        brandName: process.env.VONAGE_BRAND_NAME
-    },
     cors: {
         origin: [
             process.env.FRONTEND_URL,
@@ -95,11 +87,6 @@ module.exports = {
         cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
         api_key: process.env.CLOUDINARY_API_KEY,
         api_secret: process.env.CLOUDINARY_API_SECRET,
-    },
-    vapid: {
-        publicKey: process.env.VAPID_PUBLIC_KEY,
-        privateKey: process.env.VAPID_PRIVATE_KEY,
-        subject: process.env.VAPID_SUBJECT || 'mailto:unitedmess96@gmail.com',
     },
     firebase: {
         projectId: process.env.FIREBASE_PROJECT_ID,

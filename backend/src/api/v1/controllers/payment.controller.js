@@ -12,19 +12,8 @@ const User = require('../../../models/User.model');
 const notificationService = require('../../../services/notification.service');
 const { emitToUser } = require('../../../sockets');
 const { getBillingPeriod } = require('../../../utils/helpers/date.helper');
-const cloudinary = require('cloudinary').v2;
-const fs = require('fs');
-const path = require('path');
+const { verifyImageMagicBytes, storeUploadedImage } = require('../../../utils/helpers/imageUpload.helper');
 const logger = require('../../../utils/logger/index');
-
-// Magic-byte validators for post-upload integrity check
-const MAGIC_VALIDATORS = {
-    'image/jpeg': (buf) => buf.length >= 3 && buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF,
-    'image/jpg':  (buf) => buf.length >= 3 && buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF,
-    'image/png':  (buf) => buf.length >= 4 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47,
-    'image/webp': (buf) => buf.length >= 12 && buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46
-                      && buf[8] === 0x57 && buf[9] === 0x45 && buf[10] === 0x42 && buf[11] === 0x50,
-};
 
 /**
  * POST /payments
@@ -285,65 +274,14 @@ const uploadQrCode = asyncHandler(async (req, res) => {
         throw new AppError('Please upload an image file for QR code', 400);
     }
 
-    // Post-upload magic-byte integrity check
-    if (req.file.path && !/^https?:\/\//.test(req.file.path)) {
-        try {
-            const fd = fs.openSync(req.file.path, 'r');
-            const header = Buffer.alloc(12);
-            const bytesRead = fs.readSync(fd, header, 0, 12, 0);
-            fs.closeSync(fd);
+    verifyImageMagicBytes(req.file, { logLabel: 'QR code file integrity check failed:' });
 
-            const validator = MAGIC_VALIDATORS[req.file.mimetype];
-            const valid = validator && bytesRead >= 3 && validator(new Uint8Array(header.buffer, header.byteOffset, bytesRead));
-            if (!valid) {
-                try { fs.unlinkSync(req.file.path); } catch {}
-                throw new AppError('Uploaded file content does not match a supported image format.', 400);
-            }
-        } catch (error) {
-            if (error.isOperational) throw error;
-            try { fs.unlinkSync(req.file.path); } catch {}
-            logger.error('QR code file integrity check failed:', error);
-            throw new AppError('Uploaded file content integrity check failed.', 400);
-        }
-    }
-
-    // Determine if Cloudinary is configured
-    const isCloudinaryConfigured = config.cloudinary &&
-                                  config.cloudinary.cloud_name &&
-                                  config.cloudinary.api_key &&
-                                  config.cloudinary.api_secret;
-
-    let qrCodeUrl;
-    if (isCloudinaryConfigured) {
-        try {
-            const ext = path.extname(req.file.originalname).toLowerCase();
-            const base = path.basename(req.file.originalname, ext);
-            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-            const publicId = `${base}-${uniqueSuffix}`;
-
-            const result = await cloudinary.uploader.upload(req.file.path, {
-                folder: 'unitedMess/qrcodes',
-                public_id: publicId,
-            });
-            qrCodeUrl = result.secure_url;
-
-            // Delete temp local file
-            try { fs.unlinkSync(req.file.path); } catch {}
-        } catch (error) {
-            try { fs.unlinkSync(req.file.path); } catch {}
-            logger.error('Cloudinary QR code upload failed:', error);
-            throw new AppError('Failed to upload QR code image to cloud storage.', 500);
-        }
-    } else {
-        // Disk storage: convert filesystem path to static URL
-        const normalized = req.file.path.replace(/\\/g, '/');
-        const uploadsIdx = normalized.indexOf('/uploads/');
-        const relativePath = uploadsIdx !== -1
-            ? normalized.substring(uploadsIdx)
-            : '/uploads/qrcodes/' + (req.file.filename || '');
-        const baseUrl = `${req.protocol}://${req.get('host')}`;
-        qrCodeUrl = `${baseUrl}${relativePath}`;
-    }
+    const qrCodeUrl = await storeUploadedImage(req.file, req, {
+        folder: 'unitedMess/qrcodes',
+        diskPrefix: '/uploads/qrcodes/',
+        cloudLogLabel: 'Cloudinary QR code upload failed:',
+        cloudErrorLabel: 'Failed to upload QR code image to cloud storage.',
+    });
 
     let upiConfig = await UpiConfig.findOne();
     if (upiConfig) {
@@ -499,7 +437,9 @@ const submitUpiManualPayment = asyncHandler(async (req, res) => {
                 type: paymentType,
             },
         }
-    );
+    ).catch(error => {
+        logger.error('Failed to send UTR submission notification:', error);
+    });
 
     sendSuccessResponse(res, 201, 'Payment details submitted successfully. Pending admin verification.', createdPayments);
 });
@@ -551,7 +491,9 @@ const verifyUpiManualPayment = asyncHandler(async (req, res) => {
                 adminRemarks: remarks || '',
             },
         }
-    );
+    ).catch(error => {
+        logger.error('Failed to send payment verification notification:', error);
+    });
 
     sendSuccessResponse(res, 200, `Payment verification completed: ${status}`, updatedPayment);
 });

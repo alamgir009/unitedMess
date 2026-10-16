@@ -3,6 +3,7 @@ const { mealService, mealPollAuditService } = require('../../../services');
 const { sendSuccessResponse } = require('../../../utils/helpers/response.helper');
 const pick = require('../../../utils/helpers/pick');
 const AppError = require('../../../utils/errors/AppError');
+const assertOwnedOrAdmin = require('../../../utils/helpers/assertOwnedOrAdmin');
 const { getVisibleBillingStartDate, parseDate } = require('../../../utils/helpers/date.helper');
 
 // ─── Authenticated User Controllers ────────────────────────────────────────────
@@ -73,9 +74,7 @@ const getMeal = asyncHandler(async (req, res) => {
     const meal = await mealService.getMealById(req.params.mealId);
     if (!meal) throw new AppError('Meal not found', 404);
 
-    if (req.user.role !== 'admin' && meal.user._id.toString() !== req.user.id) {
-        throw new AppError('You do not have permission to access this meal', 403);
-    }
+    assertOwnedOrAdmin(meal, req.user, { label: 'meal', action: 'access' });
 
     sendSuccessResponse(res, 200, 'Meal retrieved successfully', meal);
 });
@@ -84,9 +83,7 @@ const updateMeal = asyncHandler(async (req, res) => {
     const meal = await mealService.getMealById(req.params.mealId);
     if (!meal) throw new AppError('Meal not found', 404);
 
-    if (req.user.role !== 'admin' && meal.user._id.toString() !== req.user.id) {
-        throw new AppError('You do not have permission to update this meal', 403);
-    }
+    assertOwnedOrAdmin(meal, req.user, { label: 'meal', action: 'update' });
 
     const updatedMeal = await mealService.updateMealById(req.params.mealId, req.body);
     sendSuccessResponse(res, 200, 'Meal updated successfully', updatedMeal);
@@ -96,9 +93,7 @@ const deleteMeal = asyncHandler(async (req, res) => {
     const meal = await mealService.getMealById(req.params.mealId);
     if (!meal) throw new AppError('Meal not found', 404);
 
-    if (req.user.role !== 'admin' && meal.user._id.toString() !== req.user.id) {
-        throw new AppError('You do not have permission to delete this meal', 403);
-    }
+    assertOwnedOrAdmin(meal, req.user, { label: 'meal', action: 'delete' });
 
     await mealService.deleteMealById(req.params.mealId);
     sendSuccessResponse(res, 200, 'Meal deleted successfully', { id: req.params.mealId });

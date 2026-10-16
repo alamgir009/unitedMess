@@ -15,18 +15,13 @@ import { BsCashCoin, BsGlobe2 } from 'react-icons/bs';
 import { MdPendingActions, MdCheckCircleOutline, MdErrorOutline, MdRefresh } from 'react-icons/md';
 import apiClient from '@/services/api/client/apiClient';
 import paymentService from '../../services/payment.service';
-import { getBillingPeriod } from '@shared/utils/billingPeriod';
+import { getBillingPeriod, MONTH_NAMES as MONTHS } from '@shared/utils/billingPeriod';
 import { Button, Avatar, MemberSelect, IconSelect } from '@/shared/components/ui';
 import { SiRazorpay } from "react-icons/si";
 import { HiOutlineIdentification } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 
 /* ─── Constants ─────────────────────────────────────────────── */
-
-const MONTHS = [
-    'January','February','March','April','May','June',
-    'July','August','September','October','November','December',
-];
 
 /* Billing-period-aware month label for a payment date.
    SINGLE SOURCE OF TRUTH: shared getBillingPeriod() (day 1-10 rule) — the

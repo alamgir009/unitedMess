@@ -4,18 +4,8 @@ import {
     HiOutlineSparkles,
 } from 'react-icons/hi2';
 import { format } from 'date-fns';
+import { getInitials } from '@/core/utils/helpers/string.helper';
 import MealList from '../MealList/MealList';
-
-const getInitials = (name) => {
-    if (!name) return '?';
-    return name
-        .split(' ')
-        .filter(Boolean)
-        .map((p) => p[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase();
-};
 
 const getMemberColor = (id) => {
     let hash = 0;

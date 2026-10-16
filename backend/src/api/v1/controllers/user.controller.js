@@ -3,21 +3,10 @@ const pick = require('../../../utils/helpers/pick');
 const { userService } = require('../../../services');
 const { sendSuccessResponse } = require('../../../utils/helpers/response.helper');
 const mongoose = require('mongoose');
-const cloudinary = require('cloudinary').v2;
 const AppError = require('../../../utils/errors/AppError');
-const fs = require('fs');
-const path = require('path');
-const config = require('../../../config');
+const { verifyImageMagicBytes, storeUploadedImage } = require('../../../utils/helpers/imageUpload.helper');
+const cloudinary = require('cloudinary').v2;
 const logger = require('../../../utils/logger/index');
-
-// Magic-byte validators for post-upload integrity check
-const MAGIC_VALIDATORS = {
-    'image/jpeg': (buf) => buf.length >= 3 && buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF,
-    'image/jpg':  (buf) => buf.length >= 3 && buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF,
-    'image/png':  (buf) => buf.length >= 4 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47,
-    'image/webp': (buf) => buf.length >= 12 && buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46
-                      && buf[8] === 0x57 && buf[9] === 0x45 && buf[10] === 0x42 && buf[11] === 0x50,
-};
 
 // Validation helper
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
@@ -129,27 +118,7 @@ const updateAvatar = asyncHandler(async (req, res) => {
         throw new AppError('Please upload an image file.', 400);
     }
 
-    // Post-upload magic-byte integrity check (disk storage only)
-    if (req.file.path && !/^https?:\/\//.test(req.file.path)) {
-        try {
-            const fd = fs.openSync(req.file.path, 'r');
-            const header = Buffer.alloc(12);
-            const bytesRead = fs.readSync(fd, header, 0, 12, 0);
-            fs.closeSync(fd);
-
-            const validator = MAGIC_VALIDATORS[req.file.mimetype];
-            const valid = validator && bytesRead >= 3 && validator(new Uint8Array(header.buffer, header.byteOffset, bytesRead));
-            if (!valid) {
-                try { fs.unlinkSync(req.file.path); } catch {}
-                throw new AppError('Uploaded file content does not match a supported image format.', 400);
-            }
-        } catch (error) {
-            if (error.isOperational) throw error;
-            try { fs.unlinkSync(req.file.path); } catch {}
-            logger.error('File integrity check failed:', error);
-            throw new AppError('Uploaded file content integrity check failed.', 400);
-        }
-    }
+    verifyImageMagicBytes(req.file);
 
     const userId = req.user.id;
     const user = await userService.getUserById(userId);
@@ -170,45 +139,13 @@ const updateAvatar = asyncHandler(async (req, res) => {
         }
     }
 
-    // Determine if Cloudinary is configured
-    const isCloudinaryConfigured = config.cloudinary && 
-                                  config.cloudinary.cloud_name && 
-                                  config.cloudinary.api_key && 
-                                  config.cloudinary.api_secret;
-
-    let imageUrl;
-    if (isCloudinaryConfigured) {
-        try {
-            const ext = path.extname(req.file.originalname).toLowerCase();
-            const base = path.basename(req.file.originalname, ext);
-            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-            const publicId = `${base}-${uniqueSuffix}`;
-
-            const result = await cloudinary.uploader.upload(req.file.path, {
-                folder: 'unitedMess/avatars',
-                public_id: publicId,
-                transformation: [{ width: 400, height: 400, crop: 'fill', gravity: 'face' }],
-            });
-            imageUrl = result.secure_url;
-            
-            // Delete temp local file
-            try { fs.unlinkSync(req.file.path); } catch {}
-        } catch (error) {
-            // Delete temp local file
-            try { fs.unlinkSync(req.file.path); } catch {}
-            logger.error('Cloudinary upload failed:', error);
-            throw new AppError('Failed to upload image to cloud storage.', 500);
-        }
-    } else {
-        // Disk storage: convert filesystem path to static URL
-        const normalized = req.file.path.replace(/\\/g, '/');
-        const uploadsIdx = normalized.indexOf('/uploads/');
-        const relativePath = uploadsIdx !== -1
-            ? normalized.substring(uploadsIdx)
-            : '/uploads/avatars/' + (req.file.filename || '');
-        const baseUrl = `${req.protocol}://${req.get('host')}`;
-        imageUrl = `${baseUrl}${relativePath}`;
-    }
+    const imageUrl = await storeUploadedImage(req.file, req, {
+        folder: 'unitedMess/avatars',
+        transformation: [{ width: 400, height: 400, crop: 'fill', gravity: 'face' }],
+        diskPrefix: '/uploads/avatars/',
+        cloudLogLabel: 'Cloudinary upload failed:',
+        cloudErrorLabel: 'Failed to upload image to cloud storage.',
+    });
 
     const updatedUser = await userService.updateProfile(userId, { image: imageUrl }, false);
     sendSuccessResponse(res, 200, 'Profile picture updated successfully', updatedUser);

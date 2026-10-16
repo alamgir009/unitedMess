@@ -14,15 +14,40 @@ const mealTypeCountMap = {
   night: 1,
 };
 
+// Canonical fields for an auto-created meal record
+const autoMealFields = (type, mealCount) => ({
+  type,
+  mealCount,
+  isGuestMeal: false,
+  guestCount: 0,
+  remarks: 'Auto-created from vote',
+  source: 'auto',
+});
+
 const MAX_BULK_DAYS = 31;
-const MAX_USER_MEALS = 200;
+
+// Fire-and-forget recalc must never crash the server
+const recalculatePayablesSafe = () => {
+  recalculateAllActiveUsersPayable().catch(err => {
+    console.error('[MealService] recalculateAllActiveUsersPayable failed:', err);
+  });
+};
+
+// Best-effort audit write — audit failures never block the caller's flow
+const writeAuditLogSafe = async (payload, contextLabel = 'audit log') => {
+  try {
+    await writeAuditLog(payload);
+  } catch (auditErr) {
+    console.error(`[MealPollAudit] Failed to write ${contextLabel}:`, auditErr);
+  }
+};
 
 /**
- * Bulk create meals for date range and multiple users.
+ * Bulk create meals for a date range and multiple users.
  *
- * Strategy: One record per user per date. Existing records for the same
- * {user, date} are OVERWRITTEN with the new type/values. This prevents
- * duplicate/conflicting entries like "01/06/2026 Day + 01/06/2026 Off".
+ * Strategy: one record per user per date. Existing records for the same
+ * {user, date} are overwritten with the new type/values, except user-authored
+ * `source: 'manual'` records which are always skipped.
  */
 const bulkCreateMeals = async ({ startDate, endDate, type, userIds, isGuestMeal, guestCount, remarks, createdBy }) => {
   const validTypes = ['day', 'night', 'both', 'off'];
@@ -224,8 +249,8 @@ const bulkCreateMeals = async ({ startDate, endDate, type, userIds, isGuestMeal,
     await User.bulkWrite(userUpdateOps);
   }
 
-  // Recalculate payable for all active users
-  recalculateAllActiveUsersPayable();
+  // A payable refresh is fire-and-forget; failures are logged, never blocking
+  recalculatePayablesSafe();
 
   return {
     inserted: insertedCount,
@@ -270,8 +295,8 @@ const createMeal = async (mealBody) => {
         )
     ]);
 
-    // Recalculate payable for all active users
-    recalculateAllActiveUsersPayable();
+    // A payable refresh is fire-and-forget; failures are logged, never blocking
+    recalculatePayablesSafe();
 
     return newMeal;
 };
@@ -279,7 +304,6 @@ const createMeal = async (mealBody) => {
 /**
  * Query meals with optional filter & options
  */
-// queryMeals in meal.service.js
 const queryMeals = async (filter, options = {}, populateUser = false) => {
     let sort = { date: -1 };
 
@@ -425,8 +449,8 @@ const updateMealById = async (mealId, updateBody) => {
         );
     }
 
-    // Recalculate payable for all active users
-    recalculateAllActiveUsersPayable();
+    // A payable refresh is fire-and-forget; failures are logged, never blocking
+    recalculatePayablesSafe();
 
     return meal;
 };
@@ -453,8 +477,8 @@ const deleteMealById = async (mealId) => {
         meal.deleteOne()
     ]);
 
-    // Recalculate payable for all active users
-    recalculateAllActiveUsersPayable();
+    // A payable refresh is fire-and-forget; failures are logged, never blocking
+    recalculatePayablesSafe();
 
     return meal;
 };
@@ -545,8 +569,8 @@ const bulkDeleteMeals = async ({ mealIds, user }) => {
         userUpdateOps.length > 0 ? User.bulkWrite(userUpdateOps) : Promise.resolve(),
     ]);
 
-    // Recalculate payable for all active users
-    recalculateAllActiveUsersPayable();
+    // A payable refresh is fire-and-forget; failures are logged, never blocking
+    recalculatePayablesSafe();
 
     return {
         deletedCount: authorizedIds.length,
@@ -582,20 +606,17 @@ const resolveEffectiveVote = async (userId, targetDate) => {
 };
 
 /**
- * Close any open standing preferences for a user that would conflict
- * with a new vote effective on `effectiveFrom`.
- *
- * Atomically sets effectiveUntil on all active records (effectiveUntil: null)
- * whose date < effectiveFrom. This prevents two simultaneous active preferences.
+ * Atomically close all active standing preferences (effectiveUntil: null)
+ * for a user whose date matches the given comparison against `effectiveFrom`.
  *
  * Returns the number of records closed.
  */
-const closePreviousStandingPreferences = async (userId, effectiveFrom) => {
+const closeStandingPreferencesMatching = async (userId, effectiveFrom, dateFilter) => {
     const result = await MealPoll.updateMany(
         {
             user: userId,
             effectiveUntil: null,
-            date: { $lt: effectiveFrom },
+            date: dateFilter,
         },
         { $set: { effectiveUntil: effectiveFrom } }
     );
@@ -603,26 +624,51 @@ const closePreviousStandingPreferences = async (userId, effectiveFrom) => {
 };
 
 /**
- * Close any open standing preferences for a user that would conflict
- * with a new vote effective on `effectiveFrom`, including records with
- * date >= effectiveFrom (same boundary or later).
- *
- * Used when re-voting on or after the same effective boundary to ensure
- * at most one active preference per user.
- *
- * Returns the number of records closed.
+ * Close open standing preferences dated before the new effective boundary.
  */
-const closeAllStandingPreferences = async (userId, effectiveFrom) => {
-    const result = await MealPoll.updateMany(
-        {
-            user: userId,
-            effectiveUntil: null,
-            date: { $gte: effectiveFrom },
+const closePreviousStandingPreferences = (userId, effectiveFrom) =>
+    closeStandingPreferencesMatching(userId, effectiveFrom, { $lt: effectiveFrom });
+
+/**
+ * Close open standing preferences dated on/after the boundary — used when
+ * re-voting on or after the same effective boundary.
+ */
+const closeAllStandingPreferences = (userId, effectiveFrom) =>
+    closeStandingPreferencesMatching(userId, effectiveFrom, { $gte: effectiveFrom });
+
+/**
+ * Most recent effective vote per user covering `date` under the half-open
+ * interval rule, computed in a single aggregation.
+ */
+const fetchEffectiveVotesForUsers = (userIds, date) => MealPoll.aggregate([
+    {
+        $match: {
+            user: { $in: userIds },
+            date: { $lte: date },
+            $or: [
+                { effectiveUntil: null },
+                { effectiveUntil: { $gt: date } },
+            ],
         },
-        { $set: { effectiveUntil: effectiveFrom } }
-    );
-    return result.modifiedCount;
-};
+    },
+    { $sort: { date: -1 } },
+    {
+        $group: {
+            _id: '$user',
+            type: { $first: '$type' },
+            date: { $first: '$date' },
+            updatedAt: { $first: '$updatedAt' },
+        },
+    },
+]);
+
+const countPollTypes = (pollData) => ({
+    total: pollData.length,
+    day: pollData.filter(p => p.type === 'day' || p.type === 'both').length,
+    night: pollData.filter(p => p.type === 'night' || p.type === 'both').length,
+    off: pollData.filter(p => p.type === 'off').length,
+    both: pollData.filter(p => p.type === 'both').length,
+});
 
 /**
  * Vote for a meal poll — creates or updates a standing preference.
@@ -662,20 +708,16 @@ const voteMealPoll = async (userId, pollData) => {
         currentActive.type === type &&
         currentActive.date.getTime() === effectiveFrom.getTime()
     ) {
-        // Write audit as unchanged for traceability
-        try {
-            await writeAuditLog({
-                userId,
-                eventType: 'vote_unchanged',
-                pollDate: effectiveFrom,
-                previousState: { type: currentActive.type, updatedAt: currentActive.updatedAt },
-                newState: { type: currentActive.type, updatedAt: currentActive.updatedAt },
-                requestId,
-                source: 'manual',
-            });
-        } catch (auditErr) {
-            console.error('[MealPollAudit] Failed to write audit log:', auditErr);
-        }
+        // Audit as unchanged for traceability
+        await writeAuditLogSafe({
+            userId,
+            eventType: 'vote_unchanged',
+            pollDate: effectiveFrom,
+            previousState: { type: currentActive.type, updatedAt: currentActive.updatedAt },
+            newState: { type: currentActive.type, updatedAt: currentActive.updatedAt },
+            requestId,
+            source: 'manual',
+        });
         return currentActive;
     }
 
@@ -704,41 +746,33 @@ const voteMealPoll = async (userId, pollData) => {
         { upsert: true, new: true, runValidators: true }
     );
 
-    // ── 7. Write audit log ──────────────────────────────────────────────
+    // ── 7. Write audit logs for the change ──────────────────────────────
     let eventType;
     if (!currentActive) {
         eventType = 'vote_created';
     } else {
         // Close audit for the superseded preference
-        try {
-            await writeAuditLog({
-                userId,
-                eventType: 'vote_preference_closed',
-                pollDate: currentActive.date,
-                previousState: { type: currentActive.type, updatedAt: currentActive.updatedAt },
-                newState: { type, updatedAt: newPoll.updatedAt },
-                requestId,
-                source: 'manual',
-            });
-        } catch (auditErr) {
-            console.error('[MealPollAudit] Failed to write preference_closed audit log:', auditErr);
-        }
-        eventType = 'vote_updated';
-    }
-
-    try {
-        await writeAuditLog({
+        await writeAuditLogSafe({
             userId,
-            eventType,
-            pollDate: effectiveFrom,
-            previousState,
+            eventType: 'vote_preference_closed',
+            pollDate: currentActive.date,
+            previousState: { type: currentActive.type, updatedAt: currentActive.updatedAt },
             newState: { type, updatedAt: newPoll.updatedAt },
             requestId,
             source: 'manual',
-        });
-    } catch (auditErr) {
-        console.error('[MealPollAudit] Failed to write audit log:', auditErr);
+        }, 'preference_closed audit log');
+        eventType = 'vote_updated';
     }
+
+    await writeAuditLogSafe({
+        userId,
+        eventType,
+        pollDate: effectiveFrom,
+        previousState,
+        newState: { type, updatedAt: newPoll.updatedAt },
+        requestId,
+        source: 'manual',
+    });
 
     // ── 8. Auto-create meal for today if vote is for today or past ─────
     const today = normalizeDate(new Date());
@@ -775,28 +809,7 @@ const getMealPollStatus = async (dateStr) => {
     const userIds = users.map(u => u._id);
 
     // 2. Batch-fetch effective votes for ALL users in one query
-    const effectiveVotes = await MealPoll.aggregate([
-        {
-            $match: {
-                user: { $in: userIds },
-                date: { $lte: targetDate },
-                $or: [
-                    { effectiveUntil: null },
-                    { effectiveUntil: { $gt: targetDate } },
-                ],
-            },
-        },
-        { $sort: { date: -1 } },
-        // Group by user, take the first (most recent) match
-        {
-            $group: {
-                _id: '$user',
-                type: { $first: '$type' },
-                date: { $first: '$date' },
-                updatedAt: { $first: '$updatedAt' },
-            },
-        },
-    ]);
+    const effectiveVotes = await fetchEffectiveVotesForUsers(userIds, targetDate);
 
     // 3. Index votes by userId for O(1) lookup
     const voteMap = new Map();
@@ -833,13 +846,7 @@ const getMealPollStatus = async (dateStr) => {
     });
 
     // 5. Aggregate stats
-    const stats = {
-        total: pollData.length,
-        day: pollData.filter(p => p.type === 'day' || p.type === 'both').length,
-        night: pollData.filter(p => p.type === 'night' || p.type === 'both').length,
-        off: pollData.filter(p => p.type === 'off').length,
-        both: pollData.filter(p => p.type === 'both').length,
-    };
+    const stats = countPollTypes(pollData);
 
     return { date: targetDate, votes: pollData, stats };
 };
@@ -851,7 +858,7 @@ const getMealPollStatus = async (dateStr) => {
  * - Idempotent: skips if meal already exists with the same type.
  * - Overwrites if meal exists with a different type.
  * - Syncs User.totalMeal and User.meals.
- * - Calls recalculateAllActiveUsersPayable().
+ * - Fires a payable refresh (non-blocking).
  *
  * @param {string} userId
  * @param {Date} date - Normalized to midnight UTC
@@ -868,34 +875,28 @@ const autoCreateMealForUser = async (userId, date, type) => {
         if (existing.source === 'manual' || existing.source === 'bulk') return;
         if (existing.type === type) return;
 
-        const oldMealCount = existing.mealCount || 0;
-        const mealCountDiff = mealCount - oldMealCount;
+        const mealCountDiff = mealCount - (existing.mealCount || 0);
 
         await Meal.updateOne(
             { _id: existing._id },
-            { $set: { type, mealCount, isGuestMeal: false, guestCount: 0, remarks: 'Auto-created from vote', source: 'auto' } },
+            { $set: { ...autoMealFields(type, mealCount) } },
         );
 
         if (mealCountDiff !== 0) {
             await User.findByIdAndUpdate(userId, { $inc: { totalMeal: mealCountDiff } });
         }
 
-        recalculateAllActiveUsersPayable();
+        recalculatePayablesSafe();
         return;
     }
 
     const mealId = new mongoose.Types.ObjectId();
     await Promise.all([
         Meal.create({
+            ...autoMealFields(type, mealCount),
             _id: mealId,
             user: userId,
             date: normalizedDate,
-            type,
-            mealCount,
-            isGuestMeal: false,
-            guestCount: 0,
-            remarks: 'Auto-created from vote',
-            source: 'auto',
         }),
         User.findByIdAndUpdate(
             userId,
@@ -904,7 +905,98 @@ const autoCreateMealForUser = async (userId, date, type) => {
         ),
     ]);
 
-    recalculateAllActiveUsersPayable();
+    recalculatePayablesSafe();
+};
+
+/**
+ * Build per-user insert/update bulk ops for an auto-created meal day.
+ * Manual and bulk meals are user-intentional — never overwritten.
+ */
+const buildAutoCreateOps = (userIds, voteMap, existingMap, date) => {
+    const insertDocs = [];
+    const updateOps = [];
+    const userInsertDeltas = {};
+    const userUpdateDeltas = {};
+    let skippedCount = 0;
+
+    for (const uid of userIds) {
+        const uidStr = uid.toString();
+        const voteType = voteMap.get(uidStr) || 'off';
+        const mealCount = mealTypeCountMap[voteType] ?? 0;
+        const existing = existingMap.get(uidStr);
+
+        // Manual and bulk meals are user-intentional — never overwrite them
+        if (existing && (existing.source === 'manual' || existing.source === 'bulk')) {
+            skippedCount++;
+            continue;
+        }
+
+        if (existing && existing.type === voteType) {
+            skippedCount++;
+            continue;
+        }
+
+        if (existing) {
+            const mealCountDiff = mealCount - (existing.mealCount || 0);
+
+            updateOps.push({
+                updateOne: {
+                    filter: { user: uid, date },
+                    update: { $set: { ...autoMealFields(voteType, mealCount) } },
+                },
+            });
+
+            if (mealCountDiff !== 0) {
+                userUpdateDeltas[uidStr] = (userUpdateDeltas[uidStr] || 0) + mealCountDiff;
+            }
+        } else {
+            const mealId = new mongoose.Types.ObjectId();
+            insertDocs.push({
+                ...autoMealFields(voteType, mealCount),
+                _id: mealId,
+                user: uid,
+                date,
+            });
+
+            if (!userInsertDeltas[uidStr]) {
+                userInsertDeltas[uidStr] = { totalMeal: 0, mealIds: [] };
+            }
+            userInsertDeltas[uidStr].totalMeal += mealCount;
+            userInsertDeltas[uidStr].mealIds.push(mealId);
+        }
+    }
+
+    return { insertDocs, updateOps, userInsertDeltas, userUpdateDeltas, skippedCount };
+};
+
+/**
+ * One bulkWrite op per user to push inserted meal ids and apply meal-count deltas.
+ */
+const buildUserStatSyncOps = (userInsertDeltas, userUpdateDeltas) => {
+    const userUpdateOps = [];
+
+    for (const [uid, delta] of Object.entries(userInsertDeltas)) {
+        userUpdateOps.push({
+            updateOne: {
+                filter: { _id: new mongoose.Types.ObjectId(uid) },
+                update: {
+                    $push: { meals: { $each: delta.mealIds } },
+                    $inc: { totalMeal: delta.totalMeal },
+                },
+            },
+        });
+    }
+
+    for (const [uid, diff] of Object.entries(userUpdateDeltas)) {
+        userUpdateOps.push({
+            updateOne: {
+                filter: { _id: new mongoose.Types.ObjectId(uid) },
+                update: { $inc: { totalMeal: diff } },
+            },
+        });
+    }
+
+    return userUpdateOps;
 };
 
 /**
@@ -938,27 +1030,9 @@ const autoCreateMealsFromVotes = async (targetDate) => {
     const userIds = users.map(u => u._id);
 
     // 2. Batch-fetch effective votes via aggregation (single query)
-    const effectiveVotes = await MealPoll.aggregate([
-        {
-            $match: {
-                user: { $in: userIds },
-                date: { $lte: date },
-                $or: [
-                    { effectiveUntil: null },
-                    { effectiveUntil: { $gt: date } },
-                ],
-            },
-        },
-        { $sort: { date: -1 } },
-        {
-            $group: {
-                _id: '$user',
-                type: { $first: '$type' },
-            },
-        },
-    ]);
+    const effectiveVotes = await fetchEffectiveVotesForUsers(userIds, date);
 
-    // Index votes by userId for O(1) lookup
+    // Index vote types by userId for O(1) lookup
     const voteMap = new Map();
     for (const v of effectiveVotes) {
         voteMap.set(v._id.toString(), v.type);
@@ -976,73 +1050,8 @@ const autoCreateMealsFromVotes = async (targetDate) => {
     }
 
     // 4. Build bulk operations
-    const insertDocs = [];
-    const updateOps = [];
-    const userInsertDeltas = {};
-    const userUpdateDeltas = {};
-    let skippedCount = 0;
-
-    for (const uid of userIds) {
-        const uidStr = uid.toString();
-        const voteType = voteMap.get(uidStr) || 'off';
-        const mealCount = mealTypeCountMap[voteType] ?? 0;
-        const existing = existingMap.get(uidStr);
-
-        // Manual and bulk meals are user-intentional — never overwrite them
-        if (existing && (existing.source === 'manual' || existing.source === 'bulk')) {
-            skippedCount++;
-            continue;
-        }
-
-        if (existing && existing.type === voteType) {
-            skippedCount++;
-            continue;
-        }
-
-        if (existing) {
-            const oldMealCount = existing.mealCount || 0;
-            const mealCountDiff = mealCount - oldMealCount;
-
-            updateOps.push({
-                updateOne: {
-                    filter: { user: uid, date },
-                    update: {
-                        $set: {
-                            type: voteType,
-                            mealCount,
-                            isGuestMeal: false,
-                            guestCount: 0,
-                            remarks: 'Auto-created from vote',
-                            source: 'auto',
-                        },
-                    },
-                },
-            });
-
-            if (mealCountDiff !== 0) {
-                userUpdateDeltas[uidStr] = (userUpdateDeltas[uidStr] || 0) + mealCountDiff;
-            }
-        } else {
-            const mealId = new mongoose.Types.ObjectId();
-            insertDocs.push({
-                _id: mealId,
-                user: uid,
-                date,
-                type: voteType,
-                mealCount,
-                isGuestMeal: false,
-                guestCount: 0,
-                remarks: 'Auto-created from vote',
-                source: 'auto',
-            });
-
-            if (!userInsertDeltas[uidStr]) {
-                userInsertDeltas[uidStr] = { totalMeal: 0, mealIds: [] };
-            }
-            userInsertDeltas[uidStr].totalMeal += mealCount;
-            userInsertDeltas[uidStr].mealIds.push(mealId);
-        }
-    }
+    const { insertDocs, updateOps, userInsertDeltas, userUpdateDeltas, skippedCount } =
+        buildAutoCreateOps(userIds, voteMap, existingMap, date);
 
     // 5. Execute bulk writes
     if (updateOps.length > 0) {
@@ -1057,35 +1066,14 @@ const autoCreateMealsFromVotes = async (targetDate) => {
     }
 
     // 6. Sync user stats
-    const userUpdateOps = [];
-
-    for (const [uid, delta] of Object.entries(userInsertDeltas)) {
-        userUpdateOps.push({
-            updateOne: {
-                filter: { _id: new mongoose.Types.ObjectId(uid) },
-                update: {
-                    $push: { meals: { $each: delta.mealIds } },
-                    $inc: { totalMeal: delta.totalMeal },
-                },
-            },
-        });
-    }
-
-    for (const [uid, diff] of Object.entries(userUpdateDeltas)) {
-        userUpdateOps.push({
-            updateOne: {
-                filter: { _id: new mongoose.Types.ObjectId(uid) },
-                update: { $inc: { totalMeal: diff } },
-            },
-        });
-    }
+    const userUpdateOps = buildUserStatSyncOps(userInsertDeltas, userUpdateDeltas);
 
     if (userUpdateOps.length > 0) {
         await User.bulkWrite(userUpdateOps);
     }
 
-    // 7. Recalculate payables for all active users
-    recalculateAllActiveUsersPayable();
+    // A payable refresh is fire-and-forget; failures are logged, never blocking
+    recalculatePayablesSafe();
 
     return {
         created: insertDocs.length,
@@ -1094,6 +1082,25 @@ const autoCreateMealsFromVotes = async (targetDate) => {
         errors: 0,
         total: users.length,
     };
+};
+
+/**
+ * Idempotent carry-forward audit entry for one user on one day.
+ */
+const writeCarryForwardAudit = async (userId, date, { requestIdSuffix = '', newState }) => {
+    try {
+        await writeAuditLog({
+            userId,
+            eventType: 'vote_carried_forward',
+            pollDate: date,
+            previousState: null,
+            newState,
+            source: 'carried_forward',
+            requestId: `cf-${userId}-${date.toISOString().slice(0, 10)}${requestIdSuffix}`,
+        });
+    } catch (auditErr) {
+        console.error(`[CarryForward] Audit log failed for user ${userId}:`, auditErr.message);
+    }
 };
 
 /**
@@ -1133,22 +1140,10 @@ const carryForwardVotes = async (targetDate) => {
 
             if (activeVote) {
                 if (user.isActive) {
-                    // 3. Active user with existing preference → record carry-forward audit log
-                    //    so the activity logs reflect that this vote carried forward to today.
-                    const cfRequestId = `cf-${user._id.toString()}-${date.toISOString().slice(0, 10)}`;
-                    try {
-                        await writeAuditLog({
-                            userId: user._id,
-                            eventType: 'vote_carried_forward',
-                            pollDate: date,
-                            previousState: null,
-                            newState: { type: activeVote.type, updatedAt: activeVote.updatedAt },
-                            source: 'carried_forward',
-                            requestId: cfRequestId,
-                        });
-                    } catch (auditErr) {
-                        console.error(`[CarryForward] Audit log failed for user ${user._id}:`, auditErr.message);
-                    }
+                    // 3. Active user with existing preference → audit the carry-forward
+                    await writeCarryForwardAudit(user._id, date, {
+                        newState: { type: activeVote.type, updatedAt: activeVote.updatedAt },
+                    });
                     skipped++;
                     continue;
                 }
@@ -1178,20 +1173,10 @@ const carryForwardVotes = async (targetDate) => {
                 updatedBy: user._id,
             });
 
-            const neverVotedCfRequestId = `cf-${user._id.toString()}-${date.toISOString().slice(0, 10)}-never-voted`;
-            try {
-                await writeAuditLog({
-                    userId: user._id,
-                    eventType: 'vote_carried_forward',
-                    pollDate: date,
-                    previousState: null,
-                    newState: { type: 'off', updatedAt: new Date() },
-                    source: 'carried_forward',
-                    requestId: neverVotedCfRequestId,
-                });
-            } catch (auditErr) {
-                console.error(`[CarryForward] Audit log failed for user ${user._id}:`, auditErr.message);
-            }
+            await writeCarryForwardAudit(user._id, date, {
+                requestIdSuffix: '-never-voted',
+                newState: { type: 'off', updatedAt: new Date() },
+            });
 
             created++;
         } catch (err) {

@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion';
-import { memo, useState } from 'react';
+import { useState } from 'react';
 import {
     HiOutlineEnvelope,
     HiOutlineChatBubbleLeftRight,
@@ -7,22 +7,7 @@ import {
     HiOutlineArrowRight,
     HiOutlineSparkles,
 } from 'react-icons/hi2';
-import { Button, Spinner } from '@/shared/components/ui';
-
-const Reveal = memo(({ children, delay = 0 }) => {
-    const shouldReduceMotion = useReducedMotion();
-    return (
-        <motion.div
-            initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.5, delay, ease: [0.16, 1, 0.3, 1] }}
-        >
-            {children}
-        </motion.div>
-    );
-});
-Reveal.displayName = 'Reveal';
+import { Button, Spinner, Reveal } from '@/shared/components/ui';
 
 const ContactMethod = ({ Icon, title, value, href, delay }) => (
     <Reveal delay={delay}>

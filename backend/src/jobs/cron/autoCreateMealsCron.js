@@ -20,7 +20,6 @@
 
 const cron = require('node-cron');
 const mealService = require('../../services/meal.service');
-const { normalizeDate } = require('../../utils/helpers/date.helper');
 const logger = require('../../utils/logger/index');
 
 /**

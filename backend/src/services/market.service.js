@@ -198,7 +198,6 @@ const updateMarketById = async (marketId, updateBody) => {
 
     const oldAmount = market.amount;
 
-    // Date Logic 
     if (updateBody.date) {
         const parsedDate = normalizeDate(parseDate(updateBody.date));
 
@@ -218,7 +217,6 @@ const updateMarketById = async (marketId, updateBody) => {
         }
     }
 
-    // Items Sanitization 
     if (updateBody.items !== undefined) {
         if (typeof updateBody.items !== 'string' || !updateBody.items.trim()) {
             throw new AppError('Items must be a non-empty string', 400);
@@ -229,7 +227,6 @@ const updateMarketById = async (marketId, updateBody) => {
     Object.assign(market, updateBody);
     await market.save();
 
-    //  User Amount Sync 
     if (updateBody.amount !== undefined && updateBody.amount !== oldAmount) {
         await User.findByIdAndUpdate(
             market.user._id,
