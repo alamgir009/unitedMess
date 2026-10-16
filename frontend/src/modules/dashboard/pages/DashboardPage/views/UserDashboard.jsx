@@ -214,11 +214,14 @@ const UserDashboard = memo(function UserDashboard() {
     }, [dispatch, userStatsLoaded, lastFetchedAt]);
 
     /* ── visibility / focus — re-fetch when user returns to this tab ── */
+    const lastRefetchRef = useRef(0);
     useEffect(() => {
         const onVisible = () => {
-            if (document.visibilityState === 'visible') {
-                dispatch(fetchUserDashboardStats());
-            }
+            if (document.visibilityState !== 'visible') return;
+            const now = Date.now();
+            if (now - lastRefetchRef.current < 1000) return;
+            lastRefetchRef.current = now;
+            dispatch(fetchUserDashboardStats());
         };
         document.addEventListener('visibilitychange', onVisible);
         window.addEventListener('focus', onVisible);

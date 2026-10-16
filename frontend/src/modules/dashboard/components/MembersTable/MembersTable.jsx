@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Search,
   CheckCircle2,
@@ -157,11 +157,20 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
     setTimeout(() => setEditingUser(null), 250);
   };
 
+  const searchTimerRef = useRef(null);
+
   const handleSearchChange = (e) => {
     const val = e.target.value;
     setLocalSearch(val);
-    onSearch?.(val);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      onSearch?.(val);
+    }, 300);
   };
+
+  useEffect(() => () => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+  }, []);
 
   const usersWithStatus = useMemo(
     () => users.map(u => ({ ...u, _displayStatus: getDisplayStatus(u) })),

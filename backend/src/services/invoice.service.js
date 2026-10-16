@@ -151,7 +151,7 @@ const _attachLatestPayment = async (invoiceObj, userId) => {
  *  - Open invoices are recalculated and persisted only when something
  *    actually changed (`isModified()`).
  */
-const getInvoice = async (userId, month, year) => {
+const getInvoice = async (userId, month, year, precomputedMessStats = null) => {
     const invoice = await Invoice.findOne({ user: userId, month, year });
     const user = await User.findById(userId).lean();
     if (!user) throw new AppError('User not found', 404);
@@ -167,7 +167,9 @@ const getInvoice = async (userId, month, year) => {
     const { start, end } = getMonthRange(month, year);
     const [livePaidAmount, messStats, userMeals, userMarkets] = await Promise.all([
         calculatePaidAmount(userId, month, year),
-        calculateMessStats(month, year),
+        typeof precomputedMessStats === 'function'
+            ? precomputedMessStats()
+            : (precomputedMessStats ?? calculateMessStats(month, year)),
         Meal.aggregate([
             { $match: { user: new mongoose.Types.ObjectId(userId), date: { $gte: start, $lte: end } } },
             {
@@ -554,6 +556,13 @@ const finalizeMonth = async (month, year) => {
         .select('_id')
         .lean();
 
+    // Mess-wide stats are identical for every member. Resolve lazily and
+    // memoize so members on the read-only/exempt path never trigger the
+    // aggregation, while the first open bill computes it exactly once and
+    // every later member reuses the result instead of recalculating it.
+    let messStatsPromise = null;
+    const getMessStats = () => (messStatsPromise ??= calculateMessStats(month, year));
+
     const results = [];
 
     for (const user of activeUsers) {
@@ -562,7 +571,7 @@ const finalizeMonth = async (month, year) => {
         try {
             // getInvoice() resolves the effective exemption (admin override or
             // zero-activity). Exempt invoices come back with totalPayable: 0.
-            const invoiceObj = await getInvoice(user._id, month, year);
+            const invoiceObj = await getInvoice(user._id, month, year, getMessStats);
 
             // Skip exempt invoices — they are handled separately below
             if (invoiceObj.isExempt) continue;
@@ -1007,7 +1016,7 @@ const emailAllInvoices = async (month, year) => {
 
     /* Helper: process a single user — returns true on success */
     const processUser = async (user) => {
-        const invoice = await getInvoice(user._id, month, year);
+        const invoice = await getInvoice(user._id, month, year, messStats);
 
         /* Annotate with mess-wide totals so pdf.service can render stat cards */
         invoice._messGrandTotalMarket = grandTotalMarket;

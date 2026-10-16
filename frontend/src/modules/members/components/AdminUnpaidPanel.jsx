@@ -521,13 +521,18 @@ const AdminUnpaidPanel = React.memo(() => {
         );
     }, [unpaidInvoices]);
 
-    const { visibleCount, unresolvedCount, settledRefundCount, actionableMemberCount } = useMemo(() => {
+    const { visibleCount, unresolvedCount, settledRefundCount, actionableMemberCount, actionableByGroup } = useMemo(() => {
         let visible = 0;
         let unresolved = 0;
         let members = 0;
+        const actionableByGroup = new Map();
         for (const g of groupedInvoices) {
             visible += g.invoices.length;
-            const actionable = g.invoices.filter(inv => getSettlement(inv).actionable).length;
+            let actionable = 0;
+            for (const inv of g.invoices) {
+                if (getSettlement(inv).actionable) actionable++;
+            }
+            actionableByGroup.set(g, actionable);
             unresolved += actionable;
             if (actionable > 0) members += 1;
         }
@@ -536,6 +541,7 @@ const AdminUnpaidPanel = React.memo(() => {
             unresolvedCount: unresolved,
             settledRefundCount: visible - unresolved,
             actionableMemberCount: members,
+            actionableByGroup,
         };
     }, [groupedInvoices]);
 
@@ -626,7 +632,7 @@ const AdminUnpaidPanel = React.memo(() => {
                 {!unpaidInvoicesLoading && groupedInvoices.length > 0 && (
                     <div className="flex flex-col">
                         {groupedInvoices.map((group) => {
-                            const actionable = group.invoices.filter(inv => getSettlement(inv).actionable).length;
+                            const actionable = actionableByGroup.get(group) ?? 0;
                             return (
                                 <div key={group.user?._id || 'unknown'} className="flex flex-col">
                                     <GroupHeader user={group.user} count={actionable} settledCount={group.invoices.length - actionable} />

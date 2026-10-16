@@ -43,8 +43,14 @@ const MarketForm = lazy(() => import('../../components/MarketForm/MarketForm'));
 ══════════════════════════════════════════════ */
 const MarketPage = () => {
     const dispatch = useDispatch();
-    const { markets, schedule, isScheduleLoading, pagination, isLoading, isError, message } = useSelector((s) => s.market);
-    const { user } = useSelector((s) => s.auth);
+    const markets = useSelector((s) => s.market.markets);
+    const schedule = useSelector((s) => s.market.schedule);
+    const isScheduleLoading = useSelector((s) => s.market.isScheduleLoading);
+    const pagination = useSelector((s) => s.market.pagination);
+    const isLoading = useSelector((s) => s.market.isLoading);
+    const isError = useSelector((s) => s.market.isError);
+    const message = useSelector((s) => s.market.message);
+    const user = useSelector((s) => s.auth.user);
     const isAdmin = user?.role === 'admin';
 
     // ── Modal
@@ -98,6 +104,8 @@ const MarketPage = () => {
     const openCreate = useCallback(() => { setEditingMarket(null); setIsModalOpen(true); }, []);
     const openEdit   = useCallback((m) => { setEditingMarket(m);    setIsModalOpen(true); }, []);
     const closeModal = useCallback(() => { setIsModalOpen(false);   setEditingMarket(null); }, []);
+    const handleToggleFilters = useCallback(() => setShowFilters((p) => !p), []);
+    const handleCancelDelete = useCallback(() => setMarketToDelete(null), []);
 
     /* ── CRUD handlers ── */
     const handleSubmit = useCallback(async (formData) => {
@@ -267,7 +275,7 @@ const MarketPage = () => {
                         dateTo={dateTo}
                         onDateToChange={setDateTo}
                         showFilters={showFilters}
-                        onToggleFilters={() => setShowFilters((p) => !p)}
+                        onToggleFilters={handleToggleFilters}
                         filteredCount={filtered?.length || 0}
                         totalCount={markets?.length || 0}
                         hasActive={hasActive}
@@ -375,7 +383,7 @@ const MarketPage = () => {
                     market={marketToDelete}
                     isDeleting={isDeleting}
                     onConfirm={executeDelete}
-                    onCancel={() => setMarketToDelete(null)}
+                    onCancel={handleCancelDelete}
                 />
 
             </div>

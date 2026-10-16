@@ -278,10 +278,14 @@ BillsOverview.displayName = 'BillsOverview';
 ══════════════════════════════════════════════════════════════ */
 const PaymentPage = () => {
     const dispatch = useDispatch();
-    const { payments, pagination, isListLoading, isError, message } =
-        useSelector(s => s.payment);
-    const { user, payableAmountData, payableGasBill } =
-        useSelector(s => s.auth);
+    const payments = useSelector(s => s.payment.payments);
+    const pagination = useSelector(s => s.payment.pagination);
+    const isListLoading = useSelector(s => s.payment.isListLoading);
+    const isError = useSelector(s => s.payment.isError);
+    const message = useSelector(s => s.payment.message);
+    const user = useSelector(s => s.auth.user);
+    const payableAmountData = useSelector(s => s.auth.payableAmountData);
+    const payableGasBill = useSelector(s => s.auth.payableGasBill);
 
     const isAdmin = user?.role === 'admin';
 
@@ -674,6 +678,15 @@ const PaymentPage = () => {
     const messBillStatus  = payableAmountData?.paymentStatus || 'pending';
     const gasBillStatus   = payableGasBill?.status           || 'pending';
 
+    const handlePayMessClick = useCallback(
+        () => handlePayBillClick(payableAmountData?.monthName || ''),
+        [handlePayBillClick, payableAmountData],
+    );
+    const handlePayGasClick = useCallback(
+        () => handleGasBillPayClick(gasBillVal),
+        [handleGasBillPayClick, gasBillVal],
+    );
+
     /* ── render ── */
     return (
         <MainLayout>
@@ -699,8 +712,8 @@ const PaymentPage = () => {
                             messBillStatus={messBillStatus}
                             gasBillStatus={gasBillStatus}
                             isPaying={isPaying}
-                            onPayMess={() => handlePayBillClick(payableAmountData?.monthName || '')}
-                            onPayGas={() => handleGasBillPayClick(gasBillVal)}
+                            onPayMess={handlePayMessClick}
+                            onPayGas={handlePayGasClick}
                             onViewInvoice={handleViewInvoiceFromOverview}
                             invoiceFetchDone={invoiceFetchDone}
                         />

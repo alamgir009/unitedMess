@@ -3,25 +3,8 @@ import { useDispatch, useSelector, useStore } from 'react-redux';
 import { io } from 'socket.io-client';
 import { addRealTimeNotification } from '../store/notification.slice';
 import { getAccessToken } from '@/services/api/client/apiClient';
+import { scheduleSyncAll } from '@/services/api/middleware/paymentSync.middleware';
 import toast from 'react-hot-toast';
-import {
-    fetchPayableAmount,
-    fetchPayableGasBill,
-} from '@/modules/auth/store/auth.slice';
-import {
-    fetchPayments,
-} from '@/modules/payment/store/payment.slice';
-import {
-    fetchActiveInvoice,
-} from '@/modules/payment/store/invoice.slice';
-import {
-    fetchBillingMonthStats,
-    fetchUsers,
-} from '@/modules/members/store/members.slice';
-import {
-    fetchAdminDashboardStats,
-    fetchUserDashboardStats,
-} from '@/modules/dashboard/store/dashboard.slice';
 
 // Use standard API URL resolution for socket connection
 const getSocketUrl = () => {
@@ -113,18 +96,10 @@ const useSocket = () => {
                 });
 
                 socketRef.current.on('billing:updated', () => {
-                    dispatch(fetchPayableAmount());
-                    dispatch(fetchPayableGasBill());
-                    dispatch(fetchBillingMonthStats());
-                    dispatch(fetchPayments({ page: 1, limit: 20 }));
-                    dispatch(fetchActiveInvoice());
-                    const state = store.getState();
-                    if (state.auth.user?.role === 'admin') {
-                        dispatch(fetchUsers({ page: 1, limit: 100, isActive: true, userStatus: 'approved' }));
-                        dispatch(fetchAdminDashboardStats());
-                    } else if (state.auth.user) {
-                        dispatch(fetchUserDashboardStats());
-                    }
+                    // Route through the shared debounced sync so a burst of
+                    // realtime events (and any overlapping mutation) collapses
+                    // into a single refresh batch instead of a request storm.
+                    scheduleSyncAll(store);
                 });
             } else if (token && !socketRef.current.auth?.token) {
                 socketRef.current.auth.token = token;

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { fetchAdminDashboardStats } from '../../../store/dashboard.slice';
@@ -52,18 +52,14 @@ const AdminDashboard = () => {
     const dispatch = useDispatch();
     const [showNotificationModal, setShowNotificationModal] = useState(false);
 
-    const {
-        adminStats,
-        marketGrandTotal,
-        mealGrandTotal,
-        mealCharge,
-        isLoading: isDashboardLoading,
-    } = useSelector((state) => state.dashboard);
+    const adminStats = useSelector((state) => state.dashboard.adminStats);
+    const marketGrandTotal = useSelector((state) => state.dashboard.marketGrandTotal);
+    const mealGrandTotal = useSelector((state) => state.dashboard.mealGrandTotal);
+    const mealCharge = useSelector((state) => state.dashboard.mealCharge);
+    const isDashboardLoading = useSelector((state) => state.dashboard.isLoading);
 
-    const {
-        users,
-        isLoading: isMembersLoading,
-    } = useSelector((state) => state.members);
+    const users = useSelector((state) => state.members.users);
+    const isMembersLoading = useSelector((state) => state.members.isLoading);
 
     useEffect(() => {
         dispatch(fetchAdminDashboardStats());
@@ -89,30 +85,48 @@ const AdminDashboard = () => {
     }, [dispatch, isDashboardLoading, isMembersLoading]);
 
     // ── Alert counts from visible user list ──────────────────────────────────
-    const pendingCount = users.filter((u) => u.userStatus === 'pending').length;
-    const deniedCount = users.filter((u) => u.userStatus === 'denied').length;
-    const inactiveCount = users.filter(
-        (u) =>
-            !u.isActive &&
-            u.userStatus !== 'pending' &&
-            u.userStatus !== 'denied'
-    ).length;
-    // "Unpaid" = money still owed (pending/failed). Settled refunds and
-    // refund credits are NOT unpaid — counting them here made refunded
-    // members show up as unpaid dues forever.
-    const unpaidMealCount = users.filter(
-        (u) => {
-            const s = resolveBillStatus({ status: u.payment, payableAmount: u.paybleAmountforMeal });
-            return (s === 'pending' || s === 'failed') && u.isActive;
+    const {
+        pendingCount,
+        deniedCount,
+        inactiveCount,
+        unpaidMealCount,
+        unpaidGasCount,
+        activeCount,
+    } = useMemo(() => {
+        let pending = 0;
+        let denied = 0;
+        let inactive = 0;
+        let unpaidMeal = 0;
+        let unpaidGas = 0;
+        let active = 0;
+        for (const u of users) {
+            const status = u.userStatus;
+            if (status === 'pending') {
+                pending++;
+            } else if (status === 'denied') {
+                denied++;
+            } else if (!u.isActive) {
+                inactive++;
+            }
+            if (u.isActive) {
+                active++;
+                // "Unpaid" = money still owed (pending/failed). Settled refunds
+                // and refund credits are NOT unpaid.
+                const s = resolveBillStatus({ status: u.payment, payableAmount: u.paybleAmountforMeal });
+                if (s === 'pending' || s === 'failed') unpaidMeal++;
+                const g = resolveBillStatus({ status: u.gasBill, payableAmount: u.gasBillCharge });
+                if (g === 'pending' || g === 'failed') unpaidGas++;
+            }
         }
-    ).length;
-    const unpaidGasCount = users.filter(
-        (u) => {
-            const s = resolveBillStatus({ status: u.gasBill, payableAmount: u.gasBillCharge });
-            return (s === 'pending' || s === 'failed') && u.isActive;
-        }
-    ).length;
-    const activeCount = users.filter((u) => u.isActive).length;
+        return {
+            pendingCount: pending,
+            deniedCount: denied,
+            inactiveCount: inactive,
+            unpaidMealCount: unpaidMeal,
+            unpaidGasCount: unpaidGas,
+            activeCount: active,
+        };
+    }, [users]);
 
     const hasAlerts =
         pendingCount > 0 ||
@@ -124,7 +138,7 @@ const AdminDashboard = () => {
     const allSettled = !hasAlerts && users.length > 0;
 
     // Stats cards configuration
-    const statsData = [
+    const statsData = useMemo(() => [
         {
             title: 'Active Members',
             value: adminStats?.activeUsers ?? activeCount ?? 0,
@@ -151,7 +165,7 @@ const AdminDashboard = () => {
             subLabel: buildMealRateFormula(mealCharge),
             icon: TrendingUp,
         },
-    ];
+    ], [adminStats, marketGrandTotal, mealGrandTotal, mealCharge, users.length, activeCount]);
 
     return (
         <div className="space-y-6">

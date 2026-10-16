@@ -157,6 +157,7 @@ const invoiceSchema = new mongoose.Schema(
 // Prevent duplicate invoices for the same user/month/year
 invoiceSchema.index({ user: 1, month: 1, year: 1 }, { unique: true });
 invoiceSchema.index({ status: 1 });
+invoiceSchema.index({ month: 1, year: 1, status: 1 });
 
 const Invoice = mongoose.model('Invoice', invoiceSchema);
 

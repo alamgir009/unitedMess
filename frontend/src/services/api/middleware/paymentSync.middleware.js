@@ -59,7 +59,7 @@ const DEFAULT_USER_PARAMS = {
 // Coalesces multiple rapid mutations into a single refresh batch.
 let debounceTimer = null;
 
-const syncAll = (store) => {
+export const syncAll = (store) => {
     const state = store.getState();
 
     // 1. Payable amounts
@@ -88,6 +88,17 @@ const syncAll = (store) => {
     }
 };
 
+// Debounced entry point shared with realtime triggers (e.g. socket
+// `billing:updated`) so overlapping mutation + server-push bursts collapse
+// into a single refresh batch instead of issuing duplicate requests.
+export const scheduleSyncAll = (store) => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        debounceTimer = null;
+        syncAll(store);
+    }, 300);
+};
+
 const paymentSyncMiddleware = (store) => (next) => (action) => {
     const result = next(action);
 
@@ -95,12 +106,7 @@ const paymentSyncMiddleware = (store) => (next) => (action) => {
         return result;
     }
 
-    // Debounce: cancel previous timer, schedule fresh batch in 300ms
-    if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-        debounceTimer = null;
-        syncAll(store);
-    }, 300);
+    scheduleSyncAll(store);
 
     return result;
 };

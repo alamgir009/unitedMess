@@ -31,7 +31,8 @@ const BELL_SHAKE = {
 };
 
 const NotificationBell = () => {
-    const { unreadCount, lastRealtimeUpdate } = useSelector(s => s.notification);
+    const unreadCount = useSelector(s => s.notification.unreadCount);
+    const lastRealtimeUpdate = useSelector(s => s.notification.lastRealtimeUpdate);
     useNotifications({ autoFetch: false });
     const navigate = useNavigate();
 

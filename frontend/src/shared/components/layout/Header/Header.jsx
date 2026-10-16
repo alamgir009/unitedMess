@@ -61,7 +61,8 @@ SunIcon.displayName = 'SunIcon';
 MoonIcon.displayName = 'MoonIcon';
 
 const Header = memo(({ onMenuClick }) => {
-  const { user, adminShowHistory } = useSelector((state) => state.auth);
+  const user = useSelector((state) => state.auth.user);
+  const adminShowHistory = useSelector((state) => state.auth.adminShowHistory);
   const dispatch = useDispatch();
   const { toggleTheme, isDark } = useTheme();
 

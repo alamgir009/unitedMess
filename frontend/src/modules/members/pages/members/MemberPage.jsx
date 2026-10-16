@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useCallback } from 'react';
+import React, { useEffect, useMemo, useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AnimatePresence, motion } from 'framer-motion';
 import { RefreshCw } from 'lucide-react';
@@ -25,8 +25,13 @@ import { useLocation } from 'react-router-dom';
 const MemberPage = React.memo(() => {
     const dispatch = useDispatch();
     const location = useLocation();
-    const { users, isLoading, isError, message, billingStats, billingStatsLoading } = useSelector((state) => state.members);
-    const { user: currentUser } = useSelector((state) => state.auth);
+    const users = useSelector((state) => state.members.users);
+    const isLoading = useSelector((state) => state.members.isLoading);
+    const isError = useSelector((state) => state.members.isError);
+    const message = useSelector((state) => state.members.message);
+    const billingStats = useSelector((state) => state.members.billingStats);
+    const billingStatsLoading = useSelector((state) => state.members.billingStatsLoading);
+    const currentUser = useSelector((state) => state.auth.user);
     const isAdmin = currentUser?.role === 'admin';
 
     /* 
@@ -60,17 +65,20 @@ const MemberPage = React.memo(() => {
     }, [dispatch, location.pathname]);
 
     /* ── visibility / focus — re-fetch when user returns to this tab ── */
+    const lastRefetchRef = useRef(0);
     useEffect(() => {
         const onVisible = () => {
-            if (document.visibilityState === 'visible') {
-                dispatch(fetchUsers({ 
-                    page: 1, 
-                    limit: 100, 
-                    isActive: true, 
-                    userStatus: 'approved' 
-                }));
-                dispatch(fetchBillingMonthStats());
-            }
+            if (document.visibilityState !== 'visible') return;
+            const now = Date.now();
+            if (now - lastRefetchRef.current < 1000) return;
+            lastRefetchRef.current = now;
+            dispatch(fetchUsers({ 
+                page: 1, 
+                limit: 100, 
+                isActive: true, 
+                userStatus: 'approved' 
+            }));
+            dispatch(fetchBillingMonthStats());
         };
         document.addEventListener('visibilitychange', onVisible);
         window.addEventListener('focus', onVisible);

@@ -61,7 +61,7 @@ const TeamCard = memo(({ name, role, bio, avatar, delay }) => {
             <div className="group flex flex-col h-full card-base p-5 motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-1 contain-content">
                 <div className="w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center bg-gradient-primary border border-border/80 shadow-sm shrink-0 text-white text-2xl font-bold overflow-hidden">
                     {!imgError ? (
-                        <img src={avatar} alt={name} className="w-full h-full object-cover" onError={() => setImgError(true)} />
+                        <img src={avatar} alt={name} loading="lazy" decoding="async" className="w-full h-full object-cover" onError={() => setImgError(true)} />
                     ) : (
                         <span>{name.charAt(0)}</span>
                     )}
