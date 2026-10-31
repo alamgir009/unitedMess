@@ -111,14 +111,27 @@ async function login(email, password, ip, userAgent) {
         throw new AppError('Invalid email or password', 401);
     }
 
-    // Reset login attempts on successful login
-    await resetLoginAttempts(user._id);
-
-    // Update last login info
-    user.lastLogin = new Date();
+    // Record the successful login and clear lockout state in ONE targeted write.
+    // Never save() the whole document here: unrelated array validators (meals,
+    // markets) must not be able to block authentication, and only these fields
+    // need to be persisted.
+    const loginAt = new Date();
+    user.lastLogin = loginAt;
     user.lastLoginIP = ip;
     user.lastLoginUA = userAgent;
-    await user.save();
+
+    await User.findByIdAndUpdate(
+        user._id,
+        {
+            $set: {
+                lastLogin: loginAt,
+                lastLoginIP: ip,
+                lastLoginUA: userAgent,
+                loginAttempts: 0,
+            },
+            $unset: { lockUntil: 1 },
+        }
+    );
 
     // Generate tokens
     const tokens = await tokenService.generateAuthTokens(user);
@@ -426,7 +439,9 @@ async function incrementLoginAttempts(userId) {
     if (user.lockUntil && user.lockUntil < Date.now()) {
         user.loginAttempts = 1;
         user.lockUntil = undefined;
-        await user.save();
+        // Only attempt-counter fields changed. Skip full-document validation so
+        // unrelated array caps can never suppress the 401/lockout flow.
+        await user.save({ validateBeforeSave: false });
         return;
     }
 
@@ -443,18 +458,8 @@ async function incrementLoginAttempts(userId) {
         }
     }
 
-    await user.save();
-}
-
-/**
- * Reset login attempts
- * @private
- */
-async function resetLoginAttempts(userId) {
-    await User.findByIdAndUpdate(userId, {
-        $set: { loginAttempts: 0 },
-        $unset: { lockUntil: 1 }
-    });
+    // Same as above: persist the counter without validating unrelated paths.
+    await user.save({ validateBeforeSave: false });
 }
 
 /**

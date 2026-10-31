@@ -242,14 +242,12 @@ userSchema.statics.isEmailTaken = async function (email, excludeUserId) {
     }).collation({ locale: 'en', strength: 2 }));
 };
 
-// ARRAY SIZE VALIDATION
-userSchema.path('markets').validate(function (v) {
-    return !v || v.length <= 200;
-}, 'Markets array too large');
-
-userSchema.path('meals').validate(function (v) {
-    return !v || v.length <= 200;
-}, 'Meals array too large');
+// NOTE: `markets` and `meals` intentionally have no arbitrary length caps.
+// They are append-only history arrays written with $push/$pull (which bypass
+// document validators anyway), so a 200-item validator never enforced a real
+// limit — it only rejected unrelated doc.save() calls such as login, payment
+// status, and gas-bill updates once a member exceeded it. The BSON 16MB
+// document limit is the only meaningful constraint here.
 
 const User = mongoose.model('User', userSchema);
 module.exports = User;
