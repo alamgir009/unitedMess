@@ -213,10 +213,33 @@ async function resetPassword(token, newPassword) {
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
     user.passwordChangedAt = Date.now();
-    await user.save();
+    // Clear any lockout so the reset password is immediately usable
+    // (the account-locked email explicitly directs users to this flow).
+    user.loginAttempts = 0;
+    user.lockUntil = undefined;
 
-    // Send confirmation email
-    await emailService.sendPasswordResetConfirmation(user.email);
+    // Only password-related fields have changed. Full-document validation would
+    // also evaluate unrelated, unbounded arrays (meals/markets) and reject a
+    // legitimate reset once a member exceeds their cap. Password strength is
+    // already enforced above by validatePassword().
+    await user.save({ validateBeforeSave: false });
+
+    // Invalidate every active session so a stolen refresh token cannot survive
+    // the password reset. Access tokens are invalidated by passwordChangedAt.
+    try {
+        await tokenService.revokeAllUserTokens(user._id);
+    } catch (error) {
+        console.error('[Auth] Failed to revoke sessions after password reset:', error.message);
+    }
+
+    // Confirmation email is best-effort: the password is already changed and the
+    // reset token is single-use, so a mail failure must not report failure to the
+    // client (which would prompt a retry against an already-consumed token).
+    try {
+        await emailService.sendPasswordResetConfirmation(user.email);
+    } catch (error) {
+        console.error('[Auth] Failed to send password reset confirmation:', error.message);
+    }
 }
 
 /**
@@ -298,10 +321,17 @@ async function changePassword(userId, currentPassword, newPassword) {
     // Update password
     user.password = newPassword;
     user.passwordChangedAt = Date.now();
-    await user.save();
 
-    // Send notification email
-    await emailService.sendPasswordChangeNotification(user.email, user.name);
+    // Skip full-document validation: only the password fields changed, and
+    // unrelated array caps (meals/markets) must not block a password change.
+    await user.save({ validateBeforeSave: false });
+
+    // Send notification email (best-effort — password is already updated)
+    try {
+        await emailService.sendPasswordChangeNotification(user.email, user.name);
+    } catch (error) {
+        console.error('[Auth] Failed to send password change notification:', error.message);
+    }
 
     // Revoke all existing tokens (force re-login)
     await tokenService.revokeAllUserTokens(userId);
