@@ -18,6 +18,7 @@ const ResetPasswordPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if(password.length < 10) return;
         if (password !== confirmPassword) return;
         dispatch(resetPassword({ token, password }));
     };
@@ -126,6 +127,9 @@ const ResetPasswordPage = () => {
                                                 placeholder="Min 10 characters"
                                                 size="lg"
                                             />
+                                            {password.length < 10 && (
+                                                <p className="mt-1.5 text-xs text-red-500">Password must be at least 10 characters</p>
+                                            )}
                                         </div>
 
                                         <div>
