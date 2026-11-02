@@ -16,6 +16,9 @@ const ResetPasswordPage = () => {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
 
+    const passwordTooShort = password.length > 0 && password.length < 10;
+    const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if(password.length < 10) return;
@@ -126,10 +129,8 @@ const ResetPasswordPage = () => {
                                                 onChange={(e) => setPassword(e.target.value)}
                                                 placeholder="Min 10 characters"
                                                 size="lg"
+                                                error={passwordTooShort ? 'Password must be at least 10 characters' : ''}
                                             />
-                                            {password.length < 10 && (
-                                                <p className="mt-1.5 text-xs text-red-500">Password must be at least 10 characters</p>
-                                            )}
                                         </div>
 
                                         <div>
@@ -145,10 +146,8 @@ const ResetPasswordPage = () => {
                                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                                 placeholder="Confirm your password"
                                                 size="lg"
+                                                error={passwordsMismatch ? "Passwords don't match" : ''}
                                             />
-                                            {password !== confirmPassword && confirmPassword.length > 0 && (
-                                                <p className="mt-1.5 text-xs text-red-500">Passwords don&apos;t match</p>
-                                            )}
                                         </div>
 
                                         {isError && message && (
