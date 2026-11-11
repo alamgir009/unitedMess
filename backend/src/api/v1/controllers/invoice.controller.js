@@ -159,9 +159,12 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
 
     const refundDelta = delta !== undefined ? Number(delta) : 0;
 
-    // Hoisted so the refund confirmation (sent AFTER save) can read them
+    // Hoisted so the payment confirmation (sent AFTER save) can read them —
+    // covers both the refund payout and the resolved (collected) payment.
     let refundPayment = null;
     let refundUser = null;
+    let collectPayment = null;
+    let collectUser = null;
 
     // If delta < 0, this is a refund operation — status is always 'refunded'
     if (refundDelta < 0) {
@@ -261,7 +264,7 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
             ? refundDelta
             : Math.max(0, Number(paidAmount) - originalPaidAmount);
         if (collectAmount > 0) {
-            await Payment.create({
+            collectPayment = await Payment.create({
                 user: invoice.user,
                 amount: collectAmount,
                 month: invoice.monthName,
@@ -271,6 +274,10 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
                 createdBy: req.user.id,
                 remarks: `Payment of ₹ ${collectAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })} recorded by admin`,
             });
+
+            // Fetch full user details for the confirmation email
+            // (name + email required — mirrors the refund branch)
+            collectUser = await User.findById(invoice.user).select('name email').lean();
 
             // Sync the user's MESS payment status (flat user.payment field) —
             // month-guarded inside syncUserPaymentStatus.
@@ -282,15 +289,26 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
 
     await invoice.save();
 
-    // Refund confirmation with the invoice PDF — sent AFTER save so the
-    // attached invoice reflects the persisted refunded state.
-    // Non-blocking: PDF/email failure must never fail the refund.
-    if (refundDelta < 0 && refundUser?.email) {
+    // Payment confirmation with the invoice PDF — sent AFTER save so the
+    // attached invoice reflects the persisted state (refunded OR paid).
+    // Non-blocking: PDF/email failure must never fail the request.
+    //  - delta < 0  → refund processed → 'refunded' confirmation
+    //  - else       → payment collected → 'completed' confirmation
+    //    (only when a Payment record was actually created, i.e. money moved)
+    if (refundDelta < 0) {
+        if (refundUser?.email) {
+            paymentService.sendPaymentConfirmationWithInvoice(
+                refundUser,
+                { ...refundPayment.toObject?.() ?? refundPayment, month: invoice.monthName, user: invoice.user },
+                'refunded'
+            ).catch(err => logger.error('[Refund Email] Failed:', err.message));
+        }
+    } else if (collectPayment && collectUser?.email) {
         paymentService.sendPaymentConfirmationWithInvoice(
-            refundUser,
-            { ...refundPayment.toObject?.() ?? refundPayment, month: invoice.monthName, user: invoice.user },
-            'refunded'
-        ).catch(err => logger.error('[Refund Email] Failed:', err.message));
+            collectUser,
+            { ...collectPayment.toObject?.() ?? collectPayment, month: invoice.monthName, user: invoice.user },
+            'completed'
+        ).catch(err => logger.error('[Payment Confirmation Email] Failed:', err.message));
     }
 
     // Annotate settlement so the panel row flips state without a refetch:
