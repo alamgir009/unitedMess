@@ -1,4 +1,5 @@
 const invoiceService = require('../../../services/invoice.service');
+const penaltyService = require('../../../services/penalty.service');
 const pdfService = require('../../../services/pdf.service');
 const emailService = require('../../../services/email.service');
 const paymentService = require('../../../services/payment.service');
@@ -114,6 +115,10 @@ const getInvoiceById = asyncHandler(async (req, res) => {
     if (invoice.user.toString() !== req.user.id && req.user.role !== 'admin') {
         throw new AppError('Not authorized to view this invoice', 403);
     }
+
+    // Attach the overdue-penalty breakdown (read-only for members — there is
+    // no member write path for any penalty field, by construction).
+    await penaltyService.annotatePenalties([invoice]);
 
     sendSuccessResponse(res, 200, 'Invoice retrieved', invoice);
 });
@@ -349,6 +354,78 @@ const updateInvoiceExemption = asyncHandler(async (req, res) => {
 });
 
 /**
+ * ── Admin: overdue-penalty controls ───────────────────────────────────────
+ * All three are authorize('admin') at the ROUTER level (see invoice.routes).
+ * Members never receive a write path for any penalty field — the guard is
+ * server-side middleware, not UI hiding.
+ */
+
+/**
+ * GET /invoices/admin/penalty-rate
+ * Read the current global daily penalty rate (₹/day).
+ */
+const getPenaltyRate = asyncHandler(async (req, res) => {
+    const dailyRate = await penaltyService.getGlobalDailyRate();
+    sendSuccessResponse(res, 200, 'Penalty rate retrieved', { dailyRate });
+});
+
+/**
+ * PUT /invoices/admin/penalty-rate
+ * Update the GLOBAL daily penalty rate. Affects only NEWLY overdue bills —
+ * existing snapshots (and per-bill overrides) are untouched.
+ * Body: { dailyRate: number ≥ 0 }
+ */
+const updatePenaltyRate = asyncHandler(async (req, res) => {
+    const { dailyRate } = req.body || {};
+    const config = await penaltyService.updateGlobalRate(Number(dailyRate), req.user.id);
+    sendSuccessResponse(res, 200, 'Penalty rate updated', config);
+});
+
+/**
+ * PATCH /invoices/:id/penalty-rate
+ * Admin: override the penalty rate on ONE bill (snapshots the new value).
+ * Body: { dailyRate: number ≥ 0, reason?: string }
+ */
+const setInvoicePenaltyRate = asyncHandler(async (req, res) => {
+    const { dailyRate, reason } = req.body || {};
+    const invoice = await penaltyService.setPerBillRate(req.params.id, Number(dailyRate), {
+        adminId: req.user.id,
+        reason,
+    });
+    sendSuccessResponse(res, 200, 'Penalty rate overridden for this bill', invoice);
+});
+
+/**
+ * PATCH /invoices/:id/penalty-waiver
+ * Admin: waive or reverse (unwaive) a bill's accrued penalty.
+ * Body: { action: 'waive' | 'unwaive', amount?: number, reason: string }
+ * `amount` defaults to the FULL remaining accrual. Reason is mandatory.
+ */
+const updatePenaltyWaiver = asyncHandler(async (req, res) => {
+    const { action, amount, reason } = req.body || {};
+
+    if (action !== 'waive' && action !== 'unwaive') {
+        throw new AppError("action must be 'waive' or 'unwaive'", 400);
+    }
+    if (amount !== undefined && (isNaN(Number(amount)) || Number(amount) < 0)) {
+        throw new AppError('amount must be a non-negative number', 400);
+    }
+
+    const invoice = action === 'waive'
+        ? await penaltyService.waivePenalty(req.params.id, {
+            amount: amount === undefined ? null : Number(amount),
+            reason,
+            adminId: req.user.id,
+        })
+        : await penaltyService.unwaivePenalty(req.params.id, { reason, adminId: req.user.id });
+
+    sendSuccessResponse(res, 200,
+        action === 'waive' ? 'Penalty waived' : 'Waiver reversed',
+        invoice
+    );
+});
+
+/**
  * Resolve the target user ID for invoice download/email endpoints.
  * Security guard: non-admin users can ONLY access their own invoice.
  * Admin users can access any user's invoice via ?userId= query param.
@@ -476,6 +553,10 @@ module.exports = {
     getInvoiceExemption,
     updateInvoicePayment,
     updateInvoiceExemption,
+    getPenaltyRate,
+    updatePenaltyRate,
+    setInvoicePenaltyRate,
+    updatePenaltyWaiver,
     downloadInvoicePDF,
     sendInvoiceEmailServer,
     emailAllInvoices,

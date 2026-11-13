@@ -97,6 +97,26 @@ const updateInvoiceExemption = async (invoiceId, payload) => {
     return response.data;
 };
 
+/**
+ * Admin: waive (or reverse) an invoice's accrued overdue penalty.
+ * @param {string} invoiceId
+ * @param {{ action: 'waive'|'unwaive', amount?: number, reason: string }} payload
+ */
+const updatePenaltyWaiver = async (invoiceId, payload) => {
+    const response = await apiClient.patch(`${INVOICE_URL}/${invoiceId}/penalty-waiver`, payload);
+    return response.data;
+};
+
+/**
+ * Admin: override the overdue-penalty DAILY RATE on one invoice.
+ * @param {string} invoiceId
+ * @param {{ dailyRate: number, reason?: string }} payload
+ */
+const setInvoicePenaltyRate = async (invoiceId, payload) => {
+    const response = await apiClient.patch(`${INVOICE_URL}/${invoiceId}/penalty-rate`, payload);
+    return response.data;
+};
+
 const membersService = {
     getUsers,
     searchUsers,
@@ -109,6 +129,8 @@ const membersService = {
     updateInvoicePayment,
     getInvoiceExemptionStatus,
     updateInvoiceExemption,
+    updatePenaltyWaiver,
+    setInvoicePenaltyRate,
 };
 
 export default membersService;

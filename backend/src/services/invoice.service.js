@@ -15,6 +15,7 @@ const {
 } = require('./billingExemption.service');
 const emailService = require('./email.service');
 const pdfService   = require('./pdf.service');
+const penaltyService = require('./penalty.service');
 
 /* Whole-rupee settlement tolerance: the UI suggests/stores rounded payables
    (₹1011) while invoices keep paise (₹1011.29) — a shortfall under ₹1 still
@@ -538,9 +539,21 @@ const getInvoiceForMonth = async (userId, year, month) => {
  * Get full invoice history for a user — all stored invoices, newest first.
  */
 const getUserInvoiceHistory = async (userId) => {
-    return Invoice.find({ user: userId })
+    const invoices = await Invoice.find({ user: userId })
         .sort({ year: -1, month: -1 })
         .lean();
+
+    // Attach the overdue-penalty breakdown. The user doc is fetched once and
+    // handed to annotatePenalties so it does not re-query it (no N+1).
+    const user = await User.findById(userId)
+        .select('isActive deactivatedAt updatedAt')
+        .lean();
+    if (user) {
+        await penaltyService.annotatePenalties(invoices, {
+            usersById: new Map([[String(user._id), user]]),
+        });
+    }
+    return invoices;
 };
 
 /**
@@ -873,11 +886,20 @@ const getAdminUnpaidInvoices = async (month, year) => {
             { totalPayable: { $lt: 0 } },
         ],
     })
-    .populate('user', 'name email image role isActive activatedAt')
+    .populate('user', 'name email image role isActive activatedAt deactivatedAt updatedAt')
     .sort({ totalPayable: -1 })
     .lean();
 
     const annotated = await annotateRefundSettlement(invoices);
+
+    // Attach the overdue-penalty breakdown — the populated user docs are
+    // reused (usersById) so no extra member queries are made (no N+1).
+    const usersById = new Map(
+        annotated
+            .filter((inv) => inv.user && typeof inv.user === 'object')
+            .map((inv) => [String(inv.user._id), inv.user])
+    );
+    await penaltyService.annotatePenalties(annotated, { usersById });
 
     // Resolved bills must CLEAR from the panel:
     //  - refund rows stay only while credit remains uncovered
@@ -961,6 +983,11 @@ const buildInvoiceForPdf = async (targetUserId, year, month) => {
     if (!invoice._paymentMethod) {
         await _attachLatestPayment(invoice, targetUserId);
     }
+
+    // Overdue-penalty breakdown — the user doc is already in hand.
+    await penaltyService.annotatePenalties([invoice], {
+        usersById: new Map([[String(user._id), user]]),
+    });
 
     return { invoice, user, monthName };
 };

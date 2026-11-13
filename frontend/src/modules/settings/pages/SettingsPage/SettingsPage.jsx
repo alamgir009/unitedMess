@@ -202,12 +202,34 @@ const SettingsPage = () => {
         await fetchCurrentValues();
     }, [fetchCurrentValues]);
 
+    // Overdue-penalty rate — stored in the PenaltyConfig singleton, fetched
+    // from its own endpoint (it is NOT a per-user charge like the cards above).
+    const [penaltyRate, setPenaltyRate] = useState(null);
+
+    const fetchPenaltyRate = useCallback(async () => {
+        try {
+            const res = await settingsService.getPenaltyRate();
+            setPenaltyRate(res.data?.data?.dailyRate ?? res.data?.dailyRate ?? 0);
+        } catch {
+            setPenaltyRate(null);
+        }
+    }, []);
+
+    useEffect(() => { fetchPenaltyRate(); }, [fetchPenaltyRate]);
+
+    const handleUpdatePenaltyRate = useCallback(async (value) => {
+        const res = await settingsService.updatePenaltyRate({ dailyRate: value });
+        toast.success(res.data?.message || 'Overdue penalty rate updated!');
+        await fetchPenaltyRate();
+    }, [fetchPenaltyRate]);
+
     const TONES = [
         { iconBg: 'bg-amber-500/15 border-amber-500/25', iconColor: 'text-amber-600 dark:text-amber-400' },
         { iconBg: 'bg-orange-500/15 border-orange-500/25', iconColor: 'text-orange-600 dark:text-orange-400' },
         { iconBg: 'bg-sky-500/15 border-sky-500/25', iconColor: 'text-sky-600 dark:text-sky-400' },
         { iconBg: 'bg-violet-500/15 border-violet-500/25', iconColor: 'text-violet-600 dark:text-violet-400' },
         { iconBg: 'bg-emerald-500/15 border-emerald-500/25', iconColor: 'text-emerald-600 dark:text-emerald-400' },
+        { iconBg: 'bg-rose-500/15 border-rose-500/25', iconColor: 'text-rose-600 dark:text-rose-400' },
     ];
 
     const cards = [
@@ -265,6 +287,18 @@ const SettingsPage = () => {
             currentValue: currentValues?.platformFee,
             onSubmit: handleUpdatePlatformFee,
             tone: TONES[4],
+        },
+        {
+            title: 'Overdue Penalty Rate',
+            description: 'Flat ₹ charged per overdue calendar day (IST) on unpaid bills, from the 6th of the month after the billing month. Changing this affects only newly overdue bills.',
+            icon: TriangleAlert,
+            badge: 'Per Day',
+            placeholder: 'e.g. 100',
+            buttonLabel: 'Update Rate',
+            currentValue: penaltyRate,
+            currentLoading: valuesLoading,
+            onSubmit: handleUpdatePenaltyRate,
+            tone: TONES[5],
         },
     ];
 

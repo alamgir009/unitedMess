@@ -3,13 +3,14 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
     ShieldAlert, ChevronDown, RefreshCw, CheckCircle2,
     ReceiptIndianRupee, Calendar, AlertTriangle,
-    BadgeIndianRupee, ArrowRight, Copy
+    BadgeIndianRupee, ArrowRight, Copy, Gauge
 } from 'lucide-react';
-import { fetchAdminUnpaidInvoices, resolveInvoicePayment } from '../store/members.slice';
+import { fetchAdminUnpaidInvoices, resolveInvoicePayment, updatePenaltyWaiver, setInvoicePenaltyRate } from '../store/members.slice';
 import { toast } from 'react-hot-toast';
 import { Spinner, Avatar, Button } from '@/shared/components/ui';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { getLastFinalizedPeriod } from '@shared/utils/billingPeriod';
+import PenaltyControlsModal from './PenaltyControlsModal';
 
 /* ─────────────────────────────────────────────
    Helpers
@@ -98,6 +99,35 @@ const StatusPill = React.memo(({ status, refund, refundDue }) => {
     );
 });
 StatusPill.displayName = 'StatusPill';
+
+/* ─────────────────────────────────────────────
+   Overdue badge — driven by the server-computed
+   `invoice.penalty` breakdown (single source: penalty.service).
+───────────────────────────────────────────── */
+const getPenalty = (inv) => inv?.penalty ?? null;
+
+const hasOverduePenalty = (inv) => {
+    const p = getPenalty(inv);
+    return !!(p && p.isOverdue && Number(p.accruedAmount) > 0);
+};
+
+const OverduePill = React.memo(({ invoice }) => {
+    if (!hasOverduePenalty(invoice)) return null;
+    const p = getPenalty(invoice);
+    const waivedFully = Number(p.netPenaltyAmount) <= 0 && Number(p.waivedAmount) > 0;
+    return (
+        <span className={cn(
+            'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-widest border',
+            waivedFully
+                ? 'bg-muted text-muted-foreground border-border'
+                : 'bg-danger-bg text-danger-text border-danger-border animate-pulse'
+        )}>
+            <AlertTriangle size={9} />
+            {waivedFully ? 'Waived' : 'Overdue'}
+        </span>
+    );
+});
+OverduePill.displayName = 'OverduePill';
 
 /* ─────────────────────────────────────────────
    ResolveModal
@@ -265,12 +295,15 @@ GroupHeader.displayName = 'GroupHeader';
 /* ─────────────────────────────────────────────
    InvoiceRow
 ───────────────────────────────────────────── */
-const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
+const InvoiceRow = React.memo(({ invoice, onResolve, isSaving, onPenalty, isPenaltySaving }) => {
     const [showModal, setShowModal] = useState(false);
+    const [showPenaltyModal, setShowPenaltyModal] = useState(false);
     // Settlement state derived the same way as the backend (credit/recorded).
     const settlement = useMemo(() => getSettlement(invoice), [invoice]);
     const { isRefundRow, isRefundDue, isRefundSettled, dueAmount } = settlement;
     const refId = useMemo(() => shortRef(invoice._id), [invoice._id]);
+    const penalty = getPenalty(invoice);
+    const overdue = hasOverduePenalty(invoice);
 
     const handleCopyRef = useCallback(() => {
         if (invoice._id) {
@@ -279,6 +312,8 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
     }, [invoice._id]);
 
     const handleCloseModal = useCallback(() => setShowModal(false), []);
+    const handleClosePenaltyModal = useCallback(() => setShowPenaltyModal(false), []);
+    const handleOpenPenaltyModal = useCallback(() => setShowPenaltyModal(true), []);
     const handleResolveInvoice = useCallback((id, amt, delta) => {
         onResolve(id, amt, delta);
         setShowModal(false);
@@ -309,18 +344,34 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
                             : isRefundDue ? `−₹${fmt(dueAmount)}`
                                 : `₹${fmt(dueAmount)}`}
                     </p>
+                    {overdue && (
+                        <p className="text-[10px] font-bold tabular-nums text-danger-text mt-0.5" title="Overdue penalty (see Penalty controls)">
+                            +₹{fmt(penalty.netPenaltyAmount)} penalty
+                        </p>
+                    )}
                 </div>
-                <div className="col-span-1 flex items-center justify-start">
+                <div className="col-span-1 flex items-center justify-start gap-1">
                     <StatusPill status={invoice.status} refund={isRefundRow} refundDue={isRefundDue} />
+                    <OverduePill invoice={invoice} />
                 </div>
-                <div className="col-span-1 flex justify-end">
+                <div className="col-span-1 flex justify-end gap-1.5">
                     {isRefundSettled ? (
                         <span className="text-[11px] font-semibold text-muted-foreground" title="Refund recorded — informational row, no action needed">Recorded</span>
                     ) : (
-                        <Button variant={isRefundDue ? 'warning' : 'success'} size="sm" onClick={() => setShowModal(true)} disabled={isSaving} iconOnly={false}>
-                            {isSaving ? <Spinner size="xs" color="white" /> : <ArrowRight size={13} className="stroke-[2.5]" />}
-                            {isSaving ? 'Saving' : isRefundDue ? 'Refund' : 'Resolve'}
-                        </Button>
+                        <>
+                            <button
+                                onClick={handleOpenPenaltyModal}
+                                disabled={isPenaltySaving}
+                                title="Penalty controls (rate / waive)"
+                                className="p-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                            >
+                                <Gauge size={13} />
+                            </button>
+                            <Button variant={isRefundDue ? 'warning' : 'success'} size="sm" onClick={() => setShowModal(true)} disabled={isSaving} iconOnly={false}>
+                                {isSaving ? <Spinner size="xs" color="white" /> : <ArrowRight size={13} className="stroke-[2.5]" />}
+                                {isSaving ? 'Saving' : isRefundDue ? 'Refund' : 'Resolve'}
+                            </Button>
+                        </>
                     )}
                 </div>
             </div>
@@ -332,7 +383,10 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
                         <span className="text-[10px] font-mono font-semibold text-muted-foreground">{refId}</span>
                         <button onClick={handleCopyRef} className="p-0.5 rounded hover:bg-muted"><Copy size={9} /></button>
                     </div>
-                    <StatusPill status={invoice.status} refund={isRefundRow} refundDue={isRefundDue} />
+                    <div className="flex items-center gap-1.5">
+                        <StatusPill status={invoice.status} refund={isRefundRow} refundDue={isRefundDue} />
+                        <OverduePill invoice={invoice} />
+                    </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="flex flex-col gap-1 bg-muted dark:bg-muted/40 rounded-xl px-3 py-2.5">
@@ -370,13 +424,24 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
                                 : isRefundDue ? `− ₹ ${fmt(dueAmount)}`
                                     : `₹ ${fmt(dueAmount)}`}
                         </span>
+                        {overdue && (
+                            <span className="text-[9.5px] font-bold tabular-nums text-danger-text">
+                                +₹{fmt(penalty.netPenaltyAmount)} penalty
+                            </span>
+                        )}
                     </div>
                 </div>
                 {!isRefundSettled && (
-                    <Button variant={isRefundDue ? 'warning' : 'success'} fullWidth onClick={() => setShowModal(true)} disabled={isSaving}>
-                        {isSaving ? <Spinner size="sm" color="white" /> : isRefundDue ? <RefreshCw size={16} /> : <BadgeIndianRupee size={16} />}
-                        {isSaving ? 'Processing…' : isRefundDue ? `Refund — ₹ ${fmt(dueAmount)}` : `Resolve — ₹ ${fmt(dueAmount)}`}
-                    </Button>
+                    <div className="grid grid-cols-2 gap-2">
+                        <Button variant={isRefundDue ? 'warning' : 'success'} onClick={() => setShowModal(true)} disabled={isSaving}>
+                            {isSaving ? <Spinner size="sm" color="white" /> : isRefundDue ? <RefreshCw size={16} /> : <BadgeIndianRupee size={16} />}
+                            {isSaving ? 'Processing…' : isRefundDue ? `Refund — ₹ ${fmt(dueAmount)}` : `Resolve — ₹ ${fmt(dueAmount)}`}
+                        </Button>
+                        <Button variant="secondary" onClick={handleOpenPenaltyModal} disabled={isPenaltySaving}>
+                            <Gauge size={15} />
+                            {isPenaltySaving ? 'Saving…' : 'Penalty'}
+                        </Button>
+                    </div>
                 )}
                 {isRefundSettled && (
                     <p className="text-center text-[11px] font-semibold text-muted-foreground">Refund recorded — nothing to action</p>
@@ -384,6 +449,16 @@ const InvoiceRow = React.memo(({ invoice, onResolve, isSaving }) => {
             </div>
 
             {showModal && <ResolveModal invoice={invoice} isSaving={isSaving} onClose={handleCloseModal} onResolve={handleResolveInvoice} />}
+            {showPenaltyModal && (
+                <PenaltyControlsModal
+                    invoice={invoice}
+                    onClose={handleClosePenaltyModal}
+                    onWaive={onPenalty?.onWaive}
+                    onSetRate={onPenalty?.onSetRate}
+                    isSaving={isPenaltySaving}
+                    isRateSaving={isPenaltySaving}
+                />
+            )}
         </>
     );
 });
@@ -401,6 +476,7 @@ const AdminUnpaidPanel = React.memo(() => {
     const monthOptions = useMemo(() => buildMonthOptions(), [billingRefreshKey]);
     const [selectedIdx, setSelectedIdx] = useState(0);
     const [savingId, setSavingId] = useState(null);
+    const [penaltySavingId, setPenaltySavingId] = useState(null);
 
     const safeMonthOptions = useMemo(
         () => monthOptions.length > 0 ? monthOptions : [{ label: '—', month: undefined, year: undefined, isLastFinalized: true }],
@@ -441,15 +517,61 @@ const AdminUnpaidPanel = React.memo(() => {
         }
     }, [dispatch, selected]);
 
-    const { totalOutstanding, totalRefundable } = useMemo(() => {
+    // ── Penalty admin actions (waive / unwaive / per-bill rate override) ──
+    // The modal closes on success and the list is refetched so the recomputed
+    // `penalty` breakdown from the server lands on every row.
+    const handleWaive = useCallback(async (invoiceId, payload) => {
+        setPenaltySavingId(invoiceId);
+        try {
+            await dispatch(updatePenaltyWaiver({ invoiceId, payload })).unwrap();
+            toast.success(payload.action === 'waive' ? 'Penalty waived' : 'Waiver reversed');
+            if (selected.month && selected.year) {
+                dispatch(fetchAdminUnpaidInvoices({ month: selected.month, year: selected.year }));
+            }
+            return true;
+        } catch (err) {
+            toast.error(err?.message || 'Failed to update penalty waiver');
+            return false;
+        } finally {
+            setPenaltySavingId(null);
+        }
+    }, [dispatch, selected]);
+
+    const handleSetRate = useCallback(async (invoiceId, payload) => {
+        setPenaltySavingId(invoiceId);
+        try {
+            await dispatch(setInvoicePenaltyRate({ invoiceId, payload })).unwrap();
+            toast.success('Penalty rate overridden for this bill');
+            if (selected.month && selected.year) {
+                dispatch(fetchAdminUnpaidInvoices({ month: selected.month, year: selected.year }));
+            }
+            return true;
+        } catch (err) {
+            toast.error(err?.message || 'Failed to override penalty rate');
+            return false;
+        } finally {
+            setPenaltySavingId(null);
+        }
+    }, [dispatch, selected]);
+
+    // Modal close-on-success: InvoiceRow keeps its local modal state, so the
+    // panel passes a wrapped close signal via the saving flag (modal reads
+    // isSaving and the parent refetch replaces the row with fresh data).
+    const onPenaltyHandlers = useMemo(() => ({ onWaive: handleWaive, onSetRate: handleSetRate }), [handleWaive, handleSetRate]);
+
+    const { totalOutstanding, totalRefundable, totalPenalty } = useMemo(() => {
         let debt = 0;
         let refundable = 0;
+        let penaltyDue = 0;
         for (const inv of unpaidInvoices) {
             const s = getSettlement(inv);
             if (s.isRefundRow) refundable += s.refundRemaining;
             else debt += Math.max(0, s.outstanding);
+            // Overdue penalty travels alongside the principal (flat ₹/day,
+            // computed server-side) — sum the NET due after waivers.
+            if (inv.penalty?.isOverdue) penaltyDue += Math.max(0, Number(inv.penalty.netPenaltyAmount) || 0);
         }
-        return { totalOutstanding: debt, totalRefundable: refundable };
+        return { totalOutstanding: debt, totalRefundable: refundable, totalPenalty: penaltyDue };
     }, [unpaidInvoices]);
 
     const isLastFinalizedPeriod = useMemo(() => {
@@ -637,7 +759,14 @@ const AdminUnpaidPanel = React.memo(() => {
                                 <div key={group.user?._id || 'unknown'} className="flex flex-col">
                                     <GroupHeader user={group.user} count={actionable} settledCount={group.invoices.length - actionable} />
                                     {group.invoices.map(invoice => (
-                                        <InvoiceRow key={invoice._id} invoice={invoice} onResolve={handleResolve} isSaving={savingId === invoice._id} />
+                                        <InvoiceRow
+                                            key={invoice._id}
+                                            invoice={invoice}
+                                            onResolve={handleResolve}
+                                            isSaving={savingId === invoice._id}
+                                            onPenalty={onPenaltyHandlers}
+                                            isPenaltySaving={penaltySavingId === invoice._id}
+                                        />
                                     ))}
                                 </div>
                             );
@@ -669,6 +798,11 @@ const AdminUnpaidPanel = React.memo(() => {
                             <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
                                 <ReceiptIndianRupee size={11} /> Total outstanding: ₹ {fmt(totalOutstanding)}
                             </div>
+                            {totalPenalty > 0 && (
+                                <div className="flex items-center gap-1.5 text-[11px] font-bold text-danger-text">
+                                    <AlertTriangle size={11} /> Overdue penalty: ₹ {fmt(totalPenalty)}
+                                </div>
+                            )}
                             {totalRefundable > 0 && (
                                 <div className="flex items-center gap-1.5 text-[11px] font-bold text-success-text">
                                     <RefreshCw size={11} /> Refundable: ₹ {fmt(totalRefundable)}

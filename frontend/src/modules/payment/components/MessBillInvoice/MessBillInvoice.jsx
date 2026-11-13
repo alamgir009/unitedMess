@@ -359,6 +359,23 @@ const MessBillInvoice = ({
         ]
         : [];
 
+    /* ── OVERDUE PENALTY rows — server-computed breakdown (penalty.service).
+          Read-only for members: rate/waiver are admin-only and enforced by
+          authorize('admin') on every backend write path. ── */
+    const penaltyData = data?.penalty ?? null;
+    const penaltyRows = (penaltyData && penaltyData.isOverdue)
+        ? [
+            { label: 'Due date', value: (penaltyData.dueDate && istFull(new Date(penaltyData.dueDate))) || '\u2014' },
+            { label: 'Days overdue', value: `${fmt(penaltyData.daysOverdue)}` },
+            { label: 'Daily rate (flat)', value: money(penaltyData.dailyRate) },
+            { label: 'Penalty accrued', value: money(penaltyData.accruedAmount) },
+            ...(Number(penaltyData.waivedAmount) > 0
+                ? [{ label: 'Waived by admin', value: money(penaltyData.waivedAmount) }]
+                : []),
+            { label: 'Net penalty due', value: money(penaltyData.netPenaltyAmount) },
+        ]
+        : [];
+
     const handleOpenPaymentFlow = () => {
         if (typeof onPayNow === 'function') {
             onPayNow(displayMonth);
@@ -494,10 +511,17 @@ const MessBillInvoice = ({
                             </p>
                         </div>
                         <div className="flex flex-col items-end gap-2 shrink-0">
-                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${chip.cls}`}>
-                                <span aria-hidden="true">{chip.glyph}</span>
-                                <span>{chip.label}</span>
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${chip.cls}`}>
+                                    <span aria-hidden="true">{chip.glyph}</span>
+                                    <span>{chip.label}</span>
+                                </span>
+                                {penaltyRows.length > 0 && !isPaid && !isRefund && (
+                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border bg-danger-bg text-danger-text border-danger-border">
+                                        Overdue
+                                    </span>
+                                )}
+                            </div>
                             <div className="w-full min-w-[150px] space-y-1">
                                 <div className="flex items-baseline justify-between gap-3">
                                     <span className="text-[11px] text-muted-foreground">Paid</span>
@@ -522,6 +546,11 @@ const MessBillInvoice = ({
                     {refundRows.length > 0 && (
                         <div className="mt-4">
                             <KeyedBlock title="Refund Details" rows={refundRows} />
+                        </div>
+                    )}
+                    {penaltyRows.length > 0 && (
+                        <div className="mt-4">
+                            <KeyedBlock title="Overdue Penalty Details" rows={penaltyRows} />
                         </div>
                     )}
 
@@ -749,10 +778,17 @@ const MessBillInvoice = ({
 
                 {/* ── Status chip + Paid / Balance due ── */}
                 <div className="flex flex-col items-end gap-2 shrink-0">
-                    <span className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border select-none ${chip.cls}`}>
-                        <span aria-hidden="true">{chip.glyph}</span>
-                        <span>{chip.label}</span>
-                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                        <span className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border select-none ${chip.cls}`}>
+                            <span aria-hidden="true">{chip.glyph}</span>
+                            <span>{chip.label}</span>
+                        </span>
+                        {penaltyRows.length > 0 && !isPaid && !isRefund && (
+                            <span className="inline-flex items-center px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border bg-danger-bg text-danger-text border-danger-border select-none">
+                                Overdue
+                            </span>
+                        )}
+                    </div>
                     <div className="w-full min-w-[160px] space-y-1">
                         <div className="flex items-baseline justify-between gap-3">
                             <span className="text-[11px] text-muted-foreground">Paid</span>
@@ -771,6 +807,7 @@ const MessBillInvoice = ({
             {/* ── PAYMENT / REFUND DETAILS — annotated data only ── */}
             {paymentRows.length > 0 && <KeyedBlock title="Payment Details" rows={paymentRows} />}
             {refundRows.length > 0 && <KeyedBlock title="Refund Details" rows={refundRows} />}
+            {penaltyRows.length > 0 && <KeyedBlock title="Overdue Penalty Details" rows={penaltyRows} />}
 
             {/* ── Premium Pay Now / Remaining Button ── */}
             {!isPaid && !isRefund && !hidePayButton && (

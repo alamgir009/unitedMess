@@ -159,6 +159,34 @@ export const resolveInvoicePayment = createAsyncThunk(
     }
 );
 
+// ── Admin: waive / reverse an invoice's overdue penalty (reason mandatory) ───
+export const updatePenaltyWaiver = createAsyncThunk(
+    'members/updatePenaltyWaiver',
+    async ({ invoiceId, payload }, thunkAPI) => {
+        try {
+            const response = await membersService.updatePenaltyWaiver(invoiceId, payload);
+            return response?.data ?? response;
+        } catch (error) {
+            const message = (error.response?.data?.error) || (error.response?.data?.message) || error.message;
+            return thunkAPI.rejectWithValue(message);
+        }
+    }
+);
+
+// ── Admin: override the overdue-penalty daily rate on one invoice ────────────
+export const setInvoicePenaltyRate = createAsyncThunk(
+    'members/setInvoicePenaltyRate',
+    async ({ invoiceId, payload }, thunkAPI) => {
+        try {
+            const response = await membersService.setInvoicePenaltyRate(invoiceId, payload);
+            return response?.data ?? response;
+        } catch (error) {
+            const message = (error.response?.data?.error) || (error.response?.data?.message) || error.message;
+            return thunkAPI.rejectWithValue(message);
+        }
+    }
+);
+
 // ── Slice ────────────────────────────────────────────────────────────────────
 export const membersSlice = createSlice({
     name: 'members',
@@ -284,6 +312,35 @@ export const membersSlice = createSlice({
                     const outstanding = (Number(merged.totalPayable) || 0) - (Number(merged.paidAmount) || 0);
                     const stillActionable = credit > 0 ? remaining > 0 : outstanding > 0;
                     return stillActionable ? [merged] : [];
+                });
+            })
+            // ── updatePenaltyWaiver / setInvoicePenaltyRate ─────────────────
+            // Both return the fresh invoice — merge it into the panel list
+            // (server payload carries the recomputed `penalty` breakdown).
+            .addCase(updatePenaltyWaiver.fulfilled, (state, action) => {
+                const updated = action.payload;
+                if (!updated?._id) return;
+                state.unpaidInvoices = state.unpaidInvoices.map(inv => {
+                    if (inv._id !== updated._id) return inv;
+                    const merged = { ...inv, ...updated };
+                    // Controller returns `user` as a bare ObjectId — keep the
+                    // populated copy from the original list row.
+                    if (!merged.user?.name && !merged.user?.email && inv.user) {
+                        merged.user = inv.user;
+                    }
+                    return merged;
+                });
+            })
+            .addCase(setInvoicePenaltyRate.fulfilled, (state, action) => {
+                const updated = action.payload;
+                if (!updated?._id) return;
+                state.unpaidInvoices = state.unpaidInvoices.map(inv => {
+                    if (inv._id !== updated._id) return inv;
+                    const merged = { ...inv, ...updated };
+                    if (!merged.user?.name && !merged.user?.email && inv.user) {
+                        merged.user = inv.user;
+                    }
+                    return merged;
                 });
             });
     },

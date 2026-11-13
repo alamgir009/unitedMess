@@ -92,6 +92,56 @@ const invoiceSchema = new mongoose.Schema(
         finalizedAt: {
             type: Date,
         },
+        // ── Overdue penalty ──────────────────────────────────────────────
+        // Money stays in the existing rupee-Number representation; all
+        // arithmetic happens in integer paise inside penalty.service.
+        dueDate: {
+            type: Date,
+            default: null,
+            comment: "5th of the month AFTER the billing month, 23:59:59 IST inclusive — penalty starts on the 6th",
+        },
+        penaltyRateSnapshot: {
+            type: Number,
+            default: null,
+            min: [0, 'Penalty rate cannot be negative'],
+            comment: "₹/day frozen when this bill first became overdue (global rate at that moment, or an admin override)",
+        },
+        penaltyWaivedAmount: {
+            type: Number,
+            default: 0,
+            min: [0, 'Waived amount cannot be negative'],
+            comment: "Admin-granted waiver against the accrued penalty (reversible by admin)",
+        },
+        waiverReason: {
+            type: String,
+            default: null,
+            comment: "Mandatory reason captured when the waiver was granted",
+        },
+        waivedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            default: null,
+        },
+        waivedAt: {
+            type: Date,
+            default: null,
+        },
+        penaltyAuditLog: {
+            type: [{
+                action: {
+                    type: String,
+                    enum: ['snapshot', 'rate_override', 'waive', 'unwaive'],
+                    required: true,
+                },
+                actor: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+                oldValue: { type: mongoose.Schema.Types.Mixed, default: null },
+                newValue: { type: mongoose.Schema.Types.Mixed, default: null },
+                reason: { type: String, default: null },
+                at: { type: Date, default: Date.now },
+            }],
+            default: [],
+            comment: "Append-only audit trail — never mutated, only $pushed",
+        },
         // ── Billing exemption ────────────────────────────────────────────
         // isExempt / exemptReason are the DENORMALIZED EFFECTIVE values
         // produced by billingExemption.service.resolveExemption(). They are
@@ -158,6 +208,9 @@ const invoiceSchema = new mongoose.Schema(
 invoiceSchema.index({ user: 1, month: 1, year: 1 }, { unique: true });
 invoiceSchema.index({ status: 1 });
 invoiceSchema.index({ month: 1, year: 1, status: 1 });
+// Overdue queries: "which unpaid/partially-paid bills are past their due date"
+invoiceSchema.index({ status: 1, dueDate: 1 });
+invoiceSchema.index({ user: 1, status: 1, dueDate: 1 });
 
 const Invoice = mongoose.model('Invoice', invoiceSchema);
 

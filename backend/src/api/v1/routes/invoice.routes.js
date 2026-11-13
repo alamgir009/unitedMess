@@ -44,6 +44,14 @@ router.patch('/:id/payment', authorize('admin'), invoiceController.updateInvoice
 // The single manual control surface for exemption — nothing else writes it.
 router.patch('/:id/exemption', authorize('admin'), invoiceController.updateInvoiceExemption);
 
+// ── Admin: overdue-penalty controls ─────────────────────────────────────
+// Every write path for penalty fields is authorize('admin') here at the
+// router — members (role 'user') get 403 from the middleware itself.
+router.get('/admin/penalty-rate', authorize('admin'), invoiceController.getPenaltyRate);
+router.put('/admin/penalty-rate', authorize('admin'), invoiceController.updatePenaltyRate);
+router.patch('/:id/penalty-rate', authorize('admin'), invoiceController.setInvoicePenaltyRate);
+router.patch('/:id/penalty-waiver', authorize('admin'), invoiceController.updatePenaltyWaiver);
+
 // Admin: email invoice summary to all active members
 router.post('/admin/email-all', authorize('admin'), invoiceController.emailAllInvoices);
 
