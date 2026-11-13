@@ -290,7 +290,7 @@ const SettingsPage = () => {
         },
         {
             title: 'Overdue Penalty Rate',
-            description: 'Flat ₹ charged per overdue calendar day (IST) on unpaid bills, from the 6th of the month after the billing month. Changing this affects only newly overdue bills.',
+            description: `Flat ₹${penaltyRate != null ? penaltyRate.toLocaleString('en-IN') : '…'} charged per overdue calendar day (IST) on unpaid bills, from the 6th of the month after the billing month. Changing this affects only newly overdue bills.`,
             icon: TriangleAlert,
             badge: 'Per Day',
             placeholder: 'e.g. 100',
