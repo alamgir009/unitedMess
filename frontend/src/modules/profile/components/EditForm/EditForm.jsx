@@ -17,7 +17,7 @@ const Field = ({ label, icon: Icon, children, className = '' }) => (
 );
 
 const inputBase =
-    'w-full px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl border border-[var(--input-border)] ' +
+    'w-full px-3 py-2.5 sm:px-4 sm:py-3 rounded-lg border border-[var(--input-border)] ' +
     'bg-[var(--input-bg)] shadow-[var(--inset-inner)] ' +
     'focus:ring-2 focus:ring-[var(--brand)]/25 focus:border-[var(--brand)] ' +
     'outline-none transition-all duration-150 ' +
@@ -25,108 +25,108 @@ const inputBase =
     'hover:border-[var(--input-border-hover)]';
 
 export const EditForm = ({ handleClose, initialData }) => {
-  const dispatch = useDispatch();
-  const { isLoading } = useSelector((state) => state.auth);
+    const dispatch = useDispatch();
+    const { isLoading } = useSelector((state) => state.auth);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: ""
-  });
+    const [formData, setFormData] = useState({
+        name: "",
+        email: "",
+        phone: ""
+    });
 
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        name: initialData.name || "",
-        email: initialData.email || "",
-        phone: initialData.phone || ""
-      });
+    useEffect(() => {
+        if (initialData) {
+            setFormData({
+                name: initialData.name || "",
+                email: initialData.email || "",
+                phone: initialData.phone || ""
+            });
+        }
+    }, [initialData]);
+
+    const { name, email, phone } = formData;
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!name.trim() || !email.trim()) {
+            toast.error('Name and Email are required.');
+            return;
+        }
+
+        const resultAction = await dispatch(updateProfile({ name, email, phone }));
+        if (updateProfile.fulfilled.match(resultAction)) {
+            handleClose();
+        }
     }
-  }, [initialData]);
 
-  const { name, email, phone } = formData;
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!name.trim() || !email.trim()) {
-        toast.error('Name and Email are required.');
-        return;
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({
+            ...prev, [name]: value
+        }));
     }
-    
-    const resultAction = await dispatch(updateProfile({ name, email, phone }));
-    if (updateProfile.fulfilled.match(resultAction)) {
-      handleClose();
-    }
-  }
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev, [name]: value
-    }));
-  }
+    return (
+        <form className="w-full space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 gap-4 sm:gap-5">
+                <Field label="Full Name" icon={User}>
+                    <input
+                        name="name"
+                        type="text"
+                        className={inputBase}
+                        placeholder="Enter your full name"
+                        onChange={handleChange}
+                        value={name}
+                        required
+                    />
+                </Field>
 
-  return (
-    <form className="w-full space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
-      <div className="grid grid-cols-1 gap-4 sm:gap-5">
-        <Field label="Full Name" icon={User}>
-          <input
-            name="name"
-            type="text"
-            className={inputBase}
-            placeholder="Enter your full name"
-            onChange={handleChange}
-            value={name}
-            required
-          />
-        </Field>
+                <Field label="Email Address" icon={Mail}>
+                    <input
+                        name="email"
+                        type="email"
+                        className={inputBase}
+                        placeholder="Enter your Email"
+                        onChange={handleChange}
+                        value={email}
+                        required
+                    />
+                </Field>
 
-        <Field label="Email Address" icon={Mail}>
-          <input
-            name="email"
-            type="email"
-            className={inputBase}
-            placeholder="Enter your Email"
-            onChange={handleChange}
-            value={email}
-            required
-          />
-        </Field>
+                <Field label="Phone Number" icon={Phone}>
+                    <input
+                        name="phone"
+                        type="text"
+                        className={inputBase}
+                        placeholder="Enter your phone number"
+                        onChange={handleChange}
+                        value={phone}
+                    />
+                </Field>
+            </div>
 
-        <Field label="Phone Number" icon={Phone}>
-          <input
-            name="phone"
-            type="text"
-            className={inputBase}
-            placeholder="Enter your phone number"
-            onChange={handleChange}
-            value={phone}
-          />
-        </Field>
-      </div>
+            <div className="flex gap-2.5 pt-3 shrink-0">
+                <Button
+                    type="button"
+                    variant="secondary"
+                    size="md"
+                    onClick={handleClose}
+                    className="w-full sm:w-auto"
+                    disabled={isLoading}
+                >
+                    Cancel
+                </Button>
 
-      <div className="flex gap-2.5 pt-3 shrink-0">
-        <Button 
-          type="button" 
-          variant="secondary" 
-          size="md"
-          onClick={handleClose} 
-          className="w-full sm:w-auto"
-          disabled={isLoading}
-        >
-          Cancel
-        </Button>
-
-        <Button
-          type="submit"
-          variant="success"
-          size="md"
-          className="w-full sm:flex-[2]"
-          isLoading={isLoading}
-        >
-          Save Changes
-        </Button>
-      </div>
-    </form>
-  )
+                <Button
+                    type="submit"
+                    variant="primary"
+                    size="md"
+                    className="w-full sm:flex-[2]"
+                    isLoading={isLoading}
+                >
+                    Save Changes
+                </Button>
+            </div>
+        </form>
+    )
 }

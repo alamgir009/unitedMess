@@ -1,45 +1,8 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { ChevronDown, UserX, ShieldCheck, Clock, XCircle, RotateCcw } from 'lucide-react';
-import { Avatar } from '@/shared/components/ui';
-import { resolveBillStatus, BILL_STATUS_LABEL } from '@shared/utils/paymentStatus';
+import { ChevronDown, UserX } from 'lucide-react';
+import { Avatar, StatusBadge } from '@/shared/components/ui';
+import { resolveBillStatus } from '@shared/utils/paymentStatus';
 import MemberInvoiceDetails from './MemberInvoiceDetails';
-
-/* ─────────────────────────────────────────────
-   StatusBadge — pill indicator
-───────────────────────────────────────────── */
-const STATUS_MAP = {
-    success: { bg: 'bg-success-bg', text: 'text-success', border: 'border-success-border', icon: ShieldCheck },
-    approved: { bg: 'bg-success-bg', text: 'text-success', border: 'border-success-border', icon: ShieldCheck },
-    paid: { bg: 'bg-success-bg', text: 'text-success', border: 'border-success-border', icon: ShieldCheck },
-    failed: { bg: 'bg-danger-bg', text: 'text-danger', border: 'border-danger-border', icon: XCircle },
-    denied: { bg: 'bg-danger-bg', text: 'text-danger', border: 'border-danger-border', icon: XCircle },
-    pending: { bg: 'bg-warning-bg', text: 'text-warning', border: 'border-warning-border', icon: Clock },
-    refund: { bg: 'bg-info-bg', text: 'text-info', border: 'border-info-border', icon: RotateCcw, label: BILL_STATUS_LABEL.refund },
-    refunded: { bg: 'bg-info-bg', text: 'text-info', border: 'border-info-border', icon: RotateCcw, label: BILL_STATUS_LABEL.refunded },
-};
-
-const DEFAULT_STATUS = { bg: 'bg-muted', text: 'text-muted-foreground', border: 'border-border', icon: null };
-
-export const StatusBadge = React.memo(({ status }) => {
-    const key = (status || 'pending').toLowerCase();
-    const style = STATUS_MAP[key] ?? DEFAULT_STATUS;
-    const Icon = style.icon;
-
-    return (
-        <span
-            className={[
-                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full',
-                'text-[10.5px] font-bold uppercase tracking-[0.06em]',
-                'border select-none',
-                style.bg, style.text, style.border,
-            ].join(' ')}
-        >
-            {Icon && <Icon size={12} strokeWidth={2.5} className="shrink-0" />}
-            {style.label ?? key}
-        </span>
-    );
-});
-StatusBadge.displayName = 'StatusBadge';
 
 /* ─────────────────────────────────────────────
    ExpandButton — desktop right column

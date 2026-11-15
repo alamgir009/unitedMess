@@ -13,16 +13,8 @@ import {
     HiOutlineShieldCheck,
     HiOutlineIdentification,
 } from 'react-icons/hi2';
-import { Button } from '@/shared/components/ui';
+import { Button, StatusBadge } from '@/shared/components/ui';
 import { formatSmartDateTime } from '@/core/utils/helpers/date.helper';
-
-const STATUS = {
-    completed:            { label: 'Paid',      cls: 'bg-success-bg text-success-text ring-1 ring-success-border' },
-    pending:              { label: 'Pending',   cls: 'bg-warning-bg text-warning-text ring-1 ring-warning-border' },
-    pending_verification: { label: 'Review',    cls: 'bg-info-bg text-info-text ring-1 ring-info-border' },
-    failed:               { label: 'Failed',    cls: 'bg-danger-bg text-danger-text ring-1 ring-danger-border' },
-    refunded:             { label: 'Refunded',  cls: 'bg-info-bg text-info-text ring-1 ring-info-border' },
-};
 
 const TYPE = {
     mess_bill: { label: 'Mess Bill', cls: 'bg-info-bg text-info-text ring-1 ring-info-border' },
@@ -34,7 +26,6 @@ const methodLabel = (m) => ({ cash: 'Cash', online: 'Online', razorpay: 'Razorpa
 
 const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInvoice, onVerify, isAdmin, canEdit }, ref) => {
     const date   = formatSmartDateTime(payment.paymentDate, payment.createdAt);
-    const stat   = STATUS[payment.status] || STATUS.pending;
     const typeC  = TYPE[payment.type]     || TYPE.other;
     const amount = Number(payment.amount ?? 0);
     const isRefund = payment.status === 'refunded';
@@ -65,9 +56,7 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewIn
                         {Math.abs(amount).toLocaleString('en-IN')}
                     </span>
                 </div>
-                <span className={`text-[10px] font-bold px-2.5 py-[3px] rounded-full ring-1 ${stat.cls}`}>
-                    {stat.label}
-                </span>
+                <StatusBadge status={payment.status} />
             </div>
 
             {isAdmin && payment.user && (
@@ -126,7 +115,7 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewIn
                         ) : (
                             <>
                                 {payment.type === 'mess_bill' && (
-                                    <Button variant="elevated" size="sm"
+                                    <Button variant="secondary" size="sm"
                                         onClick={() => onViewInvoice?.(payment)}
                                         className="text-xs">
                                         <HiOutlineDocumentText className="w-3.5 h-3.5 mr-1" />
@@ -145,7 +134,7 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewIn
                 ) : (
                     <>
                         {payment.type === 'mess_bill' && (
-                            <Button variant="link" size="sm" onClick={() => onViewInvoice?.(payment)}
+                            <Button variant="secondary" size="sm" onClick={() => onViewInvoice?.(payment)}
                                 className="flex-1 text-xs">
                                 <HiOutlineDocumentText className="w-3.5 h-3.5 mr-1" />
                                 {payment.status === 'completed' ? 'Invoice' : 'View Bill'}
@@ -164,7 +153,6 @@ PaymentCard.displayName = 'PaymentCard';
 
 const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInvoice, onVerify, isAdmin, canEdit }, ref) => {
     const date   = formatSmartDateTime(payment.paymentDate, payment.createdAt);
-    const stat   = STATUS[payment.status] || STATUS.pending;
     const typeC  = TYPE[payment.type]     || TYPE.other;
     const amount = Number(payment.amount ?? 0);
     const isRefund = payment.status === 'refunded';
@@ -222,9 +210,7 @@ const PaymentRow = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewInv
                 </div>
             </div>
 
-            <span className={`hidden md:inline-flex items-center text-[10px] font-bold px-2.5 py-[3px] rounded-full ring-1 flex-shrink-0 ${stat.cls}`}>
-                {stat.label}
-            </span>
+            <StatusBadge status={payment.status} className="max-md:hidden flex-shrink-0" />
 
             <div className="flex items-center gap-1.5 md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100 transition-opacity duration-150 flex-shrink-0 pl-1">
                 {canEdit && payment.paymentMethod === 'upi_manual' && payment.status === 'pending_verification' ? (

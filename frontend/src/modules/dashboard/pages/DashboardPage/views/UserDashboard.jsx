@@ -6,9 +6,10 @@ import { fetchPollStatus, voteMealPoll } from '@/modules/meal/store/meal.slice';
 import { fetchMarketSchedule, reset as resetMarket } from '@/modules/market/store/market.slice';
 import marketService from '@/modules/market/services/market.service';
 import PayableWidget from '../../../components/PayableWidget/PayableWidget';
-import { Button } from '@/shared/components/ui';
+import { Button, RoleBadge } from '@/shared/components/ui';
 import { cn } from '@/core/utils/helpers/string.helper';
 import {
+    HiOutlineSquares2X2,
     HiOutlineMoon,
     HiOutlineSparkles,
     HiOutlineSun,
@@ -37,10 +38,10 @@ const VOTE_OPTIONS = [
         description: 'Full-day meals',
         icon: HiOutlineSparkles,
         accent: {
-            border: 'border-violet-600 dark:border-violet-400',
-            tint: 'bg-violet-600/10 dark:bg-violet-400/10',
-            chip: 'bg-violet-500/15 dark:bg-violet-400/15',
-            text: 'text-violet-600 dark:text-violet-400',
+            border: 'border-slot-both-border',
+            tint: 'bg-slot-both-bg',
+            chip: 'bg-slot-both-bg',
+            text: 'text-slot-both-text',
         },
     },
     {
@@ -49,10 +50,10 @@ const VOTE_OPTIONS = [
         description: 'Lunch only',
         icon: HiOutlineSun,
         accent: {
-            border: 'border-amber-600 dark:border-amber-400',
-            tint: 'bg-amber-600/10 dark:bg-amber-400/10',
-            chip: 'bg-amber-500/15 dark:bg-amber-400/15',
-            text: 'text-amber-600 dark:text-amber-400',
+            border: 'border-slot-day-border',
+            tint: 'bg-slot-day-bg',
+            chip: 'bg-slot-day-bg',
+            text: 'text-slot-day-text',
         },
     },
     {
@@ -61,10 +62,10 @@ const VOTE_OPTIONS = [
         description: 'Dinner only',
         icon: HiOutlineMoon,
         accent: {
-            border: 'border-indigo-600 dark:border-indigo-400',
-            tint: 'bg-indigo-600/10 dark:bg-indigo-400/10',
-            chip: 'bg-indigo-500/15 dark:bg-indigo-400/15',
-            text: 'text-indigo-600 dark:text-indigo-400',
+            border: 'border-slot-night-border',
+            tint: 'bg-slot-night-bg',
+            chip: 'bg-slot-night-bg',
+            text: 'text-slot-night-text',
         },
     },
     {
@@ -73,10 +74,10 @@ const VOTE_OPTIONS = [
         description: 'No meals today',
         icon: HiOutlineNoSymbol,
         accent: {
-            border: 'border-slate-600 dark:border-slate-400',
-            tint: 'bg-slate-600/10 dark:bg-slate-400/10',
-            chip: 'bg-slate-500/15 dark:bg-slate-400/15',
-            text: 'text-slate-600 dark:text-slate-400',
+            border: 'border-slot-off-border',
+            tint: 'bg-slot-off-bg',
+            chip: 'bg-slot-off-bg',
+            text: 'text-slot-off-text',
         },
     },
 ];
@@ -141,14 +142,13 @@ const GUIDE_ITEMS = [
 /* Shared card chrome — matches PayableWidget (radius, border, shadow, surface) */
 const CARD_CLS = 'min-w-0 rounded-2xl bg-card border border-border/50 shadow-sm animate-fade-up p-5 lg:p-6';
 
-/* Google/Meta-style section icon chips: soft ~15% tint + saturated icon.
-   -600 (light) / -400 (dark) keeps icon-vs-chip and icon-vs-card contrast
-   ≥3:1 per WCAG 1.4.11 in both themes. */
+/* Google/Meta-style section icon chips: soft tint + saturated icon.
+   Token-driven — each theme supplies the AA-correct tint/text pair. */
 const SECTION_TONES = {
-    amber: 'bg-amber-500/15 text-amber-600 dark:bg-amber-400/15 dark:text-amber-400',
-    emerald: 'bg-emerald-500/15 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-400',
-    blue: 'bg-blue-500/15 text-blue-600 dark:bg-blue-400/15 dark:text-blue-400',
-    violet: 'bg-violet-500/15 text-violet-600 dark:bg-violet-400/15 dark:text-violet-400',
+    amber: 'bg-warning-bg text-warning-text',
+    emerald: 'bg-success-bg text-success-text',
+    blue: 'bg-info-bg text-info-text',
+    violet: 'bg-slot-both-bg text-slot-both-text',
 };
 
 const SectionHead = ({ icon: Icon, title, sub, right, id, tone = 'violet' }) => (
@@ -180,6 +180,15 @@ const ErrorPanel = ({ message, onRetry, minHeight }) => (
         <Button variant="outline" size="sm" onClick={onRetry}>Retry</Button>
     </div>
 );
+
+const isUserDuty = (dutyUser, uid) => {
+    if (!dutyUser || !uid) return false;
+    if (typeof dutyUser === 'object') {
+        const dutyId = dutyUser._id || dutyUser.id;
+        return !!dutyId && String(dutyId) === String(uid);
+    }
+    return String(dutyUser) === String(uid);
+};
 
 /* ─────────────────────────────────────────────────────────────
    Component
@@ -386,6 +395,8 @@ const UserDashboard = memo(function UserDashboard() {
         };
     }, [year, month]);
 
+    const currentUserId = user?._id || user?.id || null;
+
     const dayList = useMemo(() => {
         if (!Array.isArray(schedule)) return [];
         return schedule.map((day) => ({
@@ -394,6 +405,11 @@ const UserDashboard = memo(function UserDashboard() {
             user: day.user ?? null,
         }));
     }, [schedule]);
+
+    const myDutyDaysCount = useMemo(() => {
+        if (!currentUserId || !Array.isArray(dayList)) return 0;
+        return dayList.reduce((acc, d) => (isUserDuty(d.user, currentUserId) ? acc + 1 : acc), 0);
+    }, [dayList, currentUserId]);
 
     const todayStr = useMemo(() => new Date().toDateString(), []);
     const todayTime = useMemo(() => new Date(todayStr).getTime(), [todayStr]);
@@ -459,7 +475,20 @@ const UserDashboard = memo(function UserDashboard() {
     }, []);
 
     return (
-        <div className="grid grid-cols-1 gap-4 min-[700px]:grid-cols-2 min-[1100px]:grid-cols-12">
+        <div className="grid grid-cols-1 gap-5 min-[700px]:grid-cols-2 min-[1100px]:grid-cols-12">
+
+            {/* ── Header (Title + Eyebrow RoleBadge) ──────────────────── */}
+            <header className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 min-[700px]:col-span-2 min-[1100px]:col-span-12">
+                <div className="space-y-1 min-w-0">
+                    <RoleBadge isAdmin={false} icon={HiOutlineSquares2X2} label="My Dashboard" />
+                    <h2 className="text-h1">
+                        Member Dashboard
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                        Your real-time meal balance, active dining votes, and monthly financial summary.
+                    </p>
+                </div>
+            </header>
 
             {/* ── Total Due (Payables) ── */}
             <div className="min-w-0 min-[700px]:col-span-2 min-[1100px]:col-span-7">
@@ -658,9 +687,16 @@ const UserDashboard = memo(function UserDashboard() {
                     sub={monthLabel}
                     right={
                         dayList.length > 0 ? (
-                            <span className="shrink-0 inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 tabular-nums shadow-xs">
-                                {dayList.length} duty {dayList.length === 1 ? 'day' : 'days'}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                                {myDutyDaysCount > 0 && (
+                                    <span className="shrink-0 inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 tabular-nums shadow-xs">
+                                        {myDutyDaysCount} {myDutyDaysCount === 1 ? 'my duty' : 'my duties'}
+                                    </span>
+                                )}
+                                <span className="shrink-0 inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 tabular-nums shadow-xs">
+                                    {dayList.length} duty {dayList.length === 1 ? 'day' : 'days'}
+                                </span>
+                            </div>
                         ) : null
                     }
                 />
@@ -668,9 +704,9 @@ const UserDashboard = memo(function UserDashboard() {
                 {/* Loading skeleton — fixed heights, no layout shift */}
                 {showSchedSkeleton && (
                     <div className="mt-4 animate-pulse" aria-hidden="true">
-                        <div className="flex gap-2 overflow-hidden rounded-2xl border border-border/60 bg-muted/40 p-2">
+                        <div className="flex gap-2 overflow-hidden rounded-2xl border border-border/50 bg-muted/30 dark:bg-muted/20 p-2 sm:p-2.5">
                             {[0, 1, 2, 3, 4, 5].map((n) => (
-                                <div key={n} className="shrink-0 h-12 w-14 rounded-xl bg-card/70 border border-border/40" />
+                                <div key={n} className="shrink-0 w-14 h-14 sm:w-16 sm:h-16 aspect-square rounded-lg bg-card/80 border border-border/40 shadow-xs" />
                             ))}
                         </div>
                         <div className="mt-3 h-[76px] rounded-2xl bg-muted/30 border border-border/40" />
@@ -720,49 +756,92 @@ const UserDashboard = memo(function UserDashboard() {
                 {!showSchedSkeleton && !showSchedError && !showSchedEmpty && (
                     <>
                         <div
-                            className="mt-4 flex flex-nowrap gap-1.5 overflow-x-auto no-scrollbar snap-x snap-mandatory min-[700px]:flex-wrap min-[700px]:overflow-visible min-[700px]:snap-none rounded-2xl border border-border/60 bg-muted/45 dark:bg-muted/30 p-2 inset-shadow"
+                            className="mt-4 flex flex-nowrap gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory min-[700px]:flex-wrap min-[700px]:overflow-visible min-[700px]:snap-none rounded-2xl border border-border/50 bg-muted/30 dark:bg-muted/20 p-2 sm:p-2.5 shadow-[inset_0_1px_3px_rgba(0,0,0,0.05)] dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.4),0_1px_0_rgba(255,255,255,0.03)]"
                             role="group"
                             aria-label={`Duty days in ${monthLabel}`}
                         >
                             {dayList.map((day) => {
                                 const isSelected = day.key === activeDayKey;
                                 const isToday = day.date.toDateString() === todayStr;
+                                const isMyDay = isUserDuty(day.user, currentUserId);
                                 return (
                                     <button
                                         key={day.key}
                                         type="button"
                                         onClick={() => setSelectedDayKey(day.key)}
                                         aria-pressed={isSelected}
-                                        aria-label={format(day.date, 'EEEE, MMMM d')}
+                                        aria-label={`${format(day.date, 'EEEE, MMMM d')}${isMyDay ? ' (Your market duty)' : ''}`}
                                         className={cn(
-                                            'shrink-0 snap-start min-h-[48px] min-w-[54px] rounded-xl border px-2 py-1.5 text-center',
-                                            'transition-[background-color,border-color,box-shadow,transform,color] duration-150',
+                                            'relative overflow-hidden shrink-0 snap-start w-14 h-14 sm:w-16 sm:h-16 aspect-square p-1 sm:p-1.5 rounded-lg border text-center select-none flex flex-col items-center justify-between',
+                                            'transition-all duration-200 motion-reduce:transition-none',
                                             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                                            isSelected
-                                                ? 'bg-card border-primary/70 ring-1 ring-primary/40 shadow-md text-primary -translate-y-0.5'
-                                                : 'bg-card border-border/50 shadow-xs hover:shadow-sm hover:-translate-y-px text-foreground'
+                                            isMyDay
+                                                ? isSelected
+                                                    ? 'bg-gradient-to-b from-emerald-500/20 via-emerald-500/12 to-emerald-500/5 dark:from-emerald-500/30 dark:via-emerald-500/18 dark:to-emerald-500/8 border-emerald-500/80 dark:border-emerald-400 border-b-emerald-600/90 dark:border-b-emerald-500/60 ring-2 ring-emerald-500/35 dark:ring-emerald-400/40 shadow-[0_4px_12px_-2px_rgba(16,185,129,0.35),0_1px_3px_rgba(16,185,129,0.2),inset_0_1px_0_rgba(255,255,255,0.9)] dark:shadow-[0_4px_16px_-2px_rgba(16,185,129,0.45),0_2px_4px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.25)] -translate-y-0.5'
+                                                    : 'bg-gradient-to-b from-emerald-50/90 via-emerald-50/40 to-white/90 dark:from-emerald-500/15 dark:via-emerald-500/8 dark:to-transparent border-emerald-500/50 dark:border-emerald-500/40 border-b-emerald-600/50 dark:border-b-emerald-600/30 shadow-[0_1px_3px_rgba(16,185,129,0.15),0_1px_1px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.95)] dark:shadow-[0_2px_5px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(52,211,153,0.18)] hover:-translate-y-0.5 hover:border-emerald-500 dark:hover:border-emerald-400/70 hover:shadow-[0_4px_10px_-2px_rgba(16,185,129,0.25),inset_0_1px_0_rgba(255,255,255,1)] dark:hover:shadow-[0_4px_12px_rgba(16,185,129,0.3),inset_0_1px_0_rgba(52,211,153,0.3)]'
+                                                : isSelected
+                                                    ? 'bg-gradient-to-b from-primary/15 via-primary/8 to-transparent dark:from-primary/25 dark:via-primary/12 dark:to-transparent border-primary/70 dark:border-primary/80 border-b-primary/90 dark:border-b-primary/60 ring-2 ring-primary/25 dark:ring-primary/35 shadow-[0_4px_12px_-2px_rgba(37,99,235,0.28),0_1px_3px_rgba(37,99,235,0.12),inset_0_1px_0_rgba(255,255,255,0.95)] dark:shadow-[0_4px_16px_-2px_rgba(59,130,246,0.45),0_2px_5px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.22)] -translate-y-0.5'
+                                                    : isToday
+                                                        ? 'bg-gradient-to-b from-white via-card to-card/90 dark:from-white/[0.07] dark:via-white/[0.03] dark:to-transparent border-primary/50 dark:border-primary/40 border-b-primary/60 dark:border-b-primary/50 ring-1 ring-primary/25 dark:ring-primary/30 shadow-[0_1px_3px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.95)] dark:shadow-[0_2px_5px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.07)] hover:-translate-y-0.5 hover:border-primary hover:shadow-[0_4px_10px_-2px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,1)]'
+                                                        : 'bg-gradient-to-b from-white via-card to-card/90 dark:from-white/[0.07] dark:via-white/[0.03] dark:to-transparent border-border/70 dark:border-white/[0.08] border-b-border dark:border-b-black/40 dark:border-t-white/[0.12] shadow-[0_1px_2px_rgba(0,0,0,0.05),0_1px_1px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.95)] dark:shadow-[0_2px_5px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.07)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_4px_10px_-2px_rgba(0,0,0,0.08),0_2px_4px_-1px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,1)] dark:hover:from-white/[0.09] dark:hover:to-white/[0.04] dark:hover:border-white/[0.18] dark:hover:shadow-[0_4px_12px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.14)]'
                                         )}
                                     >
+                                        {/* Specular top light rim */}
+                                        <span
+                                            aria-hidden="true"
+                                            className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/80 dark:via-white/20 to-transparent"
+                                        />
+
                                         <span
                                             className={cn(
-                                                'block text-[10px] uppercase tracking-wider',
-                                                isSelected
-                                                    ? 'text-primary'
-                                                    : isToday
-                                                        ? 'text-success-text'
-                                                        : 'text-muted-foreground'
+                                                'block text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider leading-none transition-colors duration-150 mt-0.5',
+                                                isMyDay
+                                                    ? isSelected
+                                                        ? 'text-emerald-700 dark:text-emerald-300 font-bold'
+                                                        : 'text-emerald-600 dark:text-emerald-400 font-semibold'
+                                                    : isSelected
+                                                        ? 'text-primary font-bold'
+                                                        : isToday
+                                                            ? 'text-primary dark:text-primary font-bold'
+                                                            : 'text-muted-foreground'
                                             )}
                                         >
                                             {format(day.date, 'EEE')}
                                         </span>
                                         <span
                                             className={cn(
-                                                'block text-sm font-semibold',
-                                                isSelected ? 'text-primary' : 'text-foreground'
+                                                'block text-sm min-[380px]:text-base sm:text-base font-bold tabular-nums leading-none my-auto transition-colors duration-150',
+                                                isMyDay
+                                                    ? isSelected
+                                                        ? 'text-emerald-900 dark:text-emerald-100 font-extrabold'
+                                                        : 'text-emerald-800 dark:text-emerald-200'
+                                                    : isSelected
+                                                        ? 'text-primary font-bold'
+                                                        : isToday
+                                                            ? 'text-foreground font-extrabold'
+                                                            : 'text-foreground'
                                             )}
                                         >
                                             {format(day.date, 'd')}
                                         </span>
+                                        <div className="flex items-center justify-center h-1.5 w-full mb-0.5 shrink-0">
+                                            {isSelected ? (
+                                                <span
+                                                    className={cn(
+                                                        'block h-1 w-3 sm:w-3.5 rounded-full transition-all duration-150',
+                                                        isMyDay
+                                                            ? 'bg-emerald-600 dark:bg-emerald-400'
+                                                            : 'bg-primary'
+                                                    )}
+                                                    aria-hidden="true"
+                                                />
+                                            ) : (
+                                                <span
+                                                    className="block h-1 w-3 sm:w-3.5 rounded-full bg-transparent"
+                                                    aria-hidden="true"
+                                                />
+                                            )}
+                                        </div>
                                     </button>
                                 );
                             })}

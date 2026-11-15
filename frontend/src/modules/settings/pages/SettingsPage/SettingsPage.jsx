@@ -15,6 +15,7 @@ import settingsService from '../../services/settings.service';
 import apiClient from '@/services/api/client/apiClient';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import { Button, RoleBadge } from '@/shared/components/ui';
+import { cn } from '@/core/utils/helpers/string.helper';
 
 const CurrentBadge = ({ value, loading, prefix = '₹ ', suffix = '' }) => {
     if (loading) {
@@ -82,14 +83,16 @@ const SettingCard = ({
                     <div className={`shrink-0 flex h-10 w-10 items-center justify-center rounded-lg border ${iconBg}`}>
                         <Icon className={`w-5 h-5 ${iconColor}`} strokeWidth={2} />
                     </div>
-                    <div className="min-w-0">
-                        <h3 className="text-sm font-semibold text-foreground leading-tight">
+                    <div className="min-w-0 flex-1">
+                        <h3 className="text-base font-semibold text-foreground tracking-tight leading-snug">
                             {title}
                         </h3>
                         {badge && (
-                            <span className="mt-1 inline-block text-caption font-semibold px-2 py-0.5 rounded-md border border-border bg-muted text-muted-foreground uppercase tracking-wider">
-                                {badge}
-                            </span>
+                            <div className="mt-1.5 flex items-center">
+                                <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-sm border border-border bg-muted/80 text-muted-foreground uppercase tracking-wider leading-none select-none">
+                                    {badge}
+                                </span>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -118,14 +121,14 @@ const SettingCard = ({
                             value={value}
                             onChange={(e) => setValue(e.target.value)}
                             placeholder={placeholder}
-                            className="w-full h-9 pl-8 pr-4 border border-border rounded-md text-sm bg-background text-foreground placeholder-muted-foreground outline-none transition-colors duration-150 focus:ring-2 focus:ring-ring focus:border-primary"
+                            className="w-full h-10 pl-8 pr-4 border border-border rounded-md text-sm bg-background text-foreground placeholder-muted-foreground outline-none transition-colors duration-150 focus:ring-2 focus:ring-ring focus:border-primary"
                         />
                     </div>
 
                     <Button
                         type="submit"
                         variant="primary"
-                        size="sm"
+                        size="md"
                         disabled={isLoading}
                         fullWidth
                         isLoading={isLoading}
@@ -224,12 +227,12 @@ const SettingsPage = () => {
     }, [fetchPenaltyRate]);
 
     const TONES = [
-        { iconBg: 'bg-amber-500/15 border-amber-500/25', iconColor: 'text-amber-600 dark:text-amber-400' },
-        { iconBg: 'bg-orange-500/15 border-orange-500/25', iconColor: 'text-orange-600 dark:text-orange-400' },
-        { iconBg: 'bg-sky-500/15 border-sky-500/25', iconColor: 'text-sky-600 dark:text-sky-400' },
-        { iconBg: 'bg-violet-500/15 border-violet-500/25', iconColor: 'text-violet-600 dark:text-violet-400' },
-        { iconBg: 'bg-emerald-500/15 border-emerald-500/25', iconColor: 'text-emerald-600 dark:text-emerald-400' },
-        { iconBg: 'bg-rose-500/15 border-rose-500/25', iconColor: 'text-rose-600 dark:text-rose-400' },
+        { iconBg: 'bg-warning-bg border-warning-border', iconColor: 'text-warning-text' },
+        { iconBg: 'bg-primary/10 border-primary/20', iconColor: 'text-primary' },
+        { iconBg: 'bg-info-bg border-info-border', iconColor: 'text-info-text' },
+        { iconBg: 'bg-refund-bg border-refund-border', iconColor: 'text-refund-text' },
+        { iconBg: 'bg-success-bg border-success-border', iconColor: 'text-success-text' },
+        { iconBg: 'bg-danger-bg border-danger-border', iconColor: 'text-danger-text' },
     ];
 
     const cards = [
@@ -310,7 +313,7 @@ const SettingsPage = () => {
                         <div className="mb-1">
                             <RoleBadge isAdmin={true} />
                         </div>
-                        <h1 className="text-h1">
+                        <h1 className="text-h1 font-bold tracking-tight text-foreground">
                             System Settings
                         </h1>
                         <p className="mt-1 text-body text-muted-foreground">
@@ -318,40 +321,52 @@ const SettingsPage = () => {
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-3 shrink-0">
+                    <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
                         <Button
-                            variant="neutral"
-                            size="sm"
+                            variant="secondary"
+                            size="md"
                             onClick={fetchCurrentValues}
                             disabled={valuesLoading}
+                            aria-busy={valuesLoading}
                             aria-label="Refresh current values"
+                            className="h-10 shrink-0"
                         >
-                            <RefreshCw className={`w-4 h-4 ${valuesLoading ? 'animate-spin' : ''}`} />
-                            Refresh
+                            <RefreshCw
+                                className={cn('w-4 h-4 flex-shrink-0', valuesLoading && 'animate-spin')}
+                                aria-hidden="true"
+                            />
+                            <span>Refresh</span>
                         </Button>
 
-                        <div className="flex items-center gap-2 px-3 py-2 bg-warning-bg border border-warning-border rounded-md depth-top">
+                        <div
+                            className="h-10 inline-flex items-center gap-2 px-3 sm:px-3.5 bg-warning-bg border border-warning-border rounded-btn-md depth-top min-w-0 flex-1 sm:flex-initial"
+                            title="Applies instantly to all members"
+                        >
                             <AlertCircle className="w-4 h-4 text-warning-text shrink-0" />
-                            <span className="text-xs font-medium text-warning-text">
+                            <span className="text-xs font-medium text-warning-text truncate sm:whitespace-normal">
                                 Applies instantly to all members
                             </span>
                         </div>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-                    {cards.map(({ title, icon: Icon, currentValue, tone }, index) => (
+                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 sm:gap-3">
+                    {cards.map(({ title, icon: Icon, currentValue, tone }) => (
                         <div
                             key={title}
-                            className={`flex items-center gap-3 p-4 card-base
-                ${cards.length % 2 !== 0 && index === cards.length - 1 ? 'col-span-2 lg:col-span-1' : ''}`}
+                            className="flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3.5 card-base transition-all duration-150 hover:border-primary/20"
                         >
-                            <div className={`shrink-0 flex h-9 w-9 items-center justify-center rounded-lg border ${tone.iconBg}`}>
-                                <Icon className={`w-4 h-4 ${tone.iconColor}`} strokeWidth={2} />
+                            <div className={`shrink-0 flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg border ${tone.iconBg}`}>
+                                <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${tone.iconColor}`} strokeWidth={2} />
                             </div>
-                            <div className="min-w-0">
-                                <p className="text-xs font-medium text-muted-foreground truncate">{title}</p>
-                                <p className="text-sm font-semibold text-foreground tabular-nums">
+                            <div className="min-w-0 flex-1">
+                                <p
+                                    className="text-[11px] sm:text-xs font-medium text-muted-foreground truncate"
+                                    title={title}
+                                >
+                                    {title}
+                                </p>
+                                <p className="text-sm sm:text-base font-bold text-foreground tabular-nums tracking-tight mt-0.5 leading-tight">
                                     {valuesLoading
                                         ? <span className="inline-block h-4 w-12 rounded-md bg-muted animate-pulse align-middle" />
                                         : `₹ ${typeof currentValue === 'number' ? currentValue.toLocaleString('en-IN') : '—'}`

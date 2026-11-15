@@ -10,9 +10,9 @@ import { format } from 'date-fns';
 import { ConfirmDialog } from '@/shared/components/ui';
 
 const MEAL_TYPE_META = {
-    both: { label: 'Both Meals', Icon: HiOutlineSparkles, color: 'text-primary bg-primary/10' },
-    day: { label: 'Day Meal', Icon: HiOutlineSun, color: 'text-amber-500 bg-amber-500/10' },
-    night: { label: 'Night Meal', Icon: HiOutlineMoon, color: 'text-indigo-400 bg-indigo-400/10' },
+    both: { label: 'Both Meals', Icon: HiOutlineSparkles, color: 'text-slot-both-text bg-slot-both-bg' },
+    day: { label: 'Day Meal', Icon: HiOutlineSun, color: 'text-slot-day-text bg-slot-day-bg' },
+    night: { label: 'Night Meal', Icon: HiOutlineMoon, color: 'text-slot-night-text bg-slot-night-bg' },
     off: { label: 'No Meal (Off)', Icon: HiOutlineNoSymbol, color: 'text-muted-foreground bg-muted/40' },
 };
 

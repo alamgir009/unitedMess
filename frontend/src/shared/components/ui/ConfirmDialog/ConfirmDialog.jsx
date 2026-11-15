@@ -4,10 +4,19 @@ import { cn } from '@/core/utils/helpers/string.helper';
 import Modal from '../Modal/Modal';
 import Button from '../Button/Button';
 
-const iconBgColors = {
-  red: 'bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20',
-  amber: 'bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20',
-  blue: 'bg-blue-50 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20',
+const iconToneStyles = {
+  red: {
+    bg: 'bg-danger-bg border-danger-border',
+    icon: 'text-danger-text',
+  },
+  amber: {
+    bg: 'bg-warning-bg border-warning-border',
+    icon: 'text-warning-text',
+  },
+  blue: {
+    bg: 'bg-primary/10 border-primary/20',
+    icon: 'text-primary',
+  },
 };
 
 const ConfirmDialog = memo(({
@@ -24,11 +33,13 @@ const ConfirmDialog = memo(({
   isConfirming = false,
   variant = 'danger',
 }) => {
+  const tone = iconToneStyles[iconColor] || iconToneStyles.red;
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={isConfirming ? undefined : onClose}
-      accentColor="red"
+      accentColor={iconColor === 'blue' ? 'blue' : iconColor === 'amber' ? 'amber' : 'red'}
       size="sm"
       role="alertdialog"
       description={description}
@@ -40,9 +51,9 @@ const ConfirmDialog = memo(({
         <div className="flex justify-center">
           <div className={cn(
             'w-14 h-14 rounded-xl border flex items-center justify-center',
-            iconBgColors[iconColor] || iconBgColors.red,
+            tone.bg,
           )}>
-            <Icon className="w-6 h-6 text-rose-500" />
+            <Icon className={cn('w-6 h-6', tone.icon)} />
           </div>
         </div>
 

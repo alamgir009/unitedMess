@@ -216,7 +216,7 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
         <div className="flex gap-2.5 w-full">
           <Button
             type="button"
-            variant="ghost"
+            variant="secondary"
             size="sm"
             onClick={onClose}
             disabled={isSelecting}
@@ -226,7 +226,7 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
           </Button>
           <Button
             type="button"
-            variant="success"
+            variant="primary"
             size="sm"
             onClick={handleConfirm}
             disabled={isSelecting || selectedDates.size === 0}

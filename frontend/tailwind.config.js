@@ -16,17 +16,20 @@ export default {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
-          50: 'hsl(210, 100%, 97%)',
-          100: 'hsl(210, 96%,  93%)',
-          200: 'hsl(210, 90%,  84%)',
-          300: 'hsl(210, 86%,  72%)',
-          400: 'hsl(210, 88%,  60%)',
-          500: 'hsl(210, 92%,  48%)',
-          600: 'hsl(214, 90%,  40%)',
-          700: 'hsl(218, 88%,  32%)',
-          800: 'hsl(220, 84%,  26%)',
-          900: 'hsl(222, 80%,  18%)',
-          950: 'hsl(224, 78%,  12%)',
+          /* Realigned to the --brand hue ramp (221° light / 217° dark):
+             500 = dark --brand (#3B82F6), 600 = light --brand (#2563EB).
+             Previously a 210° sky-blue ramp rendered differently from bg-brand. */
+          50: 'hsl(214, 100%, 97%)',
+          100: 'hsl(214, 95%, 93%)',
+          200: 'hsl(213, 94%, 86%)',
+          300: 'hsl(212, 96%, 78%)',
+          400: 'hsl(213, 94%, 68%)',
+          500: 'hsl(217, 91%, 60%)',
+          600: 'hsl(221, 83%, 53%)',
+          700: 'hsl(224, 76%, 44%)',
+          800: 'hsl(226, 71%, 36%)',
+          900: 'hsl(228, 70%, 27%)',
+          950: 'hsl(230, 70%, 15%)',
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -92,6 +95,14 @@ export default {
           bg: "var(--refund-bg)",
           text: "var(--refund-text)",
           border: "var(--refund-border)",
+        },
+        slot: {
+          /* Meal-slot identity family — Day / Night / Both / Off.
+             bg/text/border pairs are theme-tinted; DEFAULT is the solid accent. */
+          day:   { DEFAULT: "var(--slot-day)",   bg: "var(--slot-day-bg)",   text: "var(--slot-day-text)",   border: "var(--slot-day-border)" },
+          night: { DEFAULT: "var(--slot-night)", bg: "var(--slot-night-bg)", text: "var(--slot-night-text)", border: "var(--slot-night-border)" },
+          both:  { DEFAULT: "var(--slot-both)",  bg: "var(--slot-both-bg)",  text: "var(--slot-both-text)",  border: "var(--slot-both-border)" },
+          off:   { DEFAULT: "var(--slot-off)",   bg: "var(--slot-off-bg)",   text: "var(--slot-off-text)",   border: "var(--slot-off-border)" },
         },
         profit: {
           DEFAULT: "var(--profit)",
@@ -260,12 +271,13 @@ export default {
     function({ addUtilities }) {
       const filledVariants = [
         'primary', 'secondary', 'destructive', 'warning', 'success',
-        'premium', 'inverse', 'neutral', 'elevated', 'brand-subtle', 'icon',
+        'premium', 'inverse', 'neutral', 'brand-subtle', 'icon',
       ];
 
       const btnBase = {};
       const btnHover = {};
       const btnActive = {};
+      const darkOverrides = {};
 
       filledVariants.forEach(v => {
         const cls = `.btn-${v}`;
@@ -274,7 +286,7 @@ export default {
           isolation: 'isolate',
           backgroundImage: `linear-gradient(to bottom, var(--btn-${v}-from), var(--btn-${v}-to))`,
           color: `var(--btn-${v}-label)`,
-          borderColor: `var(--btn-${v}-border, transparent)`,
+          border: `1px solid var(--btn-${v}-border, transparent)`,
           boxShadow: 'var(--btn-shadow)',
         };
         btnBase[cls]['&::before'] = {
@@ -283,48 +295,109 @@ export default {
           inset: '0',
           borderRadius: 'inherit',
           pointerEvents: 'none',
-          zIndex: '10',
-          backgroundImage: 'var(--btn-top-highlight-light)',
+          zIndex: '1',
+          boxShadow: 'var(--btn-top-highlight-light)',
         };
         btnHover[`${cls}:hover`] = {
-          backgroundImage: `var(--btn-${v}-hover-bg, linear-gradient(to bottom, var(--btn-${v}-to), var(--btn-${v}-to)))`,
+          backgroundImage: `var(--btn-${v}-hover-bg, linear-gradient(to bottom, var(--btn-${v}-from), var(--btn-${v}-to)))`,
+          borderColor: `var(--btn-${v}-hover-border, var(--btn-${v}-border, transparent))`,
           boxShadow: 'var(--btn-shadow-hover)',
+        };
+        btnHover[`${cls}:hover::before`] = {
+          boxShadow: 'none',
         };
         btnActive[`${cls}:active`] = {
           backgroundImage: `var(--btn-${v}-hover-bg, linear-gradient(to bottom, var(--btn-${v}-to), var(--btn-${v}-to)))`,
           boxShadow: 'var(--btn-shadow-active)',
-          opacity: '0.92',
+          opacity: '0.96',
         };
-      });
 
-      /* Dark mode overrides — applied via html.dark ancestor */
-      const darkOverrides = {};
-      filledVariants.forEach(v => {
-        const cls = `.dark .btn-${v}`;
-        darkOverrides[cls] = {
+        /* Dark mode overrides */
+        const darkCls = `.dark ${cls}`;
+        darkOverrides[darkCls] = {
           backgroundImage: `linear-gradient(to bottom, var(--btn-${v}-from), var(--btn-${v}-to))`,
+          borderColor: `var(--btn-${v}-border, transparent)`,
+          color: `var(--btn-${v}-label)`,
           boxShadow: 'var(--btn-shadow-dark)',
         };
-        darkOverrides[`${cls}::before`] = {
-          backgroundImage: 'var(--btn-top-highlight-dark)',
+        darkOverrides[`${darkCls}::before`] = {
+          boxShadow: 'var(--btn-top-highlight-dark)',
         };
-        darkOverrides[`${cls}:hover`] = {
-          backgroundImage: `var(--btn-${v}-hover-bg, linear-gradient(to bottom, var(--btn-${v}-to), var(--btn-${v}-to)))`,
+        darkOverrides[`${darkCls}:hover`] = {
+          backgroundImage: `var(--btn-${v}-hover-bg, linear-gradient(to bottom, var(--btn-${v}-from), var(--btn-${v}-to)))`,
+          borderColor: `var(--btn-${v}-hover-border, var(--btn-${v}-border, transparent))`,
           boxShadow: 'var(--btn-shadow-dark-hover)',
         };
-        darkOverrides[`${cls}:active`] = {
+        darkOverrides[`${darkCls}:hover::before`] = {
+          boxShadow: 'none',
+        };
+        darkOverrides[`${darkCls}:active`] = {
           backgroundImage: `var(--btn-${v}-hover-bg, linear-gradient(to bottom, var(--btn-${v}-to), var(--btn-${v}-to)))`,
           boxShadow: 'var(--btn-shadow-dark-active)',
         };
       });
 
+      /* Elevated variant — prominent fintech elevation with zero disabled halo */
+      btnBase['.btn-elevated'] = {
+        position: 'relative',
+        isolation: 'isolate',
+        backgroundImage: 'linear-gradient(to bottom, var(--btn-elevated-from), var(--btn-elevated-to))',
+        color: 'var(--btn-elevated-label)',
+        border: '1px solid var(--btn-elevated-border, transparent)',
+        boxShadow: 'var(--btn-elevated-shadow)',
+      };
+      btnBase['.btn-elevated']['&::before'] = {
+        content: '""',
+        position: 'absolute',
+        inset: '0',
+        borderRadius: 'inherit',
+        pointerEvents: 'none',
+        zIndex: '1',
+        boxShadow: 'var(--btn-top-highlight-light)',
+      };
+      btnBase['.btn-elevated:disabled'] = {
+        boxShadow: 'none !important',
+        transform: 'none !important',
+      };
+      btnHover['.btn-elevated:hover'] = {
+        backgroundImage: 'var(--btn-elevated-hover-bg, linear-gradient(to bottom, var(--btn-elevated-from), var(--btn-elevated-to)))',
+        borderColor: 'var(--btn-elevated-hover-border, var(--btn-elevated-border, transparent))',
+        boxShadow: 'var(--btn-elevated-shadow-hover)',
+      };
+      btnHover['.btn-elevated:hover::before'] = { boxShadow: 'none' };
+      btnActive['.btn-elevated:active'] = {
+        boxShadow: 'var(--btn-shadow-active)',
+        opacity: '0.96',
+      };
+      darkOverrides['.dark .btn-elevated'] = {
+        backgroundImage: 'linear-gradient(to bottom, var(--btn-elevated-from), var(--btn-elevated-to))',
+        borderColor: 'var(--btn-elevated-border, transparent)',
+        color: 'var(--btn-elevated-label)',
+        boxShadow: 'var(--btn-elevated-shadow-dark)',
+      };
+      darkOverrides['.dark .btn-elevated:disabled'] = {
+        boxShadow: 'none !important',
+        transform: 'none !important',
+      };
+      darkOverrides['.dark .btn-elevated::before'] = { boxShadow: 'var(--btn-top-highlight-dark)' };
+      darkOverrides['.dark .btn-elevated:hover'] = {
+        backgroundImage: 'var(--btn-elevated-hover-bg, linear-gradient(to bottom, var(--btn-elevated-from), var(--btn-elevated-to)))',
+        borderColor: 'var(--btn-elevated-hover-border, var(--btn-elevated-border, transparent))',
+        boxShadow: 'var(--btn-elevated-shadow-dark-hover)',
+      };
+      darkOverrides['.dark .btn-elevated:hover::before'] = { boxShadow: 'none' };
+      darkOverrides['.dark .btn-elevated:active'] = {
+        boxShadow: 'var(--btn-shadow-dark-active)',
+      };
+
       /* Loading variant */
       btnBase['.btn-loading'] = {
         position: 'relative',
         isolation: 'isolate',
+        overflow: 'hidden',
         backgroundImage: 'linear-gradient(to bottom, var(--btn-loading-from), var(--btn-loading-to))',
         color: 'var(--btn-loading-label)',
-        borderColor: 'var(--btn-loading-border, transparent)',
+        border: '1px solid var(--btn-loading-border, transparent)',
         boxShadow: 'var(--btn-shadow)',
         pointerEvents: 'none',
       };
@@ -334,18 +407,20 @@ export default {
         inset: '0',
         borderRadius: 'inherit',
         pointerEvents: 'none',
-        zIndex: '10',
-        backgroundImage: 'var(--btn-top-highlight-light)',
+        zIndex: '1',
+        boxShadow: 'var(--btn-top-highlight-light)',
       };
       darkOverrides['.dark .btn-loading'] = {
         backgroundImage: 'linear-gradient(to bottom, var(--btn-loading-from), var(--btn-loading-to))',
+        borderColor: 'var(--btn-loading-border, transparent)',
+        color: 'var(--btn-loading-label)',
         boxShadow: 'var(--btn-shadow-dark)',
       };
       darkOverrides['.dark .btn-loading::before'] = {
-        backgroundImage: 'var(--btn-top-highlight-dark)',
+        boxShadow: 'var(--btn-top-highlight-dark)',
       };
 
-      /* Ghost — transparent, no shadow */
+      /* Ghost — transparent, zero layout shift with 1px transparent border */
       btnBase['.btn-ghost'] = {
         background: 'none',
         color: 'var(--btn-ghost-label)',
@@ -355,6 +430,7 @@ export default {
       btnBase['.btn-ghost']['&::before'] = { display: 'none' };
       btnHover['.btn-ghost:hover'] = {
         background: 'var(--btn-ghost-hover-fill)',
+        color: 'var(--btn-ghost-hover-label, var(--btn-ghost-label))',
         boxShadow: 'none',
       };
       btnActive['.btn-ghost:active'] = {
@@ -362,7 +438,7 @@ export default {
         boxShadow: 'none',
       };
 
-      /* Outline — transparent with border */
+      /* Outline — transparent with crisp fintech perimeter */
       btnBase['.btn-outline'] = {
         background: 'none',
         color: 'var(--btn-outline-label)',
@@ -373,6 +449,7 @@ export default {
       btnHover['.btn-outline:hover'] = {
         background: 'var(--btn-outline-hover-bg)',
         borderColor: 'var(--btn-outline-hover-border)',
+        color: 'var(--btn-outline-hover-label, var(--btn-outline-label))',
         boxShadow: 'none',
       };
       btnActive['.btn-outline:active'] = {
@@ -380,12 +457,17 @@ export default {
         boxShadow: 'none',
       };
 
-      /* Glass — translucent with border and highlight */
+      /* Glass — authentic backdrop-filter frosted glassmorphism */
       btnBase['.btn-glass'] = {
+        position: 'relative',
+        isolation: 'isolate',
+        overflow: 'hidden',
         backgroundImage: 'linear-gradient(to bottom, var(--btn-glass-from), var(--btn-glass-to))',
         color: 'var(--btn-glass-label)',
         border: '1px solid var(--btn-glass-border)',
         boxShadow: 'var(--btn-shadow)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
       };
       btnBase['.btn-glass']['&::before'] = {
         content: '""',
@@ -393,40 +475,47 @@ export default {
         inset: '0',
         borderRadius: 'inherit',
         pointerEvents: 'none',
-        zIndex: '10',
-        backgroundImage: 'var(--btn-top-highlight-light)',
+        zIndex: '1',
+        boxShadow: 'var(--btn-top-highlight-light)',
       };
       btnHover['.btn-glass:hover'] = {
-        backgroundImage: 'linear-gradient(to bottom, var(--btn-glass-to), var(--btn-glass-to))',
+        backgroundImage: 'var(--btn-glass-hover-bg)',
+        borderColor: 'var(--btn-glass-hover-border)',
         boxShadow: 'var(--btn-shadow-hover)',
       };
+      btnHover['.btn-glass:hover::before'] = { boxShadow: 'none' };
       btnActive['.btn-glass:active'] = {
-        backgroundImage: 'linear-gradient(to bottom, var(--btn-glass-to), var(--btn-glass-to))',
         boxShadow: 'var(--btn-shadow-active)',
-        opacity: '0.92',
+        opacity: '0.94',
       };
       darkOverrides['.dark .btn-glass'] = {
         backgroundImage: 'linear-gradient(to bottom, var(--btn-glass-from), var(--btn-glass-to))',
+        borderColor: 'var(--btn-glass-border)',
+        color: 'var(--btn-glass-label)',
         boxShadow: 'var(--btn-shadow-dark)',
       };
       darkOverrides['.dark .btn-glass::before'] = {
-        backgroundImage: 'var(--btn-top-highlight-dark)',
+        boxShadow: 'var(--btn-top-highlight-dark)',
       };
       darkOverrides['.dark .btn-glass:hover'] = {
-        backgroundImage: 'linear-gradient(to bottom, var(--btn-glass-to), var(--btn-glass-to))',
+        backgroundImage: 'var(--btn-glass-hover-bg)',
+        borderColor: 'var(--btn-glass-hover-border)',
         boxShadow: 'var(--btn-shadow-dark-hover)',
       };
+      darkOverrides['.dark .btn-glass:hover::before'] = { boxShadow: 'none' };
 
-      /* Link — no background, underline on hover */
+      /* Link — accessible hyperlink button */
       btnBase['.btn-link'] = {
         background: 'none',
-        color: 'var(--btn-outline-label)',
+        color: 'var(--btn-link-label)',
         border: 'none',
         boxShadow: 'none',
       };
       btnBase['.btn-link']['&::before'] = { display: 'none' };
       btnHover['.btn-link:hover'] = {
+        color: 'var(--btn-link-hover-label, var(--btn-link-label))',
         textDecoration: 'underline',
+        textUnderlineOffset: '3px',
         boxShadow: 'none',
       };
       btnActive['.btn-link:active'] = {

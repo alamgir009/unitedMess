@@ -38,7 +38,7 @@ const MealPage = () => {
     const { user } = useSelector((s) => s.auth);
     const isAdmin = user?.role === 'admin';
 
-    const [isRosterOpen, setIsRosterOpen] = useState(false);
+    const [isRosterOpen, setIsRosterOpen] = useState(true);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingMeal, setEditingMeal] = useState(null);

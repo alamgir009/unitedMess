@@ -1,0 +1,333 @@
+/* =============================================================================
+   FINTECH UNIFIED TYPOGRAPHY & COLOR TOKENS
+   Single Source of Truth for UnitedMess
+   Fonts: Manrope (Headings, Display, KPI/Balances, Buttons, Nav)
+          Inter (Body, Forms, Tables, Captions, Helper Text)
+   ============================================================================= */
+
+/* ─── System-Font Fallback Stack with size-adjust (Eliminates CLS) ───────── */
+@font-face {
+  font-family: 'Manrope-Fallback';
+  src: local('Arial');
+  size-adjust: 104.2%;
+  ascent-override: 95.8%;
+  descent-override: 24.2%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'Inter-Fallback';
+  src: local('Arial');
+  size-adjust: 98.4%;
+  ascent-override: 96.5%;
+  descent-override: 23.5%;
+  line-gap-override: 0%;
+}
+
+:root {
+  /* ─── Font Families ──────────────────────────────────────────────────────── */
+  --font-heading: 'Manrope', 'Manrope-Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-display: var(--font-heading);
+  --font-body: 'Inter', 'Inter-Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-sans: var(--font-body);
+  --font-numeric: 'Manrope', 'Manrope-Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+
+  /* ─── Font Weights (Strictly 400 / 500 / 600 / 700 only) ─────────────────── */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* Legacy weight aliases */
+  --weight-normal: var(--weight-regular);
+
+  /* Optical weight shift compensation (0em in light mode) */
+  --tracking-optical-shift: 0em;
+
+  /* ─── Fluid Type Scale (clamp with rem units) ────────────────────────────── */
+  /* Display: 36px (2.25rem) @ 320px → 56px (3.5rem) @ 1280px */
+  --fs-display: clamp(2.25rem, 1.5rem + 3.75vw, 3.5rem);
+  --fw-display: 700;
+  --lh-display: 1.12;
+  --ls-display: calc(-0.025em + var(--tracking-optical-shift));
+
+  /* H1: 28px (1.75rem) @ 320px → 40px (2.5rem) @ 1280px */
+  --fs-h1: clamp(1.75rem, 1.25rem + 2.5vw, 2.5rem);
+  --fw-h1: 700;
+  --lh-h1: 1.18;
+  --ls-h1: calc(-0.022em + var(--tracking-optical-shift));
+
+  /* H2: 22px (1.375rem) @ 320px → 30px (1.875rem) @ 1280px */
+  --fs-h2: clamp(1.375rem, 1.1rem + 1.375vw, 1.875rem);
+  --fw-h2: 600;
+  --lh-h2: 1.24;
+  --ls-h2: calc(-0.018em + var(--tracking-optical-shift));
+
+  /* H3: 19px (1.1875rem) @ 320px → 24px (1.5rem) @ 1280px */
+  --fs-h3: clamp(1.1875rem, 1.025rem + 0.8125vw, 1.5rem);
+  --fw-h3: 600;
+  --lh-h3: 1.28;
+  --ls-h3: calc(-0.012em + var(--tracking-optical-shift));
+
+  /* H4: 17px (1.0625rem) @ 320px → 20px (1.25rem) @ 1280px */
+  --fs-h4: clamp(1.0625rem, 0.9625rem + 0.5vw, 1.25rem);
+  --fw-h4: 600;
+  --lh-h4: 1.34;
+  --ls-h4: calc(-0.008em + var(--tracking-optical-shift));
+
+  /* H5: 15px (0.9375rem) @ 320px → 17px (1.0625rem) @ 1280px */
+  --fs-h5: clamp(0.9375rem, 0.8875rem + 0.25vw, 1.0625rem);
+  --fw-h5: 600;
+  --lh-h5: 1.38;
+  --ls-h5: calc(-0.004em + var(--tracking-optical-shift));
+
+  /* H6: 14px (0.875rem) @ 320px → 15px (0.9375rem) @ 1280px */
+  --fs-h6: clamp(0.875rem, 0.85rem + 0.125vw, 0.9375rem);
+  --fw-h6: 600;
+  --lh-h6: 1.40;
+  --ls-h6: calc(0em + var(--tracking-optical-shift));
+
+  /* Body-LG: 16px (1rem) @ 320px → 18px (1.125rem) @ 1280px */
+  --fs-body-lg: clamp(1rem, 0.9375rem + 0.3125vw, 1.125rem);
+  --fw-body-lg: 400;
+  --lh-body-lg: 1.55;
+  --ls-body-lg: calc(-0.005em + var(--tracking-optical-shift));
+
+  /* Body-MD: 15px (0.9375rem) @ 320px → 16px (1rem) @ 1280px */
+  --fs-body-md: clamp(0.9375rem, 0.9rem + 0.1875vw, 1rem);
+  --fw-body-md: 400;
+  --lh-body-md: 1.50;
+  --ls-body-md: calc(0em + var(--tracking-optical-shift));
+
+  /* Body-SM: 13px (0.8125rem) @ 320px → 14px (0.875rem) @ 1280px */
+  --fs-body-sm: clamp(0.8125rem, 0.78125rem + 0.15625vw, 0.875rem);
+  --fw-body-sm: 400;
+  --lh-body-sm: 1.45;
+  --ls-body-sm: calc(0.005em + var(--tracking-optical-shift));
+
+  /* Caption: 11px (0.6875rem) @ 320px → 12px (0.75rem) @ 1280px */
+  --fs-caption: clamp(0.6875rem, 0.65625rem + 0.15625vw, 0.75rem);
+  --fw-caption: 400;
+  --lh-caption: 1.35;
+  --ls-caption: calc(0.015em + var(--tracking-optical-shift));
+
+  /* Overline: 11px (0.6875rem) @ 320px → 12px (0.75rem) @ 1280px */
+  --fs-overline: clamp(0.6875rem, 0.65625rem + 0.15625vw, 0.75rem);
+  --fw-overline: 600;
+  --lh-overline: 1.30;
+  --ls-overline: calc(0.08em + var(--tracking-optical-shift));
+
+  /* Button: 14px (0.875rem) @ 320px → 15px (0.9375rem) @ 1280px */
+  --fs-button: clamp(0.875rem, 0.84375rem + 0.15625vw, 0.9375rem);
+  --fw-button: 600;
+  --lh-button: 1.25;
+  --ls-button: calc(-0.005em + var(--tracking-optical-shift));
+
+  /* Label: 13px (0.8125rem) @ 320px → 14px (0.875rem) @ 1280px */
+  --fs-label: clamp(0.8125rem, 0.78125rem + 0.15625vw, 0.875rem);
+  --fw-label: 500;
+  --lh-label: 1.35;
+  --ls-label: calc(0.005em + var(--tracking-optical-shift));
+
+  /* Numeric-LG (Primary balance, key hero numbers, account totals): 28px → 38px */
+  --fs-numeric-lg: clamp(1.75rem, 1.35rem + 2vw, 2.375rem);
+  --fw-numeric-lg: 700;
+  --lh-numeric-lg: 1.15;
+  --ls-numeric-lg: calc(-0.02em + var(--tracking-optical-shift));
+
+  /* Numeric-MD (Table cells, breakdown metrics, transaction rows): 18px → 22px */
+  --fs-numeric-md: clamp(1.125rem, 1rem + 0.625vw, 1.375rem);
+  --fw-numeric-md: 600;
+  --lh-numeric-md: 1.25;
+  --ls-numeric-md: calc(-0.01em + var(--tracking-optical-shift));
+
+  /* Backward compatibility aliases */
+  --text-caption: var(--fs-caption);
+  --text-label: var(--fs-label);
+  --text-body: var(--fs-body-md);
+  --text-body-lg: var(--fs-body-lg);
+  --text-h4: var(--fs-h4);
+  --text-h3: var(--fs-h3);
+  --text-h2: var(--fs-h2);
+  --text-h1: var(--fs-h1);
+  --text-display: var(--fs-display);
+}
+
+/* ─── Optical Weight Compensation in Dark Mode ───────────────────────────── */
+html.dark {
+  --tracking-optical-shift: 0.012em;
+}
+
+/* ─── Composite Type Token Classes ────────────────────────────────────────── */
+.type-display, .text-display {
+  font-family: var(--font-heading);
+  font-size: var(--fs-display);
+  font-weight: var(--fw-display);
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-display);
+}
+
+.type-h1, h1, .text-h1 {
+  font-family: var(--font-heading);
+  font-size: var(--fs-h1);
+  font-weight: var(--fw-h1);
+  line-height: var(--lh-h1);
+  letter-spacing: var(--ls-h1);
+}
+
+.type-h2, h2, .text-h2 {
+  font-family: var(--font-heading);
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-h2);
+  line-height: var(--lh-h2);
+  letter-spacing: var(--ls-h2);
+}
+
+.type-h3, h3, .text-h3 {
+  font-family: var(--font-heading);
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-h3);
+  line-height: var(--lh-h3);
+  letter-spacing: var(--ls-h3);
+}
+
+.type-h4, h4, .text-h4 {
+  font-family: var(--font-heading);
+  font-size: var(--fs-h4);
+  font-weight: var(--fw-h4);
+  line-height: var(--lh-h4);
+  letter-spacing: var(--ls-h4);
+}
+
+.type-h5, h5, .text-h5 {
+  font-family: var(--font-heading);
+  font-size: var(--fs-h5);
+  font-weight: var(--fw-h5);
+  line-height: var(--lh-h5);
+  letter-spacing: var(--ls-h5);
+}
+
+.type-h6, h6, .text-h6 {
+  font-family: var(--font-heading);
+  font-size: var(--fs-h6);
+  font-weight: var(--fw-h6);
+  line-height: var(--lh-h6);
+  letter-spacing: var(--ls-h6);
+}
+
+.type-body-lg, .text-body-lg {
+  font-family: var(--font-body);
+  font-size: var(--fs-body-lg);
+  font-weight: var(--fw-body-lg);
+  line-height: var(--lh-body-lg);
+  letter-spacing: var(--ls-body-lg);
+}
+
+.type-body-md, .type-body, .text-body-md, .text-body {
+  font-family: var(--font-body);
+  font-size: var(--fs-body-md);
+  font-weight: var(--fw-body-md);
+  line-height: var(--lh-body-md);
+  letter-spacing: var(--ls-body-md);
+}
+
+.type-body-sm, .text-body-sm {
+  font-family: var(--font-body);
+  font-size: var(--fs-body-sm);
+  font-weight: var(--fw-body-sm);
+  line-height: var(--lh-body-sm);
+  letter-spacing: var(--ls-body-sm);
+}
+
+.type-caption, .text-caption {
+  font-family: var(--font-body);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-caption);
+  line-height: var(--lh-caption);
+  letter-spacing: var(--ls-caption);
+}
+
+.type-overline, .text-overline {
+  font-family: var(--font-body);
+  font-size: var(--fs-overline);
+  font-weight: var(--fw-overline);
+  line-height: var(--lh-overline);
+  letter-spacing: var(--ls-overline);
+  text-transform: uppercase;
+}
+
+.type-button, .text-button {
+  font-family: var(--font-heading);
+  font-size: var(--fs-button);
+  font-weight: var(--fw-button);
+  line-height: var(--lh-button);
+  letter-spacing: var(--ls-button);
+}
+
+.type-label, .text-label {
+  font-family: var(--font-body);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-label);
+  line-height: var(--lh-label);
+  letter-spacing: var(--ls-label);
+}
+
+.type-numeric-lg, .text-numeric-lg {
+  font-family: var(--font-numeric);
+  font-size: var(--fs-numeric-lg);
+  font-weight: var(--fw-numeric-lg);
+  line-height: var(--lh-numeric-lg);
+  letter-spacing: var(--ls-numeric-lg);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
+
+.type-numeric-md, .text-numeric-md {
+  font-family: var(--font-numeric);
+  font-size: var(--fs-numeric-md);
+  font-weight: var(--fw-numeric-md);
+  line-height: var(--lh-numeric-md);
+  letter-spacing: var(--ls-numeric-md);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
+
+/* ─── Numeric & Tabular Utilities ─────────────────────────────────────────── */
+.tabular-nums,
+.financial-value,
+.text-numeric {
+  font-family: var(--font-numeric);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
+
+/* ─── Color Token Utilities ───────────────────────────────────────────────── */
+.text-primary   { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary  { color: var(--text-tertiary); }
+.text-disabled  { color: var(--text-disabled); }
+.text-inverse   { color: var(--text-inverse); }
+.text-link      { color: var(--text-link); }
+.text-success   { color: var(--text-success); }
+.text-warning   { color: var(--text-warning); }
+.text-danger    { color: var(--text-danger); }
+.text-muted     { color: var(--text-tertiary); }
+
+/* ─── Touch Target & Mobile Zoom Prevention ───────────────────────────────── */
+@media (max-width: 767px) {
+  /* Prevent iOS Safari auto-zoom on input focus by guaranteeing 16px minimum */
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Touch targets ≥ 44px for standard interactive targets */
+.touch-target,
+button:not(.touch-target-exempt),
+[role="button"]:not(.touch-target-exempt) {
+  min-height: 44px;
+}
+

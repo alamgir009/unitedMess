@@ -30,10 +30,10 @@ const Avatar = ({
     };
 
     const statusColors = {
-        online: 'bg-green-500',
-        away: 'bg-yellow-500',
-        busy: 'bg-red-500',
-        offline: 'bg-gray-400',
+        online: 'bg-success',
+        away: 'bg-warning',
+        busy: 'bg-destructive',
+        offline: 'bg-muted-foreground',
     };
 
     const radiusMap = {
@@ -61,10 +61,17 @@ const Avatar = ({
         : 0;
 
     const isClickable = !!onClick;
+    const radiusCls = radiusMap[variant] || radiusMap.circle;
 
     return (
         <div
-            className={cn('relative inline-block shrink-0', isClickable && 'cursor-pointer', className)}
+            className={cn(
+                'relative inline-flex items-center justify-center shrink-0',
+                sizes[size],
+                radiusCls,
+                isClickable && 'cursor-pointer',
+                className
+            )}
             onClick={onClick}
             role={isClickable ? 'button' : undefined}
             tabIndex={isClickable ? 0 : undefined}
@@ -73,11 +80,9 @@ const Avatar = ({
         >
             <span
                 className={cn(
-                    'flex items-center justify-center overflow-hidden',
+                    'w-full h-full flex items-center justify-center overflow-hidden',
                     'bg-muted font-semibold text-foreground',
-                    sizes[size],
-                    radiusMap[variant],
-                    
+                    radiusCls,
                     isClickable && 'focus-visible:ring-2 focus-visible:ring-ring',
                 )}
                 aria-label={alt || name}
@@ -87,7 +92,7 @@ const Avatar = ({
                     <img
                         src={src}
                         alt={alt || name}
-                        className="w-full h-full object-cover"
+                        className={cn('w-full h-full object-cover', radiusCls)}
                         loading="lazy"
                         width="40"
                         height="40"
@@ -95,6 +100,7 @@ const Avatar = ({
                 ) : name ? (
                     <span className={cn(
                         'w-full h-full flex items-center justify-center text-white font-bold',
+                        radiusCls,
                         colorPalette[colorIndex],
                     )}>
                         {getInitials(name)}
@@ -108,6 +114,8 @@ const Avatar = ({
 
             {status && (
                 <span
+                    role="status"
+                    title={status}
                     aria-label={status}
                     className={cn(
                         'absolute bottom-0 right-0 rounded-full ring-2 ring-background',

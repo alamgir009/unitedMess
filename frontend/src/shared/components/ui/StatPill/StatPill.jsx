@@ -16,7 +16,7 @@ const StatPill = React.memo(({ icon: Icon, label, value, color, trend, compact, 
   >
     <div className="min-w-0 flex-1">
       <p className={cn(
-        'font-semibold uppercase tracking-wider text-muted-foreground truncate mb-0.5',
+        'font-semibold uppercase tracking-wider text-muted-foreground line-clamp-2 sm:line-clamp-1 leading-snug mb-0.5',
         compact ? 'text-[10px]' : 'text-xs',
       )}>
         {label}

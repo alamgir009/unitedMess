@@ -22,26 +22,26 @@ const TYPE = {
     day: {
         Icon: HiOutlineSun,
         label: 'Day',
-        pill: 'bg-amber-50 dark:bg-amber-400/15 text-amber-600 dark:text-amber-400 ring-1 ring-amber-300/60 dark:ring-amber-400/20',
-        bar: 'bg-amber-400',
+        pill: 'bg-slot-day-bg text-slot-day-text ring-1 ring-slot-day-border',
+        bar: 'bg-slot-day',
     },
     night: {
         Icon: HiOutlineMoon,
         label: 'Night',
-        pill: 'bg-violet-50 dark:bg-violet-400/15 text-violet-600 dark:text-violet-400 ring-1 ring-violet-300/60 dark:ring-violet-400/20',
-        bar: 'bg-violet-400',
+        pill: 'bg-slot-night-bg text-slot-night-text ring-1 ring-slot-night-border',
+        bar: 'bg-slot-night',
     },
     both: {
         Icon: HiOutlineSparkles,
         label: 'Both',
-        pill: 'bg-sky-50 dark:bg-sky-400/15 text-sky-600 dark:text-sky-400 ring-1 ring-sky-300/60 dark:ring-sky-400/20',
-        bar: 'bg-sky-400',
+        pill: 'bg-slot-both-bg text-slot-both-text ring-1 ring-slot-both-border',
+        bar: 'bg-slot-both',
     },
     off: {
         Icon: HiOutlineNoSymbol,
         label: 'Off',
-        pill: 'bg-rose-50 dark:bg-rose-400/15 text-rose-600 dark:text-rose-400 ring-1 ring-rose-300/60 dark:ring-rose-400/20',
-        bar: 'bg-rose-400',
+        pill: 'bg-slot-off-bg text-slot-off-text ring-1 ring-slot-off-border',
+        bar: 'bg-slot-off',
     },
 };
 

@@ -19,3 +19,4 @@ export { default as Popover } from './Popover/Popover.jsx';
 export { default as RoleBadge } from './RoleBadge/RoleBadge.jsx';
 export { default as IconSelect } from './IconSelect/index.js';
 export { default as Reveal } from './Reveal/Reveal.jsx';
+export { default as StatusBadge } from './StatusBadge/index.js';

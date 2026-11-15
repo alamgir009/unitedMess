@@ -72,7 +72,7 @@ const DayDetailDialog = ({
             <span>Add Market</span>
           </Button>
           <Button
-            variant="success"
+            variant="secondary"
             size="sm"
             onClick={onScheduleClick}
             aria-label="Schedule market dates"

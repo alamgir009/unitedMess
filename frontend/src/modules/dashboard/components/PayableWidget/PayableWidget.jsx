@@ -2,8 +2,9 @@ import { useNavigate } from 'react-router-dom';
 import { useMemo } from 'react';
 import {
     FiClock, FiDroplet, FiCheckCircle,
-    FiArrowRight, FiAlertCircle, FiRotateCcw,
+    FiArrowRight, FiAlertCircle, FiRotateCcw, FiCreditCard,
 } from 'react-icons/fi';
+import Button from '@/shared/components/ui/Button/Button';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { isSettledBill, isRefundDueBill, isRefundedBill } from '@shared/utils/paymentStatus';
 
@@ -70,7 +71,7 @@ const PayableWidget = ({
     const allCleared = !hasPendingRefund && !hasOutstanding && mealPaid && gasPaid;
 
     return (
-        <div className="rounded-2xl relative overflow-hidden shadow-sm bg-card border border-border/50 animate-fade-up" style={{ animationDelay: '0.1s' }}>
+        <div className="rounded-2xl relative overflow-hidden shadow-sm bg-card border border-border/50 flex flex-col justify-between animate-fade-up" style={{ animationDelay: '0.1s' }}>
             <div className="p-4 sm:p-5 lg:p-6">
 
                 {/* ── Hero Number ── */}
@@ -91,10 +92,10 @@ const PayableWidget = ({
                             <span className={cn(
                                 "text-4xl sm:text-5xl font-bold tabular-nums tracking-tight leading-none",
                                 hasRefund
-                                    ? "text-violet-600 dark:text-violet-400"
+                                    ? "text-refund-text"
                                     : hasOutstanding
                                         ? "text-foreground"
-                                        : "text-emerald-600 dark:text-emerald-400"
+                                        : "text-success-text"
                             )}>
                                 {isLoading ? (
                                     <span className="inline-block w-32 h-12 bg-muted rounded-lg animate-pulse" />
@@ -108,19 +109,19 @@ const PayableWidget = ({
                             </span>
 
                             {!isLoading && hasOutstanding && (
-                                <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-full px-2 py-0.5 mb-1">
+                                <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-warning-text bg-warning-bg border border-warning-border rounded-full px-2 py-0.5 mb-1">
                                     <FiAlertCircle size={11} />
                                     due
                                 </span>
                             )}
                             {!isLoading && hasSettledRefund && !hasOutstanding && (
-                                <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-violet-600 dark:text-violet-400 bg-violet-500/10 border border-violet-500/25 rounded-full px-2 py-0.5 mb-1">
+                                <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-refund-text bg-refund-bg border border-refund-border rounded-full px-2 py-0.5 mb-1">
                                     <FiRotateCcw size={11} />
                                     Refunded
                                 </span>
                             )}
                             {!isLoading && !hasRefund && !hasOutstanding && mealPaid && gasPaid && (
-                                <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5 mb-1">
+                                <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-success-text bg-success-bg border border-success-border rounded-full px-2 py-0.5 mb-1">
                                     <FiCheckCircle size={11} />
                                     All clear
                                 </span>
@@ -144,9 +145,9 @@ const PayableWidget = ({
                         <div className={cn(
                             "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] sm:text-caption font-semibold border",
                             mealRefund && safeMeal < 0
-                                ? "bg-violet-500/10 border-violet-500/25 text-violet-700 dark:bg-violet-500/5 dark:border-violet-500/20 dark:text-violet-400"
+                                ? "bg-refund-bg border-refund-border text-refund-text"
                                 : mealPaid
-                                    ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-700 dark:bg-emerald-500/5 dark:border-emerald-500/20 dark:text-emerald-400"
+                                    ? "bg-success-bg border-success-border text-success-text"
                                     : "bg-muted/50 border-border/40 text-foreground"
                         )}>
                             {mealRefund && safeMeal < 0 ? (
@@ -171,9 +172,9 @@ const PayableWidget = ({
                         <div className={cn(
                             "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] sm:text-caption font-semibold border",
                             gasRefund && safeGas < 0
-                                ? "bg-violet-500/10 border-violet-500/25 text-violet-700 dark:bg-violet-500/5 dark:border-violet-500/20 dark:text-violet-400"
+                                ? "bg-refund-bg border-refund-border text-refund-text"
                                 : gasPaid
-                                    ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-700 dark:bg-emerald-500/5 dark:border-emerald-500/20 dark:text-emerald-400"
+                                    ? "bg-success-bg border-success-border text-success-text"
                                     : "bg-muted/50 border-border/40 text-foreground"
                         )}>
                             {gasRefund && safeGas < 0 ? (
@@ -208,14 +209,14 @@ const PayableWidget = ({
                 {(isMealError || isGasError) && isLoaded && (
                     <div className="flex flex-wrap gap-2">
                         {isMealError && (
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] sm:text-caption font-semibold bg-rose-500/5 border border-rose-500/20 text-rose-600 dark:text-rose-400">
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] sm:text-caption font-semibold bg-danger-bg border border-danger-border text-danger-text">
                                 <FiAlertCircle size={12} />
                                 <span>Meal failed</span>
                                 <button onClick={() => window.location.reload()} className="underline underline-offset-1 ml-0.5">Retry</button>
                             </div>
                         )}
                         {isGasError && (
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] sm:text-caption font-semibold bg-rose-500/5 border border-rose-500/20 text-rose-600 dark:text-rose-400">
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] sm:text-caption font-semibold bg-danger-bg border border-danger-border text-danger-text">
                                 <FiAlertCircle size={12} />
                                 <span>Gas failed</span>
                                 <button onClick={() => window.location.reload()} className="underline underline-offset-1 ml-0.5">Retry</button>
@@ -227,37 +228,46 @@ const PayableWidget = ({
 
             {/* ── Footer ── */}
             {isLoaded && !isMealError && !isGasError && (
-                <>
+                <div className="p-4 sm:p-5 border-t border-border/40 bg-muted/15 mt-auto">
                     {/* Refund pending — action only while money is still owed back */}
                     {hasPendingRefund && (
-                        <button
+                        <Button
+                            variant="secondary"
+                            size="md"
+                            fullWidth
                             onClick={() => navigate('/payments')}
-                            className="w-full px-4 sm:px-6 py-3 sm:py-3.5 border-t border-border/40 bg-violet-500/5 hover:bg-violet-500/10 flex items-center justify-between transition-colors duration-150 group"
+                            className="font-semibold text-refund-text border-refund-border/60 hover:bg-refund-bg/70 shadow-xs flex items-center justify-between"
                         >
-                            <span className="text-caption sm:text-body font-semibold text-violet-600 dark:text-violet-400">View refund details</span>
-                            <FiArrowRight size={14} className="text-violet-600/50 dark:text-violet-400/50 group-hover:text-violet-600 dark:group-hover:text-violet-400 group-hover:translate-x-0.5 transition-all" />
-                        </button>
+                            <span>View refund details</span>
+                            <FiArrowRight size={15} />
+                        </Button>
                     )}
 
                     {/* All bills cleared */}
                     {allCleared && (
-                        <div className="px-4 sm:px-6 py-3 sm:py-3.5 border-t border-border/40 bg-emerald-500/5 flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 text-caption font-semibold">
-                            <FiCheckCircle size={14} />
+                        <div className="h-10 px-4 rounded-btn-md border border-success-border/60 bg-success-bg/40 flex items-center justify-center gap-2 text-success-text text-caption font-semibold">
+                            <FiCheckCircle size={15} />
                             <span>All bills cleared for this period</span>
                         </div>
                     )}
 
                     {/* Bills pending */}
                     {!hasPendingRefund && hasOutstanding && (
-                        <button
+                        <Button
+                            variant="primary"
+                            size="md"
+                            fullWidth
                             onClick={() => navigate('/payments')}
-                            className="w-full px-4 sm:px-6 py-3 sm:py-3.5 border-t border-border/40 bg-primary/5 hover:bg-primary/10 flex items-center justify-between transition-colors duration-150 group"
+                            className="font-semibold shadow-sm hover:shadow flex items-center justify-between"
                         >
-                            <span className="text-caption sm:text-body font-semibold text-primary">Pay now</span>
-                            <FiArrowRight size={14} className="text-primary/50 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-                        </button>
+                            <span className="flex items-center gap-2">
+                                <FiCreditCard size={16} />
+                                <span>Pay now</span>
+                            </span>
+                            <FiArrowRight size={15} />
+                        </Button>
                     )}
-                </>
+                </div>
             )}
         </div>
     );

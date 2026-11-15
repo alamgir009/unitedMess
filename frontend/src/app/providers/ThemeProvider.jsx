@@ -41,13 +41,29 @@ function getInitialTheme() {
     return getStoredTheme() ?? getSystemTheme();
 }
 
-/** Applies theme to <html> without triggering reflow — fastest DOM path */
-function applyThemeToDOM(theme) {
+/** Applies theme to <html> with instant style recalculation and zero transition jank */
+function applyThemeToDOM(theme, withTransitionSuppression = true) {
+    if (typeof document === "undefined") return;
     const root = document.documentElement;
+
+    if (withTransitionSuppression) {
+        root.classList.add("no-theme-transitions");
+    }
+
     root.classList.remove(THEMES.LIGHT, THEMES.DARK);
     root.classList.add(theme);
     // Also set color-scheme for native UI elements (scrollbars, inputs, etc.)
     root.style.colorScheme = theme;
+
+    if (withTransitionSuppression) {
+        // Force synchronous style flush so theme applies in a single frame
+        void root.offsetHeight;
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                root.classList.remove("no-theme-transitions");
+            });
+        });
+    }
 }
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
@@ -97,30 +113,56 @@ ThemeProvider.displayName = 'ThemeProvider';
         return () => window.removeEventListener("storage", handleStorageSync);
     }, []);
 
-    /** Toggle between light and dark — stable reference, never re-created */
+    /** Toggle between light and dark — 60fps ultra smooth & fast */
     const toggleTheme = useCallback(() => {
-        setTheme((prev) => {
-            const next = prev === THEMES.DARK ? THEMES.LIGHT : THEMES.DARK;
-            try {
-                localStorage.setItem(STORAGE_KEY, next);
-                hasUserPreference.current = true;
-            } catch {
-                // Silently ignore write failures (storage quota, private mode)
-            }
-            return next;
-        });
-    }, []);
+        const next = theme === THEMES.DARK ? THEMES.LIGHT : THEMES.DARK;
+
+        const prefersReducedMotion =
+            typeof window !== "undefined" &&
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        if (typeof document !== "undefined" && "startViewTransition" in document && !prefersReducedMotion) {
+            document.startViewTransition(() => {
+                applyThemeToDOM(next, false);
+                setTheme(next);
+            });
+        } else {
+            applyThemeToDOM(next, true);
+            setTheme(next);
+        }
+
+        try {
+            localStorage.setItem(STORAGE_KEY, next);
+            hasUserPreference.current = true;
+        } catch {
+            // Silently ignore write failures (storage quota, private mode)
+        }
+    }, [theme]);
 
     /** Explicitly set a theme (e.g. from a settings dropdown) */
     const setThemeExplicit = useCallback((newTheme) => {
         if (newTheme !== THEMES.LIGHT && newTheme !== THEMES.DARK) return;
+
+        const prefersReducedMotion =
+            typeof window !== "undefined" &&
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        if (typeof document !== "undefined" && "startViewTransition" in document && !prefersReducedMotion) {
+            document.startViewTransition(() => {
+                applyThemeToDOM(newTheme, false);
+                setTheme(newTheme);
+            });
+        } else {
+            applyThemeToDOM(newTheme, true);
+            setTheme(newTheme);
+        }
+
         try {
             localStorage.setItem(STORAGE_KEY, newTheme);
             hasUserPreference.current = true;
         } catch {
             // Silently ignore
         }
-        setTheme(newTheme);
     }, []);
 
     /** Clear user preference and revert to system theme */

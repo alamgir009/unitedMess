@@ -104,13 +104,12 @@ const MemberRow = React.memo(({
                         <span>{recordsCount === 1 ? 'record' : 'records'}</span>
                         <span className="text-muted-foreground/30">·</span>
                         <span className="flex items-center gap-0.5">
-                            <HiOutlineCurrencyRupee className="w-3 h-3 text-emerald-500" />
+                            <HiOutlineCurrencyRupee className="w-3 h-3 text-muted-foreground" />
                             <span className="font-medium tabular-nums">
                                 {totalAmount < 0 ? '\u2212' : ''}{fmt(Math.abs(totalAmount))}
                             </span>
                             <span>total</span>
                         </span>
-                        <span>total</span>
                         {dateRange && (
                             <>
                                 <span className="text-muted-foreground/30 hidden sm:inline">·</span>

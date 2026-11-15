@@ -1,6 +1,6 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo, memo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Camera, User } from 'lucide-react';
+import { Camera, User, Check, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Spinner } from '@/shared/components/ui';
 import { updateAvatar } from '@/modules/auth/store/auth.slice';
@@ -34,23 +34,34 @@ function detectMimeFromMagic(bytes) {
     return null;
 }
 
-export const AvatarUpload = () => {
+export const AvatarUpload = memo(({ className = '' }) => {
     const dispatch = useDispatch();
     const { user, isLoading } = useSelector((state) => state.auth);
     const fileInputRef = useRef(null);
 
     const [previewUrl, setPreviewUrl] = useState(user?.image || null);
+    const [imageError, setImageError] = useState(false);
 
     useEffect(() => {
         setPreviewUrl(user?.image || null);
+        setImageError(false);
     }, [user?.image]);
+
+    // Compute user monogram initials (e.g., "Alamgir Islam" => "AI")
+    const initials = useMemo(() => {
+        const name = (user?.name || '').trim();
+        if (!name) return 'U';
+        const parts = name.split(/\s+/).filter(Boolean);
+        if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }, [user?.name]);
 
     const handleFileChange = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         if (file.size > 5 * 1024 * 1024) {
-            toast.error('File size must be less than 5MB');
+            toast.error('File size must be under 5 MB');
             return;
         }
 
@@ -60,7 +71,7 @@ export const AvatarUpload = () => {
             '.jpeg': 'image/jpeg',
             '.png': 'image/png',
             '.webp': 'image/webp',
-            '.jfif': 'image/jpeg'
+            '.jfif': 'image/jpeg',
         };
 
         let detectedType = file.type;
@@ -69,7 +80,7 @@ export const AvatarUpload = () => {
         }
 
         if (!ALLOWED_TYPES.includes(detectedType)) {
-            toast.error('Invalid file type. Only JPEG, PNG, and WEBP images are allowed.');
+            toast.error('Supported formats: JPEG, PNG, or WEBP only.');
             return;
         }
 
@@ -77,13 +88,14 @@ export const AvatarUpload = () => {
         if (magicBytes) {
             const detectedMime = detectMimeFromMagic(magicBytes);
             if (!detectedMime) {
-                toast.error('File content does not match a supported image format.');
+                toast.error('File signature does not match a verified image type.');
                 return;
             }
         }
 
         const objectUrl = URL.createObjectURL(file);
         setPreviewUrl(objectUrl);
+        setImageError(false);
 
         try {
             const formData = new FormData();
@@ -93,12 +105,15 @@ export const AvatarUpload = () => {
 
             if (updateAvatar.rejected.match(resultAction)) {
                 setPreviewUrl(user?.image || null);
+                toast.error('Failed to update avatar photo');
+            } else {
+                toast.success('Avatar updated successfully');
             }
         } catch (err) {
             setPreviewUrl(user?.image || null);
+            toast.error('Upload failed. Please try again.');
         } finally {
             setTimeout(() => URL.revokeObjectURL(objectUrl), 3000);
-
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
@@ -110,51 +125,65 @@ export const AvatarUpload = () => {
         fileInputRef.current?.click();
     };
 
-    return (
-        <div className="relative group w-fit mx-auto">
-            
-            {/* Gradient ring wrapper */}
-            <div className="p-[2px] rounded-full bg-gradient-to-tr from-indigo-500 via-teal-500 to-cyan-400 shadow-[0_10px_40px_rgba(0,0,0,0.25)] dark:shadow-[0_10px_50px_rgba(0,0,0,0.6)] transition-all duration-300 group-hover:scale-[1.03]">
-                
-                {/* Glass container */}
-                <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/20 dark:border-white/10">
-                    
-                    {/* Avatar */}
-                    {previewUrl ? (
-                        <img
-                            src={previewUrl}
-                            alt="Avatar"
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                            <User className="w-12 h-12 text-zinc-400 dark:text-zinc-600" />
-                        </div>
-                    )}
+    const showImage = previewUrl && !imageError;
 
-                    {/* Overlay */}
-                    <div
-                        onClick={handleTriggerClick}
-                        className="absolute inset-0 flex items-center justify-center rounded-full bg-black/30 dark:bg-black/50 opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer backdrop-blur-md"
-                    >
-                        {isLoading ? (
-                            <Spinner size="lg" color="white" className="!w-7 !h-7" />
+    return (
+        <div className={`relative inline-flex flex-col items-center ${className}`}>
+            <div
+                className="relative group cursor-pointer select-none"
+                onClick={handleTriggerClick}
+                title="Tap or click to change photo"
+            >
+                {/* Concentric Outer Cradle */}
+                <div className="p-1 rounded-full bg-card border border-border shadow-xs transition-colors duration-200 group-hover:border-primary/40">
+                    <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden bg-muted/40 border border-border flex items-center justify-center">
+                        {showImage ? (
+                            <img
+                                src={previewUrl}
+                                alt={user?.name || 'User avatar'}
+                                onError={() => setImageError(true)}
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
                         ) : (
-                            <div className="flex flex-col items-center text-white">
-                                <Camera className="w-5 h-5 mb-1" />
-                                <span className="text-[11px] font-medium tracking-wide">
-                                    Change
-                                </span>
+                            <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold text-xl sm:text-2xl tracking-tight">
+                                {initials}
                             </div>
                         )}
+
+                        {/* Desktop Hover Scrim */}
+                        <div
+                            className={`absolute inset-0 bg-black/40 backdrop-blur-[1px] transition-opacity duration-200 flex flex-col items-center justify-center text-white ${
+                                isLoading ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                            }`}
+                        >
+                            {isLoading ? (
+                                <Spinner size="sm" color="white" />
+                            ) : (
+                                <div className="hidden sm:flex flex-col items-center gap-0.5">
+                                    <Camera className="w-4 h-4" />
+                                    <span className="text-[10px] font-semibold uppercase tracking-wider">
+                                        Change
+                                    </span>
+                                </div>
+                            )}
+                        </div>
                     </div>
-
-                    {/* Subtle inner glow */}
-                    <div className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/10 dark:ring-white/5 pointer-events-none" />
                 </div>
-            </div>
 
-            
+                {/* Touch-Friendly Camera Badge (Directly Accessible on Mobile) */}
+                <button
+                    type="button"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleTriggerClick();
+                    }}
+                    disabled={isLoading}
+                    aria-label="Upload profile photograph"
+                    className="absolute bottom-0 right-0 p-2 sm:p-2.5 rounded-full bg-card border border-border shadow-xs text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                >
+                    <Camera className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                </button>
+            </div>
 
             <input
                 ref={fileInputRef}
@@ -163,9 +192,11 @@ export const AvatarUpload = () => {
                 className="hidden"
                 onChange={handleFileChange}
                 disabled={isLoading}
+                aria-hidden="true"
             />
         </div>
     );
-};
+});
 
+AvatarUpload.displayName = 'AvatarUpload';
 export default AvatarUpload;

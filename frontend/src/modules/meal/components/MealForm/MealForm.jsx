@@ -21,10 +21,10 @@ const MAX_RANGE_DAYS = 31;
 const typeCountMap = { both: 2, day: 1, night: 1, off: 0 };
 
 const mealTypes = [
-    { value: 'both', label: 'Both', description: 'Day & Night', icon: HiOutlineSparkles, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-violet-500' },
-    { value: 'day', label: 'Day', description: 'Morning only', icon: HiOutlineSun, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-[var(--warning)]' },
-    { value: 'night', label: 'Night', description: 'Evening only', icon: HiOutlineMoon, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-[var(--info)]' },
-    { value: 'off', label: 'Off', description: 'No meals', icon: HiOutlineNoSymbol, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-[var(--text-secondary)]' },
+    { value: 'both', label: 'Both', description: 'Day & Night', icon: HiOutlineSparkles, color: 'border-slot-both-border bg-slot-both-bg text-slot-both-text' },
+    { value: 'day', label: 'Day', description: 'Morning only', icon: HiOutlineSun, color: 'border-slot-day-border bg-slot-day-bg text-slot-day-text' },
+    { value: 'night', label: 'Night', description: 'Evening only', icon: HiOutlineMoon, color: 'border-slot-night-border bg-slot-night-bg text-slot-night-text' },
+    { value: 'off', label: 'Off', description: 'No meals', icon: HiOutlineNoSymbol, color: 'border-slot-off-border bg-slot-off-bg text-slot-off-text' },
 ];
 
 const Field = ({ label, icon: Icon, children, className = '' }) => (

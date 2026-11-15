@@ -68,7 +68,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         )}
         aria-label="Main navigation"
       >
-        <div className="flex h-16 shrink-0 items-center justify-between px-6 bg-muted/30 border-b border-border inset-depth">
+        <div className="flex h-16 shrink-0 items-center justify-between px-6 border-b border-border">
             <div className="flex items-center gap-1.5">
               <img
                 src="/assets/icons/resize_logo.png"

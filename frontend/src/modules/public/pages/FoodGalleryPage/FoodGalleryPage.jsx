@@ -65,7 +65,7 @@ const FoodGalleryPage = () => {
                     <div className="max-w-[1280px] mx-auto">
 
                         <p
-                            className="text-[11px] sm:text-xs text-muted-foreground mb-4 sm:mb-5 font-medium uppercase tracking-widest text-center"
+                            className="text-caption font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-5 sm:mb-6 text-center"
                             aria-live="polite"
                             aria-atomic="true"
                         >

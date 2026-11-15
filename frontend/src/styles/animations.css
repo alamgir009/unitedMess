@@ -160,6 +160,30 @@ html.is-scrolling *::after {
   -webkit-backdrop-filter: none !important;
 }
 
+/* ─── Ultra-smooth 60fps Theme Transition Optimizations ──────────── */
+.no-theme-transitions,
+.no-theme-transitions *,
+.no-theme-transitions *::before,
+.no-theme-transitions *::after {
+  transition: none !important;
+  animation-duration: 0.001ms !important;
+}
+
+/* Native GPU-accelerated View Transition for theme toggling (Chromium 111+, Safari 18+) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 180ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 2;
+}
+
 /* ─── Reduced motion ─────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .reveal-hidden { opacity: 1; transform: translate3d(0, 0, 0); }

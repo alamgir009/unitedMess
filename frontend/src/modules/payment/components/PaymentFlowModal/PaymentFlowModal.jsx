@@ -357,7 +357,7 @@ const AdminUpiForm = memo(({
       <Button variant="glass" size="md" fullWidth onClick={onCancel}>
         Cancel
       </Button>
-      <Button variant="premium" size="md" fullWidth isLoading={savingUpiConfig} className="!text-white">
+      <Button variant="primary" size="md" fullWidth isLoading={savingUpiConfig}>
         Save Setup
       </Button>
     </div>
@@ -425,6 +425,37 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
   const [savingUpiConfig, setSavingUpiConfig] = useState(false);
 
   const isStepFlow = payStep <= TOTAL_STEPS && !isAdminUpiEdit;
+
+  const getDraftKey = useCallback(() => {
+    const months = isGasBill ? [activeInvoiceMonth] : selectedMonths;
+    const sorted = [...(months || [])].filter(Boolean).sort().join('_');
+    return `utr_draft_${sorted || 'current'}`;
+  }, [isGasBill, activeInvoiceMonth, selectedMonths]);
+
+  useEffect(() => {
+    if (isOpen) {
+      try {
+        const key = getDraftKey();
+        const saved = sessionStorage.getItem(key);
+        if (saved) {
+          setUtr(saved);
+        }
+      } catch {}
+    }
+  }, [isOpen, getDraftKey]);
+
+  const handleUtrChange = useCallback((val) => {
+    const clean = val.replace(/\D/g, '');
+    setUtr(clean);
+    try {
+      const key = getDraftKey();
+      if (clean) {
+        sessionStorage.setItem(key, clean);
+      } else {
+        sessionStorage.removeItem(key);
+      }
+    } catch {}
+  }, [getDraftKey]);
 
   const resetState = useCallback(() => {
     setPayStep(1);
@@ -555,6 +586,9 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
         type: paymentType,
       });
       if (res?.success) {
+        try {
+          sessionStorage.removeItem(getDraftKey());
+        } catch {}
         toast.success('UTR submitted successfully! Pending verification.');
         setPayStep(SUCCESS_STEP);
         if (typeof onSuccess === 'function') onSuccess();
@@ -564,7 +598,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
     } finally {
       setSubmittingUpi(false);
     }
-  }, [utr, selectedMonths, onSuccess, paymentType, isGasBill, activeInvoiceMonth]);
+  }, [utr, selectedMonths, onSuccess, paymentType, isGasBill, activeInvoiceMonth, getDraftKey]);
 
   const handleUpdateUpiConfig = useCallback(
     async (e) => {
@@ -825,11 +859,10 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
                       </p>
 
                       <Button
-                        variant="premium"
+                        variant="primary"
                         size="md"
                         fullWidth
                         onClick={handleRazorpayProceed}
-                        className="!text-white shadow-none transition-[transform] duration-100 will-change-transform"
                       >
                         Pay ₹{fmt(totalAmountWithFee)}
                       </Button>
@@ -845,12 +878,12 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
                   <div className="space-y-5">
                     <div className="bg-card border border-border rounded-xl p-5 space-y-4 shadow-sm relative overflow-hidden">
                       <div className="flex items-center gap-3 pb-3 border-b border-border">
-                        <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                        <div className="p-2 rounded-xl bg-success-bg border border-success-border text-success-text">
                           <SiGooglepay className="w-5 h-5" />
                         </div>
                         <div>
                           <p className="text-sm font-bold text-foreground">Direct UPI Transfer</p>
-                          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider">100% Free · Zero Gateway Fees</p>
+                          <p className="text-[10px] text-success-text font-bold uppercase tracking-wider">100% Free · Zero Gateway Fees</p>
                         </div>
                       </div>
 
@@ -861,11 +894,11 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
                         </div>
                         <div className="flex justify-between items-center text-xs">
                           <span className="text-muted-foreground font-medium">Gateway Surcharge</span>
-                          <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">₹0.00</span>
+                          <span className="font-bold text-success-text tabular-nums">₹0.00</span>
                         </div>
                         <div className="flex justify-between items-center text-xs">
                           <span className="text-muted-foreground font-medium">GST on Charges</span>
-                          <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">₹0.00</span>
+                          <span className="font-bold text-success-text tabular-nums">₹0.00</span>
                         </div>
 
                         <div className="h-px bg-border my-2" />
@@ -942,7 +975,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
                           <Input
                             type="text"
                             value={utr}
-                            onChange={(e) => setUtr(e.target.value.replace(/\D/g, ''))}
+                            onChange={(e) => handleUtrChange(e.target.value)}
                             placeholder="e.g. 123456789012"
                             variant="glass"
                             size="lg"
@@ -951,13 +984,13 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
                             autoComplete="off"
                           />
                           {utr.length > 0 && UTR_PATTERN.test(utr) && (
-                            <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400">
+                            <div className="flex items-center gap-1.5 text-[11px] text-success-text">
                               <HiOutlineCheckCircle className="w-3.5 h-3.5" />
                               Valid 12-digit UTR
                             </div>
                           )}
                           {utr.length > 0 && !UTR_PATTERN.test(utr) && (
-                            <div className="flex items-center gap-1.5 text-[11px] text-red-500 dark:text-red-400">
+                            <div className="flex items-center gap-1.5 text-[11px] text-danger-text">
                               <HiOutlineShieldCheck className="w-3.5 h-3.5" />
                               UTR must be exactly 12 digits (0-9)
                             </div>
@@ -969,13 +1002,12 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
                             </div>
                           )}
                           <Button
-                            variant="premium"
+                            variant="primary"
                             size="lg"
                             fullWidth
                             onClick={handleSubmitUtr}
                             disabled={submittingUpi || !utr.trim() || !UTR_PATTERN.test(utr)}
                             isLoading={submittingUpi}
-                            className="!text-white"
                           >
                             {!submittingUpi && <HiOutlineCheck className="w-4 h-4 mr-1.5" />}
                             Submit Reference

@@ -69,9 +69,9 @@ const UpiVerificationModal = ({ isOpen, onClose, payment, onVerified }) => {
       footer={
         <div className="flex gap-2.5 w-full">
           <Button
-            variant="outline"
+            variant="destructive"
             size="sm"
-            className="flex-1 btn-decline"
+            className="flex-1"
             onClick={() => handleVerify('failed')}
             disabled={verifying}
             isLoading={verifying}
@@ -82,7 +82,7 @@ const UpiVerificationModal = ({ isOpen, onClose, payment, onVerified }) => {
           <Button
             variant="success"
             size="sm"
-            className="flex-[2] btn-approve"
+            className="flex-[2]"
             onClick={() => handleVerify('completed')}
             disabled={verifying}
             isLoading={verifying}

@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import apiClient from '@/services/api/client/apiClient';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { format } from 'date-fns';
-import { Modal, Button, IconSelect, Badge } from '@/shared/components/ui';
+import { Modal, Button, IconSelect, Badge, Avatar } from '@/shared/components/ui';
 import { getBillingPeriod } from '@shared/utils/billingPeriod';
 import { resolveBillStatus } from '@shared/utils/paymentStatus';
 
@@ -62,20 +62,6 @@ const EMPTY_EXEMPTION = {
   savedOverride: OVERRIDE_NONE,
   reason: '',
   savedReason: '',
-};
-
-const AVATAR_COLORS = [
-  'from-blue-500 to-indigo-600',
-  'from-rose-500 to-pink-600',
-  'from-emerald-500 to-teal-600',
-  'from-amber-500 to-orange-600',
-  'from-violet-500 to-purple-600',
-  'from-cyan-500 to-sky-600',
-];
-
-const getAvatarColor = (name = '') => {
-  const idx = name.charCodeAt(0) % AVATAR_COLORS.length;
-  return AVATAR_COLORS[idx] || AVATAR_COLORS[0];
 };
 
 const inputClasses =
@@ -331,7 +317,6 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
 
   if (!user) return null;
 
-  const avatarColor = getAvatarColor(user.name);
   const joinedDate = user.createdAt ? format(new Date(user.createdAt), 'MMM d, yyyy') : 'N/A';
 
   const statusVariant =
@@ -425,15 +410,12 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
         {/* ── Identity header (replaces the old fixed sidebar) ─────────── */}
         <div className="flex flex-col gap-3">
           <div className="flex items-start gap-3 sm:gap-4">
-            <div
-              className={cn(
-                'flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr text-lg font-bold text-white shadow-md sm:h-12 sm:w-12',
-                avatarColor
-              )}
-              aria-hidden="true"
-            >
-              {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
-            </div>
+            <Avatar
+              src={user.image || user.avatar}
+              name={user.name}
+              size="lg"
+              className="shrink-0 shadow-md"
+            />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-foreground sm:text-base">
                 {user.name}

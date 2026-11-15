@@ -6,7 +6,8 @@ import { cn } from '@/core/utils/helpers/string.helper';
 import useNotifications from '../../hooks/useNotifications';
 import NotificationItem from '../../components/NotificationItem/NotificationItem';
 import NotificationService from '../../services/notification.service';
-import { Spinner, Button } from '@/shared/components/ui';
+import { Spinner, Button, RoleBadge } from '@/shared/components/ui';
+import { HiOutlineBell } from 'react-icons/hi2';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import toast from 'react-hot-toast';
 
@@ -198,52 +199,46 @@ const NotificationsPage = () => {
 
     return (
         <MainLayout>
-            <div className="-mx-4 sm:mx-0 h-full flex flex-col pt-4 sm:pt-6">
-                <div className="shrink-0 px-4 sm:px-6 lg:px-8 space-y-4 mb-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-primary/10 text-primary rounded-xl">
-                                <Bell className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <h1 className="text-h2">Notifications</h1>
-                                <p className="text-label text-muted-foreground">
-                                    {total} total &middot; {unreadCount} unread
-                                </p>
-                            </div>
+            <div className="relative min-h-[80vh] max-w-7xl mx-auto">
+                <div className="relative z-10 space-y-6">
+                    {/* ── Header (Title + Eyebrow Badge + Action Buttons) ── */}
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div className="space-y-1">
+                            <RoleBadge isAdmin={isAdmin} icon={HiOutlineBell} label="Notifications" />
+                            <h2 className="text-h1">
+                                {isAdmin ? 'Notifications & Broadcasts' : 'Notifications Hub'}
+                            </h2>
+                            <p className="text-sm text-muted-foreground">
+                                {isAdmin
+                                    ? `Monitor system alerts, member broadcasts, and announcements. ${total} total · ${unreadCount} unread.`
+                                    : `Track daily meal updates, market logs, and billing receipts. ${total} total · ${unreadCount} unread.`}
+                            </p>
                         </div>
-                        <div className="flex items-center gap-1.5 sm:gap-2">
+
+                        <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+                            {unreadCount > 0 && (
+                                <Button
+                                    variant="primary"
+                                    size="md"
+                                    onClick={markAllAsRead}
+                                    disabled={markAllLoading}
+                                    isLoading={markAllLoading}
+                                >
+                                    <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                                    <span>Mark All Read</span>
+                                </Button>
+                            )}
+
                             <Button
-                                variant="neutral"
-                                size="sm"
+                                variant="secondary"
+                                size="md"
                                 onClick={refresh}
                                 disabled={loading}
                                 aria-label="Refresh notifications"
                             >
-                                <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
+                                <RefreshCw className={cn('w-4 h-4 flex-shrink-0', loading && 'animate-spin')} />
                                 <span className="hidden sm:inline">Refresh</span>
                             </Button>
-                            {unreadCount > 0 && (
-                                <motion.button
-                                    initial={{ opacity: 0, scale: 0.85 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    onClick={markAllAsRead}
-                                    disabled={markAllLoading}
-                                    className={cn(
-                                        'inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg',
-                                        'text-sm font-medium',
-                                        'text-primary bg-primary/10 border border-primary/20',
-                                        'hover:bg-primary/20 disabled:opacity-50 disabled:cursor-not-allowed',
-                                        'transition-all',
-                                    )}
-                                >
-                                    {markAllLoading
-                                        ? <Spinner size="sm" color="current" className="!w-4 !h-4" />
-                                        : <CheckCircle2 className="w-4 h-4" />
-                                    }
-                                    <span className="hidden sm:inline">Mark all read</span>
-                                </motion.button>
-                            )}
                         </div>
                     </div>
 
@@ -251,33 +246,35 @@ const NotificationsPage = () => {
                         <AdminComposeCard onSent={refresh} />
                     )}
 
-                    <div className="overflow-x-auto no-scrollbar">
-                        <div className="flex items-center gap-1 p-1 bg-muted rounded-xl w-fit">
-                            {FILTER_TABS.map((tab) => (
-                                <button
-                                    key={tab}
-                                    onClick={() => setActiveFilter(tab)}
-                                    className={cn(
-                                        'px-4 py-1.5 rounded-lg text-label font-medium transition-all whitespace-nowrap',
-                                        activeFilter === tab
-                                            ? 'bg-card text-foreground shadow-sm'
-                                            : 'text-muted-foreground hover:text-foreground',
-                                    )}
-                                >
-                                    {tab}
-                                    {tab === 'Unread' && unreadCount > 0 && (
-                                        <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-primary text-primary-foreground">
-                                            {unreadCount}
-                                        </span>
-                                    )}
-                                </button>
-                            ))}
+                    {/* ── Filter Tabs ── */}
+                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                        <div className="overflow-x-auto no-scrollbar">
+                            <div className="flex items-center gap-1 p-1 bg-muted/40 border border-border/50 rounded-xl w-fit">
+                                {FILTER_TABS.map((tab) => (
+                                    <button
+                                        key={tab}
+                                        onClick={() => setActiveFilter(tab)}
+                                        className={cn(
+                                            'px-4 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
+                                            activeFilter === tab
+                                                ? 'bg-card text-foreground shadow-sm'
+                                                : 'text-muted-foreground hover:text-foreground',
+                                        )}
+                                    >
+                                        {tab}
+                                        {tab === 'Unread' && unreadCount > 0 && (
+                                            <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-primary text-primary-foreground font-semibold">
+                                                {unreadCount}
+                                            </span>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="flex-1 overflow-y-auto min-h-0 sm:px-6 lg:px-8 pb-4 sm:pb-6">
-                    <div className="bg-card border border-border shadow-sm overflow-hidden rounded-2xl">
+                    {/* ── Notification List ── */}
+                    <div className="bg-card border border-border shadow-sm overflow-hidden rounded-xl">
                         {loading && items.length === 0 ? (
                             <Skeleton />
                         ) : error ? (

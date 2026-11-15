@@ -6,15 +6,15 @@ import { CAT_ICONS, CATEGORIES } from '../FoodConstants/FoodConstants';
 const Hero = memo(({ totalCount, search, onSearchChange, activeCategory, onCategoryChange }) => (
     <header className="relative z-10 pt-6 md:pt-8 pb-8 md:pb-10 px-4 sm:px-6 text-center">
         <div className="max-w-3xl mx-auto flex flex-col items-center gap-4 animate-fade-in-up">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border bg-card/80 backdrop-blur-sm text-xs font-semibold uppercase tracking-widest text-muted-foreground shadow-sm">
-                <TbToolsKitchen2 className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/80 px-3 py-1.5 text-caption font-semibold uppercase tracking-[0.22em] text-muted-foreground sm:px-4 shadow-sm motion-safe:transition-colors motion-safe:duration-150">
+                <TbToolsKitchen2 className="w-3.5 h-3.5 text-primary" />
                 {totalCount} dishes &amp; counting
             </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight">
+            <h1 className="max-w-2xl text-display font-bold leading-[1.06] tracking-tight">
                 <span className="text-foreground">Mess</span>{' '}
                 <span className="text-gradient">Food Gallery</span>
             </h1>
-            <p className="text-sm sm:text-base text-muted-foreground max-w-xl leading-relaxed">
+            <p className="max-w-xl text-body-lg leading-[1.75] text-muted-foreground">
                 Every dish crafted with care — from humble breakfasts to festive spreads.
             </p>
             <div className="w-full max-w-md rounded-xl p-1.5 bg-muted/50 dark:bg-muted/30 border border-border/60 dark:border-border/40 shadow-[var(--inset-inner)] focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background motion-safe:transition-shadow motion-safe:duration-150">

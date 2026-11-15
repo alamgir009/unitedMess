@@ -121,17 +121,25 @@
   --btn-radius-lg: 12px;
   --btn-radius-xl: 14px;
 
-  /* === BUTTON SHADOWS (near-invisible separation — Cloudflare-grade) === */
-  --btn-shadow: 0 1px 3px rgba(0,0,0,0.10), 0 1px 2px rgba(0,0,0,0.06);
-  --btn-shadow-hover: 0 2px 6px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08);
-  --btn-shadow-active: 0 1px 2px rgba(0,0,0,0.08);
-  --btn-shadow-dark: 0 1px 3px rgba(0,0,0,0.40), 0 1px 2px rgba(0,0,0,0.30);
-  --btn-shadow-dark-hover: 0 2px 6px rgba(0,0,0,0.50), 0 1px 3px rgba(0,0,0,0.35);
-  --btn-shadow-dark-active: 0 1px 2px rgba(0,0,0,0.30);
+  /* === BUTTON SHADOWS (fintech tactile elevation) === */
+  --btn-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --btn-shadow-hover: 0 2px 4px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+  --btn-shadow-active: 0 1px 1px 0 rgba(0, 0, 0, 0.05);
+  --btn-shadow-dark: 0 1px 3px 0 rgba(0, 0, 0, 0.35), 0 1px 2px 0 rgba(0, 0, 0, 0.25);
+  --btn-shadow-dark-hover: 0 3px 6px 0 rgba(0, 0, 0, 0.45), 0 1px 3px 0 rgba(0, 0, 0, 0.30);
+  --btn-shadow-dark-active: 0 1px 2px 0 rgba(0, 0, 0, 0.25);
 
-  /* === BUTTON TOP HIGHLIGHT (Cloudflare-style tactile inset) === */
-  --btn-top-highlight-light: inset 0 1px 0 rgba(255,255,255,0.18);
-  --btn-top-highlight-dark: inset 0 1px 0 rgba(255,255,255,0.08);
+  /* Elevated variant — natural physical elevation with multi-stop contact & ambient dispersion */
+  --btn-elevated-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.05), 0 3px 8px -1px rgba(15, 23, 42, 0.08);
+  --btn-elevated-shadow-hover: 0 2px 4px 0 rgba(15, 23, 42, 0.06), 0 6px 16px -2px rgba(15, 23, 42, 0.12);
+  --btn-elevated-shadow-active: 0 1px 2px 0 rgba(15, 23, 42, 0.06);
+  --btn-elevated-shadow-dark: 0 1px 2px 0 rgba(0, 0, 0, 0.40), 0 4px 12px -2px rgba(0, 0, 0, 0.50);
+  --btn-elevated-shadow-dark-hover: 0 2px 4px 0 rgba(0, 0, 0, 0.50), 0 6px 18px -2px rgba(0, 0, 0, 0.65);
+  --btn-elevated-shadow-dark-active: 0 1px 2px 0 rgba(0, 0, 0, 0.35);
+
+  /* === BUTTON TOP HIGHLIGHT (fintech micro-bevel inset) === */
+  --btn-top-highlight-light: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  --btn-top-highlight-dark: inset 0 1px 0 rgba(255, 255, 255, 0.14);
 
   /* === TINT TOKENS (pill badges, subtle accents) === */
   --tint-bg: var(--brand-subtle);

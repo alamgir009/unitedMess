@@ -81,16 +81,16 @@ const groupActivitiesByDate = (activities) => {
    Activity Icon — contextual based on raw meal type
    ───────────────────────────────────────────────────────────── */
 const MEAL_ICON_CONFIG = {
-    day:   { icon: HiOutlineSun,      bg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/15' },
-    night: { icon: HiOutlineMoon,     bg: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/15' },
-    both:  { icon: HiOutlineSparkles, bg: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/15' },
+    day:   { icon: HiOutlineSun,      bg: 'bg-slot-day-bg text-slot-day-text border-slot-day-border' },
+    night: { icon: HiOutlineMoon,     bg: 'bg-slot-night-bg text-slot-night-text border-slot-night-border' },
+    both:  { icon: HiOutlineSparkles, bg: 'bg-slot-both-bg text-slot-both-text border-slot-both-border' },
 };
-const MEAL_ICON_FALLBACK = { icon: HiOutlineSun, bg: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/15' };
+const MEAL_ICON_FALLBACK = { icon: HiOutlineSun, bg: 'bg-slot-day-bg text-slot-day-text border-slot-day-border' };
 
 const ActivityIcon = memo(function ActivityIcon({ type, mealType }) {
     const config = type === 'meal'
         ? (MEAL_ICON_CONFIG[mealType] || MEAL_ICON_FALLBACK)
-        : { icon: FiShoppingBag, bg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/15' };
+        : { icon: FiShoppingBag, bg: 'bg-success-bg text-success-text border-success-border' };
 
     const Icon = config.icon;
 

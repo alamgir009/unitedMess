@@ -1,4 +1,4 @@
-import { memo, Fragment, useEffect, useMemo, useState } from 'react';
+import { memo, Fragment } from 'react';
 import { Menu, Transition } from '@headlessui/react';
 import { Menu as MenuIcon, User } from 'lucide-react';
 import { cn } from '@/core/utils/helpers/string.helper';
@@ -7,43 +7,6 @@ import { logout, toggleAdminHistory } from '@/modules/auth/store/auth.slice';
 import { Link } from 'react-router-dom';
 import { useTheme } from '@/app/providers/ThemeProvider';
 import NotificationBell from '@/modules/notification/components/NotificationBell/NotificationBell';
-
-/* ─────────────────────────────────────────────────────────────
-   Time-of-day navbar tint (IST, UTC + 5:30).
-   Light stops L≥93% + text-foreground/60 icons → AA ≥4.9:1.
-   Dark stops L10–13% + muted-foreground icons  → AA ≥4.9:1.
-   ───────────────────────────────────────────────────────────── */
-const GREET_PERIODS = [
-  {
-    from: 5,
-    to: 12,
-    bgLight: 'linear-gradient(105deg, hsl(40 92% 95%) 0%, hsl(32 85% 93%) 100%)',
-    bgDark: 'linear-gradient(105deg, hsl(35 40% 13%) 0%, hsl(28 35% 10%) 100%)',
-  },
-  {
-    from: 12,
-    to: 17,
-    bgLight: 'linear-gradient(105deg, hsl(205 80% 95%) 0%, hsl(215 72% 93%) 100%)',
-    bgDark: 'linear-gradient(105deg, hsl(215 42% 13%) 0%, hsl(222 38% 10%) 100%)',
-  },
-  {
-    from: 17,
-    to: 21,
-    bgLight: 'linear-gradient(105deg, hsl(290 55% 95%) 0%, hsl(320 48% 93%) 100%)',
-    bgDark: 'linear-gradient(105deg, hsl(285 40% 13%) 0%, hsl(315 34% 10%) 100%)',
-  },
-];
-
-const NIGHT_PERIOD = {
-  bgLight: 'linear-gradient(105deg, hsl(235 50% 95%) 0%, hsl(248 45% 93%) 100%)',
-  bgDark: 'linear-gradient(105deg, hsl(240 45% 13%) 0%, hsl(255 40% 10%) 100%)',
-};
-
-const getISTHour = () =>
-  new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })).getHours();
-
-const getPeriod = (h) =>
-  GREET_PERIODS.find((p) => h >= p.from && h < p.to) ?? NIGHT_PERIOD;
 
 const SunIcon = () => (
   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -66,19 +29,9 @@ const Header = memo(({ onMenuClick }) => {
   const dispatch = useDispatch();
   const { toggleTheme, isDark } = useTheme();
 
-  /* Recompute period every minute so the tint flips at 5/12/17/21h */
-  const [istHour, setIstHour] = useState(getISTHour);
-  useEffect(() => {
-    const id = setInterval(() => setIstHour(getISTHour()), 60_000);
-    return () => clearInterval(id);
-  }, []);
-
-  const period = useMemo(() => getPeriod(istHour), [istHour]);
-
   return (
     <header
-      className="greet-bg sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-3 border-b border-border px-4 shadow-sm sm:px-6 lg:px-8"
-      style={{ '--greet-bg-dark': period.bgDark, backgroundImage: period.bgLight }}
+      className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-3 border-b border-border bg-[var(--sidebar-bg)] px-4 sm:px-6 lg:px-8 transition-colors duration-200"
     >
       {/* Mobile sidebar trigger */}
       <button
@@ -122,7 +75,7 @@ const Header = memo(({ onMenuClick }) => {
           <button
             onClick={toggleTheme}
             aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-            className="inline-flex items-center justify-center w-11 h-11 rounded-xl text-foreground/60 hover:text-foreground hover:bg-muted/60 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="inline-flex items-center justify-center w-11 h-11 rounded-xl text-foreground/60 hover:text-foreground hover:bg-muted/60 active:scale-95 transition-all duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {isDark ? <SunIcon /> : <MoonIcon />}
           </button>

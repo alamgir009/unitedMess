@@ -9,6 +9,8 @@ import marketService from '@/modules/market/services/market.service';
 import MembersTable from '../../../components/MembersTable/MembersTable';
 import SendNotificationModal from '@/modules/notification/components/SendNotificationModal/SendNotificationModal';
 import Button from '@/shared/components/ui/Button/Button';
+import { RoleBadge } from '@/shared/components/ui';
+import { HiOutlineCommandLine } from 'react-icons/hi2';
 import { buildMealRateFormula } from '@/core/utils/helpers/billing.helper';
 import {
     resolveBillStatus,
@@ -38,6 +40,7 @@ import {
     ChevronDown,
     ChevronRight,
     ArrowRight,
+    CreditCard,
 } from 'lucide-react';
 import { FiAlertCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
@@ -231,6 +234,15 @@ const KpiCard = memo(function KpiCard({ label, value, sub, icon: Icon, tone }) {
 });
 KpiCard.displayName = 'KpiCard';
 
+const isUserDuty = (dutyUser, uid) => {
+    if (!dutyUser || !uid) return false;
+    if (typeof dutyUser === 'object') {
+        const dutyId = dutyUser._id || dutyUser.id;
+        return !!dutyId && String(dutyId) === String(uid);
+    }
+    return String(dutyUser) === String(uid);
+};
+
 /* ═════════════════════════════════════════════════════════════
    Total Due — inline rebuild of PayableWidget logic (same rules,
    cloud-console chrome). Refund / outstanding / cleared / error.
@@ -414,32 +426,41 @@ const TotalDueCard = memo(function TotalDueCard({
             </div>
 
             {isReady && (
-                <div className="mt-auto border-t border-border/40 bg-muted/25">
+                <div className="mt-auto p-3.5 sm:p-4 border-t border-border/40 bg-muted/15">
                     {hasPendingRefund && (
-                        <button
+                        <Button
                             type="button"
+                            variant="secondary"
+                            size="md"
+                            fullWidth
                             onClick={onPay}
-                            className={cn('w-full px-4 py-3 flex items-center justify-between text-xs font-bold text-refund-text hover:bg-refund-bg transition-colors duration-150', FOCUS)}
+                            className="font-semibold text-refund-text border-refund-border/60 hover:bg-refund-bg/70 shadow-xs flex items-center justify-between"
                         >
-                            View refund details
-                            <ArrowRight size={14} aria-hidden="true" />
-                        </button>
+                            <span>View refund details</span>
+                            <ArrowRight size={15} aria-hidden="true" />
+                        </Button>
                     )}
                     {allCleared && (
-                        <div className="px-4 py-3 flex items-center gap-1.5 text-xs font-bold text-success-text">
-                            <CheckCircle2 size={14} aria-hidden="true" />
-                            All bills cleared for this period
+                        <div className="h-10 px-3.5 rounded-btn-md border border-success-border/60 bg-success-bg/40 flex items-center justify-center gap-2 text-xs font-semibold text-success-text">
+                            <CheckCircle2 size={15} aria-hidden="true" />
+                            <span>All bills cleared for this period</span>
                         </div>
                     )}
                     {!hasPendingRefund && hasOutstanding && (
-                        <button
+                        <Button
                             type="button"
+                            variant="primary"
+                            size="md"
+                            fullWidth
                             onClick={onPay}
-                            className={cn('w-full px-4 py-3 flex items-center justify-between text-xs font-bold', TBRAND, 'hover:bg-muted/50 transition-colors duration-150', FOCUS)}
+                            className="font-semibold shadow-sm hover:shadow flex items-center justify-between"
                         >
-                            Pay now
-                            <ArrowRight size={14} aria-hidden="true" />
-                        </button>
+                            <span className="flex items-center gap-2">
+                                <CreditCard size={15} aria-hidden="true" />
+                                <span>Pay now</span>
+                            </span>
+                            <ArrowRight size={15} aria-hidden="true" />
+                        </Button>
                     )}
                 </div>
             )}
@@ -651,6 +672,8 @@ const AdminDashboard = memo(function AdminDashboard() {
         };
     }, [year, month]);
 
+    const currentUserId = user?._id || user?.id || null;
+
     const dayList = useMemo(() => {
         if (!Array.isArray(schedule)) return [];
         return schedule.map((day) => ({
@@ -659,6 +682,11 @@ const AdminDashboard = memo(function AdminDashboard() {
             user: day.user ?? null,
         }));
     }, [schedule]);
+
+    const myDutyDaysCount = useMemo(() => {
+        if (!currentUserId || !Array.isArray(dayList)) return 0;
+        return dayList.reduce((acc, d) => (isUserDuty(d.user, currentUserId) ? acc + 1 : acc), 0);
+    }, [dayList, currentUserId]);
 
     const todayStr = useMemo(() => new Date().toDateString(), []);
     const todayTime = useMemo(() => new Date(todayStr).getTime(), [todayStr]);
@@ -845,41 +873,40 @@ const AdminDashboard = memo(function AdminDashboard() {
     return (
         <div className="grid grid-cols-1 gap-5 min-[1100px]:grid-cols-12">
 
-            {/* ── Header ──────────────────────────────────────────── */}
-            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 min-[1100px]:col-span-12">
-                <div className="flex items-center gap-3 min-w-0">
-                    <Chip icon={Command} tone="blue" size={32} />
-                    <div className="min-w-0">
-                        <h2 className="text-h3 text-foreground tracking-tight">Command Center</h2>
-                        <p className={cn('text-xs mt-0.5 truncate', TSUB)}>
-                            Global admin overview and system controls
-                        </p>
-                    </div>
+            {/* ── Header (Title + Eyebrow RoleBadge + Actions) ──────────────── */}
+            <header className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 min-[1100px]:col-span-12">
+                <div className="space-y-1 min-w-0">
+                    <RoleBadge isAdmin={true} icon={HiOutlineCommandLine} label="Command Center" />
+                    <h2 className="text-h1">
+                        Command Center
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                        Global mess overview, daily meal operations, and system administration.
+                    </p>
                 </div>
 
                 <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
                     <Button
                         variant="primary"
-                        size="sm"
+                        size="md"
                         onClick={() => setShowNotificationModal(true)}
                     >
-                        <Send size={13} />
-                        Send Notification
+                        <Send className="w-4 h-4 flex-shrink-0" />
+                        <span>Send Broadcast</span>
                     </Button>
 
                     <Button
-                        variant="outline"
-                        size="sm"
+                        variant="secondary"
+                        size="md"
                         onClick={handleRefresh}
                         disabled={isBusy}
                         aria-busy={isBusy}
                     >
                         <RefreshCw
-                            size={13}
-                            className={isBusy ? 'animate-spin' : ''}
+                            className={cn('w-4 h-4 flex-shrink-0', isBusy && 'animate-spin')}
                             aria-hidden="true"
                         />
-                        Refresh
+                        <span>Refresh</span>
                     </Button>
                 </div>
             </header>
@@ -1183,7 +1210,7 @@ const AdminDashboard = memo(function AdminDashboard() {
                                     <Button
                                         fullWidth
                                         variant="primary"
-                                        size="sm"
+                                        size="md"
                                         onClick={handleVote}
                                         disabled={!canSubmit}
                                         isLoading={isVoting}
@@ -1209,21 +1236,28 @@ const AdminDashboard = memo(function AdminDashboard() {
                             sub={monthLabel}
                             right={
                                 dayList.length > 0 ? (
-                                    <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider tabular-nums', PILL_SUCCESS)}>
-                                        {dayList.length} days
-                                    </span>
+                                    <div className="flex items-center gap-1.5">
+                                        {myDutyDaysCount > 0 && (
+                                            <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 tabular-nums">
+                                                {myDutyDaysCount} {myDutyDaysCount === 1 ? 'duty' : 'duties'}
+                                            </span>
+                                        )}
+                                        <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider tabular-nums', PILL_SUCCESS)}>
+                                            {dayList.length} days
+                                        </span>
+                                    </div>
                                 ) : null
                             }
                         />
 
                         {showSchedSkeleton && (
                             <div className="mt-3 animate-pulse" aria-hidden="true">
-                                <div className="grid grid-cols-4 gap-1.5">
-                                    {[0, 1, 2, 3, 4, 5, 6, 7].map((n) => (
-                                        <div key={n} className="h-14 rounded-lg bg-muted/40 border border-border/40" />
+                                <div className="grid grid-cols-5 min-[380px]:grid-cols-6 min-[460px]:grid-cols-7 gap-1.5 sm:gap-2 rounded-xl border border-border/50 bg-muted/30 dark:bg-muted/20 p-2 sm:p-2.5">
+                                    {[0, 1, 2, 3, 4, 5, 6].map((n) => (
+                                        <div key={n} className="w-full aspect-square rounded-lg bg-card/80 border border-border/40 shadow-xs" />
                                     ))}
                                 </div>
-                                <div className="mt-3 h-[60px] rounded-lg bg-muted/30 border border-border/40" />
+                                <div className="mt-3 h-[60px] rounded-xl bg-muted/30 border border-border/40" />
                             </div>
                         )}
                         <span className="sr-only" role="status">
@@ -1249,7 +1283,7 @@ const AdminDashboard = memo(function AdminDashboard() {
 
                         {showSchedEmpty && (
                             <div
-                                className="mt-3 rounded-lg border border-border/50 bg-muted/25 p-4 flex flex-col items-center justify-center text-center gap-2"
+                                className="mt-3 rounded-xl border border-border/50 bg-muted/25 p-4 flex flex-col items-center justify-center text-center gap-2"
                                 style={{ minHeight: 150 }}
                             >
                                 <CalendarDays size={18} className={TBRAND} aria-hidden="true" />
@@ -1265,51 +1299,92 @@ const AdminDashboard = memo(function AdminDashboard() {
                         {!showSchedSkeleton && !showSchedError && !showSchedEmpty && (
                             <>
                                 <div
-                                    className="mt-3 rounded-lg border border-border/40 bg-muted/25 p-2 grid grid-cols-4 min-[480px]:grid-cols-7 gap-1"
+                                    className="mt-3 rounded-xl border border-border/50 bg-muted/30 dark:bg-muted/20 p-2 sm:p-2.5 shadow-[inset_0_1px_3px_rgba(0,0,0,0.05)] dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.4),0_1px_0_rgba(255,255,255,0.03)] grid grid-cols-5 min-[380px]:grid-cols-6 min-[460px]:grid-cols-7 gap-1.5 sm:gap-2"
                                     role="group"
                                     aria-label={`Duty days in ${monthLabel}`}
                                 >
                                     {dayList.map((day) => {
                                         const isSelected = day.key === activeDayKey;
                                         const isToday = day.date.toDateString() === todayStr;
+                                        const isMyDay = isUserDuty(day.user, currentUserId);
                                         return (
                                             <button
                                                 key={day.key}
                                                 type="button"
                                                 onClick={() => setSelectedDayKey(day.key)}
                                                 aria-pressed={isSelected}
-                                                aria-label={format(day.date, 'EEEE, MMMM d')}
+                                                aria-label={`${format(day.date, 'EEEE, MMMM d')}${isMyDay ? ' (Your market duty)' : ''}`}
                                                 className={cn(
-                                                    'min-h-[50px] px-1 py-1 rounded-md border text-center transition-colors duration-150 motion-reduce:transition-none',
+                                                    'relative overflow-hidden w-full aspect-square p-1 sm:p-1.5 rounded-lg border text-center select-none flex flex-col items-center justify-between',
+                                                    'transition-all duration-200 motion-reduce:transition-none',
                                                     FOCUS,
-                                                    isSelected
-                                                        ? 'bg-primary/10 border-primary/60'
-                                                        : 'bg-card border-border/50 hover:bg-muted/50'
+                                                    isMyDay
+                                                        ? isSelected
+                                                            ? 'bg-gradient-to-b from-emerald-500/20 via-emerald-500/12 to-emerald-500/5 dark:from-emerald-500/30 dark:via-emerald-500/18 dark:to-emerald-500/8 border-emerald-500/80 dark:border-emerald-400 border-b-emerald-600/90 dark:border-b-emerald-500/60 ring-2 ring-emerald-500/35 dark:ring-emerald-400/40 shadow-[0_4px_12px_-2px_rgba(16,185,129,0.35),0_1px_3px_rgba(16,185,129,0.2),inset_0_1px_0_rgba(255,255,255,0.9)] dark:shadow-[0_4px_16px_-2px_rgba(16,185,129,0.45),0_2px_4px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.25)] -translate-y-0.5'
+                                                            : 'bg-gradient-to-b from-emerald-50/90 via-emerald-50/40 to-white/90 dark:from-emerald-500/15 dark:via-emerald-500/8 dark:to-transparent border-emerald-500/50 dark:border-emerald-500/40 border-b-emerald-600/50 dark:border-b-emerald-600/30 shadow-[0_1px_3px_rgba(16,185,129,0.15),0_1px_1px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.95)] dark:shadow-[0_2px_5px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(52,211,153,0.18)] hover:-translate-y-0.5 hover:border-emerald-500 dark:hover:border-emerald-400/70 hover:shadow-[0_4px_10px_-2px_rgba(16,185,129,0.25),inset_0_1px_0_rgba(255,255,255,1)] dark:hover:shadow-[0_4px_12px_rgba(16,185,129,0.3),inset_0_1px_0_rgba(52,211,153,0.3)]'
+                                                        : isSelected
+                                                            ? 'bg-gradient-to-b from-primary/15 via-primary/8 to-transparent dark:from-primary/25 dark:via-primary/12 dark:to-transparent border-primary/70 dark:border-primary/80 border-b-primary/90 dark:border-b-primary/60 ring-2 ring-primary/25 dark:ring-primary/35 shadow-[0_4px_12px_-2px_rgba(37,99,235,0.28),0_1px_3px_rgba(37,99,235,0.12),inset_0_1px_0_rgba(255,255,255,0.95)] dark:shadow-[0_4px_16px_-2px_rgba(59,130,246,0.45),0_2px_5px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.22)] -translate-y-0.5'
+                                                            : isToday
+                                                                ? 'bg-gradient-to-b from-white via-card to-card/90 dark:from-white/[0.07] dark:via-white/[0.03] dark:to-transparent border-primary/50 dark:border-primary/40 border-b-primary/60 dark:border-b-primary/50 ring-1 ring-primary/25 dark:ring-primary/30 shadow-[0_1px_3px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.95)] dark:shadow-[0_2px_5px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.07)] hover:-translate-y-0.5 hover:border-primary hover:shadow-[0_4px_10px_-2px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,1)]'
+                                                                : 'bg-gradient-to-b from-white via-card to-card/90 dark:from-white/[0.07] dark:via-white/[0.03] dark:to-transparent border-border/70 dark:border-white/[0.08] border-b-border dark:border-b-black/40 dark:border-t-white/[0.12] shadow-[0_1px_2px_rgba(0,0,0,0.05),0_1px_1px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.95)] dark:shadow-[0_2px_5px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.07)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_4px_10px_-2px_rgba(0,0,0,0.08),0_2px_4px_-1px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,1)] dark:hover:from-white/[0.09] dark:hover:to-white/[0.04] dark:hover:border-white/[0.18] dark:hover:shadow-[0_4px_12px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.14)]'
                                                 )}
                                             >
+                                                {/* Specular top light rim */}
+                                                <span
+                                                    aria-hidden="true"
+                                                    className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/80 dark:via-white/20 to-transparent"
+                                                />
+
                                                 <span
                                                     className={cn(
-                                                        'block text-[9px] uppercase tracking-wider leading-none',
-                                                        isSelected ? (TBRAND) : isToday ? 'text-success-text' : TSUB
+                                                        'block text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider leading-none transition-colors duration-150 mt-0.5',
+                                                        isMyDay
+                                                            ? isSelected
+                                                                ? 'text-emerald-700 dark:text-emerald-300 font-bold'
+                                                                : 'text-emerald-600 dark:text-emerald-400 font-semibold'
+                                                            : isSelected
+                                                                ? TBRAND
+                                                                : isToday
+                                                                    ? 'text-primary dark:text-primary font-bold'
+                                                                    : TSUB
                                                     )}
                                                 >
                                                     {format(day.date, 'EEE')}
                                                 </span>
                                                 <span
                                                     className={cn(
-                                                        'block text-xs font-bold tabular-nums leading-none mt-1',
-                                                        isSelected ? (TBRAND) : 'text-foreground'
+                                                        'block text-sm min-[380px]:text-base sm:text-base font-bold tabular-nums leading-none my-auto transition-colors duration-150',
+                                                        isMyDay
+                                                            ? isSelected
+                                                                ? 'text-emerald-900 dark:text-emerald-100 font-extrabold'
+                                                                : 'text-emerald-800 dark:text-emerald-200'
+                                                            : isSelected
+                                                                ? TBRAND
+                                                                : isToday
+                                                                    ? 'text-foreground font-extrabold'
+                                                                    : 'text-foreground'
                                                     )}
                                                 >
                                                     {format(day.date, 'd')}
                                                 </span>
-                                                <span
-                                                    aria-hidden="true"
-                                                    className={cn(
-                                                        'block w-1 h-1 rounded-full mx-auto mt-1',
-                                                        isToday ? 'bg-success-text' : 'bg-transparent'
+                                                <div className="flex items-center justify-center h-1.5 w-full mb-0.5 shrink-0">
+                                                    {isSelected ? (
+                                                        <span
+                                                            className={cn(
+                                                                'block h-1 w-3 sm:w-3.5 rounded-full transition-all duration-150',
+                                                                isMyDay
+                                                                    ? 'bg-emerald-600 dark:bg-emerald-400'
+                                                                    : 'bg-primary'
+                                                            )}
+                                                            aria-hidden="true"
+                                                        />
+                                                    ) : (
+                                                        <span
+                                                            className="block h-1 w-3 sm:w-3.5 rounded-full bg-transparent"
+                                                            aria-hidden="true"
+                                                        />
                                                     )}
-                                                />
+                                                </div>
                                             </button>
                                         );
                                     })}

@@ -154,8 +154,8 @@ const BillsOverview = React.memo(({
                     </span>
                 ) : hasRefundDue ? (
                     <div className="text-right" aria-live="polite">
-                        <p className="text-overline text-violet-500 dark:text-violet-400">Refund Due</p>
-                        <p className="text-h3 font-bold tabular-nums text-violet-600 dark:text-violet-400">₹{fmtINR(totalRefund)}</p>
+                        <p className="text-overline text-refund-text">Refund Due</p>
+                        <p className="text-h3 font-bold tabular-nums text-refund-text">₹{fmtINR(totalRefund)}</p>
                     </div>
                 ) : (
                     <div className="text-right" aria-live="polite">
@@ -181,12 +181,12 @@ const BillsOverview = React.memo(({
                     <div className="flex items-center gap-2 sm:gap-3 min-w-0 justify-end">
                         <span className="text-[clamp(0.8125rem,0.5vw+0.6rem,1rem)] font-bold tabular-nums text-foreground whitespace-nowrap">{formatSignedRupees(messAmount)}</span>
                         {messRefundDue ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-violet-500/15 text-violet-600 dark:text-violet-400">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-refund-bg border border-refund-border text-refund-text">
                                 <HiOutlineArrowPath className="w-3 h-3" />
                                 Refund
                             </span>
                         ) : messRefunded ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-violet-500/15 text-violet-600 dark:text-violet-400">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-refund-bg border border-refund-border text-refund-text">
                                 Refunded
                             </span>
                         ) : messPaid ? (
@@ -224,12 +224,12 @@ const BillsOverview = React.memo(({
                         <div className="flex items-center gap-2 sm:gap-3 min-w-0 justify-end">
                             <span className="text-[clamp(0.8125rem,0.5vw+0.6rem,1rem)] font-bold tabular-nums text-foreground whitespace-nowrap">{formatSignedRupees(gasAmount)}</span>
                             {gasRefundDue ? (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-violet-500/15 text-violet-600 dark:text-violet-400">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-refund-bg border border-refund-border text-refund-text">
                                     <HiOutlineArrowPath className="w-3 h-3" />
                                     Refund
                                 </span>
                             ) : gasRefunded ? (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-violet-500/15 text-violet-600 dark:text-violet-400">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-refund-bg border border-refund-border text-refund-text">
                                     Refunded
                                 </span>
                             ) : gasPaid ? (
@@ -739,7 +739,7 @@ const PaymentPage = () => {
                     <AnimatePresence>
                         {(isError || message) && (
                             <div className="flex items-start gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive">
-                                <span className="w-2 h-2 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
+                                <span className="w-2 h-2 rounded-full bg-destructive mt-1.5 flex-shrink-0" />
                                 <p className="flex-1 text-sm font-medium">
                                     {message || 'Something went wrong. Please try again.'}
                                 </p>

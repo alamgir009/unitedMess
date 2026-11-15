@@ -1,77 +1,23 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Search,
-  CheckCircle2,
-  XCircle,
-  Clock,
   Users,
   SlidersHorizontal,
-  ShieldCheck,
-  RotateCcw,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
   Shield,
 } from 'lucide-react';
-import { BiBlock } from 'react-icons/bi';
 import MemberRowActions from './MemberRowActions';
 import UserEditModal from './UserEditModal';
 import { cn } from '@/core/utils/helpers/string.helper';
-import { resolveBillStatus, BILL_STATUS_LABEL } from '@shared/utils/paymentStatus';
-
-const AVATAR_GRADIENTS = [
-  'from-blue-500 to-indigo-600',
-  'from-rose-500 to-pink-600',
-  'from-emerald-500 to-teal-600',
-  'from-amber-500 to-orange-600',
-  'from-violet-500 to-purple-600',
-  'from-cyan-500 to-sky-600',
-];
-
-const avatarGradient = (name = '') =>
-  AVATAR_GRADIENTS[(name.charCodeAt(0) || 0) % AVATAR_GRADIENTS.length];
+import { StatusBadge, Avatar } from '@/shared/components/ui';
+import { resolveBillStatus } from '@shared/utils/paymentStatus';
 
 const getDisplayStatus = ({ userStatus, isActive }) => {
   if (userStatus === 'pending') return 'pending';
   if (userStatus === 'denied')  return 'denied';
   return isActive ? 'active' : 'inactive';
-};
-
-const STATUS_CONFIG = {
-  active:   { icon: ShieldCheck,  cls: 'bg-success-bg text-success border-success-border' },
-  inactive: { icon: BiBlock,      cls: 'bg-neutral-bg text-neutral border-border' },
-  pending:  { icon: Clock,        cls: 'bg-warning-bg text-warning border-warning-border' },
-  denied:   { icon: XCircle,      cls: 'bg-danger-bg text-danger border-danger-border' },
-};
-
-const StatusBadge = ({ status }) => {
-  const { icon: Icon, cls } = STATUS_CONFIG[status] ?? STATUS_CONFIG.inactive;
-  return (
-    <span className={cn('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-bold uppercase tracking-[0.06em] border select-none', cls)}>
-      <Icon size={12} strokeWidth={2.5} className="shrink-0" />
-      <span className="leading-none">{status}</span>
-    </span>
-  );
-};
-
-const resolvePayment = (raw) => {
-  const s = String(raw || '').toLowerCase();
-  if (s === 'paid' || s === 'success')  return { label: 'Paid',     icon: CheckCircle2, cls: 'bg-success-bg text-success border-success-border' };
-  if (s === 'pending')                  return { label: 'Pending',  icon: Clock,        cls: 'bg-warning-bg text-warning border-warning-border' };
-  if (s === 'refunded')                 return { label: BILL_STATUS_LABEL.refunded,  icon: RotateCcw, cls: 'bg-info-bg text-info border-info-border' };
-  // Credit exists but not yet returned — must never fall through to "Unpaid".
-  if (s === 'refund')                   return { label: BILL_STATUS_LABEL.refund,    icon: RotateCcw, cls: 'bg-info-bg text-info border-info-border' };
-  return                                       { label: 'Unpaid',   icon: XCircle,      cls: 'bg-danger-bg text-danger border-danger-border' };
-};
-
-const PaymentBadge = ({ status }) => {
-  const { label, icon: Icon, cls } = resolvePayment(status);
-  return (
-    <span className={cn('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-bold uppercase tracking-[0.06em] border select-none', cls)}>
-      <Icon size={12} strokeWidth={2.5} className="shrink-0" />
-      <span className="leading-none">{label}</span>
-    </span>
-  );
 };
 
 const ExemptBadge = React.memo(({ isExempt, reason }) => {
@@ -114,7 +60,7 @@ const SkeletonRow = () => (
   <tr className="animate-pulse">
     <td className="px-5 py-4">
       <div className="flex items-center gap-3">
-        <div className="h-9 w-9 rounded-full skeleton" />
+        <div className="h-8 w-8 rounded-full skeleton" />
         <div className="space-y-2">
           <div className="h-3 w-28 skeleton rounded" />
           <div className="h-2.5 w-20 skeleton rounded" />
@@ -301,9 +247,12 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
                   <tr key={user._id} className="group transition-colors hover:bg-muted/40">
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
-                        <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-full', 'bg-gradient-to-br text-sm font-bold text-white shadow-sm', avatarGradient(user?.name))}>
-                          {user?.name?.charAt(0)?.toUpperCase() ?? 'U'}
-                        </div>
+                        <Avatar
+                          src={user?.image || user?.avatar}
+                          name={user?.name}
+                          size="sm"
+                          className="shrink-0 shadow-sm"
+                        />
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold leading-snug text-foreground">
                             {user?.name}
@@ -332,14 +281,14 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
                     <td className="px-5 py-3.5">
                       <div className="flex flex-col items-start gap-1.5">
                         <div className="flex items-center gap-2">
-                          <PaymentBadge status={resolveBillStatus({ status: user.paymentStatus ?? user.payment, payableAmount: user.paybleAmountforMeal })} />
+                          <StatusBadge status={resolveBillStatus({ status: user.paymentStatus ?? user.payment, payableAmount: user.paybleAmountforMeal })} />
                             <ExemptBadge isExempt={user.isExempt} reason={user.exemptReason} />
                         </div>
                       </div>
                     </td>
 
                     <td className="px-5 py-3.5">
-                          <PaymentBadge status={resolveBillStatus({ status: user.gasBillStatus ?? user.gasBill, payableAmount: user.gasBillCharge })} />
+                          <StatusBadge status={resolveBillStatus({ status: user.gasBillStatus ?? user.gasBill, payableAmount: user.gasBillCharge })} />
                     </td>
 
                     <td className="px-5 py-3.5 text-right">

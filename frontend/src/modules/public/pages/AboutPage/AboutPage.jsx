@@ -92,11 +92,29 @@ const ValueCard = memo(({ Icon, title, desc, iconColor, delay }) => (
 ));
 ValueCard.displayName = 'ValueCard';
 
-const SectionHeader = memo(({ label, title, description }) => (
-    <div className="flex flex-col items-center gap-1 max-w-2xl mx-auto mb-6 md:mb-8">
-        <span className="text-caption font-semibold uppercase tracking-widest text-primary">{label}</span>
-        <h2 className="text-h1 font-bold tracking-tight text-foreground">{title}</h2>
-        {description && <p className="text-body text-muted-foreground max-w-xl">{description}</p>}
+const Pill = memo(({ children, className = '' }) => (
+    <span className={`inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/80 px-3 py-1.5 text-caption font-semibold uppercase tracking-[0.22em] text-muted-foreground sm:px-4 shadow-sm motion-safe:transition-colors motion-safe:duration-150 ${className}`}>
+        {children}
+    </span>
+));
+Pill.displayName = 'Pill';
+
+const SectionHeader = memo(({ label, title, description, icon: Icon }) => (
+    <div className="mx-auto max-w-2xl text-center mb-6 sm:mb-10 flex flex-col items-center">
+        {label && (
+            <Pill>
+                {Icon && <Icon className="w-3.5 h-3.5 text-primary" />}
+                {label}
+            </Pill>
+        )}
+        <h2 className="mt-3 text-h1 font-bold tracking-tight text-foreground">
+            {title}
+        </h2>
+        {description && (
+            <p className="mt-2 text-body leading-7 text-muted-foreground sm:leading-8 max-w-xl">
+                {description}
+            </p>
+        )}
     </div>
 ));
 SectionHeader.displayName = 'SectionHeader';
@@ -164,18 +182,20 @@ const AboutPage = () => {
             {/* ── HERO ── */}
             <section className="relative z-10 w-full max-w-[1280px] pt-6 md:pt-8 pb-8 md:pb-10 px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
                 <div className="max-w-3xl mx-auto flex flex-col items-center gap-4">
-                    <Reveal className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/80 px-3 py-1.5 text-caption font-semibold uppercase tracking-[0.22em] text-muted-foreground sm:px-4 shadow-sm shrink-0">
-                        <HiOutlineSparkles className="w-3.5 h-3.5 text-primary" />
-                        Our Story
+                    <Reveal>
+                        <Pill>
+                            <HiOutlineSparkles className="w-3.5 h-3.5 text-primary" />
+                            Our Story
+                        </Pill>
                     </Reveal>
                     <Reveal delay={0.06}>
-                        <h1 className="text-display font-bold tracking-tight">
+                        <h1 className="max-w-2xl text-display font-bold leading-[1.06] tracking-tight">
                             <span className="text-foreground">Built for</span>{' '}
                             <span className="text-gradient">Real People</span>
                         </h1>
                     </Reveal>
                     <Reveal delay={0.12}>
-                        <p className="text-body text-muted-foreground max-w-2xl leading-relaxed">
+                        <p className="max-w-xl text-body-lg leading-[1.75] text-muted-foreground">
                             UnitedMess was born in a university dorm room out of frustration with spreadsheets and WhatsApp chaos.
                             Today we serve thousands of communities across India with a platform built on empathy, craft, and code.
                         </p>
@@ -196,15 +216,15 @@ const AboutPage = () => {
                 <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-6 md:gap-8">
 
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-                        <div className="md:col-span-5 flex flex-col gap-2">
-                            <span className="text-caption font-semibold uppercase tracking-widest text-primary">
+                        <div className="md:col-span-5 flex flex-col items-start">
+                            <Pill>
                                 Our Mission
-                            </span>
-                            <h2 className="text-h1 font-bold tracking-tight text-foreground">
+                            </Pill>
+                            <h2 className="mt-3 text-h1 font-bold tracking-tight text-foreground">
                                 Simplifying lives,<br className="hidden md:block" /> one mess at a time.
                             </h2>
                         </div>
-                        <div className="md:col-span-7 flex flex-col gap-4 text-body text-muted-foreground leading-relaxed">
+                        <div className="md:col-span-7 flex flex-col gap-4 text-body leading-7 text-muted-foreground sm:leading-8">
                             <p>
                                 Managing a shared living space is inherently complex — tracking expenses, planning meals, collecting dues,
                                 and keeping everyone in sync. We believe technology should make this invisible, not add to the friction.
@@ -217,13 +237,13 @@ const AboutPage = () => {
                     </div>
 
                     <div className="flex flex-col gap-6 md:gap-8 border-t border-border/60 pt-6 md:pt-8">
-                        <div className="text-center flex flex-col items-center gap-1">
-                            <span className="text-caption font-semibold uppercase tracking-widest text-muted-foreground">
+                        <div className="mx-auto max-w-2xl text-center flex flex-col items-center">
+                            <Pill>
                                 Core Foundations
-                            </span>
-                            <h3 className="text-h2 font-bold tracking-tight text-foreground">
+                            </Pill>
+                            <h2 className="mt-3 text-h1 font-bold tracking-tight text-foreground">
                                 Principles that guide us
-                            </h3>
+                            </h2>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {values.map((v) => <ValueCard key={v.title} {...v} />)}
@@ -282,7 +302,7 @@ const AboutPage = () => {
                             &quot;UnitedMess transformed how we manage our dorm. The glass UI is stunning — I show it to friends just to show off.&quot;
                         </blockquote>
                         <div className="inline-flex items-center justify-center gap-3">
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold bg-[var(--gradient-primary)] shadow-sm shrink-0">
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold bg-gradient-primary shadow-sm shrink-0">
                                 A
                             </div>
                             <div className="text-left leading-tight">
@@ -298,25 +318,28 @@ const AboutPage = () => {
             <section className="relative z-10 w-full max-w-[1280px] py-8 md:py-14 px-4 sm:px-6 lg:px-8 border-t border-border/40 content-visibility-auto">
                 <div className="max-w-3xl mx-auto text-center flex flex-col items-center">
                     <Reveal className="w-full">
-                        <div className="relative card-base p-5 md:p-8 overflow-hidden flex flex-col items-center">
+                        <div className="relative card-base p-6 md:p-10 overflow-hidden flex flex-col items-center">
                             <div className="absolute top-0 inset-x-0 h-1/2 bg-foreground/5 blur-2xl rounded-t-3xl pointer-events-none" aria-hidden="true" />
                             <div className="relative z-10 flex flex-col items-center max-w-xl">
-                                <h2 className="text-h1 font-bold tracking-tight mb-3">
-                                    <span className="text-gradient">
-                                        Ready to join us?
-                                    </span>
+                                <Pill>
+                                    <HiOutlineSparkles className="w-3.5 h-3.5 text-primary" />
+                                    Ready to launch
+                                </Pill>
+                                <h2 className="mx-auto mt-4 max-w-xl text-h1 sm:text-display font-bold leading-[1.08] tracking-tight text-foreground">
+                                    <span className="text-foreground">Ready to </span>
+                                    <span className="text-gradient">join us?</span>
                                 </h2>
-                                <p className="text-body text-muted-foreground leading-relaxed mb-4 sm:mb-6">
+                                <p className="mx-auto mt-3 max-w-lg text-body leading-7 text-muted-foreground sm:leading-8 mb-6 sm:mb-8 text-center">
                                     Start managing your mess better today — free forever for small communities.
                                 </p>
                                 <div className="flex flex-col sm:flex-row gap-3 justify-center items-center w-full">
-                                    <Button asChild variant="primary" className="rounded-[10px] w-full sm:w-auto motion-safe:hover:scale-[1.02] transform-gpu motion-safe:transition-all">
+                                    <Button asChild variant="primary" size="lg" className="w-full sm:w-auto motion-safe:hover:scale-[1.02] transform-gpu motion-safe:transition-all">
                                         <Link to="/register">
                                             Create Free Account
                                             <HiOutlineArrowRight className="w-4 h-4" />
                                         </Link>
                                     </Button>
-                                    <Button asChild variant="glass" className="w-full sm:w-auto motion-safe:hover:scale-[1.02] transform-gpu motion-safe:transition-all">
+                                    <Button asChild variant="ghost" size="lg" className="w-full sm:w-auto motion-safe:hover:scale-[1.02] transform-gpu motion-safe:transition-all">
                                         <Link to="/food-gallery">
                                             Browse Food Gallery
                                             <HiOutlineArrowRight className="w-4 h-4" />

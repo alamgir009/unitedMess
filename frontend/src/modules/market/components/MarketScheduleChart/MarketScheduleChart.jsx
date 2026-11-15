@@ -219,30 +219,36 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
                                             <div
                                                 key={day._id || day.date}
                                                 className={`
-                                                    relative group min-w-[140px] flex-shrink-0
+                                                    relative group min-w-[140px] flex-shrink-0 overflow-hidden
                                                     rounded-xl p-4 flex flex-col items-center
-                                                    border transition-all duration-150
+                                                    border transition-all duration-200 select-none
                                                     scroll-snap-align-start
                                                     ${isToday
-                                                        ? 'bg-emerald-500/8 dark:bg-emerald-500/10 border-emerald-400/30'
-                                                        : 'bg-muted/20 dark:bg-white/[0.03] border-border/30 hover:bg-muted/40 dark:hover:bg-white/[0.06] hover:border-border/50'
+                                                        ? 'bg-gradient-to-b from-emerald-500/15 via-emerald-500/8 to-transparent dark:from-emerald-500/20 dark:via-emerald-500/10 dark:to-transparent border-emerald-500/60 dark:border-emerald-400/60 border-b-emerald-600/70 dark:border-b-emerald-500/40 shadow-[0_4px_14px_-2px_rgba(16,185,129,0.25),inset_0_1px_0_rgba(255,255,255,0.9)] dark:shadow-[0_4px_16px_-2px_rgba(16,185,129,0.35),inset_0_1px_0_rgba(255,255,255,0.18)]'
+                                                        : 'bg-gradient-to-b from-white via-card to-card/90 dark:from-white/[0.06] dark:via-white/[0.02] dark:to-transparent border-border/70 dark:border-white/[0.08] border-b-border dark:border-b-black/40 dark:border-t-white/[0.12] shadow-[0_1px_3px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] dark:shadow-[0_2px_6px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.07)] hover:-translate-y-0.5 hover:shadow-[0_6px_16px_-2px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,1)] dark:hover:border-white/[0.18] dark:hover:shadow-[0_6px_18px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.12)]'
                                                     }
                                                 `}
                                             >
-                                                <p className={`text-[10px] uppercase tracking-wider 
-                                                    ${isToday ? 'text-emerald-500' : 'text-muted-foreground'}`}>
+                                                {/* Specular top light rim */}
+                                                <span
+                                                    aria-hidden="true"
+                                                    className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/80 dark:via-white/20 to-transparent"
+                                                />
+
+                                                <p className={`text-[10px] uppercase tracking-wider font-semibold 
+                                                    ${isToday ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`}>
                                                     {dateObj.toLocaleDateString(undefined, { weekday: 'short' })}
                                                 </p>
 
-                                                <p className={`text-base font-semibold mt-0.5
-                                                    ${isToday ? 'text-emerald-500' : 'text-foreground'}`}>
+                                                <p className={`text-base font-bold mt-0.5 tabular-nums
+                                                    ${isToday ? 'text-emerald-700 dark:text-emerald-300' : 'text-foreground'}`}>
                                                     {dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                                                 </p>
 
                                                 {day.user ? (
                                                     <>
-                                                        <div className={`mt-3 w-12 h-12 rounded-full overflow-hidden border flex items-center justify-center text-base font-semibold
-                                                            ${isToday ? 'border-emerald-400/30' : 'border-border/30'}`}>
+                                                        <div className={`mt-3 w-12 h-12 rounded-full overflow-hidden border flex items-center justify-center text-base font-semibold shadow-xs
+                                                            ${isToday ? 'border-emerald-500/40 ring-2 ring-emerald-500/20' : 'border-border/60 bg-muted/40'}`}>
                                                             {day.user.image ? (
                                                                 <img
                                                                     src={day.user.image}
@@ -255,12 +261,12 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
                                                             )}
                                                         </div>
 
-                                                        <span className="text-xs mt-1.5 truncate max-w-[90px]">
+                                                        <span className="text-xs font-medium mt-1.5 truncate max-w-[90px] text-foreground">
                                                             {day.user.name.split(' ')[0]}
                                                         </span>
                                                     </>
                                                 ) : (
-                                                    <div className="mt-4 text-xs text-muted-foreground/50">Off</div>
+                                                    <div className="mt-4 text-xs font-medium text-muted-foreground/60">Off</div>
                                                 )}
                                             </div>
                                         );

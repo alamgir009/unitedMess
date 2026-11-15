@@ -757,7 +757,7 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
       <div className="flex items-center gap-2 pt-2 mt-1 border-t border-[var(--border-default)]">
         <Button
           type="button"
-          variant="ghost"
+          variant="secondary"
           size="sm"
           onClick={onCancel}
           disabled={isSubmitting}
@@ -767,7 +767,7 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
         </Button>
         <Button
           type="submit"
-          variant="success"
+          variant="primary"
           size="sm"
           disabled={isSubmitting || (isRangeMode && (rangeInvalid || daysCount === 0))}
           className="flex-[2] rounded-lg"
@@ -943,7 +943,7 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
       )}>
         <Button
           type="button"
-          variant="ghost"
+          variant="secondary"
           size="sm"
           onClick={onCancel}
           className="flex-1 rounded-lg"
@@ -953,7 +953,7 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
         </Button>
         <Button
           type="submit"
-          variant="success"
+          variant="primary"
           size="sm"
           className="flex-[2] rounded-lg"
           aria-label="Save changes"
@@ -1062,7 +1062,7 @@ const BulkUpdateForm = ({ category, selectedCount, onSubmit, onCancel, isBulkSub
       <div className="flex gap-2">
         <Button
           type="button"
-          variant="ghost"
+          variant="secondary"
           size="sm"
           onClick={onCancel}
           disabled={!!isBulkSubmitting}
@@ -1072,7 +1072,7 @@ const BulkUpdateForm = ({ category, selectedCount, onSubmit, onCancel, isBulkSub
         </Button>
         <Button
           type="submit"
-          variant="success"
+          variant="primary"
           size="sm"
           disabled={!!isBulkSubmitting}
           className="flex-[2] rounded-lg"

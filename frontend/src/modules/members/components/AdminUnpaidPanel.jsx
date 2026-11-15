@@ -183,8 +183,8 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                         <div className={cn(
                             'w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm',
                             isRefundMode
-                                ? 'bg-gradient-to-br from-amber-500 to-orange-500 dark:from-amber-400 dark:to-orange-400 shadow-amber-600/20'
-                                : 'bg-gradient-to-br from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500 shadow-emerald-600/20'
+                                ? 'bg-refund text-white shadow-refund/20'
+                                : 'bg-primary text-white shadow-primary/20'
                         )}>
                             {isRefundMode ? <RefreshCw size={20} className="text-white" /> : <BadgeIndianRupee size={20} className="text-white" />}
                         </div>
@@ -217,7 +217,7 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                             <div className="relative">
                                 <span className={cn(
                                     'absolute inset-y-0 left-4 flex items-center text-sm font-bold',
-                                    isRefundMode ? 'text-amber-500 dark:text-amber-400' : 'text-muted-foreground'
+                                    isRefundMode ? 'text-refund-text' : 'text-muted-foreground'
                                 )}>
                                     {isRefundMode ? '− ₹' : '₹'}
                                 </span>
@@ -243,7 +243,7 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                                 />
                             </div>
                             {isRefundMode && (
-                                <p className="flex items-center gap-1 mt-1.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                                <p className="flex items-center gap-1 mt-1.5 text-[11px] font-semibold text-refund-text">
                                     <AlertTriangle size={11} /> −₹ {fmt(displayRefund)} will be deducted — invoice marked as refunded
                                 </p>
                             )}
@@ -672,8 +672,8 @@ const AdminUnpaidPanel = React.memo(() => {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-4 pb-5 md:pt-0 md:pb-5 px-4 md:px-0">
                 <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/30">
-                        <ShieldAlert size={20} className="text-amber-600 dark:text-amber-500" />
+                    <div className="p-2.5 rounded-2xl bg-warning-bg border border-warning-border">
+                        <ShieldAlert size={20} className="text-warning-text" />
                     </div>
                     <div>
                         <h2 className="text-xl font-bold text-foreground tracking-tight">Unresolved Bills</h2>
@@ -684,7 +684,7 @@ const AdminUnpaidPanel = React.memo(() => {
                     <div className="relative flex items-center">
                         <Calendar size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                         <select value={selectedIdx} onChange={handleMonthChange}
-                            className="pl-9 pr-9 py-2 rounded-full text-[13px] font-semibold appearance-none bg-card border border-slate-200 dark:border-slate-800 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
+                            className="pl-9 pr-9 py-2 rounded-full text-[13px] font-semibold appearance-none bg-card border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
                             {safeMonthOptions.map((opt, i) => (
                                 <option key={opt.label} value={i}>{opt.isLastFinalized ? `★ ${opt.label}` : opt.label}</option>
                             ))}
@@ -692,7 +692,7 @@ const AdminUnpaidPanel = React.memo(() => {
                         <ChevronDown size={12} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                     </div>
                     <button onClick={() => load(selected)} disabled={unpaidInvoicesLoading}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-semibold bg-card border border-slate-200 dark:border-slate-800 text-foreground hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 transition-all cursor-pointer">
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-semibold bg-card border border-border text-foreground hover:bg-muted disabled:opacity-50 transition-all cursor-pointer">
                         <RefreshCw size={13} className={unpaidInvoicesLoading ? 'animate-spin' : ''} />
                         Refresh
                     </button>
@@ -714,16 +714,16 @@ const AdminUnpaidPanel = React.memo(() => {
             {/* Table Card */}
             <div className="w-full bg-card md:rounded-3xl border-y md:border border-border md:shadow-sm overflow-hidden">
                 {/* Desktop Header */}
-                <div className="hidden md:grid grid-cols-12 gap-3 items-center px-6 py-3.5 bg-slate-50/75 dark:bg-slate-900/40 border-b border-slate-100 dark:border-slate-800/80">
-                    <div className="col-span-3 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Invoice</div>
-                    <div className="col-span-2 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Period</div>
-                    <div className="col-span-1 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Meals</div>
-                    <div className="col-span-1 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Market</div>
-                    <div className="col-span-1 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total</div>
-                    <div className="col-span-1 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Paid</div>
-                    <div className="col-span-1 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Due</div>
-                    <div className="col-span-1 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Status</div>
-                    <div className="col-span-1 text-right text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Action</div>
+                <div className="hidden md:grid grid-cols-12 gap-3 items-center px-6 py-3.5 bg-muted/40 border-b border-border">
+                    <div className="col-span-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Invoice</div>
+                    <div className="col-span-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Period</div>
+                    <div className="col-span-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Meals</div>
+                    <div className="col-span-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Market</div>
+                    <div className="col-span-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Total</div>
+                    <div className="col-span-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Paid</div>
+                    <div className="col-span-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Due</div>
+                    <div className="col-span-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Status</div>
+                    <div className="col-span-1 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Action</div>
                 </div>
 
                 {/* Loading */}

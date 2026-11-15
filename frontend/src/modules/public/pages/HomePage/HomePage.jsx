@@ -312,15 +312,11 @@ const HeroCard = memo(() => {
         className={`relative overflow-hidden card-elevated depth-lg lg:backdrop-blur-2xl sm:rounded-[2.25rem] ${mounted ? 'animate-hero-card' : 'opacity-0'}`}
         style={{ animationDelay: '0.15s' }}
       >
-        <div className="flex items-center justify-between border-b border-border/50 px-3 py-2.5 sm:px-5 sm:py-3">
-          <div className="flex items-center gap-2">
-            <div className="h-2.5 w-2.5 rounded-full bg-destructive/80 sm:h-3 sm:w-3" />
-            <div className="h-2.5 w-2.5 rounded-full bg-warning/80 sm:h-3 sm:w-3" />
-            <div className="h-2.5 w-2.5 rounded-full bg-success/80 sm:h-3 sm:w-3" />
-          </div>
-          <div className="flex items-center gap-1.5">
-            <LiveDot />
-            <span className="text-caption font-semibold text-success-text">Live</span>
+        <div className="flex items-center border-b border-border/50 px-3.5 py-2.5 sm:px-5 sm:py-3">
+          <div className="flex items-center gap-2" aria-hidden="true">
+            <span className="h-3 w-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/50 shadow-[0_0.5px_1px_rgba(0,0,0,0.12)]" />
+            <span className="h-3 w-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/50 shadow-[0_0.5px_1px_rgba(0,0,0,0.12)]" />
+            <span className="h-3 w-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/50 shadow-[0_0.5px_1px_rgba(0,0,0,0.12)]" />
           </div>
         </div>
 
@@ -485,7 +481,7 @@ const HomePage = () => {
             </Pill>
           </div>
 
-          <h1 className="max-w-2xl text-display leading-[1.06] animate-fade-up" style={{ animationDelay: '0.08s' }}>
+          <h1 className="max-w-2xl text-display font-bold leading-[1.06] tracking-tight animate-fade-up" style={{ animationDelay: '0.08s' }}>
             Mess operations,
             <br />
             <span className="text-gradient">
@@ -872,7 +868,7 @@ const HomePage = () => {
             </div>
             <div className="relative z-10">
               <Pill>Ready to launch</Pill>
-              <h2 className="mx-auto mt-4 max-w-3xl text-display leading-[1.08] tracking-[-0.03em] text-foreground sm:leading-[1.06]">
+              <h2 className="mx-auto mt-4 max-w-3xl text-display font-bold leading-[1.08] tracking-tight text-foreground sm:leading-[1.06]">
                 Give your mess the product it deserves.
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-body leading-7 text-muted-foreground sm:mt-4 sm:leading-8">
