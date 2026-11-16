@@ -21,6 +21,7 @@ import { cn } from '@/core/utils/helpers/string.helper';
 import { fmt } from '@/core/utils/helpers/currency.helper';
 import { Modal, Button, Input, Badge, Spinner } from '@/shared/components/ui';
 import paymentService from '../../services/payment.service';
+import '@/shared/components/ui/RecordForm/record-form.css';
 
 const UTR_PATTERN = /^\d{12}$/;
 
@@ -324,7 +325,7 @@ const AdminUpiForm = memo(({
         value={editUpiId}
         onChange={(e) => onUpiIdChange(e.target.value)}
         placeholder="e.g. name@upi"
-        variant="glass"
+        variant="record"
         required
       />
     </div>
@@ -335,7 +336,7 @@ const AdminUpiForm = memo(({
         value={editMerchantName}
         onChange={(e) => onMerchantNameChange(e.target.value)}
         placeholder="e.g. United Mess"
-        variant="glass"
+        variant="record"
       />
     </div>
     <div className="space-y-1.5">
@@ -440,7 +441,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
         if (saved) {
           setUtr(saved);
         }
-      } catch {}
+      } catch { /* Draft recovery is optional when browser storage is unavailable. */ }
     }
   }, [isOpen, getDraftKey]);
 
@@ -454,7 +455,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
       } else {
         sessionStorage.removeItem(key);
       }
-    } catch {}
+    } catch { /* Keep UTR entry usable when browser storage is unavailable. */ }
   }, [getDraftKey]);
 
   const resetState = useCallback(() => {
@@ -588,7 +589,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
       if (res?.success) {
         try {
           sessionStorage.removeItem(getDraftKey());
-        } catch {}
+        } catch { /* A completed submission does not depend on clearing the local draft. */ }
         toast.success('UTR submitted successfully! Pending verification.');
         setPayStep(SUCCESS_STEP);
         if (typeof onSuccess === 'function') onSuccess();
@@ -653,10 +654,11 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
       onClose={onClose}
       title={title}
       size="lg"
+      className="record-modal"
       mobileSheet
       accentColor="blue"
     >
-      <div className="space-y-5">
+      <div className="record-payment-flow space-y-5">
         {isAdminUpiEdit ? (
           <AdminUpiForm
             editUpiId={editUpiId}
@@ -977,7 +979,7 @@ const PaymentFlowModal = ({ isOpen, onClose, isAdmin, activeInvoiceMonth, onRazo
                             value={utr}
                             onChange={(e) => handleUtrChange(e.target.value)}
                             placeholder="e.g. 123456789012"
-                            variant="glass"
+                            variant="record"
                             size="lg"
                             maxLength={12}
                             required

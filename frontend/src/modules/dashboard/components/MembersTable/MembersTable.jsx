@@ -171,7 +171,7 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
             </div>
             <div>
               <h3 className="text-base font-bold tracking-tight text-foreground">
-                Members Matrix
+                Member directory
               </h3>
               <p className="text-xs text-muted-foreground">
                 {filteredUsers.length} of {users.length} members

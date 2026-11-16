@@ -16,6 +16,7 @@ import {
 } from 'react-icons/hi2';
 import apiClient from '@/services/api/client/apiClient';
 import { Button, Avatar, MemberSelect } from '@/shared/components/ui';
+import '@/shared/components/ui/RecordForm/record-form.css';
 
 const MAX_RANGE_DAYS = 31;
 const typeCountMap = { both: 2, day: 1, night: 1, off: 0 };
@@ -28,7 +29,7 @@ const mealTypes = [
 ];
 
 const Field = ({ label, icon: Icon, children, className = '' }) => (
-    <div className={`flex flex-col gap-1.5 ${className}`}>
+    <div className={`flex flex-col gap-1.5 min-w-0 ${className}`}>
         <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)] select-none">
             {Icon && <Icon className="w-3 h-3 shrink-0 opacity-70" />}
             {label}
@@ -37,14 +38,7 @@ const Field = ({ label, icon: Icon, children, className = '' }) => (
     </div>
 );
 
-const inputBase =
-    'w-full px-3 py-2.5 rounded-xl border border-[var(--border-strong)] ' +
-    'bg-[var(--bg-subtle)] ' +
-    'shadow-[var(--inset-inner),0_1px_2px_rgba(0,0,0,0.08)] ' +
-    'focus:ring-2 focus:ring-[var(--brand)]/25 focus:border-[var(--brand)] ' +
-    'outline-none transition-all duration-150 ' +
-    'text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] ' +
-    'hover:border-[var(--input-border-hover)] hover:shadow-[var(--inset-inner),0_2px_6px_rgba(0,0,0,0.12)]';
+const inputBase = 'record-field';
 
 const inputDisabled = 'opacity-60 cursor-not-allowed pointer-events-none select-none';
 
@@ -86,11 +80,7 @@ const ModeTab = ({ mode, current, onChange, label }) => (
         role="tab"
         aria-selected={current === mode}
         onClick={() => onChange(mode)}
-        className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all duration-150 ${
-            current === mode
-                ? 'bg-[var(--brand)] text-[var(--text-on-brand)] shadow-[0_1px_3px_rgba(0,0,0,0.25)]'
-                : 'bg-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)]/40'
-        }`}
+        className="segmented-control-button flex-1"
     >
         {label}
     </button>
@@ -266,25 +256,25 @@ const [singleAdminError, setSingleAdminError] = useState('');
         const errorText = mode === 'single' && singleAdminError ? singleAdminError : null;
 
         renderFooter(
-            <>
+            <div className="record-form-footer">
                 {errorText && (
                     <p className="w-full text-xs font-semibold text-[var(--danger-text)]">{errorText}</p>
                 )}
-                <div className="flex gap-2.5 w-full">
+                <div className="record-form-actions">
                     {mode === 'single' ? (
                         <>
-                            <Button type="button" variant="secondary" size="sm" onClick={onCancel} className="flex-1" disabled={isRunning}>
+                            <Button type="button" variant="secondary" size="md" onClick={onCancel} className="flex-1" disabled={isRunning}>
                                 {readOnly ? 'Close' : 'Cancel'}
                             </Button>
                             {!readOnly && (
-                                <Button type="submit" form="meal-form" variant="primary" size="sm" className="flex-[2]" isLoading={isRunning} disabled={isRunning}>
+                                <Button type="submit" form="meal-form" variant="primary" size="md" className="flex-[2]" isLoading={isRunning} disabled={isRunning}>
                                     {initialData ? 'Update Meal' : 'Save Meal'}
                                 </Button>
                             )}
                         </>
                     ) : (
                         <>
-                            <Button type="button" variant="secondary" size="sm" onClick={onCancel} className="flex-1" disabled={isRunning}>
+                            <Button type="button" variant="secondary" size="md" onClick={onCancel} className="flex-1" disabled={isRunning}>
                                 {isRunning ? 'Saving…' : 'Cancel'}
                             </Button>
                             {!readOnly && (
@@ -292,7 +282,7 @@ const [singleAdminError, setSingleAdminError] = useState('');
                                     type="submit"
                                     form="meal-form"
                                     variant="primary"
-                                    size="sm"
+                                    size="md"
                                     className="flex-[2]"
                                     isLoading={isRunning}
                                     disabled={isRunning || rangeInvalid || daysCount === 0 || (isAdmin && formData.userIds?.length === 0)}
@@ -306,7 +296,7 @@ const [singleAdminError, setSingleAdminError] = useState('');
                         </>
                     )}
                 </div>
-            </>
+            </div>
         );
     }, [mode, isRunning, readOnly, initialData, singleAdminError, rangeInvalid, daysCount, isAdmin, formData.userIds?.length, onCancel, renderFooter]);
 
@@ -314,7 +304,7 @@ const [singleAdminError, setSingleAdminError] = useState('');
         <form
             id="meal-form"
             onSubmit={mode === 'single' ? handleSingleSubmit : (e) => { e.preventDefault(); handleBulkSubmit(formData.type); }}
-            className="flex flex-col gap-3 w-full"
+            className="record-form flex flex-col gap-3 w-full"
         >
             <button type="submit" className="sr-only" tabIndex={-1} aria-hidden="true" />
 
@@ -325,7 +315,7 @@ const [singleAdminError, setSingleAdminError] = useState('');
                 <div
                     role="tablist"
                     aria-label="Entry mode"
-                    className="flex gap-1 p-1 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-strong)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)]"
+                    className="segmented-control w-full"
                 >
                     <ModeTab mode="single" current={mode} onChange={setMode} label="Single Day" />
                     <ModeTab mode="range" current={mode} onChange={setMode} label="Date Range" />
@@ -376,7 +366,7 @@ const [singleAdminError, setSingleAdminError] = useState('');
                 {isAdmin && (
                     <Field label="Member" icon={HiOutlineUser}>
                         {initialData ? (
-                            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-[var(--border-strong)] bg-[var(--bg-subtle)] shadow-[var(--inset-inner)] text-sm">
+                            <div className="record-field flex items-center gap-2.5">
                                 <Avatar
                                     name={typeof initialData.user === 'object' ? initialData.user?.name : ''}
                                     size="xs"
@@ -395,6 +385,7 @@ const [singleAdminError, setSingleAdminError] = useState('');
                             </div>
                         ) : (
                             <MemberSelect
+                                variant="record"
                                 users={users}
                                 value={formData.userIds}
                                 onChange={(ids) => { setFormData(p => ({ ...p, userIds: ids })); setSingleAdminError(''); }}
@@ -422,7 +413,7 @@ const [singleAdminError, setSingleAdminError] = useState('');
                 )}
 
                 {mode === 'range' && (
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="record-form-pair">
                         <Field label="From" icon={HiOutlineCalendarDays}>
                             <input
                                 type="date"
@@ -548,7 +539,7 @@ const [singleAdminError, setSingleAdminError] = useState('');
                         onChange={handleChange}
                         rows={2}
                         disabled={isRunning || readOnly}
-                        className={`${inputBase} resize-none ${readOnly ? inputDisabled : ''}`}
+                        className={`${inputBase} ${readOnly ? inputDisabled : ''}`}
                         placeholder={readOnly ? '' : 'Add special notes about this meal…'}
                     />
                 </Field>

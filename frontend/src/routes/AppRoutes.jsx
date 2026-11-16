@@ -6,6 +6,7 @@ import ProtectedRoute from '@/shared/components/routes/ProtectedRoute';
 import GuestRoute from '@/shared/components/routes/GuestRoute';
 import AdminRoute from '@/shared/components/routes/AdminRoute';
 import AnalyticsGuard from '@/modules/analytics/components/AnalyticsGuard';
+import { loadAnalyticsPage } from '@/modules/analytics/utils/preload';
 import PublicLayout from '@/shared/components/layout/PublicLayout/PublicLayout';
 
 const LoginPage = lazy(() => import('@/modules/auth/pages/LoginPage/LoginPage'));
@@ -33,7 +34,7 @@ const MemberPage = lazy(() => import('@/modules/members/pages/members/MemberPage
 const UnresolvedBillsPage = lazy(() => import('@/modules/members/pages/UnresolvedBillsPage/UnresolvedBillsPage'));
 const SettingsPage = lazy(() => import('@/modules/settings/pages/SettingsPage/SettingsPage'));
 const EventsPage = lazy(() => import('@/modules/events/pages/EventsPage/EventsPage'));
-const AnalyticsPage = lazy(() => import('@/modules/analytics/pages/AnalyticsPage'));
+const AnalyticsPage = lazy(loadAnalyticsPage);
 
 const PageLoader = () => {
 PageLoader.displayName = 'PageLoader';

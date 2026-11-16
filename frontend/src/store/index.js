@@ -10,6 +10,9 @@ import notificationReducer from '@/modules/notification/store/notification.slice
 import eventsReducer from '@/modules/events/store/events.slice';
 import marketScheduleReducer from '@/modules/events/store/marketSchedule.slice';
 import paymentSyncMiddleware from '@/services/api/middleware/paymentSync.middleware';
+import analyticsUi from '@/modules/analytics/store/analytics.slice';
+import { analyticsApi } from '@/modules/analytics/store/analytics.api';
+import { analyticsMiddleware } from '@/modules/analytics/store/analytics.middleware';
 
 export const store = configureStore({
     reducer: {
@@ -23,6 +26,8 @@ export const store = configureStore({
         notification: notificationReducer,
         events: eventsReducer,
         marketSchedule: marketScheduleReducer,
+        analyticsUi,
+        [analyticsApi.reducerPath]: analyticsApi.reducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({
@@ -36,6 +41,6 @@ export const store = configureStore({
                     'profile.avatarFile',
                 ],
             },
-        }).concat(paymentSyncMiddleware),
+        }).concat(analyticsMiddleware, analyticsApi.middleware, paymentSyncMiddleware),
 
 })

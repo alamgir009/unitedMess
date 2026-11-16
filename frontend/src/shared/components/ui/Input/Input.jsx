@@ -1,6 +1,7 @@
 import { forwardRef } from 'react';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { X } from 'lucide-react';
+import '../RecordForm/record-form.css';
 
 const Input = forwardRef(({
   variant = 'default',
@@ -31,6 +32,7 @@ const Input = forwardRef(({
       : 'border-border focus:ring-ring/30 focus:border-ring';
 
   const variants = {
+    record: 'record-field',
     default: cn(
       'bg-muted text-foreground placeholder:text-muted-foreground',
       'border border-border rounded-lg caret-foreground',

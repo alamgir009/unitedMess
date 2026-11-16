@@ -1,3 +1,4 @@
+import '@/shared/components/ui/RecordForm/record-form.css';
 import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import {
@@ -13,20 +14,13 @@ import { Button, Avatar, MemberSelect } from '@/shared/components/ui';
 
 /* ─── Design tokens ─────────────────────────────────────────── */
 
-const inputBase =
-    'w-full px-3 py-2.5 rounded-xl border border-[var(--input-border)] ' +
-    'bg-[var(--input-bg)] ' +
-    'shadow-[var(--inset-inner),var(--inset-top-glow)] ' +
-    'focus:ring-2 focus:ring-[var(--brand)]/25 focus:border-[var(--brand)] ' +
-    'outline-none transition-all duration-150 ' +
-    'text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] ' +
-    'hover:border-[var(--input-border-hover)]';
+const inputBase = 'record-field';
 
 const inputDisabled = 'opacity-60 cursor-not-allowed pointer-events-none select-none';
 
 /* ─── Field wrapper ─────────────────────────────────────────── */
 const Field = ({ label, icon: Icon, children, className = '' }) => (
-    <div className={`flex flex-col gap-1.5 ${className}`}>
+    <div className={`flex flex-col gap-1.5 min-w-0 ${className}`}>
         <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)] select-none">
             {Icon && <Icon className="w-3 h-3 shrink-0 opacity-80" />}
             {label}
@@ -146,16 +140,16 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
         if (!renderFooter) return;
 
         renderFooter(
-            <div className="flex gap-2.5 w-full">
+            <div className="record-form-actions">
                 <Button
-                    type="button" variant="secondary" size="sm"
+                    type="button" variant="secondary" size="md"
                     onClick={onCancel} className="flex-1" disabled={isRunning}
                 >
                     {readOnly ? 'Close' : 'Cancel'}
                 </Button>
                 {!readOnly && (
                     <Button
-                        type="submit" form="market-form" variant="primary" size="sm"
+                        type="submit" form="market-form" variant="primary" size="md"
                         className="flex-[2]"
                         isLoading={isRunning}
                         disabled={isRunning}
@@ -168,7 +162,7 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
     }, [isRunning, readOnly, initialData, onCancel, renderFooter]);
 
     return (
-        <form id="market-form" onSubmit={handleSubmit} className="flex flex-col gap-3 w-full">
+        <form id="market-form" onSubmit={handleSubmit} className="record-form flex flex-col gap-3 w-full">
             <button type="submit" className="sr-only" tabIndex={-1} aria-hidden="true" />
 
 
@@ -203,7 +197,7 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
                     <Field label="Member" icon={HiOutlineUser}>
                         {initialData ? (
                             /* Edit mode — show single member as read-only tag */
-                            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-[var(--border-default)] bg-[var(--input-bg)] text-sm">
+                            <div className="record-field flex items-center gap-2.5">
                                 <Avatar
                                     name={typeof initialData.user === 'object' ? initialData.user?.name : ''}
                                     size="xs"
@@ -222,6 +216,7 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
                             </div>
                         ) : (
                             <MemberSelect
+                                variant="record"
                                 users={users}
                                 value={formData.userIds}
                                 onChange={(ids) => { setFormData(p => ({ ...p, userIds: ids })); setAdminError(''); }}
@@ -264,7 +259,7 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
                             required={!readOnly}
                             placeholder="0.00"
                             disabled={readOnly || isRunning}
-                            className={`${inputBase} pl-7 ${readOnly || isRunning ? inputDisabled : ''}`}
+                            className={`${inputBase} record-field-leading ${readOnly || isRunning ? inputDisabled : ''}`}
                         />
                     </div>
                 </Field>
@@ -291,7 +286,7 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
                         onChange={handleChange}
                         rows={2}
                         disabled={readOnly || isRunning}
-                        className={`${inputBase} resize-none ${readOnly || isRunning ? inputDisabled : ''}`}
+                        className={`${inputBase} ${readOnly || isRunning ? inputDisabled : ''}`}
                         placeholder={readOnly ? '' : 'Add extra notes about this purchase…'}
                     />
                 </Field>

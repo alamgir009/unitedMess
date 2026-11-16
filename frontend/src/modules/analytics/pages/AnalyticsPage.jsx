@@ -1,16 +1,20 @@
-import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, RefreshCw, ShoppingBag, Utensils } from 'lucide-react';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import Button from '@/shared/components/ui/Button/Button';
-import MemberFilter, { ALL_MEMBERS } from '../components/MemberFilter';
+import MemberFilter from '../components/MemberFilter';
 import MonthFilter from '../components/MonthFilter';
 import PercentChange from '../components/PercentChange';
-import { getReport } from '../services/analytics.service';
+import { analyticsApi, useGetAnalyticsReportQuery } from '../store/analytics.api';
+import { ALL_MEMBERS, selectMember, selectMonth, selectReport } from '../store/analytics.slice';
+import useAnalyticsSession from '../hooks/useAnalyticsSession';
+import { loadAnalyticsCharts } from '../utils/preload';
 import { formatCount, formatMoney } from '../utils/format';
 import '../styles/analytics.css';
 
-const ReportCharts = lazy(() => import('../components/ReportCharts'));
+const ReportCharts = lazy(loadAnalyticsCharts);
 const monthLabel = (key) => new Intl.DateTimeFormat('en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${key}-01T00:00:00Z`));
 
 function Skeleton() {
@@ -30,23 +34,25 @@ const Metric = memo(function Metric({ label, value, note }) {
 });
 
 export default function AnalyticsPage() {
-    const [report, setReport] = useState('market');
-    const [member, setMember] = useState(ALL_MEMBERS);
-    const [selectedMonth, setSelectedMonth] = useState('');
-    const [state, setState] = useState({ loading: true, data: null, error: '' });
-    const [retry, setRetry] = useState(0);
-    const changeMember = useCallback((value) => setMember(value), []);
+    const dispatch = useDispatch();
+    const { ui, viewerId, epoch, windowKey, enabled } = useAnalyticsSession();
+    const { report, member, selectedMonth } = ui;
+    const args = useMemo(() => ({ viewerId, epoch, windowKey, report, memberId: member._id }), [viewerId, epoch, windowKey, report, member._id]);
+    const query = useGetAnalyticsReportQuery(args, { skip: !enabled });
+    const previousArgs = useRef(args);
     useEffect(() => {
-        const controller = new AbortController();
-        setState({ loading: true, data: null, error: '' });
-        getReport(report, member._id, controller.signal).then((data) => {
-            if (!controller.signal.aborted) setState({ loading: false, data, error: '' });
-        }).catch((error) => {
-            if (!controller.signal.aborted) setState({ loading: false, data: null, error: error.response?.data?.message || 'Analytics could not be loaded. Please retry.', status: error.response?.status });
-        });
-        return () => controller.abort();
-    }, [report, member._id, retry]);
-    const { data, loading, error } = state;
+        if (previousArgs.current !== args) {
+            dispatch(analyticsApi.util.getRunningQueryThunk('getAnalyticsReport', previousArgs.current))?.abort();
+            previousArgs.current = args;
+        }
+    }, [args, dispatch]);
+    const changeMember = useCallback((value) => dispatch(selectMember(value)), [dispatch]);
+    const changeMonth = useCallback((value) => dispatch(selectMonth(value)), [dispatch]);
+    const data = ui.accessError || query.error?.status === 404 ? null : query.currentData;
+    const failure = ui.accessError || query.error;
+    const error = failure?.message;
+    const loading = !data && !error;
+    const refresh = () => { if (enabled && !query.isUninitialized) void query.refetch(); };
     const month = data?.monthly.find((row) => row.month === selectedMonth) || data?.monthly[2];
     const daily = useMemo(() => data?.daily.filter((row) => row.date.startsWith(month?.month) && row.date <= data.asOf) || [], [data, month?.month]);
     const members = useMemo(() => data?.members.filter((row) => row.month === month?.month) || [], [data, month?.month]);
@@ -58,22 +64,26 @@ export default function AnalyticsPage() {
                 <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Analytics</h1>
                 <p className="mt-2 text-sm analytics-secondary">Market spending and meals, across the last three months.</p>
             </div>
-            <Button variant="secondary" className="min-h-[44px]" onClick={() => setRetry((n) => n + 1)} disabled={loading}><RefreshCw size={16} aria-hidden="true" />Refresh reports</Button>
+            <div className="flex flex-col items-start sm:items-end gap-2">
+                <Button variant="secondary" className="min-h-[44px]" onClick={refresh} disabled={!enabled || query.isFetching}><RefreshCw size={16} aria-hidden="true" />Refresh reports</Button>
+                <p role="status" className="text-xs analytics-secondary min-h-4" aria-live="polite">{query.isFetching && data ? 'Refreshing in background…' : query.fulfilledTimeStamp && data ? `Updated ${new Intl.DateTimeFormat('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Kolkata' }).format(query.fulfilledTimeStamp)} IST` : ''}</p>
+            </div>
         </header>
         <section className="analytics-panel p-4 sm:p-5 flex flex-col xl:flex-row xl:items-end gap-5 xl:justify-between" aria-label="Analytics filters">
             <div className="flex flex-col sm:flex-row sm:items-end gap-5 min-w-0">
-                <div><span className="block text-sm font-medium mb-2">Report</span><div className="analytics-segmented" role="group" aria-label="Report type">
-                    {['market', 'meal'].map((key) => <button key={key} type="button" className="analytics-button gap-2" aria-pressed={report === key} onClick={() => setReport(key)}>{key === 'market' ? <ShoppingBag size={16} aria-hidden="true" /> : <Utensils size={16} aria-hidden="true" />}{key === 'market' ? 'Market' : 'Meal'}</button>)}
+                <div><span className="block text-sm font-medium mb-2">Report</span><div className="analytics-segmented segmented-control" role="group" aria-label="Report type">
+                    {['market', 'meal'].map((key) => <button key={key} type="button" className="segmented-control-button gap-2" aria-pressed={report === key} onClick={() => dispatch(selectReport(key))}>{key === 'market' ? <ShoppingBag size={16} aria-hidden="true" /> : <Utensils size={16} aria-hidden="true" />}{key === 'market' ? 'Market' : 'Meal'}</button>)}
                 </div></div>
                 <MemberFilter value={member} onChange={changeMember} />
             </div>
-            {data && <MonthFilter months={data.monthly} value={month.month} currentMonth={data.asOf.slice(0, 7)} onChange={setSelectedMonth} />}
+            {data && <MonthFilter months={data.monthly} value={month.month} currentMonth={data.asOf.slice(0, 7)} onChange={changeMonth} />}
         </section>
-        {loading ? <Skeleton /> : error ? <section role="alert" className="analytics-panel p-6 space-y-4">
-            <h2 className="font-semibold">{state.status === 403 ? '403 — Access denied' : 'Report unavailable'}</h2><p className="text-sm analytics-secondary">{error}</p>
-            <div className="flex flex-wrap gap-3"><button type="button" className="analytics-button" onClick={() => setRetry((n) => n + 1)}>Retry report</button>
-                {member._id && <button type="button" className="analytics-button" onClick={() => setMember(ALL_MEMBERS)}>Clear member filter</button>}</div>
+        {loading ? <Skeleton /> : error && !data ? <section role="alert" className="analytics-panel p-6 space-y-4">
+            <h2 className="font-semibold">{failure.status === 403 ? '403 — Access denied' : 'Report unavailable'}</h2><p className="text-sm analytics-secondary">{error}</p>
+            <div className="flex flex-wrap gap-3">{enabled && <button type="button" className="analytics-button" onClick={refresh}>Retry report</button>}
+                {member._id && <button type="button" className="analytics-button" onClick={() => changeMember(ALL_MEMBERS)}>Clear member filter</button>}</div>
         </section> : data && <>
+            {error && <div role="alert" className="analytics-panel p-4 flex flex-wrap items-center justify-between gap-3"><p className="text-sm analytics-secondary">Couldn’t refresh. Showing the last successful report. {error}</p><button type="button" className="analytics-button" onClick={refresh} disabled={query.isFetching}>Retry report</button></div>}
             <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 className="font-semibold">{monthLabel(month.month)}</h2><p className="text-xs analytics-secondary">{member.name} · through {data.asOf} · IST</p></div>
             <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <Metric label={isMarket ? 'Market spending' : 'Estimated meal amount'} value={formatMoney(month.amount)} note={isMarket ? 'Logged purchases only' : 'Own meals + guest meals'} />

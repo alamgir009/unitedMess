@@ -38,8 +38,8 @@ const ReportCharts = memo(function ReportCharts({ monthly, daily, month, report 
         <section className="analytics-panel min-w-0 p-4 sm:p-6" aria-labelledby="trend-heading">
             <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
                 <div><h2 id="trend-heading" className="font-semibold">Daily trend</h2><p className="analytics-secondary text-sm mt-1">{month.label} · Asia/Kolkata</p></div>
-                <div className="analytics-segmented" role="group" aria-label="Daily trend measure">
-                    {['amount', 'count'].map((key) => <button key={key} type="button" className="analytics-button" aria-pressed={metric === key} onClick={() => setMetric(key)}>{key === 'amount' ? 'Amount' : 'Count'}</button>)}
+                <div className="analytics-segmented segmented-control" role="group" aria-label="Daily trend measure">
+                    {['amount', 'count'].map((key) => <button key={key} type="button" className="segmented-control-button" aria-pressed={metric === key} onClick={() => setMetric(key)}>{key === 'amount' ? 'Amount' : 'Count'}</button>)}
                 </div>
             </div>
             <div className="h-64 min-w-0" role="group" aria-label={`Daily ${metric} line chart for ${month.label}. Exact values are available in daily data.`}>

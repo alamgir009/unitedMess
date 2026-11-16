@@ -1,0 +1,75 @@
+/* Shared Analytics control treatment, including theme-specific physical depth. */
+:root {
+    --segmented-active-text: #3730a3;
+    --control-raised-shadow: var(--btn-elevated-shadow);
+    --control-top-highlight: var(--btn-top-highlight-light);
+    --control-recessed-shadow: var(--inset-well);
+}
+
+html.dark {
+    --segmented-active-text: #c7d2fe;
+    --control-raised-shadow: var(--btn-elevated-shadow-dark);
+    --control-top-highlight: var(--btn-top-highlight-dark);
+    --control-recessed-shadow: var(--inset-inner);
+}
+
+.segmented-control {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1);
+    background: var(--bg-muted);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--control-recessed-shadow);
+}
+
+.segmented-control .segmented-control-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 44px;
+    padding: 0 var(--space-4);
+    border: 1px solid transparent;
+    border-radius: var(--radius-lg);
+    color: var(--text-primary);
+    background: transparent;
+    font-size: var(--text-label);
+    font-weight: var(--weight-semibold);
+    cursor: pointer;
+    transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.segmented-control .segmented-control-button:hover:not(:disabled) {
+    background: var(--bg-subtle);
+}
+
+.segmented-control .segmented-control-button:is([aria-pressed="true"], [aria-selected="true"]) {
+    background: var(--bg-elevated);
+    color: var(--segmented-active-text);
+    box-shadow: var(--control-top-highlight), var(--control-raised-shadow);
+}
+
+.segmented-control .segmented-control-button:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.segmented-control .segmented-control-button:is([aria-pressed="true"], [aria-selected="true"]):active:not(:disabled) {
+    box-shadow: var(--control-top-highlight), var(--shadow-xs);
+}
+
+.segmented-control .segmented-control-button:focus-visible {
+    outline: 2px solid var(--segmented-active-text);
+    outline-offset: 3px;
+}
+
+.segmented-control .segmented-control-button:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .segmented-control .segmented-control-button { transition: none; }
+    .segmented-control .segmented-control-button:active:not(:disabled) { transform: none; }
+}

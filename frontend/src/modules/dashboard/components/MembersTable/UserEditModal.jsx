@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { Modal, Button, IconSelect, Badge, Avatar } from '@/shared/components/ui';
 import { getBillingPeriod } from '@shared/utils/billingPeriod';
 import { resolveBillStatus } from '@shared/utils/paymentStatus';
+import { analyticsDataChanged } from '@/modules/analytics/store/analytics.slice';
 
 /**
  * Billing exemption is MANUAL and PERIOD-SCOPED.
@@ -290,6 +291,7 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
       }
 
       await apiClient.patch(`users/${user._id}`, formData);
+      dispatch(analyticsDataChanged());
 
       toast.success('User updated successfully');
       dispatch(fetchUsers({ page: 1, limit: 100 }));

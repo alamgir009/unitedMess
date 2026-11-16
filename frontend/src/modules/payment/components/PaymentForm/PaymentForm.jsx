@@ -1,3 +1,4 @@
+import '@/shared/components/ui/RecordForm/record-form.css';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { format } from 'date-fns';
 import {
@@ -35,9 +36,9 @@ const monthForDate = (dateStr) => {
 };
 
 const PAYMENT_TYPES = [
-    { value: 'mess_bill', label: 'Mess Bill', color: 'bg-[var(--accent-primary)] text-[var(--text-on-brand)]' },
-    { value: 'gas_bill',  label: 'Gas Bill',  color: 'bg-[var(--warning)] text-foreground' },
-    { value: 'other',     label: 'Other',     color: 'bg-[var(--bg-muted)] text-[var(--text-primary)]' },
+    { value: 'mess_bill', label: 'Mess Bill' },
+    { value: 'gas_bill',  label: 'Gas Bill' },
+    { value: 'other',     label: 'Other' },
 ];
 
 // Single source of truth: paymentType → payable-batch cache key.
@@ -63,20 +64,13 @@ const STATUS_OPTIONS = [
 
 /* ─── Design tokens ─────────────────────────────────────────── */
 
-const inputBase =
-    'w-full px-3 py-2 rounded-xl border border-[var(--input-border)] ' +
-    'bg-[var(--input-bg)] ' +
-    'focus:ring-0 focus:border-[var(--input-border-focus)] ' +
-    'outline-none transition-all duration-200 ' +
-    'text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] ' +
-    'hover:border-[var(--input-border-hover)] ' +
-    'dark:shadow-[var(--inset-top-glow),var(--shadow-xs)] dark:focus:shadow-[var(--inset-top-glow),var(--shadow-xs),0_0_0_3px_rgba(var(--brand-rgb),0.15)]';
+const inputBase = 'record-field';
 
 const inputDisabled = 'opacity-60 cursor-not-allowed pointer-events-none select-none';
 
 /* ─── Field wrapper ─────────────────────────────────────────── */
 const Field = ({ label, icon: Icon, children, className = '' }) => (
-    <div className={`flex flex-col gap-1.5 ${className}`}>
+    <div className={`flex flex-col gap-1.5 min-w-0 ${className}`}>
         <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)] select-none">
             {Icon && <Icon className="w-3 h-3 shrink-0 opacity-60" />}
             {label}
@@ -86,20 +80,13 @@ const Field = ({ label, icon: Icon, children, className = '' }) => (
 );
 
 /* ─── Payment type toggle button (segmented pill control) ───── */
-const TypeBtn = ({ value, current, onClick, label, color, disabled = false }) => (
+const TypeBtn = ({ value, current, onClick, label, disabled = false }) => (
     <button
         type="button"
         onClick={() => !disabled && onClick(value)}
         disabled={disabled}
-        className={`flex-1 min-w-0 py-2.5 px-2 rounded-xl border-2 text-xs font-semibold
-            tracking-wide transition-all duration-200 text-center truncate
-            ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-            ${current === value
-                ? `${color} shadow-sm`
-                : disabled
-                    ? 'bg-[var(--bg-muted)] text-[var(--text-tertiary)]'
-                    : 'bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:bg-[var(--border-strong)] hover:text-[var(--text-primary)]'
-            }`}
+        aria-pressed={current === value}
+        className="segmented-control-button flex-1"
     >
         {label}
     </button>
@@ -366,9 +353,9 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
         if (!renderFooter) return;
 
         renderFooter(
-            <div className="flex gap-2.5 w-full">
+            <div className="record-form-actions">
                 <Button
-                    type="button" variant="secondary" size="sm"
+                    type="button" variant="secondary" size="md"
                     onClick={onCancel} disabled={isSubmitting}
                     className="flex-1"
                 >
@@ -376,7 +363,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                 </Button>
                 {!readOnly && (
                     <Button
-                        type="submit" form="payment-form" variant="primary" size="sm"
+                        type="submit" form="payment-form" variant="primary" size="md"
                         disabled={isSubmitting}
                         isLoading={isSubmitting}
                         className="flex-[2]"
@@ -389,7 +376,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
     }, [isSubmitting, readOnly, initialData, onCancel, renderFooter]);
 
     return (
-        <form id="payment-form" onSubmit={handleSubmit} className="flex flex-col gap-3 w-full max-w-lg mx-auto">
+        <form id="payment-form" onSubmit={handleSubmit} className="record-form flex flex-col gap-3 w-full max-w-lg mx-auto">
             <button type="submit" className="sr-only" tabIndex={-1} aria-hidden="true" />
 
             {/* Read-only notice */}
@@ -432,7 +419,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                     <Field label="Member" icon={HiOutlineUser}>
                         {initialData ? (
                             /* Edit/View mode — show single member as read-only tag */
-                            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-[var(--input-border)] bg-[var(--input-bg)] text-sm dark:shadow-[var(--inset-top-glow),var(--shadow-xs)]">
+                            <div className="record-field flex items-center gap-2.5">
                                 <Avatar
                                     name={typeof initialData.user === 'object' ? initialData.user?.name : ''}
                                     size="xs"
@@ -451,6 +438,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                             </div>
                         ) : (
                             <MemberSelect
+                                variant="record"
                                 users={users}
                                 value={formData.userIds}
                                 onChange={(ids) => setFormData(p => ({
@@ -484,9 +472,9 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                             required={!readOnly}
                             placeholder={formData.status === 'refunded' ? 'Enter refund amount (negative)' : 'Enter amount'}
                             disabled={readOnly || isSubmitting}
-                            className={`${inputBase} pl-7 ${
+                            className={`${inputBase} record-field-leading ${
                                 formData.status === 'refunded' && parseFloat(formData.amount) < 0
-                                    ? 'border-[var(--danger)]/40 focus:ring-[var(--danger)]/30 focus:border-[var(--danger)]/50'
+                                    ? 'record-field-refund'
                                     : ''
                             } ${readOnly || isSubmitting ? inputDisabled : ''}`}
                         />
@@ -494,7 +482,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                 </Field>
 
                 {/* Date + Month — always side by side */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="record-form-pair">
                     <Field label="Payment Date" icon={HiOutlineCalendarDays}>
                         <input
                             type="date" name="paymentDate" value={formData.paymentDate}
@@ -506,6 +494,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                     </Field>
                     <Field label="For Month" icon={HiOutlineCalendarDays}>
                         <IconSelect
+                            variant="record"
                             name="month"
                             value={formData.month}
                             onChange={handleChange}
@@ -522,7 +511,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
 
                 {/* Payment Type */}
                 <Field label="Payment Type" icon={HiOutlineTag}>
-                    <div className="flex gap-2">
+                    <div className="segmented-control record-form-options" role="group" aria-label="Payment type">
                         {PAYMENT_TYPES.map(t => (
                             <TypeBtn
                                 key={t.value} value={t.value} current={formData.type}
@@ -540,7 +529,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                                         amount: restoredAmount,
                                     }));
                                 }}
-                                label={t.label} color={t.color}
+                                label={t.label}
                                 disabled={readOnly || isSubmitting}
                             />
                         ))}
@@ -548,9 +537,10 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                 </Field>
 
                 {/* Method + Status (admin only) — side by side */}
-                <div className={`grid gap-3 ${showStatus ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                <div className={showStatus ? 'record-form-pair' : 'grid grid-cols-1 gap-3'}>
                     <Field label="Method" icon={HiOutlineCreditCard}>
                         <IconSelect
+                            variant="record"
                             name="paymentMethod" value={formData.paymentMethod}
                             onChange={handleChange} options={PAYMENT_METHODS}
                             disabled={readOnly || isSubmitting}
@@ -559,6 +549,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                     {showStatus && (
                         <Field label="Status" icon={HiOutlineCheckCircle}>
                             <IconSelect
+                                variant="record"
                                 name="status" value={formData.status}
                                 onChange={handleChange} options={STATUS_OPTIONS}
                                 disabled={readOnly || isSubmitting}
@@ -586,7 +577,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                         name="remarks" value={formData.remarks} onChange={handleChange}
                         rows={2}
                         disabled={readOnly || isSubmitting}
-                        className={`${inputBase} resize-none ${readOnly || isSubmitting ? inputDisabled : ''}`}
+                        className={`${inputBase} ${readOnly || isSubmitting ? inputDisabled : ''}`}
                         placeholder={readOnly ? '' : 'Add any notes about this payment…'}
                     />
                 </Field>

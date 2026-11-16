@@ -6,10 +6,10 @@ import { fetchPollStatus, voteMealPoll } from '@/modules/meal/store/meal.slice';
 import { fetchMarketSchedule, reset as resetMarket } from '@/modules/market/store/market.slice';
 import marketService from '@/modules/market/services/market.service';
 import PayableWidget from '../../../components/PayableWidget/PayableWidget';
-import { Button, RoleBadge } from '@/shared/components/ui';
+import ScheduleDay from '../../../components/ScheduleDay/ScheduleDay';
+import { Button } from '@/shared/components/ui';
 import { cn } from '@/core/utils/helpers/string.helper';
 import {
-    HiOutlineSquares2X2,
     HiOutlineMoon,
     HiOutlineSparkles,
     HiOutlineSun,
@@ -140,7 +140,7 @@ const GUIDE_ITEMS = [
 ];
 
 /* Shared card chrome — matches PayableWidget (radius, border, shadow, surface) */
-const CARD_CLS = 'min-w-0 rounded-2xl bg-card border border-border/50 shadow-sm animate-fade-up p-5 lg:p-6';
+const CARD_CLS = 'dashboard-panel min-w-0';
 
 /* Google/Meta-style section icon chips: soft tint + saturated icon.
    Token-driven — each theme supplies the AA-correct tint/text pair. */
@@ -152,7 +152,7 @@ const SECTION_TONES = {
 };
 
 const SectionHead = ({ icon: Icon, title, sub, right, id, tone = 'violet' }) => (
-    <header className="flex items-start justify-between gap-3">
+    <header className="dashboard-section-head">
         <div className="flex items-center gap-2.5 min-w-0">
             <span
                 aria-hidden="true"
@@ -161,11 +161,11 @@ const SectionHead = ({ icon: Icon, title, sub, right, id, tone = 'violet' }) => 
                 <Icon size={17} strokeWidth={1.9} />
             </span>
             <div className="min-w-0">
-                <h3 id={id} className="text-sm font-semibold tracking-tight text-foreground truncate">{title}</h3>
-                <p className="text-xs text-muted-foreground truncate mt-0.5">{sub}</p>
+                <h3 id={id} className="dashboard-section-title text-foreground">{title}</h3>
+                <p className="text-sm text-muted-foreground truncate mt-0.5">{sub}</p>
             </div>
         </div>
-        {right}
+        {right && <div className="dashboard-header-meta">{right}</div>}
     </header>
 );
 
@@ -199,7 +199,7 @@ const UserDashboard = memo(function UserDashboard() {
     const {
         userMealPayable,
         userGasBillPayable,
-        isLoading,
+        isUserStatsLoading: isLoading,
         userStatsLoaded,
         isMealPayableError,
         isGasBillPayableError,
@@ -475,15 +475,14 @@ const UserDashboard = memo(function UserDashboard() {
     }, []);
 
     return (
-        <div className="grid grid-cols-1 gap-5 min-[700px]:grid-cols-2 min-[1100px]:grid-cols-12">
+        <div className="dashboard-user-grid">
 
             {/* ── Header (Title + Eyebrow RoleBadge) ──────────────────── */}
-            <header className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 min-[700px]:col-span-2 min-[1100px]:col-span-12">
+            <header className="dashboard-header flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div className="space-y-1 min-w-0">
-                    <RoleBadge isAdmin={false} icon={HiOutlineSquares2X2} label="My Dashboard" />
-                    <h2 className="text-h1">
+                    <h1 className="text-h1">
                         Member Dashboard
-                    </h2>
+                    </h1>
                     <p className="text-sm text-muted-foreground">
                         Your real-time meal balance, active dining votes, and monthly financial summary.
                     </p>
@@ -491,13 +490,14 @@ const UserDashboard = memo(function UserDashboard() {
             </header>
 
             {/* ── Total Due (Payables) ── */}
-            <div className="min-w-0 min-[700px]:col-span-2 min-[1100px]:col-span-7">
+            <div className="dashboard-balance min-w-0">
                 <PayableWidget
                     mealPayable={userMealPayable?.payableAmount}
                     gasBillPayable={userGasBillPayable?.payableAmount}
                     mealPaymentStatus={userMealPayable?.paymentStatus ?? null}
                     gasBillStatus={userGasBillPayable?.status ?? null}
-                    isLoading={isLoading}
+                    isLoading={isLoading && !userStatsLoaded}
+                    onRetry={() => dispatch(fetchUserDashboardStats())}
                     isLoaded={userStatsLoaded}
                     isMealError={isMealPayableError}
                     isGasError={isGasBillPayableError}
@@ -507,7 +507,7 @@ const UserDashboard = memo(function UserDashboard() {
             {/* ── Dining Vote ── */}
             <section
                 aria-labelledby="dining-vote-heading"
-                className={cn(CARD_CLS, 'min-[700px]:col-span-2 min-[1100px]:col-span-5 min-[1100px]:row-span-2')}
+                className={cn(CARD_CLS, 'dashboard-vote min-[700px]:col-span-2 min-[1100px]:col-span-5 min-[1100px]:row-span-2')}
                 style={{ animationDelay: '0.05s' }}
             >
                 <SectionHead
@@ -519,7 +519,7 @@ const UserDashboard = memo(function UserDashboard() {
                     right={
                         <span
                             className={cn(
-                                'shrink-0 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider',
+                                'shrink-0 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold uppercase tracking-wider',
                                 myVote
                                     ? 'bg-success-bg border-success-border text-success-text'
                                     : 'bg-muted/50 border-border/40 text-muted-foreground'
@@ -533,7 +533,7 @@ const UserDashboard = memo(function UserDashboard() {
                     }
                 />
 
-                <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+                <p className="mt-2 text-xs leading-snug text-muted-foreground">
                     Standing preference — your choice stays in effect until you change it.
                 </p>
 
@@ -557,7 +557,7 @@ const UserDashboard = memo(function UserDashboard() {
                     <ErrorPanel message="Couldn't load the dining vote." onRetry={loadPoll} minHeight={180} />
                 )}
                 {pollError && pollStatus && (
-                    <p className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px] text-destructive" role="alert">
+                    <p className="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-destructive" role="alert">
                         <FiAlertCircle size={12} aria-hidden="true" />
                         Couldn&apos;t refresh — showing the last saved vote.
                         <button
@@ -612,10 +612,10 @@ const UserDashboard = memo(function UserDashboard() {
                                             />
                                         </span>
                                         <span className="min-w-0 flex-1">
-                                            <span className="block text-xs font-semibold text-foreground">
+                                            <span className="block text-sm font-semibold text-foreground">
                                                 {option.label}
                                             </span>
-                                            <span className="block text-[10px] leading-tight text-muted-foreground truncate">
+                                            <span className="block text-xs leading-tight text-muted-foreground truncate">
                                                 {option.description}
                                             </span>
                                         </span>
@@ -629,7 +629,7 @@ const UserDashboard = memo(function UserDashboard() {
                                                         : 'scale-50 opacity-0'
                                                 )}
                                             />
-                                            <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">
+                                            <span className="text-xs font-semibold tabular-nums text-muted-foreground">
                                                 {totals[option.id]}v
                                             </span>
                                         </span>
@@ -639,12 +639,12 @@ const UserDashboard = memo(function UserDashboard() {
                         </div>
 
                         {votes.length === 0 && !isPollLoading && !pollError && (
-                            <p className="mt-3 text-[11px] text-muted-foreground">
+                            <p className="mt-3 text-xs text-muted-foreground">
                                 No selections yet — be the first to vote.
                             </p>
                         )}
 
-                        <div className="mt-3 flex items-center justify-between gap-2 text-[11px]">
+                        <div className="mt-3 flex items-center justify-between gap-2 text-xs">
                             <span className="text-muted-foreground truncate">
                                 Current:{' '}
                                 <span className="font-semibold text-foreground">{currentLabel}</span>
@@ -661,12 +661,12 @@ const UserDashboard = memo(function UserDashboard() {
                             onClick={handleVote}
                             disabled={!canSubmit}
                             isLoading={isVoting}
-                            className="mt-2.5"
+                            className="dashboard-action mt-2.5"
                         >
                             {myVote ? 'Update vote' : 'Submit vote'}
                         </Button>
 
-                        <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+                        <p className="mt-2 text-xs leading-snug text-muted-foreground">
                             You can change your vote anytime before the meal entry is finalised.
                         </p>
                     </>
@@ -676,7 +676,7 @@ const UserDashboard = memo(function UserDashboard() {
             {/* ── Market Schedule ── */}
             <section
                 aria-labelledby="market-schedule-heading"
-                className={cn(CARD_CLS, 'min-[700px]:col-span-2 min-[1100px]:col-span-7')}
+                className={cn(CARD_CLS, 'dashboard-duty min-[700px]:col-span-2 min-[1100px]:col-span-7')}
                 style={{ animationDelay: '0.1s' }}
             >
                 <SectionHead
@@ -684,21 +684,12 @@ const UserDashboard = memo(function UserDashboard() {
                     icon={HiOutlineShoppingCart}
                     tone="emerald"
                     title="Market Schedule"
-                    sub={monthLabel}
-                    right={
-                        dayList.length > 0 ? (
-                            <div className="flex items-center gap-1.5">
-                                {myDutyDaysCount > 0 && (
-                                    <span className="shrink-0 inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 tabular-nums shadow-xs">
-                                        {myDutyDaysCount} {myDutyDaysCount === 1 ? 'my duty' : 'my duties'}
-                                    </span>
-                                )}
-                                <span className="shrink-0 inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 tabular-nums shadow-xs">
-                                    {dayList.length} duty {dayList.length === 1 ? 'day' : 'days'}
-                                </span>
-                            </div>
-                        ) : null
-                    }
+                    sub={`${monthLabel}${myDutyDaysCount > 0 ? ` · ${myDutyDaysCount} ${myDutyDaysCount === 1 ? 'my duty' : 'my duties'}` : ''}`}
+                    right={dayList.length > 0 ? (
+                        <span className="dashboard-duty-count">
+                            {dayList.length} duty {dayList.length === 1 ? 'day' : 'days'}
+                        </span>
+                    ) : null}
                 />
 
                 {/* Loading skeleton — fixed heights, no layout shift */}
@@ -724,7 +715,7 @@ const UserDashboard = memo(function UserDashboard() {
                     />
                 )}
                 {schedError && dayList.length > 0 && (
-                    <p className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px] text-destructive" role="alert">
+                    <p className="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-destructive" role="alert">
                         <FiAlertCircle size={12} aria-hidden="true" />
                         Couldn&apos;t refresh — showing the last saved schedule.
                         <button
@@ -756,95 +747,20 @@ const UserDashboard = memo(function UserDashboard() {
                 {!showSchedSkeleton && !showSchedError && !showSchedEmpty && (
                     <>
                         <div
-                            className="mt-4 flex flex-nowrap gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory min-[700px]:flex-wrap min-[700px]:overflow-visible min-[700px]:snap-none rounded-2xl border border-border/50 bg-muted/30 dark:bg-muted/20 p-2 sm:p-2.5 shadow-[inset_0_1px_3px_rgba(0,0,0,0.05)] dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.4),0_1px_0_rgba(255,255,255,0.03)]"
+                            className="dashboard-days"
                             role="group"
                             aria-label={`Duty days in ${monthLabel}`}
                         >
-                            {dayList.map((day) => {
-                                const isSelected = day.key === activeDayKey;
-                                const isToday = day.date.toDateString() === todayStr;
-                                const isMyDay = isUserDuty(day.user, currentUserId);
-                                return (
-                                    <button
-                                        key={day.key}
-                                        type="button"
-                                        onClick={() => setSelectedDayKey(day.key)}
-                                        aria-pressed={isSelected}
-                                        aria-label={`${format(day.date, 'EEEE, MMMM d')}${isMyDay ? ' (Your market duty)' : ''}`}
-                                        className={cn(
-                                            'relative overflow-hidden shrink-0 snap-start w-14 h-14 sm:w-16 sm:h-16 aspect-square p-1 sm:p-1.5 rounded-lg border text-center select-none flex flex-col items-center justify-between',
-                                            'transition-all duration-200 motion-reduce:transition-none',
-                                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                                            isMyDay
-                                                ? isSelected
-                                                    ? 'bg-gradient-to-b from-emerald-500/20 via-emerald-500/12 to-emerald-500/5 dark:from-emerald-500/30 dark:via-emerald-500/18 dark:to-emerald-500/8 border-emerald-500/80 dark:border-emerald-400 border-b-emerald-600/90 dark:border-b-emerald-500/60 ring-2 ring-emerald-500/35 dark:ring-emerald-400/40 shadow-[0_4px_12px_-2px_rgba(16,185,129,0.35),0_1px_3px_rgba(16,185,129,0.2),inset_0_1px_0_rgba(255,255,255,0.9)] dark:shadow-[0_4px_16px_-2px_rgba(16,185,129,0.45),0_2px_4px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.25)] -translate-y-0.5'
-                                                    : 'bg-gradient-to-b from-emerald-50/90 via-emerald-50/40 to-white/90 dark:from-emerald-500/15 dark:via-emerald-500/8 dark:to-transparent border-emerald-500/50 dark:border-emerald-500/40 border-b-emerald-600/50 dark:border-b-emerald-600/30 shadow-[0_1px_3px_rgba(16,185,129,0.15),0_1px_1px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.95)] dark:shadow-[0_2px_5px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(52,211,153,0.18)] hover:-translate-y-0.5 hover:border-emerald-500 dark:hover:border-emerald-400/70 hover:shadow-[0_4px_10px_-2px_rgba(16,185,129,0.25),inset_0_1px_0_rgba(255,255,255,1)] dark:hover:shadow-[0_4px_12px_rgba(16,185,129,0.3),inset_0_1px_0_rgba(52,211,153,0.3)]'
-                                                : isSelected
-                                                    ? 'bg-gradient-to-b from-primary/15 via-primary/8 to-transparent dark:from-primary/25 dark:via-primary/12 dark:to-transparent border-primary/70 dark:border-primary/80 border-b-primary/90 dark:border-b-primary/60 ring-2 ring-primary/25 dark:ring-primary/35 shadow-[0_4px_12px_-2px_rgba(37,99,235,0.28),0_1px_3px_rgba(37,99,235,0.12),inset_0_1px_0_rgba(255,255,255,0.95)] dark:shadow-[0_4px_16px_-2px_rgba(59,130,246,0.45),0_2px_5px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.22)] -translate-y-0.5'
-                                                    : isToday
-                                                        ? 'bg-gradient-to-b from-white via-card to-card/90 dark:from-white/[0.07] dark:via-white/[0.03] dark:to-transparent border-primary/50 dark:border-primary/40 border-b-primary/60 dark:border-b-primary/50 ring-1 ring-primary/25 dark:ring-primary/30 shadow-[0_1px_3px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.95)] dark:shadow-[0_2px_5px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.07)] hover:-translate-y-0.5 hover:border-primary hover:shadow-[0_4px_10px_-2px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,1)]'
-                                                        : 'bg-gradient-to-b from-white via-card to-card/90 dark:from-white/[0.07] dark:via-white/[0.03] dark:to-transparent border-border/70 dark:border-white/[0.08] border-b-border dark:border-b-black/40 dark:border-t-white/[0.12] shadow-[0_1px_2px_rgba(0,0,0,0.05),0_1px_1px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.95)] dark:shadow-[0_2px_5px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.07)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_4px_10px_-2px_rgba(0,0,0,0.08),0_2px_4px_-1px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,1)] dark:hover:from-white/[0.09] dark:hover:to-white/[0.04] dark:hover:border-white/[0.18] dark:hover:shadow-[0_4px_12px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.14)]'
-                                        )}
-                                    >
-                                        {/* Specular top light rim */}
-                                        <span
-                                            aria-hidden="true"
-                                            className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/80 dark:via-white/20 to-transparent"
-                                        />
-
-                                        <span
-                                            className={cn(
-                                                'block text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider leading-none transition-colors duration-150 mt-0.5',
-                                                isMyDay
-                                                    ? isSelected
-                                                        ? 'text-emerald-700 dark:text-emerald-300 font-bold'
-                                                        : 'text-emerald-600 dark:text-emerald-400 font-semibold'
-                                                    : isSelected
-                                                        ? 'text-primary font-bold'
-                                                        : isToday
-                                                            ? 'text-primary dark:text-primary font-bold'
-                                                            : 'text-muted-foreground'
-                                            )}
-                                        >
-                                            {format(day.date, 'EEE')}
-                                        </span>
-                                        <span
-                                            className={cn(
-                                                'block text-sm min-[380px]:text-base sm:text-base font-bold tabular-nums leading-none my-auto transition-colors duration-150',
-                                                isMyDay
-                                                    ? isSelected
-                                                        ? 'text-emerald-900 dark:text-emerald-100 font-extrabold'
-                                                        : 'text-emerald-800 dark:text-emerald-200'
-                                                    : isSelected
-                                                        ? 'text-primary font-bold'
-                                                        : isToday
-                                                            ? 'text-foreground font-extrabold'
-                                                            : 'text-foreground'
-                                            )}
-                                        >
-                                            {format(day.date, 'd')}
-                                        </span>
-                                        <div className="flex items-center justify-center h-1.5 w-full mb-0.5 shrink-0">
-                                            {isSelected ? (
-                                                <span
-                                                    className={cn(
-                                                        'block h-1 w-3 sm:w-3.5 rounded-full transition-all duration-150',
-                                                        isMyDay
-                                                            ? 'bg-emerald-600 dark:bg-emerald-400'
-                                                            : 'bg-primary'
-                                                    )}
-                                                    aria-hidden="true"
-                                                />
-                                            ) : (
-                                                <span
-                                                    className="block h-1 w-3 sm:w-3.5 rounded-full bg-transparent"
-                                                    aria-hidden="true"
-                                                />
-                                            )}
-                                        </div>
-                                    </button>
-                                );
-                            })}
+                            {dayList.map((day) => (
+                                <ScheduleDay
+                                    key={day.key}
+                                    date={day.date}
+                                    isSelected={day.key === activeDayKey}
+                                    isToday={day.date.toDateString() === todayStr}
+                                    isOwnDuty={isUserDuty(day.user, currentUserId)}
+                                    onSelect={() => setSelectedDayKey(day.key)}
+                                />
+                            ))}
                         </div>
 
                         <div className="mt-3 flex flex-wrap sm:flex-nowrap items-center gap-3 rounded-2xl border border-border/60 bg-muted/30 dark:bg-muted/30 p-3 min-h-[76px]">
@@ -870,20 +786,20 @@ const UserDashboard = memo(function UserDashboard() {
                                         <p className="text-sm font-semibold text-foreground truncate">
                                             {selectedDay.user.name}
                                         </p>
-                                        <p className="text-xs text-muted-foreground">
+                                        <p className="text-sm text-muted-foreground">
                                             {format(selectedDay.date, 'EEEE, MMM d, yyyy')}
                                         </p>
                                     </div>
                                     {(isMyDuty || isDutyCompleted) && (
                                         <span className="w-full sm:w-auto shrink-0 flex items-center gap-1.5">
                                             {isDutyCompleted && (
-                                                <span className="inline-flex items-center gap-1 rounded-full border border-success-border bg-success-bg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-success-text">
+                                                <span className="inline-flex items-center gap-1 rounded-full border border-success-border bg-success-bg px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-success-text">
                                                     <HiOutlineCheckCircle size={12} aria-hidden="true" />
                                                     Market duty Completed
                                                 </span>
                                             )}
                                             {isMyDuty && !isDutyCompleted && (
-                                                <span className="inline-flex items-center rounded-full border border-success-border bg-success-bg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-success-text">
+                                                <span className="inline-flex items-center rounded-full border border-success-border bg-success-bg px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-success-text">
                                                     You&apos;re on duty
                                                 </span>
                                             )}
@@ -895,7 +811,7 @@ const UserDashboard = memo(function UserDashboard() {
                                     <p className="text-sm font-medium text-foreground truncate">
                                         No member assigned
                                     </p>
-                                    <p className="text-xs text-muted-foreground">
+                                    <p className="text-sm text-muted-foreground">
                                         {selectedDay
                                             ? format(selectedDay.date, 'EEEE, MMM d, yyyy')
                                             : monthLabel}
@@ -910,7 +826,7 @@ const UserDashboard = memo(function UserDashboard() {
             {/* ── View Schedule Markets ── */}
             <section
                 aria-labelledby="view-markets-heading"
-                className={cn(CARD_CLS, 'min-[1100px]:col-span-6')}
+                className={cn(CARD_CLS, 'dashboard-links min-[1100px]:col-span-6')}
                 style={{ animationDelay: '0.15s' }}
             >
                 <SectionHead
@@ -940,7 +856,7 @@ const UserDashboard = memo(function UserDashboard() {
                                     <span className="block text-sm font-medium text-foreground truncate">
                                         {link.title}
                                     </span>
-                                    <span className="block text-xs text-muted-foreground truncate">
+                                    <span className="block text-sm text-muted-foreground truncate">
                                         {link.sub}
                                     </span>
                                 </span>
@@ -955,7 +871,7 @@ const UserDashboard = memo(function UserDashboard() {
                 </nav>
 
                 <div className="mt-3 pt-3 border-t border-border/40">
-                    <Button asChild variant="outline" size="md" fullWidth>
+                    <Button asChild variant="outline" size="md" fullWidth className="dashboard-action">
                         <Link to="/markets">
                             View all
                             <FiArrowRight size={14} aria-hidden="true" />
@@ -967,7 +883,7 @@ const UserDashboard = memo(function UserDashboard() {
             {/* ── How to Use ── */}
             <section
                 aria-labelledby="how-to-use-heading"
-                className={cn(CARD_CLS, 'min-[1100px]:col-span-6')}
+                className={cn(CARD_CLS, 'dashboard-guide min-[1100px]:col-span-6')}
                 style={{ animationDelay: '0.2s' }}
             >
                 <SectionHead
@@ -1005,12 +921,12 @@ const UserDashboard = memo(function UserDashboard() {
 
                                 {isOpen && (
                                     <div id={`how-to-${item.id}`} className="px-3 pb-3">
-                                        <p className="text-xs leading-relaxed text-muted-foreground">
+                                        <p className="text-sm leading-relaxed text-muted-foreground">
                                             {item.body}
                                         </p>
                                         <Link
                                             to={item.to}
-                                            className="mt-1 inline-flex items-center gap-1 min-h-[44px] text-xs font-semibold text-primary rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                            className="mt-1 inline-flex items-center gap-1 min-h-[44px] text-sm font-semibold text-primary rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                         >
                                             {item.linkLabel}
                                             <HiOutlineChevronRight size={14} aria-hidden="true" />

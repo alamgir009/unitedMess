@@ -1,11 +1,14 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, render as renderComponent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import AnalyticsGuard from '@/modules/analytics/components/AnalyticsGuard';
-import MemberFilter, { ALL_MEMBERS } from '@/modules/analytics/components/MemberFilter';
+import MemberFilter from '@/modules/analytics/components/MemberFilter';
+import analyticsUi, { ALL_MEMBERS } from '@/modules/analytics/store/analytics.slice';
+import { analyticsApi } from '@/modules/analytics/store/analytics.api';
+import { analyticsMiddleware } from '@/modules/analytics/store/analytics.middleware';
 import AnalyticsPage from '@/modules/analytics/pages/AnalyticsPage';
 import { getMembers, getReport } from '@/modules/analytics/services/analytics.service';
 import { formatMoney } from '@/modules/analytics/utils/format';
@@ -16,7 +19,16 @@ vi.mock('@/shared/components/layout/MainLayout/MainLayout', () => ({ default: ({
 vi.mock('@/modules/analytics/components/ReportCharts', () => ({ default: () => <div>Report charts</div> }));
 
 beforeEach(() => { vi.clearAllMocks(); getMembers.mockResolvedValue([]); });
-afterEach(cleanup);
+const stores = [];
+const render = (component) => {
+    const store = configureStore({
+        reducer: { auth: () => ({ user: { _id: 'admin', role: 'admin', isActive: true, userStatus: 'approved' } }), analyticsUi, [analyticsApi.reducerPath]: analyticsApi.reducer },
+        middleware: (defaults) => defaults().concat(analyticsMiddleware, analyticsApi.middleware),
+    });
+    stores.push(store);
+    return renderComponent(component, { wrapper: ({ children }) => <Provider store={store}>{children}</Provider> });
+};
+afterEach(() => { cleanup(); stores.splice(0).forEach((store) => store.dispatch(analyticsApi.util.resetApiState())); });
 
 describe('Analytics', () => {
     it('blocks a non-admin client route and preserves exact currency strings', () => {
@@ -34,14 +46,21 @@ describe('Analytics', () => {
         getMembers.mockResolvedValue([alice]);
         const onChange = vi.fn();
         const view = render(<MemberFilter value={ALL_MEMBERS} onChange={onChange} />);
-        await waitFor(() => expect(getMembers).toHaveBeenCalledWith('', expect.any(AbortSignal)));
+        expect(getMembers).not.toHaveBeenCalled();
         const input = screen.getByRole('combobox');
+        await user.click(input);
+        await waitFor(() => expect(getMembers).toHaveBeenCalledWith('', expect.any(AbortSignal)));
         await user.clear(input);
         await user.type(input, 'alice@');
         expect(getMembers).not.toHaveBeenCalledWith('alice@', expect.anything());
         await waitFor(() => expect(getMembers).toHaveBeenCalledWith('alice@', expect.any(AbortSignal)));
         await user.keyboard('{ArrowDown}{End}{Enter}');
         await waitFor(() => expect(onChange).toHaveBeenCalledWith(alice));
+        const requests = getMembers.mock.calls.length;
+        await user.keyboard('{ArrowDown}');
+        await screen.findByRole('option', { name: /Alice/ });
+        expect(getMembers).toHaveBeenCalledTimes(requests);
+        await user.keyboard('{Escape}');
         view.rerender(<MemberFilter value={alice} onChange={onChange} />);
         await user.click(screen.getByRole('button', { name: 'Clear member filter' }));
         expect(onChange).toHaveBeenLastCalledWith(ALL_MEMBERS);
@@ -61,7 +80,7 @@ describe('Analytics', () => {
         expect(getReport).toHaveBeenCalledTimes(3);
         const lastSignal = getReport.mock.calls[2][2];
         view.unmount();
-        expect(lastSignal.aborted).toBe(true);
+        expect(lastSignal.aborted).toBe(false);
     });
 
     it('keeps multiple same-name members and their exact amounts in the same daily row; month dropdown supports keyboard selection', async () => {

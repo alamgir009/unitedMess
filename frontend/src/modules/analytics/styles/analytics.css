@@ -1,4 +1,5 @@
 @import './analytics-theme.css';
+@import '../../../shared/components/ui/SegmentedControl/segmented-control.css';
 
 .analytics { color: var(--text-primary); }
 .analytics-secondary { color: var(--text-secondary); }
@@ -24,11 +25,6 @@
 .analytics-member-input { padding-left: var(--space-10); padding-right: 88px; }
 .analytics-member-field:is(:hover, :focus-within) .analytics-member-input { border-color: var(--analytics-primary); }
 .analytics-input-icon { position: absolute; left: var(--space-3); pointer-events: none; }
-.analytics-segmented { display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-1); background: var(--bg-muted); border-radius: var(--radius-lg); box-shadow: var(--analytics-toggle-well); }
-.analytics-segmented .analytics-button { background: transparent; border-color: transparent; box-shadow: none; }
-.analytics-segmented .analytics-button:hover:not([aria-pressed="true"]) { background: var(--bg-subtle); color: var(--text-primary); }
-.analytics-segmented .analytics-button[aria-pressed="true"] { background: var(--bg-elevated); color: var(--analytics-primary);  box-shadow: var(--analytics-toggle-highlight), var(--analytics-toggle-shadow); }
-.analytics-segmented .analytics-button[aria-pressed="true"]:active { box-shadow: var(--analytics-toggle-highlight), var(--shadow-xs); }
 .analytics-month-trigger { display: flex; align-items: center; gap: var(--space-3); }
 .analytics-select-chevron { transition: transform var(--duration-base) var(--ease-out); }
 [aria-expanded="true"] > .analytics-select-chevron, [aria-expanded="true"] .analytics-select-chevron { transform: rotate(180deg); }

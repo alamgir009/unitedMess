@@ -1,8 +1,5 @@
 :is(.analytics, .analytics-member-options, .analytics-month-options) {
-    --analytics-primary: #3730a3;
-    --analytics-toggle-shadow: var(--btn-elevated-shadow);
-    --analytics-toggle-highlight: var(--btn-top-highlight-light);
-    --analytics-toggle-well: var(--inset-well);
+    --analytics-primary: var(--segmented-active-text);
     --analytics-control-tint: #eef2ff;
     --analytics-control-border: #7c899b;
     --analytics-market-amount: #3730a3;
@@ -18,10 +15,7 @@
 }
 
 html.dark :is(.analytics, .analytics-member-options, .analytics-month-options) {
-    --analytics-primary: #c7d2fe;
-    --analytics-toggle-shadow: var(--btn-elevated-shadow-dark);
-    --analytics-toggle-highlight: var(--btn-top-highlight-dark);
-    --analytics-toggle-well: var(--inset-inner);
+    --analytics-primary: var(--segmented-active-text);
     --analytics-control-tint: #1e1b4b;
     --analytics-control-border: #8390a4;
     --analytics-market-amount: #a5b4fc;

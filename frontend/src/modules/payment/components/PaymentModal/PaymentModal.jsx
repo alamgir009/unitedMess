@@ -7,6 +7,7 @@ const PaymentModal = ({ isOpen, onClose, title, footer, children }) => (
     title={title}
     accentColor="blue"
     size="md"
+    className="record-modal"
     mobileSheet
     footer={footer}
   >

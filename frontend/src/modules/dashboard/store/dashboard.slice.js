@@ -13,6 +13,9 @@ const initialState = {
     isError: false,
     isSuccess: false,
     isLoading: false,
+    isAdminStatsLoading: false,
+    isUserStatsLoading: false,
+    isAdminStatsError: false,
     isActivitiesLoading: false,
     // ── Per-section error/loaded flags (user stats) ──────────────────────────
     // userStatsLoaded: false means data has never been fetched yet.
@@ -29,10 +32,10 @@ export const fetchAdminDashboardStats = createAsyncThunk(
     'dashboard/fetchAdminStats',
     async (_, thunkAPI) => {
         try {
-            const stats = await dashboardService.getAdminStats();
-            const marketTotal = await dashboardService.getMarketGrandTotal();
-            const mealTotal = await dashboardService.getMealGrandTotal();
-            const mealCharge = await dashboardService.getMealCharge();
+            const [stats, marketTotal, mealTotal, mealCharge] = await Promise.all([
+                dashboardService.getAdminStats(), dashboardService.getMarketGrandTotal(),
+                dashboardService.getMealGrandTotal(), dashboardService.getMealCharge(),
+            ]);
 
             return {
                 stats: stats?.data || stats,
@@ -107,12 +110,15 @@ export const dashboardSlice = createSlice({
         builder
             // Admin Stats
             .addCase(fetchAdminDashboardStats.pending, (state) => {
+                state.isAdminStatsLoading = true;
+                state.isAdminStatsError = false;
                 state.isLoading = true;
                 state.isError = false;
                 state.isSuccess = false;
             })
             .addCase(fetchAdminDashboardStats.fulfilled, (state, action) => {
-                state.isLoading = false;
+                state.isAdminStatsLoading = false;
+                state.isLoading = state.isUserStatsLoading;
                 state.isSuccess = true;
                 state.adminStats = action.payload.stats;
                 state.marketGrandTotal = action.payload.marketTotal;
@@ -120,12 +126,15 @@ export const dashboardSlice = createSlice({
                 state.mealCharge = action.payload.mealCharge;
             })
             .addCase(fetchAdminDashboardStats.rejected, (state, action) => {
-                state.isLoading = false;
+                state.isAdminStatsLoading = false;
+                state.isAdminStatsError = true;
+                state.isLoading = state.isUserStatsLoading;
                 state.isError = true;
                 state.message = action.payload;
             })
             // User Stats
             .addCase(fetchUserDashboardStats.pending, (state) => {
+                state.isUserStatsLoading = true;
                 state.isLoading = true;
                 state.isError = false;
                 state.isUserStatsError = false;
@@ -134,7 +143,8 @@ export const dashboardSlice = createSlice({
                 state.isSuccess = false;
             })
             .addCase(fetchUserDashboardStats.fulfilled, (state, action) => {
-                state.isLoading = false;
+                state.isUserStatsLoading = false;
+                state.isLoading = state.isAdminStatsLoading;
                 state.isSuccess = true;
                 state.userStatsLoaded = true;
                 state.lastFetchedAt = Date.now();
@@ -146,7 +156,8 @@ export const dashboardSlice = createSlice({
                     action.payload.isMealPayableError && action.payload.isGasBillPayableError;
             })
             .addCase(fetchUserDashboardStats.rejected, (state) => {
-                state.isLoading = false;
+                state.isUserStatsLoading = false;
+                state.isLoading = state.isAdminStatsLoading;
                 state.isError = true;
                 state.isUserStatsError = true;
                 state.isMealPayableError = true;
@@ -170,6 +181,10 @@ export const dashboardSlice = createSlice({
             })
             // ── logout: clear all dashboard state ──────────────────────────
             .addCase(logout.fulfilled, (state) => {
+                state.isLoading = false;
+                state.isAdminStatsLoading = false;
+                state.isUserStatsLoading = false;
+                state.isAdminStatsError = false;
                 state.adminStats = null;
                 state.marketGrandTotal = null;
                 state.mealGrandTotal = null;

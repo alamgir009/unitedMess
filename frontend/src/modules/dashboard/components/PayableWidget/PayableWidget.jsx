@@ -28,6 +28,7 @@ const PayableWidget = ({
     mealPaymentStatus,
     gasBillStatus,
     isLoading,
+    onRetry,
     isLoaded,
     isMealError,
     isGasError,
@@ -82,7 +83,7 @@ const PayableWidget = ({
                             <span className="text-caption font-semibold text-muted-foreground uppercase tracking-wider">
                                 {hasRefund ? 'Total Refund' : hasOutstanding ? 'Total Due' : 'This Period'}
                             </span>
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-muted/60 border border-border/40 text-muted-foreground tabular-nums">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-muted/60 border border-border/40 text-muted-foreground tabular-nums">
                                 {periodLabel}
                             </span>
                         </div>
@@ -90,7 +91,7 @@ const PayableWidget = ({
                         {/* Large hero amount */}
                         <div className="flex items-end gap-3">
                             <span className={cn(
-                                "text-4xl sm:text-5xl font-bold tabular-nums tracking-tight leading-none",
+                                "dashboard-balance-amount tabular-nums tracking-tight",
                                 hasRefund
                                     ? "text-refund-text"
                                     : hasOutstanding
@@ -109,19 +110,19 @@ const PayableWidget = ({
                             </span>
 
                             {!isLoading && hasOutstanding && (
-                                <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-warning-text bg-warning-bg border border-warning-border rounded-full px-2 py-0.5 mb-1">
+                                <span className="inline-flex items-center gap-1 text-xs sm:text-xs font-bold text-warning-text bg-warning-bg border border-warning-border rounded-full px-2 py-0.5 mb-1">
                                     <FiAlertCircle size={11} />
                                     due
                                 </span>
                             )}
                             {!isLoading && hasSettledRefund && !hasOutstanding && (
-                                <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-refund-text bg-refund-bg border border-refund-border rounded-full px-2 py-0.5 mb-1">
+                                <span className="inline-flex items-center gap-1 text-xs sm:text-xs font-bold text-refund-text bg-refund-bg border border-refund-border rounded-full px-2 py-0.5 mb-1">
                                     <FiRotateCcw size={11} />
                                     Refunded
                                 </span>
                             )}
                             {!isLoading && !hasRefund && !hasOutstanding && mealPaid && gasPaid && (
-                                <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-success-text bg-success-bg border border-success-border rounded-full px-2 py-0.5 mb-1">
+                                <span className="inline-flex items-center gap-1 text-xs sm:text-xs font-bold text-success-text bg-success-bg border border-success-border rounded-full px-2 py-0.5 mb-1">
                                     <FiCheckCircle size={11} />
                                     All clear
                                 </span>
@@ -143,7 +144,7 @@ const PayableWidget = ({
                     <div className="flex flex-wrap gap-2">
                         {/* Meal chip */}
                         <div className={cn(
-                            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] sm:text-caption font-semibold border",
+                            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-caption font-semibold border",
                             mealRefund && safeMeal < 0
                                 ? "bg-refund-bg border-refund-border text-refund-text"
                                 : mealPaid
@@ -170,7 +171,7 @@ const PayableWidget = ({
 
                         {/* Gas chip */}
                         <div className={cn(
-                            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] sm:text-caption font-semibold border",
+                            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-caption font-semibold border",
                             gasRefund && safeGas < 0
                                 ? "bg-refund-bg border-refund-border text-refund-text"
                                 : gasPaid
@@ -209,17 +210,17 @@ const PayableWidget = ({
                 {(isMealError || isGasError) && isLoaded && (
                     <div className="flex flex-wrap gap-2">
                         {isMealError && (
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] sm:text-caption font-semibold bg-danger-bg border border-danger-border text-danger-text">
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-caption font-semibold bg-danger-bg border border-danger-border text-danger-text">
                                 <FiAlertCircle size={12} />
                                 <span>Meal failed</span>
-                                <button onClick={() => window.location.reload()} className="underline underline-offset-1 ml-0.5">Retry</button>
+                                <button onClick={onRetry} className="underline underline-offset-1 ml-0.5">Retry</button>
                             </div>
                         )}
                         {isGasError && (
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] sm:text-caption font-semibold bg-danger-bg border border-danger-border text-danger-text">
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-caption font-semibold bg-danger-bg border border-danger-border text-danger-text">
                                 <FiAlertCircle size={12} />
                                 <span>Gas failed</span>
-                                <button onClick={() => window.location.reload()} className="underline underline-offset-1 ml-0.5">Retry</button>
+                                <button onClick={onRetry} className="underline underline-offset-1 ml-0.5">Retry</button>
                             </div>
                         )}
                     </div>
@@ -236,7 +237,7 @@ const PayableWidget = ({
                             size="md"
                             fullWidth
                             onClick={() => navigate('/payments')}
-                            className="font-semibold text-refund-text border-refund-border/60 hover:bg-refund-bg/70 shadow-xs flex items-center justify-between"
+                            className="dashboard-action font-semibold text-refund-text border-refund-border/60 hover:bg-refund-bg/70 shadow-xs flex items-center justify-between"
                         >
                             <span>View refund details</span>
                             <FiArrowRight size={15} />
@@ -258,7 +259,7 @@ const PayableWidget = ({
                             size="md"
                             fullWidth
                             onClick={() => navigate('/payments')}
-                            className="font-semibold shadow-sm hover:shadow flex items-center justify-between"
+                            className="dashboard-action font-semibold shadow-sm hover:shadow flex items-center justify-between"
                         >
                             <span className="flex items-center gap-2">
                                 <FiCreditCard size={16} />

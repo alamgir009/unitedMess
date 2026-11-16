@@ -4,6 +4,7 @@ import { io } from 'socket.io-client';
 import { addRealTimeNotification } from '../store/notification.slice';
 import { getAccessToken } from '@/services/api/client/apiClient';
 import { scheduleSyncAll } from '@/services/api/middleware/paymentSync.middleware';
+import { analyticsDataChanged } from '@/modules/analytics/store/analytics.slice';
 import toast from 'react-hot-toast';
 
 // Use standard API URL resolution for socket connection
@@ -96,6 +97,7 @@ const useSocket = () => {
                 });
 
                 socketRef.current.on('billing:updated', () => {
+                    dispatch(analyticsDataChanged());
                     // Route through the shared debounced sync so a burst of
                     // realtime events (and any overlapping mutation) collapses
                     // into a single refresh batch instead of a request storm.

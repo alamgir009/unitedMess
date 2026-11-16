@@ -7,6 +7,7 @@ const MarketModal = ({ isOpen, onClose, title, footer, children }) => (
     title={title}
     accentColor="emerald"
     size="md"
+    className="record-modal"
     mobileSheet
     footer={footer}
   >

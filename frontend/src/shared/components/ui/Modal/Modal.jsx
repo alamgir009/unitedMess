@@ -253,7 +253,7 @@ const Modal = ({
           keeps the title, the close button, the Cancel escape hatch and their
           scroll position (previously the whole dialog collapsed to a spinner
           on save, and scroll reset to top on failure). */}
-      <div className={cn(
+      <div data-modal-body className={cn(
         'relative z-10 flex-1 overflow-y-auto overscroll-contain',
         useSheet ? 'px-4 py-3' : 'px-5 py-4 sm:px-6 sm:py-5',
         '[scrollbar-width:thin] [scrollbar-color:var(--border-strong)_transparent]',
@@ -277,7 +277,7 @@ const Modal = ({
       </div>
 
       {footer && (
-        <div className={cn(
+        <div data-modal-footer className={cn(
           'flex items-center justify-end gap-3 flex-shrink-0 border-t border-border-default',
           useSheet ? 'px-4 pb-4 pt-3' : 'px-5 pb-5 pt-3 sm:px-6 sm:pb-6 sm:pt-4',
         )}>

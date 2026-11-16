@@ -7,10 +7,9 @@ import { fetchPollStatus, voteMealPoll } from '@/modules/meal/store/meal.slice';
 import { fetchMarketSchedule, reset as resetMarket } from '@/modules/market/store/market.slice';
 import marketService from '@/modules/market/services/market.service';
 import MembersTable from '../../../components/MembersTable/MembersTable';
+import ScheduleDay from '../../../components/ScheduleDay/ScheduleDay';
 import SendNotificationModal from '@/modules/notification/components/SendNotificationModal/SendNotificationModal';
 import Button from '@/shared/components/ui/Button/Button';
-import { RoleBadge } from '@/shared/components/ui';
-import { HiOutlineCommandLine } from 'react-icons/hi2';
 import { buildMealRateFormula } from '@/core/utils/helpers/billing.helper';
 import {
     resolveBillStatus,
@@ -20,6 +19,7 @@ import {
 } from '@shared/utils/paymentStatus';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { format } from 'date-fns';
+import { prefetchAnalytics } from '@/modules/analytics/utils/preload';
 import {
     Users,
     ShoppingBag,
@@ -29,7 +29,6 @@ import {
     Utensils,
     UtensilsCrossed,
     CalendarDays,
-    Command,
     Send,
     RefreshCw,
     CircleAlert,
@@ -49,7 +48,7 @@ import toast from 'react-hot-toast';
    Design system — Cloud-console style
    One panel chrome, one type scale, one pill recipe, one accent.
    ───────────────────────────────────────────────────────────── */
-const PANEL_CLS = 'min-w-0 rounded-xl border border-border/60 bg-card shadow-sm animate-fade-in';
+const PANEL_CLS = 'dashboard-panel min-w-0';
 
 /* Secondary copy uses --text-secondary (7.29:1 on card in both themes).
    Brand text tier uses --brand-hover (#1D4ED8 light / #60A5FA dark):
@@ -96,16 +95,16 @@ const Chip = ({ icon: Icon, tone = 'violet', size = 28 }) => (
 );
 
 /* Shared card header: icon chip · title/sub · right meta, one baseline */
-const CardHead = ({ icon, iconTone, title, sub, right }) => (
-    <header className="flex items-start justify-between gap-2">
+const CardHead = ({ icon, iconTone, title, sub, right, id }) => (
+    <header className="dashboard-section-head">
         <div className="flex items-center gap-2.5 min-w-0">
             <Chip icon={icon} tone={iconTone} />
             <div className="min-w-0">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground truncate">{title}</h3>
-                <p className={cn('text-[10px] truncate mt-0.5', TSUB)}>{sub}</p>
+                <h3 id={id} className="dashboard-section-title text-foreground">{title}</h3>
+                <p className={cn('text-xs truncate mt-0.5', TSUB)}>{sub}</p>
             </div>
         </div>
-        {right}
+        {right && <div className="dashboard-header-meta">{right}</div>}
     </header>
 );
 
@@ -116,7 +115,7 @@ const ErrorPanel = ({ message, onRetry, minHeight }) => (
         role="alert"
     >
         <FiAlertCircle size={16} className="text-destructive" aria-hidden="true" />
-        <p className="text-xs font-medium text-foreground">{message}</p>
+        <p className="text-sm font-medium text-foreground">{message}</p>
         <Button variant="outline" size="sm" onClick={onRetry}>Retry</Button>
     </div>
 );
@@ -196,39 +195,40 @@ const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:rin
    (MemberPage grid-cols-2 lg:grid-cols-4, rounded-lg chips)
    ═════════════════════════════════════════════════════════════ */
 const KPI_TONES = {
-    brand: 'bg-primary/10 text-primary border border-primary/10',
+    brand: 'bg-primary/10 text-[color:var(--brand-hover)] border border-primary/10',
     danger: PILL_DANGER,
     success: PILL_SUCCESS,
     warning: PILL_WARN,
 };
 
-const KpiCard = memo(function KpiCard({ label, value, sub, icon: Icon, tone }) {
+const KpiCard = memo(function KpiCard({ label, value, sub, icon: Icon, tone, loading }) {
     return (
         <div
             className={cn(
-                'min-w-0 h-full rounded-lg border border-border bg-card shadow-sm',
+                'dashboard-panel dashboard-kpi min-w-0 h-full',
                 'min-h-[72px] sm:min-h-[80px] px-3.5 py-3 sm:px-4 sm:py-3.5',
-                'flex items-start justify-between gap-2.5 animate-fade-in-up'
+                'flex items-start justify-between gap-2.5'
             )}
         >
             <div className="min-w-0 flex-1">
-                <p className={cn('text-xs font-semibold uppercase tracking-wider truncate', TSUB)}>{label}</p>
+                <p className={cn('dashboard-kpi-label font-medium', TSUB)}>{label}</p>
                 <p
-                    className="mt-1 text-lg sm:text-xl font-bold tabular-nums text-foreground leading-none truncate"
+                    className="dashboard-kpi-value tabular-nums text-foreground"
+                    data-length={String(value).length > 14 ? 'extended' : String(value).length > 10 ? 'long' : 'normal'}
                     title={String(value)}
                 >
-                    {value}
+                    {loading ? <span className="inline-block h-8 w-24 rounded bg-muted motion-safe:animate-pulse" aria-label="Loading value" /> : value}
                 </p>
-                <p className={cn('text-[10px] mt-1 leading-none truncate', TSUB)}>{sub ?? ''}</p>
+                <p className={cn('text-xs mt-1 leading-none truncate', TSUB)}>{sub ?? ''}</p>
             </div>
             <span
                 aria-hidden="true"
                 className={cn(
-                    'shrink-0 flex items-center justify-center rounded-lg p-2',
+                    'shrink-0 flex items-center justify-center rounded-lg p-1.5 sm:p-2.5 md:p-3',
                     KPI_TONES[tone] ?? KPI_TONES.brand
                 )}
             >
-                <Icon size={18} strokeWidth={2} />
+                <Icon className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2} />
             </span>
         </div>
     );
@@ -253,11 +253,11 @@ const BillRow = memo(function BillRow({ name, amount, paid, refund, refundNote, 
         <div className="flex items-center justify-between gap-2 rounded-lg border border-border/40 bg-muted/25 px-2.5 py-2">
             <span className="flex items-center gap-2 min-w-0">
                 <span aria-hidden="true" className={cn('shrink-0 w-2 h-2 rounded-full', dotCls)} />
-                <span className="text-[11px] font-semibold text-foreground">{name}</span>
-                {refundNote && <span className={cn('text-[10px] truncate', TSUB)}>{refundNote}</span>}
+                <span className="text-xs font-semibold text-foreground">{name}</span>
+                {refundNote && <span className={cn('text-xs truncate', TSUB)}>{refundNote}</span>}
             </span>
             <span className={cn(
-                'shrink-0 text-xs font-bold tabular-nums',
+                'shrink-0 text-sm font-bold tabular-nums',
                 refund ? 'text-refund-text' : paid ? 'text-success-text' : 'text-foreground',
             )}>
                 {amount}
@@ -310,6 +310,7 @@ const TotalDueCard = memo(function TotalDueCard({
         >
             <div className="p-4 flex-1">
                 <CardHead
+                    id="total-due-heading"
                     icon={Wallet}
                     iconTone="blue"
                     title="Total Due"
@@ -319,8 +320,8 @@ const TotalDueCard = memo(function TotalDueCard({
                 {isReady && (
                     <>
                         <div className="mt-3 flex items-center justify-between gap-2">
-                            <p className={cn('text-[10px] font-bold uppercase tracking-wider', TSUB)}>{heroLabel}</p>
-                            <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums', PILL_NEUTRAL)}>
+                            <p className={cn('text-xs font-bold uppercase tracking-wider', TSUB)}>{heroLabel}</p>
+                            <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums', PILL_NEUTRAL)}>
                                 {periodLabel}
                             </span>
                         </div>
@@ -330,21 +331,21 @@ const TotalDueCard = memo(function TotalDueCard({
                                 <span className="inline-block h-9 w-28 rounded-lg bg-muted animate-pulse" aria-hidden="true" />
                             ) : (
                                 <>
-                                    <p className={cn('text-[28px] font-bold tabular-nums tracking-tight leading-none', heroCls)}>
+                                    <p className={cn('dashboard-balance-amount tabular-nums tracking-tight', heroCls)}>
                                         {heroAmount}
                                     </p>
                                     {hasOutstanding && (
-                                        <span className={cn('rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider', PILL_WARN)}>
+                                        <span className={cn('rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wider', PILL_WARN)}>
                                             Due
                                         </span>
                                     )}
                                     {hasSettledRefund && !hasOutstanding && (
-                                        <span className={cn('rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider', PILL_REFUND)}>
+                                        <span className={cn('rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wider', PILL_REFUND)}>
                                             Refunded
                                         </span>
                                     )}
                                     {!hasRefund && !hasOutstanding && (
-                                        <span className={cn('rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider', PILL_SUCCESS)}>
+                                        <span className={cn('rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wider', PILL_SUCCESS)}>
                                             All clear
                                         </span>
                                     )}
@@ -394,14 +395,14 @@ const TotalDueCard = memo(function TotalDueCard({
                     <div className="mt-3 grid gap-1.5" role="alert">
                         {isMealError && (
                             <div className="flex items-center justify-between gap-2 rounded-lg border border-danger-border bg-danger-bg px-2.5 py-2">
-                                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-danger-text">
+                                <span className="flex items-center gap-1.5 text-xs font-semibold text-danger-text">
                                     <FiAlertCircle size={12} aria-hidden="true" />
                                     Meal failed to load
                                 </span>
                                 <button
                                     type="button"
                                     onClick={() => window.location.reload()}
-                                    className="text-[11px] font-bold text-danger-text underline underline-offset-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    className="text-xs font-bold text-danger-text underline underline-offset-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 >
                                     Retry
                                 </button>
@@ -409,14 +410,14 @@ const TotalDueCard = memo(function TotalDueCard({
                         )}
                         {isGasError && (
                             <div className="flex items-center justify-between gap-2 rounded-lg border border-danger-border bg-danger-bg px-2.5 py-2">
-                                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-danger-text">
+                                <span className="flex items-center gap-1.5 text-xs font-semibold text-danger-text">
                                     <FiAlertCircle size={12} aria-hidden="true" />
                                     Gas failed to load
                                 </span>
                                 <button
                                     type="button"
                                     onClick={() => window.location.reload()}
-                                    className="text-[11px] font-bold text-danger-text underline underline-offset-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    className="text-xs font-bold text-danger-text underline underline-offset-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 >
                                     Retry
                                 </button>
@@ -435,14 +436,14 @@ const TotalDueCard = memo(function TotalDueCard({
                             size="md"
                             fullWidth
                             onClick={onPay}
-                            className="font-semibold text-refund-text border-refund-border/60 hover:bg-refund-bg/70 shadow-xs flex items-center justify-between"
+                            className="dashboard-action font-semibold text-refund-text border-refund-border/60 hover:bg-refund-bg/70 shadow-xs flex items-center justify-between"
                         >
                             <span>View refund details</span>
                             <ArrowRight size={15} aria-hidden="true" />
                         </Button>
                     )}
                     {allCleared && (
-                        <div className="h-10 px-3.5 rounded-btn-md border border-success-border/60 bg-success-bg/40 flex items-center justify-center gap-2 text-xs font-semibold text-success-text">
+                        <div className="h-10 px-3.5 rounded-btn-md border border-success-border/60 bg-success-bg/40 flex items-center justify-center gap-2 text-sm font-semibold text-success-text">
                             <CheckCircle2 size={15} aria-hidden="true" />
                             <span>All bills cleared for this period</span>
                         </div>
@@ -454,7 +455,7 @@ const TotalDueCard = memo(function TotalDueCard({
                             size="md"
                             fullWidth
                             onClick={onPay}
-                            className="font-semibold shadow-sm hover:shadow flex items-center justify-between"
+                            className="dashboard-action font-semibold shadow-sm hover:shadow flex items-center justify-between"
                         >
                             <span className="flex items-center gap-2">
                                 <CreditCard size={15} aria-hidden="true" />
@@ -481,8 +482,8 @@ const AdminDashboard = memo(function AdminDashboard() {
     const marketGrandTotal = useSelector((state) => state.dashboard.marketGrandTotal);
     const mealGrandTotal = useSelector((state) => state.dashboard.mealGrandTotal);
     const mealCharge = useSelector((state) => state.dashboard.mealCharge);
-    const isDashboardLoading = useSelector((state) => state.dashboard.isLoading);
-    const isDashboardError = useSelector((state) => state.dashboard.isError);
+    const isDashboardLoading = useSelector((state) => state.dashboard.isAdminStatsLoading);
+    const isDashboardError = useSelector((state) => state.dashboard.isAdminStatsError);
 
     const users = useSelector((state) => state.members.users);
     const isMembersLoading = useSelector((state) => state.members.isLoading);
@@ -495,9 +496,10 @@ const AdminDashboard = memo(function AdminDashboard() {
         lastFetchedAt,
         isMealPayableError,
         isGasBillPayableError,
+        isUserStatsLoading,
     } = useSelector((state) => state.dashboard);
     const { user } = useSelector((state) => state.auth);
-    const userPayablesLoading = isDashboardLoading && !userStatsLoaded;
+    const userPayablesLoading = isUserStatsLoading && !userStatsLoaded;
 
     /* ── Dining vote data ── */
     const pollStatus = useSelector((state) => state.meal.pollStatus);
@@ -763,14 +765,14 @@ const AdminDashboard = memo(function AdminDashboard() {
     );
 
     const handleRefresh = useCallback(() => {
-        if (isDashboardLoading || isMembersLoading) return;
+        if (isDashboardLoading || isMembersLoading || isUserStatsLoading) return;
 
         dispatch(fetchAdminDashboardStats());
         dispatch(fetchUsers({ page: 1, limit: 100 }));
         dispatch(fetchUserDashboardStats());
         loadPoll();
         loadSchedule();
-    }, [dispatch, isDashboardLoading, isMembersLoading, loadPoll, loadSchedule]);
+    }, [dispatch, isDashboardLoading, isMembersLoading, isUserStatsLoading, loadPoll, loadSchedule]);
 
     const handleRetryAdminStats = useCallback(() => {
         dispatch(fetchAdminDashboardStats());
@@ -869,24 +871,23 @@ const AdminDashboard = memo(function AdminDashboard() {
         },
     ], [adminStats, marketGrandTotal, mealGrandTotal, mealCharge, users.length, activeCount]);
 
-    const isBusy = isDashboardLoading || isMembersLoading;
+    const isBusy = isDashboardLoading || isMembersLoading || isUserStatsLoading;
 
     return (
-        <div className="grid grid-cols-1 gap-5 min-[1100px]:grid-cols-12">
+        <div className="dashboard-admin-grid">
 
             {/* ── Header (Title + Eyebrow RoleBadge + Actions) ──────────────── */}
-            <header className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 min-[1100px]:col-span-12">
+            <header className="dashboard-header flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div className="space-y-1 min-w-0">
-                    <RoleBadge isAdmin={true} icon={HiOutlineCommandLine} label="Command Center" />
-                    <h2 className="text-h1">
+                    <h1 className="text-h1">
                         Command Center
-                    </h2>
+                    </h1>
                     <p className="text-sm text-muted-foreground">
                         Global mess overview, daily meal operations, and system administration.
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                <div className="dashboard-header-actions flex items-center gap-2 shrink-0">
                     <Button
                         variant="primary"
                         size="md"
@@ -931,7 +932,7 @@ const AdminDashboard = memo(function AdminDashboard() {
                 >
                     <div className="flex items-start gap-2.5">
                         <FiAlertCircle size={15} className="text-danger-text shrink-0 mt-0.5" aria-hidden="true" />
-                        <p className="text-xs font-medium text-foreground py-1">
+                        <p className="text-sm font-medium text-foreground py-1">
                             Couldn&apos;t load admin stats.
                         </p>
                     </div>
@@ -946,12 +947,12 @@ const AdminDashboard = memo(function AdminDashboard() {
                 aria-busy={isDashboardLoading}
                 className={cn(
                     'min-[1100px]:col-span-12 transition-opacity duration-200',
-                    isDashboardLoading ? 'opacity-60 pointer-events-none' : ''
+                    isDashboardLoading && !adminStats ? 'opacity-60' : ''
                 )}
             >
-                <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+                <div className="dashboard-kpis">
                     {kpiData.map((kpi) => (
-                        <KpiCard key={kpi.label} {...kpi} />
+                        <KpiCard key={kpi.label} {...kpi} loading={!adminStats && !isDashboardError} />
                     ))}
                 </div>
             </div>
@@ -969,12 +970,12 @@ const AdminDashboard = memo(function AdminDashboard() {
                             </span>
                             <h3
                                 id="action-items-heading"
-                                className="text-xs font-bold uppercase tracking-wider text-foreground"
+                                className="text-sm font-bold uppercase tracking-wider text-foreground"
                             >
                                 Action Items
                             </h3>
                         </div>
-                        <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums', PILL_NEUTRAL)}>
+                        <span className={cn('rounded-full px-2 py-0.5 text-xs font-bold tabular-nums', PILL_NEUTRAL)}>
                             {totalAlerts} total
                         </span>
                     </div>
@@ -993,10 +994,10 @@ const AdminDashboard = memo(function AdminDashboard() {
                                         <Icon size={14} strokeWidth={2.5} />
                                     </span>
                                     <span className="min-w-0 flex-1 text-left">
-                                        <span className="block text-[10px] font-bold uppercase tracking-wider text-foreground truncate leading-none">
+                                        <span className="block text-xs font-bold uppercase tracking-wider text-foreground truncate leading-none">
                                             {count} · {label}
                                         </span>
-                                        <span className={cn('block text-[10px] mt-1 leading-none truncate', TSUB)}>
+                                        <span className={cn('block text-xs mt-1 leading-none truncate', TSUB)}>
                                             {hint}
                                         </span>
                                     </span>
@@ -1037,13 +1038,13 @@ const AdminDashboard = memo(function AdminDashboard() {
                             <CheckCircle2 size={12} strokeWidth={2.5} />
                         </span>
                         <div className="min-w-0 py-0.5">
-                            <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">All Systems Settled</h4>
-                            <p className={cn('text-[11px] mt-0.5', TSUB)}>
+                            <h4 className="text-sm font-bold uppercase tracking-wider text-foreground">All Systems Settled</h4>
+                            <p className={cn('text-xs mt-0.5', TSUB)}>
                                 No pending approvals or unpaid dues for the {activeCount} active members.
                             </p>
                         </div>
                     </div>
-                    <span className={cn('shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider', PILL_SUCCESS)}>
+                    <span className={cn('shrink-0 rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wider', PILL_SUCCESS)}>
                         Clear
                     </span>
                 </div>
@@ -1060,12 +1061,12 @@ const AdminDashboard = memo(function AdminDashboard() {
                     <h2 id="my-mess-heading" className="text-h3 text-foreground tracking-tight">
                         My Mess
                     </h2>
-                    <p className={cn('text-xs mt-0.5', TSUB)}>
+                    <p className={cn('text-sm mt-0.5', TSUB)}>
                         {greetLabel}{user?.name ? `, ${user.name}` : ''} — your dues, vote and duty month at a glance.
                     </p>
                 </div>
 
-                <div className="mt-3 grid grid-cols-1 gap-4 min-[768px]:grid-cols-2 min-[1280px]:grid-cols-12">
+                <div className="dashboard-personal-grid">
 
                     {/* ── Total Due ── */}
                     <div className="min-w-0 min-[768px]:col-span-1 min-[1280px]:col-span-4">
@@ -1086,21 +1087,22 @@ const AdminDashboard = memo(function AdminDashboard() {
                     {/* ── Dining Vote ── */}
                     <section
                         aria-labelledby="dining-vote-heading"
-                        className={cn(PANEL_CLS, 'flex flex-col min-[768px]:col-span-1 min-[1280px]:col-span-4 p-4')}
+                        className={cn(PANEL_CLS, 'dashboard-vote flex flex-col min-[768px]:col-span-1 min-[1280px]:col-span-4 p-4')}
                         style={{ animationDelay: '0.05s' }}
                     >
                         <CardHead
+                            id="dining-vote-heading"
                             icon={UtensilsCrossed}
                             iconTone="amber"
                             title="Dining Vote"
                             sub={`Applies to ${voteDateLabel}`}
                             right={
                                 myVote ? (
-                                    <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider', PILL_SUCCESS)}>
+                                    <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wider', PILL_SUCCESS)}>
                                         {myIsManualOverride ? 'Manual' : 'Recorded'}
                                     </span>
                                 ) : (
-                                    <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider', PILL_NEUTRAL)}>
+                                    <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wider', PILL_NEUTRAL)}>
                                         Pending
                                     </span>
                                 )
@@ -1125,7 +1127,7 @@ const AdminDashboard = memo(function AdminDashboard() {
                             <ErrorPanel message="Couldn't load the dining vote." onRetry={loadPoll} minHeight={180} />
                         )}
                         {pollError && pollStatus && (
-                            <p className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px] text-danger-text" role="alert">
+                            <p className="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-danger-text" role="alert">
                                 <FiAlertCircle size={12} aria-hidden="true" />
                                 Couldn&apos;t refresh — showing the last saved vote.
                                 <button
@@ -1176,14 +1178,14 @@ const AdminDashboard = memo(function AdminDashboard() {
                                                     {isActive && <span className="block w-1.5 h-1.5 rounded-full bg-card" />}
                                                 </span>
                                                 <span className="min-w-0 flex-1">
-                                                    <span className="block text-xs font-semibold text-foreground leading-none">
+                                                    <span className="block text-sm font-semibold text-foreground leading-none">
                                                         {option.label}
                                                     </span>
-                                                    <span className={cn('block text-[10px] mt-1 leading-none truncate', TSUB)}>
+                                                    <span className={cn('block text-xs mt-1 leading-none truncate', TSUB)}>
                                                         {option.description}
                                                     </span>
                                                 </span>
-                                                <span className={cn('shrink-0 text-[10px] font-semibold tabular-nums whitespace-nowrap', TSUB)}>
+                                                <span className={cn('shrink-0 text-xs font-semibold tabular-nums whitespace-nowrap', TSUB)}>
                                                     {count} {count === 1 ? 'vote' : 'votes'}
                                                 </span>
                                             </button>
@@ -1193,12 +1195,12 @@ const AdminDashboard = memo(function AdminDashboard() {
 
                                 <div className="mt-auto pt-3">
                                     {votes.length === 0 && !isPollLoading && !pollError && (
-                                        <p className={cn('mb-2 text-[11px]', TSUB)}>
+                                        <p className={cn('mb-2 text-xs', TSUB)}>
                                             No selections yet — be the first to vote.
                                         </p>
                                     )}
 
-                                    <div className="flex items-center justify-between gap-2 text-[11px]">
+                                    <div className="flex items-center justify-between gap-2 text-xs">
                                         <span className={cn('truncate', TSUB)}>
                                             Current:{' '}
                                             <span className="font-semibold text-foreground">{currentLabel}</span>
@@ -1215,7 +1217,7 @@ const AdminDashboard = memo(function AdminDashboard() {
                                         onClick={handleVote}
                                         disabled={!canSubmit}
                                         isLoading={isVoting}
-                                        className="mt-2"
+                                        className="dashboard-action mt-2"
                                     >
                                         {myVote ? 'Update vote' : 'Submit vote'}
                                     </Button>
@@ -1227,28 +1229,20 @@ const AdminDashboard = memo(function AdminDashboard() {
                     {/* ── Market Schedule ── */}
                     <section
                         aria-labelledby="market-schedule-heading"
-                        className={cn(PANEL_CLS, 'flex flex-col min-[768px]:col-span-1 min-[1280px]:col-span-4 p-4')}
+                        className={cn(PANEL_CLS, 'dashboard-duty flex flex-col min-[768px]:col-span-1 min-[1280px]:col-span-4 p-4')}
                         style={{ animationDelay: '0.1s' }}
                     >
                         <CardHead
                             icon={CalendarDays}
                             iconTone="emerald"
+                            id="market-schedule-heading"
                             title="Market Schedule"
-                            sub={monthLabel}
-                            right={
-                                dayList.length > 0 ? (
-                                    <div className="flex items-center gap-1.5">
-                                        {myDutyDaysCount > 0 && (
-                                            <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 tabular-nums">
-                                                {myDutyDaysCount} {myDutyDaysCount === 1 ? 'duty' : 'duties'}
-                                            </span>
-                                        )}
-                                        <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider tabular-nums', PILL_SUCCESS)}>
-                                            {dayList.length} days
-                                        </span>
-                                    </div>
-                                ) : null
-                            }
+                            sub={`${monthLabel}${myDutyDaysCount > 0 ? ` · ${myDutyDaysCount} ${myDutyDaysCount === 1 ? 'my duty' : 'my duties'}` : ''}`}
+                            right={dayList.length > 0 ? (
+                                <span className="dashboard-duty-count">
+                                    {dayList.length} duty {dayList.length === 1 ? 'day' : 'days'}
+                                </span>
+                            ) : null}
                         />
 
                         {showSchedSkeleton && (
@@ -1269,7 +1263,7 @@ const AdminDashboard = memo(function AdminDashboard() {
                             <ErrorPanel message="Couldn't load the market schedule." onRetry={loadSchedule} minHeight={150} />
                         )}
                         {schedError && dayList.length > 0 && (
-                            <p className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px] text-danger-text" role="alert">
+                            <p className="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-danger-text" role="alert">
                                 <FiAlertCircle size={12} aria-hidden="true" />
                                 Couldn&apos;t refresh — showing the last saved schedule.
                                 <button
@@ -1288,7 +1282,7 @@ const AdminDashboard = memo(function AdminDashboard() {
                                 style={{ minHeight: 150 }}
                             >
                                 <CalendarDays size={18} className={TBRAND} aria-hidden="true" />
-                                <p className="text-xs font-medium text-foreground">
+                                <p className="text-sm font-medium text-foreground">
                                     No duties scheduled for {monthLabel}.
                                 </p>
                                 <Button asChild variant="outline" size="sm">
@@ -1300,95 +1294,20 @@ const AdminDashboard = memo(function AdminDashboard() {
                         {!showSchedSkeleton && !showSchedError && !showSchedEmpty && (
                             <>
                                 <div
-                                    className="mt-3 rounded-xl border border-border/50 bg-muted/30 dark:bg-muted/20 p-2 sm:p-2.5 shadow-[inset_0_1px_3px_rgba(0,0,0,0.05)] dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.4),0_1px_0_rgba(255,255,255,0.03)] grid grid-cols-5 min-[380px]:grid-cols-6 min-[460px]:grid-cols-7 gap-1.5 sm:gap-2"
+                                    className="dashboard-days"
                                     role="group"
                                     aria-label={`Duty days in ${monthLabel}`}
                                 >
-                                    {dayList.map((day) => {
-                                        const isSelected = day.key === activeDayKey;
-                                        const isToday = day.date.toDateString() === todayStr;
-                                        const isMyDay = isUserDuty(day.user, currentUserId);
-                                        return (
-                                            <button
-                                                key={day.key}
-                                                type="button"
-                                                onClick={() => setSelectedDayKey(day.key)}
-                                                aria-pressed={isSelected}
-                                                aria-label={`${format(day.date, 'EEEE, MMMM d')}${isMyDay ? ' (Your market duty)' : ''}`}
-                                                className={cn(
-                                                    'relative overflow-hidden w-full aspect-square p-1 sm:p-1.5 rounded-lg border text-center select-none flex flex-col items-center justify-between',
-                                                    'transition-all duration-200 motion-reduce:transition-none',
-                                                    FOCUS,
-                                                    isMyDay
-                                                        ? isSelected
-                                                            ? 'bg-gradient-to-b from-emerald-500/20 via-emerald-500/12 to-emerald-500/5 dark:from-emerald-500/30 dark:via-emerald-500/18 dark:to-emerald-500/8 border-emerald-500/80 dark:border-emerald-400 border-b-emerald-600/90 dark:border-b-emerald-500/60 ring-2 ring-emerald-500/35 dark:ring-emerald-400/40 shadow-[0_4px_12px_-2px_rgba(16,185,129,0.35),0_1px_3px_rgba(16,185,129,0.2),inset_0_1px_0_rgba(255,255,255,0.9)] dark:shadow-[0_4px_16px_-2px_rgba(16,185,129,0.45),0_2px_4px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.25)] -translate-y-0.5'
-                                                            : 'bg-gradient-to-b from-emerald-50/90 via-emerald-50/40 to-white/90 dark:from-emerald-500/15 dark:via-emerald-500/8 dark:to-transparent border-emerald-500/50 dark:border-emerald-500/40 border-b-emerald-600/50 dark:border-b-emerald-600/30 shadow-[0_1px_3px_rgba(16,185,129,0.15),0_1px_1px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.95)] dark:shadow-[0_2px_5px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(52,211,153,0.18)] hover:-translate-y-0.5 hover:border-emerald-500 dark:hover:border-emerald-400/70 hover:shadow-[0_4px_10px_-2px_rgba(16,185,129,0.25),inset_0_1px_0_rgba(255,255,255,1)] dark:hover:shadow-[0_4px_12px_rgba(16,185,129,0.3),inset_0_1px_0_rgba(52,211,153,0.3)]'
-                                                        : isSelected
-                                                            ? 'bg-gradient-to-b from-primary/15 via-primary/8 to-transparent dark:from-primary/25 dark:via-primary/12 dark:to-transparent border-primary/70 dark:border-primary/80 border-b-primary/90 dark:border-b-primary/60 ring-2 ring-primary/25 dark:ring-primary/35 shadow-[0_4px_12px_-2px_rgba(37,99,235,0.28),0_1px_3px_rgba(37,99,235,0.12),inset_0_1px_0_rgba(255,255,255,0.95)] dark:shadow-[0_4px_16px_-2px_rgba(59,130,246,0.45),0_2px_5px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.22)] -translate-y-0.5'
-                                                            : isToday
-                                                                ? 'bg-gradient-to-b from-white via-card to-card/90 dark:from-white/[0.07] dark:via-white/[0.03] dark:to-transparent border-primary/50 dark:border-primary/40 border-b-primary/60 dark:border-b-primary/50 ring-1 ring-primary/25 dark:ring-primary/30 shadow-[0_1px_3px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.95)] dark:shadow-[0_2px_5px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.07)] hover:-translate-y-0.5 hover:border-primary hover:shadow-[0_4px_10px_-2px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,1)]'
-                                                                : 'bg-gradient-to-b from-white via-card to-card/90 dark:from-white/[0.07] dark:via-white/[0.03] dark:to-transparent border-border/70 dark:border-white/[0.08] border-b-border dark:border-b-black/40 dark:border-t-white/[0.12] shadow-[0_1px_2px_rgba(0,0,0,0.05),0_1px_1px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.95)] dark:shadow-[0_2px_5px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.07)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_4px_10px_-2px_rgba(0,0,0,0.08),0_2px_4px_-1px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,1)] dark:hover:from-white/[0.09] dark:hover:to-white/[0.04] dark:hover:border-white/[0.18] dark:hover:shadow-[0_4px_12px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.14)]'
-                                                )}
-                                            >
-                                                {/* Specular top light rim */}
-                                                <span
-                                                    aria-hidden="true"
-                                                    className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/80 dark:via-white/20 to-transparent"
-                                                />
-
-                                                <span
-                                                    className={cn(
-                                                        'block text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider leading-none transition-colors duration-150 mt-0.5',
-                                                        isMyDay
-                                                            ? isSelected
-                                                                ? 'text-emerald-700 dark:text-emerald-300 font-bold'
-                                                                : 'text-emerald-600 dark:text-emerald-400 font-semibold'
-                                                            : isSelected
-                                                                ? TBRAND
-                                                                : isToday
-                                                                    ? 'text-primary dark:text-primary font-bold'
-                                                                    : TSUB
-                                                    )}
-                                                >
-                                                    {format(day.date, 'EEE')}
-                                                </span>
-                                                <span
-                                                    className={cn(
-                                                        'block text-sm min-[380px]:text-base sm:text-base font-bold tabular-nums leading-none my-auto transition-colors duration-150',
-                                                        isMyDay
-                                                            ? isSelected
-                                                                ? 'text-emerald-900 dark:text-emerald-100 font-extrabold'
-                                                                : 'text-emerald-800 dark:text-emerald-200'
-                                                            : isSelected
-                                                                ? TBRAND
-                                                                : isToday
-                                                                    ? 'text-foreground font-extrabold'
-                                                                    : 'text-foreground'
-                                                    )}
-                                                >
-                                                    {format(day.date, 'd')}
-                                                </span>
-                                                <div className="flex items-center justify-center h-1.5 w-full mb-0.5 shrink-0">
-                                                    {isSelected ? (
-                                                        <span
-                                                            className={cn(
-                                                                'block h-1 w-3 sm:w-3.5 rounded-full transition-all duration-150',
-                                                                isMyDay
-                                                                    ? 'bg-emerald-600 dark:bg-emerald-400'
-                                                                    : 'bg-primary'
-                                                            )}
-                                                            aria-hidden="true"
-                                                        />
-                                                    ) : (
-                                                        <span
-                                                            className="block h-1 w-3 sm:w-3.5 rounded-full bg-transparent"
-                                                            aria-hidden="true"
-                                                        />
-                                                    )}
-                                                </div>
-                                            </button>
-                                        );
-                                    })}
+                                    {dayList.map((day) => (
+                                        <ScheduleDay
+                                            key={day.key}
+                                            date={day.date}
+                                            isSelected={day.key === activeDayKey}
+                                            isToday={day.date.toDateString() === todayStr}
+                                            isOwnDuty={isUserDuty(day.user, currentUserId)}
+                                            onSelect={() => setSelectedDayKey(day.key)}
+                                        />
+                                    ))}
                                 </div>
 
                                 <div className="mt-auto pt-3 border-t border-border/40">
@@ -1396,7 +1315,7 @@ const AdminDashboard = memo(function AdminDashboard() {
                                         <div className="flex items-center gap-2.5 min-h-[52px]">
                                             <span
                                                 aria-hidden="true"
-                                                className="shrink-0 w-8 h-8 rounded-full overflow-hidden bg-muted/60 border border-border/40 flex items-center justify-center text-[11px] font-bold text-foreground"
+                                                className="shrink-0 w-8 h-8 rounded-full overflow-hidden bg-muted/60 border border-border/40 flex items-center justify-center text-xs font-bold text-foreground"
                                             >
                                                 {selectedDay.user.image ? (
                                                     <img
@@ -1411,21 +1330,21 @@ const AdminDashboard = memo(function AdminDashboard() {
                                                 )}
                                             </span>
                                             <div className="min-w-0 flex-1">
-                                                <p className="text-xs font-semibold text-foreground truncate">
+                                                <p className="text-sm font-semibold text-foreground truncate">
                                                     {selectedDay.user.name}
                                                 </p>
-                                                <p className={cn('text-[10px] mt-0.5', TSUB)}>
+                                                <p className={cn('text-xs mt-0.5', TSUB)}>
                                                     {format(selectedDay.date, 'EEEE, MMM d, yyyy')}
                                                 </p>
                                             </div>
                                             {isDutyCompleted && (
-                                                <span className={cn('shrink-0 self-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider', PILL_SUCCESS)}>
+                                                <span className={cn('shrink-0 self-center rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wider', PILL_SUCCESS)}>
                                                     <CheckCircle2 size={11} className="inline mr-1 -mt-0.5" aria-hidden="true" />
                                                     Completed
                                                 </span>
                                             )}
                                             {isMyDuty && !isDutyCompleted && (
-                                                <span className={cn('shrink-0 self-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider', PILL_SUCCESS)}>
+                                                <span className={cn('shrink-0 self-center rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wider', PILL_SUCCESS)}>
                                                     On duty
                                                 </span>
                                             )}
@@ -1433,8 +1352,8 @@ const AdminDashboard = memo(function AdminDashboard() {
                                     ) : (
                                         <div className="flex items-center min-h-[52px]">
                                             <div className="min-w-0">
-                                                <p className="text-xs font-medium text-foreground truncate">No member assigned</p>
-                                                <p className={cn('text-[10px] mt-0.5', TSUB)}>
+                                                <p className="text-sm font-medium text-foreground truncate">No member assigned</p>
+                                                <p className={cn('text-xs mt-0.5', TSUB)}>
                                                     {selectedDay
                                                         ? format(selectedDay.date, 'EEEE, MMM d, yyyy')
                                                         : monthLabel}
@@ -1447,16 +1366,20 @@ const AdminDashboard = memo(function AdminDashboard() {
                         )}
                     </section>
 
+
+                </div>
+            </section>
+
                     {/* ── Quick Links + How to Use (merged) ── */}
                     <section
                         aria-label="Quick links and guide"
-                        className={cn(PANEL_CLS, 'min-[768px]:col-span-2 min-[1280px]:col-span-12 p-4')}
+                        className={cn(PANEL_CLS, 'dashboard-links dashboard-panel p-5')}
                         style={{ animationDelay: '0.15s' }}
                     >
                         <div className="grid grid-cols-1 md:grid-cols-2">
                             {/* Quick links */}
                             <div className="md:pr-5">
-                                <p className="text-[10px] font-bold uppercase tracking-wider text-foreground">
+                                <p className="text-xs font-bold uppercase tracking-wider text-foreground">
                                     Quick Links
                                 </p>
                                 <nav aria-label="Market schedule links" className="mt-2 grid gap-1.5">
@@ -1466,6 +1389,8 @@ const AdminDashboard = memo(function AdminDashboard() {
                                             <Link
                                                 key={link.to}
                                                 to={link.to}
+                                                onPointerEnter={link.to === '/admin/analytics' ? prefetchAnalytics : undefined}
+                                                onFocus={link.to === '/admin/analytics' ? prefetchAnalytics : undefined}
                                                 className={cn(
                                                     'group flex items-center gap-2.5 min-h-[44px] rounded-lg border border-border/50 bg-muted/25 px-3 py-1.5 transition-colors duration-150 hover:bg-muted/50',
                                                     FOCUS
@@ -1473,10 +1398,10 @@ const AdminDashboard = memo(function AdminDashboard() {
                                             >
                                                 <Chip icon={Icon} tone="blue" size={28} />
                                                 <span className="min-w-0 flex-1">
-                                                    <span className="block text-xs font-semibold text-foreground truncate leading-none">
+                                                    <span className="block text-sm font-semibold text-foreground truncate leading-none">
                                                         {link.title}
                                                     </span>
-                                                    <span className={cn('block text-[10px] mt-1 leading-none truncate', TSUB)}>
+                                                    <span className={cn('block text-xs mt-1 leading-none truncate', TSUB)}>
                                                         {link.sub}
                                                     </span>
                                                 </span>
@@ -1489,7 +1414,7 @@ const AdminDashboard = memo(function AdminDashboard() {
                                         );
                                     })}
                                 </nav>
-                                <Button asChild variant="outline" size="sm" fullWidth className="mt-1.5">
+                                <Button asChild variant="outline" size="sm" fullWidth className="dashboard-action mt-1.5">
                                     <Link to="/markets">
                                         View all markets
                                         <ArrowRight size={13} aria-hidden="true" />
@@ -1499,7 +1424,7 @@ const AdminDashboard = memo(function AdminDashboard() {
 
                             {/* How to Use */}
                             <div className="md:border-l md:border-border/40 md:pl-5 mt-4 md:mt-0">
-                                <p className="text-[10px] font-bold uppercase tracking-wider text-foreground">
+                                <p className="text-xs font-bold uppercase tracking-wider text-foreground">
                                     How to Use
                                 </p>
                                 <div className="mt-2 grid gap-1">
@@ -1517,7 +1442,7 @@ const AdminDashboard = memo(function AdminDashboard() {
                                                         FOCUS
                                                     )}
                                                 >
-                                                    <span className="flex-1 min-w-0 text-xs font-semibold text-foreground truncate">
+                                                    <span className="flex-1 min-w-0 text-sm font-semibold text-foreground truncate">
                                                         {item.title}
                                                     </span>
                                                     <ChevronDown
@@ -1533,12 +1458,12 @@ const AdminDashboard = memo(function AdminDashboard() {
 
                                                 {isOpen && (
                                                     <div id={`how-to-${item.id}`} className="px-3 pb-2.5">
-                                                        <p className={cn('text-[11px] leading-relaxed', TSUB)}>
+                                                        <p className={cn('text-xs leading-relaxed', TSUB)}>
                                                             {item.body}
                                                         </p>
                                                         <Link
                                                             to={item.to}
-                                                            className={cn('mt-1 inline-flex items-center gap-1 min-h-[44px] text-[11px] font-semibold rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', TBRAND)}
+                                                            className={cn('mt-1 inline-flex items-center gap-1 min-h-[44px] text-xs font-semibold rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', TBRAND)}
                                                         >
                                                             {item.linkLabel}
                                                             <ChevronRight size={12} aria-hidden="true" />
@@ -1552,8 +1477,6 @@ const AdminDashboard = memo(function AdminDashboard() {
                             </div>
                         </div>
                     </section>
-                </div>
-            </section>
 
             {/* ── Members Matrix ──────────────────────────────────── */}
             <section
@@ -1561,19 +1484,19 @@ const AdminDashboard = memo(function AdminDashboard() {
                 aria-labelledby="members-matrix-heading"
                 className="min-[1100px]:col-span-12 scroll-mt-24"
             >
-                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 pb-1">
+                <div className="dashboard-members-heading flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                     <h2 id="members-matrix-heading" className="text-h3 text-foreground tracking-tight">
                         Members Matrix
                     </h2>
-                    <p className={cn('text-xs tabular-nums', TSUB)}>
+                    <p className={cn('text-sm tabular-nums', TSUB)}>
                         {users.length} listed · {activeCount} active
                     </p>
                 </div>
 
-                <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-sm content-visibility-auto">
+                <div className="dashboard-member-table">
                     <MembersTable
                         users={users}
-                        isLoading={isMembersLoading}
+                        isLoading={isMembersLoading && users.length === 0}
                         onSearch={handleSearch}
                     />
                 </div>

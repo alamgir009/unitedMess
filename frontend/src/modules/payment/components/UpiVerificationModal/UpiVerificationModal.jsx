@@ -13,6 +13,7 @@ import { Modal, Button } from '@/shared/components/ui';
 import { fmt } from '@/core/utils/helpers/currency.helper';
 import { formatSmartDate } from '@/core/utils/helpers/date.helper';
 import paymentService from '../../services/payment.service';
+import '@/shared/components/ui/RecordForm/record-form.css';
 
 const UpiVerificationModal = ({ isOpen, onClose, payment, onVerified }) => {
   const [adminRemarks, setAdminRemarks] = useState('');
@@ -63,14 +64,15 @@ const UpiVerificationModal = ({ isOpen, onClose, payment, onVerified }) => {
       onClose={verifying ? undefined : handleClose}
       title="Verify UPI Payment"
       size="md"
+      className="record-modal"
       mobileSheet
       accentColor="blue"
       isLoading={verifying}
       footer={
-        <div className="flex gap-2.5 w-full">
+        <div className="record-form-actions">
           <Button
             variant="destructive"
-            size="sm"
+            size="md"
             className="flex-1"
             onClick={() => handleVerify('failed')}
             disabled={verifying}
@@ -81,7 +83,7 @@ const UpiVerificationModal = ({ isOpen, onClose, payment, onVerified }) => {
           </Button>
           <Button
             variant="success"
-            size="sm"
+            size="md"
             className="flex-[2]"
             onClick={() => handleVerify('completed')}
             disabled={verifying}
@@ -160,11 +162,7 @@ const UpiVerificationModal = ({ isOpen, onClose, payment, onVerified }) => {
             rows={2}
             maxLength={200}
             disabled={verifying}
-            className="w-full h-11 min-h-[56px] px-3 py-2 rounded-lg surface-elevated border border-border
-              focus:ring-2 focus:ring-ring/30 focus:border-ring
-              outline-none transition-[border-color,box-shadow] duration-150
-              text-sm text-foreground placeholder:text-muted-foreground
-              resize-none disabled:opacity-60"
+            className="record-field"
           />
         </div>
       </div>

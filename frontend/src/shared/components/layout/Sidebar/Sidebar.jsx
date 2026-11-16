@@ -18,6 +18,7 @@ import { cn } from '@/core/utils/helpers/string.helper';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '@/modules/auth/store/auth.slice';
 import useBodyScrollLock from '@/shared/hooks/useBodyScrollLock';
+import { prefetchAnalytics } from '@/modules/analytics/utils/preload';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
@@ -94,6 +95,8 @@ const Sidebar = ({ isOpen, onClose }) => {
         <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1 overscroll-contain" aria-label="Sidebar">
           {navigation.map((item) => (
             <NavLink
+              onPointerEnter={item.href === '/admin/analytics' ? prefetchAnalytics : undefined}
+              onFocus={item.href === '/admin/analytics' ? prefetchAnalytics : undefined}
               key={item.name}
               to={item.href}
               className={linkClass}

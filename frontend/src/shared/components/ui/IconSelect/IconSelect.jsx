@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { HiOutlineChevronDown, HiOutlineCheckCircle } from 'react-icons/hi2';
 import { cn } from '@/core/utils/helpers/string.helper';
 import useBodyScrollLock from '@/shared/hooks/useBodyScrollLock';
+import '../RecordForm/record-form.css';
 
 const DROPDOWN_MAX_H = 208;
 const DROPDOWN_MARGIN = 3;
@@ -48,7 +49,7 @@ function getMenuStyle(triggerRect) {
   };
 }
 
-const IconSelect = ({ name, value, onChange, options, disabled = false, placeholder = 'Select...' }) => {
+const IconSelect = ({ name, value, onChange, options, disabled = false, placeholder = 'Select...', variant = 'default' }) => {
   const [open, setOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const triggerRef = useRef(null);
@@ -141,7 +142,7 @@ const IconSelect = ({ name, value, onChange, options, disabled = false, placehol
       aria-label={`${name} options`}
       className={cn(
         'fixed z-[9999] overflow-hidden',
-        'bg-[var(--bg-surface)] border border-[var(--border-muted)]',
+        variant === 'record' ? 'record-field-menu' : 'bg-[var(--bg-surface)] border border-[var(--border-muted)]',
         'overflow-y-auto overscroll-contain',
         '[scrollbar-width:thin] [scrollbar-color:var(--border-strong)_transparent]',
         '[&::-webkit-scrollbar]:w-1.5',
@@ -150,7 +151,8 @@ const IconSelect = ({ name, value, onChange, options, disabled = false, placehol
       )}
       style={{
         ...menuStyle,
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08)',
+        ...(variant === 'record' ? { borderRadius: 'var(--radius-md)' } : {}),
+        boxShadow: variant === 'record' ? 'var(--shadow-lg)' : 'inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08)',
       }}
     >
       {options.map((opt, idx) => (
@@ -191,7 +193,7 @@ const IconSelect = ({ name, value, onChange, options, disabled = false, placehol
         aria-haspopup="listbox"
         aria-expanded={open}
         className={cn(
-          inputBase,
+          variant === 'record' ? 'record-field' : inputBase,
           'flex items-center justify-between gap-2 text-left',
           disabled ? inputDisabled : 'cursor-pointer',
         )}

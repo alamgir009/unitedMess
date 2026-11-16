@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { motion, AnimatePresence } from 'framer-motion';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import AdminDashboard from './views/AdminDashboard';
 import UserDashboard from './views/UserDashboard';
 import BillingCycleAlert from '../../components/BillingCycleAlert/BillingCycleAlert';
+import '../../styles/dashboard.css';
 
 const DashboardPage = () => {
     // Determine the user's role from the auth state
@@ -24,27 +24,11 @@ const DashboardPage = () => {
 
     return (
         <MainLayout>
-            <div className="relative min-h-[80vh] max-w-7xl mx-auto">
-                {/* Accessible Single H1 for SEO */}
-                <h1 className="sr-only">
-                    {isAdmin ? 'UnitedMess Command Center' : 'UnitedMess Member Dashboard'}
-                </h1>
-
+            <div className="dashboard relative min-h-[80vh] max-w-[1600px] min-w-0 mx-auto">
                 {/* Billing Cycle Reset Alert */}
                 <BillingCycleAlert />
 
-                {/* Conditional Rendering Strategy for Role-Based UI with fluid Framer Motion animations */}
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={isAdmin ? 'admin' : 'user'}
-                        initial={{ opacity: 0, y: 15 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -15 }}
-                        transition={{ duration: 0.25, ease: 'easeOut' }}
-                    >
-                        {isAdmin ? <AdminDashboard /> : <UserDashboard />}
-                    </motion.div>
-                </AnimatePresence>
+                {isAdmin ? <AdminDashboard /> : <UserDashboard />}
             </div>
         </MainLayout>
     );

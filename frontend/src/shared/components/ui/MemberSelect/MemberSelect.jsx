@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { HiOutlineChevronDown, HiOutlineMagnifyingGlass, HiOutlineCheck, HiOutlineXMark, HiOutlineUser } from 'react-icons/hi2';
 import Avatar from '../Avatar/Avatar.jsx';
+import '../RecordForm/record-form.css';
 
 const accentMap = {
     indigo: {
@@ -54,6 +55,7 @@ const MemberSelect = ({
     onChange,
     loading = false,
     disabled = false,
+    variant = 'default',
     placeholder = 'Select members…',
     accentColor = 'primary',
     filterUser,
@@ -128,7 +130,7 @@ const MemberSelect = ({
             <button
                 type="button"
                 onClick={() => !disabled && setOpen(o => !o)}
-                className={`${inputBase} ${ac.ring} flex items-center justify-between gap-2 text-left
+                className={`${variant === 'record' ? 'record-field' : `${inputBase} ${ac.ring}`} flex items-center justify-between gap-2 text-left
                     ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
             >
                 <span className="flex items-center gap-2 truncate">
@@ -169,7 +171,7 @@ const MemberSelect = ({
             </button>
 
             {open && !disabled && (
-                <div className="absolute z-50 top-full mt-1.5 w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-elevated)] shadow-xl overflow-hidden">
+                <div className={`absolute z-50 top-full mt-1.5 w-full overflow-hidden ${variant === 'record' ? 'record-field-menu' : 'rounded-xl border border-[var(--border-default)] bg-[var(--bg-elevated)] shadow-xl'}`}>
                     {/* Search */}
                     <div className="px-2 pt-2 pb-1">
                         <div className="relative">
@@ -180,7 +182,7 @@ const MemberSelect = ({
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
                                 placeholder="Search members…"
-                                className={`${inputBase} pl-9 h-10 text-xs`}
+                                className={`${variant === 'record' ? 'record-field record-field-search' : `${inputBase} pl-9 h-10 text-xs`}`}
                             />
                             {search && (
                                 <button
