@@ -61,6 +61,7 @@ mealSchema.pre('validate', function (next) {
 
 // Enforce one-record-per-date-per-user at database level
 mealSchema.index({ date: 1, user: 1 }, { unique: true });
+mealSchema.index({ user: 1, date: 1 });
 
 const Meal = mongoose.model('Meal', mealSchema);
 

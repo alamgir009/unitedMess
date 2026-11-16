@@ -5,6 +5,7 @@ import { Spinner } from '@/shared/components/ui';
 import ProtectedRoute from '@/shared/components/routes/ProtectedRoute';
 import GuestRoute from '@/shared/components/routes/GuestRoute';
 import AdminRoute from '@/shared/components/routes/AdminRoute';
+import AnalyticsGuard from '@/modules/analytics/components/AnalyticsGuard';
 import PublicLayout from '@/shared/components/layout/PublicLayout/PublicLayout';
 
 const LoginPage = lazy(() => import('@/modules/auth/pages/LoginPage/LoginPage'));
@@ -32,6 +33,7 @@ const MemberPage = lazy(() => import('@/modules/members/pages/members/MemberPage
 const UnresolvedBillsPage = lazy(() => import('@/modules/members/pages/UnresolvedBillsPage/UnresolvedBillsPage'));
 const SettingsPage = lazy(() => import('@/modules/settings/pages/SettingsPage/SettingsPage'));
 const EventsPage = lazy(() => import('@/modules/events/pages/EventsPage/EventsPage'));
+const AnalyticsPage = lazy(() => import('@/modules/analytics/pages/AnalyticsPage'));
 
 const PageLoader = () => {
 PageLoader.displayName = 'PageLoader';
@@ -178,6 +180,9 @@ const AppRoutes = () => {
                     </SuspenseWrapper>
                 }
             />
+            <Route path="/admin/analytics" element={
+                <AnalyticsGuard><SuspenseWrapper><AnalyticsPage /></SuspenseWrapper></AnalyticsGuard>
+            } />
             <Route
                 path="/unresolved-bills"
                 element={

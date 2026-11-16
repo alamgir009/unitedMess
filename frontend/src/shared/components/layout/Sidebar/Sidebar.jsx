@@ -11,6 +11,7 @@ import {
   X,
   ReceiptIndianRupee,
   CalendarDays,
+  BarChart3,
 } from 'lucide-react';
 import { IoFastFoodOutline } from 'react-icons/io5';
 import { cn } from '@/core/utils/helpers/string.helper';
@@ -27,6 +28,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    ...(user?.role === 'admin' ? [{ name: 'Analytics', href: '/admin/analytics', icon: BarChart3 }] : []),
     { name: 'Meals', href: '/meals', icon: IoFastFoodOutline },
     { name: 'Markets', href: '/markets', icon: ShoppingBag },
     { name: 'Payments', href: '/payments', icon: CreditCard },

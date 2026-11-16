@@ -17,6 +17,7 @@ const versionController = require('../controllers/version.controller');
 
 // Use routes
 router.use('/auth', authRoutes);
+router.use('/admin/analytics', require('./analytics.routes'));
 router.use('/users', userRoutes);
 router.use('/meals', mealRoutes);
 router.use('/markets/schedule', marketScheduleRoutes);

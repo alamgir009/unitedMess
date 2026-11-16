@@ -134,6 +134,7 @@ const VOTE_BASE_TOTALS = { total: 0, both: 0, day: 0, night: 0, off: 0 };
 
 /* Quick links to existing routes only */
 const VIEW_LINKS = [
+    { to: '/admin/analytics', icon: TrendingUp, title: 'Market & Meal Analytics', sub: 'Member reports, monthly totals and daily trends' },
     { to: '/markets', icon: ShoppingBag, title: 'Market Schedule & Purchases', sub: 'Month chart, entries and history' },
     { to: '/events?view=markets', icon: CalendarDays, title: 'Duty Calendar', sub: 'Pick your market dates in Events' },
 ];
