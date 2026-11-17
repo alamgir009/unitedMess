@@ -9,7 +9,7 @@ import {
   HiOutlineClock,
   HiOutlineExclamationTriangle,
 } from 'react-icons/hi2';
-import { Modal, Button } from '@/shared/components/ui';
+import { Modal, Button, Textarea } from '@/shared/components/ui';
 import { fmt } from '@/core/utils/helpers/currency.helper';
 import { formatSmartDate } from '@/core/utils/helpers/date.helper';
 import paymentService from '../../services/payment.service';
@@ -155,14 +155,15 @@ const UpiVerificationModal = ({ isOpen, onClose, payment, onVerified }) => {
 
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-foreground">Admin Remarks (Optional)</label>
-          <textarea
+          <Textarea
             value={adminRemarks}
             onChange={(e) => setAdminRemarks(e.target.value)}
             placeholder="Add a note about this verification..."
             rows={2}
             maxLength={200}
             disabled={verifying}
-            className="record-field"
+            variant="record"
+            aria-label="Admin Remarks"
           />
         </div>
       </div>

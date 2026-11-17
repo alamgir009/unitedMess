@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import apiClient from '@/services/api/client/apiClient';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { format } from 'date-fns';
-import { Modal, Button, IconSelect, Badge, Avatar } from '@/shared/components/ui';
+import { Modal, Button, IconSelect, Badge, Avatar, Input, Textarea } from '@/shared/components/ui';
 import { getBillingPeriod } from '@shared/utils/billingPeriod';
 import { resolveBillStatus } from '@shared/utils/paymentStatus';
 import { analyticsDataChanged } from '@/modules/analytics/store/analytics.slice';
@@ -65,16 +65,6 @@ const EMPTY_EXEMPTION = {
   savedReason: '',
 };
 
-const inputClasses =
-  'w-full h-10 px-3 py-2.5 rounded-xl ' +
-  'border border-[var(--input-border)] ' +
-  'bg-[var(--input-bg)] ' +
-  'shadow-[var(--inset-inner),var(--inset-top-glow)] ' +
-  'focus:ring-2 focus:ring-[var(--brand)]/25 focus:border-[var(--brand)] ' +
-  'outline-none transition-all duration-150 ' +
-  'text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] ' +
-  'hover:border-[var(--input-border-hover)] ' +
-  '-webkit-appearance:none';
 
 const labelClasses = 'text-xs font-semibold uppercase tracking-wider text-muted-foreground';
 const eyebrowClasses = 'text-[11px] font-bold uppercase tracking-wider text-muted-foreground';
@@ -545,13 +535,13 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
               <label htmlFor={fieldId('exempt-reason')} className={labelClasses}>
                 Reason <span className="text-danger normal-case">(min 5 characters)</span>
               </label>
-              <textarea
+              <Textarea
                 id={fieldId('exempt-reason')}
                 rows={2}
                 value={exemption.reason}
                 onChange={(e) => handleExemptionChange({ reason: e.target.value })}
                 placeholder="Why is this member exempt for this period?"
-                className={cn(inputClasses, 'h-auto resize-none py-2')}
+                className="h-auto resize-none py-2"
               />
             </div>
           )}
@@ -613,12 +603,11 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1.5">
                 <label htmlFor={fieldId('name')} className={labelClasses}>Full name</label>
-                <input
+                <Input
                   id={fieldId('name')}
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  className={inputClasses}
                   autoComplete="name"
                   required
                 />
@@ -627,26 +616,24 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="flex min-w-0 flex-col gap-1.5">
                   <label htmlFor={fieldId('email')} className={labelClasses}>Email</label>
-                  <input
+                  <Input
                     id={fieldId('email')}
                     name="email"
                     type="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className={inputClasses}
                     autoComplete="email"
                     required
                   />
                 </div>
                 <div className="flex min-w-0 flex-col gap-1.5">
                   <label htmlFor={fieldId('phone')} className={labelClasses}>Phone</label>
-                  <input
+                  <Input
                     id={fieldId('phone')}
                     name="phone"
                     type="tel"
                     value={formData.phone}
                     onChange={handleChange}
-                    className={inputClasses}
                     autoComplete="tel"
                   />
                 </div>
@@ -706,16 +693,13 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
                   <label htmlFor={fieldId('denial')} className={cn(labelClasses, 'text-danger')}>
                     Denial reason (required for email)
                   </label>
-                  <input
+                  <Input
                     id={fieldId('denial')}
                     name="denialReason"
                     value={formData.denialReason}
                     onChange={handleChange}
                     placeholder="Brief reason for account denial..."
-                    className={cn(
-                      inputClasses,
-                      'border-destructive/30 bg-destructive/5 placeholder:text-destructive/40 focus:border-destructive/50 focus:ring-destructive/20',
-                    )}
+                    error={formData.userStatus === 'denied' && !formData.denialReason ? 'Required for denial' : undefined}
                     required
                   />
                 </div>

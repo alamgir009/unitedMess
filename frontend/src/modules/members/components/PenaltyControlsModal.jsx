@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import { AlertTriangle, RotateCcw, Gauge, HandCoins } from 'lucide-react';
-import { Button } from '@/shared/components/ui';
+import { Button, Modal, Input, Textarea } from '@/shared/components/ui';
 import { cn } from '@/core/utils/helpers/string.helper';
 
 /* ─────────────────────────────────────────────
@@ -100,26 +100,17 @@ const PenaltyControlsModal = React.memo(({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-overlay" onClick={onClose}>
-            <div className="w-full max-w-md bg-card rounded-3xl shadow-2xl border border-border overflow-hidden max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                {/* Header */}
-                <div className="px-6 py-5 border-b border-border bg-muted dark:bg-muted/40">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm bg-gradient-to-br from-rose-500 to-red-600 dark:from-rose-400 dark:to-red-500 shadow-rose-600/20">
-                            <AlertTriangle size={20} className="text-white" />
-                        </div>
-                        <div>
-                            <h3 className="text-base font-black text-foreground">Overdue Penalty Controls</h3>
-                            <p className="text-xs font-medium text-muted-foreground">
-                                {invoice.user?.name ?? 'Member'} — {invoice.monthName}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Breakdown (read-only for members; admin sees it here too) */}
-                <div className="px-6 py-5 space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
+        <Modal
+            isOpen={true}
+            onClose={onClose}
+            title="Overdue Penalty Controls"
+            description={`${invoice?.user?.name ?? 'Member'} — ${invoice?.monthName ?? ''}`}
+            accentColor="red"
+            size="md"
+            mobileSheet
+        >
+            <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
                         {[
                             { label: 'Days Overdue', value: `${days}`, hint: `Due ${istDue}` },
                             { label: 'Daily Rate', value: `₹ ${fmt(rate)}`, hint: 'flat / day (IST)' },
@@ -168,27 +159,24 @@ const PenaltyControlsModal = React.memo(({
                                 <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                                     Waiver Amount (max ₹ {fmt(remaining)})
                                 </label>
-                                <div className="relative">
-                                    <span className="absolute inset-y-0 left-4 flex items-center text-sm font-bold text-muted-foreground">₹</span>
-                                    <input
-                                        type="number" step="0.01" min="0" max={remaining}
-                                        value={waiveAmount}
-                                        onChange={e => setWaiveAmount(e.target.value)}
-                                        className="w-full py-3 pl-8 pr-4 rounded-2xl text-base font-bold bg-input border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-all"
-                                    />
-                                </div>
+                                <Input
+                                    type="number" step="0.01" min="0" max={remaining}
+                                    value={waiveAmount}
+                                    onChange={e => setWaiveAmount(e.target.value)}
+                                    leftIcon={<span className="font-bold text-sm">₹</span>}
+                                />
                             </div>
                         )}
                         <div>
                             <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                                 Reason {waived > 0 && '(also required to reverse)'}
                             </label>
-                            <textarea
+                            <Textarea
                                 rows={2}
                                 value={waiveReason}
                                 onChange={e => setWaiveReason(e.target.value)}
                                 placeholder="Mandatory — recorded in the penalty audit log"
-                                className="w-full py-2.5 px-4 rounded-2xl text-sm font-semibold bg-input border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-all resize-none"
+                                className="resize-none"
                             />
                         </div>
                         <div className="flex gap-3">
@@ -215,27 +203,23 @@ const PenaltyControlsModal = React.memo(({
                                 <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                                     Daily Rate (₹)
                                 </label>
-                                <div className="relative">
-                                    <span className="absolute inset-y-0 left-4 flex items-center text-sm font-bold text-muted-foreground">₹</span>
-                                    <input
-                                        type="number" step="0.01" min="0"
-                                        value={newRate}
-                                        onChange={e => setNewRate(e.target.value)}
-                                        className="w-full py-3 pl-8 pr-4 rounded-2xl text-base font-bold bg-input border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-all"
-                                    />
-                                </div>
+                                <Input
+                                    type="number" step="0.01" min="0"
+                                    value={newRate}
+                                    onChange={e => setNewRate(e.target.value)}
+                                    leftIcon={<span className="font-bold text-sm">₹</span>}
+                                />
                             </div>
                             <Button type="submit" variant="neutral" disabled={isRateSaving} className="shrink-0">
                                 <Gauge size={15} />
                                 {isRateSaving ? 'Saving…' : 'Override'}
                             </Button>
                         </div>
-                        <input
+                        <Input
                             type="text"
                             value={rateReason}
                             onChange={e => setRateReason(e.target.value)}
                             placeholder="Reason (optional, audited)"
-                            className="w-full py-2.5 px-4 rounded-2xl text-sm font-semibold bg-input border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-all"
                         />
                     </form>
 
@@ -243,8 +227,7 @@ const PenaltyControlsModal = React.memo(({
                         Close
                     </Button>
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 });
 PenaltyControlsModal.displayName = 'PenaltyControlsModal';

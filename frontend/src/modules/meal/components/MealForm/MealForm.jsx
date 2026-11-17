@@ -15,7 +15,7 @@ import {
     HiOutlinePlus,
 } from 'react-icons/hi2';
 import apiClient from '@/services/api/client/apiClient';
-import { Button, Avatar, MemberSelect } from '@/shared/components/ui';
+import { Button, Avatar, MemberSelect, Input, Textarea, Field } from '@/shared/components/ui';
 import '@/shared/components/ui/RecordForm/record-form.css';
 
 const MAX_RANGE_DAYS = 31;
@@ -27,20 +27,6 @@ const mealTypes = [
     { value: 'night', label: 'Night', description: 'Evening only', icon: HiOutlineMoon, color: 'border-slot-night-border bg-slot-night-bg text-slot-night-text' },
     { value: 'off', label: 'Off', description: 'No meals', icon: HiOutlineNoSymbol, color: 'border-slot-off-border bg-slot-off-bg text-slot-off-text' },
 ];
-
-const Field = ({ label, icon: Icon, children, className = '' }) => (
-    <div className={`flex flex-col gap-1.5 min-w-0 ${className}`}>
-        <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)] select-none">
-            {Icon && <Icon className="w-3 h-3 shrink-0 opacity-70" />}
-            {label}
-        </label>
-        {children}
-    </div>
-);
-
-const inputBase = 'record-field';
-
-const inputDisabled = 'opacity-60 cursor-not-allowed pointer-events-none select-none';
 
 const TypeBtn = ({ value, current, onClick, icon: Icon, label, description, color, disabled }) => {
     const isActive = current === value;
@@ -399,40 +385,40 @@ const [singleAdminError, setSingleAdminError] = useState('');
                 )}
 
                 {mode === 'single' && (
-                    <Field label="Date" icon={HiOutlineCalendarDays}>
-                        <input
+                    <Field label="Date">
+                        <Input
                             type="date"
                             name="date"
                             value={formData.date}
                             onChange={handleChange}
                             required={!readOnly}
                             disabled={isRunning || readOnly}
-                            className={`${inputBase} ${readOnly ? inputDisabled : ''}`}
+                            variant="record"
                         />
                     </Field>
                 )}
 
                 {mode === 'range' && (
                     <div className="record-form-pair">
-                        <Field label="From" icon={HiOutlineCalendarDays}>
-                            <input
+                        <Field label="From">
+                            <Input
                                 type="date"
                                 value={rangeFrom}
                                 onChange={(e) => { setRangeFrom(e.target.value); setRangeError(''); }}
                                 required={!readOnly}
                                 disabled={isRunning || readOnly}
-                                className={`${inputBase} ${readOnly ? inputDisabled : ''}`}
+                                variant="record"
                             />
                         </Field>
-                        <Field label="To" icon={HiOutlineArrowRight}>
-                            <input
+                        <Field label="To">
+                            <Input
                                 type="date"
                                 value={rangeTo}
                                 min={rangeFrom}
                                 onChange={(e) => { setRangeTo(e.target.value); setRangeError(''); }}
                                 required={!readOnly}
                                 disabled={isRunning || readOnly}
-                                className={`${inputBase} ${readOnly ? inputDisabled : ''}`}
+                                variant="record"
                             />
                         </Field>
                     </div>
@@ -532,14 +518,14 @@ const [singleAdminError, setSingleAdminError] = useState('');
                     )}
                 </div>
 
-                <Field label="Remarks (Optional)" icon={HiOutlineChatBubbleBottomCenterText}>
-                    <textarea
+                <Field label="Remarks (Optional)">
+                    <Textarea
                         name="remarks"
                         value={formData.remarks}
                         onChange={handleChange}
                         rows={2}
                         disabled={isRunning || readOnly}
-                        className={`${inputBase} ${readOnly ? inputDisabled : ''}`}
+                        variant="record"
                         placeholder={readOnly ? '' : 'Add special notes about this meal…'}
                     />
                 </Field>

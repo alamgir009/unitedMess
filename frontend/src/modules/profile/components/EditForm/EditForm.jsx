@@ -1,28 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { User, Mail, Phone } from 'lucide-react';
-import { Button } from '@/shared/components/ui';
+import { Button, Input, Field } from '@/shared/components/ui';
 import { updateProfile } from '@/modules/auth/store/auth.slice';
 import toast from 'react-hot-toast';
-
-/* ── Field wrapper ── */
-const Field = ({ label, icon: Icon, children, className = '' }) => (
-    <div className={`space-y-1.5 sm:space-y-2 ${className}`}>
-        <label className="flex items-center gap-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)]">
-            {Icon && <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
-            {label}
-        </label>
-        {children}
-    </div>
-);
-
-const inputBase =
-    'w-full px-3 py-2.5 sm:px-4 sm:py-3 rounded-lg border border-[var(--input-border)] ' +
-    'bg-[var(--input-bg)] shadow-[var(--inset-inner)] ' +
-    'focus:ring-2 focus:ring-[var(--brand)]/25 focus:border-[var(--brand)] ' +
-    'outline-none transition-all duration-150 ' +
-    'text-xs sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] ' +
-    'hover:border-[var(--input-border-hover)]';
 
 export const EditForm = ({ handleClose, initialData }) => {
     const dispatch = useDispatch();
@@ -69,38 +50,38 @@ export const EditForm = ({ handleClose, initialData }) => {
     return (
         <form className="w-full space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 gap-4 sm:gap-5">
-                <Field label="Full Name" icon={User}>
-                    <input
+                <Field label="Full Name">
+                    <Input
                         name="name"
                         type="text"
-                        className={inputBase}
                         placeholder="Enter your full name"
                         onChange={handleChange}
                         value={name}
+                        leftIcon={<User className="w-4 h-4" />}
                         required
                     />
                 </Field>
 
-                <Field label="Email Address" icon={Mail}>
-                    <input
+                <Field label="Email Address">
+                    <Input
                         name="email"
                         type="email"
-                        className={inputBase}
                         placeholder="Enter your Email"
                         onChange={handleChange}
                         value={email}
+                        leftIcon={<Mail className="w-4 h-4" />}
                         required
                     />
                 </Field>
 
-                <Field label="Phone Number" icon={Phone}>
-                    <input
+                <Field label="Phone Number">
+                    <Input
                         name="phone"
-                        type="text"
-                        className={inputBase}
+                        type="tel"
                         placeholder="Enter your phone number"
                         onChange={handleChange}
                         value={phone}
+                        leftIcon={<Phone className="w-4 h-4" />}
                     />
                 </Field>
             </div>

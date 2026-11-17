@@ -20,3 +20,12 @@ export { default as RoleBadge } from './RoleBadge/RoleBadge.jsx';
 export { default as IconSelect } from './IconSelect/index.js';
 export { default as Reveal } from './Reveal/Reveal.jsx';
 export { default as StatusBadge } from './StatusBadge/index.js';
+export { Field, useFieldContext } from './primitives/Field.jsx';
+export { Textarea } from './primitives/Textarea.jsx';
+export { Select } from './primitives/Select.jsx';
+export { Checkbox } from './primitives/Checkbox.jsx';
+export { Radio, RadioGroup } from './primitives/Radio.jsx';
+export { Switch } from './primitives/Switch.jsx';
+export { Form, FormSection, FormRow, FormActions } from './primitives/FormLayout.jsx';
+export { CIRCULAR_SHAPE_ALLOWLIST, isCircularShapeAllowed } from './primitives/shapes.js';
+

@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { HiOutlineMagnifyingGlass } from 'react-icons/hi2';
 import { TbToolsKitchen2 } from 'react-icons/tb';
+import { Input } from '@/shared/components/ui';
 import { CAT_ICONS, CATEGORIES } from '../FoodConstants/FoodConstants';
 
 const Hero = memo(({ totalCount, search, onSearchChange, activeCategory, onCategoryChange }) => (
@@ -17,18 +18,15 @@ const Hero = memo(({ totalCount, search, onSearchChange, activeCategory, onCateg
             <p className="max-w-xl text-body-lg leading-[1.75] text-muted-foreground">
                 Every dish crafted with care — from humble breakfasts to festive spreads.
             </p>
-            <div className="w-full max-w-md rounded-xl p-1.5 bg-muted/50 dark:bg-muted/30 border border-border/60 dark:border-border/40 shadow-[var(--inset-inner)] focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background motion-safe:transition-shadow motion-safe:duration-150">
-                <div className="relative flex items-center rounded-lg bg-card border border-border">
-                    <HiOutlineMagnifyingGlass className="absolute left-3 w-4 h-4 text-muted-foreground pointer-events-none" />
-                    <input
-                        type="search"
-                        placeholder="Search"
-                        value={search}
-                        onChange={(e) => onSearchChange(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-transparent text-foreground placeholder:text-muted-foreground text-sm focus:outline-none motion-safe:transition-colors motion-safe:duration-150"
-                        aria-label="Search dishes"
-                    />
-                </div>
+            <div className="w-full max-w-md">
+                <Input
+                    type="search"
+                    placeholder="Search"
+                    value={search}
+                    onChange={(e) => onSearchChange(e.target.value)}
+                    aria-label="Search dishes"
+                    leftIcon={<HiOutlineMagnifyingGlass className="w-4 h-4 text-muted-foreground" />}
+                />
             </div>
         </div>
 

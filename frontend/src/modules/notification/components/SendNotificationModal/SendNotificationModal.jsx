@@ -3,7 +3,7 @@ import { Send, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { cn } from '@/core/utils/helpers/string.helper';
 import NotificationService from '../../services/notification.service';
-import { Modal, Button, IconSelect } from '@/shared/components/ui';
+import { Modal, Button, IconSelect, Input, Textarea, Checkbox } from '@/shared/components/ui';
 import { FiUser, FiShield } from 'react-icons/fi';
 import { HiOutlineBell, HiOutlineFlag } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
@@ -21,7 +21,6 @@ const targetTypes = [
     { value: 'ROLE', label: 'By Role' },
 ];
 
-const inputClasses = 'w-full h-11 px-3 py-2.5 rounded-xl surface-elevated border border-border text-body text-foreground placeholder:text-muted-foreground caret-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring transition-[border-color,box-shadow] duration-150';
 
 const SendNotificationModal = ({ isOpen, onClose }) => {
     const { user } = useSelector((state) => state.auth);
@@ -196,12 +195,11 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                                 {targetType === 'USER' ? 'User ID' : 'Role'}
                             </label>
                             {targetType === 'USER' ? (
-                                <input
+                                <Input
                                     type="text"
                                     value={userId}
                                     onChange={(e) => setUserId(e.target.value)}
                                     placeholder="Enter user ID"
-                                    className={inputClasses}
                                 />
                             ) : (
                                 <IconSelect
@@ -223,14 +221,13 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                             Title <span className="text-destructive">*</span>
                             <span className="text-caption text-muted-foreground ml-1">({title.length}/80)</span>
                         </label>
-                        <input
+                        <Input
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value.slice(0, 80))}
                             required
                             maxLength={80}
                             placeholder="Notification title"
-                            className={inputClasses}
                         />
                     </div>
 
@@ -239,14 +236,14 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                             Message <span className="text-destructive">*</span>
                             <span className="text-caption text-muted-foreground ml-1">({message.length}/300)</span>
                         </label>
-                        <textarea
+                        <Textarea
                             value={message}
                             onChange={(e) => setMessage(e.target.value.slice(0, 300))}
                             required
                             maxLength={300}
                             rows={3}
                             placeholder="Notification message"
-                            className={`${inputClasses} resize-none`}
+                            className="resize-none"
                         />
                     </div>
 
@@ -277,23 +274,18 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
                     </div>
 
                     <div className="space-y-3">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={actionRequired}
-                                onChange={(e) => setActionRequired(e.target.checked)}
-                                className="rounded border-border text-primary focus:ring-primary"
-                            />
-                            <span className="text-sm text-foreground">Requires action</span>
-                        </label>
+                        <Checkbox
+                            checked={actionRequired}
+                            onChange={(e) => setActionRequired(e.target.checked)}
+                            label="Requires action"
+                        />
 
                         {actionRequired && (
-                            <input
+                            <Input
                                 type="url"
                                 value={actionUrl}
                                 onChange={(e) => setActionUrl(e.target.value)}
                                 placeholder="Action URL (optional)"
-                                className={inputClasses}
                             />
                         )}
                     </div>

@@ -17,7 +17,7 @@ import { MdPendingActions, MdCheckCircleOutline, MdErrorOutline, MdRefresh } fro
 import apiClient from '@/services/api/client/apiClient';
 import paymentService from '../../services/payment.service';
 import { getBillingPeriod, MONTH_NAMES as MONTHS } from '@shared/utils/billingPeriod';
-import { Button, Avatar, MemberSelect, IconSelect } from '@/shared/components/ui';
+import { Button, Avatar, MemberSelect, IconSelect, Input, Textarea, Field } from '@/shared/components/ui';
 import { SiRazorpay } from "react-icons/si";
 import { HiOutlineIdentification } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
@@ -62,22 +62,7 @@ const STATUS_OPTIONS = [
     { value: 'refunded',  label: 'Refunded',  Icon: MdRefresh,            iconClass: 'text-[var(--info)]'     },
 ];
 
-/* ─── Design tokens ─────────────────────────────────────────── */
 
-const inputBase = 'record-field';
-
-const inputDisabled = 'opacity-60 cursor-not-allowed pointer-events-none select-none';
-
-/* ─── Field wrapper ─────────────────────────────────────────── */
-const Field = ({ label, icon: Icon, children, className = '' }) => (
-    <div className={`flex flex-col gap-1.5 min-w-0 ${className}`}>
-        <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)] select-none">
-            {Icon && <Icon className="w-3 h-3 shrink-0 opacity-60" />}
-            {label}
-        </label>
-        {children}
-    </div>
-);
 
 /* ─── Payment type toggle button (segmented pill control) ───── */
 const TypeBtn = ({ value, current, onClick, label, disabled = false }) => (
@@ -459,40 +444,36 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                 )}
 
                 {/* Amount */}
-                <Field label="Amount (₹)" icon={HiOutlineCurrencyRupee}>
-                    <div className="relative">
-                        <span className={`absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-sm pointer-events-none select-none ${
-                            formData.status === 'refunded' ? 'text-[var(--danger)]' : 'text-[var(--text-muted)]'
-                        }`}>
-                            ₹
-                        </span>
-                        <input
-                            type="number" name="amount" value={formData.amount}
-                            onChange={handleChange} step="0.01" 
-                            required={!readOnly}
-                            placeholder={formData.status === 'refunded' ? 'Enter refund amount (negative)' : 'Enter amount'}
-                            disabled={readOnly || isSubmitting}
-                            className={`${inputBase} record-field-leading ${
-                                formData.status === 'refunded' && parseFloat(formData.amount) < 0
-                                    ? 'record-field-refund'
-                                    : ''
-                            } ${readOnly || isSubmitting ? inputDisabled : ''}`}
-                        />
-                    </div>
+                <Field label="Amount (₹)">
+                    <Input
+                        type="number"
+                        name="amount"
+                        value={formData.amount}
+                        onChange={handleChange}
+                        step="0.01" 
+                        required={!readOnly}
+                        placeholder={formData.status === 'refunded' ? 'Enter refund amount (negative)' : 'Enter amount'}
+                        disabled={readOnly || isSubmitting}
+                        variant="record"
+                        leftIcon={<span className="font-bold text-sm">₹</span>}
+                        className={formData.status === 'refunded' && parseFloat(formData.amount) < 0 ? 'border-[var(--danger-text)]' : ''}
+                    />
                 </Field>
 
                 {/* Date + Month — always side by side */}
                 <div className="record-form-pair">
-                    <Field label="Payment Date" icon={HiOutlineCalendarDays}>
-                        <input
-                            type="date" name="paymentDate" value={formData.paymentDate}
+                    <Field label="Payment Date">
+                        <Input
+                            type="date"
+                            name="paymentDate"
+                            value={formData.paymentDate}
                             onChange={handleChange}
                             required={!readOnly}
                             disabled={readOnly || isSubmitting}
-                            className={`${inputBase} ${readOnly || isSubmitting ? inputDisabled : ''}`}
+                            variant="record"
                         />
                     </Field>
-                    <Field label="For Month" icon={HiOutlineCalendarDays}>
+                    <Field label="For Month">
                         <IconSelect
                             variant="record"
                             name="month"
@@ -560,24 +541,28 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
 
                 {/* Transaction ID / UTR — online / razorpay / upi_manual */}
                 {showTxn && (
-                    <Field label={formData.paymentMethod === 'upi_manual' ? 'UTR / Reference' : 'Transaction ID'} icon={HiOutlineCreditCard}>
-                        <input
-                            type="text" name="transactionId" value={formData.transactionId}
+                    <Field label={formData.paymentMethod === 'upi_manual' ? 'UTR / Reference' : 'Transaction ID'}>
+                        <Input
+                            type="text"
+                            name="transactionId"
+                            value={formData.transactionId}
                             onChange={handleChange}
                             placeholder={formData.paymentMethod === 'upi_manual' ? 'e.g. HDFC12345678' : 'e.g. pay_XXXXXXXXXX'}
                             disabled={readOnly || isSubmitting}
-                            className={`${inputBase} ${readOnly || isSubmitting ? inputDisabled : ''}`}
+                            variant="record"
                         />
                     </Field>
                 )}
 
                 {/* Remarks */}
-                <Field label="Remarks (Optional)" icon={HiOutlineChatBubbleBottomCenterText}>
-                    <textarea
-                        name="remarks" value={formData.remarks} onChange={handleChange}
+                <Field label="Remarks (Optional)">
+                    <Textarea
+                        name="remarks"
+                        value={formData.remarks}
+                        onChange={handleChange}
                         rows={2}
                         disabled={readOnly || isSubmitting}
-                        className={`${inputBase} ${readOnly || isSubmitting ? inputDisabled : ''}`}
+                        variant="record"
                         placeholder={readOnly ? '' : 'Add any notes about this payment…'}
                     />
                 </Field>

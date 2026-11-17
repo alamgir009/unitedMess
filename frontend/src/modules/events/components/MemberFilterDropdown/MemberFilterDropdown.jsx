@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useMemo, useCallback, memo } from 'react';
 import {
   HiOutlineChevronDown,
-  HiOutlineXMark,
   HiOutlineUser,
   HiOutlineCheck,
 } from 'react-icons/hi2';
 import { Search } from 'lucide-react';
 import Avatar from '@/shared/components/ui/Avatar/Avatar.jsx';
+import { Input } from '@/shared/components/ui';
 import membersService from '@/modules/members/services/members.service';
 
 const inputBase =
@@ -229,38 +229,28 @@ const MemberFilterDropdown = ({ selectedMemberId, onSelect, disabled = false }) 
           }}
         >
           <div className="p-2 pb-1">
-            <div className="relative flex items-center rounded-lg border border-border/60 bg-muted/30 transition-all duration-150 focus-within:bg-card focus-within:border-primary/50 focus-within:shadow-sm focus-within:shadow-primary/5">
-              <Search className="absolute left-3 w-4 h-4 text-muted-foreground pointer-events-none transition-colors duration-150 focus-within:text-primary" />
-              <input
-                ref={searchRef}
-                type="text"
-                placeholder="Search members..."
-                value={inputValue}
-                onChange={(e) => debouncedSearch(e.target.value)}
-                onKeyDown={handleKeyDown}
-                role="searchbox"
-                aria-label="Search members"
-                aria-activedescendant={
-                  focusedIndex >= 0 ? `mfi-option-${focusedIndex}` : undefined
-                }
-                className="w-full h-10 pl-9 pr-9 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 outline-none"
-              />
-              {(inputValue || search) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setInputValue('');
-                    setSearch('');
-                    clearTimeout(debounceRef.current);
-                    searchRef.current?.focus();
-                  }}
-                  className="absolute right-1.5 p-1.5 rounded-full hover:bg-muted/50 text-muted-foreground/60 hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  aria-label="Clear search"
-                >
-                  <HiOutlineXMark className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
+            <Input
+              ref={searchRef}
+              type="text"
+              size="sm"
+              placeholder="Search members..."
+              value={inputValue}
+              onChange={(e) => debouncedSearch(e.target.value)}
+              onKeyDown={handleKeyDown}
+              role="searchbox"
+              aria-label="Search members"
+              aria-activedescendant={
+                focusedIndex >= 0 ? `mfi-option-${focusedIndex}` : undefined
+              }
+              leftIcon={<Search className="w-4 h-4 text-muted-foreground" />}
+              clearable={!!(inputValue || search)}
+              onClear={() => {
+                setInputValue('');
+                setSearch('');
+                clearTimeout(debounceRef.current);
+                searchRef.current?.focus();
+              }}
+            />
           </div>
 
           {selectedMemberId && (

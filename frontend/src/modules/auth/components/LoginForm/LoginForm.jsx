@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { Mail, AlertCircle } from 'lucide-react';
 import { login } from '@/modules/auth/store/auth.slice';
-import { Button, Input } from '@/shared/components/ui';
+import { Button, Input, Checkbox } from '@/shared/components/ui';
 import PasswordInput from '@/shared/components/ui/PasswordInput/PasswordInput';
 import { toast } from 'react-hot-toast';
 
@@ -73,19 +73,13 @@ const LoginForm = () => {
             </div>
 
             <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                    <input
-                        id="remember-me"
-                        name="rememberMe"
-                        type="checkbox"
-                        checked={rememberMe}
-                        onChange={onChange}
-                        className="h-4 w-4 text-primary focus:ring-primary border-border rounded accent-primary"
-                    />
-                    <label htmlFor="remember-me" className="ml-2 block text-sm text-foreground">
-                        Remember me
-                    </label>
-                </div>
+                <Checkbox
+                    id="remember-me"
+                    name="rememberMe"
+                    checked={rememberMe}
+                    onChange={(e) => setFormData((p) => ({ ...p, rememberMe: e.target.checked }))}
+                    label="Remember me"
+                />
 
                 <div className="text-sm">
                     <Link to="/forgot-password" title="Forgot password" id="forgot-password-link" className="font-medium text-primary hover:opacity-80 transition-opacity">

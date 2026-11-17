@@ -24,7 +24,7 @@ import {
     HiOutlineCalendarDays,
     HiOutlineXMark,
 } from 'react-icons/hi2';
-import { Spinner, Button } from '@/shared/components/ui';
+import { Spinner, Button, Select } from '@/shared/components/ui';
 import { fmt } from '@/core/utils/helpers/currency.helper';
 import { MONTH_NAMES as MONTHS } from '@shared/utils/billingPeriod';
 
@@ -932,43 +932,33 @@ const MessBillInvoice = ({
                                     <label htmlFor="email-all-month" className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                                         Month
                                     </label>
-                                    <div className="relative">
-                                        <select
-                                            id="email-all-month"
-                                            value={selectedMonth}
-                                            onChange={e => setSelectedMonth(Number(e.target.value))}
-                                            disabled={sendingAllEmails}
-                                            className="w-full appearance-none px-3 py-2.5 pr-9 text-sm font-medium rounded-lg border border-input bg-input text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            {MONTHS.map((m, i) => (
-                                                <option key={m} value={i + 1}>{m}</option>
-                                            ))}
-                                        </select>
-                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-muted-foreground">
-                                            <HiOutlineChevronDown className="w-3.5 h-3.5" />
-                                        </div>
-                                    </div>
+                                    <Select
+                                        id="email-all-month"
+                                        value={selectedMonth}
+                                        onChange={e => setSelectedMonth(Number(e.target.value))}
+                                        disabled={sendingAllEmails}
+                                        aria-label="Month"
+                                    >
+                                        {MONTHS.map((m, i) => (
+                                            <option key={m} value={i + 1}>{m}</option>
+                                        ))}
+                                    </Select>
                                 </div>
                                 <div className="flex flex-col gap-1.5">
                                     <label htmlFor="email-all-year" className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                                         Year
                                     </label>
-                                    <div className="relative">
-                                        <select
-                                            id="email-all-year"
-                                            value={selectedYear}
-                                            onChange={e => setSelectedYear(Number(e.target.value))}
-                                            disabled={sendingAllEmails}
-                                            className="w-full appearance-none px-3 py-2.5 pr-9 text-sm font-medium rounded-lg border border-input bg-input text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => (
-                                                <option key={y} value={y}>{y}</option>
-                                            ))}
-                                        </select>
-                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-muted-foreground">
-                                            <HiOutlineChevronDown className="w-3.5 h-3.5" />
-                                        </div>
-                                    </div>
+                                    <Select
+                                        id="email-all-year"
+                                        value={selectedYear}
+                                        onChange={e => setSelectedYear(Number(e.target.value))}
+                                        disabled={sendingAllEmails}
+                                        aria-label="Year"
+                                    >
+                                        {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => (
+                                            <option key={y} value={y}>{y}</option>
+                                        ))}
+                                    </Select>
                                 </div>
                             </div>
 

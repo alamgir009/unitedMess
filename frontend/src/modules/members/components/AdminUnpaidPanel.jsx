@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { fetchAdminUnpaidInvoices, resolveInvoicePayment, updatePenaltyWaiver, setInvoicePenaltyRate } from '../store/members.slice';
 import { toast } from 'react-hot-toast';
-import { Spinner, Avatar, Button } from '@/shared/components/ui';
+import { Spinner, Avatar, Button, Input, Select } from '@/shared/components/ui';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { getLastFinalizedPeriod } from '@shared/utils/billingPeriod';
 import PenaltyControlsModal from './PenaltyControlsModal';
@@ -214,34 +214,23 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
                             <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                                 {isRefundMode ? `Refund Amount (max ₹ ${fmt(maxRefund)})` : 'Amount Being Paid Now (₹)'}
                             </label>
-                            <div className="relative">
-                                <span className={cn(
-                                    'absolute inset-y-0 left-4 flex items-center text-sm font-bold',
-                                    isRefundMode ? 'text-refund-text' : 'text-muted-foreground'
-                                )}>
-                                    {isRefundMode ? '− ₹' : '₹'}
-                                </span>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    max={isRefundMode ? maxRefund : undefined}
-                                    value={amount}
-                                    onChange={e => {
-                                        const raw = e.target.value;
-                                        if (isRefundMode && raw !== '' && Number(raw) > maxRefund) {
-                                            setAmount(String(maxRefund));
-                                        } else {
-                                            setAmount(raw);
-                                        }
-                                    }}
-                                    disabled={isSettled}
-                                    className={cn(
-                                        'w-full py-3 rounded-2xl text-base font-bold bg-input border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-all disabled:opacity-50',
-                                        isRefundMode ? 'pl-16' : 'pl-8'
-                                    )}
-                                />
-                            </div>
+                            <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                max={isRefundMode ? maxRefund : undefined}
+                                value={amount}
+                                onChange={e => {
+                                    const raw = e.target.value;
+                                    if (isRefundMode && raw !== '' && Number(raw) > maxRefund) {
+                                        setAmount(String(maxRefund));
+                                    } else {
+                                        setAmount(raw);
+                                    }
+                                }}
+                                disabled={isSettled}
+                                leftIcon={<span className={cn('font-bold text-sm', isRefundMode ? 'text-refund-text' : 'text-muted-foreground')}>{isRefundMode ? '− ₹' : '₹'}</span>}
+                            />
                             {isRefundMode && (
                                 <p className="flex items-center gap-1 mt-1.5 text-[11px] font-semibold text-refund-text">
                                     <AlertTriangle size={11} /> −₹ {fmt(displayRefund)} will be deducted — invoice marked as refunded
@@ -681,18 +670,20 @@ const AdminUnpaidPanel = React.memo(() => {
                     </div>
                 </div>
                 <div className="flex items-center gap-2.5 shrink-0">
-                    <div className="relative flex items-center">
-                        <Calendar size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                        <select value={selectedIdx} onChange={handleMonthChange}
-                            className="pl-9 pr-9 py-2 rounded-full text-[13px] font-semibold appearance-none bg-card border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
+                    <div className="w-56">
+                        <Select
+                            value={selectedIdx}
+                            onChange={handleMonthChange}
+                            size="sm"
+                            leftIcon={<Calendar size={14} />}
+                        >
                             {safeMonthOptions.map((opt, i) => (
                                 <option key={opt.label} value={i}>{opt.isLastFinalized ? `★ ${opt.label}` : opt.label}</option>
                             ))}
-                        </select>
-                        <ChevronDown size={12} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                        </Select>
                     </div>
                     <button onClick={() => load(selected)} disabled={unpaidInvoicesLoading}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-semibold bg-card border border-border text-foreground hover:bg-muted disabled:opacity-50 transition-all cursor-pointer">
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-[var(--radius-md)] text-[13px] font-semibold bg-card border border-border text-foreground hover:bg-muted disabled:opacity-50 transition-all cursor-pointer">
                         <RefreshCw size={13} className={unpaidInvoicesLoading ? 'animate-spin' : ''} />
                         Refresh
                     </button>

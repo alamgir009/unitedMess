@@ -6,7 +6,7 @@ import { cn } from '@/core/utils/helpers/string.helper';
 import useNotifications from '../../hooks/useNotifications';
 import NotificationItem from '../../components/NotificationItem/NotificationItem';
 import NotificationService from '../../services/notification.service';
-import { Spinner, Button, RoleBadge } from '@/shared/components/ui';
+import { Spinner, Button, RoleBadge, Input, Textarea } from '@/shared/components/ui';
 import { HiOutlineBell } from 'react-icons/hi2';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import toast from 'react-hot-toast';
@@ -104,14 +104,14 @@ const AdminComposeCard = ({ onSent }) => {
                                     <label className="text-caption font-medium text-muted-foreground">Title</label>
                                     <span className="text-caption text-muted-foreground">{title.length}/80</span>
                                 </div>
-                                <input
+                                <Input
                                     type="text"
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value.slice(0, 80))}
                                     maxLength={80}
                                     placeholder="Notification title"
                                     required
-                                    className="w-full input-base"
+                                    aria-label="Notification title"
                                 />
                             </div>
                             <div>
@@ -119,14 +119,14 @@ const AdminComposeCard = ({ onSent }) => {
                                     <label className="text-caption font-medium text-muted-foreground">Message</label>
                                     <span className="text-caption text-muted-foreground">{message.length}/300</span>
                                 </div>
-                                <textarea
+                                <Textarea
                                     value={message}
                                     onChange={(e) => setMessage(e.target.value.slice(0, 300))}
                                     maxLength={300}
                                     rows={3}
                                     placeholder="Notification message"
                                     required
-                                    className="w-full input-base resize-none"
+                                    aria-label="Notification message"
                                 />
                             </div>
                             <Button

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { HiOutlineChevronDown, HiOutlineMagnifyingGlass, HiOutlineCheck, HiOutlineXMark, HiOutlineUser } from 'react-icons/hi2';
+import { HiOutlineChevronDown, HiOutlineMagnifyingGlass, HiOutlineCheck, HiOutlineUser } from 'react-icons/hi2';
 import Avatar from '../Avatar/Avatar.jsx';
+import Input from '../primitives/Input';
 import '../RecordForm/record-form.css';
 
 const accentMap = {
@@ -174,26 +175,19 @@ const MemberSelect = ({
                 <div className={`absolute z-50 top-full mt-1.5 w-full overflow-hidden ${variant === 'record' ? 'record-field-menu' : 'rounded-xl border border-[var(--border-default)] bg-[var(--bg-elevated)] shadow-xl'}`}>
                     {/* Search */}
                     <div className="px-2 pt-2 pb-1">
-                        <div className="relative">
-                            <HiOutlineMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
-                            <input
-                                ref={searchRef}
-                                type="text"
-                                value={search}
-                                onChange={e => setSearch(e.target.value)}
-                                placeholder="Search members…"
-                                className={`${variant === 'record' ? 'record-field record-field-search' : `${inputBase} pl-9 h-10 text-xs`}`}
-                            />
-                            {search && (
-                                <button
-                                    type="button"
-                                    onClick={() => setSearch('')}
-                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-[var(--bg-muted)] text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
-                                >
-                                    <HiOutlineXMark className="w-3.5 h-3.5" />
-                                </button>
-                            )}
-                        </div>
+                        <Input
+                            ref={searchRef}
+                            type="text"
+                            size="sm"
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            placeholder="Search members…"
+                            variant={variant === 'record' ? 'record' : 'default'}
+                            leftIcon={<HiOutlineMagnifyingGlass className="w-4 h-4 text-[var(--text-muted)]" />}
+                            clearable={!!search}
+                            onClear={() => setSearch('')}
+                            aria-label="Search members"
+                        />
                     </div>
 
                     {/* Batch actions */}

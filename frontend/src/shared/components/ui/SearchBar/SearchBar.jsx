@@ -1,4 +1,5 @@
 import { Search, X, SlidersHorizontal } from 'lucide-react';
+import Input from '../primitives/Input';
 
 const SearchBar = ({
   searchQuery,
@@ -15,32 +16,26 @@ const SearchBar = ({
   return (
   <div className="group relative flex flex-col rounded-lg border border-border surface-elevated depth-top overflow-hidden transition-shadow duration-150">
     <div className="flex flex-row items-center gap-2 p-2.5">
-      <div className="relative flex-1">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-        <input
+      <div className="flex-1">
+        <Input
           type="text"
           placeholder={placeholder}
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           aria-label={placeholder}
-          className="w-full h-10 pl-10 pr-10 rounded-lg border border-border bg-muted/30 text-sm text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all"
+          leftIcon={<Search className="w-4 h-4 text-muted-foreground" />}
+          clearable={!!searchQuery}
+          onClear={() => onSearchChange('')}
+          rightIcon={
+            !searchQuery ? (
+              <div className="hidden sm:flex items-center gap-1 pointer-events-none searchbar-kbd">
+                <kbd className="text-[11px] font-sans text-muted-foreground bg-muted border border-border rounded-xs px-1.5 py-0.5 leading-none">
+                  <span className="text-[10px]">⌘</span>K
+                </kbd>
+              </div>
+            ) : null
+          }
         />
-        {searchQuery && (
-          <button
-            onClick={() => onSearchChange('')}
-            aria-label="Clear search"
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        )}
-        {!searchQuery && (
-          <div className="absolute right-3.5 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-1 pointer-events-none searchbar-kbd">
-            <kbd className="text-[11px] font-sans text-muted-foreground bg-muted border border-border rounded-xs px-1.5 py-0.5 leading-none">
-              <span className="text-[10px]">⌘</span>K
-            </kbd>
-          </div>
-        )}
       </div>
 
       <div className="flex flex-row items-center gap-2 flex-shrink-0">

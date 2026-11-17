@@ -14,7 +14,7 @@ import toast from 'react-hot-toast';
 import settingsService from '../../services/settings.service';
 import apiClient from '@/services/api/client/apiClient';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
-import { Button, RoleBadge } from '@/shared/components/ui';
+import { Button, RoleBadge, Input } from '@/shared/components/ui';
 import { cn } from '@/core/utils/helpers/string.helper';
 
 const CurrentBadge = ({ value, loading, prefix = '₹ ', suffix = '' }) => {
@@ -109,21 +109,17 @@ const SettingCard = ({
                     <label className="text-caption font-semibold uppercase tracking-wider text-muted-foreground">
                         New Value
                     </label>
-                    <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground pointer-events-none">
-                            ₹
-                        </span>
-                        <input
-                            type="number"
-                            min="0"
-                            step="any"
-                            required
-                            value={value}
-                            onChange={(e) => setValue(e.target.value)}
-                            placeholder={placeholder}
-                            className="w-full h-10 pl-8 pr-4 border border-border rounded-md text-sm bg-background text-foreground placeholder-muted-foreground outline-none transition-colors duration-150 focus:ring-2 focus:ring-ring focus:border-primary"
-                        />
-                    </div>
+                    <Input
+                        type="number"
+                        min="0"
+                        step="any"
+                        required
+                        value={value}
+                        onChange={(e) => setValue(e.target.value)}
+                        placeholder={placeholder}
+                        leftIcon={<span className="text-sm font-semibold text-muted-foreground">₹</span>}
+                        aria-label="New Value"
+                    />
 
                     <Button
                         type="submit"

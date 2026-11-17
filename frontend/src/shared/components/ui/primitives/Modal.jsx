@@ -1,0 +1,357 @@
+import { useEffect, useRef, useCallback, useState, useId } from 'react';
+import { createPortal } from 'react-dom';
+import { cn } from '@/core/utils/helpers/string.helper';
+import { useModalAnimation } from '@/shared/hooks/useModalAnimation';
+import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
+import { lockBodyScroll, unlockBodyScroll } from '@/shared/hooks/useBodyScrollLock';
+import { Spinner } from '@/shared/components/ui';
+
+// Global stack to ensure only the topmost dialog responds to Escape
+const activeModalStack = [];
+
+const sizeMap = {
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-xl',
+  '2xl': 'max-w-2xl',
+  full: 'max-w-[95vw]',
+};
+
+const accentColors = {
+  blue: 'from-[var(--brand)] to-[var(--brand-hover)]',
+  emerald: 'from-[var(--success)] to-[var(--success-text)]',
+  red: 'from-[var(--danger)] to-[var(--danger-text)]',
+  amber: 'from-[var(--warning)] to-[var(--warning-text)]',
+  none: 'hidden',
+};
+
+const SHEET_MIN_HEIGHT_PCT = 50;
+const SHEET_MAX_HEIGHT_PCT = 90;
+const SHEET_DEFAULT_HEIGHT_PCT = 75;
+const SHEET_DISMISS_THRESHOLD = SHEET_MIN_HEIGHT_PCT + 5;
+
+export const Modal = ({
+  isOpen,
+  onClose,
+  title,
+  description,
+  children,
+  footer,
+  headerContent,
+  size = 'md',
+  accentColor = 'blue',
+  mobileSheet = false,
+  role = 'dialog',
+  showCloseButton = true,
+  closeOnOverlayClick = true,
+  className = '',
+  isLoading = false,
+  desktopMaxHeight = '92dvh',
+}) => {
+  const reactId = useId().replace(/:/g, '');
+  const titleId = `modal-title-${reactId}`;
+  const descId = `modal-desc-${reactId}`;
+  const modalInstanceId = useRef(`modal-${reactId}-${Math.random().toString(36).slice(2, 7)}`).current;
+
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
+  const dialogRef = useRef(null);
+  const openerRef = useRef(null);
+  const { shouldRender, exiting } = useModalAnimation(isOpen, { exitTimeout: 140 });
+  const isMobile = useMediaQuery('(max-width: 639px)');
+  const useSheet = mobileSheet && isMobile;
+
+  const [sheetHeightPct, setSheetHeightPct] = useState(SHEET_DEFAULT_HEIGHT_PCT);
+  const dragRef = useRef({ startY: 0, startHeight: SHEET_DEFAULT_HEIGHT_PCT, dragging: false });
+
+  useEffect(() => {
+    if (useSheet && isOpen) {
+      setSheetHeightPct(SHEET_DEFAULT_HEIGHT_PCT);
+    }
+  }, [useSheet, isOpen]);
+
+  const handleKeyDown = useCallback((e) => {
+    // Only topmost modal handles Escape
+    if (e.key === 'Escape') {
+      const topModalId = activeModalStack[activeModalStack.length - 1];
+      if (topModalId !== modalInstanceId) return;
+
+      if (document.querySelector('[role="listbox"]:not([aria-hidden="true"]), [role="menu"]:not([aria-hidden="true"])')) {
+        return;
+      }
+      e.stopPropagation();
+      onCloseRef.current?.();
+      return;
+    }
+
+    if (e.key === 'Tab' && dialogRef.current) {
+      const focusableSelector =
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+      const focusable = Array.from(dialogRef.current.querySelectorAll(focusableSelector));
+      if (focusable.length === 0) {
+        e.preventDefault();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === first || !dialogRef.current.contains(document.activeElement)) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last || !dialogRef.current.contains(document.activeElement)) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+  }, [modalInstanceId]);
+
+  const handleDragMove = useCallback((e) => {
+    if (!dragRef.current.dragging) return;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const delta = dragRef.current.startY - clientY;
+    const vh = window.innerHeight;
+    const deltaPct = (delta / vh) * 100;
+    const newHeight = Math.min(
+      SHEET_MAX_HEIGHT_PCT,
+      Math.max(SHEET_MIN_HEIGHT_PCT, dragRef.current.startHeight + deltaPct),
+    );
+    setSheetHeightPct(newHeight);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    dragRef.current.dragging = false;
+    document.removeEventListener('mousemove', handleDragMove);
+    document.removeEventListener('mouseup', handleDragEnd);
+    document.removeEventListener('touchmove', handleDragMove);
+    document.removeEventListener('touchend', handleDragEnd);
+    if (sheetHeightPct < SHEET_DISMISS_THRESHOLD) {
+      onCloseRef.current?.();
+    }
+  }, [handleDragMove, sheetHeightPct]);
+
+  const handleDragStart = useCallback((e) => {
+    if (e.target.closest('button, input, select, textarea')) return;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    dragRef.current = { startY: clientY, startHeight: sheetHeightPct, dragging: true };
+    document.addEventListener('mousemove', handleDragMove);
+    document.addEventListener('mouseup', handleDragEnd);
+    document.addEventListener('touchmove', handleDragMove, { passive: false });
+    document.addEventListener('touchend', handleDragEnd);
+  }, [sheetHeightPct, handleDragMove, handleDragEnd]);
+
+  // Capture opener focus on mount and restore on unmount
+  useEffect(() => {
+    if (!openerRef.current && document.activeElement) {
+      openerRef.current = document.activeElement;
+    }
+    return () => {
+      if (openerRef.current?.focus) {
+        openerRef.current.focus();
+        openerRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!shouldRender || exiting) return;
+
+    activeModalStack.push(modalInstanceId);
+    lockBodyScroll();
+    document.addEventListener('keydown', handleKeyDown);
+
+    // Autofocus the first enabled field if nothing inside dialog is already focused
+    const raf = requestAnimationFrame(() => {
+      if (!dialogRef.current) return;
+      if (dialogRef.current.contains(document.activeElement)) return;
+
+      const enabledInputs = dialogRef.current.querySelectorAll(
+        'input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled])',
+      );
+      if (enabledInputs.length > 0) {
+        enabledInputs[0].focus();
+      } else {
+        const allFocusable = dialogRef.current.querySelectorAll(
+          'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+        );
+        if (allFocusable.length > 0) {
+          allFocusable[0].focus();
+        } else {
+          dialogRef.current.focus();
+        }
+      }
+    });
+
+    return () => {
+      cancelAnimationFrame(raf);
+      const stackIdx = activeModalStack.lastIndexOf(modalInstanceId);
+      if (stackIdx !== -1) activeModalStack.splice(stackIdx, 1);
+
+      unlockBodyScroll();
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousemove', handleDragMove);
+      document.removeEventListener('mouseup', handleDragEnd);
+      document.removeEventListener('touchmove', handleDragMove);
+      document.removeEventListener('touchend', handleDragEnd);
+    };
+  }, [shouldRender, exiting, modalInstanceId, handleKeyDown, handleDragMove, handleDragEnd]);
+
+  if (typeof document === 'undefined' || !shouldRender) return null;
+
+  const accentBar = accentColors[accentColor] || accentColors.blue;
+
+  const dialogContent = (
+    <div
+      ref={dialogRef}
+      role={role}
+      aria-modal="true"
+      aria-labelledby={title ? titleId : undefined}
+      aria-describedby={description ? descId : undefined}
+      aria-busy={isLoading || undefined}
+      tabIndex={-1}
+      style={
+        useSheet
+          ? {
+              minHeight: '300px',
+              maxHeight: '90vh',
+              height: `${sheetHeightPct}vh`,
+              boxShadow: 'var(--elevation-4, var(--shadow-xl))',
+            }
+          : { maxHeight: desktopMaxHeight }
+      }
+      className={cn(
+        'relative w-full modal-gpu',
+        !useSheet && sizeMap[size],
+        'bg-[var(--bg-elevated)] border border-[var(--border-default)]',
+        'focus:outline-none flex flex-col overflow-hidden',
+        useSheet
+          ? 'rounded-t-[var(--radius-2xl)] shadow-xl animate-fade-in-up transition-[height] duration-[var(--duration-fast,120ms)] ease-out'
+          : 'rounded-[var(--radius-xl)] shadow-xl modal-animate',
+        exiting && !useSheet && 'modal-exit',
+        !exiting && !useSheet && 'modal-enter',
+        className,
+      )}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {useSheet && (
+        <div
+          onMouseDown={handleDragStart}
+          onTouchStart={handleDragStart}
+          className="relative z-20 shrink-0 cursor-grab active:cursor-grabbing bg-transparent py-2 flex items-center justify-center touch-none"
+        >
+          <div className="w-10 h-1.5 rounded-full bg-[var(--text-disabled)] opacity-80" />
+        </div>
+      )}
+
+      {/* Header */}
+      {(title || headerContent) && (
+        <div
+          data-modal-header="true"
+          className="flex items-center justify-between shrink-0 border-b border-[var(--border-default)] px-5 py-4 sm:px-6 sm:py-5"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            {accentColor !== 'none' && (
+              <div
+                className={cn(
+                  'w-1 h-6 rounded-full bg-gradient-to-b shrink-0',
+                  accentBar,
+                )}
+              />
+            )}
+            <div className="min-w-0">
+              {title && (
+                <h2
+                  id={titleId}
+                  className="truncate font-semibold text-[var(--text-primary)] text-base sm:text-lg"
+                >
+                  {title}
+                </h2>
+              )}
+              {description && (
+                <p id={descId} className="text-xs text-[var(--text-muted)] mt-0.5 truncate">
+                  {description}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 ml-4">
+            {headerContent}
+            {showCloseButton && (
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close dialog"
+                className="p-2 rounded-[var(--radius-md)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors focus-visible:outline-none focus-visible:ring-[var(--focus-width,2px)] focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Body */}
+      <div
+        data-modal-body="true"
+        className={cn(
+          'relative z-10 flex-1 overflow-y-auto overscroll-contain',
+          useSheet ? 'px-4 py-3' : 'px-5 py-4 sm:px-6 sm:py-5',
+          '[scrollbar-width:thin] [scrollbar-color:var(--border-strong)_transparent]',
+        )}
+      >
+        {isLoading ? (
+          <div
+            className="flex min-h-[220px] items-center justify-center py-10"
+            role="status"
+            aria-live="polite"
+          >
+            <Spinner size="xl" />
+          </div>
+        ) : (
+          children
+        )}
+      </div>
+
+      {/* Footer */}
+      {footer && (
+        <div
+          data-modal-footer="true"
+          className="flex items-center justify-end gap-3 shrink-0 border-t border-[var(--border-default)] px-5 pb-5 pt-3 sm:px-6 sm:pb-6 sm:pt-4"
+        >
+          {footer}
+        </div>
+      )}
+    </div>
+  );
+
+  return createPortal(
+    <div
+      className={cn(
+        'fixed inset-0 z-[var(--z-modal,400)] modal-gpu',
+        useSheet ? 'flex flex-col justify-end' : 'flex items-center justify-center p-4 sm:p-6',
+      )}
+      onClick={closeOnOverlayClick ? onClose : undefined}
+    >
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 bg-[var(--bg-overlay)] transition-opacity duration-150"
+      />
+      {dialogContent}
+    </div>,
+    document.body,
+  );
+};
+
+Modal.displayName = 'Modal';
+export default Modal;

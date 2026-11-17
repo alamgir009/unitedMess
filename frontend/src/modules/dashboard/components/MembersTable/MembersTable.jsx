@@ -11,7 +11,7 @@ import {
 import MemberRowActions from './MemberRowActions';
 import UserEditModal from './UserEditModal';
 import { cn } from '@/core/utils/helpers/string.helper';
-import { StatusBadge, Avatar } from '@/shared/components/ui';
+import { StatusBadge, Avatar, Input } from '@/shared/components/ui';
 import { resolveBillStatus } from '@shared/utils/paymentStatus';
 
 const getDisplayStatus = ({ userStatus, isActive }) => {
@@ -179,15 +179,15 @@ const MembersTable = ({ users = [], onSearch, isLoading }) => {
             </div>
           </div>
 
-          <div className="relative w-full sm:w-64">
-            <Search size={15} strokeWidth={2} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-            <input
+          <div className="w-full sm:w-64">
+            <Input
               type="text"
+              size="sm"
               value={localSearch}
               placeholder="Search members..."
               onChange={handleSearchChange}
               aria-label="Search members"
-              className="w-full rounded-lg border border-border bg-muted/30 py-2 pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring"
+              leftIcon={<Search size={15} strokeWidth={2} className="text-muted-foreground" />}
             />
           </div>
         </div>

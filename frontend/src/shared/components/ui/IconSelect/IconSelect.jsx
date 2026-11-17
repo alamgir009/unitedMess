@@ -9,13 +9,12 @@ const DROPDOWN_MAX_H = 208;
 const DROPDOWN_MARGIN = 3;
 
 const inputBase =
-  'w-full h-10 px-3 py-2.5 rounded-xl border border-[var(--input-border)] ' +
+  'w-full h-[var(--control-height-md)] px-3 py-2 rounded-[var(--radius-md)] border border-[var(--input-border)] ' +
   'bg-[var(--input-bg)] ' +
-  'focus:ring-0 focus:border-[var(--input-border-focus)] ' +
-  'outline-none transition-all duration-200 ' +
+  'focus:ring-2 focus:ring-[var(--focus)] focus:border-[var(--focus)] ' +
+  'outline-none transition-all duration-150 ' +
   'text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] ' +
-  'hover:border-[var(--input-border-hover)] ' +
-  'dark:shadow-[var(--inset-top-glow),var(--shadow-xs)] dark:focus:shadow-[var(--inset-top-glow),var(--shadow-xs),0_0_0_3px_rgba(var(--brand-rgb),0.15)]';
+  'hover:border-[var(--input-border-hover)]';
 
 const inputDisabled = 'opacity-60 cursor-not-allowed pointer-events-none select-none';
 
@@ -45,7 +44,7 @@ function getMenuStyle(triggerRect) {
     left: `${Math.max(4, left)}px`,
     width: `${width}px`,
     maxHeight: `${Math.max(maxHeight, 80)}px`,
-    borderRadius: '12px',
+    borderRadius: 'var(--radius-lg)',
   };
 }
 
@@ -152,7 +151,7 @@ const IconSelect = ({ name, value, onChange, options, disabled = false, placehol
       style={{
         ...menuStyle,
         ...(variant === 'record' ? { borderRadius: 'var(--radius-md)' } : {}),
-        boxShadow: variant === 'record' ? 'var(--shadow-lg)' : 'inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08)',
+        boxShadow: variant === 'record' ? 'var(--shadow-lg)' : 'var(--elevation-3)',
       }}
     >
       {options.map((opt, idx) => (

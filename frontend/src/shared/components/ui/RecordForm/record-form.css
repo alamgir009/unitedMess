@@ -10,16 +10,16 @@
     box-sizing: border-box;
     width: 100%;
     min-width: 0;
-    min-height: 48px;
-    padding: 12px;
-    border: 1px solid var(--border-default);
+    min-height: var(--control-height-md);
+    padding: var(--space-3);
+    border: var(--control-border-width) solid var(--border-default);
     border-radius: var(--radius-md);
     background: var(--bg-muted);
     color: var(--text-primary);
     box-shadow: var(--control-recessed-shadow);
-    font-size: 14px;
+    font-size: var(--control-font-size);
     line-height: 20px;
-    caret-color: var(--brand-hover);
+    caret-color: var(--brand);
     outline: none;
     transition: border-color var(--duration-fast) var(--ease-out);
 }
@@ -28,7 +28,7 @@
 .record-field.record-field-leading { padding-left: 28px; }
 .record-field.record-field-search { padding-left: 36px; }
 .record-field:hover:not(:disabled) { border-color: var(--border-strong); }
-.record-field:focus { border-color: var(--brand-hover); outline: 2px solid var(--brand-hover); outline-offset: 2px; }
+.record-field:focus { border-color: var(--focus); outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); }
 .record-field:disabled { opacity: .6; cursor: not-allowed; }
 .record-field.record-field-refund { border-color: var(--danger-text); }
 .record-field.record-field-refund:focus { outline-color: var(--danger-text); }

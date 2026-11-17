@@ -7,7 +7,7 @@ import {
     HiOutlineArrowRight,
     HiOutlineSparkles,
 } from 'react-icons/hi2';
-import { Button, Spinner, Reveal } from '@/shared/components/ui';
+import { Button, Spinner, Reveal, Input, Select, Textarea } from '@/shared/components/ui';
 
 const ContactMethod = ({ Icon, title, value, href, delay }) => (
     <Reveal delay={delay}>
@@ -84,41 +84,39 @@ const ContactPage = () => {
                         <div className="relative rounded-3xl border border-border bg-card/40 p-8 backdrop-blur-md">
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="grid sm:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
+                                    <div className="space-y-1.5">
                                         <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Full Name</label>
-                                        <input 
+                                        <Input 
                                             required
                                             type="text" 
-                                            className="w-full bg-background/50 border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary/50 outline-none transition-all"
                                             placeholder="John Doe"
                                         />
                                     </div>
-                                    <div className="space-y-2">
+                                    <div className="space-y-1.5">
                                         <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Email Address</label>
-                                        <input 
+                                        <Input 
                                             required
                                             type="email" 
-                                            className="w-full bg-background/50 border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary/50 outline-none transition-all"
                                             placeholder="john@example.com"
                                         />
                                     </div>
                                 </div>
-                                <div className="space-y-2">
+                                <div className="space-y-1.5">
                                     <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Subject</label>
-                                    <select className="w-full bg-background/50 border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary/50 outline-none transition-all appearance-none cursor-pointer">
+                                    <Select defaultValue="General Inquiry">
                                         <option>General Inquiry</option>
                                         <option>Technical Support</option>
                                         <option>Billing Question</option>
                                         <option>Feature Request</option>
-                                    </select>
+                                    </Select>
                                 </div>
-                                <div className="space-y-2">
+                                <div className="space-y-1.5">
                                     <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Message</label>
-                                    <textarea 
+                                    <Textarea 
                                         required
                                         rows={4}
-                                        className="w-full bg-background/50 border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary/50 outline-none transition-all resize-none"
                                         placeholder="How can we help you today?"
+                                        className="resize-none"
                                     />
                                 </div>
                                 <Button 

@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Plus, Trash2, X, Check, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { fmt } from '@/core/utils/helpers/currency.helper';
-import { MemberSelect, Button } from '@/shared/components/ui';
+import { MemberSelect, Button, Input, Checkbox } from '@/shared/components/ui';
 import apiClient from '@/services/api/client/apiClient';
 import SlotIcon from './cells/SlotIcon';
 import {
@@ -23,77 +23,10 @@ const mealTypes = [
   { value: 'off', label: 'Off', description: 'No meals', icon: HiOutlineNoSymbol, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-[var(--text-secondary)]' },
 ];
 
-const FintechCheckbox = React.memo(({ checked, onChange, indeterminate, ariaLabel, disabled }) => {
-  const inputRef = useRef(null);
-
-  useEffect(() => {
-    if (inputRef.current) inputRef.current.indeterminate = !!indeterminate;
-  }, [indeterminate]);
-
-  return (
-    <span className="relative inline-flex items-center justify-center w-4 h-4 shrink-0">
-      <input
-        ref={inputRef}
-        type="checkbox"
-        checked={checked}
-        onChange={onChange}
-        disabled={disabled}
-        className="absolute inset-0 cursor-pointer opacity-0 z-10 disabled:cursor-not-allowed"
-        aria-label={ariaLabel}
-      />
-      <span
-        className={cn(
-          'absolute inset-0 rounded flex items-center justify-center',
-          'border-2 transition-all duration-150 ease-out',
-          'focus-within:ring-2 focus-within:ring-[var(--accent-primary)]/30 focus-within:ring-offset-1 focus-within:ring-offset-[var(--bg-elevated)]',
-          checked || indeterminate
-            ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)] shadow-sm'
-            : 'bg-[var(--bg-elevated)] border-[var(--border-default)] hover:border-[var(--accent-primary)]/50',
-          disabled && 'opacity-50',
-        )}
-        aria-hidden="true"
-      >
-        <svg
-          className={cn(
-            'w-2.5 h-2.5 text-white transition-all duration-150 ease-out',
-            checked ? 'opacity-100 scale-100' : 'opacity-0 scale-50',
-          )}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={3}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M5 13l4 4L19 7" />
-        </svg>
-        <svg
-          className={cn(
-            'absolute w-2.5 h-2.5 text-white transition-all duration-150 ease-out',
-            indeterminate && !checked ? 'opacity-100 scale-100' : 'opacity-0 scale-50',
-          )}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={3}
-          strokeLinecap="round"
-        >
-          <path d="M5 12h14" />
-        </svg>
-      </span>
-    </span>
-  );
-});
+const FintechCheckbox = React.memo(({ ariaLabel, ...props }) => (
+  <Checkbox aria-label={ariaLabel} {...props} />
+));
 FintechCheckbox.displayName = 'FintechCheckbox';
-
-const inputBase =
-  'w-full px-3 py-2.5 rounded-xl border border-[var(--border-strong)] ' +
-  'bg-[var(--bg-subtle)] ' +
-  'shadow-[var(--inset-inner),0_1px_2px_rgba(0,0,0,0.08)] ' +
-  'focus:ring-2 focus:ring-[var(--brand)]/25 focus:border-[var(--brand)] ' +
-  'outline-none transition-all duration-150 ' +
-  'text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] ' +
-  'hover:border-[var(--input-border-hover)] hover:shadow-[var(--inset-inner),0_2px_6px_rgba(0,0,0,0.12)]';
 
 const getEntryUserId = (entry) =>
   typeof entry.user === 'object' ? entry.user?._id : entry.user;
@@ -593,35 +526,44 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
       {isRangeMode ? (
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <input
+            <Input
               type="date"
+              variant="record"
+              size="sm"
               value={rangeFrom}
               onChange={(e) => { setRangeFrom(e.target.value); setErrors((p) => ({ ...p, rangeFrom: undefined, rangeTo: undefined })); }}
               disabled={isSubmitting}
-              className={cn(inputBase, errors.rangeFrom && 'ring-2 ring-[var(--danger)]/50', isSubmitting && 'opacity-60 cursor-not-allowed')}
+              isInvalid={!!errors.rangeFrom}
+              aria-label="Start date"
             />
             {errors.rangeFrom && <p className="text-[10px] text-[var(--danger)] mt-0.5">{errors.rangeFrom}</p>}
           </div>
           <div>
-            <input
+            <Input
               type="date"
+              variant="record"
+              size="sm"
               value={rangeTo}
               min={rangeFrom}
               onChange={(e) => { setRangeTo(e.target.value); setErrors((p) => ({ ...p, rangeTo: undefined })); }}
               disabled={isSubmitting}
-              className={cn(inputBase, errors.rangeTo && 'ring-2 ring-[var(--danger)]/50', isSubmitting && 'opacity-60 cursor-not-allowed')}
+              isInvalid={!!errors.rangeTo}
+              aria-label="End date"
             />
             {errors.rangeTo && <p className="text-[10px] text-[var(--danger)] mt-0.5">{errors.rangeTo}</p>}
           </div>
         </div>
       ) : (
         <div>
-          <input
+          <Input
             type="date"
+            variant="record"
+            size="sm"
             value={date}
             onChange={(e) => { setDate(e.target.value); setErrors((p) => ({ ...p, date: undefined })); }}
             disabled={isSubmitting}
-            className={cn(inputBase, errors.date && 'ring-2 ring-[var(--danger)]/50', isSubmitting && 'opacity-60 cursor-not-allowed')}
+            isInvalid={!!errors.date}
+            aria-label="Date"
           />
           {errors.date && <p className="text-[10px] text-[var(--danger)] mt-0.5">{errors.date}</p>}
         </div>
@@ -645,26 +587,33 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
         </div>
       ) : (
         <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-[var(--text-muted)]">₹</span>
-            <input
+          <div className="flex-1">
+            <Input
               type="number"
+              variant="record"
+              size="sm"
               value={amount}
               onChange={(e) => { setAmount(e.target.value); setErrors((p) => ({ ...p, amount: undefined })); }}
               min="0"
               step="0.01"
               placeholder="0.00"
               disabled={isSubmitting}
-              className={cn(inputBase, 'pl-6', errors.amount && 'ring-2 ring-[var(--danger)]/50', isSubmitting && 'opacity-60 cursor-not-allowed')}
+              isInvalid={!!errors.amount}
+              leftIcon={<span className="text-xs font-semibold text-[var(--text-muted)]">₹</span>}
+              aria-label="Amount"
             />
           </div>
-          <input
+          <Input
             type="text"
+            variant="record"
+            size="sm"
             value={items}
             onChange={(e) => { setItems(e.target.value); setErrors((p) => ({ ...p, items: undefined })); }}
             placeholder="Items"
             disabled={isSubmitting}
-            className={cn(inputBase, 'flex-[2]', errors.items && 'ring-2 ring-[var(--danger)]/50', isSubmitting && 'opacity-60 cursor-not-allowed')}
+            isInvalid={!!errors.items}
+            className="flex-[2]"
+            aria-label="Items"
           />
         </div>
       )}
@@ -731,13 +680,15 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
       )}
       {errors.guestCount && <p className="text-[10px] text-[var(--danger)]">{errors.guestCount}</p>}
 
-      <input
+      <Input
         type="text"
+        variant="record"
+        size="sm"
         value={remarks}
         onChange={(e) => setRemarks(e.target.value)}
         placeholder={`${category === 'meals' ? 'Remarks' : 'Description'} (optional)`}
         disabled={isSubmitting}
-        className={cn(inputBase, isSubmitting && 'opacity-60 cursor-not-allowed')}
+        aria-label={category === 'meals' ? 'Remarks' : 'Description'}
       />
 
       {/* Inline saving spinner */}
@@ -849,35 +800,43 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
         </div>
       ) : (
         <div className="flex items-center gap-2">
-          <div className="relative w-20">
-            <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-[var(--text-muted)]">₹</span>
-            <input
+          <div className="w-24">
+            <Input
               type="number"
+              variant="record"
+              size="sm"
               value={amount}
               onChange={(e) => { setAmount(e.target.value); setErrors((p) => ({ ...p, amount: undefined })); }}
               min="0"
               step="0.01"
-              className={cn(inputBase, 'pl-4 py-1 text-xs', errors.amount && 'ring-2 ring-[var(--danger)]/50')}
+              isInvalid={!!errors.amount}
+              leftIcon={<span className="text-[10px] text-[var(--text-muted)]">₹</span>}
+              aria-label="Amount"
             />
           </div>
-          <input
+          <Input
             type="text"
+            variant="record"
+            size="sm"
             value={items}
             onChange={(e) => setItems(e.target.value)}
             placeholder="Items"
-            className={cn(inputBase, 'flex-1 py-1 text-xs')}
+            className="flex-1"
+            aria-label="Items"
           />
         </div>
       )}
 
       {/* Row 2: Notes input (full width) */}
-      <input
+      <Input
         type="text"
+        variant="record"
+        size="sm"
         value={remarks}
         onChange={(e) => setRemarks(e.target.value)}
         placeholder="Notes"
-        className={cn(inputBase, 'w-full py-1.5 text-xs min-h-[clamp(var(--btn-height-md),calc(36px+0.3vw),var(--btn-height-lg))]',
-          '[&:not(:placeholder-shown)]:border-[var(--border-strong)]')}
+        className="w-full"
+        aria-label="Notes"
       />
 
       {/* Row 3: Guest Meals — Blinkit-style stepper (meals only) */}
@@ -1025,34 +984,42 @@ const BulkUpdateForm = ({ category, selectedCount, onSubmit, onCancel, isBulkSub
         </div>
       ) : (
         <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-[var(--text-muted)]">₹</span>
-            <input
+          <div className="flex-1">
+            <Input
               type="number"
+              variant="record"
+              size="sm"
               value={amount}
               onChange={(e) => { setAmount(e.target.value); setErrors((p) => ({ ...p, amount: undefined, empty: undefined })); }}
               min="0"
               step="0.01"
               placeholder="Amount"
-              className={cn(inputBase, 'pl-6', errors.amount && 'ring-2 ring-[var(--danger)]/50')}
+              isInvalid={!!errors.amount}
+              leftIcon={<span className="text-xs font-semibold text-[var(--text-muted)]">₹</span>}
+              aria-label="Amount"
             />
           </div>
-          <input
+          <Input
             type="text"
+            variant="record"
+            size="sm"
             value={items}
             onChange={(e) => setItems(e.target.value)}
             placeholder="Items"
-            className={cn(inputBase, 'flex-[2]')}
+            className="flex-[2]"
+            aria-label="Items"
           />
         </div>
       )}
 
-      <input
+      <Input
         type="text"
+        variant="record"
+        size="sm"
         value={remarks}
         onChange={(e) => setRemarks(e.target.value)}
         placeholder={`${category === 'meals' ? 'Remarks' : 'Description'} (optional)`}
-        className={inputBase}
+        aria-label={category === 'meals' ? 'Remarks' : 'Description'}
       />
 
       {(errors.type || errors.amount || errors.empty) && (

@@ -10,24 +10,7 @@ import {
     HiOutlineLockClosed,
 } from 'react-icons/hi2';
 import apiClient from '@/services/api/client/apiClient';
-import { Button, Avatar, MemberSelect } from '@/shared/components/ui';
-
-/* ─── Design tokens ─────────────────────────────────────────── */
-
-const inputBase = 'record-field';
-
-const inputDisabled = 'opacity-60 cursor-not-allowed pointer-events-none select-none';
-
-/* ─── Field wrapper ─────────────────────────────────────────── */
-const Field = ({ label, icon: Icon, children, className = '' }) => (
-    <div className={`flex flex-col gap-1.5 min-w-0 ${className}`}>
-        <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)] select-none">
-            {Icon && <Icon className="w-3 h-3 shrink-0 opacity-80" />}
-            {label}
-        </label>
-        {children}
-    </div>
-);
+import { Button, Avatar, MemberSelect, Input, Textarea, Field } from '@/shared/components/ui';
 
 /* ─── ReadOnly banner ───────────────────────────────────────── */
 const ReadOnlyBanner = () => (
@@ -230,43 +213,39 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
                 )}
 
                 {/* Date */}
-                <Field label="Date" icon={HiOutlineCalendarDays}>
-                    <input
+                <Field label="Date">
+                    <Input
                         type="date"
                         name="date"
                         value={formData.date}
                         onChange={handleChange}
                         required={!readOnly}
                         disabled={readOnly || isRunning}
-                        className={`${inputBase} ${readOnly || isRunning ? inputDisabled : ''}`}
+                        variant="record"
                     />
                 </Field>
 
                 {/* Amount */}
-                <Field label="Amount (₹)" icon={HiOutlineCurrencyRupee}>
-                    <div className="relative">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-500 font-semibold text-sm pointer-events-none select-none">
-                            ₹
-                        </span>
-                        <input
-                            type="number"
-                            name="amount"
-                            value={formData.amount}
-                            onChange={handleChange}
-                            min="0"
-                            max="999999"
-                            step="0.01"
-                            required={!readOnly}
-                            placeholder="0.00"
-                            disabled={readOnly || isRunning}
-                            className={`${inputBase} record-field-leading ${readOnly || isRunning ? inputDisabled : ''}`}
-                        />
-                    </div>
+                <Field label="Amount (₹)">
+                    <Input
+                        type="number"
+                        name="amount"
+                        value={formData.amount}
+                        onChange={handleChange}
+                        min="0"
+                        max="999999"
+                        step="0.01"
+                        required={!readOnly}
+                        placeholder="0.00"
+                        disabled={readOnly || isRunning}
+                        variant="record"
+                        leftIcon={<span className="text-[var(--success-text)] font-semibold text-sm">₹</span>}
+                    />
                 </Field>
 
                 {/* Items */}
-                <Field label="Items Purchased" icon={HiOutlineShoppingCart}>
-                    <input
+                <Field label="Items Purchased">
+                    <Input
                         type="text"
                         name="items"
                         value={formData.items}
@@ -274,19 +253,19 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
                         required={!readOnly}
                         placeholder="e.g. Rice, Vegetables, Oil…"
                         disabled={readOnly || isRunning}
-                        className={`${inputBase} ${readOnly || isRunning ? inputDisabled : ''}`}
+                        variant="record"
                     />
                 </Field>
 
                 {/* Description */}
-                <Field label="Description (Optional)" icon={HiOutlineChatBubbleBottomCenterText}>
-                    <textarea
+                <Field label="Description (Optional)">
+                    <Textarea
                         name="description"
                         value={formData.description}
                         onChange={handleChange}
                         rows={2}
                         disabled={readOnly || isRunning}
-                        className={`${inputBase} ${readOnly || isRunning ? inputDisabled : ''}`}
+                        variant="record"
                         placeholder={readOnly ? '' : 'Add extra notes about this purchase…'}
                     />
                 </Field>

@@ -106,13 +106,13 @@ const CountryCodeDropdown = ({ value, onChange, className = '' }) => {
         <div className="absolute z-50 mt-1 w-full rounded-md border border-input bg-background shadow-lg">
           {/* Search input */}
           <div className="p-2 border-b border-input">
-            <input
+            <Input
               ref={searchInputRef}
               type="text"
+              size="sm"
               placeholder="Search country or code..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-md border border-input px-2 py-1 text-sm focus:border-primary focus:outline-none"
               aria-label="Search countries"
             />
           </div>

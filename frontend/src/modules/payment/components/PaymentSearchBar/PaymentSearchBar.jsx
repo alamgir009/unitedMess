@@ -1,5 +1,5 @@
 import { HiOutlineCalendarDays } from 'react-icons/hi2';
-import { SearchBar } from '@/shared/components/ui';
+import { SearchBar, Input } from '@/shared/components/ui';
 
 /* ─── Filter data ─────────────────────────────────────── */
 const STATUS_OPTS = [
@@ -58,16 +58,14 @@ const PillGroup = ({ label, options, value, onChange }) => (
 const DateField = ({ label, value, onChange }) => (
     <div className="flex flex-col gap-2">
         <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground/70">{label}</p>
-        <div className="relative">
-            <HiOutlineCalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-            <input
-                type="date"
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                className="h-8 pl-8 pr-3 rounded-xl border border-border/50 bg-muted/30 text-xs text-foreground
-                    focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all"
-            />
-        </div>
+        <Input
+            type="date"
+            size="sm"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            leftIcon={<HiOutlineCalendarDays className="w-3.5 h-3.5 text-muted-foreground" />}
+            aria-label={label}
+        />
     </div>
 );
 
