@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-    ShieldAlert, ChevronDown, RefreshCw, CheckCircle2,
+    ShieldAlert, RefreshCw, CheckCircle2,
     ReceiptIndianRupee, Calendar, AlertTriangle,
     BadgeIndianRupee, ArrowRight, Copy, Gauge
 } from 'lucide-react';

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { forwardRef, useId } from 'react';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { X, AlertCircle, CheckCircle2 } from 'lucide-react';

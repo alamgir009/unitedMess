@@ -1,11 +1,13 @@
 import { useSearchParams } from 'react-router-dom';
 import { cn } from '@/core/utils/helpers/string.helper';
+import { Utensils, ShoppingBag, CreditCard, Vote } from 'lucide-react';
+import '@/shared/components/ui/SegmentedControl/segmented-control.css';
 
 const OPTIONS = [
-  { value: 'meals', label: 'Meals' },
-  { value: 'markets', label: 'Markets' },
-  { value: 'payments', label: 'Payments' },
-  { value: 'votes', label: 'Votes' },
+  { value: 'meals', label: 'Meals', icon: Utensils },
+  { value: 'markets', label: 'Markets', icon: ShoppingBag },
+  { value: 'payments', label: 'Payments', icon: CreditCard },
+  { value: 'votes', label: 'Votes', icon: Vote },
 ];
 
 const SegmentedControl = ({ className = '', isAdmin = true }) => {
@@ -25,28 +27,22 @@ const SegmentedControl = ({ className = '', isAdmin = true }) => {
       role="tablist"
       aria-label="Calendar event category"
       className={cn(
-        'flex w-full bg-muted p-0.5 rounded-xl border border-border/40',
-        'sm:inline-flex sm:w-auto sm:gap-0.5',
+        'segmented-control overflow-x-auto no-scrollbar',
         className,
       )}
-      style={{ boxShadow: 'var(--inset-well)' }}
     >
-      {options.map(({ value, label }) => (
+      {options.map(({ value, label, icon: Icon }) => (
         <button
           key={value}
+          type="button"
           role="tab"
           aria-selected={active === value}
+          aria-pressed={active === value}
           onClick={() => handleChange(value)}
-          className={cn(
-            'relative flex-1 py-1.5 text-sm font-medium rounded-lg transition-all duration-150',
-            'sm:flex-none sm:px-4',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-            active === value
-              ? 'bg-[var(--bg-elevated)] dark:bg-elevated text-foreground font-semibold shadow-[var(--inset-well-active)]'
-              : 'text-[var(--text-secondary)] hover:text-foreground',
-          )}
+          className="segmented-control-button gap-2 whitespace-nowrap"
         >
-          {label}
+          <Icon size={16} aria-hidden="true" className="shrink-0" />
+          <span>{label}</span>
         </button>
       ))}
     </div>

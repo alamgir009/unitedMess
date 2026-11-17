@@ -879,7 +879,7 @@ const AdminDashboard = memo(function AdminDashboard() {
             {/* ── Header (Title + Eyebrow RoleBadge + Actions) ──────────────── */}
             <header className="dashboard-header flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div className="space-y-1 min-w-0">
-                    <h1 className="text-h1">
+                    <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
                         Command Center
                     </h1>
                     <p className="text-sm text-muted-foreground">

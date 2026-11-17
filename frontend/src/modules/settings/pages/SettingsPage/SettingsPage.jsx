@@ -14,7 +14,7 @@ import toast from 'react-hot-toast';
 import settingsService from '../../services/settings.service';
 import apiClient from '@/services/api/client/apiClient';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
-import { Button, RoleBadge, Input } from '@/shared/components/ui';
+import { Button, Input } from '@/shared/components/ui';
 import { cn } from '@/core/utils/helpers/string.helper';
 
 const CurrentBadge = ({ value, loading, prefix = '₹ ', suffix = '' }) => {
@@ -304,20 +304,17 @@ const SettingsPage = () => {
     return (
         <MainLayout>
             <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <div className="mb-1">
-                            <RoleBadge isAdmin={true} />
-                        </div>
-                        <h1 className="text-h1 font-bold tracking-tight text-foreground">
+                <header className="dashboard-header flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                    <div className="space-y-1 min-w-0">
+                        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
                             System Settings
                         </h1>
-                        <p className="mt-1 text-body text-muted-foreground">
+                        <p className="text-sm text-muted-foreground">
                             Manage global mess charges and distribute monthly utility bills across active members.
                         </p>
                     </div>
 
-                    <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
+                    <div className="dashboard-header-actions flex flex-wrap sm:flex-nowrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto shrink-0">
                         <Button
                             variant="secondary"
                             size="md"
@@ -344,7 +341,7 @@ const SettingsPage = () => {
                             </span>
                         </div>
                     </div>
-                </div>
+                </header>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 sm:gap-3">
                     {cards.map(({ title, icon: Icon, currentValue, tone }) => (

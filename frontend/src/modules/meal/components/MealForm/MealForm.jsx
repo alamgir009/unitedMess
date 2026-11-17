@@ -6,10 +6,7 @@ import {
     HiOutlineNoSymbol,
     HiOutlineSparkles,
     HiOutlineUserGroup,
-    HiOutlineCalendarDays,
-    HiOutlineChatBubbleBottomCenterText,
     HiOutlineUser,
-    HiOutlineArrowRight,
     HiOutlineLockClosed,
     HiOutlineMinus,
     HiOutlinePlus,
@@ -89,8 +86,8 @@ const MealForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentUse
     const [rangeTo, setRangeTo] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [rangeError, setRangeError] = useState('');
 
-const [isRunning, setIsRunning] = useState(false);
-const [singleAdminError, setSingleAdminError] = useState('');
+    const [isRunning, setIsRunning] = useState(false);
+    const [singleAdminError, setSingleAdminError] = useState('');
 
     const [users, setUsers] = useState([]);
     const [isUsersLoading, setIsUsersLoading] = useState(false);
@@ -322,9 +319,8 @@ const [singleAdminError, setSingleAdminError] = useState('');
             )}
 
             {mode === 'range' && !isRunning && (
-                <div className={`relative flex items-center justify-center py-3 rounded-xl border overflow-hidden shrink-0 transition-colors ${
-                    rangeInvalid ? 'border-[var(--danger)]/30 bg-[var(--danger)]/5' : 'border-[var(--brand)]/20 bg-[var(--brand)]/5'
-                }`}>
+                <div className={`relative flex items-center justify-center py-3 rounded-xl border overflow-hidden shrink-0 transition-colors ${rangeInvalid ? 'border-[var(--danger)]/30 bg-[var(--danger)]/5' : 'border-[var(--brand)]/20 bg-[var(--brand)]/5'
+                    }`}>
                     {rangeInvalid ? (
                         <p className="text-xs font-semibold text-[var(--danger-text)] px-4 text-center">{rangeErrMsg}</p>
                     ) : (
@@ -442,13 +438,11 @@ const [singleAdminError, setSingleAdminError] = useState('');
                     </div>
                 </Field>
 
-                <div className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border transition-colors ${
-                    readOnly ? 'opacity-60 cursor-not-allowed' : ''
-                } ${
-                    formData.isGuestMeal
+                <div className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border transition-colors ${readOnly ? 'opacity-60 cursor-not-allowed' : ''
+                    } ${formData.isGuestMeal
                         ? 'border-[var(--info-border)] bg-[var(--info-bg)] shadow-[0_1px_3px_rgba(0,0,0,0.12)]'
                         : 'border-[var(--border-default)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)] shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:shadow-[0_2px_6px_rgba(0,0,0,0.1)]'
-                }`}>
+                    }`}>
                     <button
                         type="button"
                         onClick={() => {

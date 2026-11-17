@@ -1,10 +1,8 @@
 import Button from '@/shared/components/ui/Button/Button';
-import { RoleBadge } from '@/shared/components/ui';
 import {
     HiOutlinePlus,
     HiOutlineSquares2X2,
     HiOutlineListBullet,
-    HiOutlineCurrencyRupee,
 } from 'react-icons/hi2';
 
 const PaymentHeader = ({
@@ -14,12 +12,11 @@ const PaymentHeader = ({
     onAddClick,
 }) => {
     return (
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div className="space-y-1">
-                <RoleBadge isAdmin={isAdmin} icon={HiOutlineCurrencyRupee} label="My Payments" />
-                <h2 className="text-h1">
+        <header className="dashboard-header flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div className="space-y-1 min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
                     {isAdmin ? 'Payment Overview' : 'Payment Hub'}
-                </h2>
+                </h1>
                 <p className="text-sm text-muted-foreground">
                     {isAdmin
                         ? 'Monitor and manage all payment records across members.'
@@ -27,7 +24,7 @@ const PaymentHeader = ({
                 </p>
             </div>
 
-            <div className="flex items-center flex-wrap sm:flex-nowrap gap-2 sm:gap-3 w-full lg:w-auto justify-start sm:justify-end flex-shrink-0">
+            <div className="dashboard-header-actions flex items-center flex-wrap sm:flex-nowrap gap-2 sm:gap-3 w-full sm:w-auto justify-start sm:justify-end shrink-0">
                 {isAdmin && (
                     <Button
                         variant="primary"
@@ -58,7 +55,7 @@ const PaymentHeader = ({
                     </button>
                 </div>
             </div>
-        </div>
+        </header>
     );
 };
 

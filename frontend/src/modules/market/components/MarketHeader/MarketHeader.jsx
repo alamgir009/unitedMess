@@ -1,21 +1,18 @@
 import React from 'react';
 import Button from '@/shared/components/ui/Button/Button';
-import { RoleBadge } from '@/shared/components/ui';
 import {
     HiOutlinePlus,
     HiOutlineSquares2X2,
     HiOutlineListBullet,
-    HiOutlineShoppingBag,
 } from 'react-icons/hi2';
 
 const MarketHeader = React.memo(({ isAdmin, viewMode, onViewModeChange, onAddClick }) => {
     return (
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-            <div className="space-y-1">
-                <RoleBadge isAdmin={isAdmin} icon={HiOutlineShoppingBag} label="My Markets" />
-                <h2 className="text-h1">
+        <header className="dashboard-header flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div className="space-y-1 min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
                     {isAdmin ? 'Market Overview' : 'Market Hub'}
-                </h2>
+                </h1>
                 <p className="text-sm text-muted-foreground">
                     {isAdmin
                         ? 'Monitor and manage all market purchase entries across all members.'
@@ -23,7 +20,7 @@ const MarketHeader = React.memo(({ isAdmin, viewMode, onViewModeChange, onAddCli
                 </p>
             </div>
 
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="dashboard-header-actions flex items-center gap-2 shrink-0">
                 <Button
                     variant="primary"
                     size="md"
@@ -59,7 +56,7 @@ const MarketHeader = React.memo(({ isAdmin, viewMode, onViewModeChange, onAddCli
                     </button>
                 </div>
             </div>
-        </div>
+        </header>
     );
 });
 MarketHeader.displayName = 'MarketHeader';

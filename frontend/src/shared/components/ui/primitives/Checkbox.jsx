@@ -20,7 +20,14 @@ export const Checkbox = forwardRef(({
   const id = explicitId || `checkbox-${reactId.replace(/:/g, '')}`;
 
   return (
-    <div className={cn('inline-flex items-start gap-3 min-h-[44px] py-1 cursor-pointer select-none group', disabled && 'cursor-not-allowed opacity-60', className)}>
+    <label
+      htmlFor={id}
+      className={cn(
+        'inline-flex items-start gap-3 min-h-[44px] py-1 cursor-pointer select-none group',
+        disabled && 'cursor-not-allowed opacity-60',
+        className
+      )}
+    >
       <div className="relative flex items-center justify-center w-6 h-6 min-w-[24px] mt-0.5">
         <input
           ref={ref}
@@ -32,14 +39,14 @@ export const Checkbox = forwardRef(({
           disabled={disabled}
           onChange={onChange}
           aria-invalid={error ? 'true' : undefined}
-          className="peer sr-only"
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed peer"
           {...props}
         />
 
         <div
           aria-hidden="true"
           className={cn(
-            'w-5 h-5 rounded-[var(--radius-sm)] border transition-all duration-[var(--duration-fast,120ms)] ease-out',
+            'w-5 h-5 rounded-[var(--radius-sm)] border transition-all duration-[var(--duration-fast,120ms)] ease-out pointer-events-none',
             'flex items-center justify-center',
             'border-[var(--input-border)] bg-[var(--input-bg)]',
             'group-hover:border-[var(--input-border-hover)]',
@@ -59,8 +66,7 @@ export const Checkbox = forwardRef(({
       </div>
 
       {(label || description) && (
-        <label
-          htmlFor={id}
+        <div
           className={cn(
             'flex flex-col cursor-pointer justify-center min-h-[24px] pt-0.5',
             disabled && 'cursor-not-allowed text-[var(--text-disabled)]',
@@ -81,9 +87,9 @@ export const Checkbox = forwardRef(({
               {error}
             </span>
           )}
-        </label>
+        </div>
       )}
-    </div>
+    </label>
   );
 });
 

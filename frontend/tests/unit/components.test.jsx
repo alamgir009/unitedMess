@@ -244,9 +244,13 @@ describe('Input', () => {
 
     it.each(['sm', 'md', 'lg'])('renders %s size', (size) => {
         const { container } = render(<Input size={size} />);
-            const input = container.querySelector('input');
-            const heights = { sm: 'h-8', md: 'h-11', lg: 'h-12' };
-            expect(input.className).toContain(heights[size]);
+        const input = container.querySelector('input');
+        const heights = {
+            sm: 'control-height-sm',
+            md: 'control-height-md',
+            lg: 'control-height-lg',
+        };
+        expect(input.className).toContain(heights[size]);
     });
 
     it('sets aria-invalid on error', () => {

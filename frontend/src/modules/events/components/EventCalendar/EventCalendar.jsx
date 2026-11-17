@@ -752,14 +752,14 @@ const EventCalendar = () => {
     <div className="space-y-6">
 
       {/* Page header */}
-      <header className="animate-fade-in">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h2 className="text-h1">Events Calendar</h2>
-            <p className="text-sm text-muted-foreground">
-              Track daily events, meals, markets, and payments at a glance across months.
-            </p>
-          </div>
+      <header className="dashboard-header flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+        <div className="space-y-1 min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Events Calendar</h1>
+          <p className="text-sm text-muted-foreground">
+            Track daily events, meals, markets, and payments at a glance across months.
+          </p>
+        </div>
+        <div className="dashboard-header-actions flex items-center gap-2 shrink-0">
           <SegmentedControl isAdmin={isAdmin} />
         </div>
       </header>

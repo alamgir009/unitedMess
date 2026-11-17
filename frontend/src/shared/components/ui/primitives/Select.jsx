@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { forwardRef, useId } from 'react';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { ChevronDown, AlertCircle, CheckCircle2 } from 'lucide-react';
@@ -108,10 +109,10 @@ export const Select = forwardRef(({
         )}
         {options.length > 0
           ? options.map((opt) => (
-              <option key={opt.value} value={opt.value} disabled={opt.disabled}>
-                {opt.label}
-              </option>
-            ))
+            <option key={opt.value} value={opt.value} disabled={opt.disabled}>
+              {opt.label}
+            </option>
+          ))
           : children}
       </select>
 

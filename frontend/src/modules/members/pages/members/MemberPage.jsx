@@ -14,7 +14,6 @@ import { IoFastFoodOutline } from 'react-icons/io5';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import MemberTable from '../../components/MemberTable';
 import StatPill from '@/shared/components/ui/StatPill/StatPill';
-import { RoleBadge } from '@/shared/components/ui';
 import { buildMealRateFormula } from '@/core/utils/helpers/billing.helper';
 import { fetchUsers, fetchBillingMonthStats, reset } from '../../store/members.slice';
 import { useLocation } from 'react-router-dom';
@@ -155,22 +154,20 @@ const MemberPage = React.memo(() => {
                 {/* ════════════════════════════════
                     Header
                 ════════════════════════════════ */}
-                <header className="relative z-10 animate-fade-in">
-                    <div className="flex flex-col items-start sm:flex-row sm:items-start justify-between gap-4">
-                        
-                        {/* Title block */}
-                        <div className="space-y-1">
-                            <RoleBadge isAdmin={isAdmin} icon={HiOutlineUserGroup} label="Directory" />
-                            <h2 className="text-h1">
-                                {isAdmin ? 'Members & Finalized Bills' : 'Members Directory'}
-                            </h2>
-                            <p className="text-sm text-muted-foreground">
-                                Review financial statuses, expand rows for a comprehensive invoice breakdown.
-                            </p>
-                        </div>
+                <header className="dashboard-header flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                    {/* Title block */}
+                    <div className="space-y-1 min-w-0">
+                        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+                            {isAdmin ? 'Members & Finalized Bills' : 'Members Directory'}
+                        </h1>
+                        <p className="text-sm text-muted-foreground">
+                            Review financial statuses, expand rows for a comprehensive invoice breakdown.
+                        </p>
+                    </div>
 
-                        {/* Billing month badge */}
-                        {billingStats.billingMonth && (
+                    {/* Billing month badge */}
+                    {billingStats.billingMonth && (
+                        <div className="dashboard-header-actions flex items-center shrink-0">
                             <div className="inline-flex items-center gap-2 sm:gap-2.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-card border border-border shadow-sm">
                                 <div className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-md sm:rounded-lg bg-primary/10 flex-shrink-0">
                                     <HiOutlineCalendarDays className="w-4 h-4 sm:w-[18px] sm:h-[18px] text-primary" />
@@ -184,8 +181,8 @@ const MemberPage = React.memo(() => {
                                     </p>
                                 </div>
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </header>
 
                 {/* ════════════════════════════════

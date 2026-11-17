@@ -59,7 +59,7 @@ export default function AnalyticsPage() {
     const isMarket = report === 'market';
     const countLabel = isMarket ? 'Markets completed' : 'Total meals';
     return <MainLayout><div className="analytics mx-auto w-full max-w-[1600px] min-w-0 space-y-6">
-        <header className="flex flex-wrap items-start justify-between gap-4">
+        <header className="dashboard-header flex flex-wrap items-start justify-between gap-4">
             <div><Link to="/dashboard" className="analytics-back inline-flex items-center gap-2 text-sm analytics-secondary mb-3"><ArrowLeft size={15} aria-hidden="true" />Dashboard</Link>
                 <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Analytics</h1>
                 <p className="mt-2 text-sm analytics-secondary">Market spending and meals, across the last three months.</p>

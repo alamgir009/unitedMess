@@ -2,6 +2,7 @@
 @import './themes/light.css';
 @import './themes/dark.css';
 @import './animations.css';
+@import '../shared/components/ui/SegmentedControl/segmented-control.css';
 
 @tailwind base;
 @tailwind components;
@@ -37,6 +38,25 @@
   /* ─── Typography Scale ─── */
   .text-display { font-size: var(--text-display); font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight); line-height: var(--leading-tight); }
   h1, .text-h1  { font-size: var(--text-h1); font-weight: 700; letter-spacing: var(--tracking-tight); line-height: 1.25; }
+
+  /* ─── Unified Page & Dashboard Header Typography (Fintech-Grade Semibold Scale) ─── */
+  .dashboard-header h1 {
+    font-family: var(--font-sans);
+    font-size: 1.5rem; /* 24px */
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.025em;
+  }
+  @media (min-width: 640px) {
+    .dashboard-header h1 {
+      font-size: 1.875rem; /* 30px */
+    }
+  }
+  @media (min-width: 1024px) {
+    .dashboard-header h1 {
+      font-size: 2rem; /* 32px */
+    }
+  }
   h2, .text-h2  { font-size: var(--text-h2); font-weight: var(--weight-semibold); letter-spacing: var(--tracking-tight); }
   h3, .text-h3  { font-size: var(--text-h3); font-weight: var(--weight-semibold); letter-spacing: -0.01em; }
   h4, .text-h4  { font-size: var(--text-h4); font-weight: var(--weight-medium); }

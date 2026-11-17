@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import {
     HiOutlinePlus, HiOutlineSquares2X2, HiOutlineListBullet,
-    HiOutlineSparkles,
     HiOutlineXMark, HiOutlineChevronDown, HiOutlineInformationCircle,
     HiOutlineClock,
 } from 'react-icons/hi2';
@@ -13,7 +12,6 @@ import toast from 'react-hot-toast';
 
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import Button from '@/shared/components/ui/Button/Button';
-import { RoleBadge } from '@/shared/components/ui';
 import { SkeletonCard } from '@/shared/components/ui/Loader';
 import MealList from '../../components/MealList/MealList';
 import AdminMealView from '../../components/AdminMealView/AdminMealView';
@@ -265,18 +263,17 @@ const MealPage = () => {
                 <div className="relative z-10 space-y-6">
 
                     {/* Header */}
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                        <div className="space-y-1">
-                            <RoleBadge isAdmin={isAdmin} icon={HiOutlineSparkles} label="My Meals" />
-                            <h2 className="text-h1">
+                    <header className="dashboard-header flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div className="space-y-1 min-w-0">
+                            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
                                 {isAdmin ? 'Meals Overview' : 'Meals Hub'}
-                            </h2>
+                            </h1>
                             <p className="text-sm text-muted-foreground">
                                 {isAdmin ? 'Monitor and manage all meal records across all members.' : 'Track and manage your daily meal selections and history.'}
                             </p>
                         </div>
 
-                        <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+                        <div className="dashboard-header-actions flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
                             <Button
                                 variant="primary"
                                 size="md"
@@ -305,7 +302,7 @@ const MealPage = () => {
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </header>
 
                     {/* Stats */}
                     <MealStatsBar meals={meals || []} isAdmin={isAdmin} />

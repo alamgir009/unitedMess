@@ -480,7 +480,7 @@ const UserDashboard = memo(function UserDashboard() {
             {/* ── Header (Title + Eyebrow RoleBadge) ──────────────────── */}
             <header className="dashboard-header flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div className="space-y-1 min-w-0">
-                    <h1 className="text-h1">
+                    <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
                         Member Dashboard
                     </h1>
                     <p className="text-sm text-muted-foreground">

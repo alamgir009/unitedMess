@@ -2,10 +2,6 @@ import '@/shared/components/ui/RecordForm/record-form.css';
 import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import {
-    HiOutlineCalendarDays,
-    HiOutlineCurrencyRupee,
-    HiOutlineShoppingCart,
-    HiOutlineChatBubbleBottomCenterText,
     HiOutlineUser,
     HiOutlineLockClosed,
 } from 'react-icons/hi2';

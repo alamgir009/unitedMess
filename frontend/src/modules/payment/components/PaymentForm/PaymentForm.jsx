@@ -2,12 +2,10 @@ import '@/shared/components/ui/RecordForm/record-form.css';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { format } from 'date-fns';
 import {
-    HiOutlineCurrencyRupee,
     HiOutlineCalendarDays,
     HiOutlineCreditCard,
     HiOutlineTag,
     HiOutlineCheckCircle,
-    HiOutlineChatBubbleBottomCenterText,
     HiOutlineUser,
     HiOutlineLockClosed,
     HiOutlineArrowPath,
@@ -37,8 +35,8 @@ const monthForDate = (dateStr) => {
 
 const PAYMENT_TYPES = [
     { value: 'mess_bill', label: 'Mess Bill' },
-    { value: 'gas_bill',  label: 'Gas Bill' },
-    { value: 'other',     label: 'Other' },
+    { value: 'gas_bill', label: 'Gas Bill' },
+    { value: 'other', label: 'Other' },
 ];
 
 // Single source of truth: paymentType → payable-batch cache key.
@@ -49,17 +47,17 @@ const PAYABLE_KEY_FOR_TYPE = {
 };
 
 const PAYMENT_METHODS = [
-    { value: 'cash',       label: 'Cash',       Icon: BsCashCoin,           iconClass: 'text-[var(--success)]' },
-    { value: 'online',     label: 'Online',     Icon: BsGlobe2,             iconClass: 'text-[var(--info)]'     },
-    { value: 'razorpay',   label: 'Razorpay',   Icon: SiRazorpay,           iconClass: 'text-[var(--accent-primary)]'  },
+    { value: 'cash', label: 'Cash', Icon: BsCashCoin, iconClass: 'text-[var(--success)]' },
+    { value: 'online', label: 'Online', Icon: BsGlobe2, iconClass: 'text-[var(--info)]' },
+    { value: 'razorpay', label: 'Razorpay', Icon: SiRazorpay, iconClass: 'text-[var(--accent-primary)]' },
     { value: 'upi_manual', label: 'Manual UPI', Icon: HiOutlineIdentification, iconClass: 'text-[var(--info)]' },
 ];
 
 const STATUS_OPTIONS = [
-    { value: 'pending',   label: 'Pending',   Icon: MdPendingActions,     iconClass: 'text-[var(--warning)]'   },
+    { value: 'pending', label: 'Pending', Icon: MdPendingActions, iconClass: 'text-[var(--warning)]' },
     { value: 'completed', label: 'Completed', Icon: MdCheckCircleOutline, iconClass: 'text-[var(--success)]' },
-    { value: 'failed',    label: 'Failed',    Icon: MdErrorOutline,       iconClass: 'text-[var(--danger)]'    },
-    { value: 'refunded',  label: 'Refunded',  Icon: MdRefresh,            iconClass: 'text-[var(--info)]'     },
+    { value: 'failed', label: 'Failed', Icon: MdErrorOutline, iconClass: 'text-[var(--danger)]' },
+    { value: 'refunded', label: 'Refunded', Icon: MdRefresh, iconClass: 'text-[var(--info)]' },
 ];
 
 
@@ -101,19 +99,19 @@ const ReadOnlyBanner = () => (
 const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentUser, readOnly = false, isSubmitting = false, preselectedUserId = null, renderFooter }) => {
 
     const [formData, setFormData] = useState({
-        amount:        '',
-        paymentDate:   format(new Date(), 'yyyy-MM-dd'),
-        month:         monthForDate(),
-        type:          'mess_bill',
-        status:        'completed',
+        amount: '',
+        paymentDate: format(new Date(), 'yyyy-MM-dd'),
+        month: monthForDate(),
+        type: 'mess_bill',
+        status: 'completed',
         paymentMethod: 'cash',
         transactionId: '',
-        remarks:       '',
-        userId:        '',
-        userIds:       [],
+        remarks: '',
+        userId: '',
+        userIds: [],
     });
 
-    const [users, setUsers]              = useState([]);
+    const [users, setUsers] = useState([]);
     const [isUsersLoading, setUsersLoad] = useState(false);
 
     /* ── Payable amounts cache + batch-loaded state ── */
@@ -193,16 +191,16 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                 ? initialData.user?._id
                 : (initialData.user || '');
             setFormData({
-                amount:        initialData.amount        ?? '',
-                paymentDate:   pd,
-                month:         initialData.month         || monthForDate(pd),
-                type:          initialData.type          || 'mess_bill',
-                status:        initialData.status        || 'completed',
+                amount: initialData.amount ?? '',
+                paymentDate: pd,
+                month: initialData.month || monthForDate(pd),
+                type: initialData.type || 'mess_bill',
+                status: initialData.status || 'completed',
                 paymentMethod: initialData.paymentMethod || 'cash',
                 transactionId: initialData.transactionId || '',
-                remarks:       initialData.remarks       || '',
-                userId:        targetUserId,
-                userIds:       targetUserId ? [targetUserId] : [],
+                remarks: initialData.remarks || '',
+                userId: targetUserId,
+                userIds: targetUserId ? [targetUserId] : [],
             });
         } else {
             const ids = preselectedUserId ? [preselectedUserId] : [];
@@ -248,7 +246,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                 if (value < 0 && p.status === 'completed') next.status = 'refunded';
                 return next;
             });
-        }).catch(() => {});
+        }).catch(() => { });
         return () => { cancelled = true; };
         // eslint-disable-next-line react-hooks/exhaustive-deps -- formData.amount must stay out of deps: this effect only reacts to member/type selection, never to every keystroke, so manual amounts are never clobbered.
     }, [formData.userIds, formData.type, readOnly, isSubmitting, initialData, isBatchLoaded, resolvePayableForUser]);
@@ -332,7 +330,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
 
     // Status dropdown: admin only (never shown to regular users)
     const showStatus = isAdmin;
-    const showTxn    = formData.paymentMethod === 'online' || formData.paymentMethod === 'razorpay' || formData.paymentMethod === 'upi_manual';
+    const showTxn = formData.paymentMethod === 'online' || formData.paymentMethod === 'razorpay' || formData.paymentMethod === 'upi_manual';
 
     useEffect(() => {
         if (!renderFooter) return;
@@ -369,19 +367,17 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
 
             {/* ── Amount preview banner ── */}
             <div
-                className={`relative flex items-center justify-center py-3 rounded-xl border overflow-hidden shrink-0 ${
-                    formData.status === 'refunded' && parseFloat(formData.amount) < 0
-                        ? 'border-[var(--danger)]/30 bg-[var(--danger-bg)]'
-                        : 'border-[var(--accent-primary)]/30 bg-[var(--accent-subtle)]'
-                }`}
+                className={`relative flex items-center justify-center py-3 rounded-xl border overflow-hidden shrink-0 ${formData.status === 'refunded' && parseFloat(formData.amount) < 0
+                    ? 'border-[var(--danger)]/30 bg-[var(--danger-bg)]'
+                    : 'border-[var(--accent-primary)]/30 bg-[var(--accent-subtle)]'
+                    }`}
                 style={{ boxShadow: 'var(--inset-top-glow), var(--shadow-xs)' }}
             >
                 <div className="flex items-baseline gap-2.5">
-                    <span className={`text-2xl font-bold leading-none tracking-tight ${
-                        formData.status === 'refunded' && parseFloat(formData.amount) < 0
-                            ? 'text-[var(--danger)]'
-                            : 'text-[var(--text-primary)]'
-                    }`}>
+                    <span className={`text-2xl font-bold leading-none tracking-tight ${formData.status === 'refunded' && parseFloat(formData.amount) < 0
+                        ? 'text-[var(--danger)]'
+                        : 'text-[var(--text-primary)]'
+                        }`}>
                         {formData.status === 'refunded' && Number(formData.amount) < 0 ? '-₹' : '₹'}
                         {formData.amount === '' ? '—' : Math.abs(Number(formData.amount)).toLocaleString('en-IN')}
                     </span>
@@ -450,7 +446,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
                         name="amount"
                         value={formData.amount}
                         onChange={handleChange}
-                        step="0.01" 
+                        step="0.01"
                         required={!readOnly}
                         placeholder={formData.status === 'refunded' ? 'Enter refund amount (negative)' : 'Enter amount'}
                         disabled={readOnly || isSubmitting}

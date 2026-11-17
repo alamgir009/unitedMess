@@ -1,15 +1,16 @@
 import { useCallback, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bell, RefreshCw, CheckCircle2, Send, ChevronDown, ChevronUp } from 'lucide-react';
+import { Bell, RefreshCw, CheckCircle2, Send, ChevronDown, ChevronUp, Mail, AlertCircle } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { cn } from '@/core/utils/helpers/string.helper';
 import useNotifications from '../../hooks/useNotifications';
 import NotificationItem from '../../components/NotificationItem/NotificationItem';
 import NotificationService from '../../services/notification.service';
-import { Spinner, Button, RoleBadge, Input, Textarea } from '@/shared/components/ui';
+import { Spinner, Button, Input, Textarea } from '@/shared/components/ui';
 import { HiOutlineBell } from 'react-icons/hi2';
 import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import toast from 'react-hot-toast';
+import '@/shared/components/ui/SegmentedControl/segmented-control.css';
 
 const FILTER_TABS = ['All', 'Unread', 'Action Required'];
 
@@ -201,13 +202,12 @@ const NotificationsPage = () => {
         <MainLayout>
             <div className="relative min-h-[80vh] max-w-7xl mx-auto">
                 <div className="relative z-10 space-y-6">
-                    {/* ── Header (Title + Eyebrow Badge + Action Buttons) ── */}
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                        <div className="space-y-1">
-                            <RoleBadge isAdmin={isAdmin} icon={HiOutlineBell} label="Notifications" />
-                            <h2 className="text-h1">
+                    {/* ── Header (Title + Action Buttons) ── */}
+                    <header className="dashboard-header flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div className="space-y-1 min-w-0">
+                            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
                                 {isAdmin ? 'Notifications & Broadcasts' : 'Notifications Hub'}
-                            </h2>
+                            </h1>
                             <p className="text-sm text-muted-foreground">
                                 {isAdmin
                                     ? `Monitor system alerts, member broadcasts, and announcements. ${total} total · ${unreadCount} unread.`
@@ -215,7 +215,7 @@ const NotificationsPage = () => {
                             </p>
                         </div>
 
-                        <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+                        <div className="dashboard-header-actions flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
                             {unreadCount > 0 && (
                                 <Button
                                     variant="primary"
@@ -240,7 +240,7 @@ const NotificationsPage = () => {
                                 <span className="hidden sm:inline">Refresh</span>
                             </Button>
                         </div>
-                    </div>
+                    </header>
 
                     {isAdmin && (
                         <AdminComposeCard onSent={refresh} />
@@ -248,22 +248,22 @@ const NotificationsPage = () => {
 
                     {/* ── Filter Tabs ── */}
                     <div className="flex items-center justify-between gap-4 flex-wrap">
-                        <div className="overflow-x-auto no-scrollbar">
-                            <div className="flex items-center gap-1 p-1 bg-muted/40 border border-border/50 rounded-xl w-fit">
+                        <div className="overflow-x-auto no-scrollbar py-0.5">
+                            <div className="segmented-control" role="group" aria-label="Notification filters">
                                 {FILTER_TABS.map((tab) => (
                                     <button
                                         key={tab}
+                                        type="button"
+                                        className="segmented-control-button gap-2 whitespace-nowrap"
+                                        aria-pressed={activeFilter === tab}
                                         onClick={() => setActiveFilter(tab)}
-                                        className={cn(
-                                            'px-4 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
-                                            activeFilter === tab
-                                                ? 'bg-card text-foreground shadow-sm'
-                                                : 'text-muted-foreground hover:text-foreground',
-                                        )}
                                     >
-                                        {tab}
+                                        {tab === 'All' && <HiOutlineBell className="w-4 h-4 shrink-0" aria-hidden="true" />}
+                                        {tab === 'Unread' && <Mail className="w-4 h-4 shrink-0" aria-hidden="true" />}
+                                        {tab === 'Action Required' && <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />}
+                                        <span>{tab}</span>
                                         {tab === 'Unread' && unreadCount > 0 && (
-                                            <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-primary text-primary-foreground font-semibold">
+                                            <span className="ml-1 px-1.5 py-0.5 text-[11px] rounded-full bg-primary text-primary-foreground font-bold">
                                                 {unreadCount}
                                             </span>
                                         )}
