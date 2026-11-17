@@ -1,0 +1,3686 @@
+diff --git a/frontend/index.html b/frontend/index.html
+index a3a5344..74b7843 100644
+--- a/frontend/index.html
++++ b/frontend/index.html
+@@ -3,7 +3,20 @@
+   <head>
+     <!-- Basic Meta -->
+     <meta charset="UTF-8" />
+-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
++    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
++    <meta name="color-scheme" content="light dark" />
++    <script>
++      (() => {
++        let theme;
++        try { theme = localStorage.getItem('um-theme'); } catch {}
++        if (theme !== 'light' && theme !== 'dark') {
++          theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
++        }
++        document.documentElement.classList.add(theme);
++        document.documentElement.dataset.theme = theme;
++        document.documentElement.style.colorScheme = theme;
++      })();
++    </script>
+     <meta name="description" content="UnitedMess — A premium, beautifully designed mess management platform for dormitories and shared households." />
+     <meta name="theme-color" content="#0ea5e9" />
+     <title>UnitedMess - Online Mess Management</title>
+@@ -43,4 +56,4 @@
+     <div id="root"></div>
+     <script type="module" src="/src/main.jsx"></script>
+   </body>
+-</html>
+\ No newline at end of file
++</html>
+diff --git a/frontend/src/app/providers/ThemeProvider.jsx b/frontend/src/app/providers/ThemeProvider.jsx
+index 46b85ac..b260d58 100644
+--- a/frontend/src/app/providers/ThemeProvider.jsx
++++ b/frontend/src/app/providers/ThemeProvider.jsx
+@@ -1,214 +1,15 @@
+-import {
+-    createContext,
+-    useContext,
+-    useEffect,
+-    useState,
+-    useCallback,
+-    useMemo,
+-    useRef,
+-} from "react";
++import { useEffect, useSyncExternalStore } from 'react';
++import { getTheme, subscribeTheme, startThemeSync, themeActions } from '@/core/theme/themeStore';
+ 
+-// ─── Constants ────────────────────────────────────────────────────────────────
+-const STORAGE_KEY = "um-theme";
+-const THEMES = Object.freeze({ LIGHT: "light", DARK: "dark" });
+-
+-// ─── Context ──────────────────────────────────────────────────────────────────
+-const ThemeContext = createContext(null);
+-
+-// ─── Helpers ──────────────────────────────────────────────────────────────────
+-
+-/** Reads stored preference — runs once, outside component to avoid closure cost */
+-function getStoredTheme() {
+-    try {
+-        const stored = localStorage.getItem(STORAGE_KEY);
+-        if (stored === THEMES.LIGHT || stored === THEMES.DARK) return stored;
+-    } catch {
+-        // localStorage blocked (e.g. private mode, SecurityError) — fail gracefully
+-    }
+-    return null;
+-}
+-
+-/** Resolves system preference via matchMedia */
+-function getSystemTheme() {
+-    if (typeof window === "undefined") return THEMES.LIGHT;
+-    return window.matchMedia("(prefers-color-scheme: dark)").matches
+-        ? THEMES.DARK
+-        : THEMES.LIGHT;
+-}
+-
+-/** Single source of truth for initial theme — called once by useState initializer */
+-function getInitialTheme() {
+-    return getStoredTheme() ?? getSystemTheme();
+-}
+-
+-/** Applies theme to <html> with instant style recalculation and zero transition jank */
+-function applyThemeToDOM(theme, withTransitionSuppression = true) {
+-    if (typeof document === "undefined") return;
+-    const root = document.documentElement;
+-
+-    if (withTransitionSuppression) {
+-        root.classList.add("no-theme-transitions");
+-    }
+-
+-    root.classList.remove(THEMES.LIGHT, THEMES.DARK);
+-    root.classList.add(theme);
+-    // Also set color-scheme for native UI elements (scrollbars, inputs, etc.)
+-    root.style.colorScheme = theme;
+-
+-    if (withTransitionSuppression) {
+-        // Force synchronous style flush so theme applies in a single frame
+-        void root.offsetHeight;
+-        requestAnimationFrame(() => {
+-            requestAnimationFrame(() => {
+-                root.classList.remove("no-theme-transitions");
+-            });
+-        });
+-    }
+-}
+-
+-// ─── Provider ─────────────────────────────────────────────────────────────────
+ export function ThemeProvider({ children }) {
+-ThemeProvider.displayName = 'ThemeProvider';
+-    const [theme, setTheme] = useState(getInitialTheme);
+-
+-    // Track whether user has set an explicit preference — ref avoids extra renders
+-    const hasUserPreference = useRef(Boolean(getStoredTheme()));
+-
+-    // Apply theme to DOM synchronously-ish on every theme change
+-    useEffect(() => {
+-        applyThemeToDOM(theme);
+-    }, [theme]);
+-
+-    // Listen for OS-level theme changes — only honour them when user hasn't overridden
+-    useEffect(() => {
+-        if (typeof window === "undefined") return;
+-
+-        const media = window.matchMedia("(prefers-color-scheme: dark)");
+-
+-        const handleSystemChange = (e) => {
+-            // Respect user preference — don't overwrite it with system change
+-            if (hasUserPreference.current) return;
+-            setTheme(e.matches ? THEMES.DARK : THEMES.LIGHT);
+-        };
+-
+-        media.addEventListener("change", handleSystemChange);
+-        return () => media.removeEventListener("change", handleSystemChange);
+-    }, []);
+-
+-    // Sync theme across browser tabs / windows
+-    useEffect(() => {
+-        const handleStorageSync = (e) => {
+-            if (e.key !== STORAGE_KEY) return;
+-            if (e.newValue === THEMES.LIGHT || e.newValue === THEMES.DARK) {
+-                hasUserPreference.current = true;
+-                setTheme(e.newValue);
+-            } else if (e.newValue === null) {
+-                // Preference was cleared in another tab — fall back to system
+-                hasUserPreference.current = false;
+-                setTheme(getSystemTheme());
+-            }
+-        };
+-
+-        window.addEventListener("storage", handleStorageSync);
+-        return () => window.removeEventListener("storage", handleStorageSync);
+-    }, []);
+-
+-    /** Toggle between light and dark — 60fps ultra smooth & fast */
+-    const toggleTheme = useCallback(() => {
+-        const next = theme === THEMES.DARK ? THEMES.LIGHT : THEMES.DARK;
+-
+-        const prefersReducedMotion =
+-            typeof window !== "undefined" &&
+-            window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+-
+-        if (typeof document !== "undefined" && "startViewTransition" in document && !prefersReducedMotion) {
+-            document.startViewTransition(() => {
+-                applyThemeToDOM(next, false);
+-                setTheme(next);
+-            });
+-        } else {
+-            applyThemeToDOM(next, true);
+-            setTheme(next);
+-        }
+-
+-        try {
+-            localStorage.setItem(STORAGE_KEY, next);
+-            hasUserPreference.current = true;
+-        } catch {
+-            // Silently ignore write failures (storage quota, private mode)
+-        }
+-    }, [theme]);
+-
+-    /** Explicitly set a theme (e.g. from a settings dropdown) */
+-    const setThemeExplicit = useCallback((newTheme) => {
+-        if (newTheme !== THEMES.LIGHT && newTheme !== THEMES.DARK) return;
+-
+-        const prefersReducedMotion =
+-            typeof window !== "undefined" &&
+-            window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+-
+-        if (typeof document !== "undefined" && "startViewTransition" in document && !prefersReducedMotion) {
+-            document.startViewTransition(() => {
+-                applyThemeToDOM(newTheme, false);
+-                setTheme(newTheme);
+-            });
+-        } else {
+-            applyThemeToDOM(newTheme, true);
+-            setTheme(newTheme);
+-        }
+-
+-        try {
+-            localStorage.setItem(STORAGE_KEY, newTheme);
+-            hasUserPreference.current = true;
+-        } catch {
+-            // Silently ignore
+-        }
+-    }, []);
+-
+-    /** Clear user preference and revert to system theme */
+-    const resetTheme = useCallback(() => {
+-        try {
+-            localStorage.removeItem(STORAGE_KEY);
+-            hasUserPreference.current = false;
+-        } catch {
+-            // Silently ignore
+-        }
+-        setTheme(getSystemTheme());
+-    }, []);
+-
+-    // Memoized context value — only re-computes when theme changes
+-    // toggleTheme / setThemeExplicit / resetTheme are stable (useCallback) so excluded from deps
+-    const value = useMemo(
+-        () => ({
+-            theme,
+-            isDark: theme === THEMES.DARK,
+-            isLight: theme === THEMES.LIGHT,
+-            toggleTheme,
+-            setTheme: setThemeExplicit,
+-            resetTheme,
+-            THEMES,
+-        }),
+-        [theme, toggleTheme, setThemeExplicit, resetTheme]
+-    );
+-
+-    return (
+-        <ThemeContext.Provider value={value}>
+-            {children}
+-        </ThemeContext.Provider>
+-    );
++    useEffect(startThemeSync, []);
++    return children;
+ }
+ 
+-// ─── Hook ─────────────────────────────────────────────────────────────────────
+ // eslint-disable-next-line react-refresh/only-export-components
+ export function useTheme() {
+-    const ctx = useContext(ThemeContext);
+-    if (ctx === null) {
+-        throw new Error(
+-            "[useTheme] must be used inside <ThemeProvider>. " +
+-            "Wrap your app: <ThemeProvider><App /></ThemeProvider>"
+-        );
+-    }
+-    return ctx;
++    const theme = useSyncExternalStore(subscribeTheme, getTheme, () => 'light');
++    return { theme, isDark: theme === 'dark', isLight: theme === 'light', ...themeActions };
+ }
+ 
+-export default ThemeProvider;
+\ No newline at end of file
++export default ThemeProvider;
+diff --git a/frontend/src/core/config/theme.config.js b/frontend/src/core/config/theme.config.js
+index 569fb38..4eab0e2 100644
+--- a/frontend/src/core/config/theme.config.js
++++ b/frontend/src/core/config/theme.config.js
+@@ -117,13 +117,13 @@ const theme = {
+     /** ─── Border Radius ─── */
+     borderRadius: {
+         none: '0px',
+-        sm: '0.25rem',   // 4px  — tiny inputs, tags
++        sm: '0.375rem',  // 6px
+         DEFAULT: '0.5rem',    // 8px  — buttons, badges
+-        md: '0.75rem',   // 12px — dropdowns
+-        lg: '1rem',      // 16px — cards
+-        xl: '1.25rem',   // 20px — modals
+-        '2xl': '1.5rem',    // 24px — panels
+-        '3xl': '2rem',      // 32px — hero cards
++        md: '0.5rem',    // 8px
++        lg: '0.75rem',   // 12px
++        xl: '1rem',      // 16px
++        '2xl': '1rem',   // 16px
++        '3xl': '1rem',   // 16px
+         full: '9999px',    // pills, avatars, toggles
+     },
+ 
+diff --git a/frontend/src/modules/auth/components/LoginForm/LoginForm.jsx b/frontend/src/modules/auth/components/LoginForm/LoginForm.jsx
+index 8476135..39599bd 100644
+--- a/frontend/src/modules/auth/components/LoginForm/LoginForm.jsx
++++ b/frontend/src/modules/auth/components/LoginForm/LoginForm.jsx
+@@ -1,3 +1,4 @@
++import Form from '@/shared/components/ui/Form/Form';
+ import { useState } from 'react';
+ import { useDispatch, useSelector } from 'react-redux';
+ import { Link } from 'react-router-dom';
+@@ -37,7 +38,7 @@ const LoginForm = () => {
+     };
+ 
+     return (
+-        <form className="space-y-6" onSubmit={onSubmit}>
++        <Form className="space-y-6" onSubmit={onSubmit}>
+             <div>
+                 <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1.5">
+                     Email address
+@@ -107,7 +108,7 @@ const LoginForm = () => {
+                     Sign in
+                 </Button>
+             </div>
+-        </form>
++        </Form>
+     );
+ };
+ 
+diff --git a/frontend/src/modules/auth/components/RegisterForm/RegisterForm.jsx b/frontend/src/modules/auth/components/RegisterForm/RegisterForm.jsx
+index c857d8f..51cc877 100644
+--- a/frontend/src/modules/auth/components/RegisterForm/RegisterForm.jsx
++++ b/frontend/src/modules/auth/components/RegisterForm/RegisterForm.jsx
+@@ -1,3 +1,4 @@
++import Form from '@/shared/components/ui/Form/Form';
+ import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+ import { useDispatch, useSelector } from 'react-redux';
+ import { Mail, AlertCircle } from 'lucide-react';
+@@ -241,7 +242,7 @@ const RegisterForm = () => {
+   );
+ 
+   return (
+-    <form className="space-y-6" onSubmit={onSubmit} noValidate>
++    <Form className="space-y-6" onSubmit={onSubmit} noValidate>
+       {/* Full Name */}
+       <div>
+         <label htmlFor="name" className="block text-sm font-medium text-foreground mb-1.5">
+@@ -368,7 +369,7 @@ const RegisterForm = () => {
+           Create Account
+         </Button>
+       </div>
+-    </form>
++    </Form>
+   );
+ };
+ 
+diff --git a/frontend/src/modules/auth/pages/ForgotPasswordPage/ForgotPasswordPage.jsx b/frontend/src/modules/auth/pages/ForgotPasswordPage/ForgotPasswordPage.jsx
+index 2834625..d4146fd 100644
+--- a/frontend/src/modules/auth/pages/ForgotPasswordPage/ForgotPasswordPage.jsx
++++ b/frontend/src/modules/auth/pages/ForgotPasswordPage/ForgotPasswordPage.jsx
+@@ -1,3 +1,4 @@
++import Form from '@/shared/components/ui/Form/Form';
+ import { useState } from 'react';
+ import { useDispatch, useSelector } from 'react-redux';
+ import { Link } from 'react-router-dom';
+@@ -30,15 +31,15 @@ const ForgotPasswordPage = () => {
+         <div className="min-h-screen bg-background flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+             {/* Background Decorations */}
+             <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden opacity-10">
+-                <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/20 blur-[60px] rounded-full" />
+-                <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-primary/10 blur-[60px] rounded-full" />
++                <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] form-ambient rounded-full" />
++                <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] form-ambient rounded-full" />
+             </div>
+ 
+             {/* Back button */}
+             <div className="absolute top-6 left-6 sm:top-8 sm:left-8 z-50">
+                 <Link
+                     to="/"
+-                    className="group flex items-center gap-2 rounded-full border border-black/5 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 px-4 py-2 text-sm font-semibold text-foreground/80 backdrop-blur-md transition-all hover:bg-white/80 dark:hover:bg-slate-900/80 hover:text-foreground shadow-sm hover:shadow-md"
++                    className="group flex items-center gap-2 rounded-full border border-black/5 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 px-4 py-2 text-sm font-semibold text-foreground/80 transition-all hover:bg-white/80 dark:hover:bg-slate-900/80 hover:text-foreground shadow-sm hover:shadow-md"
+                 >
+                     <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                     <span className="hidden sm:inline">Back to Home</span>
+@@ -70,7 +71,7 @@ const ForgotPasswordPage = () => {
+                             transition={{ duration: 0.4 }}
+                             className="mt-8"
+                         >
+-                            <div className="bg-card border border-border/60 py-8 px-4 shadow-lg rounded-2xl sm:px-10">
++                            <div className="form-surface">
+                                 <div className="text-center mb-8">
+                                     <div className="mx-auto w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
+                                         <KeyRound className="h-7 w-7 text-primary" />
+@@ -83,7 +84,7 @@ const ForgotPasswordPage = () => {
+                                     </p>
+                                 </div>
+ 
+-                                <form onSubmit={handleSubmit} className="space-y-6">
++                                <Form onSubmit={handleSubmit} className="space-y-6">
+                                     <div>
+                                         <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1.5">
+                                             Email address
+@@ -128,7 +129,7 @@ const ForgotPasswordPage = () => {
+                                             Back to login
+                                         </Link>
+                                     </div>
+-                                </form>
++                                </Form>
+                             </div>
+                         </motion.div>
+                     ) : (
+diff --git a/frontend/src/modules/auth/pages/LoginPage/LoginPage.jsx b/frontend/src/modules/auth/pages/LoginPage/LoginPage.jsx
+index 53fa2d9..be7c5f4 100644
+--- a/frontend/src/modules/auth/pages/LoginPage/LoginPage.jsx
++++ b/frontend/src/modules/auth/pages/LoginPage/LoginPage.jsx
+@@ -12,15 +12,15 @@ const LoginPage = () => {
+     
+     {/* Background Decorations (same as register) */}
+     <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden opacity-10">
+-      <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/20 blur-[60px] rounded-full" />
+-      <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-primary/10 blur-[60px] rounded-full" />
++      <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] form-ambient rounded-full" />
++      <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] form-ambient rounded-full" />
+     </div>
+ 
+     {/* Back button */}
+     <div className="absolute top-6 left-6 sm:top-8 sm:left-8 z-50">
+       <Link
+         to="/"
+-        className="group flex items-center gap-2 rounded-full border border-black/5 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 px-4 py-2 text-sm font-semibold text-foreground/80 backdrop-blur-md transition-all hover:bg-white/80 dark:hover:bg-slate-900/80 hover:text-foreground shadow-sm hover:shadow-md"
++        className="group flex items-center gap-2 rounded-full border border-black/5 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 px-4 py-2 text-sm font-semibold text-foreground/80 transition-all hover:bg-white/80 dark:hover:bg-slate-900/80 hover:text-foreground shadow-sm hover:shadow-md"
+       >
+         <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+         <span className="hidden sm:inline">Back to Home</span>
+@@ -64,7 +64,7 @@ const LoginPage = () => {
+           </div>
+ 
+           {/* Card */}
+-          <div className="bg-card border border-border/60 py-8 px-4 shadow-lg rounded-2xl sm:px-10">
++          <div className="form-surface">
+             
+             <LoginForm />
+ 
+diff --git a/frontend/src/modules/auth/pages/RegisterPage/RegisterPage.jsx b/frontend/src/modules/auth/pages/RegisterPage/RegisterPage.jsx
+index e1d3d62..c4cfb3e 100644
+--- a/frontend/src/modules/auth/pages/RegisterPage/RegisterPage.jsx
++++ b/frontend/src/modules/auth/pages/RegisterPage/RegisterPage.jsx
+@@ -65,15 +65,15 @@ const RegisterPage = () => {
+         <div className="min-h-screen bg-background flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+             {/* Background Decorations */}
+             <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden opacity-10">
+-                <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/20 blur-[60px] rounded-full" />
+-                <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-primary/10 blur-[60px] rounded-full" />
++                <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] form-ambient rounded-full" />
++                <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] form-ambient rounded-full" />
+             </div>
+ 
+             {/* Back button */}
+             <div className="absolute top-6 left-6 sm:top-8 sm:left-8 z-50">
+                 <Link
+                     to="/"
+-                    className="group flex items-center gap-2 rounded-full border border-black/5 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 px-4 py-2 text-sm font-semibold text-foreground/80 backdrop-blur-md transition-all hover:bg-white/80 dark:hover:bg-slate-900/80 hover:text-foreground shadow-sm hover:shadow-md"
++                    className="group flex items-center gap-2 rounded-full border border-black/5 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 px-4 py-2 text-sm font-semibold text-foreground/80 transition-all hover:bg-white/80 dark:hover:bg-slate-900/80 hover:text-foreground shadow-sm hover:shadow-md"
+                 >
+                     <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                     <span className="hidden sm:inline">Back to Home</span>
+@@ -114,7 +114,7 @@ const RegisterPage = () => {
+                                 </p>
+                             </div>
+ 
+-                            <div className="bg-card border border-border/60 py-8 px-4 shadow-lg rounded-2xl sm:px-10">
++                            <div className="form-surface">
+                                 <RegisterForm />
+                                 
+                                 <div className="mt-6 text-center">
+diff --git a/frontend/src/modules/auth/pages/ResetPasswordPage/ResetPasswordPage.jsx b/frontend/src/modules/auth/pages/ResetPasswordPage/ResetPasswordPage.jsx
+index 967c82f..5a7f924 100644
+--- a/frontend/src/modules/auth/pages/ResetPasswordPage/ResetPasswordPage.jsx
++++ b/frontend/src/modules/auth/pages/ResetPasswordPage/ResetPasswordPage.jsx
+@@ -1,3 +1,4 @@
++import Form from '@/shared/components/ui/Form/Form';
+ import { useState, useEffect } from 'react';
+ import { useDispatch, useSelector } from 'react-redux';
+ import { useNavigate, useParams, Link } from 'react-router-dom';
+@@ -45,14 +46,14 @@ const ResetPasswordPage = () => {
+     return (
+         <div className="min-h-screen bg-background flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+             <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden opacity-10">
+-                <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/20 blur-[60px] rounded-full" />
+-                <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-primary/10 blur-[60px] rounded-full" />
++                <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] form-ambient rounded-full" />
++                <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] form-ambient rounded-full" />
+             </div>
+ 
+             <div className="absolute top-6 left-6 sm:top-8 sm:left-8 z-50">
+                 <Link
+                     to="/"
+-                    className="group flex items-center gap-2 rounded-full border border-black/5 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 px-4 py-2 text-sm font-semibold text-foreground/80 backdrop-blur-md transition-all hover:bg-white/80 dark:hover:bg-slate-900/80 hover:text-foreground shadow-sm hover:shadow-md"
++                    className="group flex items-center gap-2 rounded-full border border-black/5 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 px-4 py-2 text-sm font-semibold text-foreground/80 transition-all hover:bg-white/80 dark:hover:bg-slate-900/80 hover:text-foreground shadow-sm hover:shadow-md"
+                 >
+                     <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                     <span className="hidden sm:inline">Back to Home</span>
+@@ -83,7 +84,7 @@ const ResetPasswordPage = () => {
+                         transition={{ duration: 0.4 }}
+                         className="mt-8"
+                     >
+-                        <div className="bg-card border border-border/60 py-8 px-4 shadow-lg rounded-2xl sm:px-10">
++                        <div className="form-surface">
+                             {isSuccess ? (
+                                 <div className="text-center py-6">
+                                     <div className="mx-auto w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mb-6">
+@@ -115,7 +116,7 @@ const ResetPasswordPage = () => {
+                                         </p>
+                                     </div>
+ 
+-                                    <form onSubmit={handleSubmit} className="space-y-6">
++                                    <Form onSubmit={handleSubmit} className="space-y-6">
+                                         <div>
+                                             <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1.5">
+                                                 New Password
+@@ -177,7 +178,7 @@ const ResetPasswordPage = () => {
+                                                 Back to login
+                                             </Link>
+                                         </div>
+-                                    </form>
++                                    </Form>
+                                 </>
+                             )}
+                         </div>
+diff --git a/frontend/src/modules/dashboard/components/MembersTable/UserEditModal.jsx b/frontend/src/modules/dashboard/components/MembersTable/UserEditModal.jsx
+index d99f08c..61bdab7 100644
+--- a/frontend/src/modules/dashboard/components/MembersTable/UserEditModal.jsx
++++ b/frontend/src/modules/dashboard/components/MembersTable/UserEditModal.jsx
+@@ -1,3 +1,4 @@
++import Form from '@/shared/components/ui/Form/Form';
+ import { useState, useEffect, useRef, useCallback, useId } from 'react';
+ import { useDispatch } from 'react-redux';
+ import { FiCalendar, FiAlertTriangle, FiUser, FiShield } from 'react-icons/fi';
+@@ -607,7 +608,7 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
+         </section>
+ 
+         {/* ── Profile form (a genuinely separate transaction) ───────────── */}
+-        <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-5">
++        <Form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-5">
+           <section aria-labelledby={fieldId('identity')}>
+             <p id={fieldId('identity')} className={cn(eyebrowClasses, 'mb-3')}>Identity</p>
+             <div className="flex flex-col gap-3">
+@@ -722,7 +723,7 @@ const UserEditModal = ({ isOpen, onClose, user }) => {
+               )}
+             </div>
+           </section>
+-        </form>
++        </Form>
+       </div>
+     </Modal>
+   );
+diff --git a/frontend/src/modules/events/components/EventCalendar/CalendarDayEdit.jsx b/frontend/src/modules/events/components/EventCalendar/CalendarDayEdit.jsx
+index b947769..a3f96de 100644
+--- a/frontend/src/modules/events/components/EventCalendar/CalendarDayEdit.jsx
++++ b/frontend/src/modules/events/components/EventCalendar/CalendarDayEdit.jsx
+@@ -1,3 +1,4 @@
++import Form from '@/shared/components/ui/Form/Form';
+ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+ import { Plus, Trash2, X, Check, Loader2 } from 'lucide-react';
+ import { format } from 'date-fns';
+@@ -31,7 +32,7 @@ const FintechCheckbox = React.memo(({ checked, onChange, indeterminate, ariaLabe
+   }, [indeterminate]);
+ 
+   return (
+-    <span className="relative inline-flex items-center justify-center w-4 h-4 shrink-0">
++    <span className="relative inline-flex items-center justify-center w-11 h-11 shrink-0">
+       <input
+         ref={inputRef}
+         type="checkbox"
+@@ -39,11 +40,12 @@ const FintechCheckbox = React.memo(({ checked, onChange, indeterminate, ariaLabe
+         onChange={onChange}
+         disabled={disabled}
+         className="absolute inset-0 cursor-pointer opacity-0 z-10 disabled:cursor-not-allowed"
++        style={{ width: 44, height: 44 }}
+         aria-label={ariaLabel}
+       />
+       <span
+         className={cn(
+-          'absolute inset-0 rounded flex items-center justify-center',
++          'absolute w-5 h-5 rounded flex items-center justify-center',
+           'border-2 transition-all duration-150 ease-out',
+           'focus-within:ring-2 focus-within:ring-[var(--accent-primary)]/30 focus-within:ring-offset-1 focus-within:ring-offset-[var(--bg-elevated)]',
+           checked || indeterminate
+@@ -55,7 +57,7 @@ const FintechCheckbox = React.memo(({ checked, onChange, indeterminate, ariaLabe
+       >
+         <svg
+           className={cn(
+-            'w-2.5 h-2.5 text-white transition-all duration-150 ease-out',
++            'w-2.5 h-2.5 text-[var(--text-on-brand)] transition-transform duration-150 ease-out',
+             checked ? 'opacity-100 scale-100' : 'opacity-0 scale-50',
+           )}
+           fill="none"
+@@ -549,7 +551,7 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel,
+   const rangeInvalid = isRangeMode && (daysCount === 0 || daysCount > MAX_RANGE_DAYS);
+ 
+   return (
+-    <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full">
++    <Form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full">
+       <p className="text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Add Entry</p>
+ 
+       {isAdmin && (
+@@ -782,7 +784,7 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel,
+           ) : 'Save'}
+         </Button>
+       </div>
+-    </form>
++    </Form>
+   );
+ };
+ 
+@@ -830,7 +832,7 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
+   };
+ 
+   return (
+-    <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full">
++    <Form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full">
+       {/* Row 1: Segmented control (meals) or Amount+Items (markets) */}
+       {category === 'meals' ? (
+         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+@@ -961,7 +963,7 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
+           Update
+         </Button>
+       </div>
+-    </form>
++    </Form>
+   );
+ };
+ 
+@@ -1003,7 +1005,7 @@ const BulkUpdateForm = ({ category, selectedCount, onSubmit, onCancel, isBulkSub
+   };
+ 
+   return (
+-    <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-3 rounded-xl border border-[var(--accent-primary)]/20 bg-[var(--accent-primary)]/5">
++    <Form onSubmit={handleSubmit} className="flex flex-col gap-2 p-3 rounded-xl border border-[var(--accent-primary)]/20 bg-[var(--accent-primary)]/5">
+       <p className="text-xs font-semibold text-[var(--accent-primary)] uppercase tracking-wider">
+         Bulk Update · {selectedCount} entr{selectedCount === 1 ? 'y' : 'ies'}
+       </p>
+@@ -1087,7 +1089,7 @@ const BulkUpdateForm = ({ category, selectedCount, onSubmit, onCancel, isBulkSub
+           )}
+         </Button>
+       </div>
+-    </form>
++    </Form>
+   );
+ };
+ 
+diff --git a/frontend/src/modules/market/components/MarketForm/MarketForm.jsx b/frontend/src/modules/market/components/MarketForm/MarketForm.jsx
+index 1d990d8..090f3bd 100644
+--- a/frontend/src/modules/market/components/MarketForm/MarketForm.jsx
++++ b/frontend/src/modules/market/components/MarketForm/MarketForm.jsx
+@@ -1,3 +1,4 @@
++import Form from '@/shared/components/ui/Form/Form';
+ import '@/shared/components/ui/RecordForm/record-form.css';
+ import { useState, useEffect, useCallback } from 'react';
+ import { format } from 'date-fns';
+@@ -162,7 +163,7 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
+     }, [isRunning, readOnly, initialData, onCancel, renderFooter]);
+ 
+     return (
+-        <form id="market-form" onSubmit={handleSubmit} className="record-form flex flex-col gap-3 w-full">
++        <Form id="market-form" onSubmit={handleSubmit} className="record-form flex flex-col gap-3 w-full">
+             <button type="submit" className="sr-only" tabIndex={-1} aria-hidden="true" />
+ 
+ 
+@@ -295,7 +296,7 @@ const MarketForm = ({ initialData, onSubmit, onCancel, isAdmin = false, currentU
+             {adminError && (
+                 <p className="text-xs font-semibold text-destructive px-1">{adminError}</p>
+             )}
+-        </form>
++        </Form>
+     );
+ };
+ 
+diff --git a/frontend/src/modules/meal/components/MealForm/MealForm.jsx b/frontend/src/modules/meal/components/MealForm/MealForm.jsx
+index adfa9de..71d3e25 100644
+--- a/frontend/src/modules/meal/components/MealForm/MealForm.jsx
++++ b/frontend/src/modules/meal/components/MealForm/MealForm.jsx
+@@ -1,3 +1,4 @@
++import Form from '@/shared/components/ui/Form/Form';
+ import { useState, useEffect, useCallback, useMemo } from 'react';
+ import { format, parseISO, differenceInDays } from 'date-fns';
+ import {
+@@ -301,7 +302,7 @@ const [singleAdminError, setSingleAdminError] = useState('');
+     }, [mode, isRunning, readOnly, initialData, singleAdminError, rangeInvalid, daysCount, isAdmin, formData.userIds?.length, onCancel, renderFooter]);
+ 
+     return (
+-        <form
++        <Form
+             id="meal-form"
+             onSubmit={mode === 'single' ? handleSingleSubmit : (e) => { e.preventDefault(); handleBulkSubmit(formData.type); }}
+             className="record-form flex flex-col gap-3 w-full"
+@@ -548,7 +549,7 @@ const [singleAdminError, setSingleAdminError] = useState('');
+             {mode === 'single' && singleAdminError && (
+                 <p className="text-xs font-semibold text-[var(--danger-text)] px-1">{singleAdminError}</p>
+             )}
+-        </form>
++        </Form>
+     );
+ };
+ 
+diff --git a/frontend/src/modules/meal/components/MealList/MealList.jsx b/frontend/src/modules/meal/components/MealList/MealList.jsx
+index 2ceb276..7ff366c 100644
+--- a/frontend/src/modules/meal/components/MealList/MealList.jsx
++++ b/frontend/src/modules/meal/components/MealList/MealList.jsx
+@@ -100,7 +100,7 @@ const MealCard = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin,
+         <article
+             ref={ref}
+             onClick={handleCardClick}
+-            className={`group relative flex flex-col rounded-xl bg-card border overflow-hidden depth-top hover:shadow-md transition-[box-shadow,border-color,transform] duration-150 cursor-default contain-content ${isSelected ? 'ring-2 ring-primary/40 border-primary/30' : 'border-border/50'}`}
++            className={`group relative flex flex-col rounded-xl bg-card border overflow-hidden depth-top hover:shadow-md transition-transform duration-150 cursor-default contain-content ${isSelected ? 'ring-2 ring-primary/40 border-primary/30' : 'border-border/50'}`}
+         >
+             <div className="flex items-start justify-between px-4 pt-3.5">
+                 <div className="flex items-center gap-2">
+@@ -202,7 +202,7 @@ const MealRow = React.memo(React.forwardRef(({ meal, onEdit, onDelete, isAdmin,
+     return (
+         <div
+             ref={ref}
+-            className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl bg-card border hover:bg-muted/20 transition-[box-shadow,border-color,background-color] duration-150 depth-top overflow-hidden cursor-default contain-content ${isSelected ? 'ring-2 ring-primary/40 border-primary/30' : 'border-border/50'}`}
++            className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl bg-card border hover:bg-muted/20 transition-colors duration-150 depth-top overflow-hidden cursor-default contain-content ${isSelected ? 'ring-2 ring-primary/40 border-primary/30' : 'border-border/50'}`}
+         >
+             <Checkbox
+                 checked={isSelected}
+diff --git a/frontend/src/modules/members/components/AdminUnpaidPanel.jsx b/frontend/src/modules/members/components/AdminUnpaidPanel.jsx
+index 6fa152f..c4564d1 100644
+--- a/frontend/src/modules/members/components/AdminUnpaidPanel.jsx
++++ b/frontend/src/modules/members/components/AdminUnpaidPanel.jsx
+@@ -1,3 +1,4 @@
++import Form from '@/shared/components/ui/Form/Form';
+ import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+ import { useDispatch, useSelector } from 'react-redux';
+ import {
+@@ -7,7 +8,7 @@ import {
+ } from 'lucide-react';
+ import { fetchAdminUnpaidInvoices, resolveInvoicePayment, updatePenaltyWaiver, setInvoicePenaltyRate } from '../store/members.slice';
+ import { toast } from 'react-hot-toast';
+-import { Spinner, Avatar, Button } from '@/shared/components/ui';
++import { Spinner, Avatar, Button, Modal } from '@/shared/components/ui';
+ import { cn } from '@/core/utils/helpers/string.helper';
+ import { getLastFinalizedPeriod } from '@shared/utils/billingPeriod';
+ import PenaltyControlsModal from './PenaltyControlsModal';
+@@ -176,27 +177,14 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
+     };
+ 
+     return (
+-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-overlay" onClick={onClose}>
+-            <div className="w-full max-w-md bg-card rounded-3xl shadow-2xl border border-border overflow-hidden" onClick={e => e.stopPropagation()}>
+-                <div className="px-6 py-5 border-b border-border bg-muted dark:bg-muted/40">
+-                    <div className="flex items-center gap-3">
+-                        <div className={cn(
+-                            'w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm',
+-                            isRefundMode
+-                                ? 'bg-refund text-white shadow-refund/20'
+-                                : 'bg-primary text-white shadow-primary/20'
+-                        )}>
+-                            {isRefundMode ? <RefreshCw size={20} className="text-white" /> : <BadgeIndianRupee size={20} className="text-white" />}
+-                        </div>
+-                        <div>
+-                            <h3 className="text-base font-black text-foreground">{isRefundMode ? 'Process Refund' : 'Resolve Payment'}</h3>
+-                            <p className="text-xs font-medium text-muted-foreground">
+-                                {invoice.user?.name ?? 'Member'} — {invoice.monthName}
+-                            </p>
+-                        </div>
+-                    </div>
+-                </div>
+-                <div className="px-6 py-5 space-y-4">
++        <Modal
++            isOpen
++            onClose={onClose}
++            title={isRefundMode ? 'Process Refund' : 'Resolve Payment'}
++            description={`${invoice.user?.name ?? 'Member'} — ${invoice.monthName}`}
++            size="md"
++        >
++                <div className="space-y-4">
+                     <div className="grid grid-cols-3 gap-3 text-center">
+                         {[
+                             { label: 'Total Bill', value: `₹ ${fmt(totalPayable)}`, color: totalPayable < 0 ? 'text-success-text' : 'text-foreground' },
+@@ -209,7 +197,7 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
+                             </div>
+                         ))}
+                     </div>
+-                    <form onSubmit={handleSubmit} className="space-y-3">
++                    <Form onSubmit={handleSubmit} className="space-y-3">
+                         <div>
+                             <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
+                                 {isRefundMode ? `Refund Amount (max ₹ ${fmt(maxRefund)})` : 'Amount Being Paid Now (₹)'}
+@@ -257,10 +245,9 @@ const ResolveModal = React.memo(({ invoice, onClose, onResolve, isSaving }) => {
+                                 {isSaving ? 'Saving…' : isRefundMode ? 'Issue Refund' : 'Mark Payment'}
+                             </Button>
+                         </div>
+-                    </form>
++                    </Form>
+                 </div>
+-            </div>
+-        </div>
++        </Modal>
+     );
+ });
+ ResolveModal.displayName = 'ResolveModal';
+diff --git a/frontend/src/modules/members/components/PenaltyControlsModal.jsx b/frontend/src/modules/members/components/PenaltyControlsModal.jsx
+index 7466c03..07b9bd4 100644
+--- a/frontend/src/modules/members/components/PenaltyControlsModal.jsx
++++ b/frontend/src/modules/members/components/PenaltyControlsModal.jsx
+@@ -1,7 +1,8 @@
++import Form from '@/shared/components/ui/Form/Form';
+ import React, { useState, useMemo } from 'react';
+ import { toast } from 'react-hot-toast';
+ import { AlertTriangle, RotateCcw, Gauge, HandCoins } from 'lucide-react';
+-import { Button } from '@/shared/components/ui';
++import { Button, Modal } from '@/shared/components/ui';
+ import { cn } from '@/core/utils/helpers/string.helper';
+ 
+ /* ─────────────────────────────────────────────
+@@ -100,25 +101,16 @@ const PenaltyControlsModal = React.memo(({
+     };
+ 
+     return (
+-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-overlay" onClick={onClose}>
+-            <div className="w-full max-w-md bg-card rounded-3xl shadow-2xl border border-border overflow-hidden max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+-                {/* Header */}
+-                <div className="px-6 py-5 border-b border-border bg-muted dark:bg-muted/40">
+-                    <div className="flex items-center gap-3">
+-                        <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm bg-gradient-to-br from-rose-500 to-red-600 dark:from-rose-400 dark:to-red-500 shadow-rose-600/20">
+-                            <AlertTriangle size={20} className="text-white" />
+-                        </div>
+-                        <div>
+-                            <h3 className="text-base font-black text-foreground">Overdue Penalty Controls</h3>
+-                            <p className="text-xs font-medium text-muted-foreground">
+-                                {invoice.user?.name ?? 'Member'} — {invoice.monthName}
+-                            </p>
+-                        </div>
+-                    </div>
+-                </div>
+-
++        <Modal
++            isOpen
++            onClose={onClose}
++            title="Overdue Penalty Controls"
++            description={`${invoice.user?.name ?? 'Member'} — ${invoice.monthName}`}
++            size="md"
++            accentColor="red"
++        >
+                 {/* Breakdown (read-only for members; admin sees it here too) */}
+-                <div className="px-6 py-5 space-y-4">
++                <div className="space-y-4">
+                     <div className="grid grid-cols-2 gap-3">
+                         {[
+                             { label: 'Days Overdue', value: `${days}`, hint: `Due ${istDue}` },
+@@ -159,7 +151,7 @@ const PenaltyControlsModal = React.memo(({
+                     )}
+ 
+                     {/* ── Waive / Unwaive ── */}
+-                    <form onSubmit={handleWaive} className="space-y-3 pt-1">
++                    <Form onSubmit={handleWaive} className="space-y-3 pt-1">
+                         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border pb-1.5">
+                             Waiver (admin only)
+                         </p>
+@@ -203,10 +195,10 @@ const PenaltyControlsModal = React.memo(({
+                                 {isSaving ? 'Saving…' : `Waive ₹ ${fmt(remaining)}`}
+                             </Button>
+                         </div>
+-                    </form>
++                    </Form>
+ 
+                     {/* ── Per-bill rate override ── */}
+-                    <form onSubmit={handleSetRate} className="space-y-3 pt-1">
++                    <Form onSubmit={handleSetRate} className="space-y-3 pt-1">
+                         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border pb-1.5">
+                             Rate override (this bill only)
+                         </p>
+@@ -237,14 +229,13 @@ const PenaltyControlsModal = React.memo(({
+                             placeholder="Reason (optional, audited)"
+                             className="w-full py-2.5 px-4 rounded-2xl text-sm font-semibold bg-input border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-all"
+                         />
+-                    </form>
++                    </Form>
+ 
+                     <Button type="button" variant="secondary" fullWidth onClick={onClose} disabled={isSaving || isRateSaving}>
+                         Close
+                     </Button>
+                 </div>
+-            </div>
+-        </div>
++        </Modal>
+     );
+ });
+ PenaltyControlsModal.displayName = 'PenaltyControlsModal';
+diff --git a/frontend/src/modules/notification/components/NotificationBell/NotificationBell.jsx b/frontend/src/modules/notification/components/NotificationBell/NotificationBell.jsx
+index 62b8564..b839538 100644
+--- a/frontend/src/modules/notification/components/NotificationBell/NotificationBell.jsx
++++ b/frontend/src/modules/notification/components/NotificationBell/NotificationBell.jsx
+@@ -1,5 +1,4 @@
+ import { useCallback, useEffect, useRef, useState } from 'react';
+-import { createPortal } from 'react-dom';
+ import { useNavigate } from 'react-router-dom';
+ import { AnimatePresence, motion } from 'framer-motion';
+ import { Bell } from 'lucide-react';
+@@ -7,23 +6,8 @@ import { useSelector } from 'react-redux';
+ import { cn } from '@/core/utils/helpers/string.helper';
+ import useNotifications from '../../hooks/useNotifications';
+ import NotificationList from '../NotificationList/NotificationList';
+-import useBodyScrollLock from '@/shared/hooks/useBodyScrollLock';
+-import { SPRING_SNAPPY, SPRING_BOUNCE } from '@/core/utils/constants/spring';
+-
+-/* ─── Framer Variants ───────────────────────────────────────────────────── */
+-const BACKDROP_VARIANTS = {
+-    hidden: { opacity: 0 },
+-    visible: { opacity: 1 },
+-    exit: { opacity: 0 },
+-};
+-
+-const PANEL_VARIANTS = {
+-    hidden: { opacity: 0, y: 48, scale: 0.98 },
+-    visible: { opacity: 1, y: 0, scale: 1 },
+-    exit: { opacity: 0, y: 48, scale: 0.98 },
+-};
+-
+-const PANEL_TRANSITION = SPRING_SNAPPY;
++import Modal from '@/shared/components/ui/Modal/Modal';
++import { SPRING_BOUNCE } from '@/core/utils/constants/spring';
+ 
+ const BELL_SHAKE = {
+     animate: { rotate: [0, -14, 14, -10, 10, -6, 6, 0], transition: { duration: 0.55, ease: 'easeInOut' } },
+@@ -49,15 +33,6 @@ const NotificationBell = () => {
+         prevCount.current = unreadCount;
+     }, [unreadCount, lastRealtimeUpdate]);
+ 
+-    useEffect(() => {
+-        if (!open) return;
+-        const handler = (e) => { if (e.key === 'Escape') setOpen(false); };
+-        window.addEventListener('keydown', handler);
+-        return () => window.removeEventListener('keydown', handler);
+-    }, [open]);
+-
+-    useBodyScrollLock(open);
+-
+     const badgeLabel = unreadCount > 99 ? '99+' : unreadCount;
+ 
+     const handleNotificationClick = useCallback(() => {
+@@ -123,58 +98,16 @@ const NotificationBell = () => {
+                 </AnimatePresence>
+             </motion.button>
+ 
+-            {typeof document !== 'undefined' && createPortal(
+-                <AnimatePresence mode="wait">
+-                    {open && (
+-                        <div
+-                            className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center"
+-                            style={{ isolation: 'isolate' }}
+-                        >
+-                            <motion.div
+-                                key="backdrop"
+-                                variants={BACKDROP_VARIANTS}
+-                                initial="hidden"
+-                                animate="visible"
+-                                exit="exit"
+-                                transition={{ duration: 0.18 }}
+-                                className="absolute inset-0 bg-overlay"
+-                                onClick={() => setOpen(false)}
+-                                aria-hidden="true"
+-                            />
+-
+-                            <motion.div
+-                                key="panel"
+-                                role="dialog"
+-                                aria-label="Notifications panel"
+-                                variants={PANEL_VARIANTS}
+-                                initial="hidden"
+-                                animate="visible"
+-                                exit="exit"
+-                                transition={PANEL_TRANSITION}
+-                                style={{
+-                                    willChange: 'transform, opacity',
+-                                    transform: 'translateZ(0)',
+-                                }}
+-                                className={cn(
+-                                    'relative z-10 w-full sm:max-w-[480px] mx-auto',
+-                                    'rounded-t-2xl sm:rounded-2xl',
+-                                    'bg-card',
+-                                    'border-t border-x sm:border border-border',
+-                                    'shadow-2xl overflow-hidden',
+-                                    'flex flex-col max-h-[75vh] sm:max-h-[80vh]',
+-                                )}
+-                            >
+-                                <div className="flex justify-center pt-3 pb-2 sm:hidden shrink-0 bg-card" aria-hidden="true">
+-                                    <div className="w-10 h-1 rounded-full bg-muted-foreground/20" />
+-                                </div>
+-
+-                                <NotificationList closeMenu={() => setOpen(false)} onNotificationClick={handleNotificationClick} />
+-                            </motion.div>
+-                        </div>
+-                    )}
+-                </AnimatePresence>,
+-                document.body
+-            )}
++            <Modal
++                isOpen={open}
++                onClose={() => setOpen(false)}
++                ariaLabel="Notifications panel"
++                showCloseButton={false}
++                size="md"
++                mobileSheet
++            >
++                <NotificationList closeMenu={() => setOpen(false)} onNotificationClick={handleNotificationClick} />
++            </Modal>
+         </div>
+     );
+ };
+diff --git a/frontend/src/modules/notification/components/SendNotificationModal/SendNotificationModal.jsx b/frontend/src/modules/notification/components/SendNotificationModal/SendNotificationModal.jsx
+index 44ba95a..f318540 100644
+--- a/frontend/src/modules/notification/components/SendNotificationModal/SendNotificationModal.jsx
++++ b/frontend/src/modules/notification/components/SendNotificationModal/SendNotificationModal.jsx
+@@ -1,3 +1,4 @@
++import Form from '@/shared/components/ui/Form/Form';
+ import { useState, useEffect, useCallback } from 'react';
+ import { Send, AlertTriangle, Eye, EyeOff } from 'lucide-react';
+ import { useSelector } from 'react-redux';
+@@ -21,7 +22,7 @@ const targetTypes = [
+     { value: 'ROLE', label: 'By Role' },
+ ];
+ 
+-const inputClasses = 'w-full h-11 px-3 py-2.5 rounded-xl surface-elevated border border-border text-body text-foreground placeholder:text-muted-foreground caret-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring transition-[border-color,box-shadow] duration-150';
++const inputClasses = 'w-full h-11 px-3 py-2.5 rounded-xl surface-elevated border border-border text-body text-foreground placeholder:text-muted-foreground caret-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring transition-opacity duration-150';
+ 
+ const SendNotificationModal = ({ isOpen, onClose }) => {
+     const { user } = useSelector((state) => state.auth);
+@@ -168,7 +169,7 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
+                     </div>
+                 </div>
+             ) : (
+-                <form onSubmit={handleSubmit} className="flex flex-col gap-3">
++                <Form onSubmit={handleSubmit} className="flex flex-col gap-3">
+                     <div className="flex flex-col gap-1.5">
+                         <label className="text-overline">Send to</label>
+                         <div className="flex gap-2">
+@@ -331,7 +332,7 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
+                             </div>
+                         </div>
+                     )}
+-                </form>
++                </Form>
+             )}
+         </Modal>
+     );
+diff --git a/frontend/src/modules/notification/pages/NotificationsPage/NotificationsPage.jsx b/frontend/src/modules/notification/pages/NotificationsPage/NotificationsPage.jsx
+index c36f2a0..46475fa 100644
+--- a/frontend/src/modules/notification/pages/NotificationsPage/NotificationsPage.jsx
++++ b/frontend/src/modules/notification/pages/NotificationsPage/NotificationsPage.jsx
+@@ -1,3 +1,4 @@
++import Form from '@/shared/components/ui/Form/Form';
+ import { useCallback, useRef, useState } from 'react';
+ import { AnimatePresence, motion } from 'framer-motion';
+ import { Bell, RefreshCw, CheckCircle2, Send, ChevronDown, ChevronUp } from 'lucide-react';
+@@ -98,7 +99,7 @@ const AdminComposeCard = ({ onSent }) => {
+                         transition={{ duration: 0.2, ease: 'easeInOut' }}
+                         className="overflow-hidden"
+                     >
+-                        <form onSubmit={handleSubmit} className="px-4 pb-4 space-y-3 border-t border-border pt-3">
++                        <Form onSubmit={handleSubmit} className="px-4 pb-4 space-y-3 border-t border-border pt-3">
+                             <div>
+                                 <div className="flex items-center justify-between mb-1">
+                                     <label className="text-caption font-medium text-muted-foreground">Title</label>
+@@ -140,7 +141,7 @@ const AdminComposeCard = ({ onSent }) => {
+                                 {!submitting && <Send className="w-4 h-4" />}
+                                 {submitting ? 'Sending...' : 'Send to All Users'}
+                             </Button>
+-                        </form>
++                        </Form>
+                     </motion.div>
+                 )}
+             </AnimatePresence>
+diff --git a/frontend/src/modules/payment/components/MessBillInvoice/MessBillInvoice.jsx b/frontend/src/modules/payment/components/MessBillInvoice/MessBillInvoice.jsx
+index 6d22c1b..5c59677 100644
+--- a/frontend/src/modules/payment/components/MessBillInvoice/MessBillInvoice.jsx
++++ b/frontend/src/modules/payment/components/MessBillInvoice/MessBillInvoice.jsx
+@@ -1,5 +1,4 @@
+-import { useState, useMemo, memo, useRef, useCallback, useEffect } from 'react';
+-import { createPortal } from 'react-dom';
++import { useState, useMemo, memo, useRef, useCallback } from 'react';
+ import { motion, AnimatePresence } from 'framer-motion';
+ import { toast } from 'react-hot-toast';
+ import invoiceService from '../../services/invoice.service';
+@@ -22,9 +21,8 @@ import {
+     HiOutlineShieldCheck,
+     HiOutlineChevronDown,
+     HiOutlineCalendarDays,
+-    HiOutlineXMark,
+ } from 'react-icons/hi2';
+-import { Spinner, Button } from '@/shared/components/ui';
++import { Spinner, Button, Modal } from '@/shared/components/ui';
+ import { fmt } from '@/core/utils/helpers/currency.helper';
+ import { MONTH_NAMES as MONTHS } from '@shared/utils/billingPeriod';
+ 
+@@ -274,19 +272,6 @@ const MessBillInvoice = ({
+         }
+     }, [selectedMonth, selectedYear]);
+ 
+-    useEffect(() => {
+-        if (!isEmailAllModalOpen) return;
+-        document.body.style.overflow = 'hidden';
+-        const handleEsc = (e) => {
+-            if (e.key === 'Escape' && !sendingAllEmails) setIsEmailAllModalOpen(false);
+-        };
+-        document.addEventListener('keydown', handleEsc);
+-        return () => {
+-            document.body.style.overflow = '';
+-            document.removeEventListener('keydown', handleEsc);
+-        };
+-    }, [isEmailAllModalOpen, sendingAllEmails]);
+-
+     const issuedAt = useMemo(() => istFull(new Date()), []);
+ 
+     if (!data) return null;
+@@ -877,51 +862,15 @@ const MessBillInvoice = ({
+             )}
+ 
+             {/* ── Email All Modal — admin month/year picker ── */}
+-            {createPortal(
+-            <AnimatePresence>
+-            {isEmailAllModalOpen && (
+-            <div className="fixed inset-0 z-modal contain-[layout_style_paint]">
+-                <div
+-                    aria-label="Close modal"
+-                    onClick={() => { if (!sendingAllEmails) setIsEmailAllModalOpen(false); }}
+-                    className="absolute inset-0 w-full h-full bg-overlay"
+-                />
+-
+-                <div className="flex min-h-full items-center justify-center p-3 sm:p-4">
+-                    <motion.div
+-                        initial={{ opacity: 0, scale: 0.96, y: 24 }}
+-                        animate={{ opacity: 1, scale: 1, y: 0 }}
+-                        exit={{ opacity: 0, scale: 0.96, y: 24 }}
+-                        transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+-                        className="relative w-full max-w-sm overflow-hidden rounded-xl border border-border bg-card text-foreground shadow-xl"
+-                        role="dialog"
+-                        aria-modal="true"
+-                        aria-label="Email Invoice to All"
+-                        tabIndex={-1}
+-                        onClick={(e) => e.stopPropagation()}
+-                    >
+-                        {/* ── Header with accent bar ── */}
+-                        <div className="relative z-10 flex items-center justify-between px-4 py-4 sm:px-6 sm:py-5 border-b border-border">
+-                            <div className="flex items-center gap-3 min-w-0">
+-                                <div className="w-1 h-5 rounded-full bg-gradient-to-b from-primary to-primary/70" />
+-                                <h2 className="truncate text-base font-semibold sm:text-lg text-foreground">
+-                                    Email Invoice to All
+-                                </h2>
+-                            </div>
+-                            <Button
+-                                variant="ghost"
+-                                size="sm"
+-                                onClick={() => !sendingAllEmails && setIsEmailAllModalOpen(false)}
+-                                disabled={sendingAllEmails}
+-                                aria-label="Close dialog"
+-                                iconOnly
+-                            >
+-                                <HiOutlineXMark className="w-5 h-5" />
+-                            </Button>
+-                        </div>
+-
+-                        {/* ── Body ── */}
+-                        <div className="relative z-10 px-4 py-4 sm:px-6 sm:py-5 max-h-[82dvh] overflow-y-auto space-y-4">
++            <Modal
++                isOpen={isEmailAllModalOpen}
++                onClose={sendingAllEmails ? undefined : () => setIsEmailAllModalOpen(false)}
++                closeOnOverlayClick={!sendingAllEmails}
++                showCloseButton={!sendingAllEmails}
++                title="Email Invoice to All"
++                size="sm"
++            >
++                <div className="space-y-4">
+                             <p className="text-sm text-muted-foreground -mt-1">
+                                 Select the billing month to send
+                             </p>
+@@ -1014,14 +963,8 @@ const MessBillInvoice = ({
+                                     <span>{sendingAllEmails ? 'Sending\u2026' : 'Send Invoices'}</span>
+                                 </Button>
+                             </div>
+-                        </div>
+-                    </motion.div>
+                 </div>
+-            </div>
+-            )}
+-            </AnimatePresence>,
+-            document.body
+-            )}
++            </Modal>
+ 
+         </motion.div>
+     );
+diff --git a/frontend/src/modules/payment/components/PaymentFlowModal/PaymentFlowModal.jsx b/frontend/src/modules/payment/components/PaymentFlowModal/PaymentFlowModal.jsx
+index ac21c26..aa4f798 100644
+--- a/frontend/src/modules/payment/components/PaymentFlowModal/PaymentFlowModal.jsx
++++ b/frontend/src/modules/payment/components/PaymentFlowModal/PaymentFlowModal.jsx
+@@ -1,3 +1,4 @@
++import Form from '@/shared/components/ui/Form/Form';
+ import { useState, useEffect, useMemo, memo, useCallback } from 'react';
+ import { toast } from 'react-hot-toast';
+ import {
+@@ -317,7 +318,7 @@ const AdminUpiForm = memo(({
+   onCancel,
+   onSubmit,
+ }) => (
+-  <form onSubmit={onSubmit} className="space-y-5">
++  <Form onSubmit={onSubmit} className="space-y-5">
+     <div className="space-y-1.5">
+       <label className="text-xs font-semibold text-foreground">UPI ID</label>
+       <Input
+@@ -362,7 +363,7 @@ const AdminUpiForm = memo(({
+         Save Setup
+       </Button>
+     </div>
+-  </form>
++  </Form>
+ ));
+ AdminUpiForm.displayName = 'AdminUpiForm';
+ 
+diff --git a/frontend/src/modules/payment/components/PaymentForm/PaymentForm.jsx b/frontend/src/modules/payment/components/PaymentForm/PaymentForm.jsx
+index eb4b1f0..863aee6 100644
+--- a/frontend/src/modules/payment/components/PaymentForm/PaymentForm.jsx
++++ b/frontend/src/modules/payment/components/PaymentForm/PaymentForm.jsx
+@@ -1,3 +1,4 @@
++import Form from '@/shared/components/ui/Form/Form';
+ import '@/shared/components/ui/RecordForm/record-form.css';
+ import { useState, useEffect, useRef, useCallback } from 'react';
+ import { format } from 'date-fns';
+@@ -376,7 +377,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
+     }, [isSubmitting, readOnly, initialData, onCancel, renderFooter]);
+ 
+     return (
+-        <form id="payment-form" onSubmit={handleSubmit} className="record-form flex flex-col gap-3 w-full max-w-lg mx-auto">
++        <Form id="payment-form" onSubmit={handleSubmit} className="record-form flex flex-col gap-3 w-full max-w-lg mx-auto">
+             <button type="submit" className="sr-only" tabIndex={-1} aria-hidden="true" />
+ 
+             {/* Read-only notice */}
+@@ -582,7 +583,7 @@ const PaymentForm = ({ initialData, onSubmit, onCancel, isAdmin = false, current
+                     />
+                 </Field>
+             </div>
+-        </form>
++        </Form>
+     );
+ };
+ 
+diff --git a/frontend/src/modules/payment/components/PaymentList/PaymentList.jsx b/frontend/src/modules/payment/components/PaymentList/PaymentList.jsx
+index cb62e41..c59c712 100644
+--- a/frontend/src/modules/payment/components/PaymentList/PaymentList.jsx
++++ b/frontend/src/modules/payment/components/PaymentList/PaymentList.jsx
+@@ -33,7 +33,7 @@ const PaymentCard = memo(React.forwardRef(({ payment, onEdit, onDelete, onViewIn
+     return (
+         <article
+             ref={ref}
+-            className="group relative flex flex-col h-full rounded-xl bg-card border border-border/40 overflow-hidden depth-top hover:shadow-md hover:border-border/80 transition-[box-shadow,border-color,transform] duration-200 contain-content"
++            className="group relative flex flex-col h-full rounded-xl bg-card border border-border/40 overflow-hidden depth-top hover:shadow-md hover:border-border/80 transition-transform duration-200 contain-content"
+         >
+             <div className="flex items-start justify-between px-4 pt-3.5">
+                 <span className={`inline-flex items-center px-2.5 py-[3px] rounded-md text-[10px] font-bold uppercase tracking-wider ring-1 ${typeC.cls}`}>
+diff --git a/frontend/src/modules/payment/components/UpiVerificationModal/UpiVerificationModal.jsx b/frontend/src/modules/payment/components/UpiVerificationModal/UpiVerificationModal.jsx
+index b2bb4be..d559ac8 100644
+--- a/frontend/src/modules/payment/components/UpiVerificationModal/UpiVerificationModal.jsx
++++ b/frontend/src/modules/payment/components/UpiVerificationModal/UpiVerificationModal.jsx
+@@ -1,4 +1,4 @@
+-import { useState, useCallback } from 'react';
++import { useState, useCallback, useId } from 'react';
+ import { toast } from 'react-hot-toast';
+ import {
+   HiOutlineCheckCircle,
+@@ -16,6 +16,7 @@ import paymentService from '../../services/payment.service';
+ import '@/shared/components/ui/RecordForm/record-form.css';
+ 
+ const UpiVerificationModal = ({ isOpen, onClose, payment, onVerified }) => {
++  const remarksId = useId();
+   const [adminRemarks, setAdminRemarks] = useState('');
+   const [verifying, setVerifying] = useState(false);
+ 
+@@ -154,8 +155,9 @@ const UpiVerificationModal = ({ isOpen, onClose, payment, onVerified }) => {
+         </div>
+ 
+         <div className="flex flex-col gap-1.5">
+-          <label className="text-sm font-medium text-foreground">Admin Remarks (Optional)</label>
++          <label htmlFor={remarksId} className="text-sm font-medium text-foreground">Admin Remarks (Optional)</label>
+           <textarea
++            id={remarksId}
+             value={adminRemarks}
+             onChange={(e) => setAdminRemarks(e.target.value)}
+             placeholder="Add a note about this verification..."
+diff --git a/frontend/src/modules/profile/components/EditForm/EditForm.jsx b/frontend/src/modules/profile/components/EditForm/EditForm.jsx
+index 29d0631..5c75ac3 100644
+--- a/frontend/src/modules/profile/components/EditForm/EditForm.jsx
++++ b/frontend/src/modules/profile/components/EditForm/EditForm.jsx
+@@ -1,3 +1,4 @@
++import Form from '@/shared/components/ui/Form/Form';
+ import { useState, useEffect } from 'react';
+ import { useDispatch, useSelector } from 'react-redux';
+ import { User, Mail, Phone } from 'lucide-react';
+@@ -67,7 +68,7 @@ export const EditForm = ({ handleClose, initialData }) => {
+     }
+ 
+     return (
+-        <form className="w-full space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
++        <Form className="w-full space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
+             <div className="grid grid-cols-1 gap-4 sm:gap-5">
+                 <Field label="Full Name" icon={User}>
+                     <input
+@@ -127,6 +128,6 @@ export const EditForm = ({ handleClose, initialData }) => {
+                     Save Changes
+                 </Button>
+             </div>
+-        </form>
++        </Form>
+     )
+ }
+diff --git a/frontend/src/modules/public/components/FoodModal/FoodModal.jsx b/frontend/src/modules/public/components/FoodModal/FoodModal.jsx
+index ff4f95d..12d7389 100644
+--- a/frontend/src/modules/public/components/FoodModal/FoodModal.jsx
++++ b/frontend/src/modules/public/components/FoodModal/FoodModal.jsx
+@@ -10,6 +10,7 @@ const FoodModal = memo(({ food, onClose }) => {
+ 
+   return (
+     <Modal
++      ariaLabel={food.name}
+       isOpen={Boolean(food)}
+       onClose={onClose}
+       showCloseButton={false}
+diff --git a/frontend/src/modules/public/pages/ContactPage/ContactPage.jsx b/frontend/src/modules/public/pages/ContactPage/ContactPage.jsx
+index f259236..7e5d99b 100644
+--- a/frontend/src/modules/public/pages/ContactPage/ContactPage.jsx
++++ b/frontend/src/modules/public/pages/ContactPage/ContactPage.jsx
+@@ -1,3 +1,4 @@
++import Form from '@/shared/components/ui/Form/Form';
+ import { motion, useReducedMotion } from 'framer-motion';
+ import { useState } from 'react';
+ import {
+@@ -13,7 +14,7 @@ const ContactMethod = ({ Icon, title, value, href, delay }) => (
+     <Reveal delay={delay}>
+         <a 
+             href={href}
+-            className="flex items-center gap-4 p-4 rounded-2xl border border-border bg-card/40 backdrop-blur-md transition-all duration-300 hover:border-primary/30 hover:bg-primary/[0.02] group"
++            className="flex items-center gap-4 p-4 rounded-2xl border border-border bg-card/40  transition-all duration-300 hover:border-primary/30 hover:bg-primary/[0.02] group"
+         >
+             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 text-primary transition-transform group-hover:scale-105">
+                 <Icon className="h-6 w-6" />
+@@ -45,10 +46,10 @@ const ContactPage = () => {
+         <div className="relative min-h-screen bg-background text-foreground overflow-x-hidden pt-28 pb-20">
+             {/* Ambient Background */}
+             <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+-                <div className="absolute top-[20%] left-[-10%] w-[40%] h-[40%] rounded-full opacity-30 blur-[100px]"
+-                    style={{ background: 'var(--blob-2)' }} />
+-                <div className="absolute bottom-[20%] right-[-10%] w-[40%] h-[40%] rounded-full opacity-20 blur-[120px]"
+-                    style={{ background: 'var(--blob-1)' }} />
++                <div className="absolute top-[20%] left-[-10%] w-[40%] h-[40%] rounded-full opacity-30 "
++                    style={{ background: 'radial-gradient(ellipse, var(--blob-2), transparent 70%)' }} />
++                <div className="absolute bottom-[20%] right-[-10%] w-[40%] h-[40%] rounded-full opacity-20 "
++                    style={{ background: 'radial-gradient(ellipse, var(--blob-1), transparent 70%)' }} />
+             </div>
+ 
+             <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6">
+@@ -57,7 +58,7 @@ const ContactPage = () => {
+                     <motion.div
+                         initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, scale: 0.95 }}
+                         animate={{ opacity: 1, scale: 1 }}
+-                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-card/80 backdrop-blur-sm text-[11px] font-bold uppercase tracking-widest text-primary mb-6"
++                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-card/80  text-[11px] font-bold uppercase tracking-widest text-primary mb-6"
+                     >
+                         <HiOutlineChatBubbleLeftRight className="w-4 h-4" />
+                         Get In Touch
+@@ -81,8 +82,8 @@ const ContactPage = () => {
+                 <div className="grid lg:grid-cols-2 gap-12 items-start">
+                     {/* Left: Contact Form */}
+                     <Reveal delay={0.1}>
+-                        <div className="relative rounded-3xl border border-border bg-card/40 p-8 backdrop-blur-md">
+-                            <form onSubmit={handleSubmit} className="space-y-6">
++                        <div className="form-surface relative ">
++                            <Form onSubmit={handleSubmit} className="space-y-6">
+                                 <div className="grid sm:grid-cols-2 gap-6">
+                                     <div className="space-y-2">
+                                         <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Full Name</label>
+@@ -136,7 +137,7 @@ const ContactPage = () => {
+                                         "Send Message"
+                                     )}
+                                 </Button>
+-                            </form>
++                            </Form>
+                         </div>
+                     </Reveal>
+ 
+diff --git a/frontend/src/modules/settings/pages/SettingsPage/SettingsPage.jsx b/frontend/src/modules/settings/pages/SettingsPage/SettingsPage.jsx
+index 06ee380..9195154 100644
+--- a/frontend/src/modules/settings/pages/SettingsPage/SettingsPage.jsx
++++ b/frontend/src/modules/settings/pages/SettingsPage/SettingsPage.jsx
+@@ -1,3 +1,4 @@
++import Form from '@/shared/components/ui/Form/Form';
+ import { useState, useCallback, useEffect } from 'react';
+ import {
+     Utensils,
+@@ -105,7 +106,7 @@ const SettingCard = ({
+ 
+                 <div className="border-t border-dashed border-border" />
+ 
+-                <form onSubmit={handleSubmit} className="flex flex-col gap-2 flex-1 justify-end">
++                <Form onSubmit={handleSubmit} className="flex flex-col gap-2 flex-1 justify-end">
+                     <label className="text-caption font-semibold uppercase tracking-wider text-muted-foreground">
+                         New Value
+                     </label>
+@@ -142,7 +143,7 @@ const SettingCard = ({
+                             Updated at {lastUpdated}
+                         </p>
+                     )}
+-                </form>
++                </Form>
+             </div>
+         </div>
+     );
+diff --git a/frontend/src/shared/components/layout/Header/Header.jsx b/frontend/src/shared/components/layout/Header/Header.jsx
+index bf4beba..beb0476 100644
+--- a/frontend/src/shared/components/layout/Header/Header.jsx
++++ b/frontend/src/shared/components/layout/Header/Header.jsx
+@@ -5,29 +5,13 @@ import { cn } from '@/core/utils/helpers/string.helper';
+ import { useSelector, useDispatch } from 'react-redux';
+ import { logout, toggleAdminHistory } from '@/modules/auth/store/auth.slice';
+ import { Link } from 'react-router-dom';
+-import { useTheme } from '@/app/providers/ThemeProvider';
++import ThemeToggle from '@/shared/components/ui/ThemeToggle/ThemeToggle';
+ import NotificationBell from '@/modules/notification/components/NotificationBell/NotificationBell';
+ 
+-const SunIcon = () => (
+-  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+-  </svg>
+-);
+-
+-const MoonIcon = () => (
+-  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+-    <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+-  </svg>
+-);
+-
+-SunIcon.displayName = 'SunIcon';
+-MoonIcon.displayName = 'MoonIcon';
+-
+ const Header = memo(({ onMenuClick }) => {
+   const user = useSelector((state) => state.auth.user);
+   const adminShowHistory = useSelector((state) => state.auth.adminShowHistory);
+   const dispatch = useDispatch();
+-  const { toggleTheme, isDark } = useTheme();
+ 
+   return (
+     <header
+@@ -72,13 +56,7 @@ const Header = memo(({ onMenuClick }) => {
+ 
+         <div className="flex items-center gap-x-0.5">
+           {/* Theme toggle */}
+-          <button
+-            onClick={toggleTheme}
+-            aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+-            className="inline-flex items-center justify-center w-11 h-11 rounded-xl text-foreground/60 hover:text-foreground hover:bg-muted/60 active:scale-95 transition-all duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+-          >
+-            {isDark ? <SunIcon /> : <MoonIcon />}
+-          </button>
++          <ThemeToggle />
+ 
+           {/* Notifications */}
+           <NotificationBell />
+diff --git a/frontend/src/shared/components/layout/Navbar/Navbar.jsx b/frontend/src/shared/components/layout/Navbar/Navbar.jsx
+index 4257873..04ab707 100644
+--- a/frontend/src/shared/components/layout/Navbar/Navbar.jsx
++++ b/frontend/src/shared/components/layout/Navbar/Navbar.jsx
+@@ -1,6 +1,6 @@
+ import { useState, useEffect, useRef } from 'react';
+ import { Link, useLocation } from 'react-router-dom';
+-import { useTheme } from '@/app/providers/ThemeProvider';
++import ThemeToggle from '@/shared/components/ui/ThemeToggle/ThemeToggle';
+ import { cn } from '@/core/utils/helpers/string.helper';
+ import { Button } from '@/shared/components/ui';
+ import useBodyScrollLock from '@/shared/hooks/useBodyScrollLock';
+@@ -11,34 +11,7 @@ const NAV_LINKS = [
+   { label: 'Food Gallery', href: '/food-gallery' },
+ ];
+ 
+-const SunIcon = () => {
+-  return (
+-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+-      <path
+-        strokeLinecap="round"
+-        strokeLinejoin="round"
+-        d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+-      />
+-    </svg>
+-  );
+-};
+-SunIcon.displayName = 'SunIcon';
+-
+-const MoonIcon = () => {
+-  return (
+-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+-      <path
+-        strokeLinecap="round"
+-        strokeLinejoin="round"
+-        d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+-      />
+-    </svg>
+-  );
+-};
+-MoonIcon.displayName = 'MoonIcon';
+-
+ const Navbar = () => {
+-  const { toggleTheme, isDark } = useTheme();
+   const [scrolled, setScrolled] = useState(false);
+   const [mobileOpen, setMobileOpen] = useState(false);
+   const location = useLocation();
+@@ -90,9 +63,9 @@ const Navbar = () => {
+   return (
+     <header
+       className={cn(
+-        'fixed top-0 inset-x-0 z-50 transition-all duration-300',
++        'fixed top-0 inset-x-0 z-50 transition-[opacity,transform] duration-300',
+         scrolled || mobileOpen
+-          ? 'bg-background/95 backdrop-blur-md border-b border-border shadow-sm'
++          ? 'bg-background border-b border-border shadow-sm'
+           : 'bg-transparent'
+       )}
+     >
+@@ -131,15 +104,7 @@ const Navbar = () => {
+           </div>
+ 
+           <div className="flex items-center gap-2">
+-            <Button
+-              variant="ghost"
+-              size="icon"
+-              onClick={toggleTheme}
+-              className="h-9 w-9"
+-              aria-label="Toggle theme"
+-            >
+-              {isDark ? <SunIcon /> : <MoonIcon />}
+-            </Button>
++          <ThemeToggle />
+ 
+             <div className="hidden md:flex items-center gap-2.5">
+               <Button variant="outline" size="md" asChild>
+diff --git a/frontend/src/shared/components/ui/Button/Button.jsx b/frontend/src/shared/components/ui/Button/Button.jsx
+index 23ed876..9c3eaba 100644
+--- a/frontend/src/shared/components/ui/Button/Button.jsx
++++ b/frontend/src/shared/components/ui/Button/Button.jsx
+@@ -73,7 +73,7 @@ const Button = forwardRef(({
+ 
+   const btnClasses = cn(
+     'font-semibold select-none whitespace-nowrap',
+-    'transition-[background-image,background-color,border-color,box-shadow,opacity,color,transform] motion-reduce:transition-none duration-[180ms] ease-out',
++    'transition-[opacity,transform] motion-reduce:transition-none duration-[180ms] ease-out',
+     '-webkit-tap-highlight-color-transparent',
+ 
+     isLink && [
+@@ -94,7 +94,7 @@ const Button = forwardRef(({
+       'disabled:opacity-45 disabled:cursor-not-allowed disabled:pointer-events-none disabled:shadow-none',
+       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+       isDestructive ? 'focus-visible:ring-destructive' : 'focus-visible:ring-ring',
+-      !shouldReduceMotion && 'active:scale-[0.98] transform-gpu',
++      !shouldReduceMotion && 'active:scale-[0.98]',
+     ],
+ 
+     // Always keep the variant styling so buttons retain visual identity even during loading
+diff --git a/frontend/src/shared/components/ui/ConfirmDialog/ConfirmDialog.jsx b/frontend/src/shared/components/ui/ConfirmDialog/ConfirmDialog.jsx
+index 72f2a88..8fa5f6b 100644
+--- a/frontend/src/shared/components/ui/ConfirmDialog/ConfirmDialog.jsx
++++ b/frontend/src/shared/components/ui/ConfirmDialog/ConfirmDialog.jsx
+@@ -40,6 +40,7 @@ const ConfirmDialog = memo(({
+       isOpen={isOpen}
+       onClose={isConfirming ? undefined : onClose}
+       accentColor={iconColor === 'blue' ? 'blue' : iconColor === 'amber' ? 'amber' : 'red'}
++      ariaLabel={title}
+       size="sm"
+       role="alertdialog"
+       description={description}
+@@ -74,6 +75,7 @@ const ConfirmDialog = memo(({
+ 
+         <div className="flex flex-col-reverse sm:flex-row gap-2.5 w-full pt-1">
+           <Button
++            data-autofocus
+             variant="secondary"
+             onClick={onClose}
+             disabled={isConfirming}
+diff --git a/frontend/src/shared/components/ui/IconSelect/IconSelect.jsx b/frontend/src/shared/components/ui/IconSelect/IconSelect.jsx
+index ddb5f5f..8fefe36 100644
+--- a/frontend/src/shared/components/ui/IconSelect/IconSelect.jsx
++++ b/frontend/src/shared/components/ui/IconSelect/IconSelect.jsx
+@@ -9,10 +9,10 @@ const DROPDOWN_MAX_H = 208;
+ const DROPDOWN_MARGIN = 3;
+ 
+ const inputBase =
+-  'w-full h-10 px-3 py-2.5 rounded-xl border border-[var(--input-border)] ' +
++  'ui-control w-full h-10 px-3 py-2.5 rounded-xl border border-[var(--input-border)] ' +
+   'bg-[var(--input-bg)] ' +
+   'focus:ring-0 focus:border-[var(--input-border-focus)] ' +
+-  'outline-none transition-all duration-200 ' +
++  'outline-none transition-[opacity,transform] duration-200 ' +
+   'text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] ' +
+   'hover:border-[var(--input-border-hover)] ' +
+   'dark:shadow-[var(--inset-top-glow),var(--shadow-xs)] dark:focus:shadow-[var(--inset-top-glow),var(--shadow-xs),0_0_0_3px_rgba(var(--brand-rgb),0.15)]';
+@@ -190,6 +190,8 @@ const IconSelect = ({ name, value, onChange, options, disabled = false, placehol
+         type="button"
+         onClick={() => !disabled && setOpen(o => !o)}
+         onKeyDown={handleKeyDown}
++        disabled={disabled}
++        aria-label={selected?.label ?? placeholder}
+         aria-haspopup="listbox"
+         aria-expanded={open}
+         className={cn(
+diff --git a/frontend/src/shared/components/ui/Input/Input.jsx b/frontend/src/shared/components/ui/Input/Input.jsx
+index a19941b..f0ef3d5 100644
+--- a/frontend/src/shared/components/ui/Input/Input.jsx
++++ b/frontend/src/shared/components/ui/Input/Input.jsx
+@@ -1,4 +1,4 @@
+-import { forwardRef } from 'react';
++import { forwardRef, useId } from 'react';
+ import { cn } from '@/core/utils/helpers/string.helper';
+ import { X } from 'lucide-react';
+ import '../RecordForm/record-form.css';
+@@ -21,9 +21,12 @@ const Input = forwardRef(({
+   type = 'text',
+   value,
+   onChange,
++  'aria-describedby': describedBy,
+   ...props
+ }, ref) => {
+-  const inputId = id || `input-${Math.random().toString(36).slice(2, 9)}`;
++  const generatedId = useId();
++  const inputId = id || generatedId;
++  const messageId = error ? `${inputId}-error` : success ? `${inputId}-success` : helperText ? `${inputId}-helper` : undefined;
+ 
+   const stateBorder = error
+     ? 'border-destructive focus:ring-destructive/30 focus:border-destructive'
+@@ -38,7 +41,7 @@ const Input = forwardRef(({
+       'border border-border rounded-lg caret-foreground',
+       'focus:outline-none focus:ring-2 focus:ring-offset-1',
+       'focus:ring-offset-background',
+-      'transition-[border-color,box-shadow] duration-[var(--duration-fast)]',
++      'transition-opacity duration-[var(--duration-fast)]',
+       '[&:-webkit-autofill]:bg-muted [&:-webkit-autofill]:text-foreground',
+       stateBorder,
+       error ? 'focus:shadow-[var(--inset-inner),0_0_0_3px_rgba(220,38,38,0.15)]' : '',
+@@ -48,7 +51,7 @@ const Input = forwardRef(({
+       'border border-transparent rounded-lg caret-foreground',
+       'focus:surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-1',
+       'focus:ring-offset-background',
+-      'transition-[border-color,box-shadow] duration-[var(--duration-fast)]',
++      'transition-opacity duration-[var(--duration-fast)]',
+       '[&:-webkit-autofill]:bg-muted [&:-webkit-autofill]:text-foreground',
+       stateBorder,
+     ),
+@@ -57,7 +60,7 @@ const Input = forwardRef(({
+       'border border-border rounded-lg caret-foreground',
+       'focus:outline-none focus:ring-2 focus:ring-offset-1',
+       'focus:ring-offset-background',
+-      'transition-[border-color,box-shadow] duration-[var(--duration-fast)]',
++      'transition-opacity duration-[var(--duration-fast)]',
+       '[&:-webkit-autofill]:bg-muted/80 [&:-webkit-autofill]:text-foreground',
+       stateBorder,
+     ),
+@@ -90,6 +93,10 @@ const Input = forwardRef(({
+         )}
+ 
+         <input
++          data-control-size={size}
++          data-leading={Boolean(leftIcon)}
++          data-trailing={Boolean((clearable && value) || rightIcon || rightAction)}
++          data-state={success && !error ? 'success' : undefined}
+           ref={ref}
+           id={inputId}
+           type={type}
+@@ -98,10 +105,9 @@ const Input = forwardRef(({
+           value={value}
+           onChange={onChange}
+           aria-invalid={!!error}
+-          aria-describedby={
+-            error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined
+-          }
++          aria-describedby={[describedBy, messageId].filter(Boolean).join(' ') || undefined}
+           className={cn(
++            'ui-control',
+             variants[variant],
+             sizes[size],
+             iconPadding.left,
+@@ -113,12 +119,12 @@ const Input = forwardRef(({
+           {...props}
+         />
+ 
+-        {clearable && value && (
++        {clearable && value && !disabled && !readOnly && (
+           <button
+             type="button"
+             onClick={() => onChange?.({ target: { value: '' } } )}
+             aria-label="Clear input"
+-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
++            className="absolute right-0 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+           >
+             <X className="w-4 h-4" />
+           </button>
+@@ -131,7 +137,7 @@ const Input = forwardRef(({
+         )}
+ 
+         {rightAction && !(clearable && value) && (
+-          <span className="absolute right-3 top-1/2 -translate-y-1/2">
++          <span className="absolute right-0 top-1/2 -translate-y-1/2">
+             {rightAction}
+           </span>
+         )}
+@@ -143,7 +149,7 @@ const Input = forwardRef(({
+         </p>
+       )}
+       {!error && success && (
+-        <p className="text-xs text-success font-medium">
++        <p id={`${inputId}-success`} className="text-xs text-success font-medium">
+           {success}
+         </p>
+       )}
+diff --git a/frontend/src/shared/components/ui/MemberSelect/MemberSelect.jsx b/frontend/src/shared/components/ui/MemberSelect/MemberSelect.jsx
+index 2d3e0e5..aaaea84 100644
+--- a/frontend/src/shared/components/ui/MemberSelect/MemberSelect.jsx
++++ b/frontend/src/shared/components/ui/MemberSelect/MemberSelect.jsx
+@@ -43,9 +43,9 @@ const accentMap = {
+ };
+ 
+ const inputBase =
+-    'w-full px-3 py-2 rounded-xl border border-[var(--input-border)] ' +
++    'ui-control w-full px-3 py-2 rounded-xl border border-[var(--input-border)] ' +
+     'bg-[var(--input-bg)] ' +
+-    'outline-none transition-all duration-200 ' +
++    'outline-none transition-[opacity,transform] duration-200 ' +
+     'text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] ' +
+     'shadow-[var(--inset-inner)] hover:border-[var(--input-border-hover)]';
+ 
+@@ -129,6 +129,9 @@ const MemberSelect = ({
+         <div ref={ref} className="relative w-full">
+             <button
+                 type="button"
++                disabled={disabled}
++                aria-haspopup="listbox"
++                aria-expanded={open}
+                 onClick={() => !disabled && setOpen(o => !o)}
+                 className={`${variant === 'record' ? 'record-field' : `${inputBase} ${ac.ring}`} flex items-center justify-between gap-2 text-left
+                     ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+@@ -250,7 +253,7 @@ const MemberSelect = ({
+                                         onClick={() => toggle(u._id)}
+                                         disabled={blocked}
+                                         className={`
+-                                            w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-all duration-100
++                                            w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-[opacity,transform] duration-100
+                                             ${blocked
+                                                 ? 'bg-[var(--success-bg)] text-[var(--success-text)] cursor-not-allowed'
+                                                 : selected
+@@ -261,7 +264,7 @@ const MemberSelect = ({
+                                     >
+                                         {/* Checkbox */}
+                                         <span className={`
+-                                            relative flex items-center justify-center w-5 h-5 shrink-0 rounded border-2 transition-all duration-100
++                                            relative flex items-center justify-center w-5 h-5 shrink-0 rounded border-2 transition-[opacity,transform] duration-100
+                                             ${blocked
+                                                 ? 'border-[var(--success)] bg-[var(--success)]'
+                                                 : selected
+diff --git a/frontend/src/shared/components/ui/Modal/Modal.jsx b/frontend/src/shared/components/ui/Modal/Modal.jsx
+index 4c266ef..38b6b37 100644
+--- a/frontend/src/shared/components/ui/Modal/Modal.jsx
++++ b/frontend/src/shared/components/ui/Modal/Modal.jsx
+@@ -1,32 +1,12 @@
+-import { useEffect, useRef, useCallback, useState } from 'react';
++import { useEffect, useRef, useCallback, useState, useId } from 'react';
+ import { createPortal } from 'react-dom';
+ import { cn } from '@/core/utils/helpers/string.helper';
+ import { useModalAnimation } from '@/shared/hooks/useModalAnimation';
+ import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
++import { lockBodyScroll, unlockBodyScroll } from '@/shared/hooks/useBodyScrollLock';
+ import { Spinner } from '@/shared/components/ui';
+ 
+-let lockCount = 0;
+-
+-function lockBodyScroll() {
+-  if (typeof document === 'undefined') return;
+-  if (lockCount === 0) {
+-    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+-    document.body.style.overflow = 'hidden';
+-    if (scrollbarWidth > 0) {
+-      document.body.style.paddingRight = `${scrollbarWidth}px`;
+-    }
+-  }
+-  lockCount++;
+-}
+-
+-function unlockBodyScroll() {
+-  if (typeof document === 'undefined') return;
+-  lockCount = Math.max(0, lockCount - 1);
+-  if (lockCount === 0) {
+-    document.body.style.overflow = '';
+-    document.body.style.paddingRight = '';
+-  }
+-}
++const modalStack = [];
+ 
+ const accentColors = {
+   blue: 'from-[var(--brand)] to-[var(--brand-hover)]',
+@@ -36,14 +16,7 @@ const accentColors = {
+   none: 'hidden',
+ };
+ 
+-const sizeMap = {
+-  sm: 'max-w-sm',
+-  md: 'max-w-md',
+-  lg: 'max-w-lg',
+-  xl: 'max-w-xl',
+-  '2xl': 'max-w-2xl',
+-  full: 'max-w-[95vw]',
+-};
++const sizeMap = { sm: 'var(--modal-width-sm)', md: 'var(--modal-width-md)', lg: 'var(--modal-width-lg)', xl: 'var(--modal-width-lg)', '2xl': 'var(--modal-width-lg)', full: 'var(--modal-width-lg)' };
+ 
+ const SHEET_MIN_HEIGHT_PCT = 50;
+ const SHEET_MAX_HEIGHT_PCT = 90;
+@@ -55,6 +28,7 @@ const Modal = ({
+   onClose,
+   title,
+   description,
++  ariaLabel,
+   children,
+   footer,
+   headerContent,
+@@ -66,10 +40,13 @@ const Modal = ({
+   closeOnOverlayClick = true,
+   className = '',
+   isLoading = false,
+-  desktopMaxHeight = '92dvh',
++  desktopMaxHeight = '90dvh',
+ }) => {
+   const dialogRef = useRef(null);
+-  const previousFocusRef = useRef(null);
++  const closeRef = useRef(onClose);
++  closeRef.current = onClose;
++  const titleId = useId();
++  const descriptionId = useId();
+   const { shouldRender, exiting } = useModalAnimation(isOpen, { exitTimeout: 120 });
+   const isMobile = useMediaQuery('(max-width: 639px)');
+   const useSheet = mobileSheet && isMobile;
+@@ -84,29 +61,26 @@ const Modal = ({
+   }, [useSheet, isOpen]);
+ 
+   const handleKeyDown = useCallback((e) => {
++    if (modalStack.at(-1) !== dialogRef) return;
+     if (e.key === 'Escape') {
+-      // A portaled layer (IconSelect listbox, Dropdown menu) handles Escape
+-      // itself. Both listeners sit on `document`, so stopPropagation cannot
+-      // help — without this guard the first Esc closes BOTH the dropdown and
+-      // the modal behind it. Let the layer dismiss first; the next Esc closes
+-      // the dialog.
+       if (document.querySelector('[role="listbox"], [role="menu"]')) return;
+-      onClose?.();
+-      return;
++      e.preventDefault();
++      closeRef.current?.();
+     }
+-    if (e.key === 'Tab' && dialogRef.current) {
+-      const focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+-      const focusable = Array.from(dialogRef.current.querySelectorAll(focusableSelector));
+-      if (focusable.length === 0) return;
+-      const first = focusable[0];
+-      const last = focusable[focusable.length - 1];
+-      if (e.shiftKey) {
+-        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+-      } else {
+-        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+-      }
++    if (e.key !== 'Tab' || !dialogRef.current) return;
++    if (document.activeElement?.closest('[role="listbox"], [role="menu"]')) return;
++    const focusable = Array.from(dialogRef.current.querySelectorAll(
++      'button, [href], input, select, textarea, [tabindex]'
++    )).filter(el => !el.disabled && el.tabIndex >= 0 && !el.closest('[hidden], [inert]') && getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden');
++    const first = focusable[0];
++    const last = focusable.at(-1);
++    if (!first) { e.preventDefault(); dialogRef.current.focus(); return; }
++    if (e.shiftKey && (document.activeElement === first || !dialogRef.current.contains(document.activeElement))) {
++      e.preventDefault(); last.focus();
++    } else if (!e.shiftKey && (document.activeElement === last || !dialogRef.current.contains(document.activeElement) || document.activeElement === dialogRef.current)) {
++      e.preventDefault(); first.focus();
+     }
+-  }, [onClose]);
++  }, []);
+ 
+   const handleDragMove = useCallback((e) => {
+     if (!dragRef.current.dragging) return;
+@@ -118,6 +92,7 @@ const Modal = ({
+       SHEET_MAX_HEIGHT_PCT,
+       Math.max(SHEET_MIN_HEIGHT_PCT, dragRef.current.startHeight + deltaPct),
+     );
++    dragRef.current.height = newHeight;
+     setSheetHeightPct(newHeight);
+   }, []);
+ 
+@@ -127,15 +102,15 @@ const Modal = ({
+     document.removeEventListener('mouseup', handleDragEnd);
+     document.removeEventListener('touchmove', handleDragMove);
+     document.removeEventListener('touchend', handleDragEnd);
+-    if (sheetHeightPct < SHEET_DISMISS_THRESHOLD) {
+-      onClose?.();
++    if (dragRef.current.height < SHEET_DISMISS_THRESHOLD) {
++      closeRef.current?.();
+     }
+-  }, [handleDragMove, sheetHeightPct, onClose]);
++  }, [handleDragMove]);
+ 
+   const handleDragStart = useCallback((e) => {
+     if (e.target.closest('button')) return;
+     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+-    dragRef.current = { startY: clientY, startHeight: sheetHeightPct, dragging: true };
++    dragRef.current = { startY: clientY, startHeight: sheetHeightPct, height: sheetHeightPct, dragging: true };
+     document.addEventListener('mousemove', handleDragMove);
+     document.addEventListener('mouseup', handleDragEnd);
+     document.addEventListener('touchmove', handleDragMove, { passive: false });
+@@ -143,25 +118,42 @@ const Modal = ({
+   }, [sheetHeightPct, handleDragMove, handleDragEnd]);
+ 
+   useEffect(() => {
+-    if (!shouldRender || exiting) return;
+-    previousFocusRef.current = document.activeElement;
+-
++    if (!shouldRender) return;
++    const previousFocus = document.activeElement;
++    modalStack.push(dialogRef);
+     lockBodyScroll();
+     document.addEventListener('keydown', handleKeyDown);
+-
+-    const raf = requestAnimationFrame(() => dialogRef.current?.focus());
+-
++    const focusFirst = () => {
++      const dialog = dialogRef.current;
++      if (!dialog || modalStack.at(-1) !== dialogRef) return;
++      const target = Array.from(dialog.querySelectorAll(
++        '[data-autofocus], [autofocus], input:not([type="hidden"]), textarea, select, button[aria-haspopup="listbox"]'
++      )).find(el => !el.disabled && !el.closest('[hidden], [inert]') && getComputedStyle(el).display !== 'none');
++      (target || dialog).focus({ preventScroll: true });
++    };
++    const raf = requestAnimationFrame(focusFirst);
++    const onFocus = (event) => {
++      if (modalStack.at(-1) !== dialogRef || dialogRef.current?.contains(event.target)) return;
++      if (event.target.closest?.('[role="listbox"], [role="menu"]')) return;
++      focusFirst();
++    };
++    document.addEventListener('focusin', onFocus);
+     return () => {
+       cancelAnimationFrame(raf);
++      modalStack.splice(modalStack.indexOf(dialogRef), 1);
+       unlockBodyScroll();
+       document.removeEventListener('keydown', handleKeyDown);
+-      document.removeEventListener('mousemove', handleDragMove);
+-      document.removeEventListener('mouseup', handleDragEnd);
+-      document.removeEventListener('touchmove', handleDragMove);
+-      document.removeEventListener('touchend', handleDragEnd);
+-      previousFocusRef.current?.focus?.();
++      document.removeEventListener('focusin', onFocus);
++      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
+     };
+-  }, [shouldRender, exiting, handleKeyDown, handleDragMove, handleDragEnd]);
++  }, [shouldRender, handleKeyDown]);
++
++  useEffect(() => () => {
++    document.removeEventListener('mousemove', handleDragMove);
++    document.removeEventListener('mouseup', handleDragEnd);
++    document.removeEventListener('touchmove', handleDragMove);
++    document.removeEventListener('touchend', handleDragEnd);
++  }, [shouldRender, handleDragMove, handleDragEnd]);
+ 
+   if (typeof document === 'undefined') return null;
+ 
+@@ -172,22 +164,22 @@ const Modal = ({
+       ref={dialogRef}
+       role={role}
+       aria-modal="true"
+-      aria-labelledby={title ? 'modal-title' : undefined}
+-      aria-describedby={description ? 'modal-description' : undefined}
++      aria-labelledby={title ? titleId : undefined}
++      aria-label={!title ? ariaLabel || 'Dialog' : undefined}
++      aria-describedby={description ? descriptionId : undefined}
+       aria-busy={isLoading || undefined}
+       tabIndex={-1}
+-      style={useSheet ? { minHeight: '300px', maxHeight: '80vh', height: `${sheetHeightPct}vh`, boxShadow: 'var(--shadow-xl), var(--inset-top-glow)' } : { maxHeight: desktopMaxHeight }}
++      style={{ '--modal-width': sizeMap[size] || sizeMap.md, maxHeight: `min(90dvh, ${desktopMaxHeight})`, ...(useSheet ? { height: `${sheetHeightPct}dvh` } : {}) }}
+       className={cn(
+-        'relative w-full modal-gpu',
+-        !useSheet && sizeMap[size],
++        'ui-modal relative w-full',
+         'surface-elevated border border-border',
+         'focus:outline-none',
+         'flex flex-col',
+         useSheet
+-          ? 'rounded-t-2xl shadow-[var(--shadow-xl)] animate-fade-in-up transition-[height] duration-100 ease-out'
++          ? 'rounded-t-2xl shadow-[var(--shadow-xl)] modal-animate'
+           : 'rounded-xl shadow-xl modal-animate sm:rounded-xl',
+-        exiting && !useSheet && 'modal-exit',
+-        !exiting && !useSheet && 'modal-enter',
++        exiting && 'modal-exit',
++        !exiting && 'modal-enter',
+         className,
+       )}
+       onClick={(e) => e.stopPropagation()}
+@@ -210,8 +202,9 @@ const Modal = ({
+         </div>
+       )}
+ 
++      {description && !title && <p id={descriptionId} className="sr-only">{description}</p>}
+       {(title || showCloseButton) && (
+-        <div className={cn(
++        <div data-modal-header className={cn(
+           'flex items-center justify-between flex-shrink-0 border-b border-border-default',
+           useSheet ? 'px-4 pt-1 pb-2' : 'px-5 py-4 sm:px-6 sm:py-5',
+         )}>
+@@ -221,15 +214,15 @@ const Modal = ({
+             )}
+             <div className="min-w-0">
+               {title && (
+-                <h2 id="modal-title" className={cn(
+-                      'truncate line-clamp-2 font-semibold text-foreground',
++                <h2 id={titleId} className={cn(
++                      'font-semibold text-foreground',
+                       useSheet ? 'text-sm sm:text-base' : 'text-base sm:text-lg',
+                   )}>
+                   {title}
+                 </h2>
+               )}
+               {description && (
+-                <p id="modal-description" className="text-sm text-muted-foreground mt-0.5 line-clamp-3">
++                <p id={descriptionId} className="text-sm text-muted-foreground mt-0.5">
+                   {description}
+                 </p>
+               )}
+@@ -237,6 +230,7 @@ const Modal = ({
+           </div>
+           {showCloseButton && (
+             <button
++              type="button"
+               onClick={onClose}
+               aria-label="Close dialog"
+               className="ml-4 shrink-0 p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+@@ -254,7 +248,7 @@ const Modal = ({
+           scroll position (previously the whole dialog collapsed to a spinner
+           on save, and scroll reset to top on failure). */}
+       <div data-modal-body className={cn(
+-        'relative z-10 flex-1 overflow-y-auto overscroll-contain',
++        'relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain',
+         useSheet ? 'px-4 py-3' : 'px-5 py-4 sm:px-6 sm:py-5',
+         '[scrollbar-width:thin] [scrollbar-color:var(--border-strong)_transparent]',
+         '[&::-webkit-scrollbar]:w-1.5',
+@@ -304,7 +298,7 @@ const Modal = ({
+             aria-hidden="true"
+           />
+ 
+-          <div className="fixed inset-x-0 bottom-0 z-10 flex items-end justify-center">
++          <div className="fixed inset-x-0 bottom-0 z-10 flex items-end justify-center px-4 pb-[env(safe-area-inset-bottom)]">
+             {dialogContent}
+           </div>
+         </div>
+@@ -329,7 +323,7 @@ const Modal = ({
+           aria-hidden="true"
+         />
+ 
+-        <div className="fixed inset-0 flex items-center justify-center p-4">
++        <div className="ui-modal-frame fixed inset-0 flex items-center justify-center">
+           {dialogContent}
+         </div>
+       </div>
+diff --git a/frontend/src/shared/components/ui/PasswordInput/PasswordInput.jsx b/frontend/src/shared/components/ui/PasswordInput/PasswordInput.jsx
+index 377872e..8f64543 100644
+--- a/frontend/src/shared/components/ui/PasswordInput/PasswordInput.jsx
++++ b/frontend/src/shared/components/ui/PasswordInput/PasswordInput.jsx
+@@ -13,9 +13,8 @@ const PasswordInput = forwardRef(({ className, ...props }, ref) => {
+         <button
+           type="button"
+           onClick={() => setShowPassword((prev) => !prev)}
+-          tabIndex={-1}
+           aria-label={showPassword ? 'Hide password' : 'Show password'}
+-          className="flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
++          className="w-11 h-11 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+         >
+           {showPassword ? (
+             <EyeOff className="h-4 w-4" />
+diff --git a/frontend/src/shared/components/ui/Popover/Popover.jsx b/frontend/src/shared/components/ui/Popover/Popover.jsx
+index 06df06f..550c8c5 100644
+--- a/frontend/src/shared/components/ui/Popover/Popover.jsx
++++ b/frontend/src/shared/components/ui/Popover/Popover.jsx
+@@ -56,7 +56,7 @@ const Popover = ({
+       {open && (
+         <div
+           role="dialog"
+-          aria-modal="true"
++          aria-label="Options"
+           className={cn(
+             'absolute z-dropdown mt-2',
+             width,
+diff --git a/frontend/src/shared/components/ui/SearchBar/SearchBar.jsx b/frontend/src/shared/components/ui/SearchBar/SearchBar.jsx
+index 648ba42..fe7890a 100644
+--- a/frontend/src/shared/components/ui/SearchBar/SearchBar.jsx
++++ b/frontend/src/shared/components/ui/SearchBar/SearchBar.jsx
+@@ -23,7 +23,7 @@ const SearchBar = ({
+           value={searchQuery}
+           onChange={(e) => onSearchChange(e.target.value)}
+           aria-label={placeholder}
+-          className="w-full h-10 pl-10 pr-10 rounded-lg border border-border bg-muted/30 text-sm text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all"
++          className="w-full h-10 pl-10 pr-10 rounded-lg border border-border bg-muted/30 text-sm text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-[opacity,transform]"
+         />
+         {searchQuery && (
+           <button
+@@ -54,7 +54,7 @@ const SearchBar = ({
+           onClick={onToggleFilters}
+           aria-label="Toggle filters"
+           aria-expanded={showFilters}
+-          className={`touch-target relative h-10 px-3.5 rounded-lg border text-sm font-semibold flex items-center gap-1.5 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
++          className={`touch-target relative h-10 px-3.5 rounded-lg border text-sm font-semibold flex items-center gap-1.5 transition-[opacity,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+             showFilters || hasActive
+               ? 'border-primary/40 bg-primary/10 text-primary'
+               : 'border-border bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50'
+@@ -71,7 +71,7 @@ const SearchBar = ({
+           <button
+             onClick={onClearFilters}
+             aria-label="Clear all filters"
+-            className="touch-target h-10 px-3 rounded-lg border border-destructive/20 bg-destructive/10 text-destructive text-xs font-bold hover:bg-destructive/20 transition-all flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
++            className="touch-target h-10 px-3 rounded-lg border border-destructive/20 bg-destructive/10 text-destructive text-xs font-bold hover:bg-destructive/20 transition-[opacity,transform] flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+           >
+             <X className="w-3.5 h-3.5" />
+             <span className="hidden sm:inline">Clear</span>
+@@ -81,7 +81,7 @@ const SearchBar = ({
+     </div>
+ 
+     <div
+-      className={`overflow-hidden transition-all duration-300 ease-out ${
++      className={`overflow-hidden transition-[opacity,transform] duration-300 ease-out ${
+         showFilters ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+       }`}
+     >
+diff --git a/frontend/src/shared/hooks/useBodyScrollLock.js b/frontend/src/shared/hooks/useBodyScrollLock.js
+index 32f5f11..3209996 100644
+--- a/frontend/src/shared/hooks/useBodyScrollLock.js
++++ b/frontend/src/shared/hooks/useBodyScrollLock.js
+@@ -2,17 +2,22 @@ import { useEffect, useRef } from 'react';
+ 
+ let lockCount = 0;
+ let scrollY = 0;
++let previousStyle;
+ 
+ export function lockBodyScroll() {
+     if (typeof document === 'undefined') return;
+     if (lockCount === 0) {
+         scrollY = window.scrollY;
++        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
++        const stableGutter = getComputedStyle(document.documentElement).scrollbarGutter === 'stable';
++        previousStyle = {
++            bodyOverflow: document.body.style.overflow,
++            rootOverflow: document.documentElement.style.overflow,
++            paddingRight: document.body.style.paddingRight,
++        };
+         document.body.style.overflow = 'hidden';
+         document.documentElement.style.overflow = 'hidden';
+-        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+-        if (scrollbarWidth > 0) {
+-            document.body.style.paddingRight = `${scrollbarWidth}px`;
+-        }
++        if (scrollbarWidth > 0 && !stableGutter) document.body.style.paddingRight = `${scrollbarWidth}px`;
+         document.body.dataset.scrollY = String(scrollY);
+     }
+     lockCount++;
+@@ -22,9 +27,9 @@ export function unlockBodyScroll() {
+     if (typeof document === 'undefined') return;
+     lockCount = Math.max(0, lockCount - 1);
+     if (lockCount === 0) {
+-        document.body.style.overflow = '';
+-        document.documentElement.style.overflow = '';
+-        document.body.style.paddingRight = '';
++        document.body.style.overflow = previousStyle.bodyOverflow;
++        document.documentElement.style.overflow = previousStyle.rootOverflow;
++        document.body.style.paddingRight = previousStyle.paddingRight;
+         delete document.body.dataset.scrollY;
+     }
+ }
+@@ -54,6 +59,7 @@ const lockScroll = (e) => { e.preventDefault(); };
+  */
+ export default function useBodyScrollLock(active = true, anchorRef) {
+     const parentRef = useRef(null);
++    const parentOverflow = useRef('');
+ 
+     useEffect(() => {
+         if (!active) return;
+@@ -62,6 +68,7 @@ export default function useBodyScrollLock(active = true, anchorRef) {
+         if (anchorRef?.current) {
+             parentRef.current = findNearestScrollableParent(anchorRef.current);
+             if (parentRef.current) {
++                parentOverflow.current = parentRef.current.style.overflow;
+                 parentRef.current.style.overflow = 'hidden';
+                 parentRef.current.addEventListener('touchmove', lockScroll, { passive: false });
+             }
+@@ -72,7 +79,7 @@ export default function useBodyScrollLock(active = true, anchorRef) {
+         return () => {
+             if (parentRef.current) {
+                 parentRef.current.removeEventListener('touchmove', lockScroll);
+-                parentRef.current.style.overflow = '';
++                parentRef.current.style.overflow = parentOverflow.current;
+                 parentRef.current = null;
+             }
+             unlockBodyScroll();
+diff --git a/frontend/src/styles/animations.css b/frontend/src/styles/animations.css
+index d4c381d..fe4e1b3 100644
+--- a/frontend/src/styles/animations.css
++++ b/frontend/src/styles/animations.css
+@@ -8,14 +8,12 @@
+ .modal-animate {
+   transition: opacity 100ms cubic-bezier(0.16, 1, 0.3, 1),
+               transform 100ms cubic-bezier(0.16, 1, 0.3, 1);
+-  will-change: transform, opacity;
+   backface-visibility: hidden;
+   transform: translate3d(0, 0, 0);
+ }
+ 
+ .modal-animate-backdrop {
+   transition: opacity 200ms ease-out;
+-  will-change: opacity;
+ }
+ 
+ .modal-enter {
+@@ -37,7 +35,6 @@
+ 
+ /* GPU compositing layer — promote BEFORE animation starts */
+ .gpu-layer {
+-  will-change: transform;
+   backface-visibility: hidden;
+   transform: translate3d(0, 0, 0);
+   isolation: isolate;
+@@ -160,30 +157,6 @@ html.is-scrolling *::after {
+   -webkit-backdrop-filter: none !important;
+ }
+ 
+-/* ─── Ultra-smooth 60fps Theme Transition Optimizations ──────────── */
+-.no-theme-transitions,
+-.no-theme-transitions *,
+-.no-theme-transitions *::before,
+-.no-theme-transitions *::after {
+-  transition: none !important;
+-  animation-duration: 0.001ms !important;
+-}
+-
+-/* Native GPU-accelerated View Transition for theme toggling (Chromium 111+, Safari 18+) */
+-::view-transition-old(root),
+-::view-transition-new(root) {
+-  animation-duration: 180ms;
+-  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+-}
+-
+-::view-transition-old(root) {
+-  z-index: 1;
+-}
+-
+-::view-transition-new(root) {
+-  z-index: 2;
+-}
+-
+ /* ─── Reduced motion ─────────────────────────────────────────────────── */
+ @media (prefers-reduced-motion: reduce) {
+   .reveal-hidden { opacity: 1; transform: translate3d(0, 0, 0); }
+diff --git a/frontend/src/styles/global.css b/frontend/src/styles/global.css
+index fb2536a..7b658a3 100644
+--- a/frontend/src/styles/global.css
++++ b/frontend/src/styles/global.css
+@@ -2,6 +2,7 @@
+ @import './themes/light.css';
+ @import './themes/dark.css';
+ @import './animations.css';
++@import './controls.css';
+ 
+ @tailwind base;
+ @tailwind components;
+@@ -119,7 +120,7 @@
+     border-radius: var(--radius-md);
+     font-size: var(--text-label);
+     font-weight: var(--weight-medium);
+-    transition: top var(--duration-fast) var(--ease-out);
++    transition: opacity var(--duration-fast) var(--ease-out);
+   }
+   .skip-nav:focus {
+     top: var(--space-2);
+@@ -239,8 +240,7 @@
+     border: 1px solid var(--border-default);
+     border-radius: var(--radius-lg);
+     box-shadow: var(--shadow-sm);
+-    transition: box-shadow var(--duration-base) var(--ease-out),
+-                transform var(--duration-base) var(--ease-out),
++    transition: transform var(--duration-base) var(--ease-out),
+                 border-color var(--duration-base) var(--ease-out);
+   }
+   .card-interactive:hover {
+@@ -296,10 +296,8 @@
+     border: 1px solid transparent;
+     cursor: pointer;
+     transition:
+-      background-image var(--duration-fast) var(--ease-out),
+       background-color var(--duration-fast) var(--ease-out),
+       border-color var(--duration-fast) var(--ease-out),
+-      box-shadow var(--duration-fast) var(--ease-out),
+       opacity var(--duration-fast) var(--ease-out),
+       transform var(--duration-fast) var(--ease-out);
+     white-space: nowrap;
+@@ -638,7 +636,6 @@
+ 
+   /* ─── GPU-accelerated scroll container ─── */
+   .gpu-scroll {
+-    will-change: scroll-position;
+     transform: translateZ(0);
+   }
+ 
+diff --git a/frontend/src/styles/themes/dark.css b/frontend/src/styles/themes/dark.css
+index cf2f4f5..44f642f 100644
+--- a/frontend/src/styles/themes/dark.css
++++ b/frontend/src/styles/themes/dark.css
+@@ -2,19 +2,19 @@ html.dark {
+   color-scheme: dark;
+ 
+   /* ── Brand ── */
+-  --brand: hsl(217 91% 62%);              /* #3B82F6 (blue-500) — brightened for AAA */
++  --brand: hsl(214 64% 76%);
+   --brand-rgb: 59, 130, 246;
+-  --brand-hover: hsl(213 94% 68%);        /* #60A5FA (blue-400) */
+-  --brand-active: hsl(212 96% 78%);       /* #93C5FD (blue-300) */
++  --brand-hover: hsl(214 64% 82%);
++  --brand-active: hsl(214 64% 86%);
+   --brand-subtle: hsl(217 50% 15%);       /* #1A2740 — subtle tinted bg */
+-  --brand-foreground: hsl(0 0% 100%);     /* #FFFFFF */
++  --brand-foreground: hsl(225 16% 5%);
+ 
+   /* ── Tint tokens (pill badges, subtle category accents) ── */
+   --tint-bg: hsl(217 44% 16%);            /* #1A2740 — accent-subtle */
+-  --tint-text: hsl(217 91% 62%);          /* #3B82F6 — blue-500 */
++  --tint-text: hsl(214 64% 76%);
+ 
+   /* ── Fintech accent palette ── */
+-  --accent-primary: #4D9CFF;              /* CTA, active indicators */
++  --accent-primary: hsl(214 64% 76%);
+   --accent-subtle: hsl(217 44% 16%);      /* #1A2740 — tinted bg */
+ 
+   /* ── Surface hierarchy (fintech spec: deepest → raised → elevated → overlay) ── */
+@@ -27,79 +27,79 @@ html.dark {
+   --bg-overlay: hsl(0 0% 0% / 0.78);     /* #000 @ 78% */
+ 
+   /* ── Borders ── */
+-  --border-default: hsl(224 12% 20%);     /* #282E3A — visible borders */
++  --border-default: hsl(216 12% 58%);
+   --border-muted: hsl(224 12% 16%);       /* #1F2430 — subtle separators */
+-  --border-strong: hsl(228 11% 28%);      /* #363E50 — strong dividers */
+-  --border-brand: hsl(217 91% 62%);       /* #3B82F6 */
++  --border-strong: hsl(216 12% 58%);
++  --border-brand: hsl(214 64% 76%);
+ 
+   /* ── Text hierarchy (WCAG AAA: ≥7:1 on dark surfaces) ── */
+   --text-primary: hsl(216 12% 95%);       /* #F0F2F5 — 8.7:1 on #1E222C */
+-  --text-secondary: hsl(216 10% 72%);     /* #B0B8C8 — 7.2:1 on #1E222C */
+-  --text-tertiary: hsl(216 10% 55%);      /* #7E8A9E — 4.8:1 decorative */
+-  --text-muted: hsl(216 10% 50%);         /* #727E92 — labels, captions */
+-  --text-disabled: hsl(228 11% 28%);      /* #363E50 */
+-  --text-on-brand: hsl(0 0% 100%);        /* #FFFFFF */
++  --text-secondary: hsl(216 12% 78%);
++  --text-tertiary: hsl(216 12% 70%);
++  --text-muted: hsl(216 12% 70%);
++  --text-disabled: hsl(216 12% 70%);
++  --text-on-brand: hsl(225 16% 5%);
+   --text-inverse: hsl(210 40% 98%);       /* #F8FAFC */
+ 
+   /* ── Semantic tokens ── */
+-  --success: hsl(142 71% 45%);            /* #22C55E (green-500) */
++  --success: hsl(142 45% 72%);
+   --success-bg: hsl(150 60% 10%);         /* #0A2E1A */
+-  --success-border: hsl(145 55% 22%);     /* #166534 (green-800) */
+-  --success-text: hsl(142 60% 60%);       /* #4ADE80 (green-400) — 5.8:1 */
++  --success-border: hsl(142 45% 72%);
++  --success-text: hsl(142 45% 72%);
+ 
+-  --warning: hsl(38 92% 50%);             /* #F59E0B (amber-500) */
++  --warning: hsl(40 65% 76%);
+   --warning-bg: hsl(28 70% 12%);          /* #3D2008 */
+-  --warning-border: hsl(30 60% 22%);      /* #713F12 (amber-800) */
+-  --warning-text: hsl(42 90% 60%);        /* #FBBF24 (amber-400) — 10.5:1 */
++  --warning-border: hsl(40 65% 76%);
++  --warning-text: hsl(40 65% 76%);
+ 
+-  --danger: hsl(0 84% 60%);               /* #EF4444 (red-500) */
++  --danger: hsl(0 55% 80%);
+   --danger-bg: hsl(0 50% 12%);            /* #330A0A */
+-  --danger-border: hsl(0 45% 25%);        /* #7F1D1D (red-800) */
+-  --danger-text: hsl(0 85% 72%);          /* #FCA5A5 (red-300) — 7.8:1 */
++  --danger-border: hsl(0 55% 80%);
++  --danger-text: hsl(0 55% 80%);
+ 
+-  --error: hsl(0 84% 60%);
+-  --error-bg: hsl(0 50% 12%);
+-  --error-border: hsl(0 45% 25%);
+-  --error-text: hsl(0 85% 72%);
++  --error: hsl(0 55% 80%);
++  --error-bg: var(--danger-bg);
++  --error-border: hsl(0 55% 80%);
++  --error-text: hsl(0 55% 80%);
+ 
+-  --info: hsl(199 89% 48%);               /* #0EA5E9 (sky-500) */
++  --info: hsl(200 60% 78%);
+   --info-bg: hsl(210 50% 10%);            /* #0C1A2E */
+-  --info-border: hsl(210 40% 22%);        /* #1E3A5F */
+-  --info-text: hsl(200 90% 70%);          /* #7DD3FC (sky-300) — 7.2:1 */
++  --info-border: hsl(200 60% 78%);
++  --info-text: hsl(200 60% 78%);
+ 
+   /* ── Refund family (refund-due / refunded identity) ── */
+-  --refund: hsl(262 83% 58%);             /* #7C3BED */
++  --refund: var(--refund-text);             /* #7C3BED */
+   --refund-bg: hsl(262 45% 14%);          /* #1F1434 */
+-  --refund-border: hsl(262 45% 24%);      /* #362259 */
++  --refund-border: var(--refund-text);      /* #362259 */
+   --refund-text: hsl(265 90% 82%);        /* #CAA8FA — 8.69:1 on --refund-bg */
+ 
+   /* ── Financial tokens (aliases) ── */
+-  --profit: hsl(142 71% 45%);
+-  --profit-bg: hsl(150 60% 10%);
+-  --profit-text: hsl(142 60% 60%);
++  --profit: hsl(142 45% 72%);
++  --profit-bg: var(--success-bg);
++  --profit-text: hsl(142 45% 72%);
+ 
+-  --loss: hsl(0 84% 60%);
+-  --loss-bg: hsl(0 50% 12%);
+-  --loss-text: hsl(0 85% 72%);
++  --loss: hsl(0 55% 80%);
++  --loss-bg: var(--danger-bg);
++  --loss-text: hsl(0 55% 80%);
+ 
+-  --neutral: hsl(216 10% 60%);            /* #9CA3AF (gray-400) */
++  --neutral: hsl(216 12% 70%);
+   --neutral-bg: hsl(215 25% 16%);         /* #283040 */
+-  --neutral-text: hsl(216 10% 80%);       /* #D1D5DB (gray-300) */
++  --neutral-text: hsl(216 12% 78%);
+ 
+   /* ── Component inputs ── */
+   --input-bg: hsl(222 18% 9%);            /* #13161C — recessed input well */
+   --input-bg-disabled: hsl(225 12% 8%);   /* #111419 */
+-  --input-border: hsl(224 12% 20%);       /* #282E3A — visible border */
+-  --input-border-hover: hsl(228 11% 28%); /* #363E50 */
+-  --input-border-focus: hsl(217 91% 62%); /* #3B82F6 */
+-  --input-border-error: hsl(0 84% 60%);   /* #EF4444 */
++  --input-border: hsl(216 12% 58%);
++  --input-border-hover: hsl(214 64% 76%);
++  --input-border-focus: hsl(214 64% 76%);
++  --input-border-error: hsl(0 55% 80%);
+ 
+   /* ── Premium dark shadows ── */
+   --shadow-xs: 0 1px 2px hsl(0 0% 0% / 0.35);
+   --shadow-sm: 0 1px 3px hsl(0 0% 0% / 0.40), 0 1px 2px hsl(0 0% 0% / 0.30);
+   --shadow-md: 0 4px 14px hsl(0 0% 0% / 0.45), 0 2px 4px hsl(0 0% 0% / 0.35);
+   --shadow-lg: 0 12px 32px hsl(0 0% 0% / 0.50), 0 4px 8px hsl(0 0% 0% / 0.40);
+-  --shadow-xl: 0 24px 56px hsl(0 0% 0% / 0.55), 0 8px 16px hsl(0 0% 0% / 0.45);
++  --shadow-xl: 0 12px 28px hsl(0 0% 0% / 0.35);
+ 
+   /* ── Depth Insets (dark mode — white top-edge light for physical lift) ── */
+   --inset-top-light: inset 0 1px 0 rgba(255,255,255,0.08);   /* cards, nav, tabs */
+@@ -130,19 +130,19 @@ html.dark {
+   --card-foreground: 216 12% 95%;
+   --popover: 220 14% 16%;
+   --popover-foreground: 216 12% 95%;
+-  --primary: 217 91% 62%;
++  --primary: 214 64% 76%;
+   --primary-foreground: 225 16% 5%;
+   --secondary: 222 16% 12%;
+-  --secondary-foreground: 216 10% 80%;
++  --secondary-foreground: 216 12% 78%;
+   --muted: 222 16% 12%;
+-  --muted-foreground: 216 10% 55%;
++  --muted-foreground: 216 12% 70%;
+   --accent: 217 44% 16%;
+-  --accent-foreground: 217 91% 62%;
+-  --destructive: 0 84% 60%;
+-  --destructive-foreground: 216 12% 95%;
+-  --border: 224 12% 20%;
+-  --input: 224 12% 20%;
+-  --ring: 217 91% 62%;
++  --accent-foreground: 214 64% 76%;
++  --destructive: 0 55% 80%;
++  --destructive-foreground: 225 16% 5%;
++  --border: 216 12% 58%;
++  --input: 216 12% 58%;
++  --ring: 214 64% 76%;
+   --radius: 0.75rem;
+ 
+   /* ── Navbar + Sidebar ── */
+@@ -167,11 +167,11 @@ html.dark {
+   --slot-both: hsl(268 76% 62%);            /* #9B4BF0 — brightened for dark */
+   --slot-both-bg: hsl(266 45% 16%);
+   --slot-both-text: hsl(265 85% 80%);       /* ≈7:1 on slot-both-bg */
+-  --slot-both-border: hsl(266 45% 26%);
++  --slot-both-border: var(--slot-both-text);
+   --slot-off: hsl(350 89% 68%);             /* #F27BA0 — brightened for dark */
+   --slot-off-bg: hsl(350 45% 15%);
+   --slot-off-text: hsl(351 85% 78%);        /* ≈7:1 on slot-off-bg */
+-  --slot-off-border: hsl(350 40% 26%);
++  --slot-off-border: var(--slot-off-text);
+   --market-accent: var(--profit);
+   --payment-paid: var(--success);
+   --payment-pending: var(--warning);
+@@ -180,16 +180,16 @@ html.dark {
+   /* ── Market duty: own vs other — WCAG AAA ── */
+   --duty-own: hsl(160 72% 62%);
+   --duty-own-bg: hsl(156 50% 14%);
+-  --duty-own-border: hsl(156 45% 26%);
++  --duty-own-border: var(--duty-own-text);
+   --duty-own-text: hsl(160 70% 68%);
+   --duty-other: hsl(215 20% 60%);
+   --duty-other-bg: hsl(215 25% 12%);
+-  --duty-other-border: hsl(215 18% 22%);
++  --duty-other-border: var(--duty-other-text);
+   --duty-other-text: hsl(215 20% 72%);
+ 
+   /* ── Market duty: completed — WCAG AAA ── */
+   --duty-completed-bg: hsl(149 35% 10%);
+-  --duty-completed-border: hsl(149 30% 20%);
++  --duty-completed-border: var(--duty-completed-text);
+   --duty-completed-text: hsl(142 55% 64%);
+   --duty-completed-icon: hsl(142 60% 58%);
+ 
+@@ -209,78 +209,78 @@ html.dark {
+   /* ── Button tokens (dark mode — WCAG AAA, Cloudflare-grade) ── */
+   /* ── Button tokens (dark mode — WCAG AAA Verified, Fintech-grade) ── */
+   /* Gradient: linear-gradient(to bottom, lighter-stop, darker-stop) */
+-  /* Every combination independently verified to exceed WCAG AAA (7.0:1+) */
++  /* Contrast results are recorded in ui-audit/results.json. */
+ 
+-  /* Primary — Cloudflare Kumo dark (brand #005AEB): white on #005AEB = 5.7:1 ✓ AA */
+-  --btn-primary-from: #2673EE;
+-  --btn-primary-to: #005AEB;
+-  --btn-primary-label: #FFFFFF;
+-  --btn-primary-border: #0051D4;
+-  --btn-primary-hover-bg: linear-gradient(to bottom, #4C83F1, #005AEB);
+-  --btn-primary-hover-border: #0051D4;
++  /* Primary — Cloudflare Kumo dark (brand #005AEB) */
++  --btn-primary-from: #A9C8E9;
++  --btn-primary-to: #A9C8E9;
++  --btn-primary-label: #101722;
++  --btn-primary-border: hsl(216 12% 58%);
++  --btn-primary-hover-bg: linear-gradient(#BDD7EF, #BDD7EF);
++  --btn-primary-hover-border: hsl(214 64% 76%);
+ 
+-  /* Secondary — dark slate: #F8FAFC on #1E293B = 13.98:1 ✓ AAA */
++  /* Secondary — dark slate */
+   --btn-secondary-from: #1E293B;
+   --btn-secondary-to: #0F172A;
+   --btn-secondary-label: #F8FAFC;
+-  --btn-secondary-border: #334155;
++  --btn-secondary-border: hsl(216 12% 58%);
+   --btn-secondary-hover-bg: linear-gradient(to bottom, #293548, #162032);
+-  --btn-secondary-hover-border: #475569;
++  --btn-secondary-hover-border: hsl(214 64% 76%);
+ 
+-  /* Ghost — transparent: #F8FAFC on dark bg = 17.06:1 ✓ AAA */
++  /* Ghost — transparent */
+   --btn-ghost-label: #F8FAFC;
+   --btn-ghost-hover-label: #FFFFFF;
+   --btn-ghost-hover-fill: rgba(255, 255, 255, 0.08);
+   --btn-ghost-active-fill: rgba(255, 255, 255, 0.14);
+ 
+-  /* Destructive — deep crimson: white on #991B1B = 8.31:1 ✓ AAA */
+-  --btn-destructive-from: #991B1B;
+-  --btn-destructive-to: #7F1D1D;
++  /* Destructive — deep crimson */
++  --btn-destructive-from: #832121;
++  --btn-destructive-to: #832121;
+   --btn-destructive-label: #FFFFFF;
+-  --btn-destructive-border: #B91C1C;
+-  --btn-destructive-hover-bg: linear-gradient(to bottom, #B91C1C, #991B1B);
++  --btn-destructive-border: hsl(216 12% 58%);
++  --btn-destructive-hover-bg: linear-gradient(#832121, #832121);
+   --btn-destructive-hover-border: #DC2626;
+ 
+-  /* Warning — deep amber: white on #92400E = 7.09:1 ✓ AAA */
+-  --btn-warning-from: #92400E;
+-  --btn-warning-to: #78350F;
++  /* Warning — deep amber */
++  --btn-warning-from: #69421A;
++  --btn-warning-to: #69421A;
+   --btn-warning-label: #FFFFFF;
+-  --btn-warning-border: #B45309;
+-  --btn-warning-hover-bg: linear-gradient(to bottom, #B45309, #92400E);
++  --btn-warning-border: hsl(216 12% 58%);
++  --btn-warning-hover-bg: linear-gradient(#69421A, #69421A);
+   --btn-warning-hover-border: #D97706;
+ 
+-  /* Success — deep emerald: white on #166534 = 7.13:1 ✓ AAA */
+-  --btn-success-from: #166534;
+-  --btn-success-to: #14532D;
++  /* Success — deep emerald */
++  --btn-success-from: #165A2E;
++  --btn-success-to: #165A2E;
+   --btn-success-label: #FFFFFF;
+-  --btn-success-border: #15803D;
+-  --btn-success-hover-bg: linear-gradient(to bottom, #15803D, #166534);
++  --btn-success-border: hsl(216 12% 58%);
++  --btn-success-hover-bg: linear-gradient(#165A2E, #165A2E);
+   --btn-success-hover-border: #22C55E;
+ 
+-  /* Icon — neutral slate: #F8FAFC on #1E293B = 13.98:1 ✓ AAA */
++  /* Icon — neutral slate */
+   --btn-icon-from: #1E293B;
+   --btn-icon-to: #0F172A;
+   --btn-icon-label: #F8FAFC;
+   --btn-icon-hover-label: #FFFFFF;
+-  --btn-icon-border: #334155;
++  --btn-icon-border: hsl(216 12% 58%);
+   --btn-icon-hover-bg: linear-gradient(to bottom, #293548, #162032);
+-  --btn-icon-hover-border: #475569;
++  --btn-icon-hover-border: hsl(214 64% 76%);
+ 
+-  /* Loading — muted slate: white on #334155 = 10.35:1 ✓ AAA */
++  /* Loading — muted slate */
+   --btn-loading-from: #334155;
+   --btn-loading-to: #1E293B;
+   --btn-loading-label: #FFFFFF;
+   --btn-loading-border: #475569;
+ 
+-  /* Premium — deep bronze-gold: white on #92400E = 7.09:1 ✓ AAA */
+-  --btn-premium-from: #92400E;
+-  --btn-premium-to: #78350F;
++  /* Premium — deep bronze-gold */
++  --btn-premium-from: #69421A;
++  --btn-premium-to: #69421A;
+   --btn-premium-label: #FFFFFF;
+-  --btn-premium-border: #B45309;
+-  --btn-premium-hover-bg: linear-gradient(to bottom, #B45309, #92400E);
++  --btn-premium-border: hsl(216 12% 58%);
++  --btn-premium-hover-bg: linear-gradient(#69421A, #69421A);
+   --btn-premium-hover-border: #D97706;
+ 
+-  /* Inverse — stark white in dark mode: #0F172A on #F8FAFC = 17.06:1 ✓ AAA */
++  /* Inverse — stark white in dark mode */
+   --btn-inverse-from: #FFFFFF;
+   --btn-inverse-to: #F8FAFC;
+   --btn-inverse-label: #0F172A;
+@@ -288,46 +288,46 @@ html.dark {
+   --btn-inverse-hover-bg: linear-gradient(to bottom, #F8FAFC, #E2E8F0);
+   --btn-inverse-hover-border: #CBD5E1;
+ 
+-  /* Glass — frosted dark slate: #F8FAFC on frosted bg = 15+:1 ✓ AAA */
+-  --btn-glass-from: rgba(30, 41, 59, 0.70);
+-  --btn-glass-to: rgba(15, 23, 42, 0.50);
++  /* Glass — frosted dark slate */
++  --btn-glass-from: #1E293B;
++  --btn-glass-to: #0F172A;
+   --btn-glass-label: #F8FAFC;
+-  --btn-glass-border: rgba(255, 255, 255, 0.16);
+-  --btn-glass-hover-bg: linear-gradient(to bottom, rgba(51, 65, 85, 0.80), rgba(30, 41, 59, 0.60));
+-  --btn-glass-hover-border: rgba(255, 255, 255, 0.28);
++  --btn-glass-border: hsl(216 12% 58%);
++  --btn-glass-hover-bg: linear-gradient(#293548, #162032);
++  --btn-glass-hover-border: hsl(214 64% 76%);
+ 
+-  /* Neutral — slate: #F8FAFC on #334155 = 9.90:1 ✓ AAA */
++  /* Neutral — slate */
+   --btn-neutral-from: #334155;
+   --btn-neutral-to: #1E293B;
+   --btn-neutral-label: #F8FAFC;
+-  --btn-neutral-border: #475569;
++  --btn-neutral-border: hsl(216 12% 58%);
+   --btn-neutral-hover-bg: linear-gradient(to bottom, #3E4F66, #28374D);
+-  --btn-neutral-hover-border: #64748B;
++  --btn-neutral-hover-border: hsl(214 64% 76%);
+ 
+-  /* Outline — transparent: #F8FAFC on dark bg = 17.06:1 ✓ AAA */
++  /* Outline — transparent */
+   --btn-outline-label: #F8FAFC;
+   --btn-outline-hover-label: #FFFFFF;
+-  --btn-outline-border: #334155;
++  --btn-outline-border: hsl(216 12% 58%);
+   --btn-outline-hover-bg: rgba(255, 255, 255, 0.06);
+-  --btn-outline-hover-border: #475569;
++  --btn-outline-hover-border: hsl(214 64% 76%);
+ 
+   /* Elevated — brand blue with physical elevation */
+-  --btn-elevated-from: #2673EE;
+-  --btn-elevated-to: #0051D4;
+-  --btn-elevated-label: #FFFFFF;
+-  --btn-elevated-border: #0048BF;
+-  --btn-elevated-hover-bg: linear-gradient(to bottom, #4C83F1, #0051D4);
+-  --btn-elevated-hover-border: #0048BF;
+-
+-  /* Brand Subtle — deep blue: #BFDBFE on #172554 = 10.34:1 ✓ AAA */
++  --btn-elevated-from: #A9C8E9;
++  --btn-elevated-to: #A9C8E9;
++  --btn-elevated-label: #101722;
++  --btn-elevated-border: hsl(216 12% 58%);
++  --btn-elevated-hover-bg: linear-gradient(#BDD7EF, #BDD7EF);
++  --btn-elevated-hover-border: hsl(214 64% 76%);
++
++  /* Brand Subtle — deep blue */
+   --btn-brand-subtle-from: #172554;
+   --btn-brand-subtle-to: #0F172A;
+   --btn-brand-subtle-label: #BFDBFE;
+-  --btn-brand-subtle-border: #1E40AF;
++  --btn-brand-subtle-border: hsl(216 12% 58%);
+   --btn-brand-subtle-hover-bg: linear-gradient(to bottom, #1E3A8A, #172554);
+-  --btn-brand-subtle-hover-border: #2563EB;
++  --btn-brand-subtle-hover-border: hsl(214 64% 76%);
+ 
+-  /* Link — fintech hyperlink: #BFDBFE on dark bg = 12.56:1 ✓ AAA */
++  /* Link — fintech hyperlink */
+   --btn-link-label: #BFDBFE;
+   --btn-link-hover-label: #93C5FD;
+ 
+@@ -349,4 +349,8 @@ html.dark {
+   --blob-1: hsla(217, 91%, 62%, 0.06);
+   --blob-2: hsla(258, 90%, 66%, 0.04);
+   --blob-3: transparent;
++  --focus: hsl(var(--ring));
++  --control-recessed-shadow: none;
++  --loss-border: hsl(0 55% 80%);
++  --profit-border: hsl(142 45% 72%);
+ }
+diff --git a/frontend/src/styles/themes/light.css b/frontend/src/styles/themes/light.css
+index 79c6301..57fe283 100644
+--- a/frontend/src/styles/themes/light.css
++++ b/frontend/src/styles/themes/light.css
+@@ -3,19 +3,19 @@ html.light {
+   color-scheme: light;
+ 
+   /* ── Brand ── */
+-  --brand: hsl(221 83% 53%);              /* #2563EB (blue-600) */
++  --brand: hsl(222 65% 35%);
+   --brand-rgb: 37, 99, 235;
+-  --brand-hover: hsl(224 76% 48%);        /* #1D4ED8 (blue-700) */
+-  --brand-active: hsl(226 71% 40%);       /* #1E40AF (blue-800) */
++  --brand-hover: hsl(222 65% 30%);
++  --brand-active: hsl(222 65% 25%);
+   --brand-subtle: hsl(214 100% 97%);      /* #EFF6FF (blue-50) */
+-  --brand-foreground: hsl(0 0% 100%);     /* #FFFFFF */
++  --brand-foreground: hsl(0 0% 100%);
+ 
+   /* ── Tint tokens (pill badges, subtle category accents) ── */
+   --tint-bg: hsl(214 100% 97%);           /* #EFF6FF — blue-50 */
+-  --tint-text: hsl(221 83% 53%);          /* #2563EB — blue-600 */
++  --tint-text: hsl(222 65% 35%);
+ 
+   /* ── Fintech accent palette ── */
+-  --accent-primary: #0052CC;              /* CTA, active indicators */
++  --accent-primary: hsl(222 65% 35%);
+   --accent-subtle: hsl(210 100% 96%);     /* #E8F0FE — tinted bg */
+ 
+   /* ── Surface hierarchy (fintech spec: page → section → card → floating) ── */
+@@ -28,79 +28,79 @@ html.light {
+   --bg-overlay: hsl(222 47% 11% / 0.65);  /* #0F172A @ 65% */
+ 
+   /* ── Borders ── */
+-  --border-default: hsl(220 11% 88%);     /* #DDE1E8 — stronger */
++  --border-default: hsl(216 10% 44%);
+   --border-muted: hsl(220 11% 91%);       /* #E4E7EC */
+-  --border-strong: hsl(216 10% 82%);      /* #C8CDD6 — stronger */
+-  --border-brand: hsl(221 83% 53%);       /* #2563EB (blue-600) */
++  --border-strong: hsl(216 10% 44%);
++  --border-brand: hsl(222 65% 35%);
+ 
+   /* ── Text hierarchy ── */
+   --text-primary: hsl(0 0% 7%);           /* #111827 — 16.1:1 on white */
+-  --text-secondary: hsl(216 10% 35%);     /* #475569 — 8.6:1 on white */
+-  --text-tertiary: hsl(216 10% 50%);      /* #707A8A — 4.8:1 decorative */
+-  --text-muted: hsl(216 10% 46%);         /* #667085 — 5.5:1 labels */
+-  --text-disabled: hsl(216 10% 82%);      /* #C8CDD6 */
+-  --text-on-brand: hsl(0 0% 100%);        /* #FFFFFF */
++  --text-secondary: hsl(216 10% 32%);
++  --text-tertiary: hsl(216 10% 36%);
++  --text-muted: hsl(216 10% 36%);
++  --text-disabled: hsl(216 10% 36%);
++  --text-on-brand: hsl(0 0% 100%);
+   --text-inverse: hsl(210 40% 98%);       /* #F8FAFC */
+ 
+   /* ── Semantic tokens ── */
+-  --success: hsl(142 76% 36%);            /* #16A34A (green-600) */
++  --success: hsl(142 60% 22%);
+   --success-bg: hsl(139 77% 97%);         /* #F0FDF4 (green-50) */
+-  --success-border: hsl(141 79% 85%);     /* #BBF7D0 (green-200) */
+-  --success-text: hsl(142 72% 29%);       /* #15803D (green-700) */
++  --success-border: hsl(142 60% 22%);
++  --success-text: hsl(142 60% 22%);
+ 
+-  --warning: hsl(38 92% 42%);             /* #D97706 (amber-600) */
++  --warning: hsl(32 65% 25%);
+   --warning-bg: hsl(48 100% 96%);         /* #FFFBEB (amber-50) */
+-  --warning-border: hsl(48 97% 77%);      /* #FDE68A (amber-200) */
+-  --warning-text: hsl(32 95% 35%);        /* #AE5F04 — 4.56:1 on --warning-bg (AA; l 37→35) */
++  --warning-border: hsl(32 65% 25%);
++  --warning-text: hsl(32 65% 25%);
+ 
+-  --danger: hsl(0 72% 51%);               /* #DC2626 (red-600) */
++  --danger: hsl(0 60% 32%);
+   --danger-bg: hsl(0 86% 97%);            /* #FEF2F2 (red-50) */
+-  --danger-border: hsl(0 96% 89%);        /* #FECACA (red-200) */
+-  --danger-text: hsl(0 74% 42%);          /* #B91C1C (red-700) */
++  --danger-border: hsl(0 60% 32%);
++  --danger-text: hsl(0 60% 32%);
+ 
+-  --error: hsl(0 72% 51%);
+-  --error-bg: hsl(0 86% 97%);
+-  --error-border: hsl(0 96% 89%);
+-  --error-text: hsl(0 74% 42%);
++  --error: hsl(0 60% 32%);
++  --error-bg: var(--danger-bg);
++  --error-border: hsl(0 60% 32%);
++  --error-text: hsl(0 60% 32%);
+ 
+-  --info: hsl(200 98% 39%);               /* #0284C7 (sky-600) */
++  --info: hsl(205 70% 28%);
+   --info-bg: hsl(204 100% 97%);           /* #F0F9FF (sky-50) */
+-  --info-border: hsl(201 94% 86%);        /* #BAE6FD (sky-200) */
+-  --info-text: hsl(201 96% 32%);          /* #0369A1 (sky-700) */
++  --info-border: hsl(205 70% 28%);
++  --info-text: hsl(205 70% 28%);
+ 
+   /* ── Refund family (refund-due / refunded identity) ── */
+   --refund: hsl(265 74% 50%);             /* #7021DE */
+   --refund-bg: hsl(264 85% 97%);          /* #F6F1FE */
+-  --refund-border: hsl(262 83% 90%);      /* #E0D0FB */
++  --refund-border: var(--refund-text);      /* #E0D0FB */
+   --refund-text: hsl(265 59% 40%);        /* #5C2AA2 — 8.2:1 on --refund-bg */
+ 
+   /* ── Financial tokens (aliases) ── */
+-  --profit: hsl(142 76% 36%);
+-  --profit-bg: hsl(139 77% 97%);
+-  --profit-text: hsl(142 72% 29%);
++  --profit: hsl(142 60% 22%);
++  --profit-bg: var(--success-bg);
++  --profit-text: hsl(142 60% 22%);
+ 
+-  --loss: hsl(0 72% 51%);
+-  --loss-bg: hsl(0 86% 97%);
+-  --loss-text: hsl(0 74% 42%);
++  --loss: hsl(0 60% 32%);
++  --loss-bg: var(--danger-bg);
++  --loss-text: hsl(0 60% 32%);
+ 
+-  --neutral: hsl(220 9% 46%);             /* #6B7280 (gray-500) */
++  --neutral: hsl(216 10% 36%);
+   --neutral-bg: hsl(220 14% 96%);         /* #F3F4F6 (gray-100) */
+-  --neutral-text: hsl(215 14% 34%);       /* #475569 (slate-600) */
++  --neutral-text: hsl(216 10% 32%);
+ 
+   /* ── Component inputs ── */
+   --input-bg: hsl(0 0% 100%);             /* #FFFFFF */
+   --input-bg-disabled: hsl(220 14% 97%);  /* #F7F8FA */
+-  --input-border: hsl(216 10% 82%);       /* #C8CDD6 — stronger */
+-  --input-border-hover: hsl(216 10% 55%); /* #8896A6 */
+-  --input-border-focus: hsl(221 83% 53%); /* #2563EB */
+-  --input-border-error: hsl(0 72% 51%);   /* #DC2626 */
++  --input-border: hsl(216 10% 44%);
++  --input-border-hover: hsl(222 65% 35%);
++  --input-border-focus: hsl(222 65% 35%);
++  --input-border-error: hsl(0 60% 32%);
+ 
+   /* ── Shadows ── */
+   --shadow-xs: 0 1px 2px hsl(0 0% 0% / 0.05);
+   --shadow-sm: 0 1px 3px hsl(0 0% 0% / 0.07), 0 1px 2px hsl(0 0% 0% / 0.04);
+   --shadow-md: 0 4px 14px hsl(0 0% 0% / 0.08), 0 2px 4px hsl(0 0% 0% / 0.05);
+   --shadow-lg: 0 12px 32px hsl(0 0% 0% / 0.10), 0 4px 8px hsl(0 0% 0% / 0.05);
+-  --shadow-xl: 0 24px 56px hsl(0 0% 0% / 0.10), 0 8px 16px hsl(0 0% 0% / 0.04);
++  --shadow-xl: 0 12px 28px hsl(222 47% 11% / 0.14);
+ 
+   /* ── Depth Insets (light mode — soft pressed feel) ── */
+   --inset-top-light: inset 0 1px 0 rgba(255,255,255,0.90);  /* card header edge */
+@@ -131,19 +131,19 @@ html.light {
+   --card-foreground: 0 0% 7%;
+   --popover: 0 0% 100%;
+   --popover-foreground: 0 0% 7%;
+-  --primary: 221 83% 53%;
++  --primary: 222 65% 35%;
+   --primary-foreground: 0 0% 100%;
+   --secondary: 220 14% 93%;
+-  --secondary-foreground: 216 10% 20%;
++  --secondary-foreground: 216 10% 30%;
+   --muted: 216 12% 93%;
+-  --muted-foreground: 216 10% 46%;
++  --muted-foreground: 216 10% 36%;
+   --accent: 210 100% 96%;
+-  --accent-foreground: 221 83% 53%;
+-  --destructive: 0 72% 51%;
++  --accent-foreground: 222 65% 35%;
++  --destructive: 0 60% 32%;
+   --destructive-foreground: 0 0% 100%;
+-  --border: 220 11% 88%;
+-  --input: 220 11% 88%;
+-  --ring: 221 83% 53%;
++  --border: 216 10% 44%;
++  --input: 216 10% 44%;
++  --ring: 222 65% 35%;
+   --radius: 0.75rem;
+ 
+   /* ── Navbar + Sidebar ── */
+@@ -169,11 +169,11 @@ html.light {
+   --slot-both: hsl(268 76% 52%);            /* #8B2FE8 */
+   --slot-both-bg: hsl(265 80% 96%);
+   --slot-both-text: hsl(265 60% 42%);       /* ≈7:1 on slot-both-bg */
+-  --slot-both-border: hsl(264 70% 88%);
++  --slot-both-border: var(--slot-both-text);
+   --slot-off: hsl(350 89% 60%);             /* #E93573 rose — "opted out" */
+   --slot-off-bg: hsl(351 95% 96%);
+-  --slot-off-text: hsl(350 65% 42%);        /* ≈6:1 on slot-off-bg */
+-  --slot-off-border: hsl(351 90% 88%);
++  --slot-off-text: hsl(350 65% 33%);
++  --slot-off-border: var(--slot-off-text);
+   --market-accent: var(--profit);
+   --payment-paid: var(--success);
+   --payment-pending: var(--warning);
+@@ -182,17 +182,17 @@ html.light {
+   /* ── Market duty: own vs other — WCAG AAA ── */
+   --duty-own: hsl(160 84% 30%);
+   --duty-own-bg: hsl(152 60% 96%);
+-  --duty-own-border: hsl(156 50% 78%);
++  --duty-own-border: var(--duty-own-text);
+   --duty-own-text: hsl(160 80% 20%);
+   --duty-other: hsl(215 25% 45%);
+   --duty-other-bg: hsl(210 20% 96%);
+-  --duty-other-border: hsl(210 16% 88%);
+-  --duty-other-text: hsl(215 25% 35%);
++  --duty-other-border: var(--duty-other-text);
++  --duty-other-text: var(--text-secondary);
+ 
+   /* ── Market duty: completed — WCAG AAA ── */
+   --duty-completed-bg: hsl(142 50% 95%);
+-  --duty-completed-border: hsl(142 45% 82%);
+-  --duty-completed-text: hsl(142 55% 25%);
++  --duty-completed-border: var(--duty-completed-text);
++  --duty-completed-text: var(--success-text);
+   --duty-completed-icon: hsl(142 60% 32%);
+ 
+   /* ── Status glass backgrounds ── */
+@@ -210,78 +210,78 @@ html.light {
+ 
+   /* ── Button tokens (light mode — WCAG AAA Verified, Fintech-grade) ── */
+   /* Gradient: linear-gradient(to bottom, lighter-stop, darker-stop) */
+-  /* Every combination independently verified to exceed WCAG AAA (7.0:1+) */
++  /* Contrast results are recorded in ui-audit/results.json. */
+ 
+-  /* Primary — Cloudflare Kumo blue: white on #056DFF = 4.5:1 ✓ AA */
+-  --btn-primary-from: #3C86FF;
+-  --btn-primary-to: #056DFF;
++  /* Primary — Cloudflare Kumo blue */
++  --btn-primary-from: #1F4593;
++  --btn-primary-to: #1F4593;
+   --btn-primary-label: #FFFFFF;
+-  --btn-primary-border: #045EDE;
+-  --btn-primary-hover-bg: linear-gradient(to bottom, #619EFF, #056DFF);
+-  --btn-primary-hover-border: #045EDE;
++  --btn-primary-border: hsl(216 10% 44%);
++  --btn-primary-hover-bg: linear-gradient(#193A7C, #193A7C);
++  --btn-primary-hover-border: hsl(222 65% 35%);
+ 
+-  /* Secondary — slate card: #0F172A on #F8FAFC = 17.06:1 ✓ AAA */
++  /* Secondary — slate card */
+   --btn-secondary-from: #FFFFFF;
+   --btn-secondary-to: #F8FAFC;
+   --btn-secondary-label: #0F172A;
+-  --btn-secondary-border: #CBD5E1;
++  --btn-secondary-border: hsl(216 10% 44%);
+   --btn-secondary-hover-bg: linear-gradient(to bottom, #F8FAFC, #F1F5F9);
+-  --btn-secondary-hover-border: #94A3B8;
++  --btn-secondary-hover-border: hsl(222 65% 35%);
+ 
+-  /* Ghost — transparent: #0F172A on bg = 17.85:1 ✓ AAA */
++  /* Ghost — transparent */
+   --btn-ghost-label: #0F172A;
+   --btn-ghost-hover-label: #020617;
+   --btn-ghost-hover-fill: rgba(15, 23, 42, 0.06);
+   --btn-ghost-active-fill: rgba(15, 23, 42, 0.12);
+ 
+-  /* Destructive — deep crimson: white on #991B1B = 8.31:1 ✓ AAA */
+-  --btn-destructive-from: #991B1B;
+-  --btn-destructive-to: #7F1D1D;
++  /* Destructive — deep crimson */
++  --btn-destructive-from: #832121;
++  --btn-destructive-to: #832121;
+   --btn-destructive-label: #FFFFFF;
+-  --btn-destructive-border: #7F1D1D;
+-  --btn-destructive-hover-bg: linear-gradient(to bottom, #B91C1C, #991B1B);
++  --btn-destructive-border: #832121;
++  --btn-destructive-hover-bg: linear-gradient(#832121, #832121);
+   --btn-destructive-hover-border: #991B1B;
+ 
+-  /* Warning — deep amber: white on #92400E = 7.09:1 ✓ AAA */
+-  --btn-warning-from: #92400E;
+-  --btn-warning-to: #78350F;
++  /* Warning — deep amber */
++  --btn-warning-from: #69421A;
++  --btn-warning-to: #69421A;
+   --btn-warning-label: #FFFFFF;
+-  --btn-warning-border: #78350F;
+-  --btn-warning-hover-bg: linear-gradient(to bottom, #B45309, #92400E);
++  --btn-warning-border: #69421A;
++  --btn-warning-hover-bg: linear-gradient(#69421A, #69421A);
+   --btn-warning-hover-border: #92400E;
+ 
+-  /* Success — deep emerald: white on #166534 = 7.13:1 ✓ AAA */
+-  --btn-success-from: #166534;
+-  --btn-success-to: #14532D;
++  /* Success — deep emerald */
++  --btn-success-from: #165A2E;
++  --btn-success-to: #165A2E;
+   --btn-success-label: #FFFFFF;
+-  --btn-success-border: #14532D;
+-  --btn-success-hover-bg: linear-gradient(to bottom, #15803D, #166534);
++  --btn-success-border: #165A2E;
++  --btn-success-hover-bg: linear-gradient(#165A2E, #165A2E);
+   --btn-success-hover-border: #166534;
+ 
+-  /* Icon — neutral slate: #0F172A on #F8FAFC = 17.06:1 ✓ AAA */
++  /* Icon — neutral slate */
+   --btn-icon-from: #FFFFFF;
+   --btn-icon-to: #F8FAFC;
+   --btn-icon-label: #0F172A;
+   --btn-icon-hover-label: #020617;
+-  --btn-icon-border: #CBD5E1;
++  --btn-icon-border: hsl(216 10% 44%);
+   --btn-icon-hover-bg: linear-gradient(to bottom, #F8FAFC, #F1F5F9);
+-  --btn-icon-hover-border: #94A3B8;
++  --btn-icon-hover-border: hsl(222 65% 35%);
+ 
+-  /* Loading — muted slate: white on #334155 = 10.35:1 ✓ AAA */
++  /* Loading — muted slate */
+   --btn-loading-from: #334155;
+   --btn-loading-to: #1E293B;
+   --btn-loading-label: #FFFFFF;
+   --btn-loading-border: #1E293B;
+ 
+-  /* Premium — deep bronze-gold: white on #92400E = 7.09:1 ✓ AAA */
+-  --btn-premium-from: #92400E;
+-  --btn-premium-to: #78350F;
++  /* Premium — deep bronze-gold */
++  --btn-premium-from: #69421A;
++  --btn-premium-to: #69421A;
+   --btn-premium-label: #FFFFFF;
+-  --btn-premium-border: #78350F;
+-  --btn-premium-hover-bg: linear-gradient(to bottom, #B45309, #92400E);
++  --btn-premium-border: #69421A;
++  --btn-premium-hover-bg: linear-gradient(#69421A, #69421A);
+   --btn-premium-hover-border: #92400E;
+ 
+-  /* Inverse — dark on light contexts: white on #0F172A = 17.85:1 ✓ AAA */
++  /* Inverse — dark on light contexts */
+   --btn-inverse-from: #0F172A;
+   --btn-inverse-to: #020617;
+   --btn-inverse-label: #FFFFFF;
+@@ -289,46 +289,46 @@ html.light {
+   --btn-inverse-hover-bg: linear-gradient(to bottom, #1E293B, #0F172A);
+   --btn-inverse-hover-border: #1E293B;
+ 
+-  /* Glass — frosted white: #0F172A on frosted bg = 15+:1 ✓ AAA */
+-  --btn-glass-from: rgba(255, 255, 255, 0.85);
+-  --btn-glass-to: rgba(255, 255, 255, 0.65);
++  /* Glass — frosted white */
++  --btn-glass-from: #F8FAFC;
++  --btn-glass-to: #F1F5F9;
+   --btn-glass-label: #0F172A;
+-  --btn-glass-border: rgba(15, 23, 42, 0.12);
+-  --btn-glass-hover-bg: linear-gradient(to bottom, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.80));
+-  --btn-glass-hover-border: rgba(15, 23, 42, 0.20);
++  --btn-glass-border: hsl(216 10% 44%);
++  --btn-glass-hover-bg: linear-gradient(#F1F5F9, #E2E8F0);
++  --btn-glass-hover-border: hsl(222 65% 35%);
+ 
+-  /* Neutral — slate: #0F172A on #E2E8F0 = 14.48:1 ✓ AAA */
++  /* Neutral — slate */
+   --btn-neutral-from: #F1F5F9;
+   --btn-neutral-to: #E2E8F0;
+   --btn-neutral-label: #0F172A;
+-  --btn-neutral-border: #CBD5E1;
++  --btn-neutral-border: hsl(216 10% 44%);
+   --btn-neutral-hover-bg: linear-gradient(to bottom, #E2E8F0, #CBD5E1);
+-  --btn-neutral-hover-border: #94A3B8;
++  --btn-neutral-hover-border: hsl(222 65% 35%);
+ 
+-  /* Outline — transparent: #0F172A on bg = 17.85:1 ✓ AAA */
++  /* Outline — transparent */
+   --btn-outline-label: #0F172A;
+   --btn-outline-hover-label: #020617;
+-  --btn-outline-border: #CBD5E1;
++  --btn-outline-border: hsl(216 10% 44%);
+   --btn-outline-hover-bg: rgba(15, 23, 42, 0.04);
+-  --btn-outline-hover-border: #94A3B8;
++  --btn-outline-hover-border: hsl(222 65% 35%);
+ 
+   /* Elevated — brand blue, one step deeper than primary: white on #045EDE = 4.9:1 ✓ AA (large/bold label) */
+-  --btn-elevated-from: #3C86FF;
+-  --btn-elevated-to: #045EDE;
++  --btn-elevated-from: #1F4593;
++  --btn-elevated-to: #1F4593;
+   --btn-elevated-label: #FFFFFF;
+-  --btn-elevated-border: #0355C8;
+-  --btn-elevated-hover-bg: linear-gradient(to bottom, #619EFF, #045EDE);
+-  --btn-elevated-hover-border: #0355C8;
++  --btn-elevated-border: hsl(216 10% 44%);
++  --btn-elevated-hover-bg: linear-gradient(#193A7C, #193A7C);
++  --btn-elevated-hover-border: hsl(222 65% 35%);
+ 
+-  /* Brand Subtle — light blue: #1E40AF on #DBEAFE = 7.15:1 ✓ AAA */
++  /* Brand Subtle — light blue */
+   --btn-brand-subtle-from: #EFF6FF;
+   --btn-brand-subtle-to: #DBEAFE;
+-  --btn-brand-subtle-label: #1E40AF;
+-  --btn-brand-subtle-border: #BFDBFE;
++  --btn-brand-subtle-label: #18336E;
++  --btn-brand-subtle-border: hsl(216 10% 44%);
+   --btn-brand-subtle-hover-bg: linear-gradient(to bottom, #DBEAFE, #BFDBFE);
+-  --btn-brand-subtle-hover-border: #93C5FD;
++  --btn-brand-subtle-hover-border: hsl(222 65% 35%);
+ 
+-  /* Link — fintech hyperlink: #1E40AF on white = 8.72:1 ✓ AAA */
++  /* Link — fintech hyperlink */
+   --btn-link-label: #1E40AF;
+   --btn-link-hover-label: #1D4ED8;
+ 
+@@ -350,4 +350,8 @@ html.light {
+   --blob-1: hsla(221, 83%, 53%, 0.12);
+   --blob-2: hsla(271, 76%, 53%, 0.08);
+   --blob-3: transparent;
++  --focus: hsl(var(--ring));
++  --control-recessed-shadow: none;
++  --loss-border: hsl(0 60% 32%);
++  --profit-border: hsl(142 60% 22%);
+ }
+diff --git a/frontend/src/styles/variables.css b/frontend/src/styles/variables.css
+index 23397b1..d49c08f 100644
+--- a/frontend/src/styles/variables.css
++++ b/frontend/src/styles/variables.css
+@@ -29,7 +29,7 @@
+   --radius-md: 8px;
+   --radius-lg: 12px;
+   --radius-xl: 16px;
+-  --radius-2xl: 20px;
++  --radius-2xl: 16px;
+   --radius-full: 9999px;
+ 
+   /* === ELEVATION / SHADOW === */
+@@ -116,10 +116,10 @@
+   --tracking-wider: 0.05em;
+ 
+   /* === BUTTON RADII (scales with size) === */
+-  --btn-radius-sm: 8px;
+-  --btn-radius-md: 10px;
+-  --btn-radius-lg: 12px;
+-  --btn-radius-xl: 14px;
++  --btn-radius-sm: var(--radius-md);
++  --btn-radius-md: var(--radius-md);
++  --btn-radius-lg: var(--radius-md);
++  --btn-radius-xl: var(--radius-md);
+ 
+   /* === BUTTON SHADOWS (fintech tactile elevation) === */
+   --btn-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+@@ -157,4 +157,18 @@
+   --sidebar-width-collapsed: 64px;
+   --navbar-height: 60px;
+   --content-max-width: 1280px;
++  --control-height-sm: 32px;
++  --control-height-md: 40px;
++  --control-height-lg: 48px;
++  --control-padding: 12px;
++  --control-font-size: 1rem;
++  --control-border-width: 1px;
++  --focus-width: 2px;
++  --focus-offset: 2px;
++  --modal-width-sm: 400px;
++  --modal-width-md: 560px;
++  --modal-width-lg: 720px;
++  --modal-padding: 24px;
++  --field-gap: 16px;
++  --section-gap: 24px;
+ }
+diff --git a/frontend/tailwind.config.js b/frontend/tailwind.config.js
+index 7c716f8..5cc8853 100644
+--- a/frontend/tailwind.config.js
++++ b/frontend/tailwind.config.js
+@@ -7,6 +7,11 @@ export default {
+   darkMode: 'class',
+   theme: {
+     extend: {
++      transitionProperty: {
++        DEFAULT: 'opacity, transform',
++        all: 'opacity, transform',
++        shadow: 'opacity, transform',
++      },
+       colors: {
+         border: "hsl(var(--border))",
+         input: "hsl(var(--input))",
+@@ -196,6 +201,7 @@ export default {
+         lg: "var(--radius-lg)",
+         xl: "var(--radius-xl)",
+         '2xl': "var(--radius-2xl)",
++        '3xl': "var(--radius-xl)",
+         md: "var(--radius-md)",
+         sm: "var(--radius-sm)",
+         xs: "var(--radius-xs)",
+@@ -466,8 +472,8 @@ export default {
+         color: 'var(--btn-glass-label)',
+         border: '1px solid var(--btn-glass-border)',
+         boxShadow: 'var(--btn-shadow)',
+-        backdropFilter: 'blur(12px)',
+-        WebkitBackdropFilter: 'blur(12px)',
++        backdropFilter: 'none',
++        WebkitBackdropFilter: 'none',
+       };
+       btnBase['.btn-glass']['&::before'] = {
+         content: '""',
+diff --git a/frontend/tests/unit/userEditModal.test.jsx b/frontend/tests/unit/userEditModal.test.jsx
+index 8f6b53f..8d3acc5 100644
+--- a/frontend/tests/unit/userEditModal.test.jsx
++++ b/frontend/tests/unit/userEditModal.test.jsx
+@@ -79,7 +79,7 @@ describe('UserEditModal — layout contract', () => {
+ 
+   it('uses the wide desktop dialog instead of the old 576px cap', async () => {
+     await renderModal();
+-    expect(screen.getByRole('dialog').className).toContain('max-w-2xl');
++    expect(screen.getByRole('dialog').style.getPropertyValue('--modal-width')).toBe('var(--modal-width-lg)');
+   });
+ 
+   it('drops the fixed sidebar and uses single-column→2-column field grids', async () => {
+diff --git a/frontend/src/core/theme/themeStore.js b/frontend/src/core/theme/themeStore.js
+new file mode 100644
+index 0000000..7d3072e
+--- /dev/null
++++ b/frontend/src/core/theme/themeStore.js
+@@ -0,0 +1,72 @@
++const STORAGE_KEY = 'um-theme';
++const THEMES = Object.freeze({ LIGHT: 'light', DARK: 'dark' });
++const listeners = new Set();
++let releaseFrame;
++let paintFrame;
++let explicitPreference = false;
++
++const validTheme = (value) => value === 'light' || value === 'dark';
++const systemTheme = () => window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
++
++export const getTheme = () => typeof document === 'undefined' ? 'light'
++    : document.documentElement.classList.contains('dark') ? 'dark' : 'light';
++
++export function subscribeTheme(listener) {
++    listeners.add(listener);
++    return () => listeners.delete(listener);
++}
++
++function applyTheme(theme) {
++    const root = document.documentElement;
++    cancelAnimationFrame(paintFrame);
++    cancelAnimationFrame(releaseFrame);
++    root.classList.add('no-transitions');
++    root.classList.toggle('dark', theme === 'dark');
++    root.classList.toggle('light', theme === 'light');
++    root.dataset.theme = theme;
++    root.style.colorScheme = theme;
++    listeners.forEach(listener => listener());
++    // Suppress through the first painted frame without a synchronous layout read.
++    paintFrame = requestAnimationFrame(() => {
++        releaseFrame = requestAnimationFrame(() => root.classList.remove('no-transitions'));
++    });
++}
++
++function setTheme(theme) {
++    if (!validTheme(theme)) return;
++    explicitPreference = true;
++    if (getTheme() !== theme) applyTheme(theme);
++    try { localStorage.setItem(STORAGE_KEY, theme); } catch { /* Storage may be blocked. */ }
++}
++
++export const themeActions = Object.freeze({
++    THEMES,
++    setTheme,
++    toggleTheme: () => setTheme(getTheme() === 'dark' ? 'light' : 'dark'),
++    resetTheme: () => {
++        explicitPreference = false;
++        try { localStorage.removeItem(STORAGE_KEY); } catch { /* Storage may be blocked. */ }
++        applyTheme(systemTheme());
++    },
++});
++
++export function startThemeSync() {
++    let stored;
++    try { stored = localStorage.getItem(STORAGE_KEY); } catch { /* Storage may be blocked. */ }
++    explicitPreference = validTheme(stored);
++    const initial = explicitPreference ? stored : systemTheme();
++    if (getTheme() !== initial) applyTheme(initial);
++    const media = window.matchMedia('(prefers-color-scheme: dark)');
++    const onSystem = () => { if (!explicitPreference) applyTheme(systemTheme()); };
++    const onStorage = (event) => {
++        if (event.key !== STORAGE_KEY && event.key !== null) return;
++        explicitPreference = validTheme(event.newValue);
++        applyTheme(explicitPreference ? event.newValue : systemTheme());
++    };
++    media.addEventListener('change', onSystem);
++    window.addEventListener('storage', onStorage);
++    return () => {
++        media.removeEventListener('change', onSystem);
++        window.removeEventListener('storage', onStorage);
++    };
++}
+diff --git a/frontend/src/shared/components/ui/Form/Form.jsx b/frontend/src/shared/components/ui/Form/Form.jsx
+new file mode 100644
+index 0000000..8fd8707
+--- /dev/null
++++ b/frontend/src/shared/components/ui/Form/Form.jsx
+@@ -0,0 +1,91 @@
++import { forwardRef, useId, useRef, useEffect, useCallback } from 'react';
++
++const Form = forwardRef(({ children, className, onBlurCapture, onChangeCapture, onInvalidCapture, ...props }, forwardedRef) => {
++    const formRef = useRef(null);
++    const feedback = useRef(new Map());
++    const formId = useId();
++    const nextFieldId = useRef(0);
++    const nextFeedbackId = useRef(0);
++    const setRef = useCallback(node => {
++        formRef.current = node;
++        if (typeof forwardedRef === 'function') forwardedRef(node);
++        else if (forwardedRef) forwardedRef.current = node;
++    }, [forwardedRef]);
++
++    const validate = (field) => {
++        if (!field.matches?.('input, select, textarea') || field.disabled || field.readOnly || !field.willValidate) return;
++        let entry = feedback.current.get(field);
++        // Existing domain errors remain owned by the field's component.
++        if (!entry && field.getAttribute('aria-invalid') === 'true') return;
++        if (!entry) {
++            const message = document.createElement('p');
++            message.id = `${formId}-feedback-${nextFeedbackId.current++}`;
++            message.className = 'form-field-error';
++            message.setAttribute('aria-live', 'polite');
++            entry = { message, describedBy: field.getAttribute('aria-describedby'), invalid: field.getAttribute('aria-invalid') };
++            feedback.current.set(field, entry);
++            const anchor = field.closest('label') || (field.parentElement.classList.contains('relative') ? field.parentElement : field);
++            anchor.insertAdjacentElement('afterend', message);
++        }
++        const invalid = !field.validity.valid;
++        entry.message.textContent = invalid ? field.validationMessage : '';
++        entry.message.hidden = !invalid;
++        field.setAttribute('aria-invalid', String(invalid));
++        const ids = [entry.describedBy, invalid ? entry.message.id : null].filter(Boolean).join(' ');
++        if (ids) field.setAttribute('aria-describedby', ids);
++        else field.removeAttribute('aria-describedby');
++    };
++
++    useEffect(() => {
++        const form = formRef.current;
++        const linkLabels = () => {
++            feedback.current.forEach((entry, field) => {
++                if (!form.contains(field)) { entry.message.remove(); feedback.current.delete(field); }
++            });
++            form.querySelectorAll('label:not([for])').forEach(label => {
++                const selector = 'input:not([type="hidden"]), select, textarea, button[aria-haspopup="listbox"]';
++                const sibling = label.nextElementSibling;
++                const field = label.querySelector(selector)
++                    || (sibling?.matches(selector) ? sibling : sibling?.querySelector(selector))
++                    || label.parentElement.querySelector(selector);
++                if (!field) return;
++                if (!field.id) field.id = `${formId}-field-${nextFieldId.current++}`;
++                label.htmlFor = field.id;
++            });
++        };
++        linkLabels();
++        const observer = new MutationObserver(linkLabels);
++        observer.observe(form, { childList: true, subtree: true });
++        const entries = feedback.current;
++        return () => {
++            observer.disconnect();
++            entries.forEach(({ message, describedBy, invalid }, field) => {
++                message.remove();
++                if (describedBy === null) field.removeAttribute('aria-describedby');
++                else field.setAttribute('aria-describedby', describedBy);
++                if (invalid === null) field.removeAttribute('aria-invalid');
++                else field.setAttribute('aria-invalid', invalid);
++            });
++            entries.clear();
++        };
++    }, [formId]);
++
++    return (
++        <form
++            {...props}
++            className={['ui-form', className].filter(Boolean).join(' ')}
++            ref={setRef}
++            onBlurCapture={event => { onBlurCapture?.(event); if (!event.defaultPrevented) validate(event.target); }}
++            onChangeCapture={event => {
++                onChangeCapture?.(event);
++                if (!event.defaultPrevented && feedback.current.has(event.target)) validate(event.target);
++            }}
++            onInvalidCapture={event => { onInvalidCapture?.(event); if (!event.defaultPrevented) validate(event.target); }}
++        >
++            {children}
++        </form>
++    );
++});
++
++Form.displayName = 'Form';
++export default Form;
+diff --git a/frontend/src/shared/components/ui/ThemeToggle/ThemeToggle.jsx b/frontend/src/shared/components/ui/ThemeToggle/ThemeToggle.jsx
+new file mode 100644
+index 0000000..655744e
+--- /dev/null
++++ b/frontend/src/shared/components/ui/ThemeToggle/ThemeToggle.jsx
+@@ -0,0 +1,21 @@
++import { Sun, Moon } from 'lucide-react';
++import { useTheme } from '@/app/providers/ThemeProvider';
++import Button from '../Button/Button';
++
++const ThemeToggle = () => {
++    const { isDark, toggleTheme } = useTheme();
++    return (
++        <Button
++            variant="ghost"
++            iconOnly
++            onClick={toggleTheme}
++            aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
++            aria-pressed={isDark}
++            className="h-11 w-11"
++        >
++            {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
++        </Button>
++    );
++};
++
++export default ThemeToggle;
+diff --git a/frontend/src/styles/controls.css b/frontend/src/styles/controls.css
+new file mode 100644
+index 0000000..419e48b
+--- /dev/null
++++ b/frontend/src/styles/controls.css
+@@ -0,0 +1,145 @@
++:root :is(input, select, textarea):where(:not([type="hidden"]):not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="submit"]):not([type="button"]):not([type="reset"])), 
++:root :is(.ui-control, .record-field, button[aria-haspopup="listbox"]) {
++  box-sizing: border-box;
++  width: 100%;
++  min-width: 0;
++  min-height: var(--field-height, var(--control-height-md));
++  border: var(--control-border-width) solid var(--input-border);
++  border-radius: var(--radius-md);
++  background-color: var(--input-bg);
++  color: var(--text-primary);
++  font-family: var(--font-body, var(--font-sans));
++  font-size: var(--control-font-size);
++  font-weight: var(--weight-regular);
++  line-height: 1.5;
++  padding-block: var(--space-2);
++  box-shadow: none;
++  caret-color: var(--brand);
++  transition-property: opacity, transform;
++  transition-duration: var(--duration-fast);
++}
++
++:root .ui-control { padding-inline: var(--control-padding); }
++:root .ui-control[data-leading="true"] { padding-inline-start: 40px; }
++:root .ui-control[data-trailing="true"] { padding-inline-end: 48px; }
++:root [data-control-size="sm"] { --field-height: var(--control-height-sm); height: var(--control-height-sm); min-height: var(--control-height-sm); padding-block: var(--space-1); }
++:root [data-control-size="md"] { height: var(--control-height-md); }
++:root [data-control-size="lg"] { --field-height: var(--control-height-lg); height: var(--control-height-lg); }
++:root textarea { min-height: 96px; resize: vertical; }
++:root :is(input, textarea)::placeholder { color: var(--text-muted); opacity: 1; }
++:root :is(input, select, textarea, .ui-control, .record-field):hover:where(:not(:disabled):not([readonly])) { border-color: var(--input-border-hover); }
++:root :is(input, select, textarea, button, [tabindex]):focus-visible {
++  outline: var(--focus-width) solid var(--focus);
++  outline-offset: var(--focus-offset);
++}
++:root :is(input, select, textarea, .ui-control, .record-field):focus-visible { border-color: var(--focus); box-shadow: none; }
++:root :is(input, select, textarea, .ui-control, .record-field):disabled:where(:not([type="checkbox"]):not([type="radio"])) {
++  background-color: var(--input-bg-disabled);
++  color: var(--text-disabled);
++  cursor: not-allowed;
++  opacity: 1;
++}
++:root :is(input, textarea)[readonly] { background-color: var(--bg-subtle); color: var(--text-secondary); opacity: 1; }
++:root :is(input, select, textarea, .ui-control, .record-field)[aria-invalid="true"] { border-color: var(--danger-text); }
++:root :is(input, select, textarea, .ui-control, .record-field)[aria-invalid="true"]:focus-visible { border-color: var(--danger-text); outline-color: var(--danger-text); }
++:root :is(input, select, textarea, .ui-control, .record-field)[data-state="success"] { border-color: var(--success-text); }
++:root [data-state="success"]:focus-visible { outline-color: var(--success-text); }
++:root :is(input[type="checkbox"], input[type="radio"]) {
++  accent-color: var(--brand);
++  width: 20px;
++  height: 20px;
++  flex-shrink: 0;
++}
++:root label:has(> :is(input[type="checkbox"], input[type="radio"])),
++:root :is(input[type="checkbox"], input[type="radio"]) + label { display: inline-flex; min-height: 44px; align-items: center; }
++:root [role="switch"] {
++  position: relative;
++  width: 44px;
++  height: 44px;
++  min-height: 44px;
++  border: 0;
++  border-radius: var(--radius-md);
++  background: transparent;
++  flex-shrink: 0;
++}
++:root [role="switch"]::before {
++  content: '';
++  position: absolute;
++  inset: 10px 0;
++  border: 1px solid var(--input-border);
++  border-radius: var(--radius-lg);
++  background: var(--input-bg);
++}
++:root [role="switch"][aria-checked="true"]::before { background: var(--brand); border-color: var(--brand); }
++:root [role="switch"] > span {
++  position: absolute;
++  left: 3px;
++  top: 13px;
++  width: 18px;
++  height: 18px;
++  border-radius: 50%;
++  background: var(--text-secondary);
++  box-shadow: none;
++  transform: translateX(0);
++  transition: transform var(--duration-fast) var(--ease-out);
++}
++:root [role="switch"][aria-checked="true"] > span { background: var(--text-on-brand); transform: translateX(20px); }
++:root [role="switch"]:disabled { cursor: not-allowed; opacity: 0.6; }
++:root .btn { border-radius: var(--radius-md); transition-property: opacity, transform; }
++:root button[aria-haspopup="listbox"]:disabled { cursor: not-allowed; }
++:root form { min-width: 0; }
++:root form.ui-form { display: flex; flex-direction: column; gap: var(--field-gap); }
++:root form.ui-form[class] > :not([hidden]) ~ :not([hidden]) { margin-block: 0; }
++:root .grid:has(form) > * { min-width: 0; }
++:root form > :is(.grid, .flex) > * { min-width: 0; }
++:root form :is(label, legend) { color: var(--text-secondary); font-weight: var(--weight-medium); }
++:root form label:has(+ :is(input, select, textarea)) { display: block; margin-bottom: var(--space-2); }
++:root .record-form { gap: var(--field-gap); }
++.form-field-error { margin-top: var(--space-2); font-size: 0.875rem; line-height: 1.5; color: var(--danger-text); }
++:root .record-form-pair { gap: var(--field-gap); grid-template-columns: minmax(0, 1fr); }
++
++.ui-modal { overflow: hidden; max-width: var(--modal-width); border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); }
++.ui-modal > [data-modal-header],
++.ui-modal > [data-modal-body],
++.ui-modal > [data-modal-footer] { padding: var(--modal-padding); }
++.ui-modal > [data-modal-header],
++.ui-modal > [data-modal-footer] { flex-shrink: 0; background: var(--surface-elevated); }
++.ui-modal > [data-modal-body] { min-height: 0; overscroll-behavior: contain; overflow-y: auto; }
++.ui-modal > [data-modal-footer] { flex-wrap: wrap; gap: var(--space-3); padding-bottom: max(var(--modal-padding), env(safe-area-inset-bottom)); }
++.ui-modal form { display: flex; flex-direction: column; gap: var(--field-gap); }
++.ui-modal form > :where(*) { margin-block: 0; }
++.ui-modal h2 { overflow-wrap: anywhere; }
++
++@media (min-width: 768px) {
++  :root .record-form-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); }
++}
++
++@media (max-width: 767px) {
++  :root { --modal-padding: 16px; --control-height-sm: 44px; --control-height-md: 44px; }
++  :root :is(input, select, textarea, .ui-control, .record-field, .btn, button[aria-haspopup="listbox"]):where(:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"])) {
++    min-height: 44px;
++  }
++  :root :is(input, select, textarea, .ui-control, .record-field) { font-size: 16px; }
++  :root .btn { white-space: normal; height: auto; padding-block: var(--space-2); }
++  :root form .grid { grid-template-columns: minmax(0, 1fr); }
++  .ui-modal > [data-modal-footer] > * { flex: 1 1 0%; min-width: 0; }
++}
++
++:root.no-transitions,
++:root.no-transitions *,
++:root.no-transitions *::before,
++:root.no-transitions *::after { transition-duration: 0s; transition-delay: 0s; }
++
++@media (prefers-reduced-motion: reduce) {
++  :root .ui-modal, :root .ui-modal * { transition: none; animation: none; }
++}
++
++:root span:has(> input[type="checkbox"]):focus-within { outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); }
++
++.ui-modal-frame { padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
++.ui-modal.modal-enter { animation: modal-appear 160ms var(--ease-out); }
++@keyframes modal-appear { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
++@media (prefers-reduced-motion: reduce) { :root .ui-modal.modal-enter { animation: none; } }
++
++.form-surface { padding: var(--modal-padding); border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-elevated); box-shadow: var(--shadow-sm); }
++.form-ambient { background: radial-gradient(ellipse, hsl(var(--primary) / 0.12), transparent 70%); }
+diff --git a/frontend/tests/unit/themeControls.test.jsx b/frontend/tests/unit/themeControls.test.jsx
+new file mode 100644
+index 0000000..d2e5493
+--- /dev/null
++++ b/frontend/tests/unit/themeControls.test.jsx
+@@ -0,0 +1,123 @@
++import { describe, it, expect, vi, afterEach } from 'vitest';
++import { render, screen, fireEvent, waitFor } from '@testing-library/react';
++import ThemeProvider from '@/app/providers/ThemeProvider';
++import ThemeToggle from '@/shared/components/ui/ThemeToggle/ThemeToggle';
++import Form from '@/shared/components/ui/Form/Form';
++import Input from '@/shared/components/ui/Input/Input';
++import Modal from '@/shared/components/ui/Modal/Modal';
++import IconSelect from '@/shared/components/ui/IconSelect/IconSelect';
++import { themeActions } from '@/core/theme/themeStore';
++
++afterEach(() => {
++    localStorage.clear();
++    document.documentElement.className = 'light';
++    document.documentElement.dataset.theme = 'light';
++    vi.restoreAllMocks();
++});
++
++describe('theme switching', () => {
++    it('updates only subscribers, persists rapid toggles, and releases suppression', async () => {
++        let renders = 0;
++        function Content() { renders++; return <p>Stable content</p>; }
++        render(<ThemeProvider><ThemeToggle /><Content /></ThemeProvider>);
++        const before = renders;
++        for (let i = 0; i < 10; i++) fireEvent.click(screen.getByRole('button'));
++        expect(renders).toBe(before);
++        expect(document.documentElement.dataset.theme).toBe('light');
++        expect(localStorage.getItem('um-theme')).toBe('light');
++        await waitFor(() => expect(document.documentElement).not.toHaveClass('no-transitions'));
++    });
++
++    it('syncs valid preferences and storage.clear across tabs', () => {
++        render(<ThemeProvider><ThemeToggle /></ThemeProvider>);
++        fireEvent(window, new StorageEvent('storage', { key: 'um-theme', newValue: 'dark' }));
++        expect(screen.getByRole('button')).toHaveAttribute('aria-pressed', 'true');
++        fireEvent(window, new StorageEvent('storage', { key: null }));
++        expect(document.documentElement.style.colorScheme).toBe('light');
++    });
++
++    it('keeps switching when persistence is unavailable', () => {
++        vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
++        expect(() => themeActions.setTheme('dark')).not.toThrow();
++        expect(document.documentElement).toHaveClass('dark');
++    });
++});
++
++describe('form accessibility', () => {
++    it('shows native constraint errors on blur and clears them on change', () => {
++        render(<Form><label>Email<input type="email" required /></label></Form>);
++        const field = screen.getByRole('textbox', { name: 'Email' });
++        expect(field).not.toHaveAttribute('aria-invalid');
++        fireEvent.blur(field);
++        expect(field).toHaveAttribute('aria-invalid', 'true');
++        const feedbackId = field.getAttribute('aria-describedby');
++        expect(document.getElementById(feedbackId)).toBeVisible();
++        fireEvent.change(field, { target: { value: 'member@example.com' } });
++        expect(field).toHaveAttribute('aria-invalid', 'false');
++        expect(document.getElementById(feedbackId)).not.toBeVisible();
++    });
++
++    it('keeps generated field IDs and described messages stable on rerender', () => {
++        const { rerender } = render(<Input label="Amount" error="Required" aria-describedby="details" />);
++        const field = screen.getByRole('textbox');
++        const id = field.id;
++        expect(field).toHaveAttribute('aria-describedby', `details ${id}-error`);
++        rerender(<Input label="Amount" success="Saved" aria-describedby="details" />);
++        expect(field.id).toBe(id);
++        expect(field).toHaveAttribute('aria-describedby', `details ${id}-success`);
++    });
++
++    it('links dynamically added labels with unique field IDs', async () => {
++        const { rerender } = render(<Form><div><label>First</label><input /></div></Form>);
++        const firstId = screen.getByRole('textbox', { name: 'First' }).id;
++        rerender(<Form><div><label>First</label><input /></div><div><label>Second</label><input /></div></Form>);
++        await waitFor(() => expect(screen.getByRole('textbox', { name: 'Second' }).id).not.toBe(firstId));
++    });
++});
++
++describe('dialog focus', () => {
++    it('autofocuses the first enabled field and traps Tab around enabled controls', async () => {
++        render(<Modal isOpen title="Edit" onClose={vi.fn()} footer={<button>Save</button>}>
++            <input disabled aria-label="Disabled" /><input aria-label="Name" />
++        </Modal>);
++        const name = screen.getByRole('textbox', { name: 'Name' });
++        await waitFor(() => expect(name).toHaveFocus());
++        screen.getByRole('button', { name: 'Save' }).focus();
++        fireEvent.keyDown(document, { key: 'Tab' });
++        expect(screen.getByRole('button', { name: 'Close dialog' })).toHaveFocus();
++    });
++
++    it('preserves field focus during a parent rerender and restores the opener on close', async () => {
++        const opener = document.createElement('button');
++        document.body.append(opener);
++        opener.focus();
++        const { rerender, unmount } = render(<Modal isOpen title="Edit" onClose={() => {}}><input aria-label="Name" /></Modal>);
++        await waitFor(() => expect(screen.getByRole('textbox')).toHaveFocus());
++        rerender(<Modal isOpen title="Edit" onClose={() => {}}><input aria-label="Name" /></Modal>);
++        expect(screen.getByRole('textbox')).toHaveFocus();
++        unmount();
++        expect(opener).toHaveFocus();
++        opener.remove();
++    });
++
++    it('uses unique labels when dialogs are nested and only closes the top dialog', () => {
++        const outerClose = vi.fn(), innerClose = vi.fn();
++        render(<><Modal isOpen title="Outer" onClose={outerClose}><p>Outer body</p></Modal><Modal isOpen title="Inner" onClose={innerClose}><p>Inner body</p></Modal></>);
++        const dialogs = screen.getAllByRole('dialog');
++        expect(dialogs[0].getAttribute('aria-labelledby')).not.toBe(dialogs[1].getAttribute('aria-labelledby'));
++        fireEvent.keyDown(document, { key: 'Escape' });
++        expect(innerClose).toHaveBeenCalledOnce();
++        expect(outerClose).not.toHaveBeenCalled();
++    });
++
++    it('retains the page scroll lock when a select closes inside a dialog', () => {
++        const { unmount } = render(<Modal isOpen title="Edit" onClose={vi.fn()}>
++            <IconSelect name="month" value="1" options={[{ value: '1', label: 'January' }]} onChange={vi.fn()} />
++        </Modal>);
++        fireEvent.click(screen.getByRole('button', { name: 'January' }));
++        fireEvent.keyDown(document, { key: 'Escape' });
++        expect(document.body.style.overflow).toBe('hidden');
++        unmount();
++        expect(document.body.style.overflow).toBe('');
++    });
++});

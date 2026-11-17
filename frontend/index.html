@@ -4,6 +4,20 @@
     <!-- Basic Meta -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <script>
+      // Resolve before first paint so React never starts with the opposite theme.
+      (() => {
+        let theme;
+        try { theme = localStorage.getItem('um-theme'); } catch { /* Storage may be blocked. */ }
+        if (theme !== 'light' && theme !== 'dark') {
+          theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        const root = document.documentElement;
+        root.classList.add(theme);
+        root.dataset.theme = theme;
+        root.style.colorScheme = theme;
+      })();
+    </script>
     <meta name="description" content="UnitedMess — A premium, beautifully designed mess management platform for dormitories and shared households." />
     <meta name="theme-color" content="#0ea5e9" />
     <title>UnitedMess - Online Mess Management</title>

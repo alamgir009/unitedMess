@@ -1,0 +1,145 @@
+:root :is(input, select, textarea):where(:not([type="hidden"]):not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="submit"]):not([type="button"]):not([type="reset"])), 
+:root :is(.ui-control, .record-field, button[aria-haspopup="listbox"]) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--field-height, var(--control-height-md));
+  border: var(--control-border-width) solid var(--input-border);
+  border-radius: var(--radius-md);
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  font-family: var(--font-body, var(--font-sans));
+  font-size: var(--control-font-size);
+  font-weight: var(--weight-regular);
+  line-height: 1.5;
+  padding-block: var(--space-2);
+  box-shadow: none;
+  caret-color: var(--brand);
+  transition-property: opacity, transform;
+  transition-duration: var(--duration-fast);
+}
+
+:root .ui-control { padding-inline: var(--control-padding); }
+:root .ui-control[data-leading="true"] { padding-inline-start: 40px; }
+:root .ui-control[data-trailing="true"] { padding-inline-end: 48px; }
+:root [data-control-size="sm"] { --field-height: var(--control-height-sm); height: var(--control-height-sm); min-height: var(--control-height-sm); padding-block: var(--space-1); }
+:root [data-control-size="md"] { height: var(--control-height-md); }
+:root [data-control-size="lg"] { --field-height: var(--control-height-lg); height: var(--control-height-lg); }
+:root textarea { min-height: 96px; resize: vertical; }
+:root :is(input, textarea)::placeholder { color: var(--text-muted); opacity: 1; }
+:root :is(input, select, textarea, .ui-control, .record-field):hover:where(:not(:disabled):not([readonly])) { border-color: var(--input-border-hover); }
+:root :is(input, select, textarea, button, [tabindex]):focus-visible {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: var(--focus-offset);
+}
+:root :is(input, select, textarea, .ui-control, .record-field):focus-visible { border-color: var(--focus); box-shadow: none; }
+:root :is(input, select, textarea, .ui-control, .record-field):disabled:where(:not([type="checkbox"]):not([type="radio"])) {
+  background-color: var(--input-bg-disabled);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+  opacity: 1;
+}
+:root :is(input, textarea)[readonly] { background-color: var(--bg-subtle); color: var(--text-secondary); opacity: 1; }
+:root :is(input, select, textarea, .ui-control, .record-field)[aria-invalid="true"] { border-color: var(--danger-text); }
+:root :is(input, select, textarea, .ui-control, .record-field)[aria-invalid="true"]:focus-visible { border-color: var(--danger-text); outline-color: var(--danger-text); }
+:root :is(input, select, textarea, .ui-control, .record-field)[data-state="success"] { border-color: var(--success-text); }
+:root [data-state="success"]:focus-visible { outline-color: var(--success-text); }
+:root :is(input[type="checkbox"], input[type="radio"]) {
+  accent-color: var(--brand);
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+:root label:has(> :is(input[type="checkbox"], input[type="radio"])),
+:root :is(input[type="checkbox"], input[type="radio"]) + label { display: inline-flex; min-height: 44px; align-items: center; }
+:root [role="switch"] {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  flex-shrink: 0;
+}
+:root [role="switch"]::before {
+  content: '';
+  position: absolute;
+  inset: 10px 0;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-lg);
+  background: var(--input-bg);
+}
+:root [role="switch"][aria-checked="true"]::before { background: var(--brand); border-color: var(--brand); }
+:root [role="switch"] > span {
+  position: absolute;
+  left: 3px;
+  top: 13px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  box-shadow: none;
+  transform: translateX(0);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+:root [role="switch"][aria-checked="true"] > span { background: var(--text-on-brand); transform: translateX(20px); }
+:root [role="switch"]:disabled { cursor: not-allowed; opacity: 0.6; }
+:root .btn { border-radius: var(--radius-md); transition-property: opacity, transform; }
+:root button[aria-haspopup="listbox"]:disabled { cursor: not-allowed; }
+:root form { min-width: 0; }
+:root form.ui-form { display: flex; flex-direction: column; gap: var(--field-gap); }
+:root form.ui-form[class] > :not([hidden]) ~ :not([hidden]) { margin-block: 0; }
+:root .grid:has(form) > * { min-width: 0; }
+:root form > :is(.grid, .flex) > * { min-width: 0; }
+:root form :is(label, legend) { color: var(--text-secondary); font-weight: var(--weight-medium); }
+:root form label:has(+ :is(input, select, textarea)) { display: block; margin-bottom: var(--space-2); }
+:root .record-form { gap: var(--field-gap); }
+.form-field-error { margin-top: var(--space-2); font-size: 0.875rem; line-height: 1.5; color: var(--danger-text); }
+:root .record-form-pair { gap: var(--field-gap); grid-template-columns: minmax(0, 1fr); }
+
+.ui-modal { overflow: hidden; max-width: var(--modal-width); border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); }
+.ui-modal > [data-modal-header],
+.ui-modal > [data-modal-body],
+.ui-modal > [data-modal-footer] { padding: var(--modal-padding); }
+.ui-modal > [data-modal-header],
+.ui-modal > [data-modal-footer] { flex-shrink: 0; background: var(--surface-elevated); }
+.ui-modal > [data-modal-body] { min-height: 0; overscroll-behavior: contain; overflow-y: auto; }
+.ui-modal > [data-modal-footer] { flex-wrap: wrap; gap: var(--space-3); padding-bottom: max(var(--modal-padding), env(safe-area-inset-bottom)); }
+.ui-modal form { display: flex; flex-direction: column; gap: var(--field-gap); }
+.ui-modal form > :where(*) { margin-block: 0; }
+.ui-modal h2 { overflow-wrap: anywhere; }
+
+@media (min-width: 768px) {
+  :root .record-form-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 767px) {
+  :root { --modal-padding: 16px; --control-height-sm: 44px; --control-height-md: 44px; }
+  :root :is(input, select, textarea, .ui-control, .record-field, .btn, button[aria-haspopup="listbox"]):where(:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"])) {
+    min-height: 44px;
+  }
+  :root :is(input, select, textarea, .ui-control, .record-field) { font-size: 16px; }
+  :root .btn { white-space: normal; height: auto; padding-block: var(--space-2); }
+  :root form .grid { grid-template-columns: minmax(0, 1fr); }
+  .ui-modal > [data-modal-footer] > * { flex: 1 1 0%; min-width: 0; }
+}
+
+:root.no-transitions,
+:root.no-transitions *,
+:root.no-transitions *::before,
+:root.no-transitions *::after { transition-duration: 0s; transition-delay: 0s; }
+
+@media (prefers-reduced-motion: reduce) {
+  :root .ui-modal, :root .ui-modal * { transition: none; animation: none; }
+}
+
+:root span:has(> input[type="checkbox"]):focus-within { outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); }
+
+.ui-modal-frame { padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+.ui-modal.modal-enter { animation: modal-appear 160ms var(--ease-out); }
+@keyframes modal-appear { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@media (prefers-reduced-motion: reduce) { :root .ui-modal.modal-enter { animation: none; } }
+
+.form-surface { padding: var(--modal-padding); border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-elevated); box-shadow: var(--shadow-sm); }
+.form-ambient { background: radial-gradient(ellipse, hsl(var(--primary) / 0.12), transparent 70%); }

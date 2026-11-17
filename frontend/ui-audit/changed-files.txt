@@ -1,0 +1,52 @@
+frontend/index.html
+frontend/src/app/providers/ThemeProvider.jsx
+frontend/src/core/config/theme.config.js
+frontend/src/modules/auth/components/LoginForm/LoginForm.jsx
+frontend/src/modules/auth/components/RegisterForm/RegisterForm.jsx
+frontend/src/modules/auth/pages/ForgotPasswordPage/ForgotPasswordPage.jsx
+frontend/src/modules/auth/pages/LoginPage/LoginPage.jsx
+frontend/src/modules/auth/pages/RegisterPage/RegisterPage.jsx
+frontend/src/modules/auth/pages/ResetPasswordPage/ResetPasswordPage.jsx
+frontend/src/modules/dashboard/components/MembersTable/UserEditModal.jsx
+frontend/src/modules/events/components/EventCalendar/CalendarDayEdit.jsx
+frontend/src/modules/market/components/MarketForm/MarketForm.jsx
+frontend/src/modules/meal/components/MealForm/MealForm.jsx
+frontend/src/modules/meal/components/MealList/MealList.jsx
+frontend/src/modules/members/components/AdminUnpaidPanel.jsx
+frontend/src/modules/members/components/PenaltyControlsModal.jsx
+frontend/src/modules/notification/components/NotificationBell/NotificationBell.jsx
+frontend/src/modules/notification/components/SendNotificationModal/SendNotificationModal.jsx
+frontend/src/modules/notification/pages/NotificationsPage/NotificationsPage.jsx
+frontend/src/modules/payment/components/MessBillInvoice/MessBillInvoice.jsx
+frontend/src/modules/payment/components/PaymentFlowModal/PaymentFlowModal.jsx
+frontend/src/modules/payment/components/PaymentForm/PaymentForm.jsx
+frontend/src/modules/payment/components/PaymentList/PaymentList.jsx
+frontend/src/modules/payment/components/UpiVerificationModal/UpiVerificationModal.jsx
+frontend/src/modules/profile/components/EditForm/EditForm.jsx
+frontend/src/modules/public/components/FoodModal/FoodModal.jsx
+frontend/src/modules/public/pages/ContactPage/ContactPage.jsx
+frontend/src/modules/settings/pages/SettingsPage/SettingsPage.jsx
+frontend/src/shared/components/layout/Header/Header.jsx
+frontend/src/shared/components/layout/Navbar/Navbar.jsx
+frontend/src/shared/components/ui/Button/Button.jsx
+frontend/src/shared/components/ui/ConfirmDialog/ConfirmDialog.jsx
+frontend/src/shared/components/ui/IconSelect/IconSelect.jsx
+frontend/src/shared/components/ui/Input/Input.jsx
+frontend/src/shared/components/ui/MemberSelect/MemberSelect.jsx
+frontend/src/shared/components/ui/Modal/Modal.jsx
+frontend/src/shared/components/ui/PasswordInput/PasswordInput.jsx
+frontend/src/shared/components/ui/Popover/Popover.jsx
+frontend/src/shared/components/ui/SearchBar/SearchBar.jsx
+frontend/src/shared/hooks/useBodyScrollLock.js
+frontend/src/styles/animations.css
+frontend/src/styles/global.css
+frontend/src/styles/themes/dark.css
+frontend/src/styles/themes/light.css
+frontend/src/styles/variables.css
+frontend/tailwind.config.js
+frontend/tests/unit/userEditModal.test.jsx
+frontend/src/core/theme/themeStore.js (new)
+frontend/src/shared/components/ui/Form/Form.jsx (new)
+frontend/src/shared/components/ui/ThemeToggle/ThemeToggle.jsx (new)
+frontend/src/styles/controls.css (new)
+frontend/tests/unit/themeControls.test.jsx (new)

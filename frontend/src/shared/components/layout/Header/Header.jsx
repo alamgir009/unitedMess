@@ -5,29 +5,13 @@ import { cn } from '@/core/utils/helpers/string.helper';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout, toggleAdminHistory } from '@/modules/auth/store/auth.slice';
 import { Link } from 'react-router-dom';
-import { useTheme } from '@/app/providers/ThemeProvider';
+import ThemeToggle from '@/shared/components/ui/ThemeToggle/ThemeToggle';
 import NotificationBell from '@/modules/notification/components/NotificationBell/NotificationBell';
-
-const SunIcon = () => (
-  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
-  </svg>
-);
-
-const MoonIcon = () => (
-  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-  </svg>
-);
-
-SunIcon.displayName = 'SunIcon';
-MoonIcon.displayName = 'MoonIcon';
 
 const Header = memo(({ onMenuClick }) => {
   const user = useSelector((state) => state.auth.user);
   const adminShowHistory = useSelector((state) => state.auth.adminShowHistory);
   const dispatch = useDispatch();
-  const { toggleTheme, isDark } = useTheme();
 
   return (
     <header
@@ -72,13 +56,7 @@ const Header = memo(({ onMenuClick }) => {
 
         <div className="flex items-center gap-x-0.5">
           {/* Theme toggle */}
-          <button
-            onClick={toggleTheme}
-            aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-            className="inline-flex items-center justify-center w-11 h-11 rounded-xl text-foreground/60 hover:text-foreground hover:bg-muted/60 active:scale-95 transition-all duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            {isDark ? <SunIcon /> : <MoonIcon />}
-          </button>
+          <ThemeToggle />
 
           {/* Notifications */}
           <NotificationBell />
