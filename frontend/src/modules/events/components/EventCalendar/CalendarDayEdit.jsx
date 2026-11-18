@@ -467,7 +467,7 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
           payload.guestCount = isGuestMeal ? (guestCount || 0) : 0;
           if (remarks.trim()) payload.remarks = remarks.trim();
         } else {
-          payload.amount = parseFloat(amount) || 0;
+          payload.amount = Math.round((parseFloat(amount) || 0) * 100) / 100;
           payload.items = items.trim();
           if (remarks.trim()) payload.description = remarks.trim();
         }
@@ -485,18 +485,32 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full">
       <p className="text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Add Entry</p>
 
-      {isAdmin && (
-        <MemberSelect
-          users={users}
-          value={userIds}
-          onChange={(ids) => { setUserIds(ids); setErrors((p) => ({ ...p, userIds: undefined })); }}
-          loading={isUsersLoading}
-          disabled={isSubmitting}
-          accentColor="primary"
-          placeholder="Select members..."
-        />
+      {/* ── Amount preview banner (markets) ── */}
+      {category === 'markets' && (
+        <div className="relative flex items-center justify-center py-3 rounded-xl border border-[var(--brand)]/15 bg-[var(--brand)]/5 overflow-hidden shrink-0">
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-foreground leading-none tracking-tight">
+              ₹{amount === '' ? '0' : Number(amount).toLocaleString('en-IN')}
+            </span>
+            <span className="text-xs font-medium text-[var(--text-secondary)]">purchase amount</span>
+          </div>
+        </div>
       )}
-      {errors.userIds && <p className="text-xs text-[var(--danger)]">{errors.userIds}</p>}
+
+      {isAdmin && (
+        <div>
+          <MemberSelect
+            users={users}
+            value={userIds}
+            onChange={(ids) => { setUserIds(ids); setErrors((p) => ({ ...p, userIds: undefined })); }}
+            loading={isUsersLoading}
+            disabled={isSubmitting}
+            accentColor={category === 'markets' ? 'emerald' : 'primary'}
+            placeholder="Select members…"
+          />
+          {errors.userIds && <p className="text-xs text-[var(--danger)] mt-1">{errors.userIds}</p>}
+        </div>
+      )}
 
       {/* Mode toggle — only for meals (markets don't support bulk) */}
       {category === 'meals' && (
@@ -586,8 +600,8 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
           ))}
         </div>
       ) : (
-        <div className="flex items-center gap-2">
-          <div className="flex-1">
+        <>
+          <div>
             <Input
               type="number"
               variant="record"
@@ -595,27 +609,32 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
               value={amount}
               onChange={(e) => { setAmount(e.target.value); setErrors((p) => ({ ...p, amount: undefined })); }}
               min="0"
+              max="999999"
               step="0.01"
               placeholder="0.00"
               disabled={isSubmitting}
               isInvalid={!!errors.amount}
-              leftIcon={<span className="text-xs font-semibold text-[var(--text-muted)]">₹</span>}
+              leftIcon={<span className="text-[var(--success-text)] font-semibold text-sm">₹</span>}
               aria-label="Amount"
             />
+            {errors.amount && <p className="text-[10px] text-[var(--danger)] mt-0.5">{errors.amount}</p>}
           </div>
-          <Input
-            type="text"
-            variant="record"
-            size="sm"
-            value={items}
-            onChange={(e) => { setItems(e.target.value); setErrors((p) => ({ ...p, items: undefined })); }}
-            placeholder="Items"
-            disabled={isSubmitting}
-            isInvalid={!!errors.items}
-            className="flex-[2]"
-            aria-label="Items"
-          />
-        </div>
+
+          <div>
+            <Input
+              type="text"
+              variant="record"
+              size="sm"
+              value={items}
+              onChange={(e) => { setItems(e.target.value); setErrors((p) => ({ ...p, items: undefined })); }}
+              placeholder="e.g. Rice, Vegetables, Oil…"
+              disabled={isSubmitting}
+              isInvalid={!!errors.items}
+              aria-label="Items"
+            />
+            {errors.items && <p className="text-[10px] text-[var(--danger)] mt-0.5">{errors.items}</p>}
+          </div>
+        </>
       )}
 
       {/* Guest Meals — Blinkit-style stepper (meals only) */}
@@ -752,6 +771,7 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
     const errs = {};
     if (category === 'meals' && !type) errs.type = 'Type is required';
     if (category === 'markets' && (!amount || Number(amount) <= 0)) errs.amount = 'Amount must be > 0';
+    if (category === 'markets' && !items.trim()) errs.items = 'Items is required';
     if (category === 'meals' && isGuestMeal && (!guestCount || guestCount < 1)) errs.guestCount = 'Guest count must be at least 1';
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -769,7 +789,7 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
         payload.guestCount = isGuestMeal ? (guestCount || 0) : 0;
         payload.remarks = remarks.trim() || '';
       } else {
-        payload.amount = parseFloat(amount) || 0;
+        payload.amount = Math.round((parseFloat(amount) || 0) * 100) / 100;
         if (items.trim()) payload.items = items.trim();
         payload.description = remarks.trim() || '';
       }
@@ -782,7 +802,19 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full">
-      {/* Row 1: Segmented control (meals) or Amount+Items (markets) */}
+      {/* ── Amount preview banner (markets) ── */}
+      {category === 'markets' && (
+        <div className="relative flex items-center justify-center py-3 rounded-xl border border-[var(--brand)]/15 bg-[var(--brand)]/5 overflow-hidden shrink-0">
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-foreground leading-none tracking-tight">
+              ₹{amount === '' ? '0' : Number(amount).toLocaleString('en-IN')}
+            </span>
+            <span className="text-xs font-medium text-[var(--text-secondary)]">purchase amount</span>
+          </div>
+        </div>
+      )}
+
+      {/* Row 1: Segmented control (meals) or Amount + Items (markets) */}
       {category === 'meals' ? (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {mealTypes.map((t) => (
@@ -799,8 +831,8 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
           ))}
         </div>
       ) : (
-        <div className="flex items-center gap-2">
-          <div className="w-24">
+        <>
+          <div>
             <Input
               type="number"
               variant="record"
@@ -808,35 +840,42 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
               value={amount}
               onChange={(e) => { setAmount(e.target.value); setErrors((p) => ({ ...p, amount: undefined })); }}
               min="0"
+              max="999999"
               step="0.01"
+              placeholder="0.00"
               isInvalid={!!errors.amount}
-              leftIcon={<span className="text-[10px] text-[var(--text-muted)]">₹</span>}
+              leftIcon={<span className="text-[var(--success-text)] font-semibold text-sm">₹</span>}
               aria-label="Amount"
             />
+            {errors.amount && <p className="text-[10px] text-[var(--danger)] mt-0.5">{errors.amount}</p>}
           </div>
-          <Input
-            type="text"
-            variant="record"
-            size="sm"
-            value={items}
-            onChange={(e) => setItems(e.target.value)}
-            placeholder="Items"
-            className="flex-1"
-            aria-label="Items"
-          />
-        </div>
+
+          <div>
+            <Input
+              type="text"
+              variant="record"
+              size="sm"
+              value={items}
+              onChange={(e) => { setItems(e.target.value); setErrors((p) => ({ ...p, items: undefined })); }}
+              placeholder="e.g. Rice, Vegetables, Oil…"
+              isInvalid={!!errors.items}
+              aria-label="Items"
+            />
+            {errors.items && <p className="text-[10px] text-[var(--danger)] mt-0.5">{errors.items}</p>}
+          </div>
+        </>
       )}
 
-      {/* Row 2: Notes input (full width) */}
+      {/* Row 2: Notes / Description input (full width) */}
       <Input
         type="text"
         variant="record"
         size="sm"
         value={remarks}
         onChange={(e) => setRemarks(e.target.value)}
-        placeholder="Notes"
+        placeholder={category === 'meals' ? 'Notes' : 'Description (optional)'}
         className="w-full"
-        aria-label="Notes"
+        aria-label={category === 'meals' ? 'Notes' : 'Description'}
       />
 
       {/* Row 3: Guest Meals — Blinkit-style stepper (meals only) */}
@@ -983,8 +1022,8 @@ const BulkUpdateForm = ({ category, selectedCount, onSubmit, onCancel, isBulkSub
           ))}
         </div>
       ) : (
-        <div className="flex items-center gap-2">
-          <div className="flex-1">
+        <>
+          <div>
             <Input
               type="number"
               variant="record"
@@ -992,24 +1031,28 @@ const BulkUpdateForm = ({ category, selectedCount, onSubmit, onCancel, isBulkSub
               value={amount}
               onChange={(e) => { setAmount(e.target.value); setErrors((p) => ({ ...p, amount: undefined, empty: undefined })); }}
               min="0"
+              max="999999"
               step="0.01"
-              placeholder="Amount"
+              placeholder="0.00"
               isInvalid={!!errors.amount}
-              leftIcon={<span className="text-xs font-semibold text-[var(--text-muted)]">₹</span>}
+              leftIcon={<span className="text-[var(--success-text)] font-semibold text-sm">₹</span>}
               aria-label="Amount"
             />
+            {errors.amount && <p className="text-[10px] text-[var(--danger)] mt-0.5">{errors.amount}</p>}
           </div>
-          <Input
-            type="text"
-            variant="record"
-            size="sm"
-            value={items}
-            onChange={(e) => setItems(e.target.value)}
-            placeholder="Items"
-            className="flex-[2]"
-            aria-label="Items"
-          />
-        </div>
+          <div>
+            <Input
+              type="text"
+              variant="record"
+              size="sm"
+              value={items}
+              onChange={(e) => setItems(e.target.value)}
+              placeholder="e.g. Rice, Vegetables, Oil…"
+              className="w-full"
+              aria-label="Items"
+            />
+          </div>
+        </>
       )}
 
       <Input

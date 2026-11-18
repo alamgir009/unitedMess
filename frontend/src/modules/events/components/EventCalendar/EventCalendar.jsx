@@ -759,7 +759,7 @@ const EventCalendar = () => {
             Track daily events, meals, markets, and payments at a glance across months.
           </p>
         </div>
-        <div className="dashboard-header-actions flex items-center gap-2 shrink-0">
+        <div className="dashboard-header-actions w-full sm:w-auto flex items-center gap-2 shrink-0">
           <SegmentedControl isAdmin={isAdmin} />
         </div>
       </header>

@@ -27,7 +27,7 @@ const SegmentedControl = ({ className = '', isAdmin = true }) => {
       role="tablist"
       aria-label="Calendar event category"
       className={cn(
-        'segmented-control overflow-x-auto no-scrollbar',
+        'segmented-control w-full sm:w-auto flex sm:inline-flex overflow-x-auto no-scrollbar',
         className,
       )}
     >
@@ -39,9 +39,9 @@ const SegmentedControl = ({ className = '', isAdmin = true }) => {
           aria-selected={active === value}
           aria-pressed={active === value}
           onClick={() => handleChange(value)}
-          className="segmented-control-button gap-2 whitespace-nowrap"
+          className="segmented-control-button flex-1 sm:flex-initial gap-1.5 sm:gap-2 whitespace-nowrap"
         >
-          <Icon size={16} aria-hidden="true" className="shrink-0" />
+          <Icon size={16} aria-hidden="true" className="shrink-0 hidden sm:block" />
           <span>{label}</span>
         </button>
       ))}
