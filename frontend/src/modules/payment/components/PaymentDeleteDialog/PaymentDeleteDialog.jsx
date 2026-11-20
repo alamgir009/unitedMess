@@ -48,8 +48,8 @@ const PaymentDeleteDialog = memo(({ payment, onConfirm, onCancel, isDeleting }) 
                         <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
                             {meta.label}
                         </p>
-                        <p className="text-sm font-semibold text-foreground truncate">
-                            ₹{fmt(amount)} · {month}
+                        <p className="break-words text-sm font-semibold text-foreground">
+                            <span className="whitespace-nowrap">₹{fmt(amount)}</span> · {month}
                         </p>
                     </div>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${status.cls}`}>

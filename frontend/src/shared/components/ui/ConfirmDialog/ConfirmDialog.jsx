@@ -19,6 +19,8 @@ const iconToneStyles = {
   },
 };
 
+const actionClassName = 'h-auto min-h-[44px] whitespace-normal px-2 py-2 text-center [overflow-wrap:anywhere] sm:min-h-10';
+
 const ConfirmDialog = memo(({
   isOpen,
   onClose,
@@ -34,6 +36,26 @@ const ConfirmDialog = memo(({
   variant = 'danger',
 }) => {
   const tone = iconToneStyles[iconColor] || iconToneStyles.red;
+  const footer = (
+    <div className="grid w-full grid-cols-2 gap-2.5">
+      <Button
+        variant="secondary"
+        onClick={onClose}
+        disabled={isConfirming}
+        className={actionClassName}
+      >
+        {cancelLabel}
+      </Button>
+      <Button
+        variant={variant}
+        onClick={onConfirm}
+        isLoading={isConfirming}
+        className={actionClassName}
+      >
+        {isConfirming ? 'Processing…' : confirmLabel}
+      </Button>
+    </div>
+  );
 
   return (
     <Modal
@@ -45,23 +67,21 @@ const ConfirmDialog = memo(({
       description={description}
       showCloseButton={false}
       closeOnOverlayClick={!isConfirming}
-      mobileSheet
+      footer={footer}
     >
-      <div className="flex flex-col items-center gap-5">
-        <div className="flex justify-center">
-          <div className={cn(
-            'w-14 h-14 rounded-xl border flex items-center justify-center',
-            tone.bg,
-          )}>
-            <Icon className={cn('w-6 h-6', tone.icon)} />
-          </div>
+      <div className="flex flex-col items-center gap-4">
+        <div className={cn(
+          'flex h-12 w-12 items-center justify-center rounded-xl border',
+          tone.bg,
+        )}>
+          <Icon className={cn('h-6 w-6', tone.icon)} />
         </div>
 
         <div className="text-center space-y-1">
           <h3 className="text-base font-bold tracking-tight text-foreground">
             {title}
           </h3>
-          <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+          <p className="text-pretty text-xs leading-relaxed text-[var(--text-secondary)]">
             {description}
           </p>
         </div>
@@ -71,25 +91,6 @@ const ConfirmDialog = memo(({
             {itemSummary}
           </div>
         )}
-
-        <div className="flex flex-col-reverse sm:flex-row gap-2.5 w-full pt-1">
-          <Button
-            variant="secondary"
-            onClick={onClose}
-            disabled={isConfirming}
-            className="w-full sm:flex-1"
-          >
-            {cancelLabel}
-          </Button>
-          <Button
-            variant={variant}
-            onClick={onConfirm}
-            isLoading={isConfirming}
-            className="w-full sm:flex-1"
-          >
-            {isConfirming ? 'Processing…' : confirmLabel}
-          </Button>
-        </div>
       </div>
     </Modal>
   );

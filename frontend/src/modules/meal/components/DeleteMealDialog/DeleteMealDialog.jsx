@@ -41,7 +41,7 @@ const DeleteMealDialog = memo(({ meal, onConfirm, onCancel, isDeleting, isBulk, 
                         <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
                             Bulk Delete
                         </p>
-                        <p className="text-sm font-semibold text-foreground truncate">
+                        <p className="break-words text-sm font-semibold text-foreground">
                             {selectedCount} record{selectedCount !== 1 ? 's' : ''}
                         </p>
                     </div>
@@ -58,7 +58,7 @@ const DeleteMealDialog = memo(({ meal, onConfirm, onCancel, isDeleting, isBulk, 
                     <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
                         {meta.label}
                     </p>
-                    <p className="text-sm font-semibold text-foreground truncate">
+                    <p className="break-words text-sm font-semibold text-foreground">
                         {dateLabel}
                     </p>
                 </div>

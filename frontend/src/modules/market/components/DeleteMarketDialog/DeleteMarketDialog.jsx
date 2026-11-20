@@ -37,7 +37,7 @@ const DeleteMarketDialog = memo(({ market, onConfirm, onCancel, isDeleting }) =>
                                 {amountLabel}
                             </p>
                         </div>
-                        <p className="text-sm font-semibold text-foreground truncate mt-0.5">
+                        <p className="mt-0.5 break-words text-sm font-semibold text-foreground">
                             {dateLabel}
                         </p>
                     </div>

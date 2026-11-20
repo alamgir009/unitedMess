@@ -684,7 +684,12 @@ const ProfilePage = () => {
                     onConfirm={handleDeactivate}
                     title="Deactivate Account"
                     description="This action is irreversible. All of your historical metrics, billing logs, and membership states will be terminated immediately."
-                    confirmLabel="Deactivate Account"
+                    confirmLabel={
+                        <>
+                            <span className="sm:hidden">Deactivate</span>
+                            <span className="hidden sm:inline">Deactivate Account</span>
+                        </>
+                    }
                     cancelLabel="Cancel"
                     variant="danger"
                     isConfirming={deactivationLoading}

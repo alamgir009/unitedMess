@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 
 import Modal from '@/shared/components/ui/Modal/Modal';
+import ConfirmDialog from '@/shared/components/ui/ConfirmDialog/ConfirmDialog';
 import IconSelect from '@/shared/components/ui/IconSelect/IconSelect';
 
 /**
@@ -64,6 +65,38 @@ describe('Modal — isLoading keeps the chrome mounted', () => {
     expect(screen.getByText('Body content')).toBeInTheDocument();
     expect(screen.queryByRole('status')).toBeNull();
     expect(screen.getByRole('dialog')).not.toHaveAttribute('aria-busy');
+  });
+});
+
+describe('ConfirmDialog — shared footer', () => {
+  it('keeps the actions in the footer in Cancel-first order', () => {
+    const onClose = vi.fn();
+    const onConfirm = vi.fn();
+    render(
+      <ConfirmDialog
+        isOpen
+        onClose={onClose}
+        onConfirm={onConfirm}
+        title="Deactivate Account"
+        confirmLabel="Deactivate Account"
+      />
+    );
+
+    const dialog = screen.getByRole('alertdialog');
+    const body = within(dialog.querySelector('[data-modal-body]'));
+    const footer = within(dialog.querySelector('[data-modal-footer]'));
+    const cancel = footer.getByRole('button', { name: 'Cancel' });
+    const confirm = footer.getByRole('button', { name: 'Deactivate Account' });
+
+    expect(body.getByRole('heading', { name: 'Deactivate Account' })).toBeInTheDocument();
+    expect(body.queryByRole('button')).not.toBeInTheDocument();
+    expect(footer.getAllByRole('button')).toEqual([cancel, confirm]);
+
+    fireEvent.click(cancel);
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onConfirm).not.toHaveBeenCalled();
+    fireEvent.click(confirm);
+    expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 });
 
