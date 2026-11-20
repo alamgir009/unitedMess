@@ -30,7 +30,6 @@ import { logout, deactivateAccount } from '@/modules/auth/store/auth.slice';
 import { useNavigate } from 'react-router-dom';
 import { useCallback, useEffect, useState, useMemo, Component, memo } from 'react';
 import { EditModal } from '../../components/EditModal/EditModal';
-import { EditForm } from '../../components/EditForm/EditForm';
 import { AvatarUpload } from '../../components/AvatarUpload';
 import { toast } from 'react-hot-toast';
 import useFcmPush from '@/modules/notification/hooks/useFcmPush';
@@ -676,9 +675,7 @@ const ProfilePage = () => {
                 </div>
 
                 {/* ── Edit Profile Modal ── */}
-                <EditModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Edit Profile">
-                    <EditForm handleClose={() => setIsModalOpen(false)} initialData={user} />
-                </EditModal>
+                <EditModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} initialData={user} />
 
                 {/* ── Deactivation Confirmation Dialog ── */}
                 <ConfirmDialog

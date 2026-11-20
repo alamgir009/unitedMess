@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { User, Mail, Phone } from 'lucide-react';
-import { Button, Input, Field } from '@/shared/components/ui';
+import { Input, Field } from '@/shared/components/ui';
 import { updateProfile } from '@/modules/auth/store/auth.slice';
 import toast from 'react-hot-toast';
 
-export const EditForm = ({ handleClose, initialData }) => {
+export const EditForm = ({ id, handleClose, initialData }) => {
     const dispatch = useDispatch();
-    const { isLoading } = useSelector((state) => state.auth);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -48,66 +47,41 @@ export const EditForm = ({ handleClose, initialData }) => {
     }
 
     return (
-        <form className="w-full space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 gap-4 sm:gap-5">
-                <Field label="Full Name">
-                    <Input
-                        name="name"
-                        type="text"
-                        placeholder="Enter your full name"
-                        onChange={handleChange}
-                        value={name}
-                        leftIcon={<User className="w-4 h-4" />}
-                        required
-                    />
-                </Field>
+        <form id={id} className="grid w-full gap-4 sm:gap-5" onSubmit={handleSubmit}>
+            <Field label="Full Name">
+                <Input
+                    name="name"
+                    type="text"
+                    placeholder="Enter your full name"
+                    onChange={handleChange}
+                    value={name}
+                    leftIcon={<User className="w-4 h-4" />}
+                    required
+                />
+            </Field>
 
-                <Field label="Email Address">
-                    <Input
-                        name="email"
-                        type="email"
-                        placeholder="Enter your Email"
-                        onChange={handleChange}
-                        value={email}
-                        leftIcon={<Mail className="w-4 h-4" />}
-                        required
-                    />
-                </Field>
+            <Field label="Email Address">
+                <Input
+                    name="email"
+                    type="email"
+                    placeholder="Enter your Email"
+                    onChange={handleChange}
+                    value={email}
+                    leftIcon={<Mail className="w-4 h-4" />}
+                    required
+                />
+            </Field>
 
-                <Field label="Phone Number">
-                    <Input
-                        name="phone"
-                        type="tel"
-                        placeholder="Enter your phone number"
-                        onChange={handleChange}
-                        value={phone}
-                        leftIcon={<Phone className="w-4 h-4" />}
-                    />
-                </Field>
-            </div>
-
-            <div className="flex gap-2.5 pt-3 shrink-0">
-                <Button
-                    type="button"
-                    variant="secondary"
-                    size="md"
-                    onClick={handleClose}
-                    className="w-full sm:w-auto"
-                    disabled={isLoading}
-                >
-                    Cancel
-                </Button>
-
-                <Button
-                    type="submit"
-                    variant="primary"
-                    size="md"
-                    className="w-full sm:flex-[2]"
-                    isLoading={isLoading}
-                >
-                    Save Changes
-                </Button>
-            </div>
+            <Field label="Phone Number">
+                <Input
+                    name="phone"
+                    type="tel"
+                    placeholder="Enter your phone number"
+                    onChange={handleChange}
+                    value={phone}
+                    leftIcon={<Phone className="w-4 h-4" />}
+                />
+            </Field>
         </form>
     )
 }
