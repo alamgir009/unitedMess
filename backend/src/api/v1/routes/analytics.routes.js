@@ -19,6 +19,8 @@ const validate = (allowed) => (req, res, next) => {
     next();
 };
 
+router.use(require('./analyticsReport.routes'));
+
 router.get('/members',
     query('q').optional().isString().isLength({ max: 100 }).trim(),
     validate(['q']),

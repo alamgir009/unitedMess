@@ -170,4 +170,4 @@ async function searchMembers(search = '') {
     return User.find(filter).select('_id name email').sort({ name: 1, _id: 1 }).limit(50).lean();
 }
 
-module.exports = { getReport, searchMembers, getWindow, buildPipeline, ratePipeline };
+module.exports = { getReport, searchMembers, getWindow, buildPipeline, ratePipeline, activeMember };

@@ -1,0 +1,13 @@
+.analytics-report-progress {
+    appearance: none;
+    border: 0;
+    border-radius: var(--radius-md);
+    height: 8px;
+    width: 100%;
+    overflow: hidden;
+    background: var(--bg-muted);
+    color: var(--brand);
+}
+.analytics-report-progress::-webkit-progress-bar { background: var(--bg-muted); }
+.analytics-report-progress::-webkit-progress-value { background: var(--brand); }
+.analytics-report-progress::-moz-progress-bar { background: var(--brand); }

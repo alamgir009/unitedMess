@@ -6,6 +6,7 @@ import MainLayout from '@/shared/components/layout/MainLayout/MainLayout';
 import Button from '@/shared/components/ui/Button/Button';
 import MemberFilter from '../components/MemberFilter';
 import MonthFilter from '../components/MonthFilter';
+import ReportActions from '../components/ReportActions';
 import PercentChange from '../components/PercentChange';
 import { analyticsApi, useGetAnalyticsReportQuery } from '../store/analytics.api';
 import { ALL_MEMBERS, selectMember, selectMonth, selectReport } from '../store/analytics.slice';
@@ -65,7 +66,10 @@ export default function AnalyticsPage() {
                 <p className="mt-2 text-sm analytics-secondary">Market spending and meals, across the last three months.</p>
             </div>
             <div className="flex flex-col items-start sm:items-end gap-2">
-                <Button variant="secondary" className="min-h-[44px]" onClick={refresh} disabled={!enabled || query.isFetching}><RefreshCw size={16} aria-hidden="true" />Refresh reports</Button>
+                <div className="flex flex-wrap items-start gap-2">
+                    <ReportActions report={report} memberId={member._id} enabled={enabled} />
+                    <Button variant="secondary" className="min-h-[44px]" onClick={refresh} disabled={!enabled || query.isFetching}><RefreshCw size={16} aria-hidden="true" />Refresh reports</Button>
+                </div>
                 <p role="status" className="text-xs analytics-secondary min-h-4" aria-live="polite">{query.isFetching && data ? 'Refreshing in background…' : query.fulfilledTimeStamp && data ? `Updated ${new Intl.DateTimeFormat('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Kolkata' }).format(query.fulfilledTimeStamp)} IST` : ''}</p>
             </div>
         </header>

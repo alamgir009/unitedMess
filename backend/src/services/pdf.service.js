@@ -763,4 +763,4 @@ const generateInvoicePDF = (invoiceData, user) => {
     });
 };
 
-module.exports = { generateInvoicePDF, __testables: { pickFont, prepareRtl, rtlWordPositions } };
+module.exports = { generateInvoicePDF, reportResources: { colors: C, fonts: FONT_BUFFERS, pickFont, prepareRtl, rtlWordPositions, istFull, logo: LOGO_BUFFER }, __testables: { pickFont, prepareRtl, rtlWordPositions } };

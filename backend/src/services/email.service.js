@@ -863,7 +863,32 @@ const sendMarketScheduleAdminNotificationEmail = async (to, adminName, memberNam
     });
 };
 
+const sendAnalyticsReportEmail = async (to, report, pdf) => {
+    const { buildView, filename } = require('./analyticsReportPdf.service');
+    const { formatMoney, formatCount } = require('../utils/helpers/analyticsReport.helper.cjs');
+    const view = buildView(report);
+    const period = `${report.market.monthly[0].month}-01 to ${report.market.asOf} (${report.market.timezone})`;
+    const name = validator.escape(report.name);
+    const summary = [
+        `Market spending: ${formatMoney(view.market.amount)} across ${formatCount(view.market.count)} completed markets.`,
+        `Meals: ${formatCount(view.meal.count)}; estimated meal cost: ${formatMoney(view.meal.amount)}.`,
+        `Period: ${period}. Your PDF contains monthly and daily comparisons.`,
+    ];
+    const { html } = generateEmailTemplate({
+        title: 'Analytics Report',
+        previewText: 'Your three-month Market and Meal report is attached.',
+        content: `<p>Dear ${name},</p>${summary.map((line) => `<p style="margin:0 0 12px;">${validator.escape(line)}</p>`).join('')}`,
+        showButton: false,
+    });
+    return sendEmail({
+        to, subject: `United Mess Analytics Report: ${report.name.replace(/[\r\n]/g, ' ')} (${period})`,
+        text: `Dear ${report.name},\n\n${summary.join('\n')}\n\nThe PDF report is attached.`, html,
+        attachments: [{ filename: filename(report), content: pdf, contentType: 'application/pdf' }],
+    });
+};
+
 module.exports = {
+    sendAnalyticsReportEmail,
     transport,
     sendEmail,
     sendVerificationEmail,

@@ -24,6 +24,7 @@ export default defineConfig({
     plugins: [react()],
     optimizeDeps: {
         include: [
+            '@report-format',
             'react-icons/hi2',
             'react-icons/fi',
             'react-icons/bi',
@@ -54,6 +55,7 @@ export default defineConfig({
     },
     resolve: {
         alias: {
+            '@report-format': fileURLToPath(new URL('../backend/src/utils/helpers/analyticsReport.helper.cjs', import.meta.url)),
             '@': fileURLToPath(new URL('./src', import.meta.url)),
             '@shared': fileURLToPath(new URL('../shared', import.meta.url)),
         },
