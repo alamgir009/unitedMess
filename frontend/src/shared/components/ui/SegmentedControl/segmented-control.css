@@ -1,13 +1,13 @@
 /* Shared Analytics control treatment, including theme-specific physical depth. */
 :root {
-    --segmented-active-text: #3730a3;
+    --segmented-active-text: var(--brand, #2563eb);
     --control-raised-shadow: var(--btn-elevated-shadow);
     --control-top-highlight: var(--btn-top-highlight-light);
     --control-recessed-shadow: var(--inset-well);
 }
 
 html.dark {
-    --segmented-active-text: #c7d2fe;
+    --segmented-active-text: var(--brand, #3b82f6);
     --control-raised-shadow: var(--btn-elevated-shadow-dark);
     --control-top-highlight: var(--btn-top-highlight-dark);
     --control-recessed-shadow: var(--inset-inner);
@@ -21,6 +21,12 @@ html.dark {
     background: var(--bg-muted);
     border-radius: var(--radius-lg);
     box-shadow: var(--control-recessed-shadow);
+}
+
+.segmented-control.w-full,
+.segmented-control--full {
+    display: flex;
+    width: 100%;
 }
 
 .segmented-control .segmented-control-button {
@@ -37,7 +43,12 @@ html.dark {
     font-size: var(--text-label);
     font-weight: var(--weight-semibold);
     cursor: pointer;
-    transition: transform var(--duration-fast) var(--ease-out);
+    transition: transform var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.segmented-control.w-full .segmented-control-button,
+.segmented-control--full .segmented-control-button {
+    flex: 1 1 0%;
 }
 
 @media (min-width: 640px) {
@@ -47,27 +58,32 @@ html.dark {
     }
 }
 
-.segmented-control .segmented-control-button:hover:not(:disabled) {
+.segmented-control .segmented-control-button:hover:not(:disabled):not([aria-pressed="true"]):not([aria-selected="true"]):not([aria-checked="true"]) {
     background: var(--bg-subtle);
 }
 
-.segmented-control .segmented-control-button:is([aria-pressed="true"], [aria-selected="true"]) {
+.segmented-control .segmented-control-button:is([aria-pressed="true"], [aria-selected="true"], [aria-checked="true"]) {
     background: var(--bg-elevated);
     color: var(--segmented-active-text);
+    border-color: var(--border-default);
     box-shadow: var(--control-top-highlight), var(--control-raised-shadow);
+}
+
+html.dark .segmented-control .segmented-control-button:is([aria-pressed="true"], [aria-selected="true"], [aria-checked="true"]) {
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
 .segmented-control .segmented-control-button:active:not(:disabled) {
     transform: translateY(1px);
 }
 
-.segmented-control .segmented-control-button:is([aria-pressed="true"], [aria-selected="true"]):active:not(:disabled) {
+.segmented-control .segmented-control-button:is([aria-pressed="true"], [aria-selected="true"], [aria-checked="true"]):active:not(:disabled) {
     box-shadow: var(--control-top-highlight), var(--shadow-xs);
 }
 
 .segmented-control .segmented-control-button:focus-visible {
-    outline: 2px solid var(--segmented-active-text);
-    outline-offset: 3px;
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
 }
 
 .segmented-control .segmented-control-button:disabled {

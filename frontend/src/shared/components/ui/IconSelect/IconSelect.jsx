@@ -9,12 +9,12 @@ const DROPDOWN_MAX_H = 208;
 const DROPDOWN_MARGIN = 3;
 
 const inputBase =
-  'w-full h-[var(--control-height-md)] px-3 py-2 rounded-[var(--radius-md)] border border-[var(--input-border)] ' +
+  'w-full h-11 min-h-[44px] px-3 py-2 rounded-[8px] border border-[var(--border-contrast)] ' +
   'bg-[var(--input-bg)] ' +
-  'focus:ring-2 focus:ring-[var(--focus)] focus:border-[var(--focus)] ' +
+  'focus:ring-2 focus:ring-[var(--brand)] focus:border-[var(--brand)] ' +
   'outline-none transition-all duration-150 ' +
-  'text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] ' +
-  'hover:border-[var(--input-border-hover)]';
+  'text-[16px] sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] ' +
+  'hover:border-[var(--border-contrast-hover)]';
 
 const inputDisabled = 'opacity-60 cursor-not-allowed pointer-events-none select-none';
 
@@ -48,7 +48,7 @@ function getMenuStyle(triggerRect) {
   };
 }
 
-const IconSelect = ({ name, value, onChange, options, disabled = false, placeholder = 'Select...', variant = 'default' }) => {
+const IconSelect = ({ name, value, onChange, options, disabled = false, placeholder = 'Select...', variant = 'default', className }) => {
   const [open, setOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const triggerRef = useRef(null);
@@ -141,7 +141,7 @@ const IconSelect = ({ name, value, onChange, options, disabled = false, placehol
       aria-label={`${name} options`}
       className={cn(
         'fixed z-[9999] overflow-hidden',
-        variant === 'record' ? 'record-field-menu' : 'bg-[var(--bg-surface)] border border-[var(--border-muted)]',
+        variant === 'record' ? 'record-field-menu' : 'bg-[var(--bg-surface)] border border-[var(--border-default)]',
         'overflow-y-auto overscroll-contain',
         '[scrollbar-width:thin] [scrollbar-color:var(--border-strong)_transparent]',
         '[&::-webkit-scrollbar]:w-1.5',
@@ -165,7 +165,7 @@ const IconSelect = ({ name, value, onChange, options, disabled = false, placehol
           className={cn(
             'w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors duration-100',
             value === opt.value
-              ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-medium'
+              ? 'bg-[var(--accent-subtle)] text-[var(--brand)] font-medium'
               : highlightedIndex === idx
                 ? 'bg-[var(--bg-muted)] text-[var(--text-primary)]'
                 : 'hover:bg-[var(--bg-muted)] text-[var(--text-primary)]',
@@ -174,7 +174,7 @@ const IconSelect = ({ name, value, onChange, options, disabled = false, placehol
           {opt.Icon && <opt.Icon className={cn('w-4 h-4 shrink-0', opt.iconClass)} />}
           <span>{opt.label}</span>
           {value === opt.value && (
-            <HiOutlineCheckCircle className="ml-auto w-4 h-4 text-[var(--accent-primary)]" />
+            <HiOutlineCheckCircle className="ml-auto w-4 h-4 text-[var(--brand)]" />
           )}
         </button>
       ))}
@@ -195,6 +195,7 @@ const IconSelect = ({ name, value, onChange, options, disabled = false, placehol
           variant === 'record' ? 'record-field' : inputBase,
           'flex items-center justify-between gap-2 text-left',
           disabled ? inputDisabled : 'cursor-pointer',
+          className
         )}
       >
         <span className="flex items-center gap-2 truncate">

@@ -31,6 +31,8 @@ html.dark {
   --border-muted: hsl(224 12% 16%);       /* #1F2430 — subtle separators */
   --border-strong: hsl(228 11% 28%);      /* #363E50 — strong dividers */
   --border-brand: hsl(217 91% 62%);       /* #3B82F6 */
+  --border-contrast: hsl(216 10% 50%);        /* #727E92 — 3.34:1 on #1E222C */
+  --border-contrast-hover: hsl(216 10% 72%);  /* #B0B8C8 — 7.2:1 on #1E222C */
 
   /* ── Text hierarchy (WCAG AAA: ≥7:1 on dark surfaces) ── */
   --text-primary: hsl(216 12% 95%);       /* #F0F2F5 — 8.7:1 on #1E222C */

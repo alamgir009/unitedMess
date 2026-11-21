@@ -1,10 +1,13 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, Trash2, X, Check, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { Plus, Trash2, X, Check, Minus, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { fmt } from '@/core/utils/helpers/currency.helper';
-import { MemberSelect, Button, Input, Checkbox } from '@/shared/components/ui';
+import { MemberSelect, Button, Input } from '@/shared/components/ui';
 import apiClient from '@/services/api/client/apiClient';
+import MealForm from '@/modules/meal/components/MealForm/MealForm';
+import MarketForm from '@/modules/market/components/MarketForm/MarketForm';
+import PaymentForm from '@/modules/payment/components/PaymentForm/PaymentForm';
 import SlotIcon from './cells/SlotIcon';
 import {
   HiOutlineSun,
@@ -23,27 +26,81 @@ const mealTypes = [
   { value: 'off', label: 'Off', description: 'No meals', icon: HiOutlineNoSymbol, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-[var(--text-secondary)]' },
 ];
 
-const FintechCheckbox = React.memo(({ ariaLabel, ...props }) => (
-  <Checkbox aria-label={ariaLabel} {...props} />
-));
+const FintechCheckbox = React.memo(({ checked, indeterminate, onChange, disabled, ariaLabel, ...props }) => {
+  const checkboxRef = useRef(null);
+
+  useEffect(() => {
+    if (checkboxRef.current) {
+      checkboxRef.current.indeterminate = Boolean(indeterminate);
+    }
+  }, [indeterminate]);
+
+  return (
+    <label
+      className={cn(
+        'relative inline-flex items-center justify-center w-6 h-6 min-h-[40px] sm:min-h-0 shrink-0 cursor-pointer select-none',
+        disabled && 'cursor-not-allowed opacity-50'
+      )}
+    >
+      <input
+        ref={checkboxRef}
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        disabled={disabled}
+        aria-label={ariaLabel}
+        className="sr-only peer"
+        {...props}
+      />
+      <span
+        aria-hidden="true"
+        className={cn(
+          'w-4 h-4 rounded-[4px] border border-[var(--border-contrast)] bg-[var(--bg-elevated)] transition-[background-color,border-color] duration-150 flex items-center justify-center pointer-events-none',
+          'peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--focus)] peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-[var(--bg-elevated)]',
+          (checked || indeterminate) && 'bg-[var(--brand)] border-[var(--brand)] text-[var(--text-on-brand)]',
+          disabled && 'bg-[var(--input-bg-disabled)] border-[var(--border-muted)] text-[var(--text-disabled)]'
+        )}
+      >
+        {indeterminate ? (
+          <Minus className="w-3 h-3 stroke-[3]" />
+        ) : checked ? (
+          <Check className="w-3 h-3 stroke-[3]" />
+        ) : null}
+      </span>
+    </label>
+  );
+});
 FintechCheckbox.displayName = 'FintechCheckbox';
 
 const getEntryUserId = (entry) =>
   typeof entry.user === 'object' ? entry.user?._id : entry.user;
 
-const SelectAllCheckbox = ({ checked, indeterminate, onChange, count, disabled }) => {
+const SelectAllRow = ({ checked, indeterminate, onChange, count, total, disabled }) => {
   return (
-    <div className="flex items-center gap-2 px-2 py-1.5">
-      <FintechCheckbox
-        checked={checked}
-        indeterminate={indeterminate}
-        onChange={onChange}
-        disabled={disabled}
-        ariaLabel={checked ? 'Deselect all entries' : 'Select all entries'}
-      />
-      <span className="text-xs font-medium text-[var(--text-secondary)]">
-        {checked ? `${count} selected` : `Select all (${count})`}
-      </span>
+    <div
+      className={cn(
+        'flex items-center justify-between px-3 py-2 sm:py-1.5 min-h-[40px] sm:min-h-[36px] h-10 sm:h-9 rounded-[8px] border border-[var(--border-muted)] bg-transparent transition-opacity',
+        disabled && 'opacity-50 cursor-not-allowed'
+      )}
+    >
+      <div className="flex items-center gap-2 min-h-[40px] sm:min-h-0">
+        <FintechCheckbox
+          checked={checked}
+          indeterminate={indeterminate}
+          onChange={onChange}
+          disabled={disabled}
+          ariaLabel={checked ? 'Deselect all entries' : 'Select all entries'}
+        />
+        <span className="text-[13px] font-medium text-[var(--text-primary)] leading-none select-none">
+          Select all <span className="font-normal text-[var(--text-muted)]">({count})</span>
+        </span>
+      </div>
+
+      {count > 0 && total > 0 && (
+        <span className="text-xs font-medium text-[var(--text-muted)]">
+          {count} / {total} selected
+        </span>
+      )}
     </div>
   );
 };
@@ -70,6 +127,70 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
   }, [sorted, isAdmin, currentUserId]);
 
   const canEdit = (entry) => isAdmin || getEntryUserId(entry) === currentUserId;
+
+  if (category === 'meals') {
+    return (
+      <MealForm
+        entries={entries}
+        date={detailDate}
+        mode={isAdding ? 'add' : 'edit'}
+        initialData={editingId ? entries.find((e) => e._id === editingId) : null}
+        isAdmin={isAdmin}
+        currentUser={currentUser}
+        onSubmit={onSave}
+        onSave={onSave}
+        onUpdate={onUpdate}
+        onDelete={onDelete}
+        onBulkDelete={onBulkDelete}
+        onBulkUpdate={onBulkUpdate}
+        onCancel={() => {
+          setIsAdding?.(false);
+          setEditingId?.(null);
+        }}
+      />
+    );
+  }
+
+  if (category === 'markets') {
+    return (
+      <MarketForm
+        entries={entries}
+        date={detailDate}
+        mode={isAdding ? 'add' : 'edit'}
+        initialData={editingId ? entries.find((e) => e._id === editingId) : null}
+        isAdmin={isAdmin}
+        currentUser={currentUser}
+        onSubmit={onSave}
+        onSave={onSave}
+        onUpdate={onUpdate}
+        onDelete={onDelete}
+        onBulkDelete={onBulkDelete}
+        onCancel={() => {
+          setIsAdding?.(false);
+          setEditingId?.(null);
+          onDone?.();
+        }}
+      />
+    );
+  }
+
+  if (category === 'payments') {
+    return (
+      <PaymentForm
+        date={detailDate}
+        initialData={editingId ? entries.find((e) => e._id === editingId) : null}
+        isAdmin={isAdmin}
+        currentUser={currentUser}
+        onSubmit={onSave}
+        onSave={onSave}
+        onCancel={() => {
+          setIsAdding?.(false);
+          setEditingId?.(null);
+          onDone?.();
+        }}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -99,22 +220,15 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
         )}
       </div>
 
-      {visibleEntries.length > 0 && onToggleSelect && onSelectAll && (
-        <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-[var(--bg-muted)]/30 border border-[var(--border-default)]">
-          <SelectAllCheckbox
-            checked={selectedEntryIds?.size === visibleEntries.length}
-            indeterminate={selectedEntryIds?.size > 0 && selectedEntryIds?.size < visibleEntries.length}
-            onChange={onSelectAll}
-            count={selectedEntryIds?.size || 0}
-            disabled={isBulkSubmitting || !!isAdding || !!editingId || !!confirmDeleteId}
-          />
-          <div className="flex-1" />
-          {selectedEntryIds?.size > 0 && (
-            <span className="text-[11px] font-medium text-[var(--text-muted)]">
-              {selectedEntryIds.size} / {visibleEntries.length} selected
-            </span>
-          )}
-        </div>
+      {onToggleSelect && onSelectAll && (
+        <SelectAllRow
+          checked={visibleEntries.length > 0 && selectedEntryIds?.size === visibleEntries.length}
+          indeterminate={selectedEntryIds?.size > 0 && selectedEntryIds?.size < visibleEntries.length}
+          onChange={onSelectAll}
+          count={visibleEntries.length === 0 ? 0 : selectedEntryIds?.size || 0}
+          total={visibleEntries.length}
+          disabled={visibleEntries.length === 0 || isBulkSubmitting || !!isAdding || !!editingId || !!confirmDeleteId}
+        />
       )}
 
       {isAdding && (
@@ -335,45 +449,131 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
 const MAX_RANGE_DAYS = 31;
 const typeCountMap = { both: 2, day: 1, night: 1, off: 0 };
 
+const modalInputClass =
+  'h-11 sm:h-10 min-h-[44px] sm:min-h-[40px] px-3 rounded-[8px] border-[var(--border-contrast)] hover:border-[var(--border-contrast-hover)] focus:border-[var(--focus)] text-[16px] sm:text-sm bg-[var(--bg-elevated)]';
+
 const ModeTab = ({ mode, current, onChange, label }) => (
   <button
     type="button"
     role="tab"
     aria-selected={current === mode}
     onClick={() => onChange(mode)}
-    className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all duration-150 ${
+    className={cn(
+      'flex-1 h-8 sm:h-8 min-h-[32px] sm:min-h-[32px] max-sm:h-9 max-sm:min-h-[36px] flex items-center justify-center text-xs font-semibold rounded-[6px] transition-[background-color,color,box-shadow] duration-150 motion-reduce:transition-none',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
       current === mode
-        ? 'bg-[var(--brand)] text-[var(--text-on-brand)] shadow-[0_1px_3px_rgba(0,0,0,0.25)]'
-        : 'bg-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)]/40'
-    }`}
+        ? 'bg-[var(--brand)] text-[var(--text-on-brand)] shadow-xs'
+        : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)]'
+    )}
   >
     {label}
   </button>
 );
 
 const TypeBtn = ({ value, current, onClick, icon: Icon, label, description, color, disabled }) => {
-    const isActive = current === value;
-    return (
+  const isActive = current === value;
+  return (
+    <button
+      type="button"
+      onClick={() => !disabled && onClick(value)}
+      disabled={disabled}
+      aria-pressed={isActive}
+      className={cn(
+        'relative flex flex-col items-center justify-center gap-1 py-2 px-2 sm:py-2.5 sm:px-3 rounded-[10px] border transition-[background-color,border-color,opacity] duration-150 motion-reduce:transition-none text-center',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-elevated)]',
+        disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer',
+        isActive
+          ? `${color} border-2 font-semibold shadow-xs`
+          : 'border-[var(--border-contrast)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-contrast-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+      )}
+    >
+      <Icon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+      <span className="text-xs font-bold leading-tight">{label}</span>
+      <span className="text-[10px] text-[var(--text-muted)] leading-tight hidden sm:block">{description}</span>
+    </button>
+  );
+};
+
+const GuestMealsRow = ({
+  isGuestMeal,
+  guestCount,
+  onChange,
+  disabled = false,
+}) => {
+  const displayCount = isGuestMeal ? guestCount : 0;
+
+  const handleToggle = () => {
+    if (disabled) return;
+    if (isGuestMeal) {
+      onChange({ isGuestMeal: false, guestCount: 1 });
+    } else {
+      onChange({ isGuestMeal: true, guestCount: 1 });
+    }
+  };
+
+  const handleDecrease = () => {
+    if (disabled || displayCount <= 0) return;
+    if (displayCount <= 1) {
+      onChange({ isGuestMeal: false, guestCount: 1 });
+    } else {
+      onChange({ isGuestMeal: true, guestCount: displayCount - 1 });
+    }
+  };
+
+  const handleIncrease = () => {
+    if (disabled || displayCount >= 20) return;
+    onChange({ isGuestMeal: true, guestCount: Math.min(20, displayCount + 1) });
+  };
+
+  return (
+    <div
+      className={cn(
+        'flex items-center justify-between gap-3 px-3 min-h-[48px] h-12 rounded-[10px] border border-[var(--border-contrast)] bg-[var(--surface-elevated)] transition-[background-color,border-color,opacity] duration-150 motion-reduce:transition-none',
+        disabled && 'opacity-60 cursor-not-allowed'
+      )}
+    >
+      <button
+        type="button"
+        onClick={handleToggle}
+        disabled={disabled}
+        className="flex items-center gap-2 flex-1 min-w-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-elevated)] rounded-[6px]"
+      >
+        <div className="w-7 h-7 min-w-[28px] rounded-[6px] bg-[var(--accent-primary)]/12 flex items-center justify-center shrink-0">
+          <HiOutlineUserGroup className="w-4 h-4 text-[var(--accent-primary)]" />
+        </div>
+        <span className="text-[13px] font-semibold text-[var(--text-primary)]">Guest Meals</span>
+        {displayCount > 0 && (
+          <span className="text-[11px] font-semibold text-[var(--accent-primary)] bg-[var(--accent-primary)]/12 px-1.5 py-0.5 rounded-[6px] leading-tight">
+            +{displayCount}
+          </span>
+        )}
+      </button>
+
+      <div className="flex items-center shrink-0 rounded-[6px] border border-[var(--border-contrast)] bg-[var(--bg-elevated)] overflow-hidden">
         <button
-            type="button"
-            onClick={() => !disabled && onClick(value)}
-            disabled={disabled}
-            aria-pressed={isActive}
-            className={`relative flex flex-col items-center gap-1 py-2.5 px-2 sm:py-3 sm:px-3 rounded-lg border-2 transition-all duration-150 text-center
-                ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                ${isActive
-                    ? `${color} shadow-[0_2px_8px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.04)] scale-[1.02]`
-                    : 'border-[var(--border-default)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:shadow-[0_3px_8px_rgba(0,0,0,0.1)]'
-                }`}
+          type="button"
+          onClick={handleDecrease}
+          disabled={disabled || displayCount <= 0}
+          className="w-8 h-8 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--accent-primary)] hover:bg-[var(--bg-muted)] active:bg-[var(--accent-primary)]/10 transition-[background-color,color,opacity] duration-150 motion-reduce:transition-none disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-[var(--text-secondary)] disabled:hover:bg-transparent"
+          aria-label="Decrease guest count"
         >
-            <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="text-[10px] sm:text-xs font-bold">{label}</span>
-            <span className="text-[9px] sm:text-[10px] text-[var(--text-muted)] leading-tight hidden sm:block">{description}</span>
-            {isActive && (
-                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[var(--success)] border-2 border-[var(--bg-elevated)]" />
-            )}
+          <HiOutlineMinus className="w-4 h-4" />
         </button>
-    );
+        <span className="w-8 h-8 flex items-center justify-center text-xs font-semibold text-[var(--text-primary)] border-x border-[var(--border-contrast)] tabular-nums select-none">
+          {displayCount}
+        </span>
+        <button
+          type="button"
+          onClick={handleIncrease}
+          disabled={disabled || displayCount >= 20}
+          className="w-8 h-8 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--accent-primary)] hover:bg-[var(--bg-muted)] active:bg-[var(--accent-primary)]/10 transition-[background-color,color,opacity] duration-150 motion-reduce:transition-none disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-[var(--text-secondary)] disabled:hover:bg-transparent"
+          aria-label="Increase guest count"
+        >
+          <HiOutlinePlus className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
 };
 
 const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, setIsSubmitting, isSubmitting = false }) => {
@@ -498,7 +698,7 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
       )}
 
       {isAdmin && (
-        <div>
+        <div className="calendar-modal-member-select [&>div>button]:h-11 sm:[&>div>button]:h-10 [&>div>button]:min-h-[44px] sm:[&>div>button]:min-h-[40px] [&>div>button]:rounded-[8px] [&>div>button]:border-[var(--border-contrast)] hover:[&>div>button]:border-[var(--border-contrast-hover)] [&>div>button]:focus-visible:ring-2 [&>div>button]:focus-visible:ring-[var(--focus)] [&>div>button]:focus-visible:ring-offset-2 [&>div>button]:focus-visible:ring-offset-[var(--bg-elevated)] [&>div>button]:px-3 [&>div>button]:text-[16px] sm:[&>div>button]:text-sm [&>div>button]:bg-[var(--bg-elevated)] [&_.record-field-menu]:rounded-[8px] [&_.record-field-menu]:border-[var(--border-contrast)]">
           <MemberSelect
             users={users}
             value={userIds}
@@ -514,10 +714,9 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
 
       {/* Mode toggle — only for meals (markets don't support bulk) */}
       {category === 'meals' && (
-        /* shadow-inner creates a recessed well; active tab with shadow-sm rises above it */
-        <div role="tablist" aria-label="Date mode" className="flex gap-1 p-1 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-strong)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)]">
-          <ModeTab mode="single" current={mode} onChange={isSubmitting ? () => {} : setMode} label="Single" />
-          <ModeTab mode="range" current={mode} onChange={isSubmitting ? () => {} : setMode} label="Range" />
+        <div role="tablist" aria-label="Date mode" className="flex items-center gap-1 p-1 h-11 sm:h-10 min-h-[44px] sm:min-h-[40px] rounded-[8px] bg-[var(--bg-subtle)] border border-[var(--border-contrast)]">
+          <ModeTab mode="single" current={mode} onChange={isSubmitting ? () => { } : setMode} label="Single" />
+          <ModeTab mode="range" current={mode} onChange={isSubmitting ? () => { } : setMode} label="Range" />
         </div>
       )}
 
@@ -538,16 +737,16 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
 
       {/* Date inputs */}
       {isRangeMode ? (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-3">
           <div>
             <Input
               type="date"
               variant="record"
-              size="sm"
               value={rangeFrom}
               onChange={(e) => { setRangeFrom(e.target.value); setErrors((p) => ({ ...p, rangeFrom: undefined, rangeTo: undefined })); }}
               disabled={isSubmitting}
               isInvalid={!!errors.rangeFrom}
+              className={modalInputClass}
               aria-label="Start date"
             />
             {errors.rangeFrom && <p className="text-[10px] text-[var(--danger)] mt-0.5">{errors.rangeFrom}</p>}
@@ -556,12 +755,12 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
             <Input
               type="date"
               variant="record"
-              size="sm"
               value={rangeTo}
               min={rangeFrom}
               onChange={(e) => { setRangeTo(e.target.value); setErrors((p) => ({ ...p, rangeTo: undefined })); }}
               disabled={isSubmitting}
               isInvalid={!!errors.rangeTo}
+              className={modalInputClass}
               aria-label="End date"
             />
             {errors.rangeTo && <p className="text-[10px] text-[var(--danger)] mt-0.5">{errors.rangeTo}</p>}
@@ -572,11 +771,11 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
           <Input
             type="date"
             variant="record"
-            size="sm"
             value={date}
             onChange={(e) => { setDate(e.target.value); setErrors((p) => ({ ...p, date: undefined })); }}
             disabled={isSubmitting}
             isInvalid={!!errors.date}
+            className={modalInputClass}
             aria-label="Date"
           />
           {errors.date && <p className="text-[10px] text-[var(--danger)] mt-0.5">{errors.date}</p>}
@@ -605,7 +804,6 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
             <Input
               type="number"
               variant="record"
-              size="sm"
               value={amount}
               onChange={(e) => { setAmount(e.target.value); setErrors((p) => ({ ...p, amount: undefined })); }}
               min="0"
@@ -614,6 +812,7 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
               placeholder="0.00"
               disabled={isSubmitting}
               isInvalid={!!errors.amount}
+              className={modalInputClass}
               leftIcon={<span className="text-[var(--success-text)] font-semibold text-sm">₹</span>}
               aria-label="Amount"
             />
@@ -624,12 +823,12 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
             <Input
               type="text"
               variant="record"
-              size="sm"
               value={items}
               onChange={(e) => { setItems(e.target.value); setErrors((p) => ({ ...p, items: undefined })); }}
               placeholder="e.g. Rice, Vegetables, Oil…"
               disabled={isSubmitting}
               isInvalid={!!errors.items}
+              className={modalInputClass}
               aria-label="Items"
             />
             {errors.items && <p className="text-[10px] text-[var(--danger)] mt-0.5">{errors.items}</p>}
@@ -637,76 +836,29 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
         </>
       )}
 
-      {/* Guest Meals — Blinkit-style stepper (meals only) */}
+      {/* Guest Meals stepper (meals only) */}
       {category === 'meals' && (
-        <div className={cn(
-          'flex items-center gap-2 px-2.5 py-2 rounded-lg border transition-colors',
-          isGuestMeal
-            ? 'border-[var(--info-border)] bg-[var(--info-bg)] shadow-[0_1px_3px_rgba(0,0,0,0.12)]'
-            : 'border-[var(--border-default)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)] shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:shadow-[0_2px_6px_rgba(0,0,0,0.1)]',
-          isSubmitting && 'opacity-60 cursor-not-allowed',
-        )}>
-          <button
-            type="button"
-            onClick={() => { if (!isSubmitting) { setIsGuestMeal((p) => { if (p) setGuestCount(1); return !p; }); setErrors((p) => ({ ...p, guestCount: undefined })); } }}
-            disabled={isSubmitting}
-            className="flex items-center gap-1.5 flex-1 min-w-0 text-left"
-          >
-            <HiOutlineUserGroup className="w-4 h-4 text-[var(--info)] shrink-0" />
-            <span className="text-xs font-semibold text-[var(--text-primary)]">Guest Meals</span>
-            {isGuestMeal && guestCount > 0 && (
-              <span className="text-[10px] font-bold text-[var(--info-text)] bg-[var(--info-bg)] px-1.5 py-0.5 rounded-full">
-                +{guestCount}
-              </span>
-            )}
-          </button>
-
-          {isGuestMeal ? (
-            <div className="flex items-center shrink-0 rounded-lg border border-[var(--info-border)] overflow-hidden">
-              <button
-                type="button"
-                onClick={() => { if (!isSubmitting) { if (guestCount <= 1) { setIsGuestMeal(false); setGuestCount(1); } else { setGuestCount((c) => c - 1); } setErrors((p) => ({ ...p, guestCount: undefined })); } }}
-                disabled={isSubmitting}
-                className="w-9 h-9 flex items-center justify-center bg-[var(--info-bg)] text-[var(--info-text)] hover:brightness-110 active:brightness-95 transition-all text-lg font-bold select-none disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Decrease guest count"
-              >
-                <HiOutlineMinus className="w-4 h-4" />
-              </button>
-              <div className="w-10 h-9 flex items-center justify-center bg-[var(--info-bg)]/50 text-sm font-bold text-[var(--info-text)] border-x border-[var(--info-border)] tabular-nums select-none">
-                {guestCount}
-              </div>
-              <button
-                type="button"
-                onClick={() => { if (!isSubmitting) { setGuestCount((c) => Math.min(20, c + 1)); setErrors((p) => ({ ...p, guestCount: undefined })); } }}
-                disabled={isSubmitting}
-                className="w-9 h-9 flex items-center justify-center bg-[var(--info-bg)] text-[var(--info-text)] hover:brightness-110 active:brightness-95 transition-all text-lg font-bold select-none disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Increase guest count"
-              >
-                <HiOutlinePlus className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => { if (!isSubmitting) { setIsGuestMeal(true); setGuestCount(1); setErrors((p) => ({ ...p, guestCount: undefined })); } }}
-              disabled={isSubmitting}
-              className="px-3 h-9 rounded-lg bg-[var(--info-bg)] text-[var(--info-text)] text-xs font-semibold shrink-0 hover:brightness-110 active:brightness-95 transition-all border border-[var(--info-border)] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              + Add
-            </button>
-          )}
-        </div>
+        <GuestMealsRow
+          isGuestMeal={isGuestMeal}
+          guestCount={guestCount}
+          onChange={({ isGuestMeal: igm, guestCount: gc }) => {
+            setIsGuestMeal(igm);
+            setGuestCount(gc);
+            setErrors((p) => ({ ...p, guestCount: undefined }));
+          }}
+          disabled={isSubmitting}
+        />
       )}
       {errors.guestCount && <p className="text-[10px] text-[var(--danger)]">{errors.guestCount}</p>}
 
       <Input
         type="text"
         variant="record"
-        size="sm"
         value={remarks}
         onChange={(e) => setRemarks(e.target.value)}
         placeholder={`${category === 'meals' ? 'Remarks' : 'Description'} (optional)`}
         disabled={isSubmitting}
+        className={modalInputClass}
         aria-label={category === 'meals' ? 'Remarks' : 'Description'}
       />
 
@@ -724,23 +876,21 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
       )}
 
       {/* ─── Fintech Footer: Cancel + Save ─── */}
-      <div className="flex items-center gap-2 pt-2 mt-1 border-t border-[var(--border-default)]">
+      <div className="flex items-center gap-2 pt-3 mt-1 border-t border-[var(--border-contrast)]">
         <Button
           type="button"
           variant="secondary"
-          size="sm"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="flex-1 rounded-lg"
+          className="flex-1 h-11 sm:h-10 min-h-[44px] sm:min-h-[40px] px-3 rounded-[8px] text-sm font-medium border border-[var(--border-contrast)] hover:border-[var(--border-contrast-hover)] bg-[var(--bg-elevated)] text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-elevated)]"
         >
           Cancel
         </Button>
         <Button
           type="submit"
           variant="primary"
-          size="sm"
           disabled={isSubmitting || (isRangeMode && (rangeInvalid || daysCount === 0))}
-          className="flex-[2] rounded-lg"
+          className="flex-[2] h-11 sm:h-10 min-h-[44px] sm:min-h-[40px] px-3 rounded-[8px] text-sm font-semibold bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-[var(--text-on-brand)] border border-transparent shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-elevated)]"
         >
           {isSubmitting ? (
             <span className="flex items-center justify-center gap-1.5">
@@ -836,7 +986,6 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
             <Input
               type="number"
               variant="record"
-              size="sm"
               value={amount}
               onChange={(e) => { setAmount(e.target.value); setErrors((p) => ({ ...p, amount: undefined })); }}
               min="0"
@@ -844,6 +993,7 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
               step="0.01"
               placeholder="0.00"
               isInvalid={!!errors.amount}
+              className={modalInputClass}
               leftIcon={<span className="text-[var(--success-text)] font-semibold text-sm">₹</span>}
               aria-label="Amount"
             />
@@ -854,11 +1004,11 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
             <Input
               type="text"
               variant="record"
-              size="sm"
               value={items}
               onChange={(e) => { setItems(e.target.value); setErrors((p) => ({ ...p, items: undefined })); }}
               placeholder="e.g. Rice, Vegetables, Oil…"
               isInvalid={!!errors.items}
+              className={modalInputClass}
               aria-label="Items"
             />
             {errors.items && <p className="text-[10px] text-[var(--danger)] mt-0.5">{errors.items}</p>}
@@ -870,81 +1020,35 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
       <Input
         type="text"
         variant="record"
-        size="sm"
         value={remarks}
         onChange={(e) => setRemarks(e.target.value)}
         placeholder={category === 'meals' ? 'Notes' : 'Description (optional)'}
-        className="w-full"
+        className={modalInputClass}
         aria-label={category === 'meals' ? 'Notes' : 'Description'}
       />
 
-      {/* Row 3: Guest Meals — Blinkit-style stepper (meals only) */}
+      {/* Row 3: Guest Meals stepper (meals only) */}
       {category === 'meals' && (
-        <div className={cn(
-          'flex items-center gap-2 px-2.5 py-2 rounded-lg border transition-colors',
-          isGuestMeal
-            ? 'border-[var(--info-border)] bg-[var(--info-bg)] shadow-[0_1px_3px_rgba(0,0,0,0.12)]'
-            : 'border-[var(--border-default)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)] shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:shadow-[0_2px_6px_rgba(0,0,0,0.1)]',
-        )}>
-          <button
-            type="button"
-            onClick={() => { setIsGuestMeal((p) => { if (p) setGuestCount(1); return !p; }); setErrors((p) => ({ ...p, guestCount: undefined })); }}
-            className="flex items-center gap-1.5 flex-1 min-w-0 text-left"
-          >
-            <HiOutlineUserGroup className="w-4 h-4 text-[var(--info)] shrink-0" />
-            <span className="text-xs font-semibold text-[var(--text-primary)]">Guest Meals</span>
-            {isGuestMeal && guestCount > 0 && (
-              <span className="text-[10px] font-bold text-[var(--info-text)] bg-[var(--info-bg)] px-1.5 py-0.5 rounded-full">
-                +{guestCount}
-              </span>
-            )}
-          </button>
-
-          {isGuestMeal ? (
-            <div className="flex items-center shrink-0 rounded-lg border border-[var(--info-border)] overflow-hidden">
-              <button
-                type="button"
-                onClick={() => { if (guestCount <= 1) { setIsGuestMeal(false); setGuestCount(1); } else { setGuestCount((c) => c - 1); } setErrors((p) => ({ ...p, guestCount: undefined })); }}
-                className="w-9 h-9 flex items-center justify-center bg-[var(--info-bg)] text-[var(--info-text)] hover:brightness-110 active:brightness-95 transition-all text-lg font-bold select-none"
-                aria-label="Decrease guest count"
-              >
-                <HiOutlineMinus className="w-4 h-4" />
-              </button>
-              <div className="w-10 h-9 flex items-center justify-center bg-[var(--info-bg)]/50 text-sm font-bold text-[var(--info-text)] border-x border-[var(--info-border)] tabular-nums select-none">
-                {guestCount}
-              </div>
-              <button
-                type="button"
-                onClick={() => { setGuestCount((c) => Math.min(20, c + 1)); setErrors((p) => ({ ...p, guestCount: undefined })); }}
-                className="w-9 h-9 flex items-center justify-center bg-[var(--info-bg)] text-[var(--info-text)] hover:brightness-110 active:brightness-95 transition-all text-lg font-bold select-none"
-                aria-label="Increase guest count"
-              >
-                <HiOutlinePlus className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => { setIsGuestMeal(true); setGuestCount(1); setErrors((p) => ({ ...p, guestCount: undefined })); }}
-              className="px-3 h-9 rounded-lg bg-[var(--info-bg)] text-[var(--info-text)] text-xs font-semibold shrink-0 hover:brightness-110 active:brightness-95 transition-all border border-[var(--info-border)]"
-            >
-              + Add
-            </button>
-          )}
-        </div>
+        <GuestMealsRow
+          isGuestMeal={isGuestMeal}
+          guestCount={guestCount}
+          onChange={({ isGuestMeal: igm, guestCount: gc }) => {
+            setIsGuestMeal(igm);
+            setGuestCount(gc);
+            setErrors((p) => ({ ...p, guestCount: undefined }));
+          }}
+          disabled={false}
+        />
       )}
       {errors.guestCount && <p className="text-[10px] text-[var(--danger)]">{errors.guestCount}</p>}
 
       {/* ─── Fintech Footer: Cancel + Save ─── */}
-      <div className={cn(
-        'flex items-center gap-2 pt-2 mt-1 border-t border-[var(--border-default)]',
-      )}>
+      <div className="flex items-center gap-2 pt-3 mt-1 border-t border-[var(--border-contrast)]">
         <Button
           type="button"
           variant="secondary"
-          size="sm"
           onClick={onCancel}
-          className="flex-1 rounded-lg"
+          className="flex-1 h-11 sm:h-10 min-h-[44px] sm:min-h-[40px] px-3 rounded-[8px] text-sm font-medium border border-[var(--border-contrast)] hover:border-[var(--border-contrast-hover)] bg-[var(--bg-elevated)] text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-elevated)]"
           aria-label="Cancel edit"
         >
           Cancel
@@ -952,8 +1056,7 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
         <Button
           type="submit"
           variant="primary"
-          size="sm"
-          className="flex-[2] rounded-lg"
+          className="flex-[2] h-11 sm:h-10 min-h-[44px] sm:min-h-[40px] px-3 rounded-[8px] text-sm font-semibold bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-[var(--text-on-brand)] border border-transparent shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-elevated)]"
           aria-label="Save changes"
         >
           Update
@@ -1027,7 +1130,6 @@ const BulkUpdateForm = ({ category, selectedCount, onSubmit, onCancel, isBulkSub
             <Input
               type="number"
               variant="record"
-              size="sm"
               value={amount}
               onChange={(e) => { setAmount(e.target.value); setErrors((p) => ({ ...p, amount: undefined, empty: undefined })); }}
               min="0"
@@ -1035,6 +1137,7 @@ const BulkUpdateForm = ({ category, selectedCount, onSubmit, onCancel, isBulkSub
               step="0.01"
               placeholder="0.00"
               isInvalid={!!errors.amount}
+              className={modalInputClass}
               leftIcon={<span className="text-[var(--success-text)] font-semibold text-sm">₹</span>}
               aria-label="Amount"
             />
@@ -1044,11 +1147,10 @@ const BulkUpdateForm = ({ category, selectedCount, onSubmit, onCancel, isBulkSub
             <Input
               type="text"
               variant="record"
-              size="sm"
               value={items}
               onChange={(e) => setItems(e.target.value)}
               placeholder="e.g. Rice, Vegetables, Oil…"
-              className="w-full"
+              className={modalInputClass}
               aria-label="Items"
             />
           </div>
@@ -1058,10 +1160,10 @@ const BulkUpdateForm = ({ category, selectedCount, onSubmit, onCancel, isBulkSub
       <Input
         type="text"
         variant="record"
-        size="sm"
         value={remarks}
         onChange={(e) => setRemarks(e.target.value)}
         placeholder={`${category === 'meals' ? 'Remarks' : 'Description'} (optional)`}
+        className={modalInputClass}
         aria-label={category === 'meals' ? 'Remarks' : 'Description'}
       />
 
@@ -1069,23 +1171,21 @@ const BulkUpdateForm = ({ category, selectedCount, onSubmit, onCancel, isBulkSub
         <p className="text-xs text-[var(--danger)]">{errors.type || errors.amount || errors.empty}</p>
       )}
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 pt-3 mt-1 border-t border-[var(--border-contrast)]">
         <Button
           type="button"
           variant="secondary"
-          size="sm"
           onClick={onCancel}
           disabled={!!isBulkSubmitting}
-          className="flex-1 rounded-lg"
+          className="flex-1 h-11 sm:h-10 min-h-[44px] sm:min-h-[40px] px-3 rounded-[8px] text-sm font-medium border border-[var(--border-contrast)] hover:border-[var(--border-contrast-hover)] bg-[var(--bg-elevated)] text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-elevated)]"
         >
           Cancel
         </Button>
         <Button
           type="submit"
           variant="primary"
-          size="sm"
           disabled={!!isBulkSubmitting}
-          className="flex-[2] rounded-lg"
+          className="flex-[2] h-11 sm:h-10 min-h-[44px] sm:min-h-[40px] px-3 rounded-[8px] text-sm font-semibold bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-[var(--text-on-brand)] border border-transparent shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-elevated)]"
         >
           {isBulkSubmitting === 'updating' ? (
             <span className="flex items-center justify-center gap-1.5">

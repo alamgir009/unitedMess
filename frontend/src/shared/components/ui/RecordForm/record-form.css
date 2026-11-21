@@ -12,11 +12,11 @@
     min-width: 0;
     min-height: var(--control-height-md);
     padding: var(--space-3);
-    border: var(--control-border-width) solid var(--border-default);
+    border: var(--control-border-width) solid var(--border-contrast);
     border-radius: var(--radius-md);
-    background: var(--bg-muted);
+    background: var(--input-bg);
     color: var(--text-primary);
-    box-shadow: var(--control-recessed-shadow);
+    box-shadow: var(--shadow-xs);
     font-size: var(--control-font-size);
     line-height: 20px;
     caret-color: var(--brand);
@@ -24,16 +24,51 @@
     transition: border-color var(--duration-fast) var(--ease-out);
 }
 
-.record-field::placeholder { color: var(--text-secondary); opacity: 1; }
-.record-field.record-field-leading { padding-left: 28px; }
-.record-field.record-field-search { padding-left: 36px; }
-.record-field:hover:not(:disabled) { border-color: var(--border-strong); }
-.record-field:focus { border-color: var(--focus); outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); }
-.record-field:disabled { opacity: .6; cursor: not-allowed; }
-.record-field.record-field-refund { border-color: var(--danger-text); }
-.record-field.record-field-refund:focus { outline-color: var(--danger-text); }
-.record-field[aria-invalid="true"] { border-color: var(--danger-text); outline-color: var(--danger-text); }
-textarea.record-field { min-height: 88px; resize: vertical; }
+.record-field::placeholder {
+    color: var(--text-secondary);
+    opacity: 1;
+}
+
+.record-field.record-field-leading {
+    padding-left: 28px;
+}
+
+.record-field.record-field-search {
+    padding-left: 36px;
+}
+
+.record-field:hover:not(:disabled) {
+    border-color: var(--border-strong);
+}
+
+.record-field:focus {
+    border-color: var(--focus);
+    outline: var(--focus-width) solid var(--focus);
+    outline-offset: var(--focus-offset);
+}
+
+.record-field:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+.record-field.record-field-refund {
+    border-color: var(--danger-text);
+}
+
+.record-field.record-field-refund:focus {
+    outline-color: var(--danger-text);
+}
+
+.record-field[aria-invalid="true"] {
+    border-color: var(--danger-text);
+    outline-color: var(--danger-text);
+}
+
+textarea.record-field {
+    min-height: 88px;
+    resize: vertical;
+}
 
 .record-field-menu {
     border: 1px solid var(--border-default);
@@ -43,9 +78,22 @@ textarea.record-field { min-height: 88px; resize: vertical; }
     box-shadow: var(--shadow-lg);
 }
 
-.record-form-footer { display: grid; gap: 12px; width: 100%; min-width: 0; }
-.record-form-actions { display: flex; align-items: stretch; gap: 12px; width: 100%; min-width: 0; }
-.record-form-actions > .btn {
+.record-form-footer {
+    display: grid;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+}
+
+.record-form-actions {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+}
+
+.record-form-actions>.btn {
     min-width: 0;
     min-height: 48px;
     height: 48px;
@@ -55,22 +103,62 @@ textarea.record-field { min-height: 88px; resize: vertical; }
     line-height: 20px;
     white-space: normal;
 }
-.record-payment-flow .btn { min-height: 48px; height: 48px; border-radius: var(--radius-md); }
 
-.record-form-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.record-form-pair > * { min-width: 0; }
-.record-form-options.segmented-control { display: flex; width: 100%; }
-.record-form-options .segmented-control-button { padding-inline: 8px; }
+.record-payment-flow .btn {
+    min-height: 48px;
+    height: 48px;
+    border-radius: var(--radius-md);
+}
+
+.record-form-pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.record-form-pair>* {
+    min-width: 0;
+}
+
+.record-form-options.segmented-control {
+    display: flex;
+    width: 100%;
+}
+
+.record-form-options .segmented-control-button {
+    padding-inline: 8px;
+}
+
+/* Enhanced tactile depth for modal & form segmented controls */
+.record-form .segmented-control,
+.record-segmented-control {
+    width: 100%;
+    border: none;
+}
+
+.record-form .segmented-control .segmented-control-button:is([aria-pressed="true"], [aria-selected="true"], [aria-checked="true"]),
+.record-segmented-control .segmented-control-button:is([aria-pressed="true"], [aria-selected="true"], [aria-checked="true"]) {
+    color: var(--brand);
+}
 
 @container record-form (max-width: 380px) {
-    .record-form-pair { grid-template-columns: minmax(0, 1fr); }
+    .record-form-pair {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }
 
 @media (max-width: 639px) {
-    .record-field { font-size: 16px; }
-    .record-modal > [data-modal-footer] { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+    .record-field {
+        font-size: 16px;
+    }
+
+    .record-modal>[data-modal-footer] {
+        padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .record-field { transition: none; }
+    .record-field {
+        transition: none;
+    }
 }

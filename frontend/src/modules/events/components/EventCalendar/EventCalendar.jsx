@@ -21,6 +21,8 @@ import { createMarket, updateMarket, deleteMarket, bulkCreateMarkets } from '../
 import { createPayment, createBulkPayments, updatePayment } from '../../../payment/store/payment.slice';
 
 const CalendarDayEdit = lazy(() => import('./CalendarDayEdit'));
+const MealModal = lazy(() => import('../../../meal/components/MealModal/MealModal'));
+const MarketModal = lazy(() => import('../../../market/components/MarketModal/MarketModal'));
 const PaymentModal = lazy(() => import('../../../payment/components/PaymentModal/PaymentModal'));
 const PaymentForm = lazy(() => import('../../../payment/components/PaymentForm/PaymentForm'));
 
@@ -509,14 +511,15 @@ const EventCalendar = () => {
 
   // ── Payment CRUD ──────────────────────────────────────────────
   const handlePaymentAdd = useCallback(() => {
+    const defaultDate = detailDate ? getISTDateKey(detailDate) : undefined;
     setDetailDate(null);
     setIsEditMode(false);
     setIsAdding(false);
     setEditingId(null);
     setConfirmDeleteId(null);
-    setEditingPayment(null);
+    setEditingPayment(defaultDate ? { paymentDate: defaultDate } : null);
     setIsPaymentModalOpen(true);
-  }, []);
+  }, [detailDate]);
 
   const handlePaymentEdit = useCallback((payment) => {
     setEditingPayment(payment);
@@ -530,7 +533,7 @@ const EventCalendar = () => {
     }
     setIsPaymentSubmitting(true);
     try {
-      if (editingPayment) {
+      if (editingPayment && editingPayment._id) {
         await dispatch(updatePayment({
           paymentId: editingPayment._id,
           paymentData: formData,
@@ -540,7 +543,7 @@ const EventCalendar = () => {
         await dispatch(createBulkPayments(formData)).unwrap();
         toast.success(`Payments recorded for ${formData.userIds.length} members`);
       } else {
-        const singleData = { ...formData, userId: formData.userIds?.[0] || '' };
+        const singleData = { ...formData, userId: formData.userIds?.[0] || formData.userId || '' };
         delete singleData.userIds;
         await dispatch(createPayment(singleData)).unwrap();
         toast.success('Payment recorded');
@@ -792,11 +795,67 @@ const EventCalendar = () => {
           </div>
       </div>
 
-      {detailDate && (
+      {/* Unified Meal Modal for EventCalendar meal add/edit */}
+      {detailDate && category === 'meals' && isEditMode && (
+        <Suspense fallback={calendarSuspenseFallback}>
+          <MealModal
+            isOpen={Boolean(detailDate && isEditMode)}
+            onClose={() => {
+              setIsEditMode(false);
+              setIsAdding(false);
+              setEditingId(null);
+            }}
+            mode={isAdding ? 'add' : 'edit'}
+            date={detailDate}
+            entries={filteredCurrentDateEntries}
+            initialData={editingId ? filteredCurrentDateEntries.find((e) => e._id === editingId) : null}
+            onSubmit={handleSaveEntry}
+            onSave={handleSaveEntry}
+            onUpdate={handleUpdateEntry}
+            onDelete={handleDeleteEntry}
+            onBulkDelete={handleBulkDelete}
+            onBulkUpdate={handleBulkUpdate}
+            isAdmin={isAdmin}
+            currentUser={user}
+          />
+        </Suspense>
+      )}
+
+      {/* Unified Market Modal for EventCalendar market add/edit */}
+      {detailDate && category === 'markets' && isEditMode && (
+        <Suspense fallback={calendarSuspenseFallback}>
+          <MarketModal
+            isOpen={Boolean(detailDate && isEditMode)}
+            onClose={() => {
+              setIsEditMode(false);
+              setIsAdding(false);
+              setEditingId(null);
+            }}
+            mode={isAdding ? 'add' : 'edit'}
+            date={detailDate}
+            entries={filteredCurrentDateEntries}
+            initialData={editingId ? filteredCurrentDateEntries.find((e) => e._id === editingId) : null}
+            onSubmit={handleSaveEntry}
+            onSave={handleSaveEntry}
+            onUpdate={handleUpdateEntry}
+            onDelete={handleDeleteEntry}
+            onBulkDelete={handleBulkDelete}
+            isAdmin={isAdmin}
+            currentUser={user}
+          />
+        </Suspense>
+      )}
+
+      {/* DayDetailDialog for non-meals / non-markets OR in day view mode */}
+      {detailDate && !(['meals', 'markets'].includes(category) && isEditMode) && (
         <DayDetailDialog
           isOpen={!!detailDate}
           onClose={handleCloseDetail}
-          title={`${formatInIST(detailDate, 'MMM d, yyyy')}${isEditMode ? ' — Edit' : ''} — ${category}`}
+          title={
+            category === 'meals'
+              ? `${formatInIST(detailDate, 'd MMM yyyy')} · Meals`
+              : `${formatInIST(detailDate, 'd MMM yyyy')}${isEditMode ? ' · Edit' : ''} · ${category.charAt(0).toUpperCase() + category.slice(1)}`
+          }
           isEditMode={isEditMode}
           onEditToggle={!['votes', 'payments'].includes(category) ? handleEditToggle : undefined}
           category={category}

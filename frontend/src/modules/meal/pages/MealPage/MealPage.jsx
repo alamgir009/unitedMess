@@ -472,18 +472,15 @@ const MealPage = () => {
                 </div>
 
                 {/* Meal create/edit modal */}
-                <MealModal isOpen={isModalOpen} onClose={closeModal}
-                    title={editingMeal ? 'Edit Meal Record' : (isAdmin ? 'Add Meal Record' : 'Track New Meal')}
-                    footer={modalFooter}>
-                    <MealForm
-                        initialData={editingMeal}
-                        onSubmit={handleSubmit}
-                        onCancel={closeModal}
-                        isAdmin={isAdmin}
-                        currentUser={user}
-                        renderFooter={setModalFooter}
-                    />
-                </MealModal>
+                <MealModal
+                    isOpen={isModalOpen}
+                    onClose={closeModal}
+                    mode={editingMeal ? 'edit' : 'add'}
+                    initialData={editingMeal}
+                    onSubmit={handleSubmit}
+                    isAdmin={isAdmin}
+                    currentUser={user}
+                />
 
                 {/* Bulk delete confirm dialog */}
                 {bulkDeleteTarget && (

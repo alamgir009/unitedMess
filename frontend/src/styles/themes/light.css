@@ -32,6 +32,8 @@ html.light {
   --border-muted: hsl(220 11% 91%);       /* #E4E7EC */
   --border-strong: hsl(216 10% 82%);      /* #C8CDD6 — stronger */
   --border-brand: hsl(221 83% 53%);       /* #2563EB (blue-600) */
+  --border-contrast: hsl(216 10% 55%);        /* #8896A6 — 3.02:1 on #FFFFFF */
+  --border-contrast-hover: hsl(216 10% 35%);  /* #475569 — 8.6:1 on #FFFFFF */
 
   /* ── Text hierarchy ── */
   --text-primary: hsl(0 0% 7%);           /* #111827 — 16.1:1 on white */
