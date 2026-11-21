@@ -807,7 +807,7 @@ export const PaymentForm = ({
               size="md"
               disabled={!isValidToSave || isSubmitting}
               isLoading={isSubmitting}
-              className="flex-[2]"
+              className="flex-1"
             >
               {saveLabel}
             </Button>

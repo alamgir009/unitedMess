@@ -3,7 +3,7 @@ import { Plus, Trash2, X, Check, Minus, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { fmt } from '@/core/utils/helpers/currency.helper';
-import { MemberSelect, Button, Input } from '@/shared/components/ui';
+import { MemberSelect, Button, Input, GuestMealField } from '@/shared/components/ui';
 import apiClient from '@/services/api/client/apiClient';
 import MealForm from '@/modules/meal/components/MealForm/MealForm';
 import MarketForm from '@/modules/market/components/MarketForm/MarketForm';
@@ -20,9 +20,9 @@ import {
 } from 'react-icons/hi2';
 
 const mealTypes = [
-  { value: 'both', label: 'Both', description: 'Day & Night', icon: HiOutlineSparkles, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-violet-500' },
-  { value: 'day', label: 'Day', description: 'Morning only', icon: HiOutlineSun, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-[var(--warning)]' },
-  { value: 'night', label: 'Night', description: 'Evening only', icon: HiOutlineMoon, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-[var(--info)]' },
+  { value: 'both', label: 'Both', description: 'Day & Night', icon: HiOutlineSparkles, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-[var(--slot-both-text)]' },
+  { value: 'day', label: 'Day', description: 'Morning only', icon: HiOutlineSun, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-[var(--slot-day-text)]' },
+  { value: 'night', label: 'Night', description: 'Evening only', icon: HiOutlineMoon, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-[var(--slot-night-text)]' },
   { value: 'off', label: 'Off', description: 'No meals', icon: HiOutlineNoSymbol, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-[var(--text-secondary)]' },
 ];
 
@@ -494,88 +494,6 @@ const TypeBtn = ({ value, current, onClick, icon: Icon, label, description, colo
   );
 };
 
-const GuestMealsRow = ({
-  isGuestMeal,
-  guestCount,
-  onChange,
-  disabled = false,
-}) => {
-  const displayCount = isGuestMeal ? guestCount : 0;
-
-  const handleToggle = () => {
-    if (disabled) return;
-    if (isGuestMeal) {
-      onChange({ isGuestMeal: false, guestCount: 1 });
-    } else {
-      onChange({ isGuestMeal: true, guestCount: 1 });
-    }
-  };
-
-  const handleDecrease = () => {
-    if (disabled || displayCount <= 0) return;
-    if (displayCount <= 1) {
-      onChange({ isGuestMeal: false, guestCount: 1 });
-    } else {
-      onChange({ isGuestMeal: true, guestCount: displayCount - 1 });
-    }
-  };
-
-  const handleIncrease = () => {
-    if (disabled || displayCount >= 20) return;
-    onChange({ isGuestMeal: true, guestCount: Math.min(20, displayCount + 1) });
-  };
-
-  return (
-    <div
-      className={cn(
-        'flex items-center justify-between gap-3 px-3 min-h-[48px] h-12 rounded-[10px] border border-[var(--border-contrast)] bg-[var(--surface-elevated)] transition-[background-color,border-color,opacity] duration-150 motion-reduce:transition-none',
-        disabled && 'opacity-60 cursor-not-allowed'
-      )}
-    >
-      <button
-        type="button"
-        onClick={handleToggle}
-        disabled={disabled}
-        className="flex items-center gap-2 flex-1 min-w-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-elevated)] rounded-[6px]"
-      >
-        <div className="w-7 h-7 min-w-[28px] rounded-[6px] bg-[var(--accent-primary)]/12 flex items-center justify-center shrink-0">
-          <HiOutlineUserGroup className="w-4 h-4 text-[var(--accent-primary)]" />
-        </div>
-        <span className="text-[13px] font-semibold text-[var(--text-primary)]">Guest Meals</span>
-        {displayCount > 0 && (
-          <span className="text-[11px] font-semibold text-[var(--accent-primary)] bg-[var(--accent-primary)]/12 px-1.5 py-0.5 rounded-[6px] leading-tight">
-            +{displayCount}
-          </span>
-        )}
-      </button>
-
-      <div className="flex items-center shrink-0 rounded-[6px] border border-[var(--border-contrast)] bg-[var(--bg-elevated)] overflow-hidden">
-        <button
-          type="button"
-          onClick={handleDecrease}
-          disabled={disabled || displayCount <= 0}
-          className="w-8 h-8 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--accent-primary)] hover:bg-[var(--bg-muted)] active:bg-[var(--accent-primary)]/10 transition-[background-color,color,opacity] duration-150 motion-reduce:transition-none disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-[var(--text-secondary)] disabled:hover:bg-transparent"
-          aria-label="Decrease guest count"
-        >
-          <HiOutlineMinus className="w-4 h-4" />
-        </button>
-        <span className="w-8 h-8 flex items-center justify-center text-xs font-semibold text-[var(--text-primary)] border-x border-[var(--border-contrast)] tabular-nums select-none">
-          {displayCount}
-        </span>
-        <button
-          type="button"
-          onClick={handleIncrease}
-          disabled={disabled || displayCount >= 20}
-          className="w-8 h-8 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--accent-primary)] hover:bg-[var(--bg-muted)] active:bg-[var(--accent-primary)]/10 transition-[background-color,color,opacity] duration-150 motion-reduce:transition-none disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-[var(--text-secondary)] disabled:hover:bg-transparent"
-          aria-label="Increase guest count"
-        >
-          <HiOutlinePlus className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
-  );
-};
-
 const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, setIsSubmitting, isSubmitting = false }) => {
   const [mode, setMode] = useState('single');
   const [date, setDate] = useState(dateStr);
@@ -715,8 +633,8 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
       {/* Mode toggle — only for meals (markets don't support bulk) */}
       {category === 'meals' && (
         <div role="tablist" aria-label="Date mode" className="flex items-center gap-1 p-1 h-11 sm:h-10 min-h-[44px] sm:min-h-[40px] rounded-[8px] bg-[var(--bg-subtle)] border border-[var(--border-contrast)]">
-          <ModeTab mode="single" current={mode} onChange={isSubmitting ? () => { } : setMode} label="Single" />
-          <ModeTab mode="range" current={mode} onChange={isSubmitting ? () => { } : setMode} label="Range" />
+          <ModeTab mode="single" current={mode} onChange={isSubmitting ? () => { } : setMode} label="Single Day" />
+          <ModeTab mode="range" current={mode} onChange={isSubmitting ? () => { } : setMode} label="Date Range" />
         </div>
       )}
 
@@ -838,14 +756,14 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
 
       {/* Guest Meals stepper (meals only) */}
       {category === 'meals' && (
-        <GuestMealsRow
-          isGuestMeal={isGuestMeal}
-          guestCount={guestCount}
-          onChange={({ isGuestMeal: igm, guestCount: gc }) => {
-            setIsGuestMeal(igm);
+        <GuestMealField
+          value={isGuestMeal ? (guestCount || 0) : 0}
+          onChange={(gc) => {
+            setIsGuestMeal(gc > 0);
             setGuestCount(gc);
             setErrors((p) => ({ ...p, guestCount: undefined }));
           }}
+          max={20}
           disabled={isSubmitting}
         />
       )}
@@ -890,7 +808,7 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
           type="submit"
           variant="primary"
           disabled={isSubmitting || (isRangeMode && (rangeInvalid || daysCount === 0))}
-          className="flex-[2] h-11 sm:h-10 min-h-[44px] sm:min-h-[40px] px-3 rounded-[8px] text-sm font-semibold bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-[var(--text-on-brand)] border border-transparent shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-elevated)]"
+          className="flex-1 h-11 sm:h-10 min-h-[44px] sm:min-h-[40px] px-3 rounded-[8px] text-sm font-semibold bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-[var(--text-on-brand)] border border-transparent shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-elevated)]"
         >
           {isSubmitting ? (
             <span className="flex items-center justify-center gap-1.5">
@@ -1056,7 +974,7 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
         <Button
           type="submit"
           variant="primary"
-          className="flex-[2] h-11 sm:h-10 min-h-[44px] sm:min-h-[40px] px-3 rounded-[8px] text-sm font-semibold bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-[var(--text-on-brand)] border border-transparent shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-elevated)]"
+          className="flex-1 h-11 sm:h-10 min-h-[44px] sm:min-h-[40px] px-3 rounded-[8px] text-sm font-semibold bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-[var(--text-on-brand)] border border-transparent shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-elevated)]"
           aria-label="Save changes"
         >
           Update
@@ -1185,7 +1103,7 @@ const BulkUpdateForm = ({ category, selectedCount, onSubmit, onCancel, isBulkSub
           type="submit"
           variant="primary"
           disabled={!!isBulkSubmitting}
-          className="flex-[2] h-11 sm:h-10 min-h-[44px] sm:min-h-[40px] px-3 rounded-[8px] text-sm font-semibold bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-[var(--text-on-brand)] border border-transparent shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-elevated)]"
+          className="flex-1 h-11 sm:h-10 min-h-[44px] sm:min-h-[40px] px-3 rounded-[8px] text-sm font-semibold bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-[var(--text-on-brand)] border border-transparent shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-elevated)]"
         >
           {isBulkSubmitting === 'updating' ? (
             <span className="flex items-center justify-center gap-1.5">

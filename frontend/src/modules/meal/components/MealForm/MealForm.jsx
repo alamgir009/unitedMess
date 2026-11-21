@@ -17,7 +17,7 @@ import {
 } from 'react-icons/hi2';
 import { Loader2 } from 'lucide-react';
 import apiClient from '@/services/api/client/apiClient';
-import { Button, Avatar, MemberSelect } from '@/shared/components/ui';
+import { Button, Avatar, MemberSelect, GuestMealField } from '@/shared/components/ui';
 import { cn } from '@/core/utils/helpers/string.helper';
 
 const MAX_RANGE_DAYS = 31;
@@ -99,139 +99,6 @@ const DateField = ({ label, value, onChange, min, max, disabled, error, id }) =>
           {error}
         </p>
       )}
-    </div>
-  );
-};
-
-/**
- * Accessible Fintech Stepper with 44x44px touch targets and long-press repeat
- */
-const Stepper = ({ value, onChange, min = 0, max = 20, disabled, label = 'Guest meals' }) => {
-  const numValue = typeof value === 'number' ? value : (parseInt(value, 10) || 0);
-  const valueRef = useRef(numValue);
-  useEffect(() => {
-    valueRef.current = typeof value === 'number' ? value : (parseInt(value, 10) || 0);
-  }, [value]);
-
-  const timerRef = useRef(null);
-  const intervalRef = useRef(null);
-  const isRepeatingRef = useRef(false);
-
-  const clearTimers = useCallback(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    timerRef.current = null;
-    intervalRef.current = null;
-  }, []);
-
-  useEffect(() => clearTimers, [clearTimers]);
-
-  const handleStep = useCallback((delta) => {
-    if (disabled) return;
-    const current = Number(valueRef.current) || 0;
-    const next = Math.min(max, Math.max(min, current + delta));
-    valueRef.current = next;
-    onChange(next);
-  }, [disabled, min, max, onChange]);
-
-  const handlePointerDown = (delta) => {
-    if (disabled) return;
-    isRepeatingRef.current = false;
-    clearTimers();
-    timerRef.current = setTimeout(() => {
-      isRepeatingRef.current = true;
-      intervalRef.current = setInterval(() => {
-        handleStep(delta);
-      }, 75);
-    }, 350);
-  };
-
-  const handleClick = (e, delta) => {
-    e.preventDefault();
-    clearTimers();
-    if (isRepeatingRef.current) {
-      isRepeatingRef.current = false;
-      return;
-    }
-    handleStep(delta);
-  };
-
-  return (
-    <div
-      className={cn(
-        'flex items-center justify-between gap-3 px-3 h-12 min-h-[48px] rounded-[8px] border border-[var(--border-contrast)] bg-[var(--input-bg)] transition-colors',
-        disabled && 'opacity-60 cursor-not-allowed'
-      )}
-    >
-      <div className="flex items-center gap-2 min-w-0">
-        <HiOutlineUserGroup className="w-4 h-4 text-[var(--brand)] shrink-0" />
-        <span className="text-xs font-medium text-[var(--text-primary)] select-none">
-          {label}
-        </span>
-        {numValue === 0 ? (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              if (disabled) return;
-              handleStep(1);
-            }}
-            disabled={disabled}
-            className="text-[11px] font-medium text-[var(--brand)] hover:underline cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] rounded-[4px] px-1 py-0.5"
-          >
-            + Add guest
-          </button>
-        ) : (
-          <span className="text-[11px] font-semibold text-[var(--brand)] bg-[var(--accent-subtle)] px-2 py-0.5 rounded-[6px] tabular-nums leading-none">
-            +{numValue} guest{numValue !== 1 ? 's' : ''}
-          </span>
-        )}
-      </div>
-
-      <div
-        className="flex items-center shrink-0 rounded-[8px] border border-[var(--border-contrast)] bg-[var(--bg-elevated)] overflow-hidden"
-        role="group"
-        aria-label={label}
-      >
-        <button
-          type="button"
-          onClick={(e) => handleClick(e, -1)}
-          onPointerDown={() => handlePointerDown(-1)}
-          onPointerUp={clearTimers}
-          onPointerCancel={clearTimers}
-          onPointerLeave={clearTimers}
-          disabled={disabled || numValue <= min}
-          aria-label="Decrease guest meals"
-          className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--brand)] hover:bg-[var(--bg-muted)] active:bg-[var(--accent-subtle)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
-        >
-          <HiOutlineMinus className="w-4 h-4" />
-        </button>
-
-        <span
-          role="spinbutton"
-          aria-valuenow={numValue}
-          aria-valuemin={min}
-          aria-valuemax={max}
-          aria-label={label}
-          className="w-11 h-11 min-w-[44px] flex items-center justify-center text-sm font-semibold tabular-nums text-[var(--text-primary)] border-x border-[var(--border-contrast)] select-none"
-        >
-          {numValue}
-        </span>
-
-        <button
-          type="button"
-          onClick={(e) => handleClick(e, 1)}
-          onPointerDown={() => handlePointerDown(1)}
-          onPointerUp={clearTimers}
-          onPointerCancel={clearTimers}
-          onPointerLeave={clearTimers}
-          disabled={disabled || numValue >= max}
-          aria-label="Increase guest meals"
-          className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--brand)] hover:bg-[var(--bg-muted)] active:bg-[var(--accent-subtle)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
-        >
-          <HiOutlinePlus className="w-4 h-4" />
-        </button>
-      </div>
     </div>
   );
 };
@@ -914,20 +781,17 @@ export const MealForm = ({
         </div>
       </div>
 
-      {/* ── GUEST MEALS STEPPER ────────────────────────────────────── */}
-      <div className="flex flex-col gap-1 w-full">
-        <Stepper
-          value={Number(formData.guestCount) || 0}
-          onChange={(count) => {
-            const nextCount = typeof count === 'function' ? count(Number(formData.guestCount) || 0) : (Number(count) || 0);
-            setFormData((p) => ({ ...p, guestCount: nextCount, isGuestMeal: nextCount > 0 }));
-          }}
-          min={0}
-          max={20}
-          disabled={readOnly || isSubmitting}
-          label="Guest meals"
-        />
-      </div>
+      {/* ── GUEST MEALS SECTION ────────────────────────────────────── */}
+      <GuestMealField
+        value={Number(formData.guestCount) || 0}
+        onChange={(count) => {
+          const nextCount = typeof count === 'function' ? count(Number(formData.guestCount) || 0) : (Number(count) || 0);
+          setFormData((p) => ({ ...p, guestCount: nextCount, isGuestMeal: nextCount > 0 }));
+        }}
+        min={0}
+        max={20}
+        disabled={readOnly || isSubmitting}
+      />
 
       {/* ── REMARKS ────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-1 w-full">
@@ -985,7 +849,7 @@ export const MealForm = ({
             variant="primary"
             disabled={!isValidToSave}
             isLoading={isSubmitting}
-            className="flex-[2] min-h-[44px] rounded-[8px] text-sm font-semibold"
+            className="flex-1 min-h-[44px] rounded-[8px] text-sm font-semibold"
           >
             {activeEditingEntry ? 'Update meal' : totalMealsCount > 0 ? `Save ${totalMealsCount} meals` : 'Save meals'}
           </Button>

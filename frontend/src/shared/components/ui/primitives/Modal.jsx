@@ -61,7 +61,7 @@ export const Modal = ({
 
   const dialogRef = useRef(null);
   const openerRef = useRef(null);
-  const { shouldRender, exiting } = useModalAnimation(isOpen, { exitTimeout: 140 });
+  const { shouldRender, exiting } = useModalAnimation(isOpen, { exitTimeout: 180 });
   const isMobile = useMediaQuery('(max-width: 639px)');
   const useSheet = mobileSheet && isMobile;
 
@@ -221,8 +221,8 @@ export const Modal = ({
         useSheet
           ? {
               minHeight: '300px',
-              maxHeight: '90vh',
-              height: `${sheetHeightPct}vh`,
+              maxHeight: '90dvh',
+              height: `${sheetHeightPct}dvh`,
               boxShadow: 'var(--elevation-4, var(--shadow-xl))',
             }
           : { maxHeight: desktopMaxHeight }
@@ -327,7 +327,10 @@ export const Modal = ({
       {footer && (
         <div
           data-modal-footer="true"
-          className="flex items-center justify-end gap-3 shrink-0 border-t border-[var(--border-default)] px-5 pb-5 pt-3 sm:px-6 sm:pb-6 sm:pt-4"
+          className={cn(
+            'flex items-center justify-end gap-3 shrink-0 border-t border-[var(--border-default)] px-5 pt-3 sm:px-6 sm:pb-6 sm:pt-4',
+            useSheet ? 'pb-[max(1.25rem,env(safe-area-inset-bottom))]' : 'pb-5',
+          )}
         >
           {footer}
         </div>

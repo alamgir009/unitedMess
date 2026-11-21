@@ -9,6 +9,7 @@ export { default as ConfirmDialog } from './ConfirmDialog/index.js';
 export { default as Tabs, TabsList, TabsTrigger, TabsContent } from './Tabs/index.js';
 export { default as Dropdown } from './Dropdown/index.js';
 export { default as MemberSelect } from './MemberSelect/index.js';
+export { default as GuestMealField } from './GuestMealField/index.js';
 export { ToastContainer, useToast } from './Toast/index.js';
 export { default as SearchBar } from './SearchBar/SearchBar.jsx';
 export { default as Pagination } from './Pagination/Pagination.jsx';

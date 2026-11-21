@@ -668,7 +668,7 @@ export const MarketForm = ({
               variant="primary"
               disabled={!isValidToSave || isSubmitting}
               isLoading={isSubmitting}
-              className="flex-[2] min-h-[44px] rounded-[8px]"
+              className="flex-1 min-h-[44px] rounded-[8px]"
             >
               {isSubmitting
                 ? 'Saving…'

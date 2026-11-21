@@ -9,10 +9,10 @@ export const EditModal = ({ isOpen, onClose, initialData }) => {
 
   const footer = (
     <div className="grid w-full grid-cols-2 gap-2.5 sm:flex">
-      <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading}>
+      <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading} className="sm:flex-1">
         Cancel
       </Button>
-      <Button type="submit" form={formId} className="sm:flex-1" isLoading={isLoading}>
+      <Button type="submit" form={formId} className="sm:flex-1" isLoading={isLoading} disabled={isLoading}>
         Save Changes
       </Button>
     </div>
