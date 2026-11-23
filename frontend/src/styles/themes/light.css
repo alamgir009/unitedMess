@@ -215,11 +215,11 @@ html.light {
   /* Every combination independently verified to exceed WCAG AAA (7.0:1+) */
 
   /* Primary — Cloudflare Kumo blue: white on #056DFF = 4.5:1 ✓ AA */
-  --btn-primary-from: #3C86FF;
+  --btn-primary-from: #1766DB;
   --btn-primary-to: #056DFF;
   --btn-primary-label: #FFFFFF;
   --btn-primary-border: #045EDE;
-  --btn-primary-hover-bg: linear-gradient(to bottom, #619EFF, #056DFF);
+  --btn-primary-hover-bg: linear-gradient(to bottom, #2A6DDA, #056DFF);
   --btn-primary-hover-border: #045EDE;
 
   /* Secondary — slate card: #0F172A on #F8FAFC = 17.06:1 ✓ AAA */

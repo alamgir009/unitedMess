@@ -266,8 +266,14 @@ const bulkCreateMeals = async ({ startDate, endDate, type, userIds, isGuestMeal,
  * Create a meal
  */
 const createMeal = async (mealBody) => {
-    const { user } = mealBody;
+    const { user, type = 'both', isGuestMeal = false, remarks } = mealBody;
     const date = normalizeDate(parseDate(mealBody.date));
+    if (!Object.hasOwn(mealTypeCountMap, type) || typeof isGuestMeal !== 'boolean') {
+        throw new AppError('A valid meal type and guest meal setting are required', 400);
+    }
+    if (mealBody.guestCount != null && (!Number.isSafeInteger(mealBody.guestCount) || mealBody.guestCount < 0)) {
+        throw new AppError('Guest count must be a non-negative whole number', 400);
+    }
 
     // Check if any meal already exists for this user+date (regardless of type)
     if (await Meal.exists({ user, date })) {
@@ -276,31 +282,25 @@ const createMeal = async (mealBody) => {
         throw new AppError(`A meal already exists for this date${typeHint}`, 409);
     }
 
-    mealBody.date = date;
-    const typeCount = mealTypeCountMap[mealBody.type] ?? 0;
-    mealBody.guestCount = mealBody.isGuestMeal ? (mealBody.guestCount || 1) : 0;
-    mealBody.mealCount = typeCount + mealBody.guestCount;
-
-    const mealId = new mongoose.Types.ObjectId();
-    mealBody._id = mealId;
-    mealBody.source = 'manual';
-    delete mealBody.calendarTotals;
-
-    const [newMeal] = await Promise.all([
-        Meal.create(mealBody),
-        User.findByIdAndUpdate(
+    const guestCount = isGuestMeal ? (mealBody.guestCount || 1) : 0;
+    const mealCount = mealTypeCountMap[type] + guestCount;
+    const newMeal = await mongoose.connection.transaction(async (session) => {
+        const [record] = await Meal.create([{
+            user, date, type, isGuestMeal, guestCount, mealCount, remarks, source: 'manual',
+        }], { session });
+        const owner = await User.findByIdAndUpdate(
             user,
             {
-                $push: { meals: mealId },
-                $inc: { totalMeal: mealBody.mealCount, guestMeal: mealBody.guestCount }
+                $push: { meals: record._id },
+                $inc: { totalMeal: mealCount, guestMeal: guestCount },
             },
-            { new: true, runValidators: true }
-        )
-    ]);
+            { session, runValidators: true },
+        );
+        if (!owner) throw new AppError('Meal owner not found', 404);
+        return record;
+    });
 
-    // A payable refresh is fire-and-forget; failures are logged, never blocking
-    recalculatePayablesSafe();
-
+    refreshCalendarPayables();
     return newMeal;
 };
 

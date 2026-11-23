@@ -5,8 +5,6 @@ const { sendSuccessResponse } = require('../../../utils/helpers/response.helper'
 const mongoose = require('mongoose');
 const AppError = require('../../../utils/errors/AppError');
 const { verifyImageMagicBytes, storeUploadedImage } = require('../../../utils/helpers/imageUpload.helper');
-const cloudinary = require('cloudinary').v2;
-const logger = require('../../../utils/logger/index');
 
 // Validation helper
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
@@ -108,7 +106,7 @@ const updateUser = asyncHandler(async (req, res) => {
 
 const updateMe = asyncHandler(async (req, res) => {
     // Self-update restrictions
-    const allowedUpdates = pick(req.body, ['name', 'phone', 'image', 'email']);
+    const allowedUpdates = pick(req.body, ['name', 'phone', 'email']);
     const user = await userService.updateProfile(req.user.id, allowedUpdates, false);
     sendSuccessResponse(res, 200, 'Profile updated successfully', user);
 });
@@ -121,24 +119,6 @@ const updateAvatar = asyncHandler(async (req, res) => {
     verifyImageMagicBytes(req.file);
 
     const userId = req.user.id;
-    const user = await userService.getUserById(userId);
-
-    // Extract existing Cloudinary Public ID and destroy old image
-    if (user.image && user.image.includes('cloudinary.com')) {
-        try {
-            const urlObj = new URL(user.image);
-            const pathSegments = urlObj.pathname.split('/');
-            const unitedMessIdx = pathSegments.indexOf('unitedMess');
-            if (unitedMessIdx !== -1) {
-                const publicIdWithExt = pathSegments.slice(unitedMessIdx).join('/');
-                const publicId = publicIdWithExt.replace(/\.[^.]+$/, '');
-                await cloudinary.uploader.destroy(publicId);
-            }
-        } catch (error) {
-            logger.error('Failed to delete old image from Cloudinary:', error);
-        }
-    }
-
     const imageUrl = await storeUploadedImage(req.file, req, {
         folder: 'unitedMess/avatars',
         transformation: [{ width: 400, height: 400, crop: 'fill', gravity: 'face' }],

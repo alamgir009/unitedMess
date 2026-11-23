@@ -89,10 +89,10 @@ const sendCustomAdminNotification = asyncHandler(async (req, res) => {
 const deliveryReceipt = asyncHandler(async (req, res) => {
     const { notificationId, event, timestamp } = req.body;
     if (notificationId && notificationId !== 'default') {
-        Notification.findByIdAndUpdate(notificationId, {
+        await Notification.findOneAndUpdate({ _id: notificationId, recipient: req.user.id }, {
             deliveryStatus: event === 'received' ? 'DELIVERED' : 'SENT',
             $push: { 'metadata.deliveryEvents': { event, timestamp, userAgent: req.headers['user-agent'] } },
-        }).catch(() => {});
+        });
     }
     res.status(204).send();
 });

@@ -38,7 +38,7 @@ html.dark {
   --text-primary: hsl(216 12% 95%);       /* #F0F2F5 — 8.7:1 on #1E222C */
   --text-secondary: hsl(216 10% 72%);     /* #B0B8C8 — 7.2:1 on #1E222C */
   --text-tertiary: hsl(216 10% 55%);      /* #7E8A9E — 4.8:1 decorative */
-  --text-muted: hsl(216 10% 50%);         /* #727E92 — labels, captions */
+  --text-muted: hsl(216 10% 57%);
   --text-disabled: hsl(228 11% 28%);      /* #363E50 */
   --text-on-brand: hsl(0 0% 100%);        /* #FFFFFF */
   --text-inverse: hsl(210 40% 98%);       /* #F8FAFC */
@@ -214,11 +214,11 @@ html.dark {
   /* Every combination independently verified to exceed WCAG AAA (7.0:1+) */
 
   /* Primary — Cloudflare Kumo dark (brand #005AEB): white on #005AEB = 5.7:1 ✓ AA */
-  --btn-primary-from: #2673EE;
+  --btn-primary-from: #1766DB;
   --btn-primary-to: #005AEB;
   --btn-primary-label: #FFFFFF;
   --btn-primary-border: #0051D4;
-  --btn-primary-hover-bg: linear-gradient(to bottom, #4C83F1, #005AEB);
+  --btn-primary-hover-bg: linear-gradient(to bottom, #2A6DDA, #005AEB);
   --btn-primary-hover-border: #0051D4;
 
   /* Secondary — dark slate: #F8FAFC on #1E293B = 13.98:1 ✓ AAA */

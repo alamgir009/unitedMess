@@ -4,7 +4,7 @@ const Payment = require('../models/Payment.model');
 const tokenService = require('./token.service');
 const emailService = require('./email.service');
 const AppError = require('../utils/errors/AppError');
-const { validatePassword } = require('../utils/validators/common.validator.js');
+const { isEmail, validatePassword } = require('../utils/validators/common.validator.js');
 
 const LOCK_THRESHOLD = 5;
 const LOCK_TIME_MS = 2 * 60 * 60 * 1000; // 2 hours
@@ -25,12 +25,14 @@ async function register(userData) {
     // Mary-Jane
     const nameRegex = /^[A-Za-z]+([ '-][A-Za-z]+)*$/;
 
-    if (!name || !nameRegex.test(name.trim())) {
+    if (typeof name !== 'string' || !nameRegex.test(name.trim())) {
         throw new AppError(
             "Name can only contain letters, spaces, apostrophes, and hyphens",
             400
         );
     }
+
+    if (typeof email !== 'string' || !isEmail(email)) throw new AppError('A valid email is required', 400);
 
     // Validate password strength (business logic)
     const passwordValidation = validatePassword(password);
@@ -172,11 +174,10 @@ async function refreshAuth(refreshToken) {
  */
 async function forgotPassword(email) {
     const user = await User.findOne({ email: email.toLowerCase() })
+        .select('+passwordResetExpires')
         .collation({ locale: 'en', strength: 2 });
 
-    if (!user) {
-        throw new AppError('Email address not found', 404);
-    }
+    if (!user || user.passwordResetExpires > Date.now()) return;
 
     // Generate reset token
     const resetToken = createPasswordResetToken(user);
@@ -373,27 +374,6 @@ async function resendVerificationEmail(userId) {
 }
 
 /**
- * Check if user can request password reset (rate limiting logic)
- * @param {string} email - User email
- * @returns {Promise<boolean>} Whether reset can be requested
- */
-async function canRequestPasswordReset(email) {
-    const user = await User.findOne({ email: email.toLowerCase() })
-        .collation({ locale: 'en', strength: 2 });
-
-    if (!user) {
-        return true; // Allow request even if user doesn't exist (security measure)
-    }
-
-    // Check if a reset was recently requested (within last 15 minutes)
-    if (user.passwordResetExpires && user.passwordResetExpires > Date.now() - 15 * 60 * 1000) {
-        throw new AppError('Please wait before requesting another password reset', 429);
-    }
-
-    return true;
-}
-
-/**
  * Resend email verification by email address
  * @param {string} email - User email
  */
@@ -534,5 +514,4 @@ module.exports = {
     changePassword,
     resendVerificationEmail,
     resendVerificationEmailByEmail,
-    canRequestPasswordReset
 };

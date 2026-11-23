@@ -16,7 +16,7 @@ const RZ_TEST_PREFIX = 'rzp_test_';
 
 if (!keyId.startsWith(RZ_LIVE_PREFIX) && !keyId.startsWith(RZ_TEST_PREFIX)) {
     throw new Error(
-        `Invalid Razorpay key_id format: "${keyId}". ` +
+        'Invalid Razorpay key_id format. ' +
         'Expected a key starting with "rzp_live_" or "rzp_test_".'
     );
 }
@@ -34,31 +34,6 @@ const razorpay = new Razorpay({
     key_id:     keyId,
     key_secret: keySecret,
 });
-
-// ─── Non-blocking startup validation ─────────────────────────────────────────
-// Verifies the credentials are valid by making a lightweight API call.
-// Does NOT block server startup — logs the result instead.
-(async () => {
-    // Diagnose key source: platform env vars take precedence over .env
-    const rawEnv = process.env.RAZORPAY_KEY_ID || '(not set)';
-    const rawPrefix = rawEnv.length > 9 ? rawEnv.substring(0, 9) + '...' : rawEnv;
-
-    try {
-        await razorpay.orders.all({ count: 1 });
-        console.info(
-            `[Razorpay] Credentials valid — ${keyId.startsWith(RZ_LIVE_PREFIX) ? 'LIVE' : 'TEST'} mode. ` +
-            `Key loaded from: ${rawEnv === keyId ? 'PLATFORM env var' : '.env file'} (prefix: ${rawPrefix})`
-        );
-    } catch (error) {
-        const status = error.statusCode || error.statusCode || '';
-        const msg    = error?.error?.description || error.message || 'Unknown error';
-        console.error(
-            `[Razorpay] Credential validation FAILED (HTTP ${status}): ${msg}. ` +
-            `Key source: ${rawEnv === keyId ? 'PLATFORM env var' : '.env file'} (prefix: ${rawPrefix}). ` +
-            'Verify RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET.'
-        );
-    }
-})();
 
 /**
  * Create a Razorpay order
@@ -85,6 +60,8 @@ const createOrder = async (amount, currency = 'INR') => {
  * @returns {boolean}
  */
 const verifyPaymentSignature = (orderId, paymentId, signature) => {
+    if (typeof signature !== 'string' || !/^[a-f0-9]{64}$/i.test(signature)) return false;
+
     const hmac = crypto.createHmac('sha256', config.razorpay.keySecret);
     hmac.update(`${orderId}|${paymentId}`);
     const generated = hmac.digest('hex');

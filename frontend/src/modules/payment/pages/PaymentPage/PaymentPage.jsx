@@ -809,7 +809,7 @@ const PaymentPage = () => {
                 </div>
 
                 {/* Modal */}
-                <PaymentModal isOpen={isModalOpen} onClose={closeModal} title={modalTitle} footer={modalFooter}>
+                <PaymentModal isOpen={isModalOpen} onClose={closeModal} title={modalTitle} footer={modalFooter} isSubmitting={isSubmitting}>
                     <PaymentForm
                         initialData={editingPayment}
                         onSubmit={handleSubmit}

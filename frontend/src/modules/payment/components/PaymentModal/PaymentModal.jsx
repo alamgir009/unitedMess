@@ -54,6 +54,7 @@ export const PaymentModal = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      isBusy={isSubmitting}
       title={resolvedTitle}
       size="md"
       mobileSheet

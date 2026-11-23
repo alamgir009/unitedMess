@@ -55,25 +55,29 @@ const fileFilter = (req, file, cb) => {
 const uploadDir = path.join(__dirname, '../../../../uploads');
 const avatarDir = path.join(uploadDir, 'avatars');
 const qrDir = path.join(uploadDir, 'qrcodes');
+const stagingDir = path.join(uploadDir, '.staging');
 
 // Create directories if they don't exist
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 if (!fs.existsSync(avatarDir)) fs.mkdirSync(avatarDir, { recursive: true });
 if (!fs.existsSync(qrDir)) fs.mkdirSync(qrDir, { recursive: true });
+fs.mkdirSync(stagingDir, { recursive: true });
+
+const extensions = { 'image/jpeg': '.jpg', 'image/jpg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' };
 
 const safeFilename = (prefix) => (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname).toLowerCase();
+    const ext = extensions[file.mimetype];
     cb(null, `${prefix}-${uniqueSuffix}${ext}`);
 };
 
 const avatarStorage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, avatarDir),
+    destination: stagingDir,
     filename: safeFilename('avatar'),
 });
 
 const qrCodeStorage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, qrDir),
+    destination: stagingDir,
     filename: safeFilename('qrcode'),
 });
 

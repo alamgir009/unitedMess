@@ -36,6 +36,8 @@ export const Modal = ({
   onClose,
   title,
   description,
+  ariaLabelledBy,
+  ariaDescribedBy,
   children,
   footer,
   headerContent,
@@ -56,9 +58,14 @@ export const Modal = ({
   const modalInstanceId = useRef(`modal-${reactId}-${Math.random().toString(36).slice(2, 7)}`).current;
 
   const onCloseRef = useRef(onClose);
+  const busyRef = useRef(isBusy);
   useEffect(() => {
     onCloseRef.current = onClose;
+    busyRef.current = isBusy;
   });
+  const requestClose = useCallback(() => {
+    if (!busyRef.current) onCloseRef.current?.();
+  }, []);
 
   const dialogRef = useRef(null);
   const openerRef = useRef(null);
@@ -67,7 +74,19 @@ export const Modal = ({
   const useSheet = mobileSheet && isMobile;
 
   const [sheetHeightPct, setSheetHeightPct] = useState(SHEET_DEFAULT_HEIGHT_PCT);
-  const dragRef = useRef({ startY: 0, startHeight: SHEET_DEFAULT_HEIGHT_PCT, dragging: false });
+  useLayoutEffect(() => {
+    if (!shouldRender) return;
+    const dialog = dialogRef.current;
+    openerRef.current = document.activeElement;
+    return () => {
+      const opener = openerRef.current;
+      const active = document.activeElement;
+      if (opener?.isConnected && (active === document.body || dialog?.contains(active))) {
+        opener.focus({ preventScroll: true });
+      }
+      openerRef.current = null;
+    };
+  }, [shouldRender]);
 
   useLayoutEffect(() => {
     if (isOpen && isBusy) dialogRef.current?.focus({ preventScroll: true });
@@ -89,13 +108,13 @@ export const Modal = ({
         return;
       }
       e.stopPropagation();
-      onCloseRef.current?.();
+      requestClose();
       return;
     }
 
     const dialog = dialogRef.current;
     if (e.key === 'Tab' && dialog && activeModalStack.at(-1) === modalInstanceId) {
-      if (isBusy) {
+      if (busyRef.current) {
         e.preventDefault();
         dialog.focus({ preventScroll: true });
         return;
@@ -122,54 +141,32 @@ export const Modal = ({
         (e.shiftKey ? last : first).focus();
       }
     }
-  }, [isBusy, modalInstanceId]);
+  }, [modalInstanceId, requestClose]);
 
-  const handleDragMove = useCallback((e) => {
-    if (!dragRef.current.dragging) return;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const delta = dragRef.current.startY - clientY;
-    const vh = window.innerHeight;
-    const deltaPct = (delta / vh) * 100;
-    const newHeight = Math.min(
+  const dragRef = useRef(null);
+  const heightFromPointer = (e, drag) => Math.min(
       SHEET_MAX_HEIGHT_PCT,
-      Math.max(SHEET_MIN_HEIGHT_PCT, dragRef.current.startHeight + deltaPct),
-    );
-    setSheetHeightPct(newHeight);
-  }, []);
-
-  const handleDragEnd = useCallback(() => {
-    dragRef.current.dragging = false;
-    document.removeEventListener('mousemove', handleDragMove);
-    document.removeEventListener('mouseup', handleDragEnd);
-    document.removeEventListener('touchmove', handleDragMove);
-    document.removeEventListener('touchend', handleDragEnd);
-    if (sheetHeightPct < SHEET_DISMISS_THRESHOLD) {
-      onCloseRef.current?.();
+      Math.max(SHEET_MIN_HEIGHT_PCT, drag.startHeight + (drag.startY - e.clientY) / window.innerHeight * 100),
+  );
+  const handleDragStart = (e) => {
+    if (isBusy || e.button !== 0 || dragRef.current) return;
+    dragRef.current = { pointerId: e.pointerId, startY: e.clientY, startHeight: sheetHeightPct };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const handleDragMove = (e) => {
+    const drag = dragRef.current;
+    if (drag?.pointerId === e.pointerId) setSheetHeightPct(heightFromPointer(e, drag));
+  };
+  const handleDragEnd = (e) => {
+    const drag = dragRef.current;
+    if (drag?.pointerId !== e.pointerId) return;
+    dragRef.current = null;
+    if (e.type !== 'pointerup') {
+      setSheetHeightPct(drag.startHeight);
+    } else if (heightFromPointer(e, drag) < SHEET_DISMISS_THRESHOLD) {
+      requestClose();
     }
-  }, [handleDragMove, sheetHeightPct]);
-
-  const handleDragStart = useCallback((e) => {
-    if (e.target.closest('button, input, select, textarea')) return;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    dragRef.current = { startY: clientY, startHeight: sheetHeightPct, dragging: true };
-    document.addEventListener('mousemove', handleDragMove);
-    document.addEventListener('mouseup', handleDragEnd);
-    document.addEventListener('touchmove', handleDragMove, { passive: false });
-    document.addEventListener('touchend', handleDragEnd);
-  }, [sheetHeightPct, handleDragMove, handleDragEnd]);
-
-  // Capture opener focus on mount and restore on unmount
-  useEffect(() => {
-    if (!openerRef.current && document.activeElement) {
-      openerRef.current = document.activeElement;
-    }
-    return () => {
-      if (openerRef.current?.focus) {
-        openerRef.current.focus();
-        openerRef.current = null;
-      }
-    };
-  }, []);
+  };
 
   useEffect(() => {
     if (!shouldRender || exiting) return;
@@ -207,12 +204,9 @@ export const Modal = ({
 
       unlockBodyScroll();
       document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('mousemove', handleDragMove);
-      document.removeEventListener('mouseup', handleDragEnd);
-      document.removeEventListener('touchmove', handleDragMove);
-      document.removeEventListener('touchend', handleDragEnd);
+      dragRef.current = null;
     };
-  }, [shouldRender, exiting, modalInstanceId, handleKeyDown, handleDragMove, handleDragEnd]);
+  }, [shouldRender, exiting, modalInstanceId, handleKeyDown]);
 
   if (typeof document === 'undefined' || !shouldRender) return null;
 
@@ -223,14 +217,13 @@ export const Modal = ({
       ref={dialogRef}
       role={role}
       aria-modal="true"
-      aria-labelledby={title ? titleId : undefined}
-      aria-describedby={description ? descId : undefined}
+      aria-labelledby={ariaLabelledBy || (title ? titleId : undefined)}
+      aria-describedby={ariaDescribedBy || (description && (title || headerContent) ? descId : undefined)}
       aria-busy={isLoading || isBusy || undefined}
       tabIndex={-1}
       style={
         useSheet
           ? {
-              minHeight: '300px',
               maxHeight: '90dvh',
               height: `${sheetHeightPct}dvh`,
               boxShadow: 'var(--elevation-4, var(--shadow-xl))',
@@ -243,7 +236,7 @@ export const Modal = ({
         'bg-[var(--bg-elevated)] border border-[var(--border-default)]',
         'focus:outline-none flex flex-col overflow-hidden',
         useSheet
-          ? 'rounded-t-[var(--radius-2xl)] shadow-xl animate-fade-in-up transition-[height] duration-[var(--duration-fast,120ms)] ease-out'
+          ? 'rounded-t-[var(--radius-2xl)] shadow-xl animate-fade-in-up'
           : 'rounded-[var(--radius-xl)] shadow-xl modal-animate',
         exiting && !useSheet && 'modal-exit',
         !exiting && !useSheet && 'modal-enter',
@@ -253,8 +246,11 @@ export const Modal = ({
     >
       {useSheet && (
         <div
-          onMouseDown={handleDragStart}
-          onTouchStart={handleDragStart}
+          onPointerDown={handleDragStart}
+          onPointerMove={handleDragMove}
+          onPointerUp={handleDragEnd}
+          onPointerCancel={handleDragEnd}
+          onLostPointerCapture={handleDragEnd}
           className="relative z-20 shrink-0 cursor-grab active:cursor-grabbing bg-transparent py-2 flex items-center justify-center touch-none"
         >
           <div className="w-10 h-1.5 rounded-full bg-[var(--text-disabled)] opacity-80" />
@@ -298,9 +294,10 @@ export const Modal = ({
             {showCloseButton && (
               <button
                 type="button"
-                onClick={onClose}
+                onClick={requestClose}
+                disabled={isBusy}
                 aria-label="Close dialog"
-                className="p-2 rounded-[var(--radius-md)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors focus-visible:outline-none focus-visible:ring-[var(--focus-width,2px)] focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2"
+                className="grid h-11 w-11 place-items-center rounded-[var(--radius-md)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors focus-visible:outline-none focus-visible:ring-[var(--focus-width,2px)] focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
@@ -315,7 +312,7 @@ export const Modal = ({
       <div
         data-modal-body="true"
         className={cn(
-          'relative z-10 flex-1 overflow-y-auto overscroll-contain',
+          'relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain',
           useSheet ? 'px-4 py-3' : 'px-5 py-4 sm:px-6 sm:py-5',
           '[scrollbar-width:thin] [scrollbar-color:var(--border-strong)_transparent]',
         )}
@@ -354,7 +351,7 @@ export const Modal = ({
         'fixed inset-0 z-[var(--z-modal,400)] modal-gpu',
         useSheet ? 'flex flex-col justify-end' : 'flex items-center justify-center p-4 sm:p-6',
       )}
-      onClick={closeOnOverlayClick ? onClose : undefined}
+      onClick={closeOnOverlayClick ? requestClose : undefined}
     >
       <div
         aria-hidden="true"

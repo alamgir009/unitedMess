@@ -11,6 +11,7 @@ const { registerMarketReminderCron } = require('./jobs/cron/marketReminderCron')
 const { registerMarketScheduleResetCron } = require('./jobs/cron/marketScheduleResetCron');
 const { setupSocketIO, emitToAll } = require('./sockets');
 const MarketSchedule = require('./models/MarketSchedule.model');
+const { validateCredentials } = require('./services/razorpay.service');
 const pkg = require('../package.json');
 
 // Create HTTP server
@@ -40,6 +41,10 @@ const PORT = config.app.port || 8080;
 
 server.listen(PORT, () => {
     logger.info(`🚀 Server running on port ${PORT} in ${config.app.env} mode`);
+    void validateCredentials().then(({ valid, statusCode }) => {
+        if (valid) logger.info('[Razorpay] Credentials validated');
+        else logger.warn('[Razorpay] Credential validation failed', { statusCode });
+    });
     // Broadcast current version to all connected clients
     emitToAll('server:version', {
         version: pkg.version,

@@ -144,99 +144,92 @@ const getAdminUnpaidInvoices = asyncHandler(async (req, res) => {
  *   delta     — the amount entered by the admin (negative = refund)
  */
 const updateInvoicePayment = asyncHandler(async (req, res) => {
-    const invoice = await Invoice.findById(req.params.id);
-    if (!invoice) throw new AppError('Invoice not found', 404);
+    const invoiceId = req.params.id;
+    const existing = await Invoice.findById(invoiceId);
+    if (!existing) throw new AppError('Invoice not found', 404);
 
     const { paidAmount, delta } = req.body;
-    if (paidAmount === undefined || isNaN(Number(paidAmount))) {
+    if (paidAmount == null || !Number.isFinite(Number(paidAmount))) {
         throw new AppError('Valid paidAmount is required', 400);
     }
-
-    // paidAmount is min: 0 in the Invoice model — clamp so a refund-due
-    // resolution (which computes a negative new paid amount) never fails
-    // model validation, and so a negative paidAmount can never be stored
-    // without delta<0 having created the matching refund Payment record.
-    // Original paid kept for the refund guard: the body's paidAmount is
-    // already original + delta, and credit must be measured on the
-    // PRE-refund state.
-    const originalPaidAmount = Number(invoice.paidAmount) || 0;
-    invoice.paidAmount = Math.max(0, Number(paidAmount));
-
     const refundDelta = delta !== undefined ? Number(delta) : 0;
+    if (!Number.isFinite(refundDelta)) throw new AppError('Valid delta is required', 400);
 
-    // Hoisted so the payment confirmation (sent AFTER save) can read them —
-    // covers both the refund payout and the resolved (collected) payment.
-    let refundPayment = null;
-    let refundUser = null;
-    let collectPayment = null;
-    let collectUser = null;
+    const { invoice, payment } = await paymentService.withPaymentWrite([existing.user], async (session) => {
+        const invoice = await Invoice.findById(invoiceId, null, { session });
+        if (!invoice) throw new AppError('Invoice not found', 404);
+        const originalPaidAmount = Number(invoice.paidAmount) || 0;
+        const nextPaidAmount = Math.max(0, Number(paidAmount));
+        let payment = null;
 
-    // If delta < 0, this is a refund operation — status is always 'refunded'
-    if (refundDelta < 0) {
-        // Amount-aware refund guard (single source: invoiceService helpers).
-        // Existence-based blocking wrongly refused legitimate top-ups
-        // (e.g. only ₹114 of ₹329.60 recorded → the remaining ₹215.60
-        // could never be paid out). Allow payouts only while credit is
-        // still uncovered; the predicate over {user, month} matches the
-        // panel's refundRecorded sum exactly so they can never disagree.
-        const credit = invoiceService.computeRefundCredit({
-            totalPayable: invoice.totalPayable,
-            paidAmount: originalPaidAmount,
-        });
-        const recordedRows = await Payment.find({
-            user: invoice.user,
-            month: invoice.monthName,
-            status: 'refunded',
-        }).select('amount').lean();
-        const recorded = recordedRows.reduce(
-            (sum, r) => sum + Math.abs(Number(r.amount) || 0), 0
-        );
-        const remainingRefundable = credit - recorded;
-        const refundAmount = Math.abs(refundDelta);
-
-        if (remainingRefundable <= invoiceService.SETTLEMENT_TOLERANCE) {
-            throw new AppError(
-                `A refund for ${invoice.monthName} has already been processed`, 409
-            );
+        if (refundDelta < 0) {
+            const credit = invoiceService.computeRefundCredit({
+                totalPayable: invoice.totalPayable,
+                paidAmount: originalPaidAmount,
+            });
+            const recordedRows = await Payment.find({
+                user: invoice.user,
+                month: invoice.monthName,
+                status: 'refunded',
+            }, null, { session }).select('amount').lean();
+            const remaining = credit - recordedRows.reduce((sum, row) => sum + Math.abs(Number(row.amount) || 0), 0);
+            const amount = Math.abs(refundDelta);
+            if (remaining <= invoiceService.SETTLEMENT_TOLERANCE) {
+                throw new AppError(`A refund for ${invoice.monthName} has already been processed`, 409);
+            }
+            if (amount > remaining + invoiceService.SETTLEMENT_TOLERANCE) {
+                throw new AppError(
+                    `Refund of ₹${amount.toLocaleString('en-IN', { maximumFractionDigits: 2 })} exceeds the remaining refundable of ₹${Math.max(0, remaining).toLocaleString('en-IN', { maximumFractionDigits: 2 })} for ${invoice.monthName}`,
+                    409,
+                );
+            }
+            [payment] = await Payment.create([{
+                user: invoice.user, amount, month: invoice.monthName, type: 'mess_bill', status: 'refunded',
+                paymentMethod: 'cash', createdBy: req.user.id,
+                remarks: `Refund of ₹ ${amount.toLocaleString('en-IN', { maximumFractionDigits: 2 })} processed by admin`,
+            }], { session });
+            invoice.status = 'refunded';
+        } else {
+            if (invoice.isExempt === true && (invoice.totalPayable || 0) === 0) {
+                throw new AppError(
+                    `${invoice.monthName} is marked exempt (₹0 due). Clear the exemption before recording a payment.`, 409,
+                );
+            }
+            if (refundDelta > 0 && Math.round(nextPaidAmount * 100) === Math.round(originalPaidAmount * 100)) {
+                return { invoice, payment };
+            }
+            const amount = nextPaidAmount - originalPaidAmount;
+            if (refundDelta > 0 && Math.round(amount * 100) !== Math.round(refundDelta * 100)) {
+                throw new AppError('Invoice payments changed. Refresh the invoice and try again.', 409);
+            }
+            if (amount > 0) {
+                const collected = refundDelta || amount;
+                [payment] = await Payment.create([{
+                    user: invoice.user, amount: collected, month: invoice.monthName, type: 'mess_bill', status: 'completed',
+                    paymentMethod: 'cash', createdBy: req.user.id,
+                    remarks: `Payment of ₹ ${collected.toLocaleString('en-IN', { maximumFractionDigits: 2 })} recorded by admin`,
+                }], { session });
+            }
+            invoice.status = invoiceService.determineInvoiceStatus(nextPaidAmount, invoice.totalPayable);
         }
-        if (refundAmount > remainingRefundable + invoiceService.SETTLEMENT_TOLERANCE) {
-            throw new AppError(
-                `Refund of ₹${refundAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })} exceeds the remaining refundable of ₹${Math.max(0, remainingRefundable).toLocaleString('en-IN', { maximumFractionDigits: 2 })} for ${invoice.monthName}`,
-                409
-            );
+        invoice.paidAmount = nextPaidAmount;
+        await invoice.save({ session });
+        return { invoice, payment };
+    });
+
+    if (payment) {
+        await paymentService.syncUserPaymentStatus(invoice.user, 'mess_bill', payment.status, invoice.monthName);
+        const user = await User.findById(invoice.user).select('name email').lean();
+        if (user?.email) {
+            paymentService.sendPaymentConfirmationWithInvoice(
+                user,
+                { ...payment.toObject?.() ?? payment, month: invoice.monthName, user: invoice.user },
+                payment.status,
+            ).catch(err => logger.error('[Payment Confirmation Email] Failed:', err.message));
         }
+    }
 
-        invoice.status = 'refunded';
-
-        // The refund settles the MESS BILL invoice — always record it as
-        // 'mess_bill'. (The previous "detect original payment type" logic
-        // sniffed the member's latest completed payment for the month; when
-        // their only payment was a gas bill it misclassified the refund as
-        // 'gas_bill' and synced the wrong user status field. Gas is a
-        // separate charge — calculatePaidAmount only counts mess_bill
-        // payments against this invoice, so its refunds are mess refunds.)
-        refundPayment = await Payment.create({
-            user: invoice.user,
-            // Refund deltas arrive negative; Payment.amount is min: 0 — the
-            // sign is carried by status:'refunded' (legacy rows store negative,
-            // new rows must store positive to pass model validation).
-            amount: Math.abs(refundDelta),
-            month: invoice.monthName,
-            type: 'mess_bill',
-            status: 'refunded',
-            paymentMethod: 'cash',
-            createdBy: req.user.id,
-            remarks: `Refund of ₹ ${Math.abs(refundDelta).toLocaleString('en-IN', { maximumFractionDigits: 2 })} processed by admin`,
-        });
-
-        // Sync the user's MESS payment status (flat user.payment field) —
-        // month-guarded inside syncUserPaymentStatus.
-        await paymentService.syncUserPaymentStatus(invoice.user, 'mess_bill', 'refunded', invoice.monthName);
-
-        // Fetch full user details for email (name + email required)
-        refundUser = await User.findById(invoice.user).select('name email').lean();
-
-        // Notify user of refund (in-app notification)
+    if (payment?.status === 'refunded') {
         notificationService.createAndSend(
             invoice.user.toString(),
             'PAYMENT',
@@ -245,75 +238,7 @@ const updateInvoicePayment = asyncHandler(async (req, res) => {
             { priority: 'HIGH', actionRequired: false }
         ).catch(() => {});
 
-        // Broadcast billing:updated to all connected clients for real-time status refresh
         emitToAll('billing:updated');
-    } else {
-        // Guard: recording money against an exempt invoice would leave a
-        // Payment record with nothing to reconcile against. Clear the
-        // exemption first (or refund, if it was already collected).
-        if (invoice.isExempt === true && (invoice.totalPayable || 0) === 0) {
-            throw new AppError(
-                `${invoice.monthName} is marked exempt (₹0 due). Clear the exemption before recording a payment.`,
-                409
-            );
-        }
-
-        // Persist a completed Payment record for the collected amount —
-        // GROUND TRUTH. paidAmount is reconstructible only from completed
-        // mess_bill payments (calculatePaidAmount); without this record the
-        // resolve lived solely on the invoice document and any later
-        // syncInvoiceStatus/syncInvoiceAfterPayment silently reverted it
-        // to unpaid with paidAmount 0. (Mirrors the refund branch, which
-        // has always created its record.)
-        const collectAmount = refundDelta > 0
-            ? refundDelta
-            : Math.max(0, Number(paidAmount) - originalPaidAmount);
-        if (collectAmount > 0) {
-            collectPayment = await Payment.create({
-                user: invoice.user,
-                amount: collectAmount,
-                month: invoice.monthName,
-                type: 'mess_bill',
-                status: 'completed',
-                paymentMethod: 'cash',
-                createdBy: req.user.id,
-                remarks: `Payment of ₹ ${collectAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })} recorded by admin`,
-            });
-
-            // Fetch full user details for the confirmation email
-            // (name + email required — mirrors the refund branch)
-            collectUser = await User.findById(invoice.user).select('name email').lean();
-
-            // Sync the user's MESS payment status (flat user.payment field) —
-            // month-guarded inside syncUserPaymentStatus.
-            await paymentService.syncUserPaymentStatus(invoice.user, 'mess_bill', 'completed', invoice.monthName);
-        }
-
-        invoice.status = invoiceService.determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
-    }
-
-    await invoice.save();
-
-    // Payment confirmation with the invoice PDF — sent AFTER save so the
-    // attached invoice reflects the persisted state (refunded OR paid).
-    // Non-blocking: PDF/email failure must never fail the request.
-    //  - delta < 0  → refund processed → 'refunded' confirmation
-    //  - else       → payment collected → 'completed' confirmation
-    //    (only when a Payment record was actually created, i.e. money moved)
-    if (refundDelta < 0) {
-        if (refundUser?.email) {
-            paymentService.sendPaymentConfirmationWithInvoice(
-                refundUser,
-                { ...refundPayment.toObject?.() ?? refundPayment, month: invoice.monthName, user: invoice.user },
-                'refunded'
-            ).catch(err => logger.error('[Refund Email] Failed:', err.message));
-        }
-    } else if (collectPayment && collectUser?.email) {
-        paymentService.sendPaymentConfirmationWithInvoice(
-            collectUser,
-            { ...collectPayment.toObject?.() ?? collectPayment, month: invoice.monthName, user: invoice.user },
-            'completed'
-        ).catch(err => logger.error('[Payment Confirmation Email] Failed:', err.message));
     }
 
     // Annotate settlement so the panel row flips state without a refetch:

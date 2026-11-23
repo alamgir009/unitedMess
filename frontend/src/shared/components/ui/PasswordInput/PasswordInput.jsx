@@ -13,9 +13,9 @@ const PasswordInput = forwardRef(({ className, ...props }, ref) => {
         <button
           type="button"
           onClick={() => setShowPassword((prev) => !prev)}
-          tabIndex={-1}
+          disabled={props.disabled}
           aria-label={showPassword ? 'Hide password' : 'Show password'}
-          className="flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="grid size-11 place-items-center rounded-[var(--radius-md)] text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
         >
           {showPassword ? (
             <EyeOff className="h-4 w-4" />

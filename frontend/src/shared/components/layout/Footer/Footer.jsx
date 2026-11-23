@@ -42,7 +42,7 @@ const Footer = () => {
             <div className="flex flex-col gap-4">
               <Link
                 to="/"
-                className="inline-flex items-center gap-1.5 shrink-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg w-fit"
+                className="inline-flex min-h-11 items-center gap-1.5 shrink-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg w-fit"
                 aria-label="UnitedMess home"
               >
                 <img
@@ -78,7 +78,7 @@ const Footer = () => {
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
                 Quick Links
               </h3>
-              <ul className="flex flex-col gap-3">
+              <ul className="flex flex-col">
                 {[
                   { label: 'Home', href: '/' },
                   { label: 'About', href: '/about' },
@@ -88,7 +88,7 @@ const Footer = () => {
                   <li key={link.href}>
                     <Link
                       to={link.href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                      className="inline-flex min-h-11 min-w-11 items-center text-sm text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
                     >
                       {link.label}
                     </Link>
@@ -102,7 +102,7 @@ const Footer = () => {
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
                 Legal
               </h3>
-              <ul className="flex flex-col gap-3">
+              <ul className="flex flex-col">
                 {[
                   { label: 'Privacy Policy', href: '/privacy' },
                   { label: 'Terms of Service', href: '/terms' },
@@ -111,7 +111,7 @@ const Footer = () => {
                   <li key={link.href}>
                     <Link
                       to={link.href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                      className="inline-flex min-h-11 min-w-11 items-center text-sm text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
                     >
                       {link.label}
                     </Link>

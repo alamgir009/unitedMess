@@ -78,12 +78,16 @@ const storeUploadedImage = async (file, req, { folder, transformation, diskPrefi
         }
     }
 
-    // Disk storage: convert filesystem path to static URL
-    const normalized = file.path.replace(/\\/g, '/');
-    const uploadsIdx = normalized.indexOf('/uploads/');
-    const relativePath = uploadsIdx !== -1
-        ? normalized.substring(uploadsIdx)
-        : diskPrefix + (file.filename || '');
+    // Publish only after the caller has checked the staged image.
+    const relativePath = diskPrefix + file.filename;
+    const publicPath = path.join(__dirname, '../../../', relativePath);
+    try {
+        await fs.promises.rename(file.path, publicPath);
+    } catch (error) {
+        safeUnlink(file.path);
+        logger.error('Unable to publish uploaded image', { code: error.code });
+        throw new AppError('Unable to save uploaded image.', 500);
+    }
     const baseUrl = `${req.protocol}://${req.get('host')}`;
     return `${baseUrl}${relativePath}`;
 };

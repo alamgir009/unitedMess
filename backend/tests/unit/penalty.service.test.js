@@ -294,11 +294,11 @@ describe('waivePenalty (admin-only by route middleware)', () => {
 
     it('applies a full waiver via a conditional update and appends the audit entry', async () => {
         mockFindById(OVERDUE_INVOICE);
-        Invoice.findOneAndUpdate.mockResolvedValue({
+        Invoice.findOneAndUpdate.mockReturnValue({ lean: async () => ({
             ...OVERDUE_INVOICE,
             penaltyWaivedAmount: 1000,
             waiverReason: 'goodwill gesture',
-        });
+        }) });
         const updated = await waivePenalty(OVERDUE_INVOICE._id, {
             reason: 'goodwill gesture', adminId: 'admin1',
         });
@@ -319,7 +319,7 @@ describe('waivePenalty (admin-only by route middleware)', () => {
 
     it('409s on a concurrent modification (conditional update matched 0 docs)', async () => {
         mockFindById(OVERDUE_INVOICE);
-        Invoice.findOneAndUpdate.mockResolvedValue(null);
+        Invoice.findOneAndUpdate.mockReturnValue({ lean: async () => null });
         await expect(
             waivePenalty(OVERDUE_INVOICE._id, { reason: 'race condition test', adminId: 'admin1' })
         ).rejects.toThrow(/concurrently/);
@@ -341,7 +341,7 @@ describe('unwaivePenalty (admin-only by route middleware)', () => {
     it('reverses the waiver to exactly 0 and clears the waiver fields', async () => {
         const waived = { ...OVERDUE_INVOICE, penaltyWaivedAmount: 400, waiverReason: 'old reason' };
         Invoice.findById.mockReturnValue({ lean: jest.fn().mockResolvedValue(waived) });
-        Invoice.findOneAndUpdate.mockResolvedValue({ ...waived, penaltyWaivedAmount: 0 });
+        Invoice.findOneAndUpdate.mockReturnValue({ lean: async () => ({ ...waived, penaltyWaivedAmount: 0 }) });
 
         const updated = await unwaivePenalty(OVERDUE_INVOICE._id, { reason: 'waiver reversed', adminId: 'admin1' });
 
@@ -371,7 +371,7 @@ describe('setPerBillRate (admin-only by route middleware)', () => {
 
     it('overrides with a version check on the previous snapshot', async () => {
         Invoice.findById.mockReturnValue({ lean: jest.fn().mockResolvedValue(OVERDUE_INVOICE) });
-        Invoice.findOneAndUpdate.mockResolvedValue({ ...OVERDUE_INVOICE, penaltyRateSnapshot: 250 });
+        Invoice.findOneAndUpdate.mockReturnValue({ lean: async () => ({ ...OVERDUE_INVOICE, penaltyRateSnapshot: 250 }) });
 
         await setPerBillRate(OVERDUE_INVOICE._id, 250, { adminId: 'admin1', reason: 'hike' });
 

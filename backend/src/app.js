@@ -16,7 +16,6 @@ app.set('trust proxy', 1);
 
 // Security middlewares
 app.use(helmet());
-app.use(mongoSanitize());
 
 // CORS
 app.use(cors(config.cors));
@@ -25,6 +24,7 @@ app.use(cors(config.cors));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
+app.use(mongoSanitize());
 
 // Compression
 app.use(compression());

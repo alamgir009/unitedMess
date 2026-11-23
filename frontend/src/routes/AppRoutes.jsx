@@ -57,19 +57,15 @@ return (
 const AppRoutes = () => {
     return (
         <Routes>
-            <Route element={<PublicLayout />}>
+            <Route element={<SuspenseWrapper><PublicLayout /></SuspenseWrapper>}>
                 <Route path="/" element={
-                    <SuspenseWrapper>
-                        <GuestRoute>
-                            <HomePage />
-                        </GuestRoute>
-                    </SuspenseWrapper>
+                    <GuestRoute><HomePage /></GuestRoute>
                 } />
-                <Route path="/about" element={<SuspenseWrapper><AboutPage /></SuspenseWrapper>} />
-                <Route path="/privacy" element={<SuspenseWrapper><PrivacyPage /></SuspenseWrapper>} />
-                <Route path="/terms" element={<SuspenseWrapper><TermsPage /></SuspenseWrapper>} />
-                <Route path="/contact" element={<SuspenseWrapper><ContactPage /></SuspenseWrapper>} />
-                <Route path="/food-gallery" element={<SuspenseWrapper><FoodGalleryPage /></SuspenseWrapper>} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/privacy" element={<PrivacyPage />} />
+                <Route path="/terms" element={<TermsPage />} />
+                <Route path="/contact" element={<ContactPage />} />
+                <Route path="/food-gallery" element={<FoodGalleryPage />} />
             </Route>
 
             <Route path="/login" element={

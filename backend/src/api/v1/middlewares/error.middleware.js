@@ -2,11 +2,9 @@ const logger = require('../../../utils/logger/index');
 const config = require('../../../config/index');
 
 const errorMiddleware = (err, req, res, next) => {
+    if (res.headersSent) return next(err);
     let error = { ...err };
     error.message = err.message;
-
-    // Log Error
-    logger.error(err);
 
     // Multer errors (file too large, unexpected field, etc.)
     if (err.name === 'MulterError') {
@@ -43,10 +41,16 @@ const errorMiddleware = (err, req, res, next) => {
         error = { statusCode: 400, message };
     }
 
-    res.status(error.statusCode || 500).json({
+    const statusCode = error.statusCode || 500;
+    const isDevelopment = process.env.NODE_ENV === 'development' && config.app.env === 'development';
+    if (statusCode >= 500) {
+        logger.error('Server request failed', { statusCode, name: err.name, code: err.code });
+    }
+
+    res.status(statusCode).json({
         success: false,
-        error: error.message || 'Server Error',
-        stack: config.app.env === 'development' ? err.stack : undefined,
+        error: statusCode >= 500 && !isDevelopment ? 'Server Error' : error.message || 'Server Error',
+        stack: isDevelopment ? err.stack : undefined,
     });
 };
 

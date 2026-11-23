@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useId } from 'react';
 import { HiOutlineExclamationTriangle } from 'react-icons/hi2';
 import { cn } from '@/core/utils/helpers/string.helper';
 import Modal from '../Modal/Modal';
@@ -35,6 +35,8 @@ const ConfirmDialog = memo(({
   isConfirming = false,
   variant = 'danger',
 }) => {
+  const titleId = useId();
+  const descriptionId = useId();
   const tone = iconToneStyles[iconColor] || iconToneStyles.red;
   const footer = (
     <div className="grid w-full grid-cols-2 gap-2.5">
@@ -60,11 +62,13 @@ const ConfirmDialog = memo(({
   return (
     <Modal
       isOpen={isOpen}
-      onClose={isConfirming ? undefined : onClose}
+      onClose={onClose}
       accentColor={iconColor === 'blue' ? 'blue' : iconColor === 'amber' ? 'amber' : 'red'}
       size="sm"
       role="alertdialog"
-      description={description}
+      ariaLabelledBy={titleId}
+      ariaDescribedBy={descriptionId}
+      isBusy={isConfirming}
       showCloseButton={false}
       closeOnOverlayClick={!isConfirming}
       footer={footer}
@@ -78,10 +82,10 @@ const ConfirmDialog = memo(({
         </div>
 
         <div className="text-center space-y-1">
-          <h3 className="text-base font-bold tracking-tight text-foreground">
+          <h3 id={titleId} className="text-base font-bold tracking-tight text-foreground">
             {title}
           </h3>
-          <p className="text-pretty text-xs leading-relaxed text-[var(--text-secondary)]">
+          <p id={descriptionId} className="text-pretty text-xs leading-relaxed text-[var(--text-secondary)]">
             {description}
           </p>
         </div>

@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { format, parseISO, isValid } from 'date-fns';
 import {
   HiOutlineCalendar,
   HiOutlineCalendarDays,
-  HiOutlineUser,
   HiOutlineLockClosed,
   HiOutlineArrowPath,
   HiOutlineIdentification,
@@ -293,13 +292,12 @@ export const PaymentForm = ({
     // Fast path: cache hit
     if (key && cachedInfo && cachedInfo[key] != null) {
       const amount = Number(cachedInfo[key]);
-      if (formData.amount !== amount) {
-        setFormData((p) => {
-          const next = { ...p, amount };
-          if (amount < 0 && p.status === 'completed') next.status = 'refunded';
-          return next;
-        });
-      }
+      setFormData((p) => {
+        if (p.amount === amount) return p;
+        const next = { ...p, amount };
+        if (amount < 0 && p.status === 'completed') next.status = 'refunded';
+        return next;
+      });
       return;
     }
 

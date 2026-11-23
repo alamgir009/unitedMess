@@ -105,7 +105,7 @@ export const Input = forwardRef(({
           resolvedSize,
           stateClass,
           leftIcon ? 'pl-9' : 'pl-3',
-          (clearable && value) || rightIcon || rightAction ? 'pr-9' : 'pr-3',
+          rightAction ? 'pr-12' : ((clearable && value) || rightIcon ? 'pr-9' : 'pr-3'),
           'touch-target-exempt',
           className,
         )}
@@ -136,7 +136,7 @@ export const Input = forwardRef(({
       )}
 
       {rightAction && !(clearable && value) && (
-        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center">
+        <span className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center">
           {rightAction}
         </span>
       )}

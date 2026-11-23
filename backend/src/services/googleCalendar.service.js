@@ -5,33 +5,64 @@ const MarketSchedule = require('../models/MarketSchedule.model');
 const AppError = require('../utils/errors/AppError');
 const { normalizeToUTC } = require('../utils/helpers/date.helper');
 const logger = require('../utils/logger/index');
+const config = require('../config');
 
-const ENCRYPTION_KEY = process.env.GOOGLE_CALENDAR_ENCRYPTION_KEY || process.env.SECRET_KEY || 'default-key-change-in-production';
-const ALGORITHM = 'aes-256-cbc';
+const currentSecret = process.env.GOOGLE_CALENDAR_ENCRYPTION_KEY || config.jwt.secret;
+const previousSecret = process.env.GOOGLE_CALENDAR_PREVIOUS_ENCRYPTION_KEY;
+const currentKey = crypto.scryptSync(currentSecret, 'unitedmess/google-calendar/v2', 32);
+const authenticatedKeys = [
+    currentKey,
+    ...(previousSecret && previousSecret !== currentSecret
+        ? [crypto.scryptSync(previousSecret, 'unitedmess/google-calendar/v2', 32)]
+        : []),
+];
+const utf8 = new TextDecoder('utf-8', { fatal: true });
+// Legacy keys are read-only during the migration window.
+const legacySecrets = [...new Set([
+    previousSecret, process.env.GOOGLE_CALENDAR_ENCRYPTION_KEY, process.env.SECRET_KEY,
+    'default-key-change-in-production',
+].filter(Boolean))];
+let legacyKeys;
 
-const encrypt = (text) => {
+const encrypt = (text, userId) => {
     if (!text) return null;
-    const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32);
-    const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
-    let encrypted = cipher.update(text, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
-    return `${iv.toString('hex')}:${encrypted}`;
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv('aes-256-gcm', currentKey, iv);
+    cipher.setAAD(Buffer.from(String(userId)));
+    const ciphertext = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
+    return `v2:${iv.toString('hex')}:${cipher.getAuthTag().toString('hex')}:${ciphertext.toString('hex')}`;
 };
 
-const decrypt = (encryptedText) => {
+const decrypt = (encryptedText, userId) => {
     if (!encryptedText) return null;
-    try {
-        const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32);
-        const [ivHex, encrypted] = encryptedText.split(':');
-        const iv = Buffer.from(ivHex, 'hex');
-        const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
-        let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-        decrypted += decipher.final('utf8');
-        return decrypted;
-    } catch {
-        return null;
+    const parts = encryptedText.split(':');
+    if (parts[0] === 'v2' && parts.length === 4) {
+        const [, iv, tag, ciphertext] = parts;
+        for (const key of authenticatedKeys) {
+            try {
+                const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'hex'), { authTagLength: 16 });
+                decipher.setAAD(Buffer.from(String(userId)));
+                decipher.setAuthTag(Buffer.from(tag, 'hex'));
+                const text = utf8.decode(Buffer.concat([decipher.update(Buffer.from(ciphertext, 'hex')), decipher.final()]));
+                return { text, migrate: key !== currentKey };
+            } catch {
+                // Try the previous configured key during key rotation.
+            }
+        }
+    } else if (parts.length === 2) {
+        const [iv, ciphertext] = parts;
+        legacyKeys ??= legacySecrets.map(secret => crypto.scryptSync(secret, 'salt', 32));
+        for (const key of legacyKeys) {
+            try {
+                const decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(iv, 'hex'));
+                const text = utf8.decode(Buffer.concat([decipher.update(Buffer.from(ciphertext, 'hex')), decipher.final()]));
+                if (/^[!-~]+$/.test(text)) return { text, migrate: true };
+            } catch {
+                // Legacy deployments used different configured keys.
+            }
+        }
     }
+    return null;
 };
 
 const getOAuth2Client = () => {
@@ -49,7 +80,7 @@ const getOAuth2Client = () => {
 /**
  * Generate Google OAuth URL for Calendar access
  */
-const getAuthUrl = (userId) => {
+const getAuthUrl = (state) => {
     const oauth2Client = getOAuth2Client();
     const scopes = ['https://www.googleapis.com/auth/calendar'];
 
@@ -57,7 +88,7 @@ const getAuthUrl = (userId) => {
         access_type: 'offline',
         scope: scopes,
         prompt: 'consent',
-        state: userId.toString(),
+        state,
     });
 };
 
@@ -68,8 +99,11 @@ const handleCallback = async (userId, code) => {
     const oauth2Client = getOAuth2Client();
     const { tokens } = await oauth2Client.getToken(code);
 
-    const encryptedToken = encrypt(tokens.access_token);
-    const encryptedRefreshToken = encrypt(tokens.refresh_token);
+    const encryptedToken = encrypt(tokens.access_token, userId);
+    const encryptedRefreshToken = encrypt(tokens.refresh_token, userId);
+    if (!encryptedToken || !encryptedRefreshToken) {
+        throw new AppError('Google Calendar did not return the required credentials', 502);
+    }
 
     await User.findByIdAndUpdate(userId, {
         googleCalendarToken: encryptedToken,
@@ -88,32 +122,52 @@ const getAuthenticatedClient = async (userId) => {
         .select('+googleCalendarToken +googleCalendarRefreshToken googleCalendarSyncEnabled')
         .lean();
 
-    if (!user?.googleCalendarToken || !user?.googleCalendarRefreshToken) {
+    if (!user?.googleCalendarSyncEnabled || !user.googleCalendarToken || !user.googleCalendarRefreshToken) {
         throw new AppError('Google Calendar not connected', 400);
     }
 
-    const accessToken = decrypt(user.googleCalendarToken);
-    const refreshToken = decrypt(user.googleCalendarRefreshToken);
+    const accessToken = decrypt(user.googleCalendarToken, userId);
+    const refreshToken = decrypt(user.googleCalendarRefreshToken, userId);
 
     if (!accessToken || !refreshToken) {
         throw new AppError('Invalid Google Calendar credentials', 400);
     }
 
+    let storedRefreshToken = user.googleCalendarRefreshToken;
+    if (accessToken.migrate || refreshToken.migrate) {
+        const migratedRefreshToken = encrypt(refreshToken.text, userId);
+        const migrated = await User.updateOne({
+            _id: userId,
+            googleCalendarToken: user.googleCalendarToken,
+            googleCalendarRefreshToken: user.googleCalendarRefreshToken,
+            googleCalendarSyncEnabled: true,
+        }, {
+            $set: {
+                googleCalendarToken: encrypt(accessToken.text, userId),
+                googleCalendarRefreshToken: migratedRefreshToken,
+            },
+        });
+        if (!migrated.matchedCount) throw new AppError('Calendar connection changed. Please retry.', 409);
+        storedRefreshToken = migratedRefreshToken;
+    }
+
     const oauth2Client = getOAuth2Client();
     oauth2Client.setCredentials({
-        access_token: accessToken,
-        refresh_token: refreshToken,
+        access_token: accessToken.text,
+        refresh_token: refreshToken.text,
     });
 
-    oauth2Client.on('tokens', async (newTokens) => {
-        if (newTokens.access_token) {
-            const encToken = encrypt(newTokens.access_token);
-            const updateFields = { googleCalendarToken: encToken };
-            if (newTokens.refresh_token) {
-                updateFields.googleCalendarRefreshToken = encrypt(newTokens.refresh_token);
-            }
-            await User.findByIdAndUpdate(userId, updateFields);
-        }
+    oauth2Client.on('tokens', (newTokens) => {
+        if (!newTokens.access_token) return;
+        const update = { googleCalendarToken: encrypt(newTokens.access_token, userId) };
+        if (newTokens.refresh_token) update.googleCalendarRefreshToken = encrypt(newTokens.refresh_token, userId);
+        void User.updateOne({
+            _id: userId,
+            googleCalendarSyncEnabled: true,
+            googleCalendarRefreshToken: storedRefreshToken,
+        }, { $set: update }).then(({ matchedCount }) => {
+            if (matchedCount && update.googleCalendarRefreshToken) storedRefreshToken = update.googleCalendarRefreshToken;
+        }).catch(() => logger.warn('Could not persist refreshed Google Calendar credentials'));
     });
 
     return oauth2Client;

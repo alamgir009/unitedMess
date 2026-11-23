@@ -38,7 +38,8 @@ const ForgotPasswordPage = () => {
             <div className="absolute top-6 left-6 sm:top-8 sm:left-8 z-50">
                 <Link
                     to="/"
-                    className="group flex items-center gap-2 rounded-full border border-black/5 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 px-4 py-2 text-sm font-semibold text-foreground/80 backdrop-blur-md transition-all hover:bg-white/80 dark:hover:bg-slate-900/80 hover:text-foreground shadow-sm hover:shadow-md"
+                    aria-label="Back to Home"
+                    className="group flex min-h-11 items-center gap-2 rounded-full border border-black/5 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 px-4 py-2 text-sm font-semibold text-foreground/80 backdrop-blur-md transition-all hover:bg-white/80 dark:hover:bg-slate-900/80 hover:text-foreground shadow-sm hover:shadow-md"
                 >
                     <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
                     <span className="hidden sm:inline">Back to Home</span>
@@ -150,8 +151,8 @@ const ForgotPasswordPage = () => {
                                     Check your email
                                 </h2>
                                 <p className="text-muted-foreground mb-8 leading-relaxed">
-                                    We&apos;ve sent a password reset link to <br />
-                                    <span className="font-bold text-foreground">{email}</span>
+                                    If an account exists for <span className="font-bold text-foreground">{email}</span>,
+                                    you&apos;ll receive a password reset link.
                                 </p>
 
                                 <div className="space-y-4">

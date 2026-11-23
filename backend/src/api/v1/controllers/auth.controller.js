@@ -2,6 +2,7 @@ const asyncHandler = require('../../../utils/helpers/asyncHandler');
 const authService = require('../../../services/auth.service');
 const { sendSuccessResponse } = require('../../../utils/helpers/response.helper');
 const AppError = require('../../../utils/errors/AppError');
+const { isEmail } = require('../../../utils/validators/common.validator');
 
 // Cookie config helper
 // SameSite=Strict: refresh cookie is never sent in cross-site contexts → CSRF-immune without tokens.
@@ -52,10 +53,14 @@ exports.register = asyncHandler(async (req, res) => {
 // @access  Public
 exports.login = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
+    if (typeof email !== 'string' || !isEmail(email) || typeof password !== 'string' || !password) {
+        throw new AppError('A valid email and password are required', 400);
+    }
     const ip = req.ip;
     const userAgent = req.headers['user-agent'];
 
     const { user, tokens } = await authService.login(email, password, ip, userAgent);
+    res.set('Cache-Control', 'no-store');
 
     const rootDomain = getRootDomain();
 
@@ -69,13 +74,10 @@ exports.login = asyncHandler(async (req, res) => {
     if (rootDomain) sessionOptions.domain = rootDomain;
     res.cookie('__session', '1', sessionOptions);
 
-    // Also return tokens in body — required for cross-origin deployments where
-    // SameSite=None cookies are blocked by Chrome's third-party cookie policy.
     sendSuccessResponse(res, 200, 'Login successful', {
         user,
         tokens: {
             accessToken: tokens.access.token,
-            refreshToken: tokens.refresh.token,
         },
     });
 });
@@ -125,6 +127,7 @@ exports.refreshTokens = asyncHandler(async (req, res) => {
 
     // Validate, rotate, and issue new token pair
     const tokens = await authService.refreshAuth(refreshToken);
+    res.set('Cache-Control', 'no-store');
 
     // Resolve the user from the newly-issued access token payload
     const User = require('../../../models/User.model');
@@ -173,9 +176,10 @@ exports.refreshTokens = asyncHandler(async (req, res) => {
 // @route   POST /api/v1/auth/forgot-password
 // @access  Public
 exports.forgotPassword = asyncHandler(async (req, res) => {
-    await authService.canRequestPasswordReset(req.body.email);
-    await authService.forgotPassword(req.body.email);
-    sendSuccessResponse(res, 200, 'Password reset link sent to email');
+    const { email } = req.body;
+    if (typeof email !== 'string' || !isEmail(email)) throw new AppError('A valid email is required', 400);
+    await authService.forgotPassword(email);
+    sendSuccessResponse(res, 200, 'If that account exists, a password reset link will be sent');
 });
 
 // @desc    Reset password
@@ -199,7 +203,7 @@ exports.verifyEmail = asyncHandler(async (req, res) => {
 // @access  Public
 exports.resendVerificationEmail = asyncHandler(async (req, res) => {
     const { email } = req.body;
-    if (!email) throw new AppError('Email is required', 400);
+    if (typeof email !== 'string' || !isEmail(email)) throw new AppError('A valid email is required', 400);
     await authService.resendVerificationEmailByEmail(email);
     sendSuccessResponse(res, 200, 'Verification email resent successfully');
 });

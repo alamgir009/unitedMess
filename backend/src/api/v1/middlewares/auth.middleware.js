@@ -1,8 +1,7 @@
-const jwt = require('jsonwebtoken');
 const asyncHandler = require('../../../utils/helpers/asyncHandler');
 const User = require('../../../models/User.model');
 const AppError = require('../../../utils/errors/AppError');
-const config = require('../../../config/index');
+const { verifyAccessToken } = require('../../../services/token.service');
 
 exports.protect = asyncHandler(async (req, res, next) => {
     // Get token from header or cookie
@@ -22,36 +21,28 @@ exports.protect = asyncHandler(async (req, res, next) => {
         );
     }
 
+    let decoded;
     try {
-        // Verify token
-        const decoded = jwt.verify(token, config.jwt.secret);
-
-        // Check if user still exists
-        const user = await User.findById(decoded.sub || decoded.id).select('+password');
-        if (!user) {
-            return next(
-                new AppError('The user belonging to this token no longer exists.', 401)
-            );
-        }
-
-        // Check if user is active
-        if (!user.isActive) {
-            return next(new AppError('Your account has been deactivated.', 403));
-        }
-
-        // Check if user changed password after token was issued
-        if (user.changedPasswordAfter(decoded.iat)) {
-            return next(
-                new AppError('User recently changed password. Please log in again.', 401)
-            );
-        }
-
-        // Grant access to protected route
-        req.user = user;
-        next();
-    } catch (err) {
+        decoded = verifyAccessToken(token);
+    } catch {
         return next(new AppError('Invalid token. Please log in again.', 401));
     }
+
+    const user = await User.findById(decoded.sub || decoded.id);
+    if (!user) {
+        return next(new AppError('The user belonging to this token no longer exists.', 401));
+    }
+
+    if (!user.isActive) {
+        return next(new AppError('Your account has been deactivated.', 403));
+    }
+
+    if (user.changedPasswordAfter(decoded.iat)) {
+        return next(new AppError('User recently changed password. Please log in again.', 401));
+    }
+
+    req.user = user;
+    next();
 });
 
 exports.authorize = (...roles) => {

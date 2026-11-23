@@ -15,7 +15,6 @@ import Button from '@/shared/components/ui/Button/Button';
 import { SkeletonCard } from '@/shared/components/ui/Loader';
 import MealList from '../../components/MealList/MealList';
 import AdminMealView from '../../components/AdminMealView/AdminMealView';
-import MealForm from '../../components/MealForm/MealForm';
 import MealModal from '../../components/MealModal/MealModal';
 import MealPolling from '../../components/MealPolling/MealPolling';
 import Pagination from '@/shared/components/ui/Pagination/Pagination';
@@ -54,7 +53,6 @@ const MealPage = () => {
     const [selectedIds, setSelectedIds] = useState(new Set());
     const [bulkDeleteTarget, setBulkDeleteTarget] = useState(null);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-    const [modalFooter, setModalFooter] = useState(null);
 
     const fetchParams = useMemo(() =>
         isAdmin ? { page: 1, limit: 'all' } : { page, limit },

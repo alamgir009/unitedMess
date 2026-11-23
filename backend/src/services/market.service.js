@@ -114,10 +114,7 @@ const createMarket = async (marketBody) => {
         throw new AppError('Market already exists for this date', 409);
     }
 
-    const marketId = new mongoose.Types.ObjectId();
-
     const marketData = {
-        _id: marketId,
         user,
         date,
         amount,
@@ -126,21 +123,21 @@ const createMarket = async (marketBody) => {
         ...(image && { image }),
     };
 
-    const [newMarket] = await Promise.all([
-        Market.create(marketData),
-        User.findByIdAndUpdate(
+    const newMarket = await mongoose.connection.transaction(async (session) => {
+        const [record] = await Market.create([marketData], { session });
+        const owner = await User.findByIdAndUpdate(
             user,
             {
-                $push: { markets: marketId },
+                $push: { markets: record._id },
                 $inc: { totalMarketAmount: amount },
             },
-            { new: true, runValidators: true }
-        ),
-    ]    );
+            { session, runValidators: true },
+        );
+        if (!owner) throw new AppError('Market entry owner not found', 404);
+        return record;
+    });
 
-    // Recalculate payable for all active users
-    recalculateAllActiveUsersPayable();
-
+    refreshCalendarPayables();
     return newMarket;
 };
 

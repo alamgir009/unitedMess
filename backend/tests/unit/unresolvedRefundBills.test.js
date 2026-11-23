@@ -15,6 +15,9 @@
 jest.mock('../../src/models/Invoice.model');
 jest.mock('../../src/models/Payment.model');
 jest.mock('../../src/models/User.model');
+jest.mock('../../src/models/PenaltyConfig.model', () => ({
+    findOne: () => ({ lean: async () => ({ dailyRate: 100 }) }),
+}));
 jest.mock('../../src/services/email.service');
 
 const Invoice = require('../../src/models/Invoice.model');

@@ -62,7 +62,8 @@ function stubPaymentFind(guardRows, annotateRows) {
 }
 
 function stubCommon() {
-    Payment.create.mockResolvedValue({ _id: 'pay1' });
+    Payment.create.mockImplementation(async ([record]) => [{ ...record, _id: 'pay1' }]);
+    paymentService.withPaymentWrite.mockImplementation((_, write) => write({}));
     User.findById.mockReturnValue({
         select: jest.fn().mockReturnValue({
             lean: jest.fn().mockResolvedValue({ name: 'Member', email: 'm@example.com' }),
@@ -127,7 +128,7 @@ describe('updateInvoicePayment — refund guard', () => {
 
         expect(next).not.toHaveBeenCalled();
         expect(Payment.create).toHaveBeenCalledTimes(1);
-        expect(Payment.create.mock.calls[0][0]).toMatchObject({
+        expect(Payment.create.mock.calls[0][0][0]).toMatchObject({
             amount: 215.6,
             status: 'refunded',
             month: 'May 2026',
@@ -227,7 +228,7 @@ describe('updateInvoicePayment — refund guard', () => {
 
         expect(next).not.toHaveBeenCalled();
         expect(Payment.create).toHaveBeenCalledTimes(1);
-        expect(Payment.create.mock.calls[0][0]).toMatchObject({
+        expect(Payment.create.mock.calls[0][0][0]).toMatchObject({
             amount: 100,
             status: 'refunded',
             type: 'mess_bill',
@@ -267,7 +268,7 @@ describe('updateInvoicePayment — payment path creates ground-truth record', ()
 
         expect(next).not.toHaveBeenCalled();
         expect(Payment.create).toHaveBeenCalledTimes(1);
-        expect(Payment.create.mock.calls[0][0]).toMatchObject({
+        expect(Payment.create.mock.calls[0][0][0]).toMatchObject({
             amount: 1453.87,
             month: 'September 2026',
             type: 'mess_bill',
@@ -319,7 +320,7 @@ describe('updateInvoicePayment — payment path creates ground-truth record', ()
         await flush();
 
         expect(Payment.create).toHaveBeenCalledTimes(1);
-        expect(Payment.create.mock.calls[0][0]).toMatchObject({
+        expect(Payment.create.mock.calls[0][0][0]).toMatchObject({
             amount: 500,
             type: 'mess_bill',
             status: 'completed',

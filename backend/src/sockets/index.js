@@ -1,6 +1,7 @@
 const socketIO = require('socket.io');
-const jwt = require('jsonwebtoken');
 const config = require('../config/index');
+const User = require('../models/User.model');
+const { verifyAccessToken } = require('../services/token.service');
 const logger = require('../utils/logger/index');
 const pkg = require('../../package.json');
 
@@ -28,7 +29,7 @@ const setupSocketIO = (server) => {
     };
 
     // Authentication middleware
-    io.use((socket, next) => {
+    io.use(async (socket, next) => {
         try {
             // Frontend might pass token in auth object or via httpOnly cookie
             let token = socket.handshake.auth?.token;
@@ -42,8 +43,12 @@ const setupSocketIO = (server) => {
                 return next(new Error('Authentication error: Token missing'));
             }
 
-            const decoded = jwt.verify(token, config.jwt.secret);
-            socket.user = decoded; // { sub: userId, ... }
+            const decoded = verifyAccessToken(token);
+            const user = await User.findById(decoded.sub || decoded.id).select('isActive passwordChangedAt');
+            if (!user?.isActive || user.changedPasswordAfter(decoded.iat)) {
+                return next(new Error('Authentication error: Invalid session'));
+            }
+            socket.userId = user.id;
             next();
         } catch (error) {
             return next(new Error('Authentication error: Invalid token'));
@@ -51,7 +56,7 @@ const setupSocketIO = (server) => {
     });
 
     io.on('connection', (socket) => {
-        const userId = socket.user.sub;
+        const userId = socket.userId;
         
         // Handle multiple connections for same user
         if (!userSockets.has(userId)) {

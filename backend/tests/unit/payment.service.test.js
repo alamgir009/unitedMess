@@ -10,6 +10,7 @@ const Payment = require('../../src/models/Payment.model');
 const User = require('../../src/models/User.model');
 const Invoice = require('../../src/models/Invoice.model');
 const AppError = require('../../src/utils/errors/AppError');
+const mongoose = require('mongoose');
 
 // ── Mongoose chain-query mock helper ──
 // Model.findById() returns a Query which exposes .select() -> .lean() chain.
@@ -33,6 +34,13 @@ jest.mock('../../src/models/Invoice.model');
 // Real SMTP sends must never fire from unit tests (createPayment emails on
 // completed/failed/refunded).
 jest.mock('../../src/services/email.service');
+
+const paymentSession = {};
+beforeEach(() => {
+    jest.spyOn(mongoose.connection, 'transaction').mockImplementation(work => work(paymentSession));
+    User.updateMany.mockResolvedValue({ matchedCount: 1 });
+});
+afterEach(() => jest.restoreAllMocks());
 
 describe('verifyUpiManualPaymentService', () => {
     beforeEach(() => {
@@ -340,7 +348,7 @@ describe('createPayment — status sync & duplicate guard', () => {
 
         Payment.find.mockResolvedValue([]);       // invoice sync: no payments
         Invoice.findOne.mockResolvedValue(null);  // invoice sync: no invoice
-        Payment.create.mockResolvedValue(makePaymentDoc());
+        Payment.create.mockResolvedValue([makePaymentDoc()]);
         Payment.findOne.mockResolvedValue(null);  // duplicate guard: none
         // Invoice sync now checks for a refund payout (ground truth) before
         // deriving status — default to "no refund" for these tests.
@@ -527,7 +535,9 @@ describe('updatePaymentById — month repair re-sync', () => {
         // New month's invoice AND old month's invoice both re-synced
         expect(Invoice.findOne).toHaveBeenCalledTimes(2);
         expect(Invoice.findOne).toHaveBeenCalledWith(
-            expect.objectContaining({ month: BP.month, year: BP.year })
+            expect.objectContaining({ month: BP.month, year: BP.year }),
+            null,
+            { session: paymentSession },
         );
     });
 

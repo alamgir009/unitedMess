@@ -1,8 +1,10 @@
+const { randomUUID } = require('node:crypto');
 const jwt = require('jsonwebtoken');
 const moment = require('moment');
 const config = require('../config');
 const AppError = require('../utils/errors/AppError');
 const RefreshToken = require('../models/RefreshToken.model');
+const User = require('../models/User.model');
 const { tokenTypes } = require('../config/tokens');
 
 /**
@@ -19,8 +21,18 @@ const generateToken = (userId, expires, type, secret = config.jwt.secret) => {
         iat: moment().unix(),
         exp: expires.unix(),
         type,
+        ...(type === tokenTypes.REFRESH && { jti: randomUUID() }),
     };
     return jwt.sign(payload, secret);
+};
+
+const verifyAccessToken = (token) => {
+    const payload = jwt.verify(token, config.jwt.secret, { algorithms: ['HS256'] });
+    if (payload.type !== tokenTypes.ACCESS || typeof (payload.sub || payload.id) !== 'string' ||
+        !Number.isFinite(payload.iat) || !Number.isFinite(payload.exp)) {
+        throw new AppError('Invalid access token', 401);
+    }
+    return payload;
 };
 
 /**
@@ -44,31 +56,12 @@ const saveToken = async (token, userId, expires, type, blacklisted = false) => {
 };
 
 /**
- * Verify token and return token doc (or throw error if it is not valid)
- * @param {string} token
- * @param {string} type
- * @returns {Promise<Token>}
- */
-const verifyToken = async (token, type) => {
-    const payload = jwt.verify(token, config.jwt.secret);
-    const tokenDoc = await RefreshToken.findOne({ token, type, user: payload.sub, blacklisted: false });
-    if (!tokenDoc) {
-        throw new Error('Token not found');
-    }
-    return tokenDoc;
-};
-
-/**
  * Revoke token
  * @param {string} token
  * @returns {Promise}
  */
 const revokeToken = async (token) => {
-    const refreshToken = await RefreshToken.findOne({ token, type: tokenTypes.REFRESH, blacklisted: false });
-    if (!refreshToken) {
-        throw new Error('Token not found');
-    }
-    await refreshToken.deleteOne();
+    await RefreshToken.deleteMany({ token, type: tokenTypes.REFRESH });
 };
 
 /**
@@ -103,18 +96,15 @@ const generateAuthTokens = async (user) => {
  */
 const refreshAuthTokens = async (refreshToken) => {
     try {
-        const refreshTokenDoc = await verifyToken(refreshToken, tokenTypes.REFRESH);
-        // refreshTokenDoc.user is a Mongoose ObjectId (ref not populated) — NOT a full document.
-        // We must convert it to a string so generateAuthTokens gets a valid id.
-        const userId = refreshTokenDoc.user.toString();
-
-        // delete used refresh token (rotation)
-        await refreshTokenDoc.deleteOne();
-
-        // generate new tokens — pass a plain object so user.id resolves correctly
-        const tokens = await generateAuthTokens({ id: userId });
-
-        return tokens;
+        const payload = jwt.verify(refreshToken, config.jwt.secret, { algorithms: ['HS256'] });
+        if (payload.type !== tokenTypes.REFRESH) throw new Error('Invalid refresh token');
+        const user = await User.findById(payload.sub).select('isActive passwordChangedAt');
+        if (!user?.isActive || user.changedPasswordAfter(payload.iat)) throw new Error('Invalid session');
+        const consumed = await RefreshToken.findOneAndDelete({
+            token: refreshToken, type: tokenTypes.REFRESH, user: user.id, blacklisted: false,
+        });
+        if (!consumed) throw new Error('Refresh token already consumed');
+        return await generateAuthTokens(user);
     } catch (error) {
         throw new AppError('Please authenticate', 401);
     }
@@ -132,8 +122,8 @@ const revokeAllUserTokens = async (userId) => {
 
 module.exports = {
     generateToken,
+    verifyAccessToken,
     saveToken,
-    verifyToken,
     generateAuthTokens,
     revokeToken,
     refreshAuthTokens,

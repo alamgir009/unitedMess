@@ -52,6 +52,9 @@ const mockMeal = {
 jest.mock('../../src/models/MealPoll.model', () => mockMealPoll);
 jest.mock('../../src/models/User.model', () => mockUser);
 jest.mock('../../src/models/Meal.model', () => mockMeal);
+jest.mock('../../src/services/user.service', () => ({
+    recalculateAllActiveUsersPayable: jest.fn().mockResolvedValue(undefined),
+}));
 
 jest.mock('../../src/services/mealPollAudit.service', () => ({
     writeAuditLog: jest.fn().mockResolvedValue({ _id: 'audit1' }),

@@ -14,6 +14,7 @@ const { emitToUser } = require('../../../sockets');
 const { getBillingPeriod } = require('../../../utils/helpers/date.helper');
 const { verifyImageMagicBytes, storeUploadedImage } = require('../../../utils/helpers/imageUpload.helper');
 const logger = require('../../../utils/logger/index');
+const { isPositiveCurrencyAmount } = require('../../../utils/validators/common.validator');
 
 /**
  * POST /payments
@@ -23,17 +24,28 @@ const createPayment = asyncHandler(async (req, res) => {
     const { user: targetUserIdBody, userId: targetUserIdAlt } = req.body;
     const targetUserId = targetUserIdBody || targetUserIdAlt;
 
-    if (!targetUserId) {
-        throw new AppError('Target student ID is required', 400);
+    if (typeof targetUserId !== 'string' || !/^[a-f0-9]{24}$/i.test(targetUserId)) {
+        throw new AppError('A valid target student ID is required', 400);
     }
 
-    // Authorization guard: non-admins can only create payments for themselves
-    if (req.user.role !== 'admin' && targetUserId.toString() !== req.user.id.toString()) {
-        throw new AppError('You do not have permission to create payments for other users', 403);
+    const paymentData = pick(req.body, ['amount', 'paymentDate', 'month', 'type', 'remarks']);
+    if (req.user.role === 'admin') {
+        Object.assign(paymentData, pick(req.body, ['status', 'paymentMethod', 'transactionId', 'receiptUrl', 'adminRemarks']));
+    } else {
+        const { status = 'pending', paymentMethod = 'cash' } = req.body;
+        if (targetUserId !== req.user.id || status !== 'pending' || paymentMethod !== 'cash') {
+            throw new AppError('Members can only record their own pending cash payments', 403);
+        }
+        Object.assign(paymentData, { status, paymentMethod });
+    }
+
+    const period = typeof paymentData.month === 'string' && paymentService.parseMonthString(paymentData.month);
+    if (!isPositiveCurrencyAmount(paymentData.amount) || !period || !/^\d{4}$/.test(paymentData.month.split(' ')[1])) {
+        throw new AppError('A valid billing month and positive amount with at most 2 decimal places are required', 400);
     }
 
     const payment = await paymentService.createPayment({
-        ...req.body,
+        ...paymentData,
         user: targetUserId,
         createdBy: req.user.id
     });
@@ -86,11 +98,11 @@ const createOnlineOrder = asyncHandler(async (req, res) => {
 const verifyPayment = asyncHandler(async (req, res) => {
     const { orderId, paymentId, signature } = req.body;
 
-    if (!orderId || !paymentId || !signature) {
+    if (![orderId, paymentId, signature].every(value => typeof value === 'string' && value.length > 0)) {
         throw new AppError('orderId, paymentId and signature are required', 400);
     }
 
-    const payment = await paymentService.verifyOnlinePayment({ orderId, paymentId, signature });
+    const payment = await paymentService.verifyOnlinePayment({ userId: req.user.id, orderId, paymentId, signature });
     sendSuccessResponse(res, 200, 'Payment verified successfully', payment);
 });
 

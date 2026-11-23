@@ -104,10 +104,10 @@ test('real authentication/authorization blocks non-admins and validates admin re
     app.use((error, req, res, next) => res.status(error.statusCode || 500).json({ message: error.message }));
     const findUser = jest.spyOn(User, 'findById');
     const report = jest.spyOn(analytics, 'getReport').mockResolvedValue({ monthly: [] });
-    const token = jwt.sign({ sub: alice.toString() }, 'analytics-test-secret');
+    const token = jwt.sign({ sub: alice.toString(), type: 'access' }, 'analytics-test-secret', { expiresIn: '30m' });
     const send = (path) => request(app).get(`/admin/analytics/${path}`).set('Authorization', `Bearer ${token}`);
     const user = { role: 'user', isActive: true, changedPasswordAfter: () => false };
-    findUser.mockImplementation(() => ({ select: async () => user }));
+    findUser.mockResolvedValue(user);
     for (const path of ['market', 'meal', 'members']) expect((await send(path)).status).toBe(403);
     expect(report).not.toHaveBeenCalled();
     expect((await request(app).get('/admin/analytics/market')).status).toBe(401);

@@ -19,6 +19,7 @@ const { fixture, now } = require('../fixtures/analyticsReport.fixture');
 const routes = require('../../src/api/v1/routes/analytics.routes');
 jest.setTimeout(30000);
 const id = (index) => String(index).padStart(24, '0');
+const accessToken = (userId) => jwt.sign({ sub: userId, type: 'access' }, 'report-test-secret', { expiresIn: '30m' });
 const admin = { _id: id(99), name: 'Admin', email: 'admin@example.com', role: 'admin', isActive: true, changedPasswordAfter: () => false };
 const people = [
     { _id: id(1), name: 'Alice', email: 'alice@example.com', role: 'user' },
@@ -43,7 +44,7 @@ beforeEach(() => {
     jest.spyOn(global, 'setImmediate').mockImplementation(() => 0);
     jest.spyOn(User, 'find').mockImplementation((filter) => query(people.filter((person) => (!filter._id || person._id === String(filter._id)) && (!filter.role || person.role === filter.role))));
     jest.spyOn(User, 'findOne').mockImplementation((filter) => query(people.find((person) => person._id === String(filter._id) && (!filter.role || person.role === filter.role))));
-    jest.spyOn(User, 'findById').mockImplementation(() => ({ select: async () => admin }));
+    jest.spyOn(User, 'findById').mockResolvedValue(admin);
     jest.spyOn(analytics, 'getReport').mockImplementation(async (type, memberId) => fixture(memberId)[type]);
     Job.findOne.mockImplementation((filter) => query([...store.values()].find((entry) => matches(entry, filter))));
     Job.create.mockImplementation(async (input) => {
@@ -154,7 +155,7 @@ test('streamed PDF totals equal the dashboard API totals for the same member', a
     const seen = jest.spyOn(PDFDocument.prototype, 'text');
     const app = express();
     app.use('/admin/analytics', routes);
-    const token = jwt.sign({ sub: admin._id }, 'report-test-secret');
+    const token = accessToken(admin._id);
     const dashboard = await request(app).get(`/admin/analytics/market?memberId=${id(1)}&months=3`).set('Authorization', `Bearer ${token}`);
     const pdf = await request(app).get(`/admin/analytics/report.pdf?type=market&memberId=${id(1)}&months=3`).set('Authorization', `Bearer ${token}`);
     expect(pdf.status).toBe(200);
@@ -171,7 +172,7 @@ test('real RBAC returns 403 on every report route; validates filters, idempotenc
     app.use(express.json());
     app.use('/admin/analytics', routes);
     app.use((error, req, res, next) => res.status(error.statusCode || 500).json({ message: error.message }));
-    const token = jwt.sign({ sub: admin._id }, 'report-test-secret');
+    const token = accessToken(admin._id);
     const get = (path) => request(app).get(`/admin/analytics/${path}`).set('Authorization', `Bearer ${token}`);
     const post = (path) => request(app).post(`/admin/analytics/${path}`).set('Authorization', `Bearer ${token}`);
     admin.role = 'user';
@@ -187,12 +188,12 @@ test('real RBAC returns 403 on every report route; validates filters, idempotenc
 
 test('email requests are rate limited per administrator', async () => {
     const limitedAdmin = { ...admin, _id: id(77) };
-    jest.spyOn(User, 'findById').mockImplementation(() => ({ select: async () => limitedAdmin }));
+    jest.spyOn(User, 'findById').mockResolvedValue(limitedAdmin);
     const app = express();
     app.use(express.json());
     app.use('/admin/analytics', routes);
     app.use((error, req, res, next) => res.status(error.statusCode || 500).json({ message: error.message }));
-    const token = jwt.sign({ sub: limitedAdmin._id }, 'report-test-secret');
+    const token = accessToken(limitedAdmin._id);
     const send = () => request(app).post('/admin/analytics/report/email').set('Authorization', `Bearer ${token}`).send({ type: 'invalid' });
     for (let index = 0; index < 10; index++) expect((await send()).status).toBe(400);
     expect((await send()).status).toBe(429);

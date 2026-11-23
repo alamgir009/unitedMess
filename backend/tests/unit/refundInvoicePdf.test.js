@@ -18,6 +18,9 @@ jest.mock('../../src/models/User.model');
 jest.mock('../../src/models/Meal.model');
 jest.mock('../../src/models/Market.model');
 jest.mock('../../src/models/UpiConfig.model');
+jest.mock('../../src/models/PenaltyConfig.model', () => ({
+    findOne: () => ({ lean: async () => ({ dailyRate: 100 }) }),
+}));
 
 const Invoice = require('../../src/models/Invoice.model');
 const Payment = require('../../src/models/Payment.model');
@@ -45,6 +48,7 @@ function stubGraph({ invoiceObj, refundPayout, completedPayment = null }) {
 
     Meal.aggregate.mockResolvedValue([]);
     Market.aggregate.mockResolvedValue([]);
+    Payment.find.mockReturnValue({ select: () => ({ lean: async () => [] }) });
 
     Payment.findOne.mockImplementation((filter) => {
         if (filter && filter.status === 'refunded') {

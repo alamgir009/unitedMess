@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Payment = require('../models/Payment.model');
 const User = require('../models/User.model');
 const Invoice = require('../models/Invoice.model');
@@ -228,22 +229,23 @@ const parseMonthString = (monthStr) => {
 /**
  * Immediately sync Invoice collection paidAmount and status based on completed payments
  */
-const syncInvoiceAfterPayment = async (userId, monthStr) => {
+const syncInvoiceAfterPayment = async (userId, monthStr, session) => {
     try {
         const parsed = parseMonthString(monthStr);
         if (!parsed) return;
 
         // Calculate total completed payments for this user & month
+        const options = session ? [null, { session }] : [];
         const payments = await Payment.find({
             user: userId,
             month: monthStr,
             status: 'completed',
             type: 'mess_bill'
-        });
+        }, ...options);
         const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
 
         // Find and update invoice
-        const invoice = await Invoice.findOne({ user: userId, month: parsed.month, year: parsed.year });
+        const invoice = await Invoice.findOne({ user: userId, month: parsed.month, year: parsed.year }, ...options);
         if (invoice) {
             invoice.paidAmount = totalPaid;
             // Single source of truth for status (same deriver every invoice
@@ -256,19 +258,23 @@ const syncInvoiceAfterPayment = async (userId, monthStr) => {
                 // an already-settled bill in Unresolved Bills and invite
                 // double collection (the Resolve→refund path would then 409
                 // on the duplicate-refund guard).
-                const refundSettled = await Payment.exists({
+                const refundFilter = {
                     user: userId,
                     month: monthStr,
                     status: 'refunded',
-                });
+                };
+                const refundSettled = session
+                    ? await Payment.findOne(refundFilter, '_id', { session })
+                    : await Payment.exists(refundFilter);
                 invoice.status = refundSettled
                     ? 'refunded'
                     : determineInvoiceStatus(invoice.paidAmount, invoice.totalPayable);
             }
-            await invoice.save();
+            await invoice.save(session ? { session } : undefined);
             console.info(`[Sync] Synced invoice status for user ${userId}, month ${monthStr} to ${invoice.status}`);
         }
     } catch (err) {
+        if (session) throw err;
         console.error('[Sync Error] Failed to sync invoice after payment:', err.message);
     }
 };
@@ -291,11 +297,11 @@ const syncInvoiceAfterPayment = async (userId, monthStr) => {
  *   amount is not counted twice against the cap.
  * @throws {AppError} 409 when the payment would duplicate or exceed the payable
  */
-const assertWithinPayableLimit = async ({ userId, month, type, amount = 0, excludePaymentId = null }) => {
+const assertWithinPayableLimit = async ({ userId, month, type, amount = 0, excludePaymentId = null, session }) => {
     const filter = { user: userId, month, type, status: 'completed' };
     if (excludePaymentId) filter._id = { $ne: excludePaymentId };
 
-    const completed = await Payment.find(filter);
+    const completed = await Payment.find(filter, null, { session });
     if (!completed || completed.length === 0) return;
 
     const label = (type || 'payment').replace('_', ' ');
@@ -308,7 +314,7 @@ const assertWithinPayableLimit = async ({ userId, month, type, amount = 0, exclu
 
     const parsed = parseMonthString(month);
     const invoice = parsed
-        ? await Invoice.findOne({ user: userId, month: parsed.month, year: parsed.year })
+        ? await Invoice.findOne({ user: userId, month: parsed.month, year: parsed.year }, null, { session })
         : null;
     if (!invoice) throw duplicateError;
 
@@ -323,6 +329,16 @@ const assertWithinPayableLimit = async ({ userId, month, type, amount = 0, exclu
     }
 };
 
+const withPaymentWrite = (userIds, write) => mongoose.connection.transaction(async (session) => {
+    const result = await User.updateMany(
+        { _id: { $in: userIds } },
+        { $inc: { paymentWriteVersion: 1 } },
+        { session, timestamps: false },
+    );
+    if (result.matchedCount !== userIds.length) throw new AppError('Payment owner not found', 404);
+    return write(session);
+});
+
 // ─────────────────────────────────────────────────────────────
 // Create
 // ─────────────────────────────────────────────────────────────
@@ -332,7 +348,7 @@ const assertWithinPayableLimit = async ({ userId, month, type, amount = 0, exclu
  * Cash payments auto-complete server-side — never trust client status
  */
 const createPayment = async (paymentBody) => {
-    const { user: userId, createdBy } = paymentBody;
+    const { user: userId, createdBy, type = 'mess_bill' } = paymentBody;
 
     // Sub-fix A: Correct user fetch
     const student = await User.findById(userId).select('_id name email payment gasBill');
@@ -340,40 +356,29 @@ const createPayment = async (paymentBody) => {
         throw new AppError('Target student not found. Payment record cannot be created.', 404);
     }
 
-    // Duplicate/cap guard: only the new record's own status is guarded —
-    // refund/pending/failed records are legitimate alongside a completed one
-    // (corrections, audit entries) and must never be blocked. Completed
-    // mess_bill records are cumulative installments within the invoice
-    // payable; other types keep the one-completed-record-per-period rule.
-    if ((paymentBody.status || 'completed') === 'completed') {
-        await assertWithinPayableLimit({
-            userId: student._id,
-            month: paymentBody.month,
-            type: paymentBody.type,
-            amount: paymentBody.amount,
-        });
-    }
-
-    // Sub-fix B: Fix payment record creation
-    // Set user field in the Payment document to student._id — never to admin ID
+    const status = paymentBody.status || 'completed';
+    const actorId = createdBy || student._id;
     const paymentData = {
         ...paymentBody,
+        type,
         user: student._id,
-        createdBy: createdBy || student._id, // Audit trail
-        status: paymentBody.status || 'completed',
+        createdBy: actorId,
+        status,
+        statusHistory: [{ status, changedBy: actorId, changedAt: new Date(), remarks: 'Payment created' }],
         paymentDate: (paymentBody.paymentDate && String(paymentBody.paymentDate).includes('T')) ? paymentBody.paymentDate : new Date(),
     };
 
-    const payment = await Payment.create(paymentData);
-
-    // Push initial status to audit trail
-    payment.statusHistory.push({
-        status: payment.status,
-        changedBy: payment.createdBy,
-        changedAt: new Date(),
-        remarks: 'Payment created',
-    });
-    await payment.save({ validateBeforeSave: false });
+    const completed = status === 'completed';
+    const payment = completed
+        ? await withPaymentWrite([student._id], async (session) => {
+            await assertWithinPayableLimit({
+                userId: student._id, month: paymentData.month, type, amount: paymentData.amount, session,
+            });
+            const [created] = await Payment.create([paymentData], { session });
+            await syncInvoiceAfterPayment(student._id, created.month, session);
+            return created;
+        })
+        : await Payment.create(paymentData);
 
     // Sub-fix C & D: Sync and Email (non-blocking)
     // Invoice + user status sync run for every decided status — a refunded or
@@ -384,7 +389,7 @@ const createPayment = async (paymentBody) => {
     if (!['pending', 'pending_verification'].includes(payment.status)) {
         await syncUserPaymentStatus(student._id, payment.type, payment.status, payment.month);
     }
-    await syncInvoiceAfterPayment(student._id, payment.month);
+    if (!completed) await syncInvoiceAfterPayment(student._id, payment.month);
     if (payment.type === 'mess_bill') recalcUserPayable(student._id);
 
     if (['completed', 'failed', 'refunded'].includes(payment.status)) {
@@ -556,15 +561,16 @@ const createOnlinePaymentOrderForMonths = async (userId, months, type) => {
  * findOneAndUpdate with status:'pending' filter makes this race-condition safe —
  * only one concurrent request can win the atomic update
  */
-const verifyOnlinePayment = async ({ orderId, paymentId, signature }) => {
+const verifyOnlinePayment = async ({ userId, orderId, paymentId, signature }) => {
     const isValid = razorpayService.verifyPaymentSignature(orderId, paymentId, signature);
     if (!isValid) throw new AppError('Invalid payment signature', 400);
 
     // Find all pending payments for this order
-    const pendingPayments = await Payment.find({ transactionId: orderId, status: 'pending' });
+    const pendingPayments = await Payment.find({ user: userId, paymentMethod: 'razorpay', transactionId: orderId, status: 'pending' });
+    const completedFilter = { user: userId, paymentMethod: 'razorpay', transactionId: paymentId, status: 'completed' };
     if (pendingPayments.length === 0) {
         // Check if already completed
-        const completedCount = await Payment.countDocuments({ transactionId: paymentId, status: 'completed' });
+        const completedCount = await Payment.countDocuments(completedFilter);
         if (completedCount > 0) {
             throw new AppError('Payment already verified', 409);
         }
@@ -590,7 +596,7 @@ const verifyOnlinePayment = async ({ orderId, paymentId, signature }) => {
     }
 
     if (updatedPayments.length === 0) {
-        const completedCount = await Payment.countDocuments({ transactionId: paymentId, status: 'completed' });
+        const completedCount = await Payment.countDocuments(completedFilter);
         if (completedCount > 0) {
             throw new AppError('Payment already verified', 409);
         }
@@ -746,17 +752,9 @@ const updatePaymentById = async (paymentId, updateBody, actor) => {
     // Guard: cumulative cap when a record is promoted to completed —
     // the other completed records for {user, month, type} plus this one's
     // (possibly edited) amount must stay within the payable limit.
-    if ((safeUpdate.status ?? oldStatus) === 'completed' && (oldStatus !== 'completed' ||
+    const needsCapCheck = (safeUpdate.status ?? oldStatus) === 'completed' && (oldStatus !== 'completed' ||
         ('amount' in safeUpdate && Number(safeUpdate.amount) !== payment.amount) ||
-        ('month' in safeUpdate && safeUpdate.month !== oldMonth))) {
-        await assertWithinPayableLimit({
-            userId: payment.user,
-            month: safeUpdate.month || payment.month,
-            type: payment.type,
-            amount: safeUpdate.amount !== undefined ? safeUpdate.amount : payment.amount,
-            excludePaymentId: payment._id,
-        });
-    }
+        ('month' in safeUpdate && safeUpdate.month !== oldMonth));
 
     payment.$where = {
         status: oldStatus,
@@ -777,7 +775,19 @@ const updatePaymentById = async (paymentId, updateBody, actor) => {
         });
     }
 
-    await payment.save({ validateModifiedOnly: true }).catch((err) => {
+    const monthChanged = safeUpdate.month && safeUpdate.month !== oldMonth;
+    const savePayment = async (session) => {
+        if (session) {
+            await assertWithinPayableLimit({
+                userId: payment.user, month: payment.month, type: payment.type, amount: payment.amount,
+                excludePaymentId: payment._id, session,
+            });
+        }
+        await payment.save({ validateModifiedOnly: true, ...(session && { session }) });
+        await syncInvoiceAfterPayment(payment.user, payment.month, session);
+        if (monthChanged) await syncInvoiceAfterPayment(payment.user, oldMonth, session);
+    };
+    await (needsCapCheck ? withPaymentWrite([payment.user], savePayment) : savePayment()).catch((err) => {
         if (err.name === 'DocumentNotFoundError') {
             throw new AppError('This payment changed. Refresh the calendar and try again.', 409);
         }
@@ -785,7 +795,6 @@ const updatePaymentById = async (paymentId, updateBody, actor) => {
     });
 
     const statusChanged = safeUpdate.status && safeUpdate.status !== oldStatus;
-    const monthChanged = safeUpdate.month && safeUpdate.month !== oldMonth;
 
     if (statusChanged || monthChanged) {
         // Fetch user once — shared by sync and email
@@ -803,13 +812,6 @@ const updatePaymentById = async (paymentId, updateBody, actor) => {
         ]);
 
         if (payment.type === 'mess_bill') recalcUserPayable(payment.user);
-    }
-
-    // Always sync invoice after payment updates
-    await syncInvoiceAfterPayment(payment.user, payment.month);
-    // A corrected month leaves the OLD period's invoice stale — re-sync it too
-    if (monthChanged) {
-        await syncInvoiceAfterPayment(payment.user, oldMonth);
     }
 
     return payment;
@@ -874,7 +876,7 @@ const deletePaymentById = async (paymentId, actor) => {
  * @returns {Promise<Array>} created payment documents
  */
 const createBulkPayments = async (body) => {
-    const { userIds, createdBy, ...paymentData } = body;
+    const { userIds, createdBy, type = 'mess_bill', ...paymentData } = body;
 
     if (!Array.isArray(userIds) || userIds.length === 0) {
         throw new AppError('userIds array is required with at least one user', 400);
@@ -896,20 +898,20 @@ const createBulkPayments = async (body) => {
     // completed payment (same rule as createPayment). Completed mess_bill
     // records are cumulative installments within each invoice's payable;
     // other types keep the one-completed-record-per-period rule.
-    if ((paymentData.status || 'completed') === 'completed') {
+    const guardBulkCompletion = async (session) => {
         const duplicates = await Payment.find({
             user: { $in: userIds },
             month: paymentData.month,
-            type: paymentData.type,
+            type,
             status: 'completed',
-        }).populate('user', 'name').lean();
+        }, null, { session }).populate('user', 'name').lean();
 
         if (duplicates.length > 0) {
-            const label = (paymentData.type || 'payment').replace('_', ' ');
+            const label = type.replace('_', ' ');
             const nameOf = (d) => (typeof d.user === 'object' ? d.user?.name : 'Unknown');
             const names = [...new Set(duplicates.map(nameOf))];
 
-            if (paymentData.type !== 'mess_bill') {
+            if (type !== 'mess_bill') {
                 throw new AppError(
                     `A completed ${label} for ${paymentData.month} already exists for: ${names.join(', ')}`,
                     409
@@ -918,7 +920,7 @@ const createBulkPayments = async (body) => {
 
             const parsed = parseMonthString(paymentData.month);
             const invoices = parsed
-                ? await Invoice.find({ user: { $in: userIds }, month: parsed.month, year: parsed.year }).lean()
+                ? await Invoice.find({ user: { $in: userIds }, month: parsed.month, year: parsed.year }, null, { session }).lean()
                 : [];
             const invoiceByUser = new Map(invoices.map(inv => [String(inv.user), inv]));
             const paidByUser = new Map();
@@ -946,15 +948,16 @@ const createBulkPayments = async (body) => {
                 );
             }
         }
-    }
+    };
 
+    const status = paymentData.status || 'completed';
     const docs = users.map(user => ({
         user: user._id,
         amount: paymentData.amount ?? 0,
         paymentDate: (paymentData.paymentDate && String(paymentData.paymentDate).includes('T')) ? paymentData.paymentDate : new Date(),
         month: paymentData.month,
-        type: paymentData.type || 'mess_bill',
-        status: paymentData.status || 'completed',
+        type,
+        status,
         paymentMethod: paymentData.paymentMethod || 'cash',
         transactionId: paymentData.transactionId || '',
         remarks: paymentData.remarks || '',
@@ -963,19 +966,20 @@ const createBulkPayments = async (body) => {
 
     // Payment.create validates all docs — if any fail, a Mongoose
     // ValidationError propagates up and the error middleware returns 400.
-    const createdPayments = await Payment.create(docs);
+    const completed = status === 'completed';
+    const createdPayments = await withPaymentWrite(userIds, async (session) => {
+        if (completed) await guardBulkCompletion(session);
+        const records = await Payment.create(docs, { session, ordered: true });
+        for (const record of records) {
+            await syncInvoiceAfterPayment(record.user, record.month, session);
+        }
+        return records;
+    });
 
     // Sync user payment statuses and invoice amounts in parallel
-    await Promise.all(createdPayments.map(p =>
-        Promise.all([
-            // Pending/pending_verification never declare the period status
-            // (same contract as createPayment) — invoice sync always runs.
-            ['pending', 'pending_verification'].includes(p.status)
-                ? Promise.resolve()
-                : syncUserPaymentStatus(p.user, p.type, p.status, p.month),
-            syncInvoiceAfterPayment(p.user, p.month),
-        ])
-    ));
+    await Promise.all(createdPayments
+        .filter(p => !['pending', 'pending_verification'].includes(p.status))
+        .map(p => syncUserPaymentStatus(p.user, p.type, p.status, p.month)));
     createdPayments.forEach(p => {
         if (p.type === 'mess_bill') recalcUserPayable(p.user);
     });
@@ -1071,6 +1075,7 @@ const verifyUpiManualPaymentService = async (paymentId, { status, adminRemarks, 
 };
 
 module.exports = {
+    withPaymentWrite,
     createPayment,
     createBulkPayments,
     createOnlinePaymentOrder,

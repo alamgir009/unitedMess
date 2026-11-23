@@ -1,16 +1,11 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, parseISO, isValid, differenceInDays } from 'date-fns';
 import {
-  HiOutlineUserGroup,
-  HiOutlineUser,
   HiOutlineLockClosed,
-  HiOutlineMinus,
-  HiOutlinePlus,
   HiOutlineCalendar,
   HiOutlineTrash,
   HiOutlinePencilSquare,
 } from 'react-icons/hi2';
-import { Loader2 } from 'lucide-react';
 import apiClient from '@/services/api/client/apiClient';
 import { Button, Avatar, MemberSelect, GuestMealField } from '@/shared/components/ui';
 import { cn } from '@/core/utils/helpers/string.helper';
