@@ -29,9 +29,18 @@ const marketSchema = new mongoose.Schema(
             type: String,
             trim: true,
         },
+        calendarTotals: {
+            type: new mongoose.Schema({
+                revision: Number,
+                increments: { totalMarketAmount: Number },
+                retireFor: mongoose.Schema.Types.ObjectId,
+            }, { _id: false }),
+            select: false,
+        },
     },
     {
         timestamps: true,
+        toJSON: { transform: (_, data) => { delete data.calendarTotals; } },
     }
 );
 

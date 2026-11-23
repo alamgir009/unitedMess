@@ -38,9 +38,17 @@ function isValidPhoneNumber(value) {
     }
 }
 
+function isPositiveCurrencyAmount(value) {
+    if (typeof value !== 'number' && typeof value !== 'string') return false;
+    const amount = Number(value);
+    return /^(?:\d+(?:\.\d{1,2})?|\.\d{1,2})$/.test(String(value).trim()) &&
+        amount > 0 && Number.isSafeInteger(Math.round(amount * 100));
+}
+
 module.exports = {
     validatePassword,
     isValidPhoneNumber,
+    isPositiveCurrencyAmount,
     isEmail: validator.isEmail,
     isURL: validator.isURL
 };

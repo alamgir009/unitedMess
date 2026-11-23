@@ -1,13 +1,17 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { Plus, Trash2, X, Check, Minus, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/core/utils/helpers/string.helper';
-import { fmt } from '@/core/utils/helpers/currency.helper';
+import { fmt, isPositiveCurrencyAmount } from '@/core/utils/helpers/currency.helper';
+import { getISTDateKey } from '@/core/utils/helpers/date.helper';
+import { hasValidMarketItems, MARKET_ITEMS_ERROR } from '@/modules/market/marketValidation';
+import { isMemberEditablePaymentAmount } from '@shared/utils/paymentStatus';
 import { MemberSelect, Button, Input, GuestMealField } from '@/shared/components/ui';
 import apiClient from '@/services/api/client/apiClient';
 import MealForm from '@/modules/meal/components/MealForm/MealForm';
 import MarketForm from '@/modules/market/components/MarketForm/MarketForm';
 import PaymentForm from '@/modules/payment/components/PaymentForm/PaymentForm';
+import { EntryEditActions } from './DayDetailDialog';
 import SlotIcon from './cells/SlotIcon';
 import {
   HiOutlineSun,
@@ -15,8 +19,6 @@ import {
   HiOutlineNoSymbol,
   HiOutlineSparkles,
   HiOutlineUserGroup,
-  HiOutlineMinus,
-  HiOutlinePlus,
 } from 'react-icons/hi2';
 
 const mealTypes = [
@@ -105,7 +107,33 @@ const SelectAllRow = ({ checked, indeterminate, onChange, count, total, disabled
   );
 };
 
-const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, currentUser, onSave, onUpdate, onDelete, selectedEntryIds, onToggleSelect, onSelectAll, onBulkDelete, onBulkUpdate, onExitSelectMode, isBulkSubmitting = false, isAdding, setIsAdding, editingId, setEditingId, confirmDeleteId, setConfirmDeleteId }) => {
+export const DaySelectionControls = ({ scope, onScopeChange, onExit, count, total, onSelectAll, disabled }) => (
+  <div className="mb-3 flex flex-col gap-2">
+    <div className="flex flex-wrap items-center gap-2">
+      <Button autoFocus variant="ghost" size="sm" onClick={onExit} disabled={disabled}>
+        Back to entries
+      </Button>
+      <Button variant="secondary" size="sm" aria-pressed={scope === 'day'} onClick={() => onScopeChange('day')} disabled={disabled}>
+        This day
+      </Button>
+      <Button variant="secondary" size="sm" aria-pressed={scope === 'month'} onClick={() => onScopeChange('month')} disabled={disabled}>
+        This month
+      </Button>
+    </div>
+    {total > 0 && (
+      <SelectAllRow
+        checked={count === total}
+        indeterminate={count > 0 && count < total}
+        onChange={onSelectAll}
+        count={count}
+        total={total}
+        disabled={disabled}
+      />
+    )}
+  </div>
+);
+
+const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, currentUser, onSave, onUpdate, onDelete, onDone, selectedEntryIds, onToggleSelect, onSelectAll, onBulkDelete, onBulkUpdate, onExitSelectMode, isBulkSubmitting = false, isAdding, setIsAdding, editingId, setEditingId, confirmDeleteId, setConfirmDeleteId }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showBulkUpdateForm, setShowBulkUpdateForm] = useState(false);
 
@@ -826,56 +854,83 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
 
 // ─── Inline Edit Form ──────────────────────────────────────────
 
-const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting }) => {
+export const EntryEditForm = ({ formId, entry, category, isAdmin, onUpdate, onCancel, isSubmitting = false, setIsSubmitting }) => {
+  const isMarket = category === 'markets';
+  const isPayment = category === 'payments';
+  const canEditAmount = isMarket || (isPayment && (isAdmin || isMemberEditablePaymentAmount(entry)));
+  const initialAmount = isPayment && entry.status === 'refunded' ? Math.abs(entry.amount) : entry.amount;
   const [type, setType] = useState(entry.type || 'day');
-  const [amount, setAmount] = useState(entry.amount ?? '');
+  const [amount, setAmount] = useState(initialAmount ?? '');
+  const [date, setDate] = useState(entry.date ? getISTDateKey(entry.date) : '');
+  const [month, setMonth] = useState(entry.month || '');
+  const [status, setStatus] = useState(entry.status || 'pending');
   const [items, setItems] = useState(entry.items || '');
   const [remarks, setRemarks] = useState(entry.remarks || entry.description || '');
-  const [isGuestMeal, setIsGuestMeal] = useState(entry.isGuestMeal || false);
-  const [guestCount, setGuestCount] = useState(entry.guestCount || 1);
+  const [guestCount, setGuestCount] = useState(entry.guestCount || 0);
   const [errors, setErrors] = useState({});
+  const formRef = useRef(null);
+  const isChangingLegacyRefund = isPayment && isAdmin && entry.amount < 0 && status !== entry.status && status !== 'refunded';
+  const shouldSaveAmount = canEditAmount && (isMarket || Number(amount) !== initialAmount || isChangingLegacyRefund);
+
+  useLayoutEffect(() => {
+    formRef.current?.querySelector('[aria-pressed="true"], input:not([readonly])')?.focus();
+  }, []);
 
   const validate = () => {
     const errs = {};
     if (category === 'meals' && !type) errs.type = 'Type is required';
-    if (category === 'markets' && (!amount || Number(amount) <= 0)) errs.amount = 'Amount must be > 0';
-    if (category === 'markets' && !items.trim()) errs.items = 'Items is required';
-    if (category === 'meals' && isGuestMeal && (!guestCount || guestCount < 1)) errs.guestCount = 'Guest count must be at least 1';
+    if (shouldSaveAmount && !isPositiveCurrencyAmount(amount)) {
+      errs.amount = 'Amount must be greater than 0 with at most 2 decimal places.';
+    }
+    if (isMarket && !hasValidMarketItems(items)) errs.items = MARKET_ITEMS_ERROR;
+    if (!isPayment && !date) errs.date = 'Date is required';
+    if (category === 'meals' && (!Number.isSafeInteger(guestCount) || guestCount < 0)) {
+      errs.guestCount = 'Guest count must be a non-negative whole number';
+    }
+    if (isPayment && isAdmin && month !== entry.month && !/^(January|February|March|April|May|June|July|August|September|October|November|December) \d{4}$/.test(month.trim())) {
+      errs.month = 'Enter a billing month and year, such as January 2026.';
+    }
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validate()) return;
-    setIsSubmitting(true);
+    if (isSubmitting || !validate()) return;
+    setIsSubmitting?.(true);
     try {
-      const payload = {};
+      const payload = isPayment || date === getISTDateKey(entry.date) ? {} : { date };
       if (category === 'meals') {
-        payload.type = type;
-        payload.isGuestMeal = isGuestMeal;
-        payload.guestCount = isGuestMeal ? (guestCount || 0) : 0;
-        payload.remarks = remarks.trim() || '';
+        if (type !== entry.type) payload.type = type;
+        if (guestCount !== (entry.guestCount ?? 0) || (guestCount > 0) !== Boolean(entry.isGuestMeal)) {
+          payload.isGuestMeal = guestCount > 0;
+          payload.guestCount = guestCount;
+        }
+      } else if (isMarket) {
+        if (Number(amount) !== initialAmount) payload.amount = Number(amount);
+        if (items.trim() !== entry.items) payload.items = items.trim();
       } else {
-        payload.amount = Math.round((parseFloat(amount) || 0) * 100) / 100;
-        if (items.trim()) payload.items = items.trim();
-        payload.description = remarks.trim() || '';
+        if (shouldSaveAmount) payload.amount = Number(amount);
+        if (isAdmin && month.trim() !== entry.month) payload.month = month.trim();
+        if (isAdmin && status !== entry.status) payload.status = status;
       }
+      const remarksField = isMarket ? 'description' : 'remarks';
+      if (remarks.trim() !== (entry[remarksField] || '')) payload[remarksField] = remarks.trim();
       await onUpdate(entry._id, payload);
-      onCancel();
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting?.(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full">
+    <form id={formId} ref={formRef} onSubmit={handleSubmit} noValidate aria-busy={isSubmitting} className="flex flex-col gap-3 w-full">
+      <fieldset disabled={isSubmitting} className="contents">
       {/* ── Amount preview banner (markets) ── */}
-      {category === 'markets' && (
+      {isMarket && (
         <div className="relative flex items-center justify-center py-3 rounded-xl border border-[var(--brand)]/15 bg-[var(--brand)]/5 overflow-hidden shrink-0">
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-bold text-foreground leading-none tracking-tight">
-              ₹{amount === '' ? '0' : Number(amount).toLocaleString('en-IN')}
+              ₹{fmt(Number.isFinite(Number(amount)) ? amount : 0)}
             </span>
             <span className="text-xs font-medium text-[var(--text-secondary)]">purchase amount</span>
           </div>
@@ -899,38 +954,70 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
           ))}
         </div>
       ) : (
-        <>
-          <div>
             <Input
-              type="number"
+              type="text"
+              inputMode="decimal"
               variant="record"
+              label="Amount"
               value={amount}
               onChange={(e) => { setAmount(e.target.value); setErrors((p) => ({ ...p, amount: undefined })); }}
-              min="0"
-              max="999999"
-              step="0.01"
               placeholder="0.00"
-              isInvalid={!!errors.amount}
-              className={modalInputClass}
+              error={errors.amount}
+              readOnly={!canEditAmount}
+              className={cn(modalInputClass, 'pl-9')}
               leftIcon={<span className="text-[var(--success-text)] font-semibold text-sm">₹</span>}
-              aria-label="Amount"
             />
-            {errors.amount && <p className="text-[10px] text-[var(--danger)] mt-0.5">{errors.amount}</p>}
-          </div>
+      )}
 
-          <div>
+      {isMarket && (
             <Input
               type="text"
               variant="record"
+              label="Items purchased"
               value={items}
               onChange={(e) => { setItems(e.target.value); setErrors((p) => ({ ...p, items: undefined })); }}
               placeholder="e.g. Rice, Vegetables, Oil…"
-              isInvalid={!!errors.items}
+              error={errors.items}
               className={modalInputClass}
-              aria-label="Items"
             />
-            {errors.items && <p className="text-[10px] text-[var(--danger)] mt-0.5">{errors.items}</p>}
-          </div>
+      )}
+
+      {!isPayment && (
+        <Input
+          type="date"
+          variant="record"
+          label="Date"
+          value={date}
+          onChange={(e) => { setDate(e.target.value); setErrors((p) => ({ ...p, date: undefined })); }}
+          error={errors.date}
+          className={modalInputClass}
+        />
+      )}
+
+      {isPayment && isAdmin && (
+        <>
+          <Input
+            variant="record"
+            label="Billing month"
+            value={month}
+            onChange={(e) => { setMonth(e.target.value); setErrors((p) => ({ ...p, month: undefined })); }}
+            error={errors.month}
+            className={modalInputClass}
+          />
+          <label className="flex flex-col gap-1.5 text-sm font-semibold text-[var(--text-secondary)]">
+            Status
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className={cn('w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)]', modalInputClass)}
+            >
+              <option value="pending">Pending</option>
+              <option value="pending_verification">Verifying</option>
+              <option value="completed">Paid</option>
+              <option value="failed">Failed</option>
+              <option value="refunded">Refunded</option>
+            </select>
+          </label>
         </>
       )}
 
@@ -938,82 +1025,79 @@ const EntryEditForm = ({ entry, category, onUpdate, onCancel, setIsSubmitting })
       <Input
         type="text"
         variant="record"
+        label={isMarket ? 'Description' : 'Remarks'}
         value={remarks}
         onChange={(e) => setRemarks(e.target.value)}
-        placeholder={category === 'meals' ? 'Notes' : 'Description (optional)'}
+        placeholder="Optional"
         className={modalInputClass}
-        aria-label={category === 'meals' ? 'Notes' : 'Description'}
       />
 
       {/* Row 3: Guest Meals stepper (meals only) */}
       {category === 'meals' && (
-        <GuestMealsRow
-          isGuestMeal={isGuestMeal}
-          guestCount={guestCount}
-          onChange={({ isGuestMeal: igm, guestCount: gc }) => {
-            setIsGuestMeal(igm);
-            setGuestCount(gc);
+        <GuestMealField
+          value={guestCount}
+          onChange={(count) => {
+            setGuestCount(count);
             setErrors((p) => ({ ...p, guestCount: undefined }));
           }}
-          disabled={false}
+          max={Math.max(20, entry.guestCount || 0)}
+          disabled={isSubmitting}
         />
       )}
       {errors.guestCount && <p className="text-[10px] text-[var(--danger)]">{errors.guestCount}</p>}
+      </fieldset>
 
-      {/* ─── Fintech Footer: Cancel + Save ─── */}
-      <div className="flex items-center gap-2 pt-3 mt-1 border-t border-[var(--border-contrast)]">
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={onCancel}
-          className="flex-1 h-11 sm:h-10 min-h-[44px] sm:min-h-[40px] px-3 rounded-[8px] text-sm font-medium border border-[var(--border-contrast)] hover:border-[var(--border-contrast-hover)] bg-[var(--bg-elevated)] text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-elevated)]"
-          aria-label="Cancel edit"
-        >
-          Cancel
-        </Button>
-        <Button
-          type="submit"
-          variant="primary"
-          className="flex-1 h-11 sm:h-10 min-h-[44px] sm:min-h-[40px] px-3 rounded-[8px] text-sm font-semibold bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-[var(--text-on-brand)] border border-transparent shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-elevated)]"
-          aria-label="Save changes"
-        >
-          Update
-        </Button>
-      </div>
+      {!formId && (
+        <div className="pt-3 mt-1 border-t border-[var(--border-contrast)]">
+          <EntryEditActions onCancel={onCancel} isSubmitting={isSubmitting} />
+        </div>
+      )}
     </form>
   );
 };
 
 // ─── Bulk Update Form ──────────────────────────────────────────
 
-const BulkUpdateForm = ({ category, selectedCount, onSubmit, onCancel, isBulkSubmitting = false }) => {
+export const BulkUpdateForm = ({ formId, category, selectedCount, onSubmit, onCancel, isBulkSubmitting = false, allowAmount = true }) => {
+  const formRef = useRef(null);
   const [type, setType] = useState('');
   const [amount, setAmount] = useState('');
   const [items, setItems] = useState('');
   const [remarks, setRemarks] = useState('');
+  const [guestCount, setGuestCount] = useState('');
   const [errors, setErrors] = useState({});
+  const isMarket = category === 'markets';
+  const isMeal = category === 'meals';
 
-  const validate = () => {
-    const errs = {};
-    if (category === 'meals' && !type) errs.type = 'Select a type';
-    if (category === 'markets' && amount !== '' && Number(amount) <= 0) errs.amount = 'Amount must be > 0';
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
+  useLayoutEffect(() => {
+    formRef.current?.querySelector('button, input')?.focus();
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!validate()) return;
+    if (isBulkSubmitting) return;
+    const errs = {};
+    if (allowAmount && amount !== '' && !isPositiveCurrencyAmount(amount)) {
+      errs.amount = 'Amount must be greater than 0 with at most 2 decimal places.';
+    }
+    if (isMarket && items !== '' && !hasValidMarketItems(items)) errs.items = MARKET_ITEMS_ERROR;
+    if (isMeal && guestCount !== '' && (!/^\d+$/.test(guestCount) || !Number.isSafeInteger(Number(guestCount)))) {
+      errs.guestCount = 'Enter a non-negative whole number.';
+    }
+    setErrors(errs);
+    if (Object.keys(errs).length) return;
+
     const payload = {};
-    if (category === 'meals' && type) payload.type = type;
-    if (category === 'markets') {
-      if (amount !== '') payload.amount = parseFloat(amount) || 0;
-      if (items.trim()) payload.items = items.trim();
+    if (isMeal) {
+      if (type) payload.type = type;
+      if (guestCount !== '') {
+        payload.guestCount = Number(guestCount);
+        payload.isGuestMeal = payload.guestCount > 0;
+      }
     }
-    if (remarks.trim()) {
-      if (category === 'meals') payload.remarks = remarks.trim();
-      else payload.description = remarks.trim();
-    }
+    if (allowAmount && !isMeal && amount !== '') payload.amount = Number(amount);
+    if (isMarket && items !== '') payload.items = items.trim();
+    if (remarks.trim()) payload[isMarket ? 'description' : 'remarks'] = remarks.trim();
     if (Object.keys(payload).length === 0) {
       setErrors({ empty: 'Change at least one field' });
       return;
@@ -1022,99 +1106,36 @@ const BulkUpdateForm = ({ category, selectedCount, onSubmit, onCancel, isBulkSub
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-3 rounded-xl border border-[var(--accent-primary)]/20 bg-[var(--accent-primary)]/5">
-      <p className="text-xs font-semibold text-[var(--accent-primary)] uppercase tracking-wider">
-        Bulk Update · {selectedCount} entr{selectedCount === 1 ? 'y' : 'ies'}
+    <form ref={formRef} id={formId} onSubmit={handleSubmit} noValidate className="flex flex-col gap-3">
+      <p className="text-sm text-[var(--text-secondary)]">
+        Editing {selectedCount} {selectedCount === 1 ? 'entry' : 'entries'}. Leave fields blank to keep their current values.
       </p>
 
-      {category === 'meals' ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {mealTypes.map((t) => (
-            <TypeBtn
-              key={t.value}
-              value={t.value}
-              current={type}
-              onClick={(v) => { setType(v); setErrors((p) => ({ ...p, type: undefined, empty: undefined })); }}
-              icon={t.icon}
-              label={t.label}
-              description={t.description}
-              color={t.color}
-            />
-          ))}
-        </div>
-      ) : (
-        <>
-          <div>
-            <Input
-              type="number"
-              variant="record"
-              value={amount}
-              onChange={(e) => { setAmount(e.target.value); setErrors((p) => ({ ...p, amount: undefined, empty: undefined })); }}
-              min="0"
-              max="999999"
-              step="0.01"
-              placeholder="0.00"
-              isInvalid={!!errors.amount}
-              className={modalInputClass}
-              leftIcon={<span className="text-[var(--success-text)] font-semibold text-sm">₹</span>}
-              aria-label="Amount"
-            />
-            {errors.amount && <p className="text-[10px] text-[var(--danger)] mt-0.5">{errors.amount}</p>}
-          </div>
-          <div>
-            <Input
-              type="text"
-              variant="record"
-              value={items}
-              onChange={(e) => setItems(e.target.value)}
-              placeholder="e.g. Rice, Vegetables, Oil…"
-              className={modalInputClass}
-              aria-label="Items"
-            />
-          </div>
-        </>
-      )}
-
-      <Input
-        type="text"
-        variant="record"
-        value={remarks}
-        onChange={(e) => setRemarks(e.target.value)}
-        placeholder={`${category === 'meals' ? 'Remarks' : 'Description'} (optional)`}
-        className={modalInputClass}
-        aria-label={category === 'meals' ? 'Remarks' : 'Description'}
-      />
-
-      {(errors.type || errors.amount || errors.empty) && (
-        <p className="text-xs text-[var(--danger)]">{errors.type || errors.amount || errors.empty}</p>
-      )}
-
-      <div className="flex gap-2 pt-3 mt-1 border-t border-[var(--border-contrast)]">
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={onCancel}
-          disabled={!!isBulkSubmitting}
-          className="flex-1 h-11 sm:h-10 min-h-[44px] sm:min-h-[40px] px-3 rounded-[8px] text-sm font-medium border border-[var(--border-contrast)] hover:border-[var(--border-contrast-hover)] bg-[var(--bg-elevated)] text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-elevated)]"
-        >
-          Cancel
-        </Button>
-        <Button
-          type="submit"
-          variant="primary"
-          disabled={!!isBulkSubmitting}
-          className="flex-1 h-11 sm:h-10 min-h-[44px] sm:min-h-[40px] px-3 rounded-[8px] text-sm font-semibold bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-[var(--text-on-brand)] border border-transparent shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-elevated)]"
-        >
-          {isBulkSubmitting === 'updating' ? (
-            <span className="flex items-center justify-center gap-1.5">
-              <Loader2 className="w-3 h-3 animate-spin" />
-              Updating…
-            </span>
-          ) : (
-            `Apply to ${selectedCount}`
-          )}
-        </Button>
-      </div>
+      <fieldset disabled={Boolean(isBulkSubmitting)} className="contents">
+        {isMeal && (
+          <>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Meal type" role="group">
+              {mealTypes.map((mealType) => (
+                <TypeBtn key={mealType.value} {...mealType} current={type} onClick={(value) => setType(type === value ? '' : value)} />
+              ))}
+            </div>
+            <Input label="Guest meals" variant="record" value={guestCount} inputMode="numeric"
+              onChange={(e) => setGuestCount(e.target.value)} error={errors.guestCount} className={modalInputClass} />
+          </>
+        )}
+        {allowAmount && !isMeal && (
+          <Input label="Amount" variant="record" value={amount} inputMode="decimal"
+            onChange={(e) => setAmount(e.target.value)} error={errors.amount} className={modalInputClass} />
+        )}
+        {isMarket && (
+          <Input label="Items purchased" variant="record" value={items}
+            onChange={(e) => setItems(e.target.value)} error={errors.items} className={modalInputClass} />
+        )}
+        <Input label={isMarket ? 'Description' : 'Remarks'} variant="record" value={remarks}
+          onChange={(e) => setRemarks(e.target.value)} className={modalInputClass} />
+      </fieldset>
+      {errors.empty && <p role="alert" className="text-xs text-[var(--danger-text)]">{errors.empty}</p>}
+      {!formId && <EntryEditActions onCancel={onCancel} isSubmitting={Boolean(isBulkSubmitting)} />}
     </form>
   );
 };

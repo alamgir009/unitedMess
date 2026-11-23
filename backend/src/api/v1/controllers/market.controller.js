@@ -50,22 +50,22 @@ const getMarket = asyncHandler(async (req, res) => {
 });
 
 const updateMarket = asyncHandler(async (req, res) => {
-    const market = await marketService.getMarketById(req.params.marketId);
+    const market = await marketService.getMarketById(req.params.marketId, true);
     if (!market) throw new AppError('Market entry not found', 404);
 
     assertOwnedOrAdmin(market, req.user, { label: 'market entry', action: 'update' });
 
-    const updatedMarket = await marketService.updateMarketById(req.params.marketId, req.body);
+    const updatedMarket = await marketService.updateMarketById(req.params.marketId, req.body, market);
     sendSuccessResponse(res, 200, 'Market entry updated successfully', updatedMarket);
 });
 
 const deleteMarket = asyncHandler(async (req, res) => {
-    const market = await marketService.getMarketById(req.params.marketId);
+    const market = await marketService.getMarketById(req.params.marketId, true);
     if (!market) throw new AppError('Market entry not found', 404);
 
     assertOwnedOrAdmin(market, req.user, { label: 'market entry', action: 'delete' });
 
-    await marketService.deleteMarketById(req.params.marketId);
+    await marketService.deleteMarketById(req.params.marketId, market);
     res.status(204).send();
 });
 
@@ -80,10 +80,6 @@ const bulkCreateMarkets = asyncHandler(async (req, res) => {
 
     if (amount === undefined || amount === null) {
         throw new AppError('amount is required', 400);
-    }
-
-    if (!items || typeof items !== 'string' || !items.trim()) {
-        throw new AppError('items is required', 400);
     }
 
     const isAdmin = req.user.role === 'admin';
@@ -134,28 +130,28 @@ const adminCreateMarket = asyncHandler(async (req, res) => {
 const adminUpdateMarket = asyncHandler(async (req, res) => {
     await marketService.verifyUserExists(req.params.userId);
 
-    const market = await marketService.getMarketById(req.params.marketId);
+    const market = await marketService.getMarketById(req.params.marketId, true);
     if (!market) throw new AppError('Market entry not found', 404);
 
     if (market.user._id.toString() !== req.params.userId) {
         throw new AppError('Market entry does not belong to this user', 400);
     }
 
-    const updatedMarket = await marketService.updateMarketById(req.params.marketId, req.body);
+    const updatedMarket = await marketService.updateMarketById(req.params.marketId, req.body, market);
     sendSuccessResponse(res, 200, 'Market entry updated successfully', updatedMarket);
 });
 
 const adminDeleteMarket = asyncHandler(async (req, res) => {
     await marketService.verifyUserExists(req.params.userId);
 
-    const market = await marketService.getMarketById(req.params.marketId);
+    const market = await marketService.getMarketById(req.params.marketId, true);
     if (!market) throw new AppError('Market entry not found', 404);
 
     if (market.user._id.toString() !== req.params.userId) {
         throw new AppError('Market entry does not belong to this user', 400);
     }
 
-    await marketService.deleteMarketById(req.params.marketId);
+    await marketService.deleteMarketById(req.params.marketId, market);
     res.status(204).send();
 });
 

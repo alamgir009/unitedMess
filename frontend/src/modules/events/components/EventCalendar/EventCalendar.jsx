@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
+import { useState, useCallback, useEffect, useLayoutEffect, useRef, useMemo, useId, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { addMonths, subMonths, format, startOfMonth, endOfMonth, addDays } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
@@ -7,7 +7,10 @@ import CalendarHeader from './CalendarHeader';
 import CalendarGrid from './CalendarGrid';
 import MealLegend from './MealLegend';
 import DayDetailContent from './DayDetailContent';
-import DayDetailDialog from './DayDetailDialog';
+import DayDetailDialog, { EntryEditActions } from './DayDetailDialog';
+import { canDeleteDayEntry, canEditDayEntry } from './dayEntryPermissions';
+import { Button } from '@/shared/components/ui';
+import { isMemberEditablePaymentAmount } from '@shared/utils/paymentStatus';
 import MarketScheduleModal from './MarketScheduleModal';
 import SegmentedControl from '../SegmentedControl';
 
@@ -16,11 +19,14 @@ import { formatInIST, getISTDateKey } from '@/core/utils/helpers/date.helper';
 import eventService from '../../services/event.service';
 import { setCurrentMonth, setLoading } from '../../store/events.slice';
 import { fetchMonthSchedule, fetchAvailableDates } from '../../store/marketSchedule.slice';
-import { createMeal, bulkCreateMeals, updateMeal, deleteMeal, bulkDeleteMeals } from '../../../meal/store/meal.slice';
+import { createMeal, bulkCreateMeals, updateMeal, deleteMeal } from '../../../meal/store/meal.slice';
 import { createMarket, updateMarket, deleteMarket, bulkCreateMarkets } from '../../../market/store/market.slice';
-import { createPayment, createBulkPayments, updatePayment } from '../../../payment/store/payment.slice';
+import { createPayment, createBulkPayments, updatePayment, deletePayment } from '../../../payment/store/payment.slice';
 
 const CalendarDayEdit = lazy(() => import('./CalendarDayEdit'));
+const EntryEditForm = lazy(() => import('./CalendarDayEdit').then(({ EntryEditForm }) => ({ default: EntryEditForm })));
+const BulkUpdateForm = lazy(() => import('./CalendarDayEdit').then(({ BulkUpdateForm }) => ({ default: BulkUpdateForm })));
+const DaySelectionControls = lazy(() => import('./CalendarDayEdit').then(({ DaySelectionControls }) => ({ default: DaySelectionControls })));
 const MealModal = lazy(() => import('../../../meal/components/MealModal/MealModal'));
 const MarketModal = lazy(() => import('../../../market/components/MarketModal/MarketModal'));
 const PaymentModal = lazy(() => import('../../../payment/components/PaymentModal/PaymentModal'));
@@ -80,6 +86,7 @@ const EventCalendar = () => {
   const [searchParams] = useSearchParams();
   const category = searchParams.get('view') || 'meals';
   const currentMonth = useSelector((state) => state.events.currentMonth);
+  const viewScope = `${category}:${currentMonth}`;
   const currentMonthDate = useMemo(() => new Date(currentMonth), [currentMonth]);
 
   const [dataMap, setDataMap] = useState({});
@@ -89,14 +96,19 @@ const EventCalendar = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [editingEntry, setEditingEntry] = useState(null);
+  const editFormId = useId();
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [selectedEntryIds, setSelectedEntryIds] = useState(new Set());
+  const [selectionScope, setSelectionScope] = useState(null);
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
+  const [confirmSelectionDelete, setConfirmSelectionDelete] = useState(false);
   const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState(null);
-  const [isPaymentSubmitting, setIsPaymentSubmitting] = useState(false);
+  const [isDaySubmitting, setIsDaySubmitting] = useState(false);
   const [paymentFooter, setPaymentFooter] = useState(null);
 
   const { monthSchedule } = useSelector((state) => state.marketSchedule);
@@ -147,6 +159,20 @@ const EventCalendar = () => {
     });
   }, [currentDateEntries, selectedMemberId]);
 
+  const editableDayEntries = filteredCurrentDateEntries.filter((entry) => canEditDayEntry(entry, category, user));
+  const editableMonthEntries = useMemo(() => {
+    if (!detailDate) return [];
+    const monthKey = format(currentMonthDate, 'yyyy-MM');
+    return Object.keys(dataMap).filter((key) => key.startsWith(monthKey)).sort()
+      .flatMap((key) => dataMap[key].filter((entry) =>
+        (!selectedMemberId || (entry.user?._id || entry.user) === selectedMemberId) &&
+        canEditDayEntry(entry, category, user),
+      ));
+  }, [category, currentMonthDate, dataMap, detailDate, selectedMemberId, user]);
+  const selectionEntries = selectionScope === 'month' ? editableMonthEntries : editableDayEntries;
+  const selectedEntries = selectionEntries.filter((entry) => selectedEntryIds.has(entry._id));
+  const canDeleteSelection = selectedEntries.length > 0 && selectedEntries.every((entry) => canDeleteDayEntry(entry, category, user));
+
   const userOwnMealEntry = useMemo(() => {
     if (category !== 'meals' || isAdmin || !detailDate) return null;
     const uid = user?._id || user?.id;
@@ -157,6 +183,35 @@ const EventCalendar = () => {
   }, [currentDateEntries, category, isAdmin, detailDate, user]);
 
   const abortRef = useRef(null);
+  const saveRequestRef = useRef(null);
+  const rowTriggerRef = useRef(null);
+  const activeViewRef = useRef(null);
+
+  const resetDayModal = useCallback(() => {
+    setDetailDate(null);
+    setIsEditMode(false);
+    setIsAdding(false);
+    setEditingId(null);
+    setEditingEntry(null);
+    setConfirmDeleteId(null);
+    setSelectedEntryIds(new Set());
+    setSelectionScope(null);
+    setBulkEditOpen(false);
+    setConfirmSelectionDelete(false);
+    setIsBulkSubmitting(false);
+    setIsPaymentModalOpen(false);
+    setEditingPayment(null);
+    setPaymentFooter(null);
+    setIsDaySubmitting(false);
+    rowTriggerRef.current = null;
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!editingEntry && rowTriggerRef.current) {
+      rowTriggerRef.current.focus();
+      rowTriggerRef.current = null;
+    }
+  }, [editingEntry]);
 
   const fetchData = useCallback(async (signal) => {
     const monthStart = format(startOfMonth(currentMonthDate), 'yyyy-MM-dd');
@@ -176,6 +231,7 @@ const EventCalendar = () => {
       if (!fetcher) return;
 
       const envelope = await fetcher({ signal, startDate: monthStart, endDate: monthEnd });
+      if (signal.aborted) return;
       const allItems = extractItems(envelope, category);
 
       const grouped = groupByDateIST(allItems);
@@ -184,14 +240,14 @@ const EventCalendar = () => {
       setErrorMap({});
       setLoadingMap({});
     } catch (err) {
-      if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED' || err.name === 'AbortError') return;
+      if (signal.aborted || err.name === 'CanceledError' || err.code === 'ERR_CANCELED' || err.name === 'AbortError') return;
       const days = getDaysInMonth(currentMonthDate);
       const errors = {};
       for (const d of days) errors[d] = true;
       setErrorMap(errors);
       setLoadingMap({});
     } finally {
-      dispatch(setLoading(false));
+      if (!signal.aborted) dispatch(setLoading(false));
     }
   }, [category, currentMonthDate, dispatch]);
 
@@ -205,7 +261,7 @@ const EventCalendar = () => {
 
   useEffect(() => {
     const handleVisibility = () => {
-      if (document.visibilityState !== 'visible') return;
+      if (document.visibilityState !== 'visible' || saveRequestRef.current) return;
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
@@ -232,27 +288,107 @@ const EventCalendar = () => {
   }, [dispatch, currentMonthDate]);
 
   const handleCellClick = useCallback((date) => {
+    if (saveRequestRef.current) return;
     setDetailDate(date);
     setIsEditMode(false);
     setIsAdding(false);
     setEditingId(null);
+    setEditingEntry(null);
     setConfirmDeleteId(null);
+    setSelectedEntryIds(new Set());
+    setSelectionScope(null);
+    setBulkEditOpen(false);
+    setConfirmSelectionDelete(false);
   }, []);
 
   const handleRetry = useCallback(() => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
-    fetchData(controller.signal);
+    return fetchData(controller.signal);
   }, [fetchData]);
 
+  useLayoutEffect(() => {
+    activeViewRef.current = { scope: viewScope, refresh: handleRetry };
+    resetDayModal();
+    setDataMap({});
+    return () => {
+      activeViewRef.current = null;
+      saveRequestRef.current = null;
+      abortRef.current?.abort();
+    };
+  }, [viewScope, handleRetry, resetDayModal]);
+
   const handleCloseDetail = useCallback(() => {
-    setDetailDate(null);
+    if (!saveRequestRef.current) resetDayModal();
+  }, [resetDayModal]);
+
+  const handleCancelEntry = useCallback(() => {
+    if (saveRequestRef.current) return;
     setIsEditMode(false);
     setIsAdding(false);
     setEditingId(null);
-    setConfirmDeleteId(null);
+    setEditingEntry(null);
   }, []);
+
+  const mergeSavedDayEntry = useCallback((entry, sourceDate) => {
+    if (!entry?._id || !sourceDate) return;
+    const destinationDate = getISTDateKey(entry.date || entry.paymentDate || sourceDate);
+    const visibleMonth = format(currentMonthDate, 'yyyy-MM');
+
+    setDataMap((previous) => {
+      const source = previous[sourceDate] || [];
+      const prior = source.find((row) => row._id === entry._id);
+      // Payment PATCH can return just the owner id. Keep the name and avatar from the list.
+      const owner = (typeof entry.user === 'string' && prior?.user?._id === entry.user) ? prior.user : entry.user ?? prior?.user;
+      const updated = { ...prior, ...entry, user: owner };
+      if (destinationDate === sourceDate) {
+        return { ...previous, [sourceDate]: prior ? source.map((row) => row._id === entry._id ? updated : row) : [...source, updated] };
+      }
+
+      const next = { ...previous, [sourceDate]: source.filter((row) => row._id !== entry._id) };
+      if (destinationDate.startsWith(visibleMonth)) {
+        const ownerId = owner?._id || owner;
+        const destination = (previous[destinationDate] || []).filter((row) =>
+          row._id !== entry._id && !(category === 'meals' && ownerId && (row.user?._id || row.user) === ownerId),
+        );
+        next[destinationDate] = [...destination, updated];
+      }
+      return next;
+    });
+  }, [category, currentMonthDate]);
+
+  const runDaySave = useCallback(async (save, sourceDate) => {
+    if (saveRequestRef.current) return;
+    const request = {};
+    saveRequestRef.current = request;
+    setIsDaySubmitting(true);
+    try {
+      const result = await save();
+      const message = result?.message ?? result;
+      if (saveRequestRef.current !== request) {
+        if (!saveRequestRef.current && activeViewRef.current?.scope === viewScope) {
+          mergeSavedDayEntry(result?.entry, sourceDate);
+          await activeViewRef.current.refresh();
+        }
+        return;
+      }
+      mergeSavedDayEntry(result?.entry, sourceDate);
+      await handleRetry();
+      if (saveRequestRef.current !== request) return;
+      toast.success(message);
+      resetDayModal();
+    } catch (error) {
+      if (saveRequestRef.current !== request) return;
+      const message = Array.isArray(error) ? error.join(' ') : error?.message || error;
+      toast.error(typeof message === 'string' ? message : 'Failed to save entry');
+    } finally {
+      if (saveRequestRef.current === request) {
+        saveRequestRef.current = null;
+        setIsDaySubmitting(false);
+      }
+    }
+  }, [handleRetry, mergeSavedDayEntry, resetDayModal, viewScope]);
 
   const handleScheduleClick = useCallback(() => {
     setDetailDate(null);
@@ -300,214 +436,66 @@ const EventCalendar = () => {
     setConfirmDeleteId(null);
   }, []);
 
-  const handleMealUpdate = useCallback(() => {
-    if (!userOwnMealEntry) return;
-    setIsEditMode(true);
-    setIsAdding(false);
-    setEditingId(userOwnMealEntry._id);
-    setConfirmDeleteId(null);
-  }, [userOwnMealEntry]);
-
-  const handleEntryClick = useCallback((entry) => {
-    setIsEditMode(true);
-    setEditingId(entry._id);
-    setIsAdding(false);
-    setConfirmDeleteId(null);
+  const handleEntryClick = useCallback((entry, trigger) => {
+    rowTriggerRef.current = trigger;
+    setEditingEntry(entry);
   }, []);
 
-  const snapshotRef = useRef(null);
+  const handleMealUpdate = useCallback((event) => {
+    if (userOwnMealEntry) handleEntryClick(userOwnMealEntry, event.currentTarget);
+  }, [handleEntryClick, userOwnMealEntry]);
 
-  const handleSaveEntry = useCallback(async (entryData) => {
-    if (isAdmin && !entryData.startDate && 'userIds' in entryData && (!entryData.userIds || entryData.userIds.length === 0)) {
-      toast.error('Select at least one member');
-      return;
+  const handleSaveEntry = useCallback((entryData) => runDaySave(async () => {
+    const { userIds, ...fields } = entryData;
+    const bulk = isAdmin && userIds?.length > 0;
+
+    if (category === 'meals') {
+      if (fields.startDate || bulk) {
+        const date = fields.date ? getISTDateKey(fields.date) : getISTDateKey(detailDate);
+        const response = await dispatch(bulkCreateMeals({
+          ...fields, userIds, startDate: fields.startDate || date, endDate: fields.endDate || date,
+        })).unwrap();
+        const { inserted = 0, updated = 0, skipped = 0 } = response?.data || response || {};
+        return [
+          inserted > 0 && `${inserted} added`,
+          updated > 0 && `${updated} updated`,
+          skipped > 0 && `${skipped} unchanged`,
+        ].filter(Boolean).join(' · ') || 'Meals saved';
+      }
+      await dispatch(createMeal(fields)).unwrap();
+      return 'Meal added';
     }
 
-    if (entryData.startDate && entryData.endDate) {
-      try {
-        const res = await dispatch(bulkCreateMeals(entryData)).unwrap();
-        const result = res?.data || res;
-        const inserted = result?.inserted || 0;
-        const updated = result?.updated || 0;
-        const skipped = result?.skipped || 0;
-        const parts = [];
-        if (inserted > 0) parts.push(`${inserted} added`);
-        if (updated > 0) parts.push(`${updated} updated`);
-        if (skipped > 0) parts.push(`${skipped} unchanged`);
-        toast.success(parts.length ? parts.join(' · ') : 'Meals saved');
-        abortRef.current?.abort();
-        const controller = new AbortController();
-        abortRef.current = controller;
-        fetchData(controller.signal);
-      } catch (err) {
-        const msg = err?.response?.data?.message || err?.message || 'Failed to save meals';
-        toast.error(msg);
-      }
-      return;
+    if (bulk) {
+      const { inserted = 0, skipped = 0 } = await dispatch(bulkCreateMarkets({
+        ...fields, userIds, date: getISTDateKey(fields.date || detailDate),
+      })).unwrap() || {};
+      return [
+        inserted > 0 && `${inserted} added`,
+        skipped > 0 && `${skipped} unchanged`,
+      ].filter(Boolean).join(' · ') || 'Market entries saved';
     }
 
-    if (!detailDate) return;
-    const dateKey = format(new Date(detailDate), 'yyyy-MM-dd');
+    await dispatch(createMarket(fields)).unwrap();
+    return 'Market entry added';
+  }), [category, detailDate, dispatch, isAdmin, runDaySave]);
 
-    snapshotRef.current = { ...dataMap };
+  const updateEntry = useCallback((entryId, fields) => {
+    if (category === 'meals') return dispatch(updateMeal({ mealId: entryId, mealData: fields })).unwrap();
+    if (category === 'payments') return dispatch(updatePayment({ paymentId: entryId, paymentData: fields })).unwrap();
+    return dispatch(updateMarket({ marketId: entryId, marketData: fields })).unwrap();
+  }, [category, dispatch]);
 
-    const tempId = `temp_${Date.now()}`;
-    const optimisticEntry = { ...entryData, _id: tempId, __optimistic: true };
-    setDataMap((prevMap) => ({
-      ...prevMap,
-      [dateKey]: [...(prevMap[dateKey] || []), optimisticEntry],
-    }));
+  const deleteEntry = useCallback((entryId) => {
+    if (category === 'meals') return dispatch(deleteMeal(entryId)).unwrap();
+    if (category === 'payments') return dispatch(deletePayment(entryId)).unwrap();
+    return dispatch(deleteMarket(entryId)).unwrap();
+  }, [category, dispatch]);
 
-    try {
-      const isCreatingForOthers = isAdmin && entryData.userIds?.length > 0;
-
-      if (isCreatingForOthers) {
-        const selectedIds = [...entryData.userIds];
-        delete entryData.userIds;
-
-        if (category === 'meals') {
-          const res = await dispatch(bulkCreateMeals({
-            startDate: dateKey,
-            endDate: dateKey,
-            type: entryData.type,
-            userIds: selectedIds,
-            isGuestMeal: entryData.isGuestMeal || false,
-            guestCount: entryData.guestCount || 0,
-            remarks: entryData.remarks || '',
-          })).unwrap();
-          const result = res?.data || res;
-          const inserted = result?.inserted || 0;
-          const skipped = result?.skipped || 0;
-          const parts = [];
-          if (inserted > 0) parts.push(`${inserted} added`);
-          if (skipped > 0) parts.push(`${skipped} unchanged`);
-          toast.success(parts.length ? parts.join(' · ') : 'Meals saved');
-        } else {
-          const res = await dispatch(bulkCreateMarkets({
-            userIds: selectedIds,
-            date: dateKey,
-            amount: entryData.amount,
-            items: entryData.items,
-            description: entryData.description || '',
-          })).unwrap();
-          const inserted = res?.inserted || 0;
-          const skipped = res?.skipped || 0;
-          const parts = [];
-          if (inserted > 0) parts.push(`${inserted} added`);
-          if (skipped > 0) parts.push(`${skipped} unchanged`);
-          toast.success(parts.length ? parts.join(' · ') : 'Market entries saved');
-        }
-      } else {
-        if (category === 'meals') {
-          const res = await dispatch(createMeal(entryData)).unwrap();
-          const created = res?.data ?? res;
-          setDataMap((prevMap) => ({
-            ...prevMap,
-            [dateKey]: (prevMap[dateKey] || []).map((e) =>
-              e._id === tempId ? created : e,
-            ),
-          }));
-          toast.success('Meal added');
-        } else {
-          const res = await dispatch(createMarket(entryData)).unwrap();
-          const created = res?.data ?? res;
-          setDataMap((prevMap) => ({
-            ...prevMap,
-            [dateKey]: (prevMap[dateKey] || []).map((e) =>
-              e._id === tempId ? created : e,
-            ),
-          }));
-          toast.success('Market entry added');
-        }
-      }
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
-      fetchData(controller.signal);
-    } catch (err) {
-      if (snapshotRef.current) {
-        setDataMap(snapshotRef.current);
-      }
-      const msg = err?.response?.data?.message || err?.message || 'Failed to save';
-      toast.error(msg);
-    }
-  }, [detailDate, dataMap, category, dispatch, fetchData, isAdmin]);
-
-  const handleUpdateEntry = useCallback(async (entryId, entryData) => {
-    if (!detailDate) return;
-    const dateKey = format(new Date(detailDate), 'yyyy-MM-dd');
-
-    snapshotRef.current = { ...dataMap };
-
-    setDataMap((prevMap) => ({
-      ...prevMap,
-      [dateKey]: (prevMap[dateKey] || []).map((e) =>
-        e._id === entryId ? { ...e, ...entryData } : e,
-      ),
-    }));
-
-    try {
-      if (category === 'meals') {
-        const res = await dispatch(updateMeal({ mealId: entryId, mealData: entryData })).unwrap();
-        const updated = res?.data ?? res;
-        setDataMap((prevMap) => ({
-          ...prevMap,
-          [dateKey]: (prevMap[dateKey] || []).map((e) =>
-            e._id === entryId ? updated : e,
-          ),
-        }));
-        toast.success('Meal updated');
-      } else {
-        const res = await dispatch(updateMarket({ marketId: entryId, marketData: entryData })).unwrap();
-        const updated = res?.data ?? res;
-        setDataMap((prevMap) => ({
-          ...prevMap,
-          [dateKey]: (prevMap[dateKey] || []).map((e) =>
-            e._id === entryId ? updated : e,
-          ),
-        }));
-        toast.success('Market entry updated');
-      }
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
-      fetchData(controller.signal);
-    } catch (err) {
-      if (snapshotRef.current) setDataMap(snapshotRef.current);
-      const msg = err?.response?.data?.message || err?.message || 'Failed to update';
-      toast.error(msg);
-    }
-  }, [detailDate, dataMap, category, dispatch, fetchData]);
-
-  const handleDeleteEntry = useCallback(async (entryId) => {
-    if (!detailDate) return;
-    const dateKey = format(new Date(detailDate), 'yyyy-MM-dd');
-
-    snapshotRef.current = { ...dataMap };
-
-    setDataMap((prevMap) => ({
-      ...prevMap,
-      [dateKey]: (prevMap[dateKey] || []).filter((e) => e._id !== entryId),
-    }));
-
-    try {
-      if (category === 'meals') {
-        await dispatch(deleteMeal(entryId)).unwrap();
-        toast.success('Meal deleted');
-      } else {
-        await dispatch(deleteMarket(entryId)).unwrap();
-        toast.success('Market entry deleted');
-      }
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
-      fetchData(controller.signal);
-    } catch (err) {
-      if (snapshotRef.current) setDataMap(snapshotRef.current);
-      const msg = err?.response?.data?.message || err?.message || 'Failed to delete';
-      toast.error(msg);
-    }
-  }, [detailDate, dataMap, category, dispatch, fetchData]);
+  const handleUpdateEntry = useCallback((entryId, fields, sourceDate = detailDate) => runDaySave(async () => ({
+    entry: await updateEntry(entryId, fields),
+    message: { meals: 'Meal updated', payments: 'Payment updated', markets: 'Market entry updated' }[category],
+  }), sourceDate && getISTDateKey(sourceDate)), [category, detailDate, runDaySave, updateEntry]);
 
   // ── Payment CRUD ──────────────────────────────────────────────
   const handlePaymentAdd = useCallback(() => {
@@ -521,58 +509,19 @@ const EventCalendar = () => {
     setIsPaymentModalOpen(true);
   }, [detailDate]);
 
-  const handlePaymentEdit = useCallback((payment) => {
-    setEditingPayment(payment);
-    setIsPaymentModalOpen(true);
-  }, []);
-
-  const handlePaymentSave = useCallback(async (formData) => {
-    if (!isAdmin) {
-      toast.error('Only administrators can manage payment records');
-      return;
+  const handlePaymentSave = useCallback((formData) => runDaySave(async () => {
+    if (formData.userIds?.length > 1) {
+      await dispatch(createBulkPayments(formData)).unwrap();
+      return `Payments recorded for ${formData.userIds.length} members`;
     }
-    setIsPaymentSubmitting(true);
-    try {
-      if (editingPayment && editingPayment._id) {
-        await dispatch(updatePayment({
-          paymentId: editingPayment._id,
-          paymentData: formData,
-        })).unwrap();
-        toast.success('Payment updated');
-      } else if (formData.userIds && formData.userIds.length > 1) {
-        await dispatch(createBulkPayments(formData)).unwrap();
-        toast.success(`Payments recorded for ${formData.userIds.length} members`);
-      } else {
-        const singleData = { ...formData, userId: formData.userIds?.[0] || formData.userId || '' };
-        delete singleData.userIds;
-        await dispatch(createPayment(singleData)).unwrap();
-        toast.success('Payment recorded');
-      }
-      setIsPaymentModalOpen(false);
-      setEditingPayment(null);
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
-      fetchData(controller.signal);
-    } catch (err) {
-      toast.error(typeof err === 'string' ? err : err?.message ?? 'Failed to save payment');
-    } finally {
-      setIsPaymentSubmitting(false);
-    }
-  }, [editingPayment, isAdmin, dispatch, fetchData]);
+    const { userIds, ...fields } = formData;
+    await dispatch(createPayment({ ...fields, userId: userIds?.[0] || fields.userId })).unwrap();
+    return 'Payment recorded';
+  }), [dispatch, runDaySave]);
 
   const handlePaymentClose = useCallback(() => {
-    setIsPaymentModalOpen(false);
-    setEditingPayment(null);
-    setPaymentFooter(null);
-  }, []);
-
-  const paymentModalTitle = useMemo(() => {
-    if (editingPayment) return 'Edit Payment';
-    return 'Record Payment';
-  }, [editingPayment]);
-
-  // ── Bulk selection ──────────────────────────────────────────────
+    if (!saveRequestRef.current) resetDayModal();
+  }, [resetDayModal]);
   const handleToggleSelect = useCallback((entryId) => {
     setSelectedEntryIds((prev) => {
       const next = new Set(prev);
@@ -583,122 +532,121 @@ const EventCalendar = () => {
   }, []);
 
   const handleSelectAll = useCallback(() => {
-    setSelectedEntryIds((prev) => {
-      const allIds = currentDateEntries.map((e) => e._id);
-      const allSelected = allIds.length > 0 && allIds.every((id) => prev.has(id));
-      if (allSelected) return new Set();
-      return new Set(allIds);
+    setSelectedEntryIds((previous) => {
+      const ids = selectionEntries.map((entry) => entry._id);
+      return ids.every((id) => previous.has(id)) ? new Set() : new Set(ids);
     });
-  }, [currentDateEntries]);
+  }, [selectionEntries]);
 
   const handleExitSelectMode = useCallback(() => {
+    setSelectionScope(null);
+    setSelectedEntryIds(new Set());
+    setBulkEditOpen(false);
+    setConfirmSelectionDelete(false);
+  }, []);
+
+  const handleSelectionScope = useCallback((scope) => {
+    setSelectionScope(scope);
     setSelectedEntryIds(new Set());
   }, []);
 
-  useEffect(() => {
-    if (!isEditMode || !detailDate) {
-      setSelectedEntryIds(new Set());
+  const runEntryBatch = useCallback(async (entries, operation, fields) => {
+    if (entries.length === 0 || saveRequestRef.current) return;
+    const canOperate = operation === 'delete' ? canDeleteDayEntry : canEditDayEntry;
+    if (!entries.every((entry) => canOperate(entry, category, user))) {
+      toast.error('Some selected entries are unavailable for this action');
+      return;
     }
-  }, [isEditMode, detailDate]);
 
-  const handleBulkDelete = useCallback(async () => {
-    if (selectedEntryIds.size === 0 || isBulkSubmitting) return;
-    if (!detailDate) return;
-    const dateKey = format(new Date(detailDate), 'yyyy-MM-dd');
-
-    setIsBulkSubmitting('deleting');
-    snapshotRef.current = { ...dataMap };
-
-    const idsToRemove = new Set(selectedEntryIds);
-    setDataMap((prevMap) => ({
-      ...prevMap,
-      [dateKey]: (prevMap[dateKey] || []).filter((e) => !idsToRemove.has(e._id)),
-    }));
+    const request = {};
+    saveRequestRef.current = request;
+    setIsBulkSubmitting(operation === 'delete' ? 'deleting' : 'updating');
 
     try {
-      let results;
-      if (category === 'meals') {
-        await dispatch(bulkDeleteMeals({ mealIds: [...idsToRemove] })).unwrap();
-        results = [{ status: 'fulfilled' }];
-      } else {
-        results = await Promise.allSettled(
-          [...idsToRemove].map((entryId) => dispatch(deleteMarket(entryId)).unwrap()),
-        );
+      // Serialize writes for each owner so payment and cached total updates stay ordered.
+      const byOwner = new Map();
+      for (const entry of entries) {
+        const owner = entry.user?._id || entry.user || entry._id;
+        if (!byOwner.has(owner)) byOwner.set(owner, []);
+        byOwner.get(owner).push(entry);
+      }
+      const groups = [...byOwner.values()];
+      const succeeded = new Map();
+      const failed = new Map();
+      let nextGroup = 0;
+      await Promise.all(groups.slice(0, 4).map(async () => {
+        while (nextGroup < groups.length) {
+          for (const entry of groups[nextGroup++]) {
+            try {
+              const saved = operation === 'delete' ? await deleteEntry(entry._id) : await updateEntry(entry._id, fields);
+              succeeded.set(entry._id, saved);
+            } catch (error) {
+              failed.set(entry._id, error);
+            }
+          }
+        }
+      }));
+
+      if (saveRequestRef.current !== request) {
+        if (succeeded.size && !saveRequestRef.current && activeViewRef.current?.scope === viewScope) {
+          await activeViewRef.current.refresh();
+        }
+        return;
       }
 
-      const failed = results.filter((r) => r.status === 'rejected');
-      if (failed.length > 0) {
-        if (snapshotRef.current) setDataMap(snapshotRef.current);
-        failed.forEach((r) => {
-          const msg = r.reason?.response?.data?.message || r.reason?.message || 'Delete failed';
-          toast.error(msg);
+      if (succeeded.size) {
+        const changedDates = new Set(entries.filter((entry) => succeeded.has(entry._id))
+          .map((entry) => getISTDateKey(entry.date || entry.paymentDate)));
+        setDataMap((previous) => {
+          const next = { ...previous };
+          for (const date of changedDates) {
+            const rows = previous[date] || [];
+            next[date] = operation === 'delete'
+              ? rows.filter((entry) => !succeeded.has(entry._id))
+              : rows.map((entry) => {
+                const saved = succeeded.get(entry._id);
+                if (!saved) return entry;
+                const owner = typeof saved.user === 'string' && entry.user?._id === saved.user ? entry.user : saved.user ?? entry.user;
+                return { ...entry, ...saved, user: owner };
+              });
+          }
+          return next;
         });
-      } else {
-        toast.success(`${idsToRemove.size} entr${idsToRemove.size === 1 ? 'y' : 'ies'} deleted`);
+        await handleRetry();
       }
+      if (saveRequestRef.current !== request) return;
 
-      handleExitSelectMode();
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
-      fetchData(controller.signal);
-    } catch (err) {
-      if (snapshotRef.current) setDataMap(snapshotRef.current);
-      const msg = err?.response?.data?.message || err?.message || 'Failed to delete';
-      toast.error(msg);
-    } finally {
-      setIsBulkSubmitting(false);
-    }
-  }, [selectedEntryIds, detailDate, dataMap, category, dispatch, fetchData, handleExitSelectMode, isBulkSubmitting]);
-
-  const handleBulkUpdate = useCallback(async (payload) => {
-    if (selectedEntryIds.size === 0 || isBulkSubmitting) return;
-    if (!detailDate) return;
-    const dateKey = format(new Date(detailDate), 'yyyy-MM-dd');
-
-    setIsBulkSubmitting('updating');
-    snapshotRef.current = { ...dataMap };
-
-    const idsToUpdate = new Set(selectedEntryIds);
-    setDataMap((prevMap) => ({
-      ...prevMap,
-      [dateKey]: (prevMap[dateKey] || []).map((e) =>
-        idsToUpdate.has(e._id) ? { ...e, ...payload } : e,
-      ),
-    }));
-
-    try {
-      const results = await Promise.allSettled(
-        [...idsToUpdate].map((entryId) => {
-          if (category === 'meals') return dispatch(updateMeal({ mealId: entryId, mealData: payload })).unwrap();
-          return dispatch(updateMarket({ marketId: entryId, marketData: payload })).unwrap();
-        }),
-      );
-
-      const failed = results.filter((r) => r.status === 'rejected');
-      if (failed.length > 0) {
-        if (snapshotRef.current) setDataMap(snapshotRef.current);
-        failed.forEach((r) => {
-          const msg = r.reason?.response?.data?.message || r.reason?.message || 'Update failed';
-          toast.error(msg);
-        });
+      const resultLabel = operation === 'delete' ? 'deleted' : 'updated';
+      if (failed.size) {
+        const reason = failed.values().next().value;
+        const detail = (typeof reason === 'string' ? reason : reason?.message) || 'Try again.';
+        toast.error(`${succeeded.size} of ${entries.length} entries ${resultLabel}. ${detail}`);
+        setSelectedEntryIds(new Set(failed.keys()));
       } else {
-        toast.success(`${idsToUpdate.size} entr${idsToUpdate.size === 1 ? 'y' : 'ies'} updated`);
+        toast.success(`${succeeded.size} ${succeeded.size === 1 ? 'entry' : 'entries'} ${resultLabel}`);
+        setSelectedEntryIds(new Set());
+        setBulkEditOpen(false);
       }
-
-      handleExitSelectMode();
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
-      fetchData(controller.signal);
-    } catch (err) {
-      if (snapshotRef.current) setDataMap(snapshotRef.current);
-      const msg = err?.response?.data?.message || err?.message || 'Failed to update';
-      toast.error(msg);
+      if (succeeded.size) setConfirmSelectionDelete(false);
     } finally {
-      setIsBulkSubmitting(false);
+      if (saveRequestRef.current === request) {
+        saveRequestRef.current = null;
+        setIsBulkSubmitting(false);
+      }
     }
-  }, [selectedEntryIds, detailDate, dataMap, category, dispatch, fetchData, handleExitSelectMode, isBulkSubmitting]);
+  }, [category, deleteEntry, handleRetry, updateEntry, user, viewScope]);
+
+  const handleDeleteEntry = useCallback((id) => {
+    const entry = editableMonthEntries.find((row) => row._id === id);
+    return entry && runEntryBatch([entry], 'delete');
+  }, [editableMonthEntries, runEntryBatch]);
+
+  const handleBulkDelete = useCallback((ids) => runEntryBatch(
+    Array.isArray(ids) ? editableMonthEntries.filter((entry) => ids.includes(entry._id)) : selectedEntries,
+    'delete',
+  ), [editableMonthEntries, runEntryBatch, selectedEntries]);
+
+  const handleBulkUpdate = useCallback((fields) => runEntryBatch(selectedEntries, 'update', fields), [runEntryBatch, selectedEntries]);
 
   const handleMemberFilter = useCallback((id) => {
     setSelectedMemberId(id);
@@ -751,6 +699,43 @@ const EventCalendar = () => {
     </div>
   );
 
+  const showSelection = Boolean(selectionScope && !editingEntry);
+  const showBatchEdit = showSelection && bulkEditOpen && selectedEntries.length > 0;
+  const showDeleteConfirmation = showSelection && confirmSelectionDelete && selectedEntries.length > 0;
+  const busy = isDaySubmitting || Boolean(isBulkSubmitting);
+  const entryLabel = selectedEntries.length === 1 ? 'entry' : 'entries';
+  const titleDate = editingEntry?.date || editingEntry?.paymentDate || detailDate;
+  let editFooter = editingEntry && (
+    <EntryEditActions formId={editFormId} onCancel={handleCancelEntry} isSubmitting={isDaySubmitting} />
+  );
+  if (showDeleteConfirmation) {
+    editFooter = (
+      <div className="grid w-full grid-cols-2 gap-2">
+        <Button autoFocus variant="secondary" onClick={() => setConfirmSelectionDelete(false)} disabled={busy}>Cancel</Button>
+        <Button variant="danger" onClick={() => handleBulkDelete()} isLoading={busy}>Confirm delete</Button>
+      </div>
+    );
+  } else if (showBatchEdit) {
+    editFooter = <EntryEditActions formId={editFormId} onCancel={() => setBulkEditOpen(false)} isSubmitting={busy} />;
+  } else if (showSelection) {
+    editFooter = (
+      <div className="flex w-full flex-col gap-2">
+        {selectedEntries.length > 0 && !canDeleteSelection && (
+          <p role="status" className="text-xs text-[var(--text-secondary)]">Some selected payments cannot be deleted.</p>
+        )}
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="secondary" disabled={busy || !selectedEntries.length}
+            onClick={() => selectedEntries.length === 1 ? handleEntryClick(selectedEntries[0]) : setBulkEditOpen(true)}>
+            Edit selected
+          </Button>
+          <Button variant="danger" disabled={busy || !canDeleteSelection} onClick={() => setConfirmSelectionDelete(true)}>
+            Delete selected
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
 
@@ -800,11 +785,8 @@ const EventCalendar = () => {
         <Suspense fallback={calendarSuspenseFallback}>
           <MealModal
             isOpen={Boolean(detailDate && isEditMode)}
-            onClose={() => {
-              setIsEditMode(false);
-              setIsAdding(false);
-              setEditingId(null);
-            }}
+            onClose={handleCancelEntry}
+            isSubmitting={isDaySubmitting}
             mode={isAdding ? 'add' : 'edit'}
             date={detailDate}
             entries={filteredCurrentDateEntries}
@@ -826,11 +808,8 @@ const EventCalendar = () => {
         <Suspense fallback={calendarSuspenseFallback}>
           <MarketModal
             isOpen={Boolean(detailDate && isEditMode)}
-            onClose={() => {
-              setIsEditMode(false);
-              setIsAdding(false);
-              setEditingId(null);
-            }}
+            onClose={handleCancelEntry}
+            isSubmitting={isDaySubmitting}
             mode={isAdding ? 'add' : 'edit'}
             date={detailDate}
             entries={filteredCurrentDateEntries}
@@ -851,22 +830,30 @@ const EventCalendar = () => {
         <DayDetailDialog
           isOpen={!!detailDate}
           onClose={handleCloseDetail}
+          role={showDeleteConfirmation ? 'alertdialog' : undefined}
+          description={showDeleteConfirmation ? `This permanently deletes the selected ${entryLabel}.` : undefined}
           title={
-            category === 'meals'
-              ? `${formatInIST(detailDate, 'd MMM yyyy')} · Meals`
-              : `${formatInIST(detailDate, 'd MMM yyyy')}${isEditMode ? ' · Edit' : ''} · ${category.charAt(0).toUpperCase() + category.slice(1)}`
+            showDeleteConfirmation
+              ? `Delete ${selectedEntries.length} ${entryLabel}?`
+              : `${formatInIST(titleDate, 'd MMM yyyy')}${isEditMode && category !== 'meals' ? ' · Edit' : ''} · ${category.charAt(0).toUpperCase() + category.slice(1)}`
           }
-          isEditMode={isEditMode}
+          isEditMode={isEditMode || Boolean(editingEntry) || showSelection}
           onEditToggle={!['votes', 'payments'].includes(category) ? handleEditToggle : undefined}
           category={category}
           onScheduleClick={category === 'markets' ? handleScheduleClick : undefined}
           onPaymentAdd={category === 'payments' && isAdmin ? handlePaymentAdd : undefined}
-          onAddMarket={category === 'markets' && isAdmin ? handleAddMarket : undefined}
+          onAddMarket={category === 'markets' ? handleAddMarket : undefined}
           onMealAdd={category === 'meals' ? (userOwnMealEntry ? handleMealUpdate : handleMealAdd) : undefined}
+          onManageEntries={editableDayEntries.length || editableMonthEntries.length
+            ? () => handleSelectionScope(editableDayEntries.length ? 'day' : 'month')
+            : undefined}
           mealActionLabel={category === 'meals' ? (userOwnMealEntry ? 'Update Meal' : 'Add Meal') : undefined}
           isAdding={isAdding}
           editingId={editingId}
           confirmDeleteId={confirmDeleteId}
+          isSubmitting={busy}
+          showEditInstructions={editableDayEntries.length > 0}
+          editFooter={editFooter}
         >
           {isEditMode ? (
             <Suspense fallback={calendarSuspenseFallback}>
@@ -896,29 +883,76 @@ const EventCalendar = () => {
                 setConfirmDeleteId={setConfirmDeleteId}
               />
             </Suspense>
+          ) : showDeleteConfirmation ? null : showBatchEdit ? (
+            <Suspense fallback={calendarSuspenseFallback}>
+              <BulkUpdateForm
+                formId={editFormId}
+                category={category}
+                selectedCount={selectedEntries.length}
+                allowAmount={category !== 'payments' || isAdmin || selectedEntries.every(isMemberEditablePaymentAmount)}
+                onSubmit={handleBulkUpdate}
+                isBulkSubmitting={isBulkSubmitting}
+              />
+            </Suspense>
+          ) : showSelection ? (
+            <>
+              <Suspense fallback={calendarSuspenseFallback}>
+                <DaySelectionControls
+                  scope={selectionScope}
+                  onScopeChange={handleSelectionScope}
+                  onExit={handleExitSelectMode}
+                  count={selectedEntries.length}
+                  total={selectionEntries.length}
+                  onSelectAll={handleSelectAll}
+                  disabled={busy}
+                />
+              </Suspense>
+              <DayDetailContent
+                key={selectionScope}
+                entries={selectionEntries}
+                category={category}
+                selection={{ selectedIds: selectedEntryIds, onToggle: handleToggleSelect }}
+              />
+            </>
           ) : (
-            <DayDetailContent
-              entries={filteredCurrentDateEntries}
-              category={category}
-              totalMealsCount={totalMealsForDate}
-              scheduleData={getScheduleForDate(detailDate)}
-              onPaymentEdit={category === 'payments' && isAdmin ? handlePaymentEdit : undefined}
-              onEntryClick={category === 'meals' && !isAdmin ? handleEntryClick : undefined}
-            />
+            <>
+              <div hidden={Boolean(editingEntry)} className={editingEntry ? 'hidden' : 'contents'}>
+                <DayDetailContent
+                  entries={filteredCurrentDateEntries}
+                  category={category}
+                  totalMealsCount={totalMealsForDate}
+                  scheduleData={getScheduleForDate(detailDate)}
+                  onEntryClick={handleEntryClick}
+                />
+              </div>
+              {editingEntry && (
+                <Suspense fallback={calendarSuspenseFallback}>
+                  <EntryEditForm
+                    key={editingEntry._id}
+                    formId={editFormId}
+                    entry={editingEntry}
+                    category={category}
+                    isAdmin={isAdmin}
+                    onUpdate={(id, fields) => handleUpdateEntry(id, fields, editingEntry.date || editingEntry.paymentDate)}
+                    isSubmitting={isDaySubmitting}
+                  />
+                </Suspense>
+              )}
+            </>
           )}
         </DayDetailDialog>
       )}
 
       {/* Payment Modal (admin only) */}
       <Suspense fallback={null}>
-        <PaymentModal isOpen={isPaymentModalOpen} onClose={handlePaymentClose} title={paymentModalTitle} footer={paymentFooter}>
+        <PaymentModal isOpen={isPaymentModalOpen} onClose={handlePaymentClose} title="Record Payment" footer={paymentFooter}>
           <PaymentForm
             initialData={editingPayment}
             onSubmit={handlePaymentSave}
             onCancel={handlePaymentClose}
             isAdmin={isAdmin}
             currentUser={user}
-            isSubmitting={isPaymentSubmitting}
+            isSubmitting={isDaySubmitting}
             readOnly={!isAdmin}
             renderFooter={setPaymentFooter}
           />

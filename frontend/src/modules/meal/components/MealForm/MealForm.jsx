@@ -118,6 +118,7 @@ export const MealForm = ({
   isAdmin = false,
   currentUser,
   readOnly = false,
+  isSubmitting: submitting,
   renderFooter,
 }) => {
   const isEditMode = initialMode === 'edit' || Boolean(initialData);
@@ -148,7 +149,8 @@ export const MealForm = ({
   const [bulkActionType, setBulkActionType] = useState('');
   const [isBulkActing, setIsBulkActing] = useState(false);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localSubmitting, setIsSubmitting] = useState(false);
+  const isSubmitting = submitting ?? localSubmitting;
   const [memberError, setMemberError] = useState('');
 
   // Users for Admin MemberSelect
@@ -253,6 +255,7 @@ export const MealForm = ({
   // Form submit handler
   const handleFormSubmit = async (e) => {
     if (e) e.preventDefault();
+    if (readOnly || isSubmitting) return;
     if (!isValidToSave) {
       if (isAdmin && !activeEditingEntry && memberCount === 0) {
         setMemberError('Please select at least one member.');
@@ -261,7 +264,7 @@ export const MealForm = ({
     }
 
     setMemberError('');
-    setIsSubmitting(true);
+    if (submitting === undefined) setIsSubmitting(true);
 
     try {
       if (activeEditingEntry) {
@@ -311,7 +314,7 @@ export const MealForm = ({
         if (targetFn) await targetFn(singlePayload);
       }
     } finally {
-      setIsSubmitting(false);
+      if (submitting === undefined) setIsSubmitting(false);
     }
   };
 
@@ -401,7 +404,6 @@ export const MealForm = ({
           form="meal-form"
           variant="primary"
           size="md"
-          onClick={handleFormSubmit}
           disabled={!isValidToSave}
           isLoading={isSubmitting}
           className="flex-[2]"

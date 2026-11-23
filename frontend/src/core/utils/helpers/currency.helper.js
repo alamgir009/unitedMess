@@ -8,6 +8,13 @@
 export const fmt = (n, minFraction = 0, maxFraction = 2) =>
     Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: minFraction, maximumFractionDigits: maxFraction });
 
+export const isPositiveCurrencyAmount = (value) => {
+    if (typeof value !== 'number' && typeof value !== 'string') return false;
+    const amount = Number(value);
+    return /^(?:\d+(?:\.\d{1,2})?|\.\d{1,2})$/.test(String(value).trim()) &&
+        amount > 0 && Number.isSafeInteger(Math.round(amount * 100));
+};
+
 /**
  * Currency label with the sign BEFORE the ₹ symbol (fintech convention):
  *   formatSignedRupees(779)   → "₹779"

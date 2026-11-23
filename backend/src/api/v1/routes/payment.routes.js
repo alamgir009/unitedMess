@@ -31,7 +31,7 @@ router.post('/bulk',      ...adminOnly,     paymentController.createBulkPayments
 
 router.route('/:paymentId')
     .get(   ...authenticated, paymentController.getPayment)
-    .patch( ...adminOnly,     paymentController.updatePayment)
-    .delete(...adminOnly,     paymentController.deletePayment);
+    .patch( ...authenticated, paymentController.updatePayment)
+    .delete(...authenticated, paymentController.deletePayment);
 
 module.exports = router;

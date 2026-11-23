@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
 
 import { Button, Badge, Card, Avatar, Spinner, Input, StatPill } from '@/shared/components/ui';
 
@@ -227,9 +227,26 @@ describe('Input', () => {
         expect(screen.getByText('Looks good!')).toBeInTheDocument();
     });
 
-    it('shows clear button when clearable and value present', () => {
-        render(<Input clearable value="text" onChange={() => {}} />);
-        expect(screen.getByLabelText('Clear input')).toBeInTheDocument();
+    it('clears through onChange when no clear callback is provided', () => {
+        const onChange = vi.fn();
+        render(<Input clearable value="text" onChange={onChange} />);
+        fireEvent.click(screen.getByRole('button', { name: 'Clear input' }));
+        expect(onChange).toHaveBeenCalledExactlyOnceWith({ target: { value: '' } });
+    });
+
+    it('handles onClear on the clear button without forwarding it to the input', () => {
+        const onClear = vi.fn();
+        const onChange = vi.fn();
+        const consoleError = vi.spyOn(console, 'error');
+        try {
+            render(<Input clearable value="text" onChange={onChange} onClear={onClear} />);
+            fireEvent.click(screen.getByRole('button', { name: 'Clear input' }));
+            expect(onClear).toHaveBeenCalledTimes(1);
+            expect(onChange).not.toHaveBeenCalled();
+            expect(consoleError.mock.calls.flat()).not.toContain('onClear');
+        } finally {
+            consoleError.mockRestore();
+        }
     });
 
     it('renders left icon', () => {

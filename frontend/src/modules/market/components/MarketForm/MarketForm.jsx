@@ -11,6 +11,8 @@ import { Loader2 } from 'lucide-react';
 import apiClient from '@/services/api/client/apiClient';
 import { Button, Avatar, MemberSelect } from '@/shared/components/ui';
 import { cn } from '@/core/utils/helpers/string.helper';
+import { isPositiveCurrencyAmount } from '@/core/utils/helpers/currency.helper';
+import { hasValidMarketItems, MARKET_ITEMS_ERROR } from '../../marketValidation';
 import '@/shared/components/ui/RecordForm/record-form.css';
 
 /**
@@ -100,6 +102,7 @@ export const MarketForm = ({
   isAdmin = false,
   currentUser,
   readOnly = false,
+  isSubmitting: submitting,
   renderFooter,
 }) => {
   const isEditMode = initialMode === 'edit' || Boolean(initialData);
@@ -116,7 +119,8 @@ export const MarketForm = ({
 
   const [users, setUsers] = useState([]);
   const [isUsersLoading, setIsUsersLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localSubmitting, setIsSubmitting] = useState(false);
+  const isSubmitting = submitting ?? localSubmitting;
   const [isBulkActing, setIsBulkActing] = useState(false);
 
   // Errors state
@@ -182,9 +186,8 @@ export const MarketForm = ({
   // Validation
   const isValidToSave = useMemo(() => {
     if (readOnly || isSubmitting) return false;
-    const numAmount = parseFloat(formData.amount);
-    if (isNaN(numAmount) || numAmount <= 0) return false;
-    if (!formData.items || !formData.items.trim()) return false;
+    if (!isPositiveCurrencyAmount(formData.amount)) return false;
+    if (!hasValidMarketItems(formData.items)) return false;
     if (!formData.date) return false;
     if (isAdmin && !activeEditingEntry && (!formData.userIds || formData.userIds.length === 0)) return false;
     return true;
@@ -193,14 +196,14 @@ export const MarketForm = ({
   // Form submit handler
   const handleFormSubmit = async (e) => {
     if (e) e.preventDefault();
+    if (readOnly || isSubmitting) return;
     if (!isValidToSave) {
       const newErrors = {};
-      const numAmount = parseFloat(formData.amount);
-      if (isNaN(numAmount) || numAmount <= 0) {
-        newErrors.amount = 'Amount must be greater than 0';
+      if (!isPositiveCurrencyAmount(formData.amount)) {
+        newErrors.amount = 'Amount must be greater than 0 with at most 2 decimal places.';
       }
-      if (!formData.items || !formData.items.trim()) {
-        newErrors.items = 'Items purchased is required';
+      if (!hasValidMarketItems(formData.items)) {
+        newErrors.items = MARKET_ITEMS_ERROR;
       }
       if (isAdmin && !activeEditingEntry && (!formData.userIds || formData.userIds.length === 0)) {
         newErrors.userIds = 'Please select at least one member.';
@@ -210,11 +213,11 @@ export const MarketForm = ({
     }
 
     setErrors({});
-    setIsSubmitting(true);
+    if (submitting === undefined) setIsSubmitting(true);
 
     try {
       const submitDate = new Date(formData.date).toISOString();
-      const numAmount = Math.round((parseFloat(formData.amount) || 0) * 100) / 100;
+      const numAmount = Number(formData.amount);
 
       if (activeEditingEntry) {
         // Editing existing entry
@@ -245,7 +248,7 @@ export const MarketForm = ({
       const targetFn = onSubmit || onSave;
       if (targetFn) await targetFn(payload);
     } finally {
-      setIsSubmitting(false);
+      if (submitting === undefined) setIsSubmitting(false);
     }
   };
 
@@ -307,7 +310,6 @@ export const MarketForm = ({
             form="market-form"
             variant="primary"
             size="md"
-            onClick={handleFormSubmit}
             disabled={!isValidToSave || isSubmitting}
             isLoading={isSubmitting}
             className="flex-[2]"
@@ -579,6 +581,11 @@ export const MarketForm = ({
             max="999999"
             step="0.01"
             value={formData.amount}
+            onBlur={() => {
+              if (!readOnly && !isPositiveCurrencyAmount(formData.amount)) {
+                setErrors((p) => ({ ...p, amount: 'Amount must be greater than 0 with at most 2 decimal places.' }));
+              }
+            }}
             onChange={(e) => {
               const val = e.target.value;
               setFormData((p) => ({ ...p, amount: val }));
@@ -605,12 +612,17 @@ export const MarketForm = ({
           id="market-items"
           type="text"
           value={formData.items}
+          onBlur={() => {
+            if (!readOnly && !hasValidMarketItems(formData.items)) setErrors((p) => ({ ...p, items: MARKET_ITEMS_ERROR }));
+          }}
           onChange={(e) => {
             const val = e.target.value;
             setFormData((p) => ({ ...p, items: val }));
             setErrors((p) => ({ ...p, items: undefined }));
           }}
           disabled={readOnly || isSubmitting}
+          aria-invalid={Boolean(errors.items)}
+          aria-describedby={errors.items ? 'market-items-error' : undefined}
           placeholder="e.g. Rice, Vegetables, Oil…"
           className={cn(
             'w-full h-11 min-h-[44px] px-3 rounded-[8px] border transition-colors',
@@ -622,7 +634,7 @@ export const MarketForm = ({
           )}
         />
         {errors.items && (
-          <p className="text-xs text-[var(--danger-text)] font-medium">
+          <p id="market-items-error" role="alert" className="text-xs text-[var(--danger-text)] font-medium">
             {errors.items}
           </p>
         )}

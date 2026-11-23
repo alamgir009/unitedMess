@@ -2,23 +2,34 @@ const mongoose = require('mongoose');
 const Market = require('../models/Market.model');
 const User = require('../models/User.model');
 const AppError = require('../utils/errors/AppError');
+const pick = require('../utils/helpers/pick');
+const { isPositiveCurrencyAmount } = require('../utils/validators/common.validator');
 const { parseDate, normalizeDate } = require('../utils/helpers/date.helper');
 const { recalculateAllActiveUsersPayable } = require('./user.service');
+const { stageCalendarTotals, settleCalendarTotals, retireCalendarRecord, refreshCalendarPayables } = require('./calendarRecordTotals.service');
+
+const validateItems = (items) => {
+    if (typeof items !== 'string' || (items.trim().match(/\p{L}/gu)?.length ?? 0) < 4) {
+        throw new AppError('Items purchased must contain at least 4 letters.', 400);
+    }
+    return items.trim();
+};
+
+const validateAmount = (amount) => {
+    if (!isPositiveCurrencyAmount(amount)) {
+        throw new AppError('Amount must be greater than 0 with at most 2 decimal places.', 400);
+    }
+    return Number(amount);
+};
 
 /**
  * Bulk create markets for multiple users on a single date.
  * Idempotent: skips users who already have a market entry for that date.
  */
-const bulkCreateMarkets = async ({ userIds, date, amount, items, description }) => {
+const bulkCreateMarkets = async ({ userIds, date, amount: inputAmount, items: inputItems, description }) => {
     const parsedDate = normalizeDate(parseDate(date));
-
-    if (!items || typeof items !== 'string' || !items.trim()) {
-        throw new AppError('Items description is required and must be a non-empty string', 400);
-    }
-
-    if (amount === undefined || amount === null || amount < 0) {
-        throw new AppError('A valid amount is required', 400);
-    }
+    const items = validateItems(inputItems);
+    const amount = validateAmount(inputAmount);
 
     if (!Array.isArray(userIds) || userIds.length === 0) {
         throw new AppError('At least one user must be selected', 400);
@@ -93,12 +104,10 @@ const bulkCreateMarkets = async ({ userIds, date, amount, items, description }) 
  * Create a market entry
  */
 const createMarket = async (marketBody) => {
-    const { user, amount, items, description, image } = marketBody;
+    const { user, description, image } = marketBody;
     const date = normalizeDate(parseDate(marketBody.date));
-
-    if (!items || typeof items !== 'string' || !items.trim()) {
-        throw new AppError('Items description is required and must be a non-empty string', 400);
-    }
+    const items = validateItems(marketBody.items);
+    const amount = validateAmount(marketBody.amount);
 
     // Use exists() — faster than findOne(), no document fetch needed
     if (await Market.exists({ user, date })) {
@@ -185,23 +194,31 @@ const queryMarkets = async (filter, options = {}, populateUser = false) => {
 /**
  * Get market by id
  */
-const getMarketById = async (id) => {
-    return Market.findById(id).populate('user', 'name email');
+const getMarketById = async (id, includeTotals = false) => {
+    const query = Market.findById(id);
+    if (includeTotals) query.select('+calendarTotals');
+    return query.populate('user', 'name email');
 };
 
 /**
  * Update market by id
  */
-const updateMarketById = async (marketId, updateBody) => {
-    const market = await getMarketById(marketId);
+const updateMarketById = async (marketId, input, existingMarket) => {
+    const market = existingMarket ?? await getMarketById(marketId, true);
     if (!market) throw new AppError('Market not found', 404);
 
+    const updateBody = pick(input, ['date', 'amount', 'items', 'description', 'image']);
+    if ('items' in updateBody) updateBody.items = validateItems(updateBody.items);
+    if ('amount' in updateBody) updateBody.amount = validateAmount(updateBody.amount);
+    if (market.calendarTotals?.retireFor) throw new AppError('This market entry is being deleted', 409);
+    const repairedTotals = await settleCalendarTotals(Market, market);
     const oldAmount = market.amount;
+    const oldDate = market.date.getTime();
 
     if (updateBody.date) {
         const parsedDate = normalizeDate(parseDate(updateBody.date));
 
-        if (market.date.getTime() !== parsedDate.getTime()) {
+        if (oldDate !== parsedDate.getTime()) {
             // Date changed — check for duplicate
             const duplicate = await Market.exists({
                 user: market.user._id,
@@ -217,25 +234,24 @@ const updateMarketById = async (marketId, updateBody) => {
         }
     }
 
-    if (updateBody.items !== undefined) {
-        if (typeof updateBody.items !== 'string' || !updateBody.items.trim()) {
-            throw new AppError('Items must be a non-empty string', 400);
-        }
-        updateBody.items = updateBody.items.trim();
-    }
-
     Object.assign(market, updateBody);
-    await market.save();
-
-    if (updateBody.amount !== undefined && updateBody.amount !== oldAmount) {
-        await User.findByIdAndUpdate(
-            market.user._id,
-            { $inc: { totalMarketAmount: updateBody.amount - oldAmount } }
-        );
+    if (!market.isModified()) {
+        if (repairedTotals) refreshCalendarPayables();
+        return market;
     }
+    const affectsPayable = repairedTotals || market.isModified('amount') || market.isModified('date');
+    market.$where = { user: market.user._id, amount: oldAmount };
+    stageCalendarTotals(market, { totalMarketAmount: market.amount - oldAmount });
+    await market.save().catch((err) => {
+        if (err.name === 'DocumentNotFoundError') {
+            throw new AppError('This market entry changed. Refresh the calendar and try again.', 409);
+        }
+        throw err;
+    });
 
-    // Recalculate payable for all active users
-    recalculateAllActiveUsersPayable();
+    await settleCalendarTotals(Market, market);
+
+    if (affectsPayable) refreshCalendarPayables();
 
     return market;
 };
@@ -243,23 +259,13 @@ const updateMarketById = async (marketId, updateBody) => {
 /**
  * Delete market by id
  */
-const deleteMarketById = async (marketId) => {
-    const market = await getMarketById(marketId);
+const deleteMarketById = async (marketId, existingMarket) => {
+    const market = existingMarket ?? await getMarketById(marketId, true);
     if (!market) throw new AppError('Market not found', 404);
-
-    await Promise.all([
-        User.findByIdAndUpdate(
-            market.user._id,
-            {
-                $pull: { markets: marketId },
-                $inc: { totalMarketAmount: -market.amount },
-            }
-        ),
-        Market.findByIdAndDelete(marketId)
-    ]);
+    await retireCalendarRecord(Market, market, { totalMarketAmount: -market.amount });
 
     // Recalculate payable for all active users
-    recalculateAllActiveUsersPayable();
+    refreshCalendarPayables();
 
     return market;
 };

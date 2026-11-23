@@ -3,9 +3,11 @@ const Meal = require('../models/Meal.model');
 const MealPoll = require('../models/MealPoll.model');
 const User = require('../models/User.model');
 const AppError = require('../utils/errors/AppError');
+const pick = require('../utils/helpers/pick');
 const { parseDate, normalizeDate } = require('../utils/helpers/date.helper');
 const { recalculateAllActiveUsersPayable } = require('./user.service');
 const { writeAuditLog } = require('./mealPollAudit.service');
+const { stageCalendarTotals, settleCalendarTotals, retireCalendarRecord, refreshCalendarPayables } = require('./calendarRecordTotals.service');
 
 const mealTypeCountMap = {
   off: 0,
@@ -282,6 +284,7 @@ const createMeal = async (mealBody) => {
     const mealId = new mongoose.Types.ObjectId();
     mealBody._id = mealId;
     mealBody.source = 'manual';
+    delete mealBody.calendarTotals;
 
     const [newMeal] = await Promise.all([
         Meal.create(mealBody),
@@ -357,8 +360,10 @@ const queryMeals = async (filter, options = {}, populateUser = false) => {
 /**
  * Get meal by id
  */
-const getMealById = async (id) => {
-    return Meal.findById(id).populate('user', 'name email');
+const getMealById = async (id, includeTotals = false) => {
+    const query = Meal.findById(id);
+    if (includeTotals) query.select('+calendarTotals');
+    return query.populate('user', 'name email');
 };
 
 /**
@@ -369,9 +374,26 @@ const getMealById = async (id) => {
  * with the old type is deleted (replaced by the one being updated).
  * This prevents conflicting duplicates from surviving after an update.
  */
-const updateMealById = async (mealId, updateBody) => {
-    const meal = await getMealById(mealId);
+const updateMealById = async (mealId, input, existingMeal) => {
+    const meal = existingMeal ?? await getMealById(mealId, true);
     if (!meal) throw new AppError('Meal not found', 404);
+    const updateBody = pick(input, ['date', 'type', 'isGuestMeal', 'guestCount', 'remarks']);
+    if ('type' in updateBody && (typeof updateBody.type !== 'string' || !Object.hasOwn(mealTypeCountMap, updateBody.type))) {
+        throw new AppError('Invalid meal type', 400);
+    }
+    if ('isGuestMeal' in updateBody && typeof updateBody.isGuestMeal !== 'boolean') {
+        throw new AppError('Guest meal must be true or false', 400);
+    }
+    if ('guestCount' in updateBody && (!Number.isSafeInteger(updateBody.guestCount) || updateBody.guestCount < 0)) {
+        throw new AppError('Guest count must be a non-negative whole number', 400);
+    }
+    if (updateBody.remarks != null && typeof updateBody.remarks !== 'string') {
+        throw new AppError('Remarks must be text', 400);
+    }
+    if (meal.calendarTotals?.retireFor) {
+        throw new AppError('This meal is being deleted or replaced. Refresh the calendar and try again.', 409);
+    }
+    const repairedTotals = await settleCalendarTotals(Meal, meal);
 
     // ── 1. Resolve target date (normalized to midnight UTC) ──────────
     const targetDate = updateBody.date
@@ -397,23 +419,13 @@ const updateMealById = async (mealId, updateBody) => {
             _id: { $ne: mealId },
         };
 
-        const conflict = await Meal.findOne(conflictFilter).lean();
+        const conflict = await Meal.findOne(conflictFilter).select('+calendarTotals');
 
         if (conflict) {
-            // Delete the conflicting record and adjust user stats
-            const conflictMealCount = conflict.mealCount || 0;
-            const conflictGuestCount = conflict.isGuestMeal ? (conflict.guestCount || 0) : 0;
-
-            await Promise.all([
-                Meal.deleteOne({ _id: conflict._id }),
-                User.findByIdAndUpdate(meal.user._id, {
-                    $pull: { meals: conflict._id },
-                    $inc: {
-                        totalMeal: -conflictMealCount,
-                        guestMeal: -conflictGuestCount,
-                    },
-                }),
-            ]);
+            await retireCalendarRecord(Meal, conflict, {
+                totalMeal: -(conflict.mealCount || 0),
+                guestMeal: -(conflict.isGuestMeal ? (conflict.guestCount || 0) : 0),
+            }, meal._id);
         }
     }
 
@@ -427,6 +439,11 @@ const updateMealById = async (mealId, updateBody) => {
     // ── 5. Apply updates ────────────────────────────────────────────
     const oldMealCount = meal.mealCount || 0;
     const oldGuestCount = meal.guestCount || 0;
+    meal.$where = {
+        user: meal.user._id,
+        mealCount: meal.mealCount,
+        guestCount: oldGuestCount || { $in: [0, null] },
+    };
 
     Object.assign(meal, updateBody, {
         type: finalType,
@@ -436,21 +453,24 @@ const updateMealById = async (mealId, updateBody) => {
         source: 'manual',
     });
 
-    await meal.save();
-
-    // ── 6. Sync user stats ──────────────────────────────────────────
+    if (!meal.isModified()) {
+        if (repairedTotals) refreshCalendarPayables();
+        return meal;
+    }
     const mealDiff = finalMealCount - oldMealCount;
     const guestDiff = finalGuestCount - oldGuestCount;
+    stageCalendarTotals(meal, { totalMeal: mealDiff, guestMeal: guestDiff });
+    await meal.save().catch((err) => {
+        if (err.name === 'DocumentNotFoundError') {
+            throw new AppError('This meal changed. Refresh the calendar and try again.', 409);
+        }
+        throw err;
+    });
 
-    if (mealDiff || guestDiff) {
-        await User.findByIdAndUpdate(
-            meal.user._id,
-            { $inc: { totalMeal: mealDiff, guestMeal: guestDiff } },
-        );
-    }
+    await settleCalendarTotals(Meal, meal);
 
     // A payable refresh is fire-and-forget; failures are logged, never blocking
-    recalculatePayablesSafe();
+    if (repairedTotals || mealDiff || guestDiff || dateChanged) refreshCalendarPayables();
 
     return meal;
 };
@@ -458,27 +478,13 @@ const updateMealById = async (mealId, updateBody) => {
 /**
  * Delete meal by id
  */
-const deleteMealById = async (mealId) => {
-    const meal = await getMealById(mealId);
+const deleteMealById = async (mealId, existingMeal) => {
+    const meal = existingMeal ?? await getMealById(mealId, true);
     if (!meal) throw new AppError('Meal not found', 404);
-
-    // Cast mealId to ObjectId so $pull correctly matches the ObjectId stored
-    // in User.meals (a plain string would fail to match the stored ObjectId).
-    const mealObjectId = new mongoose.Types.ObjectId(mealId);
-
-    await Promise.all([
-        User.findByIdAndUpdate(
-            meal.user._id,
-            {
-                $pull: { meals: mealObjectId },
-                $inc: { totalMeal: -meal.mealCount, guestMeal: -(meal.guestCount || 0) }
-            }
-        ),
-        meal.deleteOne()
-    ]);
+    await retireCalendarRecord(Meal, meal, { totalMeal: -(meal.mealCount || 0), guestMeal: -(meal.guestCount || 0) });
 
     // A payable refresh is fire-and-forget; failures are logged, never blocking
-    recalculatePayablesSafe();
+    refreshCalendarPayables();
 
     return meal;
 };
@@ -514,7 +520,7 @@ const bulkDeleteMeals = async ({ mealIds, user }) => {
 
     // Fetch existing meals for these IDs
     const existingMeals = await Meal.find({ _id: { $in: objectIds } })
-        .select('user mealCount guestCount')
+        .select('user mealCount guestCount +calendarTotals')
         .lean();
 
     const foundIds = new Set(existingMeals.map((m) => m._id.toString()));
@@ -532,6 +538,7 @@ const bulkDeleteMeals = async ({ mealIds, user }) => {
     if (authorizedMeals.length === 0) {
         throw new AppError('No authorized meals found to delete', 404);
     }
+    await Promise.all(authorizedMeals.map((meal) => settleCalendarTotals(Meal, meal)));
 
     // Accumulate per-user stat deltas
     const userDeltas = {};
@@ -539,6 +546,7 @@ const bulkDeleteMeals = async ({ mealIds, user }) => {
 
     for (const meal of authorizedMeals) {
         authorizedIds.push(meal._id);
+        if (meal.calendarTotals?.retireFor) continue;
         const uid = meal.user.toString();
 
         if (!userDeltas[uid]) {

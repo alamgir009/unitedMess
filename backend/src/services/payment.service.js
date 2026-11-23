@@ -2,6 +2,8 @@ const Payment = require('../models/Payment.model');
 const User = require('../models/User.model');
 const Invoice = require('../models/Invoice.model');
 const AppError = require('../utils/errors/AppError');
+const pick = require('../utils/helpers/pick');
+const { isPositiveCurrencyAmount } = require('../utils/validators/common.validator');
 const razorpayService = require('./razorpay.service');
 const emailService = require('./email.service');
 const config = require('../config');
@@ -22,7 +24,8 @@ const PAYMENT_TO_USER_STATUS = {
 };
 
 // Fields admin is allowed to update — prevents accidental corruption
-const UPDATABLE_FIELDS = ['status', 'remarks', 'receiptUrl', 'month', 'amount', 'adminRemarks', 'changedBy'];
+const UPDATABLE_FIELDS = ['status', 'remarks', 'receiptUrl', 'month', 'amount', 'adminRemarks'];
+const MEMBER_EDITABLE_STATUSES = ['pending', 'pending_verification', 'failed'];
 
 const getUserFieldByType = (paymentType) => {
     switch (paymentType) {
@@ -672,9 +675,52 @@ const getPaymentById = async (id) => {
  * Update payment — only UPDATABLE_FIELDS allowed
  * Prevents admin from accidentally overwriting user, transactionId, paymentMethod
  */
-const updatePaymentById = async (paymentId, updateBody) => {
+const updatePaymentById = async (paymentId, updateBody, actor) => {
     const payment = await Payment.findById(paymentId);
     if (!payment) throw new AppError('Payment not found', 404);
+
+    if (actor && actor.role !== 'admin') {
+        const canChangeAmount = payment.status === 'pending' && payment.paymentMethod === 'cash' && !payment.transactionId && !payment.utr;
+        const allowed = canChangeAmount ? ['remarks', 'amount'] : ['remarks'];
+        if (String(payment.user) !== actor.id || payment.verifiedAt || payment.verifiedBy ||
+            payment.amount < 0 || !MEMBER_EDITABLE_STATUSES.includes(payment.status) ||
+            Object.keys(updateBody).some((field) => !allowed.includes(field))) {
+            throw new AppError('You do not have permission to update this payment', 403);
+        }
+
+        const changes = pick(updateBody, allowed);
+        if ('amount' in changes) {
+            if (!isPositiveCurrencyAmount(changes.amount)) {
+                throw new AppError('Amount must be greater than 0 with at most 2 decimal places.', 400);
+            }
+            changes.amount = Number(changes.amount);
+        }
+        if ('remarks' in changes) {
+            if (typeof changes.remarks !== 'string') throw new AppError('Remarks must be text', 400);
+            changes.remarks = changes.remarks.trim();
+        }
+        if (Object.keys(changes).every((field) => changes[field] === payment[field])) return payment;
+
+        const filter = {
+            _id: paymentId,
+            user: actor.id,
+            status: { $in: MEMBER_EDITABLE_STATUSES },
+            amount: { $gte: 0 },
+            verifiedAt: null,
+            verifiedBy: null,
+        };
+        if ('amount' in changes) {
+            Object.assign(filter, {
+                status: 'pending',
+                paymentMethod: 'cash',
+                transactionId: { $in: [null, ''] },
+                utr: { $in: [null, ''] },
+            });
+        }
+        const updated = await Payment.findOneAndUpdate(filter, { $set: changes }, { new: true, runValidators: true });
+        if (!updated) throw new AppError('You do not have permission to update this payment', 403);
+        return updated;
+    }
 
     // Guard: cannot revert completed Razorpay payment to pending
     if (
@@ -686,18 +732,23 @@ const updatePaymentById = async (paymentId, updateBody) => {
     }
 
     // Whitelist — only pick safe fields from updateBody
-    const safeUpdate = UPDATABLE_FIELDS.reduce((acc, field) => {
-        if (updateBody[field] !== undefined) acc[field] = updateBody[field];
-        return acc;
-    }, {});
+    const safeUpdate = pick(updateBody, UPDATABLE_FIELDS);
+    if ('amount' in safeUpdate && !isPositiveCurrencyAmount(safeUpdate.amount)) {
+        throw new AppError('Amount must be greater than 0 with at most 2 decimal places.', 400);
+    }
 
     const oldStatus = payment.status;
     const oldMonth = payment.month;
+    if (payment.amount < 0 && safeUpdate.status && safeUpdate.status !== 'refunded' && !('amount' in safeUpdate)) {
+        throw new AppError('Enter a positive amount before changing this refund’s status.', 400);
+    }
 
     // Guard: cumulative cap when a record is promoted to completed —
     // the other completed records for {user, month, type} plus this one's
     // (possibly edited) amount must stay within the payable limit.
-    if (safeUpdate.status === 'completed' && oldStatus !== 'completed') {
+    if ((safeUpdate.status ?? oldStatus) === 'completed' && (oldStatus !== 'completed' ||
+        ('amount' in safeUpdate && Number(safeUpdate.amount) !== payment.amount) ||
+        ('month' in safeUpdate && safeUpdate.month !== oldMonth))) {
         await assertWithinPayableLimit({
             userId: payment.user,
             month: safeUpdate.month || payment.month,
@@ -707,19 +758,31 @@ const updatePaymentById = async (paymentId, updateBody) => {
         });
     }
 
+    payment.$where = {
+        status: oldStatus,
+        month: oldMonth,
+        amount: payment.amount,
+        verifiedAt: payment.verifiedAt ?? null,
+        verifiedBy: payment.verifiedBy ?? null,
+    };
     Object.assign(payment, safeUpdate);
 
     // Track status change in audit history
     if (safeUpdate.status && safeUpdate.status !== oldStatus) {
         payment.statusHistory.push({
             status: safeUpdate.status,
-            changedBy: safeUpdate.changedBy || payment.verifiedBy || (payment.user?.toString ? payment.user : payment.user?.toString()),
+            changedBy: actor?.id || payment.verifiedBy || payment.user,
             changedAt: new Date(),
             remarks: safeUpdate.adminRemarks || '',
         });
     }
 
-    await payment.save();
+    await payment.save({ validateModifiedOnly: true }).catch((err) => {
+        if (err.name === 'DocumentNotFoundError') {
+            throw new AppError('This payment changed. Refresh the calendar and try again.', 409);
+        }
+        throw err;
+    });
 
     const statusChanged = safeUpdate.status && safeUpdate.status !== oldStatus;
     const monthChanged = safeUpdate.month && safeUpdate.month !== oldMonth;
@@ -753,27 +816,46 @@ const updatePaymentById = async (paymentId, updateBody) => {
 };
 
 // ─────────────────────────────────────────────────────────────
-// Delete (admin only)
+// Delete
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Delete payment — resets user status field to pending in parallel
- * Blocks deletion of completed Razorpay payments (use refund flow instead)
+ * Members can delete only their own pending cash entries without verification or a reference.
+ * Completed Razorpay payments must use the refund flow.
  */
-const deletePaymentById = async (paymentId) => {
-    const payment = await Payment.findById(paymentId);
-    if (!payment) throw new AppError('Payment not found', 404);
+const deletePaymentById = async (paymentId, actor) => {
+    if (!actor?.id) throw new AppError('Authentication required to delete a payment', 401);
 
-    if (payment.paymentMethod === 'razorpay' && payment.status === 'completed') {
+    if (actor.role !== 'admin') {
+        const pendingCash = await Payment.findOneAndDelete({
+            _id: paymentId,
+            user: actor.id,
+            amount: { $gte: 0 },
+            status: 'pending',
+            paymentMethod: 'cash',
+            verifiedAt: null,
+            verifiedBy: null,
+            transactionId: { $in: [null, ''] },
+            utr: { $in: [null, ''] },
+        });
+        if (pendingCash) return pendingCash;
+        if (!await Payment.exists({ _id: paymentId })) throw new AppError('Payment not found', 404);
+        throw new AppError('You can only delete your own pending cash payments without a transaction reference', 403);
+    }
+
+    const payment = await Payment.findOneAndDelete({
+        _id: paymentId,
+        $nor: [{ paymentMethod: 'razorpay', status: 'completed' }],
+    });
+    if (!payment) {
+        if (!await Payment.exists({ _id: paymentId })) throw new AppError('Payment not found', 404);
         throw new AppError('Cannot delete a completed Razorpay payment', 400);
     }
 
-    await Promise.all([
-        payment.deleteOne(),
-        syncUserPaymentStatus(payment.user, payment.type, 'pending', payment.month),
-    ]);
-
-    await syncInvoiceAfterPayment(payment.user, payment.month);
+    if (['completed', 'failed', 'refunded'].includes(payment.status)) {
+        await syncUserPaymentStatus(payment.user, payment.type, 'pending', payment.month);
+        await syncInvoiceAfterPayment(payment.user, payment.month);
+    }
 
     return payment;
 };

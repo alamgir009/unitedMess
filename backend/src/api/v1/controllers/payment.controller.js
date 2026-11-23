@@ -136,15 +136,15 @@ const getPayment = asyncHandler(async (req, res) => {
  * PATCH /payments/:paymentId  [admin only]
  */
 const updatePayment = asyncHandler(async (req, res) => {
-    const payment = await paymentService.updatePaymentById(req.params.paymentId, req.body);
+    const payment = await paymentService.updatePaymentById(req.params.paymentId, req.body, req.user);
     sendSuccessResponse(res, 200, 'Payment updated successfully', payment);
 });
 
 /**
- * DELETE /payments/:paymentId  [admin only]
+ * DELETE /payments/:paymentId
  */
 const deletePayment = asyncHandler(async (req, res) => {
-    await paymentService.deletePaymentById(req.params.paymentId);
+    await paymentService.deletePaymentById(req.params.paymentId, req.user);
     res.status(204).send();
 });
 

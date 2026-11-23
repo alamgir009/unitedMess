@@ -41,9 +41,18 @@ const mealSchema = new mongoose.Schema(
             enum: ['manual', 'bulk', 'auto'],
             default: 'manual',
         },
+        calendarTotals: {
+            type: new mongoose.Schema({
+                revision: Number,
+                increments: { totalMeal: Number, guestMeal: Number },
+                retireFor: mongoose.Schema.Types.ObjectId,
+            }, { _id: false }),
+            select: false,
+        },
     },
     {
         timestamps: true,
+        toJSON: { transform: (_, data) => { delete data.calendarTotals; } },
     }
 );
 

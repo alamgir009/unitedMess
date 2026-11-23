@@ -5,10 +5,11 @@ import { cn } from '@/core/utils/helpers/string.helper';
 import { fmt, formatSignedRupees } from '@/core/utils/helpers/currency.helper';
 import { summarizePayments, isRefundPayment } from '@shared/utils/paymentAmount';
 import { formatInIST } from '@/core/utils/helpers/date.helper';
-import { Calendar, Trash2, Loader2, CheckCircle } from 'lucide-react';
+import { Calendar, Trash2, Loader2, CheckCircle, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { removeMarketScheduledDate } from '../../store/marketSchedule.slice';
 import SlotIcon from './cells/SlotIcon';
+import { canEditDayEntry } from './dayEntryPermissions';
 
 const STATUS_BADGE = {
   completed: { variant: 'success', label: 'Paid' },
@@ -43,19 +44,21 @@ const VOTE_VALUE_BADGE_COLORS = {
 const ROW_HEIGHT = 44;
 const OVERSCAN = 4;
 
-const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, scheduleData = null, onPaymentEdit, onEntryClick }) => {
+const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, scheduleData = null, onEntryClick, selection }) => {
   const [scrollTop, setScrollTop] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const containerRef = useRef(null);
   const currentUser = useSelector((state) => state.auth.user);
   const isVotes = category === 'votes';
+  const isSelecting = Boolean(selection);
+  const hasEntries = entries.length > 0;
 
   const sorted = useMemo(
     () =>
-      [...entries].sort(
+      isSelecting ? entries : [...entries].sort(
         (a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt),
       ),
-    [entries],
+    [entries, isSelecting],
   );
 
   const isDutyFulfilled = useMemo(() => {
@@ -67,23 +70,15 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
     });
   }, [scheduleData, entries, category]);
 
-  const fulfilledEntryId = useMemo(() => {
-    if (!isDutyFulfilled) return null;
-    const scheduledUserId = scheduleData.user?._id;
-    const match = entries.find((e) => {
-      const entryUserId = typeof e.user === 'object' ? e.user?._id : e.user;
-      return entryUserId === scheduledUserId;
-    });
-    return match?._id || null;
-  }, [isDutyFulfilled, scheduleData, entries]);
-
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const observer = new ResizeObserver(([entry]) => setContainerHeight(entry.contentRect.height));
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry.contentRect.height > 0) setContainerHeight(entry.contentRect.height);
+    });
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [hasEntries]);
 
   const handleScroll = useCallback((e) => {
     setScrollTop(e.currentTarget.scrollTop);
@@ -98,13 +93,13 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
         </div>
       );
     }
-    return <p className="text-sm text-[var(--text-muted)] py-8 text-center">No entries for this day.</p>;
+    return <p className="text-sm text-[var(--text-muted)] py-8 text-center">{isSelecting ? 'No manageable entries in this range.' : 'No entries for this day.'}</p>;
   }
 
   const showMealSummary = category === 'meals' && totalMealsCount > 0;
   // Money-flow summary so the day-cell total and these rows always reconcile:
   // Net = Paid − Refunded (pending/failed excluded, same as the cell badge).
-  const paymentSummary = category === 'payments' ? summarizePayments(entries) : null;
+  const paymentSummary = category === 'payments' && !selection ? summarizePayments(entries) : null;
 
   const totalHeight = sorted.length * ROW_HEIGHT;
   const startIdx = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN);
@@ -116,6 +111,9 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
     <div
       ref={containerRef}
       onScroll={handleScroll}
+      tabIndex={isSelecting ? 0 : undefined}
+      aria-label={isSelecting ? 'Entries available for selection' : undefined}
+      role={isSelecting ? 'region' : undefined}
       className="relative overflow-y-auto custom-scrollbar"
       style={{ height: '100%', minHeight: 200 }}
     >
@@ -177,14 +175,12 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
           {visibleRows.map((entry, i) => {
             const idx = startIdx + i;
             const isUnpopulated = entry.user && typeof entry.user === 'string';
-            const name = entry.user?.name || entry.userName || (isUnpopulated ? currentUser?.name : 'Unknown');
+            const name = entry.user?.name || entry.userName || (isUnpopulated ? currentUser?.name : null) || 'Unknown';
             const firstName = name.split(' ')[0];
             const avatarSrc = entry.user?.image || (isUnpopulated ? currentUser?.image : undefined);
             const isFailed = entry.status === 'failed';
             const isCompleted = entry.status === 'completed';
             const isRefundEntry = isRefundPayment(entry);
-
-            if (isDutyFulfilled && entry._id === fulfilledEntryId) return null;
 
             if (isVotes) {
               const hasPrev = !!entry.previousState?.type;
@@ -235,58 +231,85 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
               );
             }
 
-            const isOwnEntry = onEntryClick && (
-              (typeof entry.user === 'object' && entry.user?._id === currentUser?._id) ||
-              (typeof entry.user === 'string' && entry.user === currentUser?._id)
-            );
+            const canEdit = onEntryClick && canEditDayEntry(entry, category, currentUser);
+            const isInteractive = selection || canEdit;
+            const isSelected = selection?.selectedIds.has(entry._id);
+            const entryDate = selection ? formatInIST(entry.date || entry.paymentDate, 'd MMM') : '';
+            const Row = isInteractive ? 'button' : 'div';
+            const detailsId = `calendar-${category}-${entry._id}`;
+            const descriptionIds = [
+              category === 'markets' && `${detailsId}-items`,
+              (category === 'markets' || category === 'payments') && `${detailsId}-amount`,
+              category === 'payments' && entry.status && `${detailsId}-status`,
+            ].filter(Boolean).join(' ');
 
             return (
-              <div
+              <Row
                 key={entry._id || idx}
-                onClick={category === 'payments' && onPaymentEdit ? () => onPaymentEdit(entry) : isOwnEntry ? () => onEntryClick(entry) : undefined}
+                type={isInteractive ? 'button' : undefined}
+                onClick={selection ? () => selection.onToggle(entry._id) : canEdit ? (event) => onEntryClick(entry, event.currentTarget) : undefined}
+                aria-label={selection ? `Select ${category.slice(0, -1)} entry for ${name}, ${entryDate}` : canEdit ? `Edit ${category.slice(0, -1)} entry for ${name}` : undefined}
+                aria-pressed={selection ? isSelected : undefined}
+                aria-describedby={isInteractive && descriptionIds ? descriptionIds : undefined}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-100',
-                  'hover:bg-[var(--bg-muted)] hover:shadow-xs',
-                  (category === 'payments' && onPaymentEdit || isOwnEntry) && 'cursor-pointer',
+                  'flex w-full items-center gap-3 px-3 text-left rounded-lg transition-colors duration-100',
+                  category === 'markets' ? 'py-1.5' : 'py-2',
+                  isInteractive && 'cursor-pointer hover:bg-[var(--bg-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--focus)]',
+                  isSelected && 'bg-[var(--accent-subtle)]',
                   isFailed && 'bg-[var(--danger-bg)]/40 border-l-[3px] border-[var(--payment-failed)] pl-2.5',
                   isRefundEntry && !isFailed && 'bg-violet-500/[0.03]',
                 )}
                 style={{ height: ROW_HEIGHT }}
               >
+                {selection && (
+                  <span aria-hidden="true" className={cn(
+                    'flex size-4 shrink-0 items-center justify-center rounded border border-[var(--border-contrast)]',
+                    isSelected && 'border-[var(--brand)] bg-[var(--brand)] text-[var(--text-on-brand)]',
+                  )}>
+                    {isSelected && <Check className="size-3" />}
+                  </span>
+                )}
                 <Avatar
                   src={avatarSrc}
                   name={name}
                   size="sm"
                   className="shrink-0"
                 />
-                <div className="flex-1 min-w-0 flex items-center gap-2">
-                  <span className="text-sm font-semibold text-[var(--text-primary)] truncate">
-                    {name}
+                <span className={cn('flex-1 min-w-0 flex', selection || category === 'markets' ? 'flex-col' : 'items-center gap-2')}>
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <span className="truncate text-sm font-semibold leading-4 text-[var(--text-primary)]">{name}</span>
+                    {category === 'meals' && entry.type && (
+                      <SlotIcon slot={entry.type} status={entry.status} size={12} />
+                    )}
                   </span>
-                  {category === 'meals' && entry.type && (
-                    <SlotIcon slot={entry.type} status={entry.status} size={12} />
-                  )}
-                  {category === 'meals' && entry.guestCount > 0 && (
+                  {category === 'meals' && !selection && entry.guestCount > 0 && (
                     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-[var(--warning-bg)] text-[var(--warning-text)] border border-[var(--warning-border)] shrink-0">
                       +{entry.guestCount} guest{entry.guestCount !== 1 ? 's' : ''}
                     </span>
                   )}
-                  {category === 'markets' && (
-                    <span className="text-xs text-[var(--text-muted)] truncate">
-                      {entry.items || entry.description || ''}
+                  {category === 'markets' ? (
+                    <span id={`${detailsId}-items`} className="text-xs leading-4 text-[var(--text-secondary)] truncate" title={entry.items}>
+                      {selection && `${entryDate} · `}
+                      {entry.items}
+                    </span>
+                  ) : selection && (
+                    <span className="truncate text-xs leading-4 text-[var(--text-secondary)]">
+                      {entryDate}
+                      {category === 'meals' && entry.guestCount > 0 && ` · +${entry.guestCount} guests`}
+                      {category === 'payments' && entry.paymentMethod && ` · ${entry.paymentMethod}`}
                     </span>
                   )}
-                  {category === 'payments' && entry.paymentMethod && (
+                  {!selection && category === 'payments' && entry.paymentMethod && (
                     <span className="text-xs text-[var(--text-muted)] truncate">
                       {entry.paymentMethod}
                       {(entry.utr || entry.transactionId) && ` · ${(entry.utr || entry.transactionId).slice(0, 10)}…`}
                     </span>
                   )}
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
+                </span>
+                <span className="flex items-center gap-2 shrink-0">
                   {(category === 'markets' || category === 'payments') && (
-                    <span className={cn(
-                      'text-sm font-bold tabular-nums tracking-tight',
+                    <span id={`${detailsId}-amount`} className={cn(
+                      'text-sm font-bold tabular-nums tracking-tight text-right',
                       isRefundEntry ? 'text-violet-600 dark:text-violet-400' : 'text-[var(--text-primary)]',
                     )}>
                       {isRefundEntry ? '-' : ''}₹{fmt(Math.abs(entry.amount))}
@@ -294,6 +317,7 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
                   )}
                   {category === 'payments' && entry.status && (
                     <span
+                      id={`${detailsId}-status`}
                       className={cn(
                         'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold shadow-xs',
                         isCompleted && 'bg-[var(--success-bg)] text-[var(--success-text)]',
@@ -305,8 +329,8 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
                       {STATUS_BADGE[entry.status]?.label || entry.status}
                     </span>
                   )}
-                </div>
-              </div>
+                </span>
+              </Row>
             );
           })}
         </div>
@@ -374,17 +398,7 @@ const MarketDutyBanner = ({ scheduleData, currentUser, entries = [], isFulfilled
               Market duty completed
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-[var(--text-primary)] truncate">
-              {entryName}
-            </span>
-            <span className="text-xs text-[var(--text-muted)] truncate">
-              {fulfilledEntry.items || fulfilledEntry.description || ''}
-            </span>
-            <span className="text-xs font-bold tabular-nums text-[var(--text-primary)] ml-auto shrink-0">
-              ₹{fmt(fulfilledEntry.amount)}
-            </span>
-          </div>
+          <span className="text-xs font-semibold text-[var(--text-primary)] truncate">{entryName}</span>
         </div>
       </div>
     );

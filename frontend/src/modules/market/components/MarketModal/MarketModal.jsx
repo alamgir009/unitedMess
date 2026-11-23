@@ -29,6 +29,7 @@ export const MarketModal = ({
   isAdmin = false,
   currentUser,
   readOnly = false,
+  isSubmitting,
   footer,
   children,
   className = '',
@@ -76,6 +77,7 @@ export const MarketModal = ({
           isAdmin={isAdmin}
           currentUser={currentUser}
           readOnly={readOnly}
+          isSubmitting={isSubmitting}
           renderFooter={setInternalFooter}
         />
       )}

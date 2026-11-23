@@ -2,6 +2,7 @@ const {
     verifyUpiManualPaymentService,
     createPayment,
     updatePaymentById,
+    deletePaymentById,
 } = require('../../src/services/payment.service');
 const { determineInvoiceStatus } = require('../../src/services/invoice.service');
 const { getBillingPeriod } = require('../../src/utils/helpers/date.helper');
@@ -573,6 +574,102 @@ describe('updatePaymentById — month repair re-sync', () => {
 
         // Guard fires before any mutation — nothing saved or synced
         expect(User.findByIdAndUpdate).not.toHaveBeenCalled();
+    });
+});
+
+describe('member payment updates', () => {
+    const member = { id: 'owner', role: 'user' };
+    const pending = { user: 'owner', status: 'pending', amount: 510, paymentMethod: 'cash' };
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        Payment.findById.mockResolvedValue({ ...pending });
+        Payment.findOneAndUpdate.mockResolvedValue({ ...pending, amount: 520.25 });
+    });
+
+    it.each([
+        { user: 'other' },
+        { status: 'completed' },
+        { status: 'refunded' },
+        { verifiedAt: new Date() },
+        { verifiedBy: 'admin' },
+    ])('rejects a member edit for %o', async (changes) => {
+        Payment.findById.mockResolvedValue({ ...pending, ...changes });
+        await expect(updatePaymentById('pay1', { remarks: 'Note' }, member)).rejects.toMatchObject({ statusCode: 403 });
+        expect(Payment.findOneAndUpdate).not.toHaveBeenCalled();
+    });
+
+    it('rejects changes to status or ownership', async () => {
+        await expect(updatePaymentById('pay1', { status: 'completed', user: 'other' }, member))
+            .rejects.toMatchObject({ statusCode: 403 });
+        expect(Payment.findOneAndUpdate).not.toHaveBeenCalled();
+    });
+
+    it('edits a pending cash payment with ownership and lock checks on the write', async () => {
+        await updatePaymentById('pay1', { amount: '520.25', remarks: ' Note ' }, member);
+        expect(Payment.findOneAndUpdate).toHaveBeenCalledWith(
+            expect.objectContaining({ _id: 'pay1', user: 'owner', status: 'pending', verifiedAt: null, verifiedBy: null }),
+            { $set: { amount: 520.25, remarks: 'Note' } },
+            { new: true, runValidators: true },
+        );
+    });
+
+    it('rejects an amount change on gateway payments and a concurrent verification', async () => {
+        Payment.findById.mockResolvedValue({ ...pending, paymentMethod: 'razorpay' });
+        await expect(updatePaymentById('pay1', { amount: 520 }, member)).rejects.toMatchObject({ statusCode: 403 });
+        Payment.findOneAndUpdate.mockResolvedValueOnce(null);
+        await expect(updatePaymentById('pay1', { remarks: 'Note' }, member)).rejects.toMatchObject({ statusCode: 403 });
+    });
+});
+
+describe('payment deletion authorization', () => {
+    const member = { id: 'owner1', role: 'user' };
+    const admin = { id: 'admin1', role: 'admin' };
+
+    beforeEach(() => jest.resetAllMocks());
+
+    it('requires an authenticated actor before attempting deletion', async () => {
+        await expect(deletePaymentById('draft')).rejects.toMatchObject({ statusCode: 401 });
+        expect(Payment.findOneAndDelete).not.toHaveBeenCalled();
+    });
+
+    it('atomically checks ownership and payment locks on member deletes', async () => {
+        const draft = { status: 'pending', paymentMethod: 'cash', user: member.id };
+        Payment.findOneAndDelete.mockResolvedValueOnce(draft);
+        await expect(deletePaymentById('draft', member)).resolves.toBe(draft);
+        expect(Payment.findOneAndDelete).toHaveBeenCalledWith({
+            _id: 'draft', user: member.id, amount: { $gte: 0 }, status: 'pending', paymentMethod: 'cash',
+            verifiedAt: null, verifiedBy: null, transactionId: { $in: [null, ''] }, utr: { $in: [null, ''] },
+        });
+        expect(User.findByIdAndUpdate).not.toHaveBeenCalled();
+        expect(Invoice.findOne).not.toHaveBeenCalled();
+    });
+
+    it.each([['payment owned by another member', 403], ['verified payment', 403], ['missing payment', 404]])(
+        'returns the correct result for a %s',
+        async (_, statusCode) => {
+            Payment.findOneAndDelete.mockResolvedValueOnce(null);
+            Payment.exists.mockResolvedValueOnce(statusCode === 403 ? { _id: 'record' } : null);
+            await expect(deletePaymentById('record', member)).rejects.toMatchObject({ statusCode });
+            expect(User.findByIdAndUpdate).not.toHaveBeenCalled();
+        },
+    );
+
+    it('allows admins to delete another member’s draft without resetting their billing status', async () => {
+        const draft = { status: 'pending', paymentMethod: 'cash', user: member.id };
+        Payment.findOneAndDelete.mockResolvedValueOnce(draft);
+        await expect(deletePaymentById('draft', admin)).resolves.toBe(draft);
+        expect(User.findByIdAndUpdate).not.toHaveBeenCalled();
+        expect(Invoice.findOne).not.toHaveBeenCalled();
+    });
+
+    it('blocks completed Razorpay payments even for admins', async () => {
+        Payment.findOneAndDelete.mockResolvedValueOnce(null);
+        Payment.exists.mockResolvedValueOnce({ _id: 'gateway' });
+        await expect(deletePaymentById('gateway', admin)).rejects.toMatchObject({ statusCode: 400 });
+        expect(Payment.findOneAndDelete).toHaveBeenCalledWith({
+            _id: 'gateway', $nor: [{ status: 'completed', paymentMethod: 'razorpay' }],
+        });
     });
 });
 

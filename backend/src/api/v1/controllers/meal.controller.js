@@ -80,22 +80,22 @@ const getMeal = asyncHandler(async (req, res) => {
 });
 
 const updateMeal = asyncHandler(async (req, res) => {
-    const meal = await mealService.getMealById(req.params.mealId);
+    const meal = await mealService.getMealById(req.params.mealId, true);
     if (!meal) throw new AppError('Meal not found', 404);
 
     assertOwnedOrAdmin(meal, req.user, { label: 'meal', action: 'update' });
 
-    const updatedMeal = await mealService.updateMealById(req.params.mealId, req.body);
+    const updatedMeal = await mealService.updateMealById(req.params.mealId, req.body, meal);
     sendSuccessResponse(res, 200, 'Meal updated successfully', updatedMeal);
 });
 
 const deleteMeal = asyncHandler(async (req, res) => {
-    const meal = await mealService.getMealById(req.params.mealId);
+    const meal = await mealService.getMealById(req.params.mealId, true);
     if (!meal) throw new AppError('Meal not found', 404);
 
     assertOwnedOrAdmin(meal, req.user, { label: 'meal', action: 'delete' });
 
-    await mealService.deleteMealById(req.params.mealId);
+    await mealService.deleteMealById(req.params.mealId, meal);
     sendSuccessResponse(res, 200, 'Meal deleted successfully', { id: req.params.mealId });
 });
 
@@ -143,28 +143,28 @@ const adminCreateMeal = asyncHandler(async (req, res) => {
 const adminUpdateMeal = asyncHandler(async (req, res) => {
     await mealService.verifyUserExists(req.params.userId);
 
-    const meal = await mealService.getMealById(req.params.mealId);
+    const meal = await mealService.getMealById(req.params.mealId, true);
     if (!meal) throw new AppError('Meal not found', 404);
 
     if (meal.user._id.toString() !== req.params.userId) {
         throw new AppError('Meal does not belong to this user', 400);
     }
 
-    const updatedMeal = await mealService.updateMealById(req.params.mealId, req.body);
+    const updatedMeal = await mealService.updateMealById(req.params.mealId, req.body, meal);
     sendSuccessResponse(res, 200, 'Meal updated successfully', updatedMeal);
 });
 
 const adminDeleteMeal = asyncHandler(async (req, res) => {
     await mealService.verifyUserExists(req.params.userId);
 
-    const meal = await mealService.getMealById(req.params.mealId);
+    const meal = await mealService.getMealById(req.params.mealId, true);
     if (!meal) throw new AppError('Meal not found', 404);
 
     if (meal.user._id.toString() !== req.params.userId) {
         throw new AppError('Meal does not belong to this user', 400);
     }
 
-    await mealService.deleteMealById(req.params.mealId);
+    await mealService.deleteMealById(req.params.mealId, meal);
     res.status(204).send();
 });
 

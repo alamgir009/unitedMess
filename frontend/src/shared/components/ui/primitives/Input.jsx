@@ -50,6 +50,7 @@ export const Input = forwardRef(({
   type = 'text',
   value,
   onChange,
+  onClear,
   'aria-describedby': explicitAriaDescribedBy,
   ...props
 }, ref) => {
@@ -114,7 +115,10 @@ export const Input = forwardRef(({
       {clearable && value && !disabled && !readOnly && (
         <button
           type="button"
-          onClick={() => onChange?.({ target: { value: '' } })}
+          onClick={() => {
+            if (onClear) onClear();
+            else onChange?.({ target: { value: '' } });
+          }}
           aria-label="Clear input"
           className="absolute right-2.5 top-1/2 -translate-y-1/2 min-w-[28px] min-h-[28px] p-1 flex items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)]"
         >

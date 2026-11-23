@@ -26,6 +26,14 @@ const normalize = (status) => {
     return s || 'pending';
 };
 
+export const isMemberEditablePayment = (payment) =>
+    ['pending', 'pending_verification', 'failed'].includes(payment.status) &&
+    !payment.verifiedAt && !payment.verifiedBy && !(payment.amount < 0);
+
+export const isMemberEditablePaymentAmount = (payment) =>
+    isMemberEditablePayment(payment) && payment.status === 'pending' &&
+    payment.paymentMethod === 'cash' && !payment.transactionId && !payment.utr;
+
 /**
  * Resolve the canonical bill status from a stored status + current balance.
  *

@@ -474,7 +474,6 @@ export const PaymentForm = ({
             form="payment-form"
             variant="primary"
             size="md"
-            onClick={handleSubmit}
             disabled={!isValidToSave || isSubmitting}
             isLoading={isSubmitting}
             className="flex-[2]"

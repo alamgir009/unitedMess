@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState, useId } from 'react';
+import { useEffect, useLayoutEffect, useRef, useCallback, useState, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { useModalAnimation } from '@/shared/hooks/useModalAnimation';
@@ -47,6 +47,7 @@ export const Modal = ({
   closeOnOverlayClick = true,
   className = '',
   isLoading = false,
+  isBusy = false,
   desktopMaxHeight = '92dvh',
 }) => {
   const reactId = useId().replace(/:/g, '');
@@ -68,6 +69,10 @@ export const Modal = ({
   const [sheetHeightPct, setSheetHeightPct] = useState(SHEET_DEFAULT_HEIGHT_PCT);
   const dragRef = useRef({ startY: 0, startHeight: SHEET_DEFAULT_HEIGHT_PCT, dragging: false });
 
+  useLayoutEffect(() => {
+    if (isOpen && isBusy) dialogRef.current?.focus({ preventScroll: true });
+  }, [isOpen, isBusy, shouldRender]);
+
   useEffect(() => {
     if (useSheet && isOpen) {
       setSheetHeightPct(SHEET_DEFAULT_HEIGHT_PCT);
@@ -88,31 +93,36 @@ export const Modal = ({
       return;
     }
 
-    if (e.key === 'Tab' && dialogRef.current) {
+    const dialog = dialogRef.current;
+    if (e.key === 'Tab' && dialog && activeModalStack.at(-1) === modalInstanceId) {
+      if (isBusy) {
+        e.preventDefault();
+        dialog.focus({ preventScroll: true });
+        return;
+      }
       const focusableSelector =
-        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-      const focusable = Array.from(dialogRef.current.querySelectorAll(focusableSelector));
+        'button, [href], input:not([type="hidden"]), select, textarea, [tabindex]';
+      const focusable = Array.from(dialog.querySelectorAll(focusableSelector)).filter((element) =>
+        element.tabIndex >= 0 &&
+        !element.matches(':disabled') &&
+        !element.closest('[hidden], [inert], [aria-hidden="true"]') &&
+        (element.checkVisibility?.({ visibilityProperty: true }) ?? true),
+      );
       if (focusable.length === 0) {
         e.preventDefault();
+        dialog.focus({ preventScroll: true });
         return;
       }
 
       const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-
-      if (e.shiftKey) {
-        if (document.activeElement === first || !dialogRef.current.contains(document.activeElement)) {
-          e.preventDefault();
-          last.focus();
-        }
-      } else {
-        if (document.activeElement === last || !dialogRef.current.contains(document.activeElement)) {
-          e.preventDefault();
-          first.focus();
-        }
+      const last = focusable.at(-1);
+      const active = document.activeElement;
+      if (!focusable.includes(active) || active === (e.shiftKey ? first : last)) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
       }
     }
-  }, [modalInstanceId]);
+  }, [isBusy, modalInstanceId]);
 
   const handleDragMove = useCallback((e) => {
     if (!dragRef.current.dragging) return;
@@ -215,7 +225,7 @@ export const Modal = ({
       aria-modal="true"
       aria-labelledby={title ? titleId : undefined}
       aria-describedby={description ? descId : undefined}
-      aria-busy={isLoading || undefined}
+      aria-busy={isLoading || isBusy || undefined}
       tabIndex={-1}
       style={
         useSheet
