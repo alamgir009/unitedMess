@@ -119,7 +119,6 @@ export const MarketForm = ({
   const [isUsersLoading, setIsUsersLoading] = useState(false);
   const [localSubmitting, setIsSubmitting] = useState(false);
   const isSubmitting = submitting ?? localSubmitting;
-  const [isBulkActing, setIsBulkActing] = useState(false);
 
   // Errors state
   const [errors, setErrors] = useState({});
@@ -128,7 +127,8 @@ export const MarketForm = ({
   const [activeEditingEntry, setActiveEditingEntry] = useState(initialData || null);
 
   // Multi-select for bulk delete
-  const [selectedEntryIds, setSelectedEntryIds] = useState(new Set());
+  const [selectedIds, setSelectedEntryIds] = useState(new Set());
+  const selectedEntryIds = new Set(entries.filter((entry) => selectedIds.has(entry._id)).map((entry) => entry._id));
 
   // Fetch users for admin
   useEffect(() => {
@@ -262,22 +262,10 @@ export const MarketForm = ({
 
   const handleSelectAll = () => {
     if (entries.length === 0) return;
-    setSelectedEntryIds((prev) => {
-      if (prev.size === entries.length) return new Set();
-      return new Set(entries.map((e) => e._id));
-    });
+    setSelectedEntryIds(selectedEntryIds.size === entries.length ? new Set() : new Set(entries.map((entry) => entry._id)));
   };
 
-  const handleExecuteBulkDelete = async () => {
-    if (selectedEntryIds.size === 0 || !onBulkDelete) return;
-    setIsBulkActing(true);
-    try {
-      await onBulkDelete(Array.from(selectedEntryIds));
-      setSelectedEntryIds(new Set());
-    } finally {
-      setIsBulkActing(false);
-    }
-  };
+  const handleRequestBulkDelete = () => onBulkDelete?.([...selectedEntryIds]);
 
   // Render external footer if renderFooter prop is passed (e.g. from MarketPage)
   useEffect(() => {
@@ -348,7 +336,7 @@ export const MarketForm = ({
                       if (el) el.indeterminate = selectedEntryIds.size > 0 && selectedEntryIds.size < entries.length;
                     }}
                     onChange={handleSelectAll}
-                    disabled={entries.length === 0 || isBulkActing}
+                    disabled={entries.length === 0}
                     className="w-4 h-4 rounded-[4px] border-[var(--border-contrast)] accent-[var(--brand)] cursor-pointer"
                   />
                   <span>Select all ({entries.length})</span>
@@ -366,8 +354,8 @@ export const MarketForm = ({
               <Button
                 size="sm"
                 variant="destructive"
-                onClick={handleExecuteBulkDelete}
-                isLoading={isBulkActing}
+                onClick={handleRequestBulkDelete}
+                disabled={!onBulkDelete}
                 className="h-8 px-2.5 text-xs rounded-[6px]"
               >
                 Delete selected
@@ -398,7 +386,6 @@ export const MarketForm = ({
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => handleToggleSelectEntry(entry._id)}
-                        disabled={isBulkActing}
                         className="w-3.5 h-3.5 rounded-[3px] border-[var(--border-contrast)] accent-[var(--brand)] cursor-pointer shrink-0"
                       />
                     )}

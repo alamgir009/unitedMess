@@ -34,17 +34,26 @@ const ConfirmDialog = memo(({
   cancelLabel = 'Cancel',
   isConfirming = false,
   variant = 'danger',
+  appearance,
+  isStacked = false,
+  error,
 }) => {
   const titleId = useId();
   const descriptionId = useId();
+  const summaryId = useId();
   const tone = iconToneStyles[iconColor] || iconToneStyles.red;
+  const isRecordDelete = appearance === 'record-delete';
+  const actionClasses = isRecordDelete ? 'h-auto min-h-11 min-w-0 whitespace-normal px-2 py-2 text-center [overflow-wrap:anywhere] sm:min-h-11' : actionClassName;
   const footer = (
-    <div className="grid w-full grid-cols-2 gap-2.5">
+    <div className={cn(
+      'grid w-full grid-cols-2 gap-2.5',
+      isRecordDelete && 'bg-[var(--bg-surface)] px-5 py-4 sm:px-6',
+    )}>
       <Button
         variant="secondary"
         onClick={onClose}
         disabled={isConfirming}
-        className={actionClassName}
+        className={actionClasses}
       >
         {cancelLabel}
       </Button>
@@ -52,7 +61,8 @@ const ConfirmDialog = memo(({
         variant={variant}
         onClick={onConfirm}
         isLoading={isConfirming}
-        className={actionClassName}
+        aria-label={isRecordDelete && isConfirming ? 'Deleting…' : undefined}
+        className={actionClasses}
       >
         {isConfirming ? 'Processing…' : confirmLabel}
       </Button>
@@ -67,34 +77,45 @@ const ConfirmDialog = memo(({
       size="sm"
       role="alertdialog"
       ariaLabelledBy={titleId}
-      ariaDescribedBy={descriptionId}
+      ariaDescribedBy={isRecordDelete && itemSummary ? `${descriptionId} ${summaryId}` : descriptionId}
       isBusy={isConfirming}
+      isStacked={isStacked}
       showCloseButton={false}
-      closeOnOverlayClick={!isConfirming}
+      closeOnOverlayClick={!isRecordDelete && !isConfirming}
+      className={isRecordDelete ? 'max-w-[26rem] [&>[data-modal-body]]:p-0 [&>[data-modal-footer]]:p-0' : undefined}
       footer={footer}
     >
-      <div className="flex flex-col items-center gap-4">
-        <div className={cn(
-          'flex h-12 w-12 items-center justify-center rounded-xl border',
-          tone.bg,
-        )}>
-          <Icon className={cn('h-6 w-6', tone.icon)} />
-        </div>
+      <div className={cn('flex flex-col gap-4', isRecordDelete ? 'px-5 py-5 sm:px-6 sm:py-6' : 'items-center')}>
+        <div className={cn('flex', isRecordDelete ? 'items-start gap-3.5' : 'flex-col items-center gap-4')}>
+          <div className={cn(
+            'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border',
+            tone.bg,
+          )}>
+            <Icon aria-hidden="true" className={cn(isRecordDelete ? 'h-5 w-5' : 'h-6 w-6', tone.icon)} />
+          </div>
 
-        <div className="text-center space-y-1">
-          <h3 id={titleId} className="text-base font-bold tracking-tight text-foreground">
-            {title}
-          </h3>
-          <p id={descriptionId} className="text-pretty text-xs leading-relaxed text-[var(--text-secondary)]">
-            {description}
-          </p>
+          <div className={cn('min-w-0 space-y-1', !isRecordDelete && 'text-center')}>
+            <h3 id={titleId} className={cn(
+              'break-words font-bold tracking-tight text-foreground',
+              isRecordDelete ? 'text-lg leading-snug' : 'text-base',
+            )}>
+              {title}
+            </h3>
+            <p id={descriptionId} className={cn(
+              'text-pretty leading-relaxed text-[var(--text-secondary)]',
+              isRecordDelete ? 'text-sm' : 'text-xs',
+            )}>
+              {description}
+            </p>
+          </div>
         </div>
 
         {itemSummary && (
-          <div className="w-full">
+          <div id={isRecordDelete ? summaryId : undefined} className="w-full">
             {itemSummary}
           </div>
         )}
+        {error && <p role="alert" className="break-words rounded-lg bg-danger-bg px-3 py-2 text-sm text-danger-text">{error}</p>}
       </div>
     </Modal>
   );

@@ -166,7 +166,10 @@ const MealPage = () => {
         }
     }, [editingMeal, dispatch, closeModal, isAdmin, fetchParams]);
 
-    const handleDeleteRequest = useCallback((meal) => setDeletingMeal(meal), []);
+    const handleDeleteRequest = useCallback((meal) => {
+        setErrorMsg('');
+        setDeletingMeal(meal);
+    }, []);
     const handleDeleteCancel = useCallback(() => { if (!isDeleting) setDeletingMeal(null); }, [isDeleting]);
     const handleDeleteConfirm = useCallback(async () => {
         if (!deletingMeal || isDeleting) return;
@@ -206,6 +209,7 @@ const MealPage = () => {
 
     const handleBulkDeleteRequest = useCallback(() => {
         if (selectedIds.size === 0) return;
+        setErrorMsg('');
         setBulkDeleteTarget({ mealIds: [...selectedIds], count: selectedIds.size });
     }, [selectedIds]);
 
@@ -489,6 +493,7 @@ const MealPage = () => {
                         onConfirm={handleBulkDeleteConfirm}
                         onCancel={handleBulkDeleteCancel}
                         isDeleting={isBulkDeleting}
+                        error={errorMsg}
                     />
                 )}
                 {/* Single delete confirm dialog */}
@@ -498,6 +503,7 @@ const MealPage = () => {
                         onConfirm={handleDeleteConfirm}
                         onCancel={handleDeleteCancel}
                         isDeleting={isDeleting}
+                        error={errorMsg}
                     />
                 )}
             </div>

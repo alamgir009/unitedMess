@@ -38,7 +38,7 @@ const ThemeToggle = ({ appearance = 'header' }) => {
     return (
         <button
             type="button"
-            className="inline-flex items-center justify-center w-11 h-11 rounded-xl text-foreground/60 hover:text-foreground hover:bg-muted/60 active:scale-95 transition-[color,background-color,transform] duration-100 motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="header-control inline-flex w-11 items-center justify-center text-foreground/60 transition-[color,background-color,border-color,transform] active:scale-95 motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             {...buttonProps}
         >
             {icon}

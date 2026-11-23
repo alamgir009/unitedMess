@@ -11,6 +11,7 @@ import DayDetailContent from './DayDetailContent';
 import DayDetailDialog, { EntryEditActions } from './DayDetailDialog';
 import { canDeleteDayEntry, canEditDayEntry } from './dayEntryPermissions';
 import { Button } from '@/shared/components/ui';
+import RecordDeleteDialog from '@/shared/components/ui/ConfirmDialog/RecordDeleteDialog';
 import { isMemberEditablePaymentAmount } from '@shared/utils/paymentStatus';
 import MarketScheduleModal from './MarketScheduleModal';
 import SegmentedControl from '../SegmentedControl';
@@ -96,11 +97,11 @@ const EventCalendar = () => {
   const [editingId, setEditingId] = useState(null);
   const [editingEntry, setEditingEntry] = useState(null);
   const editFormId = useId();
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [selectedEntryIds, setSelectedEntryIds] = useState(new Set());
   const [selectionScope, setSelectionScope] = useState(null);
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
   const [entriesToDelete, setEntriesToDelete] = useState(null);
+  const [deleteError, setDeleteError] = useState('');
   const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
@@ -191,7 +192,6 @@ const EventCalendar = () => {
     setIsAdding(false);
     setEditingId(null);
     setEditingEntry(null);
-    setConfirmDeleteId(null);
     setSelectedEntryIds(new Set());
     setSelectionScope(null);
     setBulkEditOpen(false);
@@ -293,7 +293,6 @@ const EventCalendar = () => {
     setIsAdding(false);
     setEditingId(null);
     setEditingEntry(null);
-    setConfirmDeleteId(null);
     setSelectedEntryIds(new Set());
     setSelectionScope(null);
     setBulkEditOpen(false);
@@ -394,7 +393,6 @@ const EventCalendar = () => {
     setIsEditMode(false);
     setIsAdding(false);
     setEditingId(null);
-    setConfirmDeleteId(null);
     setIsScheduleModalOpen(true);
   }, []);
 
@@ -412,7 +410,6 @@ const EventCalendar = () => {
     setIsEditMode((prev) => {
       if (!prev) {
         setEditingId(null);
-        setConfirmDeleteId(null);
         setIsAdding(currentDateEntries.length === 0);
       } else {
         setIsAdding(false);
@@ -425,14 +422,12 @@ const EventCalendar = () => {
     setIsEditMode(true);
     setIsAdding(true);
     setEditingId(null);
-    setConfirmDeleteId(null);
   }, []);
 
   const handleMealAdd = useCallback(() => {
     setIsEditMode(true);
     setIsAdding(true);
     setEditingId(null);
-    setConfirmDeleteId(null);
   }, []);
 
   const handleEntryClick = useCallback((entry, trigger) => {
@@ -504,7 +499,6 @@ const EventCalendar = () => {
     setIsEditMode(false);
     setIsAdding(false);
     setEditingId(null);
-    setConfirmDeleteId(null);
     setEditingPayment(defaultDate ? { paymentDate: defaultDate } : null);
     setIsPaymentModalOpen(true);
   }, [detailDate]);
@@ -553,14 +547,17 @@ const EventCalendar = () => {
 
   const runEntryBatch = useCallback(async (entries, operation, fields) => {
     if (entries.length === 0 || saveRequestRef.current) return;
-    const canOperate = operation === 'delete' ? canDeleteDayEntry : canEditDayEntry;
+    const isDelete = operation === 'delete';
+    const canOperate = isDelete ? canDeleteDayEntry : canEditDayEntry;
     if (!entries.every((entry) => canOperate(entry, category, user))) {
-      toast.error('Some selected entries are unavailable for this action');
+      const message = 'Some selected entries are unavailable for this action.';
+      if (isDelete) setDeleteError(message);
+      toast.error(message);
       return;
     }
 
     const request = {};
-    const isDelete = operation === 'delete';
+    if (isDelete) setDeleteError('');
     saveRequestRef.current = request;
     setIsBulkSubmitting(isDelete ? 'deleting' : 'updating');
 
@@ -640,6 +637,7 @@ const EventCalendar = () => {
         const detail = (typeof reason === 'string' ? reason : reason?.message) || 'Try again.';
         toast.error(`${succeeded.size} of ${entries.length} entries ${resultLabel}. ${detail}`);
         setSelectedEntryIds(new Set(failed.keys()));
+        if (isDelete) setDeleteError(detail);
         if (succeeded.size) setEntriesToDelete(null);
       } else {
         toast.success(`${succeeded.size} ${succeeded.size === 1 ? 'entry' : 'entries'} ${resultLabel}`);
@@ -658,15 +656,24 @@ const EventCalendar = () => {
     }
   }, [category, deleteEntry, handleRetry, resetDayModal, updateEntry, user, viewScope]);
 
+  const requestDelete = useCallback((entries) => {
+    if (!entries.length || saveRequestRef.current) return;
+    if (!entries.every((entry) => canDeleteDayEntry(entry, category, user))) {
+      toast.error('Some selected entries cannot be deleted.');
+      return;
+    }
+    setDeleteError('');
+    setEntriesToDelete(entries);
+  }, [category, user]);
+
   const handleDeleteEntry = useCallback((id) => {
     const entry = editableMonthEntries.find((row) => row._id === id);
-    return entry && runEntryBatch([entry], 'delete');
-  }, [editableMonthEntries, runEntryBatch]);
+    if (entry) requestDelete([entry]);
+  }, [editableMonthEntries, requestDelete]);
 
-  const handleBulkDelete = useCallback((ids) => runEntryBatch(
+  const handleBulkDelete = useCallback((ids) => requestDelete(
     Array.isArray(ids) ? editableMonthEntries.filter((entry) => ids.includes(entry._id)) : selectedEntries,
-    'delete',
-  ), [editableMonthEntries, runEntryBatch, selectedEntries]);
+  ), [editableMonthEntries, requestDelete, selectedEntries]);
 
   const handleBulkUpdate = useCallback((fields) => runEntryBatch(selectedEntries, 'update', fields), [runEntryBatch, selectedEntries]);
 
@@ -723,22 +730,12 @@ const EventCalendar = () => {
 
   const showSelection = Boolean(selectionScope && !editingEntry);
   const showBatchEdit = showSelection && bulkEditOpen && selectedEntries.length > 0;
-  const showDeleteConfirmation = showSelection && Boolean(entriesToDelete);
   const busy = isDaySubmitting || Boolean(isBulkSubmitting);
-  const deleteCount = entriesToDelete?.length;
-  const entryLabel = deleteCount === 1 ? 'entry' : 'entries';
   const titleDate = editingEntry?.date || editingEntry?.paymentDate || detailDate;
   let editFooter = editingEntry && (
     <EntryEditActions formId={editFormId} onCancel={handleCancelEntry} isSubmitting={isDaySubmitting} />
   );
-  if (showDeleteConfirmation) {
-    editFooter = (
-      <div className="grid w-full grid-cols-2 gap-2">
-        <Button autoFocus variant="secondary" onClick={() => setEntriesToDelete(null)} disabled={busy}>Cancel</Button>
-        <Button variant="danger" onClick={() => runEntryBatch(entriesToDelete, 'delete')} isLoading={busy}>Confirm delete</Button>
-      </div>
-    );
-  } else if (showBatchEdit) {
+  if (showBatchEdit) {
     editFooter = <EntryEditActions formId={editFormId} onCancel={() => setBulkEditOpen(false)} isSubmitting={busy} />;
   } else if (showSelection) {
     editFooter = (
@@ -751,7 +748,7 @@ const EventCalendar = () => {
             onClick={() => selectedEntries.length === 1 ? handleEntryClick(selectedEntries[0]) : setBulkEditOpen(true)}>
             Edit selected
           </Button>
-          <Button variant="danger" disabled={busy || !canDeleteSelection} onClick={() => setEntriesToDelete(selectedEntries)}>
+          <Button variant="danger" disabled={busy || !canDeleteSelection} onClick={handleBulkDelete}>
             Delete selected
           </Button>
         </div>
@@ -853,13 +850,7 @@ const EventCalendar = () => {
         <DayDetailDialog
           isOpen={!!detailDate}
           onClose={handleCloseDetail}
-          role={showDeleteConfirmation ? 'alertdialog' : undefined}
-          description={showDeleteConfirmation ? `This permanently deletes the selected ${entryLabel}.` : undefined}
-          title={
-            showDeleteConfirmation
-              ? `Delete ${deleteCount} ${entryLabel}?`
-              : `${formatInIST(titleDate, 'd MMM yyyy')}${isEditMode && category !== 'meals' ? ' · Edit' : ''} · ${category.charAt(0).toUpperCase() + category.slice(1)}`
-          }
+          title={`${formatInIST(titleDate, 'd MMM yyyy')}${isEditMode && category !== 'meals' ? ' · Edit' : ''} · ${category.charAt(0).toUpperCase() + category.slice(1)}`}
           isEditMode={isEditMode || Boolean(editingEntry) || showSelection}
           onEditToggle={!['votes', 'payments'].includes(category) ? handleEditToggle : undefined}
           category={category}
@@ -873,8 +864,7 @@ const EventCalendar = () => {
           mealActionLabel={category === 'meals' ? (userOwnMealEntry ? 'Update Meal' : 'Add Meal') : undefined}
           isAdding={isAdding}
           editingId={editingId}
-          confirmDeleteId={confirmDeleteId}
-          isSubmitting={busy}
+          isSubmitting={busy && !entriesToDelete}
           showEditInstructions={editableDayEntries.length > 0}
           editFooter={editFooter}
         >
@@ -902,11 +892,9 @@ const EventCalendar = () => {
                 setIsAdding={setIsAdding}
                 editingId={editingId}
                 setEditingId={setEditingId}
-                confirmDeleteId={confirmDeleteId}
-                setConfirmDeleteId={setConfirmDeleteId}
               />
             </Suspense>
-          ) : showDeleteConfirmation ? null : showBatchEdit ? (
+          ) : showBatchEdit ? (
             <Suspense fallback={calendarSuspenseFallback}>
               <BulkUpdateForm
                 formId={editFormId}
@@ -988,6 +976,23 @@ const EventCalendar = () => {
         onClose={handleCloseScheduleModal}
         currentMonth={currentMonthDate}
       />
+
+      {entriesToDelete && (
+        <RecordDeleteDialog
+          category={category}
+          isOpen
+          isStacked
+          record={entriesToDelete.length === 1 ? entriesToDelete[0] : undefined}
+          count={entriesToDelete.length}
+          rangeLabel={entriesToDelete.length > 1
+            ? formatInIST(selectionScope === 'month' ? currentMonthDate : detailDate, selectionScope === 'month' ? 'MMMM yyyy' : 'd MMM yyyy')
+            : undefined}
+          onClose={() => setEntriesToDelete(null)}
+          onConfirm={() => runEntryBatch(entriesToDelete, 'delete')}
+          isDeleting={isBulkSubmitting === 'deleting'}
+          error={deleteError}
+        />
+      )}
     </div>
   );
 };

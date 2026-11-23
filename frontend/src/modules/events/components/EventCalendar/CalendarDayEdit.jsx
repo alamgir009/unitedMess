@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect, useId } from 'react';
-import { Plus, Trash2, X, Check, Minus, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Check, Minus, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { fmt, isPositiveCurrencyAmount } from '@/core/utils/helpers/currency.helper';
@@ -13,6 +13,7 @@ import MealTypeSelector from '@/modules/meal/components/MealForm/MealTypeSelecto
 import MarketForm from '@/modules/market/components/MarketForm/MarketForm';
 import PaymentForm from '@/modules/payment/components/PaymentForm/PaymentForm';
 import { EntryEditActions } from './DayDetailDialog';
+import { canDeleteDayEntry } from './dayEntryPermissions';
 import SlotIcon from './cells/SlotIcon';
 import { HiOutlineUserGroup } from 'react-icons/hi2';
 
@@ -126,7 +127,7 @@ export const DaySelectionControls = ({ scope, onScopeChange, onExit, count, tota
   </div>
 );
 
-const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, currentUser, onSave, onUpdate, onDelete, onDone, selectedEntryIds, onToggleSelect, onSelectAll, onBulkDelete, onBulkUpdate, onExitSelectMode, isBulkSubmitting = false, isAdding, setIsAdding, editingId, setEditingId, confirmDeleteId, setConfirmDeleteId }) => {
+const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, currentUser, onSave, onUpdate, onDelete, onDone, selectedEntryIds, onToggleSelect, onSelectAll, onBulkDelete, onBulkUpdate, onExitSelectMode, isBulkSubmitting = false, isAdding, setIsAdding, editingId, setEditingId }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showBulkUpdateForm, setShowBulkUpdateForm] = useState(false);
 
@@ -227,10 +228,10 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
         {!isAdding && !isBulkSubmitting && !(category === 'meals' && !isAdmin && visibleEntries.length > 0) && (
           <button
             onClick={() => setIsAdding(true)}
-            disabled={!!editingId || !!confirmDeleteId || selectedEntryIds?.size > 0}
+            disabled={!!editingId || selectedEntryIds?.size > 0}
             className={cn(
               'flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              editingId || confirmDeleteId || selectedEntryIds?.size > 0
+              editingId || selectedEntryIds?.size > 0
                 ? 'text-[var(--text-muted)] opacity-40 cursor-not-allowed'
                 : 'text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10',
             )}
@@ -248,7 +249,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
           onChange={onSelectAll}
           count={visibleEntries.length === 0 ? 0 : selectedEntryIds?.size || 0}
           total={visibleEntries.length}
-          disabled={visibleEntries.length === 0 || isBulkSubmitting || !!isAdding || !!editingId || !!confirmDeleteId}
+          disabled={visibleEntries.length === 0 || isBulkSubmitting || !!isAdding || !!editingId}
         />
       )}
 
@@ -273,7 +274,6 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
         )}
         {visibleEntries.map((entry) => {
           const isEditing = editingId === entry._id;
-          const isConfirming = confirmDeleteId === entry._id;
           const isUnpopulated = entry.user && typeof entry.user === 'string';
           const displayName = entry.user?.name || entry.userName || (isUnpopulated ? currentUser?.name : 'Unknown');
           return (
@@ -292,14 +292,13 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
                     /* composited: only bg changes on hover */
                     'flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-75',
                     'hover:bg-[var(--bg-muted)]',
-                    isConfirming && 'bg-[var(--danger-bg)]/20 border border-[var(--danger)]/30',
                   )}
                 >
                   {selectedEntryIds && onToggleSelect && (
                     <FintechCheckbox
                       checked={selectedEntryIds.has(entry._id)}
                       onChange={() => onToggleSelect(entry._id)}
-                      disabled={isBulkSubmitting || !!isAdding || !!editingId || !!confirmDeleteId}
+                      disabled={isBulkSubmitting || !!isAdding || !!editingId}
                       ariaLabel={`Select ${displayName}`}
                     />
                   )}
@@ -323,49 +322,11 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
                     )}
                   </div>
 
-                  {isConfirming ? (
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <button
-                        onClick={async () => {
-                          setIsSubmitting(true);
-                          try { await onDelete(entry._id); }
-                          finally { setConfirmDeleteId(null); setIsSubmitting(false); }
-                        }}
-                        disabled={isSubmitting || isBulkSubmitting}
-                        className={cn(
-                          'rounded-lg bg-[var(--danger)] text-[var(--text-on-brand)]',
-                          'hover:bg-[var(--danger)]/90 active:bg-[var(--danger)]/80 shadow-xs',
-                          'transition-colors duration-100',
-                          'min-h-[36px] px-2.5 flex items-center justify-center gap-1 text-[11px] font-semibold',
-                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
-                          'disabled:opacity-50 disabled:cursor-not-allowed',
-                        )}
-                        aria-label="Confirm delete"
-                      >
-                        <Check className="w-3.5 h-3.5" />
-                        <span className="hidden min-[380px]:inline">Delete</span>
-                      </button>
-                      <button
-                        onClick={() => setConfirmDeleteId(null)}
-                        disabled={isSubmitting || isBulkSubmitting}
-                        className={cn(
-                          'rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)]',
-                          'hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-strong)]',
-                          'active:bg-[var(--bg-muted)]/80 transition-colors duration-100',
-                          'min-h-[36px] min-w-[36px] p-1.5 flex items-center justify-center',
-                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
-                          'disabled:opacity-50 disabled:cursor-not-allowed',
-                        )}
-                        aria-label="Cancel delete"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ) : canEdit(entry) ? (
+                  {canEdit(entry) && (
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => setEditingId(entry._id)}
-                        disabled={isBulkSubmitting || !!isAdding || !!confirmDeleteId || selectedEntryIds?.size > 0}
+                        disabled={isBulkSubmitting || !!isAdding || selectedEntryIds?.size > 0}
                         className={cn(
                           'rounded-lg text-[var(--text-secondary)]',
                           'hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10',
@@ -380,23 +341,26 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
                           <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
                         </svg>
                       </button>
-                      <button
-                        onClick={() => setConfirmDeleteId(entry._id)}
-                        disabled={isBulkSubmitting || !!isAdding || !!editingId || selectedEntryIds?.size > 0}
-                        className={cn(
-                          'rounded-lg text-[var(--text-secondary)]',
-                          'hover:text-[var(--danger)] hover:bg-[var(--danger-bg)]/30',
-                          'active:bg-[var(--danger-bg)]/50 transition-colors duration-100',
-                          'min-h-[36px] min-w-[36px] p-1.5 flex items-center justify-center',
-                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
-                          'disabled:opacity-40 disabled:cursor-not-allowed',
-                        )}
-                        aria-label="Delete entry"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {canDeleteDayEntry(entry, category, currentUser) && (
+                        <button
+                          type="button"
+                          onClick={() => onDelete(entry._id)}
+                          disabled={isBulkSubmitting || !!isAdding || !!editingId || selectedEntryIds?.size > 0}
+                          className={cn(
+                            'rounded-lg text-[var(--text-secondary)]',
+                            'hover:text-[var(--danger)] hover:bg-[var(--danger-bg)]/30',
+                            'active:bg-[var(--danger-bg)]/50 transition-colors duration-100',
+                            'min-h-[36px] min-w-[36px] p-1.5 flex items-center justify-center',
+                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-elevated)]',
+                            'disabled:opacity-40 disabled:cursor-not-allowed',
+                          )}
+                          aria-label="Delete entry"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
-                  ) : null}
+                  )}
                 </div>
               )}
             </div>
@@ -419,7 +383,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
           <div className="flex-1" />
           <button
             onClick={() => setShowBulkUpdateForm(true)}
-            disabled={!!isBulkSubmitting || !!isAdding || !!editingId || !!confirmDeleteId}
+            disabled={!!isBulkSubmitting || !!isAdding || !!editingId}
             className="px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isBulkSubmitting === 'updating' ? (
@@ -431,7 +395,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
           </button>
           <button
             onClick={onBulkDelete}
-            disabled={!!isBulkSubmitting || !!isAdding || !!editingId || !!confirmDeleteId}
+            disabled={!!isBulkSubmitting || !!isAdding || !!editingId}
             className="px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--danger)] hover:bg-[var(--danger-bg)]/20 border border-[var(--danger)]/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--danger)]/30 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isBulkSubmitting === 'deleting' ? (
@@ -443,7 +407,7 @@ const CalendarDayEdit = ({ entries = [], category, date: detailDate, isAdmin, cu
           </button>
           <button
             onClick={onExitSelectMode}
-            disabled={!!isBulkSubmitting || !!isAdding || !!editingId || !!confirmDeleteId}
+            disabled={!!isBulkSubmitting || !!isAdding || !!editingId}
             className="px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] border border-[var(--border-default)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel

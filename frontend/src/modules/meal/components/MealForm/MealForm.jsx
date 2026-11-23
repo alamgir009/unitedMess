@@ -129,7 +129,8 @@ export const MealForm = ({
   const [rangeError, setRangeError] = useState('');
 
   // Selected entry IDs for bulk actions
-  const [selectedEntryIds, setSelectedEntryIds] = useState(new Set());
+  const [selectedIds, setSelectedEntryIds] = useState(new Set());
+  const selectedEntryIds = new Set(entries.filter((entry) => selectedIds.has(entry._id)).map((entry) => entry._id));
   const [bulkActionType, setBulkActionType] = useState('');
   const [isBulkActing, setIsBulkActing] = useState(false);
 
@@ -322,10 +323,7 @@ export const MealForm = ({
 
   const handleSelectAll = () => {
     if (entries.length === 0) return;
-    setSelectedEntryIds((prev) => {
-      if (prev.size === entries.length) return new Set();
-      return new Set(entries.map((e) => e._id));
-    });
+    setSelectedEntryIds(selectedEntryIds.size === entries.length ? new Set() : new Set(entries.map((entry) => entry._id)));
   };
 
   const handleApplyBulkUpdate = async () => {
@@ -343,16 +341,7 @@ export const MealForm = ({
     }
   };
 
-  const handleExecuteBulkDelete = async () => {
-    if (selectedEntryIds.size === 0 || !onBulkDelete) return;
-    setIsBulkActing(true);
-    try {
-      await onBulkDelete(Array.from(selectedEntryIds));
-      setSelectedEntryIds(new Set());
-    } finally {
-      setIsBulkActing(false);
-    }
-  };
+  const handleRequestBulkDelete = () => onBulkDelete?.([...selectedEntryIds]);
 
   // Render external footer if renderFooter prop is passed
   useEffect(() => {
@@ -452,8 +441,8 @@ export const MealForm = ({
                 <Button
                   size="sm"
                   variant="destructive"
-                  onClick={handleExecuteBulkDelete}
-                  isLoading={isBulkActing}
+                  onClick={handleRequestBulkDelete}
+                  disabled={isBulkActing || !onBulkDelete}
                   className="h-8 px-2.5 text-xs rounded-[6px]"
                 >
                   Delete

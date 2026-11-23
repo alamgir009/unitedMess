@@ -150,6 +150,7 @@ const MarketPage = () => {
     }, [editingMarket, dispatch, closeModal, isAdmin, fetchParams]);
 
     const handleDeleteClick = useCallback((market) => {
+        setErrorMsg('');
         setMarketToDelete(market);
     }, []);
 
@@ -384,6 +385,7 @@ const MarketPage = () => {
                     isDeleting={isDeleting}
                     onConfirm={executeDelete}
                     onCancel={handleCancelDelete}
+                    error={errorMsg}
                 />
 
             </div>

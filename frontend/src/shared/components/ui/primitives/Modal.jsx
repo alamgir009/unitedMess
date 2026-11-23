@@ -50,6 +50,7 @@ export const Modal = ({
   className = '',
   isLoading = false,
   isBusy = false,
+  isStacked = false,
   desktopMaxHeight = '92dvh',
 }) => {
   const reactId = useId().replace(/:/g, '');
@@ -78,15 +79,25 @@ export const Modal = ({
     if (!shouldRender) return;
     const dialog = dialogRef.current;
     openerRef.current = document.activeElement;
+    const parentLayer = isStacked ? activeModalStack.at(-1) : null;
+    const underlay = parentLayer?.dialog;
+    if (underlay) {
+      const firstAction = dialog?.querySelector('button:not([disabled])');
+      (firstAction || dialog)?.focus({ preventScroll: true });
+      underlay.setAttribute('inert', '');
+      underlay.setAttribute('aria-hidden', 'true');
+    }
     return () => {
-      const opener = openerRef.current;
+      underlay?.removeAttribute('inert');
+      underlay?.removeAttribute('aria-hidden');
+      const opener = openerRef.current?.isConnected ? openerRef.current : parentLayer?.opener;
       const active = document.activeElement;
       if (opener?.isConnected && (active === document.body || dialog?.contains(active))) {
         opener.focus({ preventScroll: true });
       }
       openerRef.current = null;
     };
-  }, [shouldRender]);
+  }, [isStacked, shouldRender]);
 
   useLayoutEffect(() => {
     if (isOpen && isBusy) dialogRef.current?.focus({ preventScroll: true });
@@ -101,10 +112,10 @@ export const Modal = ({
   const handleKeyDown = useCallback((e) => {
     // Only topmost modal handles Escape
     if (e.key === 'Escape') {
-      const topModalId = activeModalStack[activeModalStack.length - 1];
+      const topModalId = activeModalStack.at(-1)?.id;
       if (topModalId !== modalInstanceId) return;
 
-      if (document.querySelector('[role="listbox"]:not([aria-hidden="true"]), [role="menu"]:not([aria-hidden="true"])')) {
+      if (document.querySelector('[role="listbox"]:not([aria-hidden="true"], [inert] *), [role="menu"]:not([aria-hidden="true"], [inert] *)')) {
         return;
       }
       e.stopPropagation();
@@ -113,7 +124,7 @@ export const Modal = ({
     }
 
     const dialog = dialogRef.current;
-    if (e.key === 'Tab' && dialog && activeModalStack.at(-1) === modalInstanceId) {
+    if (e.key === 'Tab' && dialog && activeModalStack.at(-1)?.id === modalInstanceId) {
       if (busyRef.current) {
         e.preventDefault();
         dialog.focus({ preventScroll: true });
@@ -171,7 +182,8 @@ export const Modal = ({
   useEffect(() => {
     if (!shouldRender || exiting) return;
 
-    activeModalStack.push(modalInstanceId);
+    const stackEntry = { id: modalInstanceId, dialog: dialogRef.current, opener: openerRef.current };
+    activeModalStack.push(stackEntry);
     lockBodyScroll();
     document.addEventListener('keydown', handleKeyDown);
 
@@ -199,7 +211,7 @@ export const Modal = ({
 
     return () => {
       cancelAnimationFrame(raf);
-      const stackIdx = activeModalStack.lastIndexOf(modalInstanceId);
+      const stackIdx = activeModalStack.lastIndexOf(stackEntry);
       if (stackIdx !== -1) activeModalStack.splice(stackIdx, 1);
 
       unlockBodyScroll();
@@ -348,14 +360,15 @@ export const Modal = ({
   return createPortal(
     <div
       className={cn(
-        'fixed inset-0 z-[var(--z-modal,400)] modal-gpu',
+        'fixed inset-0 modal-gpu',
+        isStacked ? 'z-[calc(var(--z-modal,400)_+_1)]' : 'z-[var(--z-modal,400)]',
         useSheet ? 'flex flex-col justify-end' : 'flex items-center justify-center p-4 sm:p-6',
       )}
       onClick={closeOnOverlayClick ? requestClose : undefined}
     >
       <div
         aria-hidden="true"
-        className="fixed inset-0 bg-[var(--bg-overlay)] transition-opacity duration-150"
+        className={cn('fixed inset-0 transition-opacity duration-150', isStacked ? 'bg-black/25' : 'bg-[var(--bg-overlay)]')}
       />
       {dialogContent}
     </div>,

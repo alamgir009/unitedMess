@@ -30,19 +30,23 @@ const Header = memo(({ onMenuClick }) => {
       {/* Right-aligned actions */}
       <div className="flex items-center gap-x-1 ml-auto">
         {user?.role === 'admin' && (
-          <div className="flex items-center gap-x-2 px-3 py-1.5 rounded-lg hover:bg-muted/50 transition-colors duration-150">
-            <span className="hidden sm:inline text-sm text-foreground/70 font-medium select-none">
+          <button
+            type="button"
+            onClick={() => dispatch(toggleAdminHistory())}
+            className="header-control inline-flex items-center gap-x-2 px-3 text-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+            role="switch"
+            aria-checked={adminShowHistory}
+            aria-label="All History"
+          >
+            <span className="hidden sm:inline text-sm font-medium select-none">
               All History
             </span>
-            <button
-              onClick={() => dispatch(toggleAdminHistory())}
+            <span
+              aria-hidden="true"
               className={cn(
-                'relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+                'inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out',
                 adminShowHistory ? 'bg-primary' : 'bg-muted-foreground/30',
               )}
-              role="switch"
-              aria-checked={adminShowHistory}
-              aria-label="Toggle historical data"
             >
               <span
                 className={cn(
@@ -50,8 +54,8 @@ const Header = memo(({ onMenuClick }) => {
                   adminShowHistory ? 'translate-x-4' : 'translate-x-0',
                 )}
               />
-            </button>
-          </div>
+            </span>
+          </button>
         )}
 
         <div className="flex items-center gap-x-0.5">
@@ -66,7 +70,7 @@ const Header = memo(({ onMenuClick }) => {
 
           {/* User menu */}
           <Menu as="div" className="relative">
-            <Menu.Button className="inline-flex items-center gap-x-3 rounded-xl py-1.5 pr-3 pl-2 hover:bg-muted transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <Menu.Button className="header-control inline-flex items-center gap-x-3 pr-3 pl-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <span className="sr-only">Open user menu</span>
               <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold ring-1 ring-border overflow-hidden flex-shrink-0">
                 {user?.image ? (

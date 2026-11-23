@@ -75,14 +75,10 @@ const NotificationBell = () => {
                 aria-haspopup="true"
                 aria-expanded={open}
                 className={cn(
-                    'relative flex items-center justify-center',
-                    'w-11 h-11 rounded-xl',
-                    'border transition-colors duration-150',
+                    'header-control relative flex w-11 items-center justify-center',
                     'focus:outline-none focus-visible:ring-2',
                     'focus-visible:ring-ring focus-visible:ring-offset-2',
-                    open
-                        ? 'bg-muted text-foreground border-border'
-                        : 'bg-transparent border-transparent text-foreground/60 hover:bg-muted/70 hover:text-foreground hover:border-border',
+                    open ? 'bg-muted text-foreground border-border hover:bg-muted' : 'text-foreground/60',
                 )}
             >
                 <motion.span animate={isShaking ? BELL_SHAKE.animate : BELL_SHAKE.initial}>

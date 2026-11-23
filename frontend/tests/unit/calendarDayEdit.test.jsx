@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -356,9 +356,18 @@ describe('calendar day edits', () => {
     renderCalendar(adminUser, 'meals');
     await openManageEntries();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Select all entries' }));
+    const selection = screen.getByRole('dialog', { name: /Meals/ });
+    const deleteSelected = within(selection).getByRole('button', { name: 'Delete selected' });
+    deleteSelected.focus();
     startDelete();
-    expect(screen.getByRole('alertdialog', { name: 'Delete 2 entries?' })).toHaveAccessibleDescription(/permanently deletes/);
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    const confirmation = screen.getByRole('alertdialog', { name: 'Delete 2 meal records?' });
+    expect(confirmation).toHaveAccessibleDescription(/permanently deletes/);
+    expect(selection).toHaveAttribute('inert');
+    expect(within(confirmation).getByRole('button', { name: 'Cancel' })).toHaveFocus();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(selection).not.toHaveAttribute('inert');
+    expect(deleteSelected).toHaveFocus();
+    expect(within(selection).getByRole('checkbox', { name: 'Deselect all entries' })).toBeChecked();
     expect(mealService.deleteMeal).not.toHaveBeenCalled();
     const confirm = startDelete();
     act(() => {
@@ -413,7 +422,7 @@ describe('calendar day edits', () => {
     marketService.deleteMarket.mockResolvedValueOnce(undefined);
     fireEvent.click(startDelete());
     await waitFor(() => expect(eventService.getMarkets).toHaveBeenCalledTimes(2));
-    const confirmation = screen.getByRole('alertdialog', { name: 'Delete 1 entry?' });
+    const confirmation = screen.getByRole('alertdialog', { name: 'Delete market entry?' });
     expect(confirmation).toHaveAttribute('aria-busy', 'true');
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(confirmation).toBeInTheDocument();
@@ -437,7 +446,7 @@ describe('calendar day edits', () => {
     fireEvent.click(confirm);
     await waitFor(() => expect(confirm).toBeEnabled());
     expect(toast.error).toHaveBeenCalledWith('0 of 1 entries deleted. Connection lost');
-    expect(screen.getByRole('alertdialog')).toBeVisible();
+    expect(within(screen.getByRole('alertdialog')).getByRole('alert')).toHaveTextContent('Connection lost');
 
     marketService.deleteMarket.mockRejectedValueOnce({
       response: { status: 404, data: { message: 'Market entry not found' } },

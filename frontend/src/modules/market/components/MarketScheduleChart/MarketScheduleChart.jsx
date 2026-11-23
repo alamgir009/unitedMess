@@ -1,10 +1,12 @@
-import { useEffect, useRef, useMemo, useCallback, memo } from 'react';
+import { useEffect, useRef, useMemo, useCallback, useId, memo } from 'react';
 import { HiOutlineChevronDown, HiOutlineShoppingCart } from 'react-icons/hi2';
 
 const AVATAR_DISPLAY = 4;
 
 const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => {
     const scrollRef = useRef(null);
+    const titleId = useId();
+    const scheduleId = useId();
 
     const todayStr = useMemo(() => new Date().toDateString(), []);
 
@@ -82,17 +84,21 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
                     ${!isCollapsed ? 'ring-1 ring-emerald-500/15' : ''}
                 `}
             >
-                <button
-                    onClick={onToggle}
-                    className="w-full px-4 py-3.5 sm:px-5 sm:py-4 flex items-center justify-between gap-3 text-left group"
-                    aria-expanded={!isCollapsed}
-                >
-                    <div className="flex items-center gap-3 min-w-0">
+                <div className="relative px-4 py-3.5 sm:px-5 sm:py-4 flex items-center justify-between gap-3 group">
+                    <button
+                        type="button"
+                        onClick={onToggle}
+                        className="absolute inset-0 w-full rounded-t-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                        aria-labelledby={titleId}
+                        aria-controls={scheduleId}
+                        aria-expanded={!isCollapsed}
+                    />
+                    <div className="pointer-events-none flex items-center gap-3 min-w-0">
                         <div className="p-2 sm:p-2.5 rounded-xl bg-emerald-500/10 text-emerald-500 flex-shrink-0">
                             <HiOutlineShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
                         <div className="min-w-0">
-                            <h3 className="text-sm sm:text-base font-semibold text-foreground tracking-tight">
+                            <h3 id={titleId} className="text-sm sm:text-base font-semibold text-foreground tracking-tight">
                                 Market Schedule
                             </h3>
                             <p className="text-xs text-muted-foreground truncate">
@@ -105,7 +111,7 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 ml-auto">
+                    <div className="pointer-events-none flex items-center gap-3 sm:gap-4 flex-shrink-0 ml-auto">
                         {isCollapsed && upcomingMembers.length > 0 && (
                             <div className="flex items-center">
                                 <div className="flex items-center -space-x-2.5">
@@ -160,12 +166,10 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
 
                         {!isCollapsed && (
                             <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    scrollToToday();
-                                }}
+                                type="button"
+                                onClick={scrollToToday}
                                 className="
-                                    flex-shrink-0
+                                    relative z-10 pointer-events-auto flex-shrink-0
                                     px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-xs font-medium
                                     bg-emerald-500/10 text-emerald-500
                                     border border-emerald-400/25
@@ -178,15 +182,17 @@ const MarketScheduleChart = ({ schedule, isLoading, isCollapsed, onToggle }) => 
                         )}
 
                         <div
+                            aria-hidden="true"
                             className="text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0 ml-1 transition-transform duration-200"
                             style={{ transform: isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)' }}
                         >
                             <HiOutlineChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
                     </div>
-                </button>
+                </div>
 
                 <div
+                    id={scheduleId}
                     className="grid transition-all duration-300 ease-out"
                     style={{
                         gridTemplateRows: isCollapsed ? '0fr' : '1fr',

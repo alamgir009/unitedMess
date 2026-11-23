@@ -197,6 +197,14 @@
 
 @layer components {
 
+  .header-control {
+    @apply h-11 rounded-xl border border-transparent bg-transparent transition-colors duration-150;
+  }
+
+  .header-control:hover {
+    @apply border-border bg-muted/70 text-foreground;
+  }
+
   /* ─── Surface Layers ─── */
   .surface-base { background: var(--surface-base); }
   .surface-raised { background: var(--surface-raised); }

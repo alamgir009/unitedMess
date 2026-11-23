@@ -306,6 +306,7 @@ const PaymentPage = () => {
     const [limit,          setLimit]          = useState(20);
     const [deletingPayment, setDeletingPayment] = useState(null);
     const [isDeleting, setIsDeleting]           = useState(false);
+    const [deleteError, setDeleteError]         = useState('');
     const [invoiceFetchDone, setInvoiceFetchDone] = useState(false);
     const [isPaymentFlowOpen, setIsPaymentFlowOpen] = useState(false);
     const [activePaymentMonth, setActivePaymentMonth] = useState('');
@@ -588,6 +589,7 @@ const PaymentPage = () => {
 
     const handleDelete = useCallback((payment) => {
         if (!isAdmin || !payment) return;
+        setDeleteError('');
         setDeletingPayment(payment);
     }, [isAdmin]);
 
@@ -598,13 +600,16 @@ const PaymentPage = () => {
     const handleDeleteConfirm = useCallback(async () => {
         if (!deletingPayment || isDeleting) return;
         setIsDeleting(true);
+        setDeleteError('');
         try {
             await dispatch(deletePayment(deletingPayment._id)).unwrap();
             toast.success('Payment deleted');
             setDeletingPayment(null);
             refreshData();
         } catch (err) {
-            toast.error(err?.message ?? 'Failed to delete payment');
+            const message = typeof err === 'string' ? err : (err?.message || 'Failed to delete payment');
+            setDeleteError(message);
+            toast.error(message);
         } finally {
             setIsDeleting(false);
         }
@@ -874,6 +879,7 @@ const PaymentPage = () => {
                         onConfirm={handleDeleteConfirm}
                         onCancel={handleDeleteCancel}
                         isDeleting={isDeleting}
+                        error={deleteError}
                     />
                 )}
             </div>

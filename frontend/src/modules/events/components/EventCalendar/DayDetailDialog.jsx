@@ -41,17 +41,14 @@ const DayDetailDialog = ({
   mealActionLabel = 'Add Meal',
   isAdding = false,
   editingId = null,
-  confirmDeleteId = null,
   isSubmitting = false,
   editFooter,
   showEditInstructions,
-  role,
-  description,
 }) => {
   const showMealActions = category === 'meals' && !isEditMode && onMealAdd;
   const showMarketActions = category === 'markets' && !isEditMode && onEditToggle && onScheduleClick;
   const showPaymentActions = category === 'payments' && !isEditMode && onPaymentAdd;
-  const anyActionActive = isAdding || !!editingId || !!confirmDeleteId;
+  const anyActionActive = isAdding || !!editingId;
   const manageAction = onManageEntries && (
     <Button variant="secondary" size="sm" onClick={onManageEntries}>
       Manage entries
@@ -63,8 +60,6 @@ const DayDetailDialog = ({
       isOpen={isOpen}
       onClose={onClose}
       title={title}
-      role={role}
-      description={description && <span className="block whitespace-normal break-words text-[var(--text-secondary)]">{description}</span>}
       size="lg"
       mobileSheet
       accentColor="blue"
