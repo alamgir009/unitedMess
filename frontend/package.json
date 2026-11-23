@@ -34,9 +34,7 @@
         "tailwind-merge": "^3.4.0"
     },
     "overrides": {
-        "firebase": {
-            "@grpc/grpc-js": "1.14.7"
-        }
+        "@grpc/grpc-js": "1.14.7"
     },
     "devDependencies": {
         "@testing-library/jest-dom": "^6.9.1",
