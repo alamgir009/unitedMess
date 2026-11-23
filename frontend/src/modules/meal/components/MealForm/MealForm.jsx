@@ -1,16 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { format, parseISO, isValid, differenceInDays } from 'date-fns';
 import {
-  HiOutlineSun,
-  HiOutlineMoon,
-  HiOutlineNoSymbol,
-  HiOutlineSparkles,
   HiOutlineUserGroup,
   HiOutlineUser,
   HiOutlineLockClosed,
   HiOutlineMinus,
   HiOutlinePlus,
-  HiOutlineCheck,
   HiOutlineCalendar,
   HiOutlineTrash,
   HiOutlinePencilSquare,
@@ -19,16 +14,10 @@ import { Loader2 } from 'lucide-react';
 import apiClient from '@/services/api/client/apiClient';
 import { Button, Avatar, MemberSelect, GuestMealField } from '@/shared/components/ui';
 import { cn } from '@/core/utils/helpers/string.helper';
+import MealTypeSelector from './MealTypeSelector';
 
 const MAX_RANGE_DAYS = 31;
 const typeCountMap = { both: 2, day: 1, night: 1, off: 0 };
-
-const mealTypes = [
-  { value: 'both', label: 'Both', description: 'Day & Night · 2 meals', icon: HiOutlineSparkles },
-  { value: 'day', label: 'Day', description: 'Morning only · 1 meal', icon: HiOutlineSun },
-  { value: 'night', label: 'Night', description: 'Evening only · 1 meal', icon: HiOutlineMoon },
-  { value: 'off', label: 'Off', description: 'No meals · 0 meals', icon: HiOutlineNoSymbol },
-];
 
 /**
  * Format date string to "21 Nov 2026"
@@ -316,20 +305,6 @@ export const MealForm = ({
     } finally {
       if (submitting === undefined) setIsSubmitting(false);
     }
-  };
-
-  // Keyboard navigation for meal types (radiogroup)
-  const handleTypeKeyDown = (e, currentIndex) => {
-    let nextIndex = currentIndex;
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-      nextIndex = (currentIndex + 1) % mealTypes.length;
-    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-      nextIndex = (currentIndex - 1 + mealTypes.length) % mealTypes.length;
-    } else {
-      return;
-    }
-    e.preventDefault();
-    setFormData((prev) => ({ ...prev, type: mealTypes[nextIndex].value }));
   };
 
   // Keyboard navigation for Mode switch
@@ -730,58 +705,11 @@ export const MealForm = ({
       )}
 
       {/* ── MEAL TYPE RADIOGROUP ───────────────────────────────────── */}
-      <div className="flex flex-col gap-1 w-full">
-        <label className="text-xs font-medium text-[var(--text-secondary)] select-none">
-          Meal type
-        </label>
-        <div
-          role="radiogroup"
-          aria-label="Meal type"
-          className="grid grid-cols-2 sm:grid-cols-4 gap-2"
-        >
-          {mealTypes.map((t, idx) => {
-            const isSelected = formData.type === t.value;
-            const IconComponent = t.icon;
-
-            return (
-              <button
-                key={t.value}
-                type="button"
-                role="radio"
-                aria-checked={isSelected}
-                tabIndex={isSelected ? 0 : -1}
-                onClick={() => !readOnly && !isSubmitting && setFormData((p) => ({ ...p, type: t.value }))}
-                onKeyDown={(e) => handleTypeKeyDown(e, idx)}
-                disabled={readOnly || isSubmitting}
-                className={cn(
-                  'relative flex flex-col items-center justify-center gap-1 min-h-[48px] py-2 px-2.5 rounded-[8px] border transition-colors text-center select-none',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]',
-                  isSelected
-                    ? 'border-[var(--brand)] bg-[var(--accent-subtle)] text-[var(--brand)] font-semibold shadow-xs'
-                    : 'border-[var(--border-contrast)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-contrast-hover)] hover:bg-[var(--bg-muted)]',
-                  (readOnly || isSubmitting) && 'opacity-60 cursor-not-allowed'
-                )}
-              >
-                <IconComponent className="w-4 h-4 shrink-0" />
-                <span className="text-xs font-semibold leading-tight">{t.label}</span>
-                <span className="text-[10px] text-[var(--text-muted)] leading-tight hidden sm:block">
-                  {t.description}
-                </span>
-
-                {/* Single accent check badge — no unexplained green dots, no purple */}
-                {isSelected && (
-                  <span
-                    className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[var(--brand)] text-[var(--text-on-brand)] flex items-center justify-center"
-                    aria-hidden="true"
-                  >
-                    <HiOutlineCheck className="w-2.5 h-2.5 stroke-[3]" />
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <MealTypeSelector
+        value={formData.type}
+        onChange={(type) => setFormData((previous) => ({ ...previous, type }))}
+        disabled={readOnly || isSubmitting}
+      />
 
       {/* ── GUEST MEALS SECTION ────────────────────────────────────── */}
       <GuestMealField

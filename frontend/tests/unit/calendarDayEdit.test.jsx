@@ -272,11 +272,15 @@ describe('calendar day edits', () => {
     const row = await screen.findByRole('button', { name: 'Edit meal entry for Member One' });
     expect(screen.getByText(/^Select an editable row/)).toBeVisible();
     fireEvent.click(row);
-    const mealType = await screen.findByRole('button', { name: 'Night Evening only' });
+    const mealType = await screen.findByRole('radio', { name: /^Night\b/ });
     expect(screen.queryByText(/^Select an editable row/)).not.toBeInTheDocument();
     expectEditActionsInFooter();
     expect(mealType).toHaveFocus();
-    expect(mealType).toHaveAttribute('aria-pressed', 'true');
+    expect(mealType).toBeChecked();
+    fireEvent.keyDown(mealType, { key: 'ArrowRight' });
+    const off = screen.getByRole('radio', { name: /^Off\b/ });
+    expect(off).toBeChecked();
+    expect(off).toHaveFocus();
     expect(screen.getByLabelText('Remarks')).toHaveValue('Serving after eight');
     expect(screen.getByRole('spinbutton', { name: 'Guest meals count' })).toHaveValue('2');
     fireEvent.keyDown(document, { key: 'Escape' });

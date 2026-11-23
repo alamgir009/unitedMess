@@ -9,24 +9,12 @@ import { isMemberEditablePaymentAmount } from '@shared/utils/paymentStatus';
 import { MemberSelect, Button, Input, GuestMealField } from '@/shared/components/ui';
 import apiClient from '@/services/api/client/apiClient';
 import MealForm from '@/modules/meal/components/MealForm/MealForm';
+import MealTypeSelector from '@/modules/meal/components/MealForm/MealTypeSelector';
 import MarketForm from '@/modules/market/components/MarketForm/MarketForm';
 import PaymentForm from '@/modules/payment/components/PaymentForm/PaymentForm';
 import { EntryEditActions } from './DayDetailDialog';
 import SlotIcon from './cells/SlotIcon';
-import {
-  HiOutlineSun,
-  HiOutlineMoon,
-  HiOutlineNoSymbol,
-  HiOutlineSparkles,
-  HiOutlineUserGroup,
-} from 'react-icons/hi2';
-
-const mealTypes = [
-  { value: 'both', label: 'Both', description: 'Day & Night', icon: HiOutlineSparkles, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-[var(--slot-both-text)]' },
-  { value: 'day', label: 'Day', description: 'Morning only', icon: HiOutlineSun, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-[var(--slot-day-text)]' },
-  { value: 'night', label: 'Night', description: 'Evening only', icon: HiOutlineMoon, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-[var(--slot-night-text)]' },
-  { value: 'off', label: 'Off', description: 'No meals', icon: HiOutlineNoSymbol, color: 'border-[var(--brand)]/60 bg-[var(--bg-muted)] text-[var(--text-secondary)]' },
-];
+import { HiOutlineUserGroup } from 'react-icons/hi2';
 
 const FintechCheckbox = React.memo(({ checked, indeterminate, onChange, disabled, ariaLabel, ...props }) => {
   const checkboxRef = useRef(null);
@@ -503,30 +491,6 @@ const ModeTab = ({ mode, current, onChange, label }) => (
   </button>
 );
 
-const TypeBtn = ({ value, current, onClick, icon: Icon, label, description, color, disabled }) => {
-  const isActive = current === value;
-  return (
-    <button
-      type="button"
-      onClick={() => !disabled && onClick(value)}
-      disabled={disabled}
-      aria-pressed={isActive}
-      className={cn(
-        'relative flex flex-col items-center justify-center gap-1 py-2 px-2 sm:py-2.5 sm:px-3 rounded-[10px] border transition-[background-color,border-color,opacity] duration-150 motion-reduce:transition-none text-center',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-elevated)]',
-        disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer',
-        isActive
-          ? `${color} border-2 font-semibold shadow-xs`
-          : 'border-[var(--border-contrast)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-muted)] hover:border-[var(--border-contrast-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-      )}
-    >
-      <Icon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-      <span className="text-xs font-bold leading-tight">{label}</span>
-      <span className="text-[10px] text-[var(--text-muted)] leading-tight hidden sm:block">{description}</span>
-    </button>
-  );
-};
-
 const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, setIsSubmitting, isSubmitting = false }) => {
   const [mode, setMode] = useState('single');
   const [date, setDate] = useState(dateStr);
@@ -734,21 +698,11 @@ const EntryForm = ({ category, dateStr, isAdmin, currentUser, onSave, onCancel, 
       )}
 
       {category === 'meals' ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {mealTypes.map((t) => (
-            <TypeBtn
-              key={t.value}
-              value={t.value}
-              current={type}
-              onClick={(v) => { if (!isSubmitting) { setType(v); setErrors((p) => ({ ...p, type: undefined })); } }}
-              icon={t.icon}
-              label={t.label}
-              description={t.description}
-              color={t.color}
-              disabled={isSubmitting}
-            />
-          ))}
-        </div>
+        <MealTypeSelector
+          value={type}
+          onChange={(value) => { setType(value); setErrors((previous) => ({ ...previous, type: undefined })); }}
+          disabled={isSubmitting}
+        />
       ) : (
         <>
           <div>
@@ -878,7 +832,7 @@ export const EntryEditForm = ({ formId, entry, category, isAdmin, onUpdate, onCa
   const shouldSaveAmount = canEditAmount && (isMarket || Number(amount) !== initialAmount || isChangingLegacyRefund);
 
   useLayoutEffect(() => {
-    formRef.current?.querySelector('[aria-pressed="true"], input:not([readonly])')?.focus();
+    formRef.current?.querySelector('[role="radio"][tabindex="0"], input:not([readonly])')?.focus();
   }, []);
 
   const validate = () => {
@@ -944,20 +898,11 @@ export const EntryEditForm = ({ formId, entry, category, isAdmin, onUpdate, onCa
 
       {/* Row 1: Segmented control (meals) or Amount + Items (markets) */}
       {category === 'meals' ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {mealTypes.map((t) => (
-            <TypeBtn
-              key={t.value}
-              value={t.value}
-              current={type}
-              onClick={(v) => { setType(v); setErrors((p) => ({ ...p, type: undefined })); }}
-              icon={t.icon}
-              label={t.label}
-              description={t.description}
-              color={t.color}
-            />
-          ))}
-        </div>
+        <MealTypeSelector
+          value={type}
+          onChange={(value) => { setType(value); setErrors((previous) => ({ ...previous, type: undefined })); }}
+          disabled={isSubmitting}
+        />
       ) : (
             <Input
               type="text"
@@ -1119,11 +1064,7 @@ export const BulkUpdateForm = ({ formId, category, selectedCount, onSubmit, onCa
       <fieldset disabled={Boolean(isBulkSubmitting)} className="contents">
         {isMeal && (
           <>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Meal type" role="group">
-              {mealTypes.map((mealType) => (
-                <TypeBtn key={mealType.value} {...mealType} current={type} onClick={(value) => setType(type === value ? '' : value)} />
-              ))}
-            </div>
+            <MealTypeSelector value={type} onChange={setType} disabled={Boolean(isBulkSubmitting)} allowClear />
             <Input label="Guest meals" variant="record" value={guestCount} inputMode="numeric"
               onChange={(e) => setGuestCount(e.target.value)} error={errors.guestCount} className={modalInputClass} />
           </>
