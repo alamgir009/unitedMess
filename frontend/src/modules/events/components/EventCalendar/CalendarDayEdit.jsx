@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect, useId } from 'react';
 import { Plus, Trash2, X, Check, Minus, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/core/utils/helpers/string.helper';
@@ -78,6 +78,7 @@ const getEntryUserId = (entry) =>
   typeof entry.user === 'object' ? entry.user?._id : entry.user;
 
 const SelectAllRow = ({ checked, indeterminate, onChange, count, total, disabled }) => {
+  const checkboxId = useId();
   return (
     <div
       className={cn(
@@ -87,15 +88,19 @@ const SelectAllRow = ({ checked, indeterminate, onChange, count, total, disabled
     >
       <div className="flex items-center gap-2 min-h-[40px] sm:min-h-0">
         <FintechCheckbox
+          id={checkboxId}
           checked={checked}
           indeterminate={indeterminate}
           onChange={onChange}
           disabled={disabled}
           ariaLabel={checked ? 'Deselect all entries' : 'Select all entries'}
         />
-        <span className="text-[13px] font-medium text-[var(--text-primary)] leading-none select-none">
+        <label htmlFor={checkboxId} className={cn(
+          'text-[13px] font-medium text-[var(--text-primary)] leading-none select-none',
+          disabled ? 'cursor-not-allowed' : 'cursor-pointer',
+        )}>
           Select all <span className="font-normal text-[var(--text-muted)]">({count})</span>
-        </span>
+        </label>
       </div>
 
       {count > 0 && total > 0 && (
@@ -113,10 +118,10 @@ export const DaySelectionControls = ({ scope, onScopeChange, onExit, count, tota
       <Button autoFocus variant="ghost" size="sm" onClick={onExit} disabled={disabled}>
         Back to entries
       </Button>
-      <Button variant="secondary" size="sm" aria-pressed={scope === 'day'} onClick={() => onScopeChange('day')} disabled={disabled}>
+      <Button variant={scope === 'day' ? 'brand-subtle' : 'secondary'} size="sm" aria-pressed={scope === 'day'} onClick={() => onScopeChange('day')} disabled={disabled}>
         This day
       </Button>
-      <Button variant="secondary" size="sm" aria-pressed={scope === 'month'} onClick={() => onScopeChange('month')} disabled={disabled}>
+      <Button variant={scope === 'month' ? 'brand-subtle' : 'secondary'} size="sm" aria-pressed={scope === 'month'} onClick={() => onScopeChange('month')} disabled={disabled}>
         This month
       </Button>
     </div>

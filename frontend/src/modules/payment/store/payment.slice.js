@@ -49,7 +49,10 @@ export const deletePayment = createAsyncThunk('payment/delete', async (paymentId
         await paymentService.deletePayment(paymentId);
         return paymentId;
     } catch (err) {
-        return thunkAPI.rejectWithValue(err.response?.data?.error || err.response?.data?.message || err.message);
+        return thunkAPI.rejectWithValue(
+            err.response?.data?.error || err.response?.data?.message || err.message,
+            { httpStatus: err.response?.status },
+        );
     }
 });
 

@@ -297,11 +297,17 @@ describe('calendar day edits', () => {
     await openManageEntries();
     expect(screen.getAllByRole('button', { name: /^Select market/ })).toHaveLength(1);
     expect(screen.getByRole('button', { name: 'Delete selected' })).toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: 'This month' }));
+    const thisMonth = screen.getByRole('button', { name: 'This month' });
+    fireEvent.click(thisMonth);
     expect(screen.getAllByRole('button', { name: /^Select market/ })).toHaveLength(2);
     expect(screen.queryByRole('button', { name: /Select market entry for Member Two/ })).toBeNull();
 
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Select all entries' }));
+    fireEvent.click(screen.getByText('Select all'));
+    const selected = screen.getByRole('checkbox', { name: 'Deselect all entries' });
+    expect(selected).toBeChecked();
+    fireEvent.click(thisMonth);
+    expect(selected).toBeChecked();
+    expect(thisMonth).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(screen.getByRole('button', { name: 'Edit selected' }));
     const items = await screen.findByLabelText('Items purchased');
     const save = expectEditActionsInFooter();
@@ -366,6 +372,8 @@ describe('calendar day edits', () => {
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('1 entry deleted'));
     expect(mealService.deleteMeal.mock.calls).toEqual([['meal-1'], ['meal-2'], ['meal-2']]);
     expect(eventService.getMeals).toHaveBeenCalledTimes(3);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByRole('alertdialog')).toBeNull();
   });
 
   it('deletes an owned cash draft and prevents selecting settled or unrelated payments as a member', async () => {
@@ -386,6 +394,89 @@ describe('calendar day edits', () => {
     fireEvent.click(startDelete());
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('1 entry deleted'));
     expect(paymentService.deletePayment.mock.calls).toEqual([['new']]);
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await openManageEntries();
     expect(screen.getAllByRole('button', { name: /^Select payment/ })).toHaveLength(1);
+  });
+
+  it('keeps the confirmation locked through refresh, then closes and clears selection', async () => {
+    renderCalendar();
+    await openManageEntries();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select all entries' }));
+    const refresh = deferred();
+    eventService.getMarkets.mockReturnValueOnce(refresh.promise);
+    marketService.deleteMarket.mockResolvedValueOnce(undefined);
+    fireEvent.click(startDelete());
+    await waitFor(() => expect(eventService.getMarkets).toHaveBeenCalledTimes(2));
+    const confirmation = screen.getByRole('alertdialog', { name: 'Delete 1 entry?' });
+    expect(confirmation).toHaveAttribute('aria-busy', 'true');
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(confirmation).toBeInTheDocument();
+    expect(toast.success).not.toHaveBeenCalled();
+
+    await act(() => refresh.resolve({ data: { markets: [] } }));
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(toast.success).toHaveBeenCalledExactlyOnceWith('1 entry deleted');
+    fireEvent.click(screen.getByText('Open test day'));
+    expect(screen.queryByRole('button', { name: 'Delete selected' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Manage entries' })).toBeNull();
+  });
+
+  it('reconciles a missing entry on retry after the original delete response was lost', async () => {
+    renderCalendar();
+    await openManageEntries();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select all entries' }));
+    const confirm = startDelete();
+    marketService.deleteMarket.mockRejectedValueOnce(new Error('Connection lost'));
+    fireEvent.click(confirm);
+    await waitFor(() => expect(confirm).toBeEnabled());
+    expect(toast.error).toHaveBeenCalledWith('0 of 1 entries deleted. Connection lost');
+    expect(screen.getByRole('alertdialog')).toBeVisible();
+
+    marketService.deleteMarket.mockRejectedValueOnce({
+      response: { status: 404, data: { message: 'Market entry not found' } },
+    });
+    eventService.getMarkets.mockResolvedValueOnce({ data: { markets: [] } });
+    fireEvent.click(confirm);
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(marketService.deleteMarket).toHaveBeenCalledTimes(2);
+    expect(eventService.getMarkets).toHaveBeenCalledTimes(2);
+    expect(toast.success).toHaveBeenCalledExactlyOnceWith('1 entry deleted');
+  });
+
+  it.each(['still present', 'refresh failed'])('keeps a 404 confirmation open when the entry is %s', async (scenario) => {
+    renderCalendar();
+    await openManageEntries();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select all entries' }));
+    const confirm = startDelete();
+    if (scenario === 'refresh failed') eventService.getMarkets.mockRejectedValueOnce(new Error('Refresh unavailable'));
+    marketService.deleteMarket.mockRejectedValueOnce({
+      response: { status: 404, data: { message: 'Market entry not found' } },
+    });
+    fireEvent.click(confirm);
+    await waitFor(() => expect(confirm).toBeEnabled());
+    expect(toast.error).toHaveBeenCalledWith('0 of 1 entries deleted. Market entry not found');
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(screen.getByRole('alertdialog')).toBeVisible();
+  });
+
+  it('ignores a completed delete after the user switches tabs', async () => {
+    renderCalendar();
+    await openManageEntries();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select all entries' }));
+    const deletion = deferred();
+    marketService.deleteMarket.mockReturnValueOnce(deletion.promise);
+    fireEvent.click(startDelete());
+    fireEvent.click(screen.getByText('Switch test tab'));
+    fireEvent.click(screen.getByText('Open test day'));
+    const payments = await screen.findByRole('dialog', { name: /Payments/ });
+
+    await act(() => deletion.resolve());
+    expect(payments).toBeVisible();
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(eventService.getMarkets).toHaveBeenCalledTimes(1);
   });
 });

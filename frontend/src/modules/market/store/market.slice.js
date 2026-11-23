@@ -101,7 +101,7 @@ export const deleteMarket = createAsyncThunk('market/delete', async (marketId, t
         return marketId; // Return IDs so we can filter state
     } catch (error) {
         const message = error.response?.data?.error || error.response?.data?.message || error.message || 'Something went wrong';
-        return thunkAPI.rejectWithValue(message);
+        return thunkAPI.rejectWithValue(message, { httpStatus: error.response?.status });
     }
 });
 

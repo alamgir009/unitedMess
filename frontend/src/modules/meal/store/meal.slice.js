@@ -131,7 +131,7 @@ export const deleteMeal = createAsyncThunk('meal/delete', async (mealId, thunkAP
             error.response?.data?.message ||
             error.message ||
             'Something went wrong';
-        return thunkAPI.rejectWithValue(message);
+        return thunkAPI.rejectWithValue(message, { httpStatus: error.response?.status });
     }
 });
 

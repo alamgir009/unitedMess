@@ -18,7 +18,7 @@ export const EntryEditActions = ({ formId, onCancel, isSubmitting }) => (
       form={formId}
       variant="primary"
       isLoading={isSubmitting}
-      className="flex-1 h-11 sm:h-10 min-h-[44px] sm:min-h-[40px] px-3 rounded-[8px] text-sm font-semibold bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-[var(--text-on-brand)] border border-transparent shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-elevated)]"
+      className="flex-1 h-11 sm:h-10 min-h-[44px] sm:min-h-[40px] px-3 rounded-[8px] text-sm font-semibold !bg-[var(--btn-primary-border)] !bg-[linear-gradient(var(--btn-primary-to),var(--btn-primary-border))] hover:!bg-none text-[var(--text-on-brand)] shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-[var(--focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-elevated)]"
     >
       Save Updates
     </Button>
@@ -64,7 +64,7 @@ const DayDetailDialog = ({
       onClose={onClose}
       title={title}
       role={role}
-      description={description}
+      description={description && <span className="block whitespace-normal break-words text-[var(--text-secondary)]">{description}</span>}
       size="lg"
       mobileSheet
       accentColor="blue"
