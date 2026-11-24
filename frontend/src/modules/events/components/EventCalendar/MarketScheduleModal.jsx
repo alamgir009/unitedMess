@@ -5,19 +5,18 @@ import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { Modal, Avatar, Button } from '@/shared/components/ui';
-import { getISTDateKey } from '@/core/utils/helpers/date.helper';
+import { formatInIST, getISTDateKey } from '@/core/utils/helpers/date.helper';
 import {
   fetchMonthSchedule,
   fetchAvailableDates,
   fetchMyScheduledDates,
   selectMarketDates,
-  removeMarketScheduledDate,
   clearMySelectedDates,
 } from '../../store/marketSchedule.slice';
 
 const MAX_DATES = 3;
 
-const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
+const MarketScheduleModal = ({ isOpen, onClose, currentMonth, onScheduleDelete }) => {
   const dispatch = useDispatch();
 
   const [selectedDates, setSelectedDates] = useState(new Set());
@@ -165,20 +164,6 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
       toast.error(err || 'Failed to select dates');
     }
   }, [selectedDates, viewMonth, dispatch, onClose]);
-
-  const handleRemoveDate = useCallback(async (scheduleId) => {
-    try {
-      await dispatch(removeMarketScheduledDate(scheduleId)).unwrap();
-      toast.success('Date removed');
-      const year = viewMonth.getFullYear();
-      const month = viewMonth.getMonth() + 1;
-      dispatch(fetchMyScheduledDates({ year, month }));
-      dispatch(fetchMonthSchedule({ year, month }));
-      dispatch(fetchAvailableDates({ year, month }));
-    } catch (err) {
-      toast.error(err || 'Failed to remove date');
-    }
-  }, [viewMonth, dispatch]);
 
   const handlePrevMonth = useCallback(() => {
     setViewMonth((prev) => subMonths(prev, 1));
@@ -363,7 +348,7 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
             </h3>
             <div className="space-y-1.5">
               {mySelectedDates.map((item) => {
-                const dateLabel = format(new Date(item.date), 'EEE, MMM d');
+                const dateLabel = formatInIST(item.date, 'EEE, MMM d');
                 return (
                   <div
                     key={item._id}
@@ -373,9 +358,12 @@ const MarketScheduleModal = ({ isOpen, onClose, currentMonth }) => {
                       {dateLabel}
                     </span>
                     <button
-                      onClick={() => handleRemoveDate(item._id)}
+                      type="button"
+                      onClick={() => onScheduleDelete(item)}
+                      disabled={isSelecting || item.isPendingRefetch}
                       aria-label={`Remove ${dateLabel}`}
-                      className="p-1 rounded-md text-danger hover:bg-danger-bg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      aria-haspopup="dialog"
+                      className="p-1 rounded-md text-danger hover:bg-danger-bg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

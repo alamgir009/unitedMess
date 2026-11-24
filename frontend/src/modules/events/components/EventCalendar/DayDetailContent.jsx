@@ -1,13 +1,11 @@
 import { useMemo, useRef, useCallback, useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { Avatar } from '@/shared/components/ui';
 import { cn } from '@/core/utils/helpers/string.helper';
 import { fmt, formatSignedRupees } from '@/core/utils/helpers/currency.helper';
 import { summarizePayments, isRefundPayment } from '@shared/utils/paymentAmount';
 import { formatInIST } from '@/core/utils/helpers/date.helper';
-import { Calendar, Trash2, Loader2, CheckCircle, Check } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { removeMarketScheduledDate } from '../../store/marketSchedule.slice';
+import { Calendar, Trash2, CheckCircle, Check } from 'lucide-react';
 import SlotIcon from './cells/SlotIcon';
 import { canEditDayEntry } from './dayEntryPermissions';
 
@@ -44,7 +42,7 @@ const VOTE_VALUE_BADGE_COLORS = {
 const ROW_HEIGHT = 44;
 const OVERSCAN = 4;
 
-const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, scheduleData = null, onEntryClick, selection }) => {
+const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, scheduleData = null, onEntryClick, onScheduleDelete, selection }) => {
   const [scrollTop, setScrollTop] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const containerRef = useRef(null);
@@ -88,7 +86,7 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
     if (category === 'markets' && scheduleData?.user) {
       return (
         <div className="space-y-4">
-          <MarketDutyBanner scheduleData={scheduleData} currentUser={currentUser} />
+          <MarketDutyBanner scheduleData={scheduleData} currentUser={currentUser} onScheduleDelete={onScheduleDelete} />
           <p className="text-sm text-[var(--text-muted)] py-4 text-center">No market entries for this day.</p>
         </div>
       );
@@ -121,6 +119,7 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
         <MarketDutyBanner
           scheduleData={scheduleData}
           currentUser={currentUser}
+          onScheduleDelete={onScheduleDelete}
           entries={entries}
           isFulfilled={isDutyFulfilled}
         />
@@ -342,12 +341,7 @@ const DayDetailContent = ({ entries = [], category, totalMealsCount = 0, schedul
 DayDetailContent.displayName = 'DayDetailContent';
 export default DayDetailContent;
 
-const MarketDutyBanner = ({ scheduleData, currentUser, entries = [], isFulfilled = false }) => {
-  const dispatch = useDispatch();
-  const [removing, setRemoving] = useState(false);
-
-  // Hooks must run before any early return — the null-check lives inside the
-  // memo so hook order stays identical when scheduleData.user appears/leaves.
+const MarketDutyBanner = ({ scheduleData, currentUser, entries = [], isFulfilled = false, onScheduleDelete }) => {
   const fulfilledEntry = useMemo(() => {
     if (!isFulfilled || !scheduleData?.user) return null;
     const scheduledUserId = scheduleData.user?._id;
@@ -362,19 +356,6 @@ const MarketDutyBanner = ({ scheduleData, currentUser, entries = [], isFulfilled
   const userName = scheduleData.user.name || 'Member';
   const firstName = userName.split(' ')[0];
   const isOwnDuty = currentUser?._id === scheduleData?.user?._id;
-
-  const handleRemove = async () => {
-    if (!scheduleData?._id || removing) return;
-    setRemoving(true);
-    try {
-      await dispatch(removeMarketScheduledDate(scheduleData._id)).unwrap();
-      toast.success('Market duty removed');
-    } catch (err) {
-      toast.error(err || 'Failed to remove market duty');
-    } finally {
-      setRemoving(false);
-    }
-  };
 
   if (isFulfilled && fulfilledEntry) {
     const entryName = fulfilledEntry.user?.name || fulfilledEntry.userName || userName;
@@ -429,23 +410,19 @@ const MarketDutyBanner = ({ scheduleData, currentUser, entries = [], isFulfilled
           {isOwnDuty ? 'You are on market duty today' : `${firstName} is on market duty today`}
         </span>
       </div>
-      {isOwnDuty && (
+      {isOwnDuty && scheduleData._id && onScheduleDelete && (
         <button
-          onClick={handleRemove}
-          disabled={removing}
+          type="button"
+          onClick={() => onScheduleDelete(scheduleData)}
           aria-label="Remove your market duty"
+          aria-haspopup="dialog"
           className={cn(
             'p-1.5 rounded-lg transition-colors shrink-0',
             'text-[var(--danger)] hover:bg-[var(--danger-bg)]',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-            removing && 'opacity-50 cursor-not-allowed',
           )}
         >
-          {removing ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Trash2 className="w-4 h-4" />
-          )}
+          <Trash2 className="w-4 h-4" />
         </button>
       )}
     </div>

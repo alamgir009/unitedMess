@@ -11,7 +11,9 @@ import DayDetailContent from './DayDetailContent';
 import DayDetailDialog, { EntryEditActions } from './DayDetailDialog';
 import { canDeleteDayEntry, canEditDayEntry } from './dayEntryPermissions';
 import { Button } from '@/shared/components/ui';
+import ConfirmDialog from '@/shared/components/ui/ConfirmDialog/ConfirmDialog';
 import RecordDeleteDialog from '@/shared/components/ui/ConfirmDialog/RecordDeleteDialog';
+import { HiOutlineTrash } from 'react-icons/hi2';
 import { isMemberEditablePaymentAmount } from '@shared/utils/paymentStatus';
 import MarketScheduleModal from './MarketScheduleModal';
 import SegmentedControl from '../SegmentedControl';
@@ -20,7 +22,7 @@ import SegmentedControl from '../SegmentedControl';
 import { formatInIST, getISTDateKey } from '@/core/utils/helpers/date.helper';
 import eventService from '../../services/event.service';
 import { setCurrentMonth, setLoading } from '../../store/events.slice';
-import { fetchMonthSchedule, fetchAvailableDates } from '../../store/marketSchedule.slice';
+import { fetchMonthSchedule, fetchAvailableDates, removeMarketScheduledDate } from '../../store/marketSchedule.slice';
 import { createMeal, bulkCreateMeals, updateMeal, deleteMeal } from '../../../meal/store/meal.slice';
 import { createMarket, updateMarket, deleteMarket, bulkCreateMarkets } from '../../../market/store/market.slice';
 import { createPayment, createBulkPayments, updatePayment, deletePayment } from '../../../payment/store/payment.slice';
@@ -104,6 +106,10 @@ const EventCalendar = () => {
   const [deleteError, setDeleteError] = useState('');
   const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [scheduleToDelete, setScheduleToDelete] = useState(null);
+  const [isDeletingSchedule, setIsDeletingSchedule] = useState(false);
+  const [scheduleDeleteError, setScheduleDeleteError] = useState('');
+  const scheduleDeleteInProgress = useRef(false);
 
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState(null);
@@ -309,6 +315,7 @@ const EventCalendar = () => {
   useLayoutEffect(() => {
     activeViewRef.current = { scope: viewScope, refresh: handleRetry };
     resetDayModal();
+    setScheduleToDelete(null);
     setDataMap({});
     return () => {
       activeViewRef.current = null;
@@ -405,6 +412,39 @@ const EventCalendar = () => {
       dispatch(fetchAvailableDates({ year, month }));
     }
   }, [category, currentMonthDate, dispatch]);
+
+  const handleScheduleDeleteRequest = useCallback((schedule) => {
+    if (scheduleDeleteInProgress.current || !schedule?._id) return;
+    setScheduleDeleteError('');
+    setScheduleToDelete(schedule);
+  }, []);
+
+  const handleConfirmScheduleDelete = async () => {
+    if (!scheduleToDelete || scheduleDeleteInProgress.current) return;
+    const originView = activeViewRef.current;
+    const [year, month] = (formatInIST(scheduleToDelete.date, 'yyyy-M') || scheduleKey).split('-').map(Number);
+    scheduleDeleteInProgress.current = true;
+    setIsDeletingSchedule(true);
+    setScheduleDeleteError('');
+
+    try {
+      await dispatch(removeMarketScheduledDate(scheduleToDelete._id)).unwrap();
+      dispatch(fetchMonthSchedule({ year, month }));
+      if (activeViewRef.current === originView) {
+        setScheduleToDelete(null);
+        if (isScheduleModalOpen) setIsScheduleModalOpen(false);
+        else resetDayModal();
+        toast.success('Market duty removed');
+      }
+    } catch (error) {
+      if (activeViewRef.current === originView) {
+        setScheduleDeleteError(typeof error === 'string' ? error : error?.message || 'Failed to remove market duty');
+      }
+    } finally {
+      scheduleDeleteInProgress.current = false;
+      setIsDeletingSchedule(false);
+    }
+  };
 
   const handleEditToggle = useCallback(() => {
     setIsEditMode((prev) => {
@@ -933,6 +973,7 @@ const EventCalendar = () => {
                   category={category}
                   totalMealsCount={totalMealsForDate}
                   scheduleData={getScheduleForDate(detailDate)}
+                  onScheduleDelete={handleScheduleDeleteRequest}
                   onEntryClick={handleEntryClick}
                 />
               </div>
@@ -975,7 +1016,26 @@ const EventCalendar = () => {
         isOpen={isScheduleModalOpen}
         onClose={handleCloseScheduleModal}
         currentMonth={currentMonthDate}
+        onScheduleDelete={handleScheduleDeleteRequest}
       />
+
+      {scheduleToDelete && (
+        <ConfirmDialog
+          isOpen
+          isStacked
+          onClose={() => {
+            if (!scheduleDeleteInProgress.current) setScheduleToDelete(null);
+          }}
+          onConfirm={handleConfirmScheduleDelete}
+          title="Delete scheduled market date?"
+          description={`This removes your market duty for ${formatInIST(scheduleToDelete.date, 'EEEE, d MMMM yyyy')}.`}
+          confirmLabel="Confirm, Delete"
+          icon={HiOutlineTrash}
+          appearance="record-delete"
+          isConfirming={isDeletingSchedule}
+          error={scheduleDeleteError}
+        />
+      )}
 
       {entriesToDelete && (
         <RecordDeleteDialog

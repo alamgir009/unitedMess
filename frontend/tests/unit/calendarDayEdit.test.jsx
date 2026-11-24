@@ -7,7 +7,9 @@ import toast from 'react-hot-toast';
 import EventCalendar from '@/modules/events/components/EventCalendar/EventCalendar';
 import '@/modules/events/components/EventCalendar/CalendarDayEdit';
 import events from '@/modules/events/store/events.slice';
+import marketSchedule from '@/modules/events/store/marketSchedule.slice';
 import eventService from '@/modules/events/services/event.service';
+import marketScheduleService from '@/modules/events/services/marketSchedule.service';
 import marketService from '@/modules/market/services/market.service';
 import mealService from '@/modules/meal/services/meal.service';
 import paymentService from '@/modules/payment/services/payment.service';
@@ -30,17 +32,20 @@ vi.mock('react-hot-toast', () => ({
 vi.mock('@/services/api/client/apiClient', () => ({
   default: { get: vi.fn(async () => ({ data: {} })) },
 }));
-vi.mock('@/modules/events/components/EventCalendar/MarketScheduleModal', () => ({ default: () => null }));
-vi.mock('@/modules/events/store/marketSchedule.slice', () => ({
-  fetchMonthSchedule: () => ({ type: 'schedule/fetch' }),
-  fetchAvailableDates: () => ({ type: 'schedule/dates' }),
-  removeMarketScheduledDate: () => ({ type: 'schedule/remove' }),
+vi.mock('@/modules/events/services/marketSchedule.service', () => ({
+  default: {
+    getMonthSchedule: vi.fn(),
+    getAvailableDates: vi.fn(),
+    getMyScheduledDates: vi.fn(),
+    removeScheduledDate: vi.fn(),
+  },
 }));
 vi.mock('@/modules/events/components/EventCalendar/CalendarGrid', () => ({
-  default: ({ onCellClick, onNextMonth }) => (
+  default: ({ onCellClick, onNextMonth, scheduleMap }) => (
     <>
       <button onClick={() => onCellClick('2026-11-22')}>Open test day</button>
       <button onClick={onNextMonth}>Next test month</button>
+      {scheduleMap['2026-11-22'] && <span>Test day has market duty</span>}
     </>
   ),
 }));
@@ -65,11 +70,11 @@ const renderCalendar = (user = ownUser, view = 'markets') => {
     reducer: {
       events,
       auth: (state = { user }) => state,
-      marketSchedule: (state = { monthSchedule: {} }) => state,
+      marketSchedule,
     },
     preloadedState: { events: { currentMonth: '2026-11-05T00:00:00.000Z' } },
   });
-  return render(
+  const rendered = render(
     <Provider store={store}>
       <MemoryRouter initialEntries={[`/?view=${view}`]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Navigation />
@@ -77,6 +82,7 @@ const renderCalendar = (user = ownUser, view = 'markets') => {
       </MemoryRouter>
     </Provider>,
   );
+  return { ...rendered, store };
 };
 
 const expectEditActionsInFooter = () => {
@@ -128,6 +134,84 @@ describe('calendar day edits', () => {
     });
     eventService.getPayments.mockResolvedValue({ data: { results: [closedPayment, draftPayment] } });
     eventService.getMeals.mockResolvedValue({ data: { meals: [] } });
+    marketScheduleService.getMonthSchedule.mockResolvedValue({ data: [] });
+    marketScheduleService.getAvailableDates.mockResolvedValue({ data: [] });
+    marketScheduleService.getMyScheduledDates.mockResolvedValue({ data: [] });
+  });
+
+  it('confirms day-detail duty deletion and removes the calendar marker after one successful request', async () => {
+    const duty = { _id: 'duty-1', date: market.date, user: ownUser };
+    const deletion = deferred();
+    eventService.getMarkets.mockResolvedValue({ data: { markets: [] } });
+    marketScheduleService.getMonthSchedule.mockResolvedValueOnce({ data: [duty] });
+    marketScheduleService.removeScheduledDate.mockReturnValueOnce(deletion.promise);
+    renderCalendar();
+
+    await screen.findByText('Test day has market duty');
+    fireEvent.click(screen.getByText('Open test day'));
+    const remove = await screen.findByRole('button', { name: 'Remove your market duty' });
+    remove.focus();
+    fireEvent.click(remove);
+    const dialog = await screen.findByRole('alertdialog', { name: 'Delete scheduled market date?' });
+    expect(dialog).toHaveAccessibleDescription(/22 November 2026/);
+    expect(marketScheduleService.removeScheduledDate).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    expect(remove).toHaveFocus();
+    expect(marketScheduleService.removeScheduledDate).not.toHaveBeenCalled();
+    expect(screen.getByText('Test day has market duty')).toBeVisible();
+
+    fireEvent.click(remove);
+    const confirm = await screen.findByRole('button', { name: 'Confirm, Delete' });
+    fireEvent.click(confirm);
+    fireEvent.click(confirm);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.getByRole('alertdialog')).toHaveAttribute('aria-busy', 'true');
+    expect(marketScheduleService.removeScheduledDate).toHaveBeenCalledExactlyOnceWith('duty-1');
+    expect(screen.getByText('Test day has market duty')).toBeVisible();
+
+    await act(async () => deletion.resolve());
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByText('Test day has market duty')).toBeNull();
+    expect(marketScheduleService.getMonthSchedule.mock.calls).toEqual([[2026, 11], [2026, 11]]);
+  });
+
+  it('keeps the scheduling sheet on deletion failure and refreshes the deleted date’s month on retry', async () => {
+    const duty = { _id: 'duty-2', date: '2026-12-02T00:00:00.000Z', user: ownUser };
+    const oldMonthResponse = deferred();
+    const refreshedMonth = deferred();
+    marketScheduleService.getMonthSchedule.mockImplementation((year, month) => {
+      if (month !== 12) return { data: [] };
+      return marketScheduleService.getMonthSchedule.mock.calls.filter(([, m]) => m === 12).length === 1
+        ? oldMonthResponse.promise
+        : refreshedMonth.promise;
+    });
+    marketScheduleService.getMyScheduledDates.mockImplementation(async (_, month) => ({ data: month === 12 ? [duty] : [] }));
+    marketScheduleService.removeScheduledDate
+      .mockRejectedValueOnce(new Error('Connection lost'))
+      .mockResolvedValueOnce(undefined);
+    const { store } = renderCalendar();
+
+    fireEvent.click(screen.getByText('Open test day'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Schedule market dates' }));
+    const sheet = await screen.findByRole('dialog', { name: 'Schedule Market Dates' });
+    fireEvent.click(within(sheet).getByText('November 2026').nextElementSibling);
+    const remove = await within(sheet).findByRole('button', { name: 'Remove Wed, Dec 2' });
+    fireEvent.click(remove);
+    const confirm = await screen.findByRole('button', { name: 'Confirm, Delete' });
+    expect(marketScheduleService.removeScheduledDate).not.toHaveBeenCalled();
+    fireEvent.click(confirm);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Connection lost');
+    expect(remove).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm, Delete' }));
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Schedule Market Dates' })).toBeNull());
+    expect(marketScheduleService.removeScheduledDate.mock.calls).toEqual([['duty-2'], ['duty-2']]);
+    expect(marketScheduleService.getMonthSchedule.mock.calls.filter(([, month]) => month === 12)).toEqual([[2026, 12], [2026, 12]]);
+    await act(async () => refreshedMonth.resolve({ data: [] }));
+    await act(async () => oldMonthResponse.resolve({ data: [duty] }));
+    expect(store.getState().marketSchedule.monthSchedule['2026-12']).toEqual([]);
+    expect(store.getState().marketSchedule.mySelectedDates).toEqual([]);
   });
 
   it('validates items, keeps the editor on network failure and closes once after a single refresh', async () => {

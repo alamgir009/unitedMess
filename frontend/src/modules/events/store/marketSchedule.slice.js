@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import marketScheduleService from '../services/marketSchedule.service';
+import { getISTDateKey } from '@/core/utils/helpers/date.helper';
 
 export const fetchMonthSchedule = createAsyncThunk(
     'marketSchedule/fetchMonth',
@@ -104,6 +105,7 @@ export const disconnectGoogleCalendar = createAsyncThunk(
 
 const initialState = {
     monthSchedule: {},
+    monthScheduleRequestIds: {},
     availableDates: {},
     mySelectedDates: [],
     isLoading: false,
@@ -127,16 +129,24 @@ const marketScheduleSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-            .addCase(fetchMonthSchedule.pending, (state) => {
+            .addCase(fetchMonthSchedule.pending, (state, action) => {
+                const { year, month } = action.meta.arg;
+                state.monthScheduleRequestIds[`${year}-${month}`] = action.meta.requestId;
                 state.isLoading = true;
                 state.error = null;
             })
             .addCase(fetchMonthSchedule.fulfilled, (state, action) => {
-                state.isLoading = false;
                 const key = `${action.payload.year}-${action.payload.month}`;
+                if (state.monthScheduleRequestIds[key] !== action.meta.requestId) return;
+                delete state.monthScheduleRequestIds[key];
+                state.isLoading = false;
                 state.monthSchedule[key] = action.payload.data;
             })
             .addCase(fetchMonthSchedule.rejected, (state, action) => {
+                const { year, month } = action.meta.arg;
+                const key = `${year}-${month}`;
+                if (state.monthScheduleRequestIds[key] !== action.meta.requestId) return;
+                delete state.monthScheduleRequestIds[key];
                 state.isLoading = false;
                 state.error = action.payload;
             })
@@ -163,15 +173,23 @@ const marketScheduleSlice = createSlice({
             .addCase(selectMarketDates.fulfilled, (state, action) => {
                 state.isSelecting = false;
                 const result = action.payload;
-                if (result && result.inserted > 0 && action.meta?.arg?.dates) {
+                if (result && (result.inserted > 0 || result.removed > 0) && Array.isArray(action.meta?.arg?.dates)) {
                     const { dates } = action.meta.arg;
-                    const newEntries = dates.map((dateKey) => ({
-                        _id: `optimistic_${dateKey}_${Date.now()}`,
-                        date: new Date(dateKey + 'T00:00:00.000Z'),
-                        status: 'active',
-                        isPendingRefetch: true,
-                    }));
-                    state.mySelectedDates = [...state.mySelectedDates, ...newEntries];
+                    const existingMap = new Map();
+                    for (const item of state.mySelectedDates) {
+                        const key = getISTDateKey(item.date);
+                        if (key) existingMap.set(key, item);
+                    }
+                    state.mySelectedDates = dates.map((dateKey) => {
+                        return (
+                            existingMap.get(dateKey) || {
+                                _id: `optimistic_${dateKey}_${Date.now()}`,
+                                date: dateKey.includes('T') ? dateKey : `${dateKey}T00:00:00.000Z`,
+                                status: 'active',
+                                isPendingRefetch: true,
+                            }
+                        );
+                    });
                 }
             })
             .addCase(selectMarketDates.rejected, (state, action) => {
@@ -182,6 +200,10 @@ const marketScheduleSlice = createSlice({
                 state.mySelectedDates = state.mySelectedDates.filter(
                     (d) => d._id !== action.payload
                 );
+                for (const schedule of Object.values(state.monthSchedule)) {
+                    const removedIndex = schedule.findIndex((item) => item._id === action.payload);
+                    if (removedIndex !== -1) schedule.splice(removedIndex, 1);
+                }
             })
             .addCase(removeMarketScheduledDate.rejected, (state, action) => {
                 state.error = action.payload;
